@@ -1,0 +1,139 @@
+/* ════════════════════════════════════════════════
+   BLOCK 5 CSS — ANALYTICS
+   ════════════════════════════════════════════════ */
+
+/* ── Calendar ── */
+.cal-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-l);
+  padding: var(--sp-2);
+  margin-bottom: var(--sp-1);
+  overflow: hidden;
+}
+.cal-day-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.cal-day-hdr {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--c-text-3); text-align: center;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.cal-cell {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  background: var(--c-bg-3);
+  transition: all var(--t-fast);
+  position: relative;
+}
+.cal-cell.empty { background: transparent; border-color: transparent; }
+.cal-cell.has-workout { }
+.cal-cell.cal-today { box-shadow: 0 0 0 1.5px var(--c-accent); }
+.cal-num {
+  font-size: 10px; font-weight: 700;
+  color: var(--c-text-3);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.cal-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.btn-icon-nav {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  color: var(--c-text-3); display: flex;
+  align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.btn-icon-nav:active { background: var(--c-surface-h); }
+
+/* ── Chart cards ── */
+.chart-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-l);
+  padding: var(--sp-2);
+  margin-bottom: var(--sp-2);
+  overflow: hidden;
+}
+.chart-card canvas { width: 100%; display: block; }
+.ppl-dist-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.ppl-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.ppl-leg-item {
+  display: flex; align-items: center; gap: 8px;
+}
+.ppl-leg-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%; flex-shrink: 0;
+}
+.ppl-leg-label {
+  font-size: 12px; font-weight: 700;
+  color: var(--c-text-2); flex: 1;
+  letter-spacing: 0.04em;
+}
+.ppl-leg-val {
+  font-size: 12px; font-weight: 700;
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 1RM list ── */
+.orm-row {
+  display: flex; align-items: center;
+  gap: var(--sp-1);
+  padding: 10px var(--sp-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  margin-bottom: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.orm-name {
+  flex: 1; font-size: 13px; font-weight: 700;
+  color: var(--c-text-1); min-width: 0;
+}
+.orm-val {
+  font-size: 16px; font-weight: 700;
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.orm-unit {
+  font-size: 11px; font-weight: 600;
+  color: var(--c-text-3); margin-left: 2px;
+}
+.orm-bar-wrap {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px; background: var(--c-border);
+}
+.orm-bar-fill {
+  height: 100%; border-radius: 2px;
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
