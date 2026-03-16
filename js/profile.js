@@ -6,79 +6,26 @@
 'use strict';
 
 const Profile = (() => {
-
   /* ══════════════════════════════════════════════
      MAIN LOAD
      ══════════════════════════════════════════════ */
   async function load() {
+    console.log('Profile.load() called');
     const screen = document.getElementById('s-profile');
-    if (!screen) return;
+    if (!screen) {
+      console.error('s-profile screen not found');
+      return;
+    }
 
-    const [latest, allMetrics, settings] = await Promise.all([
-      DB.Metrics.latest(),
-      DB.Metrics.getAll(),
-      DB.Settings.getAll(),
-    ]);
-
-    screen.innerHTML = `
+    try {
+      const settings = await DB.Settings.getAll();
+      screen.innerHTML = `
       <div class="screen-header">
         <div>
           <div class="screen-title">Profile</div>
           <div class="screen-sub">Settings & data</div>
         </div>
       </div>
-
-      <!-- ── Body Stats Summary ── -->
-      ${_renderBodySummary(latest)}
-
-      <!-- ── Body Metrics Form ── -->
-      <div class="section-header">
-        <span class="section-label">Body Metrics</span>
-        <button class="btn-text" onclick="Profile.saveMetrics()">Save</button>
-      </div>
-      <div class="profile-card">
-        <div class="metrics-grid">
-          <div class="metric-field">
-            <label class="metric-label">Weight</label>
-            <div class="metric-input-wrap">
-              <input class="metric-input" id="m-weight" type="number"
-                inputmode="decimal" step="0.1" placeholder="80.0"
-                value="${latest?.weight || ''}">
-              <span class="metric-unit">kg</span>
-            </div>
-          </div>
-          <div class="metric-field">
-            <label class="metric-label">Height</label>
-            <div class="metric-input-wrap">
-              <input class="metric-input" id="m-height" type="number"
-                inputmode="numeric" step="1" placeholder="180"
-                value="${latest?.height || ''}">
-              <span class="metric-unit">cm</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Body Measurements ── -->
-      <div class="section-header" style="margin-top:var(--sp-2)">
-        <span class="section-label">Measurements</span>
-        <button class="btn-text" onclick="Profile.saveMeasurements()">Save</button>
-      </div>
-      <div class="profile-card">
-        <div class="metrics-grid">
-          ${_measurementField('m-chest',    'Chest',      settings['m-chest'],    'cm')}
-          ${_measurementField('m-waist',    'Waist',      settings['m-waist'],    'cm')}
-          ${_measurementField('m-hips',     'Hips',       settings['m-hips'],     'cm')}
-          ${_measurementField('m-arm-l',    'Left Arm',   settings['m-arm-l'],    'cm')}
-          ${_measurementField('m-arm-r',    'Right Arm',  settings['m-arm-r'],    'cm')}
-          ${_measurementField('m-thigh-l',  'Left Thigh', settings['m-thigh-l'],  'cm')}
-          ${_measurementField('m-thigh-r',  'Right Thigh',settings['m-thigh-r'],  'cm')}
-          ${_measurementField('m-neck',     'Neck',       settings['m-neck'],     'cm')}
-        </div>
-      </div>
-
-      <!-- ── Metrics History ── -->
-      ${allMetrics.length > 1 ? _renderMetricsHistory(allMetrics) : ''}
 
       <!-- ── Settings ── -->
       <div class="section-header" style="margin-top:var(--sp-2)">
@@ -116,9 +63,9 @@ const Profile = (() => {
             <div class="pref-sub">Kilograms or pounds</div>
           </div>
           <div class="toggle-group">
-            <button class="toggle-btn ${(settings['weight-unit']||'kg')==='kg'?'active':''}"
+            <button class="toggle-btn ${(settings['weight-unit'] || 'kg') === 'kg' ? 'active' : ''}"
                     onclick="Profile.setUnit('kg')">kg</button>
-            <button class="toggle-btn ${settings['weight-unit']==='lbs'?'active':''}"
+            <button class="toggle-btn ${settings['weight-unit'] === 'lbs' ? 'active' : ''}"
                     onclick="Profile.setUnit('lbs')">lbs</button>
           </div>
         </div>
@@ -131,7 +78,7 @@ const Profile = (() => {
             <div class="pref-sub">Vibrate on set completion</div>
           </div>
           <div class="switch-wrap" onclick="Profile.toggleHaptic()">
-            <div class="switch ${settings['haptic']!=='off'?'on':''}" id="sw-haptic">
+            <div class="switch ${settings['haptic'] !== 'off' ? 'on' : ''}" id="sw-haptic">
               <div class="switch-thumb"></div>
             </div>
           </div>
@@ -213,22 +160,39 @@ const Profile = (() => {
 
       <div style="height:var(--sp-4)"></div>
     `;
+    } catch (err) {
+      console.error('Profile load error', err);
+      screen.innerHTML = '<div style="padding:20px;">Error loading profile</div>';
+    }
   }
 
   /* ══════════════════════════════════════════════
      RENDER HELPERS
      ══════════════════════════════════════════════ */
   function _renderBodySummary(latest) {
-    if (!latest) return `
+    if (!latest)
+      return `
       <div class="body-summary empty-state" style="padding:var(--sp-3)">
         <div class="empty-title" style="font-size:13px">No body metrics yet</div>
         <div class="empty-desc">Add your weight and height below</div>
       </div>`;
 
-    const bmiLabel = latest.bmi < 18.5 ? 'Underweight'
-      : latest.bmi < 25 ? 'Normal' : latest.bmi < 30 ? 'Overweight' : 'Obese';
-    const bmiColor = latest.bmi < 18.5 ? 'var(--c-blue)'
-      : latest.bmi < 25 ? 'var(--c-accent)' : latest.bmi < 30 ? 'var(--c-amber)' : 'var(--c-red)';
+    const bmiLabel =
+      latest.bmi < 18.5
+        ? 'Underweight'
+        : latest.bmi < 25
+          ? 'Normal'
+          : latest.bmi < 30
+            ? 'Overweight'
+            : 'Obese';
+    const bmiColor =
+      latest.bmi < 18.5
+        ? 'var(--c-blue)'
+        : latest.bmi < 25
+          ? 'var(--c-accent)'
+          : latest.bmi < 30
+            ? 'var(--c-amber)'
+            : 'var(--c-red)';
 
     return `
       <div class="body-summary">
@@ -269,15 +233,22 @@ const Profile = (() => {
         <span class="section-label">Weight History</span>
       </div>
       <div class="profile-card">
-        ${recent.map(m => `
+        ${recent
+          .map(
+            (m) => `
           <div class="history-row">
-            <span class="history-date">${new Date(m.timestamp).toLocaleDateString('en',{
-              month:'short', day:'numeric', year:'numeric'})}</span>
+            <span class="history-date">${new Date(m.timestamp).toLocaleDateString('en', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}</span>
             <span class="history-val">${m.weight} kg</span>
             <span class="history-bmi" style="color:${m.bmi < 25 ? 'var(--c-accent)' : 'var(--c-amber)'}">
               BMI ${m.bmi}
             </span>
-          </div>`).join('')}
+          </div>`
+          )
+          .join('')}
       </div>`;
   }
 
@@ -288,7 +259,8 @@ const Profile = (() => {
     const w = parseFloat(document.getElementById('m-weight')?.value);
     const h = parseFloat(document.getElementById('m-height')?.value);
     if (!w || !h || w <= 0 || h <= 0) {
-      Toast.show('Enter valid weight and height', 'error'); return;
+      Toast.show('Enter valid weight and height', 'error');
+      return;
     }
     await DB.Metrics.save(w, h);
     Toast.show('Body metrics saved', 'success');
@@ -296,8 +268,17 @@ const Profile = (() => {
   }
 
   async function saveMeasurements() {
-    const fields = ['m-chest','m-waist','m-hips','m-arm-l','m-arm-r','m-thigh-l','m-thigh-r','m-neck'];
-    const saves  = fields.map(id => {
+    const fields = [
+      'm-chest',
+      'm-waist',
+      'm-hips',
+      'm-arm-l',
+      'm-arm-r',
+      'm-thigh-l',
+      'm-thigh-r',
+      'm-neck',
+    ];
+    const saves = fields.map((id) => {
       const val = document.getElementById(id)?.value;
       return val ? DB.Settings.set(id, val) : Promise.resolve();
     });
@@ -310,7 +291,7 @@ const Profile = (() => {
      ══════════════════════════════════════════════ */
   async function adjustRest(delta) {
     const current = parseInt((await DB.Settings.get('rest-duration')) || 90);
-    const next    = Math.max(15, Math.min(300, current + delta));
+    const next = Math.max(15, Math.min(300, current + delta));
     await DB.Settings.set('rest-duration', next);
     const el = document.getElementById('pref-rest-val');
     if (el) el.textContent = next + 's';
@@ -318,14 +299,14 @@ const Profile = (() => {
 
   async function setUnit(unit) {
     await DB.Settings.set('weight-unit', unit);
-    document.querySelectorAll('.toggle-btn').forEach(b => {
+    document.querySelectorAll('.toggle-btn').forEach((b) => {
       b.classList.toggle('active', b.textContent.trim() === unit);
     });
   }
 
   async function toggleHaptic() {
     const current = await DB.Settings.get('haptic', 'on');
-    const next    = current === 'off' ? 'on' : 'off';
+    const next = current === 'off' ? 'on' : 'off';
     await DB.Settings.set('haptic', next);
     const sw = document.getElementById('sw-haptic');
     if (sw) sw.classList.toggle('on', next === 'on');
@@ -338,10 +319,10 @@ const Profile = (() => {
     try {
       const json = await DB.Backup.export();
       const blob = new Blob([json], { type: 'application/json' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
       const date = new Date().toISOString().split('T')[0];
-      a.href     = url;
+      a.href = url;
       a.download = `athlete-pro-backup-${date}.json`;
       a.click();
       URL.revokeObjectURL(url);
@@ -375,9 +356,7 @@ const Profile = (() => {
      ══════════════════════════════════════════════ */
   async function clearAllData() {
     const confirmed = confirm(
-      'This will permanently delete ALL workouts, metrics, and settings. This cannot be undone.
-
-Type OK to confirm.'
+      'This will permanently delete ALL workouts, metrics, and settings. This cannot be undone.\n\nType OK to confirm.'
     );
     if (!confirmed) return;
     await DB.clearAll();
@@ -387,10 +366,15 @@ Type OK to confirm.'
   }
 
   return {
-    load, saveMetrics, saveMeasurements,
-    adjustRest, setUnit, toggleHaptic,
-    exportData, importData, _onImportFile,
+    load,
+    saveMetrics,
+    saveMeasurements,
+    adjustRest,
+    setUnit,
+    toggleHaptic,
+    exportData,
+    importData,
+    _onImportFile,
     clearAllData,
   };
-
 })();

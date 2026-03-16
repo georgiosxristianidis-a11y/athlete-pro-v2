@@ -1,505 +1,893 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0a0a0f">
-  <meta name="description" content="Professional PPL workout tracker">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Athlete Pro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0a0f" />
+    <meta name="description" content="Professional PPL workout tracker" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Athlete Pro" />
 
-  <title>Athlete Pro</title>
+    <title>Athlete Pro</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="icons/favicon.png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" type="image/png" href="icons/favicon.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 
-  <!-- Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
 
-  <!-- ── BLOCK 0: Critical CSS (inline — zero flash) ──────────────── -->
-  <style>
-  /* RESET */
-  *, *::before, *::after {
-    box-sizing: border-box; margin: 0; padding: 0;
-    -webkit-tap-highlight-color: transparent;
-  }
-  html { height: 100%; overflow: hidden; }
-  body {
-    height: 100%;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #0a0a0f; color: #e8eaed; overflow: hidden;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    user-select: none;
-  }
+    <!-- ── BLOCK 0: Critical CSS (inline — zero flash) ──────────────── -->
+    <style>
+      /* RESET */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        height: 100%;
+        font-family:
+          'Outfit',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #0a0a0f;
+        color: #e8eaed;
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        user-select: none;
+      }
 
-  /* DESIGN TOKENS */
-  :root {
-    --c-bg:        #0a0a0f;
-    --c-bg-1:      #111118;
-    --c-bg-2:      #16161f;
-    --c-bg-3:      #1c1c28;
-    --c-surface:   rgba(255,255,255,0.04);
-    --c-surface-h: rgba(255,255,255,0.07);
-    --c-border:    rgba(255,255,255,0.06);
-    --c-border-h:  rgba(255,255,255,0.12);
-    --c-text-1: #e8eaed;
-    --c-text-2: #9aa0ab;
-    --c-text-3: #5a6070;
-    --c-accent:    #00e676;
-    --c-accent-d:  #00c260;
-    --c-accent-bg: rgba(0,230,118,0.08);
-    --c-purple:    #8b5cf6;
-    --c-purple-bg: rgba(139,92,246,0.08);
-    --c-blue:      #2979ff;
-    --c-blue-bg:   rgba(41,121,255,0.08);
-    --c-amber:     #ffb300;
-    --c-amber-bg:  rgba(255,179,0,0.08);
-    --c-red:       #ff4757;
-    --c-red-bg:    rgba(255,71,87,0.08);
-    --sp-1: 8px;  --sp-2: 16px; --sp-3: 24px;
-    --sp-4: 32px; --sp-5: 40px; --sp-6: 48px;
-    --r-s: 10px; --r-m: 14px; --r-l: 18px; --r-xl: 22px;
-    --safe-top:    env(safe-area-inset-top,    0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --nav-h: 68px;
-    --t-fast:   0.15s cubic-bezier(0.4,0,0.2,1);
-    --t-normal: 0.25s cubic-bezier(0.4,0,0.2,1);
-    --t-slow:   0.4s  cubic-bezier(0.4,0,0.2,1);
-  }
+      /* DESIGN TOKENS */
+      :root {
+        --c-bg: #0a0a0f;
+        --c-bg-1: #111118;
+        --c-bg-2: #16161f;
+        --c-bg-3: #1c1c28;
+        --c-surface: rgba(255, 255, 255, 0.04);
+        --c-surface-h: rgba(255, 255, 255, 0.07);
+        --c-border: rgba(255, 255, 255, 0.06);
+        --c-border-h: rgba(255, 255, 255, 0.12);
+        --c-text-1: #e8eaed;
+        --c-text-2: #9aa0ab;
+        --c-text-3: #6b7280;
+        --c-accent: #00e676;
+        --c-accent-d: #00c260;
+        --c-accent-bg: rgba(0, 230, 118, 0.08);
+        --c-purple: #8b5cf6;
+        --c-purple-bg: rgba(139, 92, 246, 0.08);
+        --c-blue: #2979ff;
+        --c-blue-bg: rgba(41, 121, 255, 0.08);
+        --c-amber: #ffb300;
+        --c-amber-bg: rgba(255, 179, 0, 0.08);
+        --c-red: #ff4757;
+        --c-red-bg: rgba(255, 71, 87, 0.08);
+        --sh-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+        --sh-md: 0 4px 16px rgba(0, 0, 0, 0.22);
+        --sh-lg: 0 8px 32px rgba(0, 0, 0, 0.32);
+        --c-border-purple: rgba(139, 92, 246, 0.15);
+        --c-border-blue: rgba(41, 121, 255, 0.15);
+        --sp-1: 8px;
+        --sp-2: 16px;
+        --sp-3: 24px;
+        --sp-4: 32px;
+        --sp-5: 40px;
+        --sp-6: 48px;
+        --r-s: 10px;
+        --r-m: 14px;
+        --r-l: 18px;
+        --r-xl: 22px;
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --nav-h: 68px;
+        --t-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        --t-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        --t-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
 
-  /* SHELL */
-  #app {
-    display: flex; flex-direction: column;
-    height: 100%; padding-top: var(--safe-top);
-  }
+      /* SHELL */
+      #app {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding-top: var(--safe-top);
+      }
 
-  /* STATUS BAR */
-  #status-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 var(--sp-2); height: 40px;
-    background: var(--c-bg); border-bottom: 1px solid var(--c-border);
-    flex-shrink: 0; z-index: 100;
-  }
-  .status-logo { display: flex; align-items: center; gap: 8px; }
-  .status-logo-img {
-    width: 22px; height: 22px; border-radius: 6px; object-fit: cover;
-  }
-  .status-logo-text {
-    font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
-    color: var(--c-accent); text-transform: uppercase;
-  }
-  .status-pill {
-    display: flex; align-items: center; gap: 5px;
-    padding: 3px 10px; border-radius: 20px;
-    background: var(--c-surface); border: 1px solid var(--c-border);
-    font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
-    color: var(--c-text-2); transition: all var(--t-fast);
-  }
-  .status-pill.online  { color: var(--c-accent); border-color: rgba(0,230,118,0.2); background: var(--c-accent-bg); }
-  .status-pill.offline { color: var(--c-red);    border-color: rgba(255,71,87,0.2);  background: var(--c-red-bg); }
-  .status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-  .status-pill.online .status-dot { animation: pulse 2s infinite; }
-  #status-time {
-    font-size: 11px; font-weight: 500; color: var(--c-text-3);
-    font-variant-numeric: tabular-nums; min-width: 36px; text-align: right;
-  }
+      /* STATUS BAR */
+      #status-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 var(--sp-2);
+        height: 40px;
+        background: var(--c-bg);
+        border-bottom: 1px solid var(--c-border);
+        flex-shrink: 0;
+        z-index: 100;
+      }
+      .status-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .status-logo-img {
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        object-fit: cover;
+      }
+      .status-logo-text {
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: var(--c-accent);
+        text-transform: uppercase;
+      }
+      .status-pill {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        color: var(--c-text-2);
+        transition: all var(--t-fast);
+      }
+      .status-pill.online {
+        color: var(--c-accent);
+        border-color: rgba(0, 230, 118, 0.2);
+        background: var(--c-accent-bg);
+      }
+      .status-pill.offline {
+        color: var(--c-red);
+        border-color: rgba(255, 71, 87, 0.2);
+        background: var(--c-red-bg);
+      }
+      .status-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+        flex-shrink: 0;
+      }
+      .status-pill.online .status-dot {
+        animation: pulse 2s infinite;
+      }
+      #status-time {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--c-text-3);
+        font-variant-numeric: tabular-nums;
+        min-width: 36px;
+        text-align: right;
+      }
 
-  /* SCREENS */
-  #screens { flex: 1; overflow: hidden; position: relative; }
-  .screen {
-    position: absolute; inset: 0;
-    overflow-y: auto; overflow-x: hidden;
-    padding: var(--sp-2);
-    padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + var(--sp-2));
-    display: none; -webkit-overflow-scrolling: touch;
-  }
-  .screen.active { display: block; }
-  .screen::-webkit-scrollbar { width: 2px; }
-  .screen::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 2px; }
+      /* SCREENS — DESIGN-1: fade transition, DESIGN-2: GPU scroll */
+      #screens {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+      }
+      .screen {
+        position: absolute;
+        inset: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: var(--sp-2);
+        padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + var(--sp-2));
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(6px);
+        transition:
+          opacity 0.22s ease,
+          transform 0.22s ease;
+        -webkit-overflow-scrolling: touch;
+        will-change: scroll-position;
+      }
+      .screen.active {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+      }
+      .screen::-webkit-scrollbar {
+        width: 2px;
+      }
+      .screen::-webkit-scrollbar-thumb {
+        background: var(--c-border);
+        border-radius: 2px;
+      }
 
-  /* BOTTOM NAV */
-  #nav {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    height: calc(var(--nav-h) + var(--safe-bottom));
-    padding-bottom: var(--safe-bottom);
-    background: rgba(10,10,15,0.96);
-    border-top: 1px solid var(--c-border);
-    display: flex; align-items: flex-start;
-    z-index: 200;
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-  }
-  .nav-btn {
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 4px;
-    height: var(--nav-h); cursor: pointer; padding: 0;
-    border: none; background: none; color: var(--c-text-3);
-    transition: color var(--t-fast);
-    -webkit-tap-highlight-color: transparent; position: relative;
-  }
-  .nav-btn svg { width: 22px; height: 22px; transition: transform var(--t-fast); }
-  .nav-btn span {
-    font-size: 9px; font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    font-family: 'Outfit', sans-serif;
-  }
-  .nav-btn.active { color: var(--c-accent); }
-  .nav-btn.active svg { transform: translateY(-1px); }
-  .nav-btn:active svg { transform: scale(0.86); }
-  .nav-btn.active::before {
-    content: ''; position: absolute;
-    top: 0; left: 50%; transform: translateX(-50%);
-    width: 28px; height: 2px;
-    background: var(--c-accent); border-radius: 0 0 3px 3px;
-  }
+      /* BOTTOM NAV — DESIGN-5: enhanced glass-morphism */
+      #nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(var(--nav-h) + var(--safe-bottom));
+        padding-bottom: var(--safe-bottom);
+        background: linear-gradient(180deg, rgba(10, 10, 15, 0.82) 0%, rgba(10, 10, 15, 0.96) 100%);
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        align-items: flex-start;
+        z-index: 200;
+        backdrop-filter: blur(32px) saturate(1.6);
+        -webkit-backdrop-filter: blur(32px) saturate(1.6);
+      }
+      #nav::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          rgba(0, 230, 118, 0.02) 0%,
+          rgba(139, 92, 246, 0.03) 50%,
+          rgba(41, 121, 255, 0.02) 100%
+        );
+        pointer-events: none;
+      }
+      .nav-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        height: var(--nav-h);
+        cursor: pointer;
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--c-text-3);
+        transition:
+          color var(--t-fast),
+          transform var(--t-fast);
+        -webkit-tap-highlight-color: transparent;
+        position: relative;
+      }
+      .nav-btn svg {
+        width: 22px;
+        height: 22px;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .nav-btn span {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-family: 'Outfit', sans-serif;
+        transition: opacity var(--t-fast);
+      }
+      .nav-btn.active {
+        color: var(--c-accent);
+      }
+      .nav-btn.active svg {
+        transform: translateY(-2px) scale(1.08);
+      }
+      .nav-btn:active svg {
+        transform: scale(0.82);
+      }
+      .nav-btn.active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 28px;
+        height: 2.5px;
+        background: var(--c-accent);
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 2px 8px rgba(0, 230, 118, 0.3);
+      }
+      @media (hover: hover) {
+        .nav-btn:hover {
+          color: var(--c-text-2);
+        }
+        .nav-btn:hover svg {
+          transform: translateY(-1px);
+        }
+      }
 
-  /* LOADING */
-  #loading {
-    position: fixed; inset: 0; background: var(--c-bg);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: var(--sp-2);
-    z-index: 9000; transition: opacity 0.5s ease;
-  }
-  #loading.hidden { opacity: 0; pointer-events: none; }
-  .loading-icon {
-    width: 80px; height: 80px; border-radius: 22px; overflow: hidden;
-    animation: loading-pulse 1.8s ease infinite;
-  }
-  .loading-icon img { width: 100%; height: 100%; object-fit: cover; }
-  .loading-text {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
-    text-transform: uppercase; color: var(--c-text-3);
-  }
+      /* LOADING — DESIGN-9: shimmer skeleton */
+      #loading {
+        position: fixed;
+        inset: 0;
+        background: var(--c-bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--sp-2);
+        z-index: 9000;
+        transition:
+          opacity 0.5s ease,
+          transform 0.5s ease;
+      }
+      #loading.hidden {
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(1.04);
+      }
+      .loading-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 22px;
+        overflow: hidden;
+        animation: loading-pulse 1.8s ease infinite;
+        position: relative;
+      }
+      .loading-icon::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          105deg,
+          transparent 30%,
+          rgba(255, 255, 255, 0.06) 50%,
+          transparent 70%
+        );
+        animation: shimmer 2s infinite;
+      }
+      .loading-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .loading-text {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--c-text-3);
+        animation: pulse 2s infinite;
+      }
 
-  /* TOAST */
-  #toast-wrap {
-    position: fixed;
-    bottom: calc(var(--nav-h) + var(--safe-bottom) + var(--sp-2));
-    left: var(--sp-2); right: var(--sp-2);
-    z-index: 9999; display: flex; flex-direction: column;
-    gap: var(--sp-1); pointer-events: none;
-  }
-  .toast {
-    display: flex; align-items: center; gap: var(--sp-1);
-    padding: 12px var(--sp-2);
-    background: var(--c-bg-3); border: 1px solid var(--c-border-h);
-    border-radius: var(--r-m); font-size: 13px; font-weight: 600;
-    color: var(--c-text-1);
-    backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    animation: toast-in 0.3s cubic-bezier(0.4,0,0.2,1) forwards;
-  }
-  .toast.out { animation: toast-out 0.3s cubic-bezier(0.4,0,0.2,1) forwards; }
-  .toast svg { width: 16px; height: 16px; flex-shrink: 0; }
-  .toast.success svg { color: var(--c-accent); }
-  .toast.error   svg { color: var(--c-red); }
-  .toast.info    svg { color: var(--c-blue); }
+      /* TOAST */
+      #toast-wrap {
+        position: fixed;
+        bottom: calc(var(--nav-h) + var(--safe-bottom) + var(--sp-2));
+        left: var(--sp-2);
+        right: var(--sp-2);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-1);
+        pointer-events: none;
+      }
+      .toast {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-1);
+        padding: 12px var(--sp-2);
+        background: var(--c-bg-3);
+        border: 1px solid var(--c-border-h);
+        border-radius: var(--r-m);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--c-text-1);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        animation: toast-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+      .toast.out {
+        animation: toast-out 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+      .toast svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+      .toast.success svg {
+        color: var(--c-accent);
+      }
+      .toast.error svg {
+        color: var(--c-red);
+      }
+      .toast.info svg {
+        color: var(--c-blue);
+      }
 
-  /* SHARED */
-  .screen-header {
-    display: flex; align-items: center;
-    justify-content: space-between; padding: var(--sp-1) 0 var(--sp-2);
-  }
-  .screen-title {
-    font-size: 26px; font-weight: 800;
-    letter-spacing: -0.03em; color: var(--c-text-1);
-  }
-  .screen-sub {
-    font-size: 12px; font-weight: 500; color: var(--c-text-3); margin-top: 2px;
-  }
-  .section-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: var(--sp-1); padding: 0 2px;
-  }
-  .section-label {
-    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--c-text-3);
-  }
-  .badge {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
-    text-transform: uppercase; padding: 3px 8px; border-radius: 6px;
-  }
-  .badge-accent { color: var(--c-accent); background: var(--c-accent-bg); }
-  .badge-purple { color: var(--c-purple); background: var(--c-purple-bg); }
-  .badge-blue   { color: var(--c-blue);   background: var(--c-blue-bg);   }
-  .badge-amber  { color: var(--c-amber);  background: var(--c-amber-bg);  }
-  .badge-red    { color: var(--c-red);    background: var(--c-red-bg);    }
-  .empty-state {
-    display: flex; flex-direction: column; align-items: center;
-    gap: var(--sp-2); padding: var(--sp-5) var(--sp-3); text-align: center;
-  }
-  .empty-icon {
-    width: 52px; height: 52px; border-radius: var(--r-l);
-    background: var(--c-surface); border: 1px solid var(--c-border);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .empty-icon svg { width: 22px; height: 22px; color: var(--c-text-3); }
-  .empty-title { font-size: 15px; font-weight: 700; color: var(--c-text-2); }
-  .empty-desc  { font-size: 12px; font-weight: 500; color: var(--c-text-3); line-height: 1.6; }
-  .session-item {
-    display: flex; align-items: center; gap: var(--sp-1);
-    padding: 12px var(--sp-2); background: var(--c-surface);
-    border: 1px solid var(--c-border); border-radius: var(--r-m);
-    margin-bottom: 6px; transition: background var(--t-fast); cursor: pointer;
-  }
-  .session-item:active { background: var(--c-surface-h); }
-  .session-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .session-info { flex: 1; min-width: 0; }
-  .session-title { font-size: 13px; font-weight: 700; color: var(--c-text-1); }
-  .session-meta  { font-size: 11px; font-weight: 500; color: var(--c-text-3); margin-top: 1px; }
-  .session-vol   {
-    font-size: 13px; font-weight: 700; color: var(--c-text-2);
-    font-variant-numeric: tabular-nums; flex-shrink: 0;
-  }
-  .btn-text {
-    display: flex; align-items: center; gap: 4px;
-    background: none; border: none; font-size: 11px; font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--c-accent); cursor: pointer; padding: 4px 0;
-    font-family: 'Outfit', sans-serif;
-  }
-  .btn-text:active { opacity: 0.7; }
-  .mini-stepper {
-    display: flex; align-items: center; gap: 6px;
-    background: var(--c-bg-3); border: 1px solid var(--c-border);
-    border-radius: 8px; padding: 4px 8px;
-  }
-  .mini-stepper button {
-    background: none; border: none; color: var(--c-text-3);
-    cursor: pointer; display: flex; align-items: center;
-    padding: 0; -webkit-tap-highlight-color: transparent;
-  }
-  .mini-stepper button svg { width: 12px; height: 12px; }
-  .mini-stepper span {
-    font-size: 13px; font-weight: 700; color: var(--c-text-1);
-    font-variant-numeric: tabular-nums; min-width: 20px; text-align: center;
-  }
-  .stat-row {
-    display: grid; grid-template-columns: 1fr 1fr 1fr;
-    gap: var(--sp-1); margin-bottom: var(--sp-2);
-  }
-  .stat-chip {
-    background: var(--c-surface); border: 1px solid var(--c-border);
-    border-radius: var(--r-m); padding: 12px var(--sp-1);
-    display: flex; flex-direction: column; gap: 4px;
-  }
-  .stat-chip-purple { border-color: rgba(139,92,246,0.15); }
-  .stat-chip-blue   { border-color: rgba(41,121,255,0.15); }
-  .stat-chip-val {
-    font-size: 20px; font-weight: 700; letter-spacing: -0.03em;
-    color: var(--c-text-1); font-variant-numeric: tabular-nums; line-height: 1;
-  }
-  .stat-chip-unit {
-    font-size: 11px; font-weight: 600; color: var(--c-text-3); margin-left: 2px;
-  }
-  .stat-chip-label {
-    font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--c-text-3);
-  }
+      /* SHARED */
+      .screen-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--sp-1) 0 var(--sp-2);
+      }
+      .screen-title {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        color: var(--c-text-1);
+      }
+      .screen-sub {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--c-text-3);
+        margin-top: 2px;
+      }
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--sp-1);
+        padding: 0 2px;
+      }
+      .section-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--c-text-3);
+      }
+      .badge {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 6px;
+      }
+      .badge-accent {
+        color: var(--c-accent);
+        background: var(--c-accent-bg);
+      }
+      .badge-purple {
+        color: var(--c-purple);
+        background: var(--c-purple-bg);
+      }
+      .badge-blue {
+        color: var(--c-blue);
+        background: var(--c-blue-bg);
+      }
+      .badge-amber {
+        color: var(--c-amber);
+        background: var(--c-amber-bg);
+      }
+      .badge-red {
+        color: var(--c-red);
+        background: var(--c-red-bg);
+      }
+      /* BUG-5: Duplicate CSS removed — these rules exist in dashboard.css and workout.css */
 
-  /* KEYFRAMES */
-  @keyframes pulse         { 0%,100%{opacity:1} 50%{opacity:0.35} }
-  @keyframes loading-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(139,92,246,0.4)} 50%{box-shadow:0 0 0 16px rgba(139,92,246,0)} }
-  @keyframes toast-in      { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes toast-out     { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(12px)} }
-  </style>
+      /* FOCUS-VISIBLE — keyboard accessibility */
+      :focus-visible {
+        outline: 2px solid var(--c-accent);
+        outline-offset: 2px;
+      }
+      /* inputs handle focus via parent wrapper's focus-within border */
+      input:focus-visible,
+      textarea:focus-visible {
+        outline: none;
+      }
 
-  <!-- Module CSS (non-critical, async-safe) -->
-  <link rel="stylesheet" href="css/dashboard.css">
-  <link rel="stylesheet" href="css/workout.css">
-  <link rel="stylesheet" href="css/analytics.css">
-  <link rel="stylesheet" href="css/profile.css">
-  <link rel="stylesheet" href="css/claude.css">
-</head>
+      /* TOUCH-ACTION — remove 300ms tap delay on interactive elements */
+      button,
+      [role='button'],
+      .nav-btn,
+      .dash-cta,
+      .type-card,
+      .session-item,
+      .data-btn,
+      .toggle-btn,
+      .switch-wrap,
+      .plan-tab,
+      .set-check,
+      .set-badge,
+      .add-set-btn,
+      .btn-add-ex,
+      .rpe-btn,
+      .rpe-seg,
+      .rest-btn-sec,
+      .rest-btn-primary,
+      .rest-bar-plus,
+      .rest-bar-skip,
+      .btn-icon-nav,
+      .btn-text,
+      .chat-send-btn,
+      .exercise-header,
+      .cal-cell,
+      .cal-pick-btn,
+      .cal-pick-remove,
+      .orm-row,
+      .stat-chip,
+      .ppl-chip,
+      .add-ex-item,
+      .btn-icon-sm,
+      .streak-dot {
+        touch-action: manipulation;
+      }
 
-<body>
+      /* KEYFRAMES */
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+      @keyframes loading-pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+        }
+        50% {
+          box-shadow: 0 0 0 16px rgba(139, 92, 246, 0);
+        }
+      }
+      @keyframes toast-in {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes toast-out {
+        from {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+      }
+      @keyframes shimmer {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(100%);
+        }
+      }
+      @keyframes fadeSlideUp {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-<!-- ── Loading splash ── -->
-<div id="loading">
-  <div class="loading-icon">
-    <img src="icons/icon-512.png" alt="Athlete Pro">
-  </div>
-  <span class="loading-text">Loading</span>
-</div>
+      /* REDUCED MOTION — respect system preference */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+        .screen {
+          transition: none !important;
+        }
+        #loading {
+          transition: none !important;
+        }
+      }
 
-<!-- ── App Shell ── -->
-<div id="app">
+      /* DESKTOP — center content, cap at 480px */
+      @media (min-width: 600px) {
+        .screen {
+          padding-left: max(var(--sp-2), calc(50% - 232px));
+          padding-right: max(var(--sp-2), calc(50% - 232px));
+        }
+      }
+    </style>
 
-  <!-- Status Bar -->
-  <div id="status-bar">
-    <div class="status-logo">
-      <img src="icons/icon-192.png" class="status-logo-img" alt="AP">
-      <span class="status-logo-text">Athlete Pro</span>
+    <!-- Cloud status card styles (inline — tiny) -->
+    <style>
+      .cloud-card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-l);
+        padding: var(--sp-2);
+        margin-bottom: var(--sp-1);
+      }
+      .cloud-status-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .cloud-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .cloud-status-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .cloud-status-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--c-text-1);
+      }
+      .cloud-status-sub {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--c-text-3);
+      }
+      .cloud-status-val {
+        font-size: 12px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+
+    <!-- Module CSS (non-critical, async-safe) -->
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <link rel="stylesheet" href="css/workout.css" />
+    <link rel="stylesheet" href="css/analytics.css" />
+    <link rel="stylesheet" href="css/profile.css" />
+    <link rel="stylesheet" href="css/claude.css" />
+    <link rel="stylesheet" href="css/body-stats.css" />
+  </head>
+
+  <body>
+    <!-- ── Loading splash ── -->
+    <div id="loading">
+      <div class="loading-icon">
+        <img src="icons/icon-512.png" alt="Athlete Pro" />
+      </div>
+      <span class="loading-text">Loading</span>
     </div>
-    <div id="status-pill" class="status-pill offline">
-      <span class="status-dot"></span>
-      <span id="status-text">Offline</span>
+
+    <!-- ── App Shell ── -->
+    <div id="app">
+      <!-- Status Bar -->
+      <div id="status-bar">
+        <div class="status-logo">
+          <img src="icons/icon-192.png" class="status-logo-img" alt="AP" />
+          <span class="status-logo-text">Athlete Pro</span>
+        </div>
+        <div id="status-pill" class="status-pill offline">
+          <span class="status-dot"></span>
+          <span id="status-text">Offline</span>
+        </div>
+        <span id="status-time"></span>
+      </div>
+
+      <!-- Screens -->
+      <div id="screens">
+        <div id="s-home" class="screen active"></div>
+        <div id="s-train" class="screen"></div>
+        <div id="s-stats" class="screen"></div>
+        <div id="s-body" class="screen"><div id="body-stats-root"></div></div>
+        <div id="s-profile" class="screen"></div>
+      </div>
+
+      <!-- Bottom Nav -->
+      <nav id="nav">
+        <button class="nav-btn active" data-s="s-home" onclick="Nav.go('s-home')">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" />
+            <path d="M9 21V12h6v9" />
+          </svg>
+          <span>Home</span>
+        </button>
+        <button class="nav-btn" data-s="s-train" onclick="Nav.go('s-train')">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          >
+            <circle cx="7" cy="12" r="2.4" />
+            <circle cx="17" cy="12" r="2.4" />
+            <rect x="4.6" y="10.6" width="4.8" height="2.8" rx="1.2" />
+            <rect x="14.6" y="10.6" width="4.8" height="2.8" rx="1.2" />
+            <line x1="9.4" y1="12" x2="14.6" y2="12" />
+            <rect x="11" y="9" width="2" height="6" rx="0.8" />
+          </svg>
+          <span>Train</span>
+        </button>
+        <button class="nav-btn" data-s="s-stats" onclick="Nav.go('s-stats')">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+          <span>Stats</span>
+        </button>
+        <button class="nav-btn" data-s="s-body" onclick="Nav.go('s-body')">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="5" r="2.5" />
+            <path d="M12 8v7" />
+            <path d="M8 11h8" />
+            <path d="M9 22l3-7 3 7" />
+          </svg>
+          <span>Body</span>
+        </button>
+        <button class="nav-btn" data-s="s-profile" onclick="Nav.go('s-profile')">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+          </svg>
+          <span>Profile</span>
+        </button>
+      </nav>
     </div>
-    <span id="status-time"></span>
-  </div>
+    <!-- /app -->
 
-  <!-- Screens -->
-  <div id="screens">
-    <div id="s-home"    class="screen active"></div>
-    <div id="s-train"   class="screen"></div>
-    <div id="s-stats"   class="screen"></div>
-    <div id="s-profile" class="screen"></div>
-  </div>
+    <!-- Toast container -->
+    <div id="toast-wrap"></div>
 
-  <!-- Bottom Nav -->
-  <nav id="nav">
-    <button class="nav-btn active" data-s="s-home" onclick="Nav.go('s-home')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
-        <path d="M9 21V12h6v9"/>
-      </svg>
-      <span>Home</span>
-    </button>
-    <button class="nav-btn" data-s="s-train" onclick="Nav.go('s-train')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.5" stroke-linecap="round">
-        <circle cx="7"  cy="12" r="2.4"/>
-        <circle cx="17" cy="12" r="2.4"/>
-        <rect x="4.6"  y="10.6" width="4.8" height="2.8" rx="1.2"/>
-        <rect x="14.6" y="10.6" width="4.8" height="2.8" rx="1.2"/>
-        <line x1="9.4" y1="12" x2="14.6" y2="12"/>
-        <rect x="11"   y="9"   width="2"   height="6"   rx="0.8"/>
-      </svg>
-      <span>Train</span>
-    </button>
-    <button class="nav-btn" data-s="s-stats" onclick="Nav.go('s-stats')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-      </svg>
-      <span>Stats</span>
-    </button>
-    <button class="nav-btn" data-s="s-profile" onclick="Nav.go('s-profile')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="8" r="4"/>
-        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-      </svg>
-      <span>Profile</span>
-    </button>
-  </nav>
+    <!-- ── Firebase compat SDK (must load before db-firebase.js) ── -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-</div><!-- /app -->
+    <!-- ── Core scripts (order matters) ── -->
+    <script src="js/db.js" defer></script>
+    <script src="js/db-firebase.js" defer></script>
+    <script src="js/supabase-check.js" defer></script>
+    <script src="js/timer.js" defer></script>
+    <script src="js/dashboard.js" defer></script>
+    <script src="js/workout.js" defer></script>
+    <script src="js/analytics.js" defer></script>
+    <script src="js/profile.js" defer></script>
+    <script src="js/claude.js" defer></script>
+    <script src="js/body-stats.js" defer></script>
+    <script src="js/plate-calc.js" defer></script>
 
-<!-- Toast container -->
-<div id="toast-wrap"></div>
+    <!-- ── App bootstrap (runs after all defer scripts) ── -->
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        /* ── Clock ── */
+        const clockEl = document.getElementById('status-time');
+        function updateClock() {
+          clockEl.textContent = new Date().toLocaleTimeString('en', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+        }
+        updateClock();
+        setInterval(updateClock, 30000);
 
-<!-- ── Core scripts (order matters) ── -->
-<script src="js/db.js"          defer></script>
-<script src="js/timer.js"       defer></script>
-<script src="js/dashboard.js"   defer></script>
-<script src="js/workout.js"     defer></script>
-<script src="js/analytics.js"   defer></script>
-<script src="js/profile.js"     defer></script>
-<script src="js/claude.js"       defer></script>
+        /* ── Network ── */
+        const pill = document.getElementById('status-pill');
+        const pillText = document.getElementById('status-text');
+        function setOnline() {
+          pill.className = 'status-pill online';
+          pillText.textContent = 'Online';
+        }
+        function setOffline() {
+          pill.className = 'status-pill offline';
+          pillText.textContent = 'Offline';
+        }
+        window.addEventListener('online', setOnline);
+        window.addEventListener('offline', setOffline);
+        if (navigator.onLine) setOnline();
+        else setOffline();
 
-<!-- ── App bootstrap (runs after all defer scripts) ── -->
-<script>
-document.addEventListener('DOMContentLoaded', () => {
+        /* ── Navigation ── */
+        window.Nav = (() => {
+          let current = 's-home';
+          const handlers = {
+            's-home': () => Dashboard.load(),
+            's-train': () => Workout.renderSelect(),
+            's-stats': () => Analytics.load(),
+            's-body': () => renderBodyStats(),
+            's-profile': () => Profile.load(),
+          };
+          function go(id) {
+            if (id === current) return;
+            document.getElementById(current)?.classList.remove('active');
+            document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('active'));
+            document.getElementById(id)?.classList.add('active');
+            document.querySelector(`.nav-btn[data-s="${id}"]`)?.classList.add('active');
+            current = id;
+            document.getElementById(id).scrollTop = 0;
+            handlers[id]?.();
+          }
+          return { go, current: () => current };
+        })();
 
-  /* ── Clock ── */
-  const clockEl = document.getElementById('status-time');
-  function updateClock() {
-    clockEl.textContent = new Date().toLocaleTimeString('en', {
-      hour: '2-digit', minute: '2-digit', hour12: false
-    });
-  }
-  updateClock();
-  setInterval(updateClock, 10000);
-
-  /* ── Network ── */
-  const pill     = document.getElementById('status-pill');
-  const pillText = document.getElementById('status-text');
-  function setOnline()  { pill.className = 'status-pill online';  pillText.textContent = 'Online';  }
-  function setOffline() { pill.className = 'status-pill offline'; pillText.textContent = 'Offline'; }
-  window.addEventListener('online',  setOnline);
-  window.addEventListener('offline', setOffline);
-  if (navigator.onLine) setOnline(); else setOffline();
-
-  /* ── Navigation ── */
-  window.Nav = (() => {
-    let current = 's-home';
-    const handlers = {
-      's-home'   : () => Dashboard.load(),
-      's-train'  : () => Workout.renderSelect(),
-      's-stats'  : () => Analytics.load(),
-      's-profile': () => Profile.load(),
-    };
-    function go(id) {
-      if (id === current) return;
-      document.getElementById(current)?.classList.remove('active');
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(id)?.classList.add('active');
-      document.querySelector(`.nav-btn[data-s="${id}"]`)?.classList.add('active');
-      current = id;
-      document.getElementById(id).scrollTop = 0;
-      handlers[id]?.();
-    }
-    return { go, current: () => current };
-  })();
-
-  /* ── Toast ── */
-  window.Toast = (() => {
-    const wrap = document.getElementById('toast-wrap');
-    const ICONS = {
-      success: '<path d="M20 6L9 17l-5-5"/>',
-      error:   '<circle cx="12" cy="12" r="9"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
-      info:    '<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/>',
-    };
-    function show(msg, type = 'info', duration = 2800) {
-      const t = document.createElement('div');
-      t.className = `toast ${type}`;
-      t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        /* ── Toast ── */
+        window.Toast = (() => {
+          const wrap = document.getElementById('toast-wrap');
+          const ICONS = {
+            success: '<path d="M20 6L9 17l-5-5"/>',
+            error:
+              '<circle cx="12" cy="12" r="9"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+            info: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/>',
+          };
+          function show(msg, type = 'info', duration = 2800) {
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        ${ICONS[type]||ICONS.info}</svg>${msg}`;
-      wrap.appendChild(t);
-      setTimeout(() => {
-        t.classList.add('out');
-        setTimeout(() => t.remove(), 320);
-      }, duration);
-    }
-    return { show };
-  })();
+        ${ICONS[type] || ICONS.info}</svg>${msg}`;
+            wrap.appendChild(t);
+            setTimeout(() => {
+              t.classList.add('out');
+              setTimeout(() => t.remove(), 320);
+            }, duration);
+          }
+          return { show };
+        })();
 
-  /* ── Init DB then boot app ── */
-  openDB()
-    .then(() => {
-      // Try to restore an interrupted session first
-      const restored = Workout.init();
-      if (!restored) Dashboard.load();
-    })
-    .catch(err => {
-      console.error('[boot] DB failed', err);
-      Toast.show('Storage unavailable', 'error');
-    })
-    .finally(() => {
-      // Hide loading screen
-      setTimeout(() => {
-        document.getElementById('loading')?.classList.add('hidden');
-      }, 400);
-    });
+        /* ── Init DB then boot app ── */
+        openDB()
+          .then(() => {
+            // Try to restore an interrupted session first
+            if (!Workout.init()) {
+              Dashboard.load();
+            }
+          })
+          .catch((err) => {
+            console.error('[boot] DB failed', err);
+            Toast.show('Storage unavailable', 'error');
+          })
+          .finally(() => {
+            // Hide loading screen with smooth transition
+            setTimeout(() => {
+              document.getElementById('loading')?.classList.add('hidden');
+            }, 350);
+          });
 
-  /* ── Service Worker ── */
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-      .catch(() => {});
-  }
-
-});
-</script>
-
-</body>
+        /* ── Service Worker ── */
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+      });
+    </script>
+  </body>
 </html>

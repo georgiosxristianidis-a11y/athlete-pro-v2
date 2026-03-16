@@ -6,11 +6,10 @@
 'use strict';
 
 const Analytics = (() => {
-
   const TYPE_COLOR = {
-    push : '#00e676',
-    pull : '#8b5cf6',
-    legs : '#2979ff',
+    push: '#00e676',
+    pull: '#8b5cf6',
+    legs: '#2979ff',
   };
 
   /* ══════════════════════════════════════════════
@@ -135,10 +134,10 @@ const Analytics = (() => {
      ══════════════════════════════════════════════ */
   function _renderQuickStats(workouts) {
     const since = Date.now() - 30 * 86400000;
-    const recent = workouts.filter(w => w.timestamp >= since);
+    const recent = workouts.filter((w) => w.timestamp >= since);
 
     const totalVol = recent.reduce((s, w) => s + (w.tonnage || 0), 0);
-    const avgMs    = recent.length
+    const avgMs = recent.length
       ? recent.reduce((s, w) => s + (w.duration || 0), 0) / recent.length
       : 0;
 
@@ -150,7 +149,7 @@ const Analytics = (() => {
   /* ══════════════════════════════════════════════
      CALENDAR HEATMAP
      ══════════════════════════════════════════════ */
-  let _calYear  = new Date().getFullYear();
+  let _calYear = new Date().getFullYear();
   let _calMonth = new Date().getMonth();
   let _calWorkouts = [];
 
@@ -161,31 +160,49 @@ const Analytics = (() => {
 
   function calPrev() {
     _calMonth--;
-    if (_calMonth < 0) { _calMonth = 11; _calYear--; }
+    if (_calMonth < 0) {
+      _calMonth = 11;
+      _calYear--;
+    }
     _drawCalendar();
   }
 
   function calNext() {
     _calMonth++;
-    if (_calMonth > 11) { _calMonth = 0; _calYear++; }
+    if (_calMonth > 11) {
+      _calMonth = 0;
+      _calYear++;
+    }
     _drawCalendar();
   }
 
   function _drawCalendar() {
-    const card    = document.getElementById('cal-card');
-    const label   = document.getElementById('cal-month-label');
+    const card = document.getElementById('cal-card');
+    const label = document.getElementById('cal-month-label');
     if (!card) return;
 
-    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun',
-                        'Jul','Aug','Sep','Oct','Nov','Dec'];
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     if (label) label.textContent = monthNames[_calMonth] + ' ' + _calYear;
 
     // Map workout dates for this month
     const workedDays = {};
-    _calWorkouts.forEach(w => {
+    _calWorkouts.forEach((w) => {
       const d = new Date(w.timestamp);
       if (d.getFullYear() === _calYear && d.getMonth() === _calMonth) {
-        workedDays[d.getDate()] = w.type;
+        workedDays[d.getDate()] = { type: w.type, id: w.id };
       }
     });
 
@@ -195,13 +212,13 @@ const Analytics = (() => {
     const isCurrentMonth = today.getFullYear() === _calYear && today.getMonth() === _calMonth;
 
     // Adjust so week starts Monday
-    const startOffset = (firstDay === 0 ? 6 : firstDay - 1);
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
 
-    const dayLabels = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+    const dayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
     let html = `
       <div class="cal-day-headers">
-        ${dayLabels.map(d => `<div class="cal-day-hdr">${d}</div>`).join('')}
+        ${dayLabels.map((d) => `<div class="cal-day-hdr">${d}</div>`).join('')}
       </div>
       <div class="cal-grid">`;
 
@@ -211,15 +228,18 @@ const Analytics = (() => {
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
-      const type    = workedDays[d];
+      const entry = workedDays[d];
+      const type = entry?.type || '';
+      const wid = entry?.id || 0;
       const isToday = isCurrentMonth && d === today.getDate();
-      const color   = TYPE_COLOR[type] || '';
-      const style   = type ? `background:${color}20;border-color:${color}40` : '';
-      const dotStyle= type ? `background:${color}` : '';
+      const color = TYPE_COLOR[type] || '';
+      const style = type ? `background:${color}20;border-color:${color}40` : '';
+      const dotStyle = type ? `background:${color}` : '';
 
       html += `
         <div class="cal-cell ${type ? 'has-workout' : ''} ${isToday ? 'cal-today' : ''}"
-             style="${style}">
+             style="${style}"
+             data-day="${d}" data-type="${type}" data-wid="${wid}">
           <span class="cal-num" style="${isToday ? 'color:var(--c-accent)' : ''}">${d}</span>
           ${type ? `<div class="cal-dot" style="${dotStyle}"></div>` : ''}
         </div>`;
@@ -227,6 +247,125 @@ const Analytics = (() => {
 
     html += `</div>`;
     card.innerHTML = html;
+
+    // Single delegated listener — more reliable than 31 inline onclicks
+    const grid = card.querySelector('.cal-grid');
+    if (grid) {
+      grid.addEventListener('click', (e) => {
+        const cell = e.target.closest('.cal-cell');
+        if (!cell || cell.classList.contains('empty')) return;
+        const day = parseInt(cell.dataset.day);
+        const type = cell.dataset.type || '';
+        const wid = parseInt(cell.dataset.wid) || 0;
+        calDayClick(_calYear, _calMonth, day, type, wid);
+      });
+    }
+  }
+
+  /* ══════════════════════════════════════════════
+     CALENDAR DAY CLICK — log / remove workout
+     ══════════════════════════════════════════════ */
+  function calDayClick(year, month, day, existingType, existingId) {
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    const dateLabel = `${day} ${monthNames[month]} ${year}`;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '4000';
+
+    const removeBtn = existingType
+      ? `
+      <button class="cal-pick-remove" id="cal-pick-rm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" width="14" height="14">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14H6L5 6"/>
+        </svg>
+        Remove workout
+      </button>`
+      : '';
+
+    overlay.innerHTML = `
+      <div class="modal-sheet" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">Log Workout</div>
+          <button class="btn-icon-sm" id="cal-pick-close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" width="18" height="18">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="cal-pick-date">${dateLabel}</div>
+        <div class="cal-pick-grid">
+          ${['push', 'pull', 'legs']
+            .map(
+              (t) => `
+            <button class="cal-pick-btn ${existingType === t ? 'active' : ''}"
+                    data-type="${t}"
+                    style="--pick-color:${TYPE_COLOR[t]}">
+              <span class="cal-pick-dot" style="background:${TYPE_COLOR[t]}"></span>
+              ${t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>`
+            )
+            .join('')}
+        </div>
+        ${removeBtn}
+      </div>`;
+
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('visible'));
+
+    const close = () => {
+      overlay.classList.remove('visible');
+      setTimeout(() => overlay.remove(), 300);
+    };
+
+    // Pick type
+    overlay.querySelectorAll('[data-type]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const type = btn.dataset.type;
+        // Remove existing same-day entry if any
+        if (existingId) await DB.Workouts.deleteById(existingId);
+        // Save new entry at noon on that day
+        await DB.Workouts.save({
+          type,
+          timestamp: new Date(year, month, day, 12, 0, 0).getTime(),
+          duration: 0,
+          tonnage: 0,
+          exercises: [],
+          logged: true, // flag: manually logged
+        });
+        close();
+        Analytics.load();
+      });
+    });
+
+    // Remove
+    overlay.querySelector('#cal-pick-rm')?.addEventListener('click', async () => {
+      if (existingId) await DB.Workouts.deleteById(existingId);
+      close();
+      Analytics.load();
+    });
+
+    overlay.querySelector('#cal-pick-close').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close();
+    });
   }
 
   /* ══════════════════════════════════════════════
@@ -235,32 +374,32 @@ const Analytics = (() => {
 
   /* ── Weekly Volume Bar Chart ── */
   function _renderVolumeChart(workouts) {
-    DB.Workouts.weeklyTrend(10).then(buckets => {
+    DB.Workouts.weeklyTrend(10).then((buckets) => {
       const canvas = document.getElementById('cv-volume');
       if (!canvas) return;
 
-      const max = Math.max(...buckets.map(b => b.tonnage), 1);
-      const best = Math.max(...buckets.map(b => b.tonnage));
+      const max = Math.max(...buckets.map((b) => b.tonnage), 1);
+      const best = Math.max(...buckets.map((b) => b.tonnage));
       const el = document.getElementById('an-week-best');
       if (el) el.textContent = _fmtVol(best) + ' kg best';
 
       const W = canvas.offsetWidth || 320;
-      canvas.width  = W * devicePixelRatio;
+      canvas.width = W * devicePixelRatio;
       canvas.height = 140 * devicePixelRatio;
       const ctx = canvas.getContext('2d');
       ctx.scale(devicePixelRatio, devicePixelRatio);
       ctx.clearRect(0, 0, W, 140);
 
-      const pad   = { t: 20, b: 28, l: 8, r: 8 };
-      const bW    = (W - pad.l - pad.r) / buckets.length;
-      const gap   = bW * 0.25;
+      const pad = { t: 20, b: 28, l: 8, r: 8 };
+      const bW = (W - pad.l - pad.r) / buckets.length;
+      const gap = bW * 0.25;
       const chartH = 140 - pad.t - pad.b;
 
       buckets.forEach((b, i) => {
-        const x  = pad.l + i * bW + gap / 2;
+        const x = pad.l + i * bW + gap / 2;
         const bw = bW - gap;
         const bh = b.tonnage ? Math.max(4, (b.tonnage / max) * chartH) : 2;
-        const y  = pad.t + chartH - bh;
+        const y = pad.t + chartH - bh;
 
         // Bar
         const isMax = b.tonnage === best && best > 0;
@@ -292,24 +431,27 @@ const Analytics = (() => {
 
   /* ── PPL Donut ── */
   function _renderPPLDonut(workouts) {
-    DB.Workouts.pplTonnage().then(ppl => {
+    DB.Workouts.pplTonnage().then((ppl) => {
       const canvas = document.getElementById('cv-ppl');
       const legend = document.getElementById('ppl-legend');
       if (!canvas) return;
 
       const total = ppl.push + ppl.pull + ppl.legs;
-      canvas.width  = 120 * devicePixelRatio;
+      canvas.width = 120 * devicePixelRatio;
       canvas.height = 120 * devicePixelRatio;
       const ctx = canvas.getContext('2d');
       ctx.scale(devicePixelRatio, devicePixelRatio);
       ctx.clearRect(0, 0, 120, 120);
 
-      const cx = 60, cy = 60, r = 46, inner = 28;
+      const cx = 60,
+        cy = 60,
+        r = 46,
+        inner = 28;
       const slices = [
         { label: 'Push', val: ppl.push, color: '#00e676' },
         { label: 'Pull', val: ppl.pull, color: '#8b5cf6' },
         { label: 'Legs', val: ppl.legs, color: '#2979ff' },
-      ].filter(s => s.val > 0);
+      ].filter((s) => s.val > 0);
 
       if (!slices.length) {
         ctx.fillStyle = 'rgba(255,255,255,0.04)';
@@ -319,7 +461,7 @@ const Analytics = (() => {
         ctx.fill();
       } else {
         let start = -Math.PI / 2;
-        slices.forEach(s => {
+        slices.forEach((s) => {
           const angle = (s.val / total) * Math.PI * 2;
           ctx.beginPath();
           ctx.moveTo(cx, cy);
@@ -349,12 +491,16 @@ const Analytics = (() => {
 
       // Legend
       if (legend) {
-        legend.innerHTML = ['push','pull','legs'].map(t => `
+        legend.innerHTML = ['push', 'pull', 'legs']
+          .map(
+            (t) => `
           <div class="ppl-leg-item">
             <div class="ppl-leg-dot" style="background:${TYPE_COLOR[t]}"></div>
-            <span class="ppl-leg-label">${t.charAt(0).toUpperCase()+t.slice(1)}</span>
+            <span class="ppl-leg-label">${t.charAt(0).toUpperCase() + t.slice(1)}</span>
             <span class="ppl-leg-val">${_fmtVol(ppl[t])} kg</span>
-          </div>`).join('');
+          </div>`
+          )
+          .join('');
       }
     });
   }
@@ -369,15 +515,19 @@ const Analytics = (() => {
       return;
     }
     const sorted = orms.sort((a, b) => b.value - a.value);
-    el.innerHTML = sorted.map(o => `
+    el.innerHTML = sorted
+      .map(
+        (o) => `
       <div class="orm-row">
         <div class="orm-name">${o.id}</div>
         <div class="orm-val">${o.value}<span class="orm-unit">kg</span></div>
         <div class="orm-bar-wrap">
-          <div class="orm-bar-fill" style="width:${Math.min(100, o.value/3)}%;
+          <div class="orm-bar-fill" style="width:${Math.min(100, o.value / 3)}%;
             background:var(--c-purple)"></div>
         </div>
-      </div>`).join('');
+      </div>`
+      )
+      .join('');
   }
 
   /* ── Body Weight Line Chart ── */
@@ -391,46 +541,56 @@ const Analytics = (() => {
       return;
     }
 
-    const W  = canvas.offsetWidth || 320;
-    canvas.width  = W * devicePixelRatio;
+    const W = canvas.offsetWidth || 320;
+    canvas.width = W * devicePixelRatio;
     canvas.height = 120 * devicePixelRatio;
     const ctx = canvas.getContext('2d');
     ctx.scale(devicePixelRatio, devicePixelRatio);
     ctx.clearRect(0, 0, W, 120);
 
-    _drawLineChart(ctx, W, 120, sorted.map(m => m.weight), '#8b5cf6', 'kg');
+    _drawLineChart(
+      ctx,
+      W,
+      120,
+      sorted.map((m) => m.weight),
+      '#8b5cf6',
+      'kg'
+    );
   }
 
   /* ── Training Time Bar Chart ── */
   function _renderTimeChart(workouts) {
-    DB.Workouts.weeklyTrend(8).then(buckets => {
+    DB.Workouts.weeklyTrend(8).then((buckets) => {
       const canvas = document.getElementById('cv-time');
       if (!canvas) return;
 
       // Convert duration ms → minutes per week
-      const data = buckets.map(b => {
-        const wks = workouts.filter(w => w.timestamp >= b.start && w.timestamp < b.end);
-        return { ...b, minutes: Math.round(wks.reduce((s, w) => s + (w.duration || 0), 0) / 60000) };
+      const data = buckets.map((b) => {
+        const wks = workouts.filter((w) => w.timestamp >= b.start && w.timestamp < b.end);
+        return {
+          ...b,
+          minutes: Math.round(wks.reduce((s, w) => s + (w.duration || 0), 0) / 60000),
+        };
       });
 
       const W = canvas.offsetWidth || 320;
-      canvas.width  = W * devicePixelRatio;
+      canvas.width = W * devicePixelRatio;
       canvas.height = 120 * devicePixelRatio;
       const ctx = canvas.getContext('2d');
       ctx.scale(devicePixelRatio, devicePixelRatio);
       ctx.clearRect(0, 0, W, 120);
 
-      const max    = Math.max(...data.map(d => d.minutes), 1);
-      const pad    = { t: 8, b: 24, l: 8, r: 8 };
-      const bW     = (W - pad.l - pad.r) / data.length;
-      const gap    = bW * 0.3;
+      const max = Math.max(...data.map((d) => d.minutes), 1);
+      const pad = { t: 8, b: 24, l: 8, r: 8 };
+      const bW = (W - pad.l - pad.r) / data.length;
+      const gap = bW * 0.3;
       const chartH = 120 - pad.t - pad.b;
 
       data.forEach((d, i) => {
-        const x  = pad.l + i * bW + gap / 2;
+        const x = pad.l + i * bW + gap / 2;
         const bw = bW - gap;
         const bh = d.minutes ? Math.max(3, (d.minutes / max) * chartH) : 2;
-        const y  = pad.t + chartH - bh;
+        const y = pad.t + chartH - bh;
 
         ctx.fillStyle = d.minutes ? 'rgba(41,121,255,0.6)' : 'rgba(41,121,255,0.1)';
         _roundRect(ctx, x, y, bw, bh, 3);
@@ -454,12 +614,12 @@ const Analytics = (() => {
      CANVAS HELPERS
      ══════════════════════════════════════════════ */
   function _drawLineChart(ctx, W, H, values, color, unit) {
-    const pad    = { t: 12, b: 16, l: 28, r: 12 };
+    const pad = { t: 12, b: 16, l: 28, r: 12 };
     const chartW = W - pad.l - pad.r;
     const chartH = H - pad.t - pad.b;
-    const min    = Math.min(...values) * 0.98;
-    const max    = Math.max(...values) * 1.02;
-    const range  = max - min || 1;
+    const min = Math.min(...values) * 0.98;
+    const max = Math.max(...values) * 1.02;
+    const range = max - min || 1;
 
     const pts = values.map((v, i) => ({
       x: pad.l + (i / (values.length - 1)) * chartW,
@@ -471,8 +631,8 @@ const Analytics = (() => {
     grad.addColorStop(0, color + '40');
     grad.addColorStop(1, color + '00');
     ctx.beginPath();
-    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-    ctx.lineTo(pts[pts.length-1].x, pad.t + chartH);
+    pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+    ctx.lineTo(pts[pts.length - 1].x, pad.t + chartH);
     ctx.lineTo(pts[0].x, pad.t + chartH);
     ctx.closePath();
     ctx.fillStyle = grad;
@@ -480,14 +640,14 @@ const Analytics = (() => {
 
     // Line
     ctx.beginPath();
-    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
     ctx.strokeStyle = color;
-    ctx.lineWidth   = 2;
-    ctx.lineJoin    = 'round';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
     ctx.stroke();
 
     // Dots
-    pts.forEach(p => {
+    pts.forEach((p) => {
       ctx.beginPath();
       ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
       ctx.fillStyle = color;
@@ -504,7 +664,7 @@ const Analytics = (() => {
 
   function _chartEmpty(canvas, msg) {
     const W = canvas.offsetWidth || 320;
-    canvas.width  = W * devicePixelRatio;
+    canvas.width = W * devicePixelRatio;
     canvas.height = canvas.height * devicePixelRatio || 120 * devicePixelRatio;
     const ctx = canvas.getContext('2d');
     ctx.scale(devicePixelRatio, devicePixelRatio);
@@ -520,8 +680,10 @@ const Analytics = (() => {
     ctx.moveTo(x + r, y);
     ctx.lineTo(x + w - r, y);
     ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h);
-    ctx.lineTo(x, y + h);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
     ctx.lineTo(x, y + r);
     ctx.quadraticCurveTo(x, y, x + r, y);
     ctx.closePath();
@@ -539,6 +701,5 @@ const Analytics = (() => {
     if (el) el.innerHTML = String(html);
   }
 
-  return { load, calPrev, calNext };
-
+  return { load, calPrev, calNext, calDayClick };
 })();

@@ -3,11 +3,10 @@
    ════════════════════════════════════════════════ */
 
 const Dashboard = (() => {
-
   const TYPE_COLOR = {
-    push : 'var(--c-accent)',
-    pull : 'var(--c-purple)',
-    legs : 'var(--c-blue)',
+    push: 'var(--c-accent)',
+    pull: 'var(--c-purple)',
+    legs: 'var(--c-blue)',
   };
 
   /* ── Greeting ── */
@@ -107,6 +106,13 @@ const Dashboard = (() => {
         </div>
       </div>
 
+      <!-- Top Lifts -->
+      <div class="section-header">
+        <span class="section-label">Top Lifts</span>
+        <span class="badge badge-purple">Estimated 1RM</span>
+      </div>
+      <div id="dash-orm-list"></div>
+
       <!-- Recent sessions -->
       <div class="section-header">
         <span class="section-label">Recent</span>
@@ -120,9 +126,9 @@ const Dashboard = (() => {
     const strip = document.getElementById('streak-strip');
     if (!strip) return;
 
-    const days = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+    const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
 
     const cells = [];
     for (let i = 6; i >= 0; i--) {
@@ -132,9 +138,9 @@ const Dashboard = (() => {
     }
 
     const workedDays = {};
-    workouts.forEach(w => {
+    workouts.forEach((w) => {
       const d = new Date(w.timestamp);
-      d.setHours(0,0,0,0);
+      d.setHours(0, 0, 0, 0);
       workedDays[d.getTime()] = w.type;
     });
 
@@ -142,7 +148,7 @@ const Dashboard = (() => {
     for (let i = 0; i <= 30; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      d.setHours(0,0,0,0);
+      d.setHours(0, 0, 0, 0);
       if (workedDays[d.getTime()]) streak++;
       else if (i > 0) break;
     }
@@ -150,37 +156,43 @@ const Dashboard = (() => {
     const el = document.getElementById('streak-count');
     if (el) el.textContent = streak === 1 ? '1 day streak' : `${streak} day streak`;
 
-    strip.innerHTML = cells.map(d => {
-      const isToday  = d.getTime() === today.getTime();
-      const type     = workedDays[d.getTime()];
-      const hasWork  = !!type;
-      const color    = TYPE_COLOR[type] || '';
-      const dayName  = days[d.getDay() === 0 ? 6 : d.getDay() - 1];
-      const dotStyle = hasWork ? `background:${color};opacity:0.9` : '';
-      const dotClass = ['streak-dot', hasWork ? 'has-workout' : '', isToday ? 'today' : ''].join(' ');
+    strip.innerHTML = cells
+      .map((d) => {
+        const isToday = d.getTime() === today.getTime();
+        const type = workedDays[d.getTime()];
+        const hasWork = !!type;
+        const color = TYPE_COLOR[type] || '';
+        const dayName = days[(d.getDay() + 6) % 7];
+        const dotStyle = hasWork ? `background:${color};opacity:0.9` : '';
+        const dotClass = ['streak-dot', hasWork ? 'has-workout' : '', isToday ? 'today' : ''].join(
+          ' '
+        );
 
-      const check = hasWork
-        ? `<svg viewBox="0 0 24 24" fill="none" stroke="#000"
+        const check = hasWork
+          ? `<svg viewBox="0 0 24 24" fill="none" stroke="#000"
                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
              <polyline points="20 6 9 17 4 12"/>
            </svg>`
-        : (isToday ? `<svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)"
+          : isToday
+            ? `<svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)"
                stroke-width="1.5" stroke-linecap="round">
              <circle cx="12" cy="12" r="3"/>
-           </svg>` : '');
+           </svg>`
+            : '';
 
-      return `
+        return `
         <div class="streak-day">
           <span class="streak-day-label">${dayName}</span>
           <div class="${dotClass}" style="${dotStyle}">${check}</div>
         </div>`;
-    }).join('');
+      })
+      .join('');
   }
 
   /* ── PPL bars (FIX: width starts at 0% for animation) ── */
   function renderPPL(ppl) {
     const max = Math.max(ppl.push, ppl.pull, ppl.legs, 1);
-    ['push','pull','legs'].forEach(t => {
+    ['push', 'pull', 'legs'].forEach((t) => {
       const val = document.getElementById(`ppl-${t}-val`);
       const bar = document.getElementById(`ppl-${t}-bar`);
       if (val) val.textContent = fmtVol(ppl[t]);
@@ -196,6 +208,35 @@ const Dashboard = (() => {
       const sum = ppl.push + ppl.pull + ppl.legs;
       total.textContent = fmtVol(sum) + ' kg';
     }
+  }
+
+  /* ── Top Lifts (1RM) ── */
+  function renderTopLifts(orms) {
+    const el = document.getElementById('dash-orm-list');
+    if (!el) return;
+    if (!orms.length) {
+      el.innerHTML = `<div style="text-align:center;padding:var(--sp-2);
+        color:var(--c-text-3);font-size:12px">Complete sets to see 1RM estimates</div>`;
+      return;
+    }
+    const top = orms.sort((a, b) => b.value - a.value).slice(0, 5);
+    const max = top[0].value;
+    el.innerHTML = top
+      .map(
+        (o, i) => `
+      <div class="orm-row">
+        <div class="orm-name">
+          <span style="font-size:10px;font-weight:700;color:var(--c-text-3);
+            margin-right:6px;font-variant-numeric:tabular-nums">#${i + 1}</span>${o.id}
+        </div>
+        <div class="orm-val">${o.value}<span class="orm-unit">kg</span></div>
+        <div class="orm-bar-wrap">
+          <div class="orm-bar-fill" style="width:${Math.round((o.value / max) * 100)}%;
+            background:var(--c-purple)"></div>
+        </div>
+      </div>`
+      )
+      .join('');
   }
 
   /* ── Recent sessions ── */
@@ -223,14 +264,18 @@ const Dashboard = (() => {
       return;
     }
 
-    el.innerHTML = workouts.slice(0, 5).map(w => {
-      const dot  = TYPE_COLOR[w.type] || 'var(--c-text-3)';
-      const date = new Date(w.timestamp).toLocaleDateString('en', {
-        weekday: 'short', month: 'short', day: 'numeric'
-      });
-      const dur  = w.duration ? ` · ${Math.round(w.duration / 60)}m` : '';
-      const type = w.type.charAt(0).toUpperCase() + w.type.slice(1);
-      return `
+    el.innerHTML = workouts
+      .slice(0, 5)
+      .map((w) => {
+        const dot = TYPE_COLOR[w.type] || 'var(--c-text-3)';
+        const date = new Date(w.timestamp).toLocaleDateString('en', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        });
+        const dur = w.duration ? ` · ${Math.round(w.duration / 60)}m` : '';
+        const type = w.type.charAt(0).toUpperCase() + w.type.slice(1);
+        return `
         <div class="session-item">
           <div class="session-dot" style="background:${dot}"></div>
           <div class="session-info">
@@ -239,7 +284,8 @@ const Dashboard = (() => {
           </div>
           <div class="session-vol">${fmtVol(w.tonnage)} kg</div>
         </div>`;
-    }).join('');
+      })
+      .join('');
   }
 
   /* ── Main load (FIX: build template first, then populate) ── */
@@ -257,17 +303,21 @@ const Dashboard = (() => {
     if (greet) greet.textContent = greeting();
 
     const dateEl = document.getElementById('dash-date');
-    if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en', {
-      weekday: 'long', month: 'long', day: 'numeric'
-    });
+    if (dateEl)
+      dateEl.textContent = new Date().toLocaleDateString('en', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+      });
 
     // Fetch data in parallel
-    const [allWorkouts, weekVol, monthVol, monthCount, ppl] = await Promise.all([
+    const [allWorkouts, weekVol, monthVol, monthCount, ppl, orms] = await Promise.all([
       DB.Workouts.getAll(),
       DB.Workouts.weeklyVolume(),
       DB.Workouts.monthlyVolume(),
       DB.Workouts.monthlyCount(),
       DB.Workouts.pplTonnage(),
+      DB.OneRM.getAll(),
     ]);
 
     // Stats
@@ -281,6 +331,7 @@ const Dashboard = (() => {
     // Render sections
     renderStreak(allWorkouts);
     renderPPL(ppl);
+    renderTopLifts(orms);
     renderRecent(allWorkouts);
   }
 

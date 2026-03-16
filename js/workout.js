@@ -6,34 +6,44 @@
 'use strict';
 
 const Workout = (() => {
-
   /* ══════════════════════════════════════════════
      DEFAULT PPL PROGRAM
      ══════════════════════════════════════════════ */
   const DEFAULT_PLAN = {
     push: [
-      { name: 'Bench Press',         sets: 4, reps: 8,  weight: 80  },
-      { name: 'Overhead Press',      sets: 3, reps: 10, weight: 50  },
-      { name: 'Incline DB Press',    sets: 3, reps: 12, weight: 30  },
-      { name: 'Cable Fly',           sets: 3, reps: 15, weight: 20  },
-      { name: 'Tricep Pushdown',     sets: 3, reps: 12, weight: 25  },
-      { name: 'Lateral Raise',       sets: 3, reps: 15, weight: 12  },
+      // Chest ×3
+      { name: 'Bench Press', sets: 4, reps: 8, weight: 80 },
+      { name: 'Incline DB Press', sets: 3, reps: 12, weight: 30 },
+      { name: 'Cable Fly', sets: 3, reps: 15, weight: 20 },
+      // Shoulders ×2
+      { name: 'Overhead Press', sets: 3, reps: 10, weight: 50 },
+      { name: 'Lateral Raise', sets: 3, reps: 15, weight: 12 },
+      // Arms / Triceps ×2
+      { name: 'Tricep Pushdown', sets: 3, reps: 12, weight: 25 },
+      { name: 'Overhead Tricep Ext.', sets: 3, reps: 12, weight: 20 },
     ],
     pull: [
-      { name: 'Deadlift',            sets: 4, reps: 5,  weight: 120 },
-      { name: 'Pull-up',             sets: 3, reps: 8,  weight: 0   },
-      { name: 'Barbell Row',         sets: 3, reps: 10, weight: 70  },
-      { name: 'Cable Row',           sets: 3, reps: 12, weight: 55  },
-      { name: 'Face Pull',           sets: 3, reps: 15, weight: 20  },
-      { name: 'Bicep Curl',          sets: 3, reps: 12, weight: 18  },
+      // Back ×4
+      { name: 'Deadlift', sets: 4, reps: 5, weight: 120 },
+      { name: 'Pull-up', sets: 3, reps: 8, weight: 0 },
+      { name: 'Barbell Row', sets: 3, reps: 10, weight: 70 },
+      { name: 'Cable Row', sets: 3, reps: 12, weight: 55 },
+      { name: 'Face Pull', sets: 3, reps: 15, weight: 20 },
+      // Arms / Biceps ×2
+      { name: 'Bicep Curl', sets: 3, reps: 12, weight: 18 },
+      { name: 'Hammer Curl', sets: 3, reps: 12, weight: 16 },
     ],
     legs: [
-      { name: 'Squat',               sets: 4, reps: 6,  weight: 100 },
-      { name: 'Romanian Deadlift',   sets: 3, reps: 10, weight: 80  },
-      { name: 'Leg Press',           sets: 3, reps: 12, weight: 140 },
-      { name: 'Walking Lunge',       sets: 3, reps: 12, weight: 20  },
-      { name: 'Leg Curl',            sets: 3, reps: 12, weight: 40  },
-      { name: 'Calf Raise',          sets: 4, reps: 15, weight: 60  },
+      // Legs ×6
+      { name: 'Squat', sets: 4, reps: 6, weight: 100 },
+      { name: 'Romanian Deadlift', sets: 3, reps: 10, weight: 80 },
+      { name: 'Leg Press', sets: 3, reps: 12, weight: 140 },
+      { name: 'Walking Lunge', sets: 3, reps: 12, weight: 20 },
+      { name: 'Leg Curl', sets: 3, reps: 12, weight: 40 },
+      { name: 'Calf Raise', sets: 4, reps: 15, weight: 60 },
+      // Core ×2
+      { name: 'Plank', sets: 3, reps: 60, weight: 0 },
+      { name: 'Hanging Leg Raise', sets: 3, reps: 12, weight: 0 },
     ],
   };
 
@@ -41,15 +51,99 @@ const Workout = (() => {
      STATE
      ══════════════════════════════════════════════ */
   let State = {
-    phase    : 'select',   // select | active | done
-    type     : null,       // push | pull | legs
-    plan     : [],         // [{name, sets:[{weight,reps,rpe,done}]}]
+    phase: 'select', // select | active | done
+    type: null, // push | pull | legs
+    plan: [], // [{name, sets:[{weight,reps,rpe,done}]}]
     startedAt: null,
     stepDebounce: {},
   };
 
   const SESSION_KEY = 'ap-active-session';
-  const PLAN_KEY    = 'ap-custom-plan';
+  const PLAN_KEY = 'ap-custom-plan';
+
+  /* ══════════════════════════════════════════════
+     EXERCISE LIBRARY
+     ══════════════════════════════════════════════ */
+  const EXERCISE_LIBRARY = [
+    // Push — Chest
+    'Bench Press',
+    'Incline Bench Press',
+    'Decline Bench Press',
+    'Incline DB Press',
+    'DB Fly',
+    'Cable Fly',
+    'Pec Deck',
+    'Machine Chest Press',
+    // Push — Shoulders
+    'Overhead Press',
+    'DB Shoulder Press',
+    'Arnold Press',
+    'Lateral Raise',
+    'Front Raise',
+    'Cable Lateral Raise',
+    'Upright Row',
+    // Push — Triceps
+    'Tricep Pushdown',
+    'Overhead Tricep Ext.',
+    'Skull Crusher',
+    'Tricep Dip',
+    'Close-Grip Bench',
+    'Cable Overhead Ext.',
+    // Pull — Back
+    'Deadlift',
+    'Romanian Deadlift',
+    'Stiff-Leg Deadlift',
+    'Pull-up',
+    'Chin-up',
+    'Lat Pulldown',
+    'Barbell Row',
+    'DB Row',
+    'Cable Row',
+    'T-Bar Row',
+    'Seal Row',
+    'Meadows Row',
+    // Pull — Rear delt / traps
+    'Face Pull',
+    'Rear Delt Fly',
+    'Shrug',
+    'Cable Shrug',
+    // Pull — Biceps
+    'Bicep Curl',
+    'Hammer Curl',
+    'Preacher Curl',
+    'Cable Curl',
+    'Incline DB Curl',
+    'Concentration Curl',
+    'Spider Curl',
+    // Legs
+    'Squat',
+    'Front Squat',
+    'Hack Squat',
+    'Smith Machine Squat',
+    'Leg Press',
+    'Bulgarian Split Squat',
+    'Walking Lunge',
+    'Step-Up',
+    'Romanian Deadlift',
+    'Sumo Deadlift',
+    'Leg Curl',
+    'Leg Extension',
+    'Calf Raise',
+    'Seated Calf Raise',
+    'Hip Thrust',
+    'Glute Bridge',
+    // Core
+    'Plank',
+    'Side Plank',
+    'Hanging Leg Raise',
+    'Cable Crunch',
+    'Russian Twist',
+    'Ab Wheel',
+    'Decline Crunch',
+    'Mountain Climber',
+    'Dragon Flag',
+    'Toes-to-Bar',
+  ].sort();
 
   /* ══════════════════════════════════════════════
      PLAN: load / save custom
@@ -58,7 +152,9 @@ const Workout = (() => {
     try {
       const raw = localStorage.getItem(PLAN_KEY);
       return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_PLAN));
-    } catch { return JSON.parse(JSON.stringify(DEFAULT_PLAN)); }
+    } catch {
+      return JSON.parse(JSON.stringify(DEFAULT_PLAN));
+    }
   }
 
   function savePlan(plan) {
@@ -70,13 +166,13 @@ const Workout = (() => {
      ══════════════════════════════════════════════ */
   function buildSession(type) {
     const plan = loadPlan();
-    return (plan[type] || []).map(ex => ({
+    return (plan[type] || []).map((ex) => ({
       name: ex.name,
       sets: Array.from({ length: ex.sets }, () => ({
-        weight : ex.weight,
-        reps   : ex.reps,
-        rpe    : null,
-        done   : false,
+        weight: ex.weight,
+        reps: ex.reps,
+        rpe: null,
+        done: false,
       })),
     }));
   }
@@ -85,17 +181,17 @@ const Workout = (() => {
      RENDER HELPERS
      ══════════════════════════════════════════════ */
   const TYPE_COLOR = {
-    push : 'var(--c-accent)',
-    pull : 'var(--c-purple)',
-    legs : 'var(--c-blue)',
+    push: 'var(--c-accent)',
+    pull: 'var(--c-purple)',
+    legs: 'var(--c-blue)',
   };
 
   function svgArrow(dir) {
     const p = {
-      minus : '<line x1="5" y1="12" x2="19" y2="12"/>',
-      plus  : '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
-      up    : '<polyline points="18 15 12 9 6 15"/>',
-      down  : '<polyline points="6 9 12 15 18 9"/>',
+      minus: '<line x1="5" y1="12" x2="19" y2="12"/>',
+      plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+      up: '<polyline points="18 15 12 9 6 15"/>',
+      down: '<polyline points="6 9 12 15 18 9"/>',
     };
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -136,15 +232,19 @@ const Workout = (() => {
       </div>
 
       <div class="type-grid">
-        ${['push','pull','legs'].map(t => `
+        ${['push', 'pull', 'legs']
+          .map(
+            (t) => `
           <button class="type-card" data-type="${t}"
                   onclick="Workout.selectType('${t}')">
-            <div class="type-card-icon" style="background:${t==='push'?'var(--c-accent-bg)':t==='pull'?'var(--c-purple-bg)':'var(--c-blue-bg)'}">
-              ${typeIcon(t, t==='push'?'var(--c-accent)':t==='pull'?'var(--c-purple)':'var(--c-blue)')}
+            <div class="type-card-icon" style="background:${t === 'push' ? 'var(--c-accent-bg)' : t === 'pull' ? 'var(--c-purple-bg)' : 'var(--c-blue-bg)'}">
+              ${typeIcon(t, t === 'push' ? 'var(--c-accent)' : t === 'pull' ? 'var(--c-purple)' : 'var(--c-blue)')}
             </div>
-            <div class="type-card-name">${t.charAt(0).toUpperCase()+t.slice(1)}</div>
-            <div class="type-card-meta">${(plan[t]||[]).length} exercises</div>
-          </button>`).join('')}
+            <div class="type-card-name">${t.charAt(0).toUpperCase() + t.slice(1)}</div>
+            <div class="type-card-meta">${(plan[t] || []).length} exercises</div>
+          </button>`
+          )
+          .join('')}
       </div>
 
       <!-- Last sessions preview -->
@@ -156,11 +256,14 @@ const Workout = (() => {
       </div>
     `;
 
-    document.getElementById('train-date').textContent =
-      new Date().toLocaleDateString('en',{weekday:'long',month:'long',day:'numeric'});
+    document.getElementById('train-date').textContent = new Date().toLocaleDateString('en', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
 
     // Load last 3 sessions
-    DB.Workouts.getLast(3).then(list => {
+    DB.Workouts.getLast(3).then((list) => {
       const el = document.getElementById('last-sessions-preview');
       if (!el) return;
       if (!list.length) {
@@ -169,19 +272,25 @@ const Workout = (() => {
         </div>`;
         return;
       }
-      el.innerHTML = list.map(w => {
-        const dot  = TYPE_COLOR[w.type] || 'var(--c-text-3)';
-        const date = new Date(w.timestamp).toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'});
-        const dur  = w.duration ? Timer.fmt(Math.round(w.duration/1000)) : '--';
-        return `<div class="session-item">
+      el.innerHTML = list
+        .map((w) => {
+          const dot = TYPE_COLOR[w.type] || 'var(--c-text-3)';
+          const date = new Date(w.timestamp).toLocaleDateString('en', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+          });
+          const dur = w.duration ? Timer.fmt(Math.round(w.duration / 1000)) : '--';
+          return `<div class="session-item">
           <div class="session-dot" style="background:${dot}"></div>
           <div class="session-info">
-            <div class="session-title">${w.type.charAt(0).toUpperCase()+w.type.slice(1)} Day</div>
+            <div class="session-title">${w.type.charAt(0).toUpperCase() + w.type.slice(1)} Day</div>
             <div class="session-meta">${date} · ${dur}</div>
           </div>
           <div class="session-vol">${fmtVol(w.tonnage)} kg</div>
         </div>`;
-      }).join('');
+        })
+        .join('');
     });
   }
 
@@ -217,7 +326,10 @@ const Workout = (() => {
     overlay.id = 'plan-editor-overlay';
 
     function tabContent(type) {
-      return plan[type].map((ex, i) => `
+      return (
+        plan[type]
+          .map(
+            (ex, i) => `
         <div class="plan-row" id="plan-row-${type}-${i}">
           <input class="plan-input" value="${ex.name}"
             onchange="Workout._updatePlanName('${type}',${i},this.value)">
@@ -243,7 +355,9 @@ const Workout = (() => {
               </svg>
             </button>
           </div>
-        </div>`).join('') +
+        </div>`
+          )
+          .join('') +
         `<button class="btn-add-ex" onclick="Workout._addPlanEx('${type}')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="16" height="16">
@@ -251,7 +365,8 @@ const Workout = (() => {
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
           Add Exercise
-        </button>`;
+        </button>`
+      );
     }
 
     function render() {
@@ -269,12 +384,16 @@ const Workout = (() => {
             </button>
           </div>
           <div class="plan-tabs">
-            ${['push','pull','legs'].map(t => `
-              <button class="plan-tab ${t===activeTab?'active':''}"
+            ${['push', 'pull', 'legs']
+              .map(
+                (t) => `
+              <button class="plan-tab ${t === activeTab ? 'active' : ''}"
                       onclick="Workout._switchPlanTab('${t}')"
-                      style="${t===activeTab?'color:'+TYPE_COLOR[t]+';border-color:'+TYPE_COLOR[t]:''}">
-                ${t.charAt(0).toUpperCase()+t.slice(1)}
-              </button>`).join('')}
+                      style="${t === activeTab ? 'color:' + TYPE_COLOR[t] + ';border-color:' + TYPE_COLOR[t] : ''}">
+                ${t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>`
+              )
+              .join('')}
           </div>
           <div class="plan-list" id="plan-list">
             ${tabContent(activeTab)}
@@ -288,13 +407,16 @@ const Workout = (() => {
 
     render();
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', e => {
+    overlay.addEventListener('click', (e) => {
       if (e.target === overlay) _closePlanEditor();
     });
 
     // Expose tab switch
     window._planEditorActiveTab = () => activeTab;
-    window._planEditorSetTab    = (t) => { activeTab = t; render(); };
+    window._planEditorSetTab = (t) => {
+      activeTab = t;
+      render();
+    };
   }
 
   function _switchPlanTab(type) {
@@ -319,7 +441,7 @@ const Workout = (() => {
 
   function _adjustPlan(type, i, field, delta) {
     const plan = loadPlan();
-    const min  = field === 'sets' ? 1 : 1;
+    const min = field === 'sets' ? 1 : 1;
     plan[type][i][field] = Math.max(min, plan[type][i][field] + delta);
     savePlan(plan);
     const el = document.getElementById(`ps-${field}-${type}-${i}`);
@@ -346,15 +468,15 @@ const Workout = (() => {
      PHASE 2 — ACTIVE WORKOUT
      ══════════════════════════════════════════════ */
   function selectType(type) {
-    State.type  = type;
-    State.plan  = buildSession(type);
+    State.type = type;
+    State.plan = buildSession(type);
     State.phase = 'active';
     State.startedAt = Date.now();
 
     // Autosave session to localStorage
     _persistSession();
 
-    Timer.start(s => {
+    Timer.start((s) => {
       const el = document.getElementById('session-timer-val');
       if (el) el.textContent = Timer.fmt(s);
     });
@@ -372,7 +494,7 @@ const Workout = (() => {
       <!-- Header -->
       <div class="screen-header">
         <div>
-          <div class="screen-title">${State.type.charAt(0).toUpperCase()+State.type.slice(1)} Day</div>
+          <div class="screen-title">${State.type.charAt(0).toUpperCase() + State.type.slice(1)} Day</div>
           <div class="screen-sub">${exCount} exercises · ${totalSets} sets</div>
         </div>
         <div class="session-timer-chip" style="border-color:${color}20">
@@ -428,23 +550,24 @@ const Workout = (() => {
       </div>
       <div style="height:var(--sp-2)"></div>
     `;
+
+    requestAnimationFrame(_initDrag);
   }
 
   function renderExerciseCard(ex, ei) {
-    const doneSets = ex.sets.filter(s => s.done).length;
+    const doneSets = ex.sets.filter((s) => s.done).length;
     return `
-      <div class="exercise-card" id="ex-card-${ei}">
+      <div class="exercise-card" id="ex-card-${ei}" data-ei="${ei}">
         <div class="exercise-header" onclick="Workout.toggleCard(${ei})">
-          <div class="exercise-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)"
-                 stroke-width="1.5" stroke-linecap="round" width="15" height="15">
-              <circle cx="7" cy="12" r="2.4"/>
-              <circle cx="17" cy="12" r="2.4"/>
-              <rect x="4.6" y="10.6" width="4.8" height="2.8" rx="1.2"/>
-              <rect x="14.6" y="10.6" width="4.8" height="2.8" rx="1.2"/>
-              <line x1="9.4" y1="12" x2="14.6" y2="12"/>
-              <rect x="11" y="9" width="2" height="6" rx="0.8"/>
+          <div class="drag-handle" onclick="event.stopPropagation()">
+            <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
+              <circle cx="5" cy="4"  r="1.5"/><circle cx="11" cy="4"  r="1.5"/>
+              <circle cx="5" cy="8"  r="1.5"/><circle cx="11" cy="8"  r="1.5"/>
+              <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
             </svg>
+          </div>
+          <div class="exercise-icon">
+            <span class="ex-num">${ei + 1}</span>
           </div>
           <div class="exercise-info">
             <div class="exercise-name">${ex.name}</div>
@@ -454,6 +577,17 @@ const Workout = (() => {
               </span>
             </div>
           </div>
+          <button class="ex-replace-btn" title="Replace exercise"
+                  onclick="event.stopPropagation();Workout.openReplaceExModal(${ei})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                 width="15" height="15">
+              <path d="M17 1l4 4-4 4"/>
+              <path d="M3 11V9a4 4 0 014-4h14"/>
+              <path d="M7 23l-4-4 4-4"/>
+              <path d="M21 13v2a4 4 0 01-4 4H3"/>
+            </svg>
+          </button>
           <div class="exercise-chevron" id="ex-chevron-${ei}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.5" stroke-linecap="round" width="16" height="16">
@@ -480,14 +614,14 @@ const Workout = (() => {
 
   function renderSetRow(ex, ei, set, si) {
     const prevWeight = set.weight;
-    const prevReps   = set.reps;
+    const prevReps = set.reps;
     return `
       <div class="set-row ${set.done ? 'set-done' : ''}" id="set-row-${ei}-${si}">
         <span class="set-num">${si + 1}</span>
 
         <!-- Weight stepper -->
         <div class="stepper" id="sw-${ei}-${si}">
-          <button class="stepper-btn ${set.weight<=0?'at-min':''}"
+          <button class="stepper-btn ${set.weight <= 0 ? 'at-min' : ''}"
             ontouchstart="Workout.stepWeight(${ei},${si},-2.5);event.preventDefault()"
             onclick="Workout.stepWeight(${ei},${si},-2.5)">
             ${svgArrow('minus')}
@@ -508,7 +642,7 @@ const Workout = (() => {
 
         <!-- Reps stepper -->
         <div class="stepper" id="sr-${ei}-${si}">
-          <button class="stepper-btn ${set.reps<=1?'at-min':''}"
+          <button class="stepper-btn ${set.reps <= 1 ? 'at-min' : ''}"
             ontouchstart="Workout.stepReps(${ei},${si},-1);event.preventDefault()"
             onclick="Workout.stepReps(${ei},${si},-1)">
             ${svgArrow('down')}
@@ -529,15 +663,19 @@ const Workout = (() => {
 
         <!-- RPE -->
         <div class="rpe-row" id="rpe-${ei}-${si}">
-          ${[6,7,8,9,10].map(v => `
-            <button class="rpe-btn ${set.rpe===v?'rpe-active':''}"
+          ${[6, 7, 8, 9, 10]
+            .map(
+              (v) => `
+            <button class="rpe-btn ${set.rpe === v ? 'rpe-active' : ''}"
                     data-val="${v}"
                     onclick="Workout.setRPE(${ei},${si},${v})">${v}</button>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
 
         <!-- Done check -->
-        <button class="set-check ${set.done?'done':''}" id="chk-${ei}-${si}"
+        <button class="set-check ${set.done ? 'done' : ''}" id="chk-${ei}-${si}"
                 onclick="Workout.toggleSet(${ei},${si})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.5" stroke-linecap="round" width="16" height="16">
@@ -578,18 +716,18 @@ const Workout = (() => {
 
   function _updateStepperUI(type, ei, si, val, atMin) {
     const prefix = type === 'w' ? 'sw' : 'sr';
-    const valEl  = document.getElementById(`${prefix}v-${ei}-${si}`);
-    const inpEl  = document.getElementById(`${prefix}i-${ei}-${si}`);
+    const valEl = document.getElementById(`${prefix}v-${ei}-${si}`);
+    const inpEl = document.getElementById(`${prefix}i-${ei}-${si}`);
     const minBtn = document.querySelector(`#${prefix}-${ei}-${si} .stepper-btn:first-child`);
-    if (valEl)  valEl.textContent = val;
-    if (inpEl)  inpEl.value = val;
+    if (valEl) valEl.textContent = val;
+    if (inpEl) inpEl.value = val;
     if (minBtn) minBtn.classList.toggle('at-min', atMin);
   }
 
   function editVal(type, ei, si) {
     const prefix = type === 'w' ? 'sw' : 'sr';
-    const valEl  = document.getElementById(`${prefix}v-${ei}-${si}`);
-    const inpEl  = document.getElementById(`${prefix}i-${ei}-${si}`);
+    const valEl = document.getElementById(`${prefix}v-${ei}-${si}`);
+    const inpEl = document.getElementById(`${prefix}i-${ei}-${si}`);
     if (!valEl || !inpEl) return;
     valEl.classList.add('hidden');
     inpEl.classList.add('active');
@@ -599,14 +737,14 @@ const Workout = (() => {
 
   function commitVal(type, ei, si) {
     const prefix = type === 'w' ? 'sw' : 'sr';
-    const valEl  = document.getElementById(`${prefix}v-${ei}-${si}`);
-    const inpEl  = document.getElementById(`${prefix}i-${ei}-${si}`);
+    const valEl = document.getElementById(`${prefix}v-${ei}-${si}`);
+    const inpEl = document.getElementById(`${prefix}i-${ei}-${si}`);
     if (!valEl || !inpEl) return;
     const parsed = parseFloat(inpEl.value);
     if (!isNaN(parsed)) {
       const set = State.plan[ei].sets[si];
       if (type === 'w') set.weight = Math.max(0, parsed);
-      else              set.reps   = Math.max(1, Math.round(parsed));
+      else set.reps = Math.max(1, Math.round(parsed));
       valEl.textContent = type === 'w' ? set.weight : set.reps;
     }
     valEl.classList.remove('hidden');
@@ -621,10 +759,10 @@ const Workout = (() => {
   function setRPE(ei, si, val) {
     _haptic(8);
     const set = State.plan[ei].sets[si];
-    set.rpe   = set.rpe === val ? null : val;  // toggle off
+    set.rpe = set.rpe === val ? null : val; // toggle off
     const row = document.getElementById(`rpe-${ei}-${si}`);
     if (!row) return;
-    row.querySelectorAll('.rpe-btn').forEach(btn => {
+    row.querySelectorAll('.rpe-btn').forEach((btn) => {
       const v = parseInt(btn.dataset.val);
       btn.classList.toggle('rpe-active', v === set.rpe);
     });
@@ -638,17 +776,17 @@ const Workout = (() => {
 
   function toggleSet(ei, si) {
     _haptic(15);
-    const set  = State.plan[ei].sets[si];
-    set.done   = !set.done;
+    const set = State.plan[ei].sets[si];
+    set.done = !set.done;
 
-    const row  = document.getElementById(`set-row-${ei}-${si}`);
-    const chk  = document.getElementById(`chk-${ei}-${si}`);
+    const row = document.getElementById(`set-row-${ei}-${si}`);
+    const chk = document.getElementById(`chk-${ei}-${si}`);
     if (row) row.classList.toggle('set-done', set.done);
     if (chk) chk.classList.toggle('done', set.done);
 
     // Update exercise done count
-    const doneSets = State.plan[ei].sets.filter(s => s.done).length;
-    const countEl  = document.getElementById(`ex-done-count-${ei}`);
+    const doneSets = State.plan[ei].sets.filter((s) => s.done).length;
+    const countEl = document.getElementById(`ex-done-count-${ei}`);
     if (countEl) countEl.textContent = doneSets > 0 ? ` · ${doneSets} done` : '';
 
     // Update 1RM if set done
@@ -668,14 +806,14 @@ const Workout = (() => {
     if (!wrap) return;
     wrap.style.display = 'block';
     let remaining = seconds;
-    const valEl  = document.getElementById('rest-val');
+    const valEl = document.getElementById('rest-val');
     const fillEl = document.getElementById('rest-fill');
 
     clearInterval(_restInterval);
     _restInterval = setInterval(() => {
       remaining--;
-      if (valEl)  valEl.textContent = remaining + 's';
-      if (fillEl) fillEl.style.width = (remaining / seconds * 100) + '%';
+      if (valEl) valEl.textContent = remaining + 's';
+      if (fillEl) fillEl.style.width = (remaining / seconds) * 100 + '%';
       if (remaining <= 0) {
         _stopRest();
         _haptic(40);
@@ -683,7 +821,7 @@ const Workout = (() => {
       }
     }, 1000);
 
-    if (valEl)  valEl.textContent = seconds + 's';
+    if (valEl) valEl.textContent = seconds + 's';
     if (fillEl) fillEl.style.width = '100%';
   }
 
@@ -697,28 +835,122 @@ const Workout = (() => {
      CARD TOGGLE
      ══════════════════════════════════════════════ */
   function toggleCard(ei) {
-    const wrap    = document.getElementById(`sets-wrap-${ei}`);
+    const wrap = document.getElementById(`sets-wrap-${ei}`);
     const chevron = document.getElementById(`ex-chevron-${ei}`);
     if (!wrap) return;
     const open = wrap.style.display !== 'none';
-    wrap.style.display    = open ? 'none' : 'block';
+    wrap.style.display = open ? 'none' : 'block';
     if (chevron) chevron.style.transform = open ? 'rotate(-90deg)' : 'rotate(0)';
+  }
+
+  /* ══════════════════════════════════════════════
+     REPLACE EXERCISE MODAL
+     ══════════════════════════════════════════════ */
+  function openReplaceExModal(ei) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'replace-ex-overlay';
+
+    overlay.innerHTML = `
+      <div class="modal-sheet" style="max-height:82vh;display:flex;flex-direction:column">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">Replace Exercise</div>
+          <button class="btn-icon-sm" id="replace-ex-close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" width="18" height="18">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="add-ex-search-wrap">
+          <input class="add-ex-search" id="replace-ex-search"
+                 type="text" placeholder="Search or type a custom name…"
+                 autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+        <div class="add-ex-list" id="replace-ex-list"></div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    const searchEl = overlay.querySelector('#replace-ex-search');
+    const listEl = overlay.querySelector('#replace-ex-list');
+
+    function renderList(query) {
+      const q = query.trim();
+      const ql = q.toLowerCase();
+      const matches = ql
+        ? EXERCISE_LIBRARY.filter((e) => e.toLowerCase().includes(ql))
+        : EXERCISE_LIBRARY;
+
+      listEl.innerHTML = '';
+
+      // "Use custom" item when typed text isn't exact match in library
+      if (q && !EXERCISE_LIBRARY.some((e) => e.toLowerCase() === ql)) {
+        const btn = document.createElement('button');
+        btn.className = 'add-ex-item';
+        btn.style.cssText = 'border-color:rgba(0,230,118,0.35);color:var(--c-accent)';
+        btn.textContent = `+ Use "${q}"`;
+        btn.dataset.name = q;
+        listEl.appendChild(btn);
+      }
+
+      matches.slice(0, 40).forEach((name) => {
+        const btn = document.createElement('button');
+        btn.className = 'add-ex-item';
+        btn.textContent = name;
+        btn.dataset.name = name;
+        listEl.appendChild(btn);
+      });
+
+      if (!matches.length && !q) return;
+      if (!matches.length) {
+        const msg = document.createElement('div');
+        msg.className = 'add-ex-empty';
+        msg.textContent = 'No exercises found';
+        listEl.appendChild(msg);
+      }
+    }
+
+    renderList('');
+    searchEl.addEventListener('input', () => renderList(searchEl.value));
+
+    listEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-name]');
+      if (!btn) return;
+      const name = btn.dataset.name.trim();
+      if (!name) return;
+      State.plan[ei].name = name;
+      _persistSession();
+      overlay.remove();
+      const nameEl = document.querySelector(`#ex-card-${ei} .exercise-name`);
+      if (nameEl) nameEl.textContent = name;
+      _haptic(15);
+      Toast.show(`Replaced with ${name}`, 'info');
+    });
+
+    overlay.querySelector('#replace-ex-close').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+    requestAnimationFrame(() => searchEl.focus());
   }
 
   /* ══════════════════════════════════════════════
      ADD SET
      ══════════════════════════════════════════════ */
   function addSet(ei) {
-    const ex  = State.plan[ei];
+    const ex = State.plan[ei];
     const last = ex.sets[ex.sets.length - 1] || { weight: 0, reps: 10 };
     ex.sets.push({ weight: last.weight, reps: last.reps, rpe: null, done: false });
     // Re-render just the sets-wrap
     const wrap = document.getElementById(`sets-wrap-${ei}`);
     if (wrap) {
       const headerRow = wrap.querySelector('.set-header-row').outerHTML;
-      const addBtn    = wrap.querySelector('.add-set-btn').outerHTML;
-      const rows      = ex.sets.map((s, si) => renderSetRow(ex, ei, s, si)).join('');
-      wrap.innerHTML  = headerRow + rows + addBtn;
+      const addBtn = wrap.querySelector('.add-set-btn').outerHTML;
+      const rows = ex.sets.map((s, si) => renderSetRow(ex, ei, s, si)).join('');
+      wrap.innerHTML = headerRow + rows + addBtn;
     }
     _updateLiveStats();
     _persistSession();
@@ -728,17 +960,19 @@ const Workout = (() => {
      LIVE STATS
      ══════════════════════════════════════════════ */
   function _updateLiveStats() {
-    let tonnage   = 0;
-    let setsDone  = 0;
-    let exDone    = 0;
+    let tonnage = 0;
+    let setsDone = 0;
+    let exDone = 0;
 
-    State.plan.forEach(ex => {
+    State.plan.forEach((ex) => {
       let allDone = true;
-      ex.sets.forEach(s => {
+      ex.sets.forEach((s) => {
         if (s.done) {
-          tonnage  += s.weight * s.reps;
+          tonnage += s.weight * s.reps;
           setsDone++;
-        } else { allDone = false; }
+        } else {
+          allDone = false;
+        }
       });
       if (allDone && ex.sets.length) exDone++;
     });
@@ -746,8 +980,8 @@ const Workout = (() => {
     const t = document.getElementById('live-tonnage');
     const s = document.getElementById('live-sets-done');
     const e = document.getElementById('live-ex-done');
-    if (t) t.textContent = tonnage >= 1000
-      ? (tonnage/1000).toFixed(1)+'k' : Math.round(tonnage);
+    if (t)
+      t.textContent = tonnage >= 1000 ? (tonnage / 1000).toFixed(1) + 'k' : Math.round(tonnage);
     if (s) s.textContent = setsDone;
     if (e) e.textContent = exDone;
   }
@@ -761,22 +995,24 @@ const Workout = (() => {
     Timer.reset();
 
     let tonnage = 0;
-    State.plan.forEach(ex =>
-      ex.sets.forEach(s => { if (s.done) tonnage += s.weight * s.reps; })
+    State.plan.forEach((ex) =>
+      ex.sets.forEach((s) => {
+        if (s.done) tonnage += s.weight * s.reps;
+      })
     );
 
     const session = {
-      type     : State.type,
+      type: State.type,
       timestamp: State.startedAt,
       duration,
       tonnage,
-      exercises: State.plan.map(ex => ({
+      exercises: State.plan.map((ex) => ({
         name: ex.name,
-        sets: ex.sets.map(s => ({
+        sets: ex.sets.map((s) => ({
           weight: s.weight,
-          reps  : s.reps,
-          rpe   : s.rpe,
-          done  : s.done,
+          reps: s.reps,
+          rpe: s.rpe,
+          done: s.done,
         })),
       })),
     };
@@ -788,23 +1024,63 @@ const Workout = (() => {
     Toast.show(`Session saved — ${Math.round(tonnage)} kg`, 'success');
     _stopRest();
 
-    // Back to select
+    // Back to home
     State.phase = 'select';
-    renderSelect();
     Nav.go('s-home');
-    Dashboard.load();
   }
 
   /* ══════════════════════════════════════════════
      CANCEL SESSION
      ══════════════════════════════════════════════ */
   function cancelSession() {
-    if (!confirm('Cancel this session? Progress will be lost.')) return;
-    Timer.reset();
-    _stopRest();
-    localStorage.removeItem(SESSION_KEY);
-    State.phase = 'select';
-    renderSelect();
+    _showConfirm(
+      '⚠ Cancel Session?',
+      'All progress for this workout will be lost. This cannot be undone.',
+      'Cancel Session',
+      () => {
+        Timer.reset();
+        _stopRest();
+        localStorage.removeItem(SESSION_KEY);
+        State.phase = 'select';
+        renderSelect();
+      }
+    );
+  }
+
+  function _showConfirm(title, body, confirmLabel, onConfirm) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '5000';
+    overlay.innerHTML = `
+      <div class="modal-sheet" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+        <div class="modal-handle"></div>
+        <div style="text-align:center;padding:8px 0 20px;">
+          <div style="font-size:17px;font-weight:800;color:var(--c-text-1);margin-bottom:10px;">${title}</div>
+          <div style="font-size:13px;color:var(--c-text-2);line-height:1.5;">${body}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button class="btn btn-ghost" id="wk-confirm-ok" style="border-color:rgba(255,71,87,0.3);color:var(--c-red)">
+            ${confirmLabel}
+          </button>
+          <button class="btn btn-primary" id="wk-confirm-cancel">
+            Keep Training
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('visible'));
+    const close = () => {
+      overlay.classList.remove('visible');
+      setTimeout(() => overlay.remove(), 300);
+    };
+    overlay.querySelector('#wk-confirm-ok').addEventListener('click', () => {
+      close();
+      onConfirm();
+    });
+    overlay.querySelector('#wk-confirm-cancel').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close();
+    });
   }
 
   /* ══════════════════════════════════════════════
@@ -812,12 +1088,15 @@ const Workout = (() => {
      ══════════════════════════════════════════════ */
   function _persistSession() {
     if (State.phase !== 'active') return;
-    localStorage.setItem(SESSION_KEY, JSON.stringify({
-      type     : State.type,
-      plan     : State.plan,
-      startedAt: State.startedAt,
-      savedAt  : Date.now(),
-    }));
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({
+        type: State.type,
+        plan: State.plan,
+        startedAt: State.startedAt,
+        savedAt: Date.now(),
+      })
+    );
   }
 
   function tryRestoreSession() {
@@ -830,13 +1109,13 @@ const Workout = (() => {
         localStorage.removeItem(SESSION_KEY);
         return false;
       }
-      State.type     = s.type;
-      State.plan     = s.plan;
+      State.type = s.type;
+      State.plan = s.plan;
       State.startedAt = s.startedAt;
-      State.phase    = 'active';
+      State.phase = 'active';
 
       Timer.restore();
-      Timer.start(sec => {
+      Timer.start((sec) => {
         const el = document.getElementById('session-timer-val');
         if (el) el.textContent = Timer.fmt(sec);
       });
@@ -849,6 +1128,75 @@ const Workout = (() => {
       localStorage.removeItem(SESSION_KEY);
       return false;
     }
+  }
+
+  /* ══════════════════════════════════════════════
+     DRAG-AND-DROP REORDER (pointer events: desktop + mobile)
+     ══════════════════════════════════════════════ */
+  function _initDrag() {
+    const list = document.getElementById('exercise-list');
+    if (!list) return;
+
+    list.querySelectorAll('.exercise-card').forEach((card) => {
+      const handle = card.querySelector('.drag-handle');
+      if (!handle) return;
+
+      let dragging = false;
+      let startY = 0;
+      let srcIdx = parseInt(card.dataset.ei);
+
+      handle.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragging = true;
+        startY = e.clientY;
+        handle.setPointerCapture(e.pointerId);
+        card.classList.add('ex-dragging');
+        _haptic(15);
+      });
+
+      handle.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dy = e.clientY - startY;
+        card.style.transform = `translateY(${dy}px)`;
+        card.style.zIndex = '50';
+
+        list.querySelectorAll('.exercise-card').forEach((other) => {
+          if (other === card) return;
+          const rect = other.getBoundingClientRect();
+          const inZone = e.clientY >= rect.top && e.clientY <= rect.bottom;
+          other.classList.toggle('ex-drag-over', inZone);
+        });
+      });
+
+      handle.addEventListener('pointerup', () => {
+        if (!dragging) return;
+        dragging = false;
+        card.style.transform = '';
+        card.style.zIndex = '';
+        card.classList.remove('ex-dragging');
+
+        let dropIdx = srcIdx;
+        list.querySelectorAll('.exercise-card').forEach((other) => {
+          if (other.classList.contains('ex-drag-over')) {
+            dropIdx = parseInt(other.dataset.ei);
+            other.classList.remove('ex-drag-over');
+          }
+        });
+
+        if (dropIdx !== srcIdx) {
+          const moved = State.plan.splice(srcIdx, 1)[0];
+          State.plan.splice(dropIdx, 0, moved);
+          _persistSession();
+          const scrollY = document.getElementById('s-train').scrollTop;
+          renderActive();
+          requestAnimationFrame(() => {
+            const s = document.getElementById('s-train');
+            if (s) s.scrollTop = scrollY;
+          });
+        }
+      });
+    });
   }
 
   /* ══════════════════════════════════════════════
@@ -867,15 +1215,29 @@ const Workout = (() => {
 
   /* ── Public ── */
   return {
-    init, renderSelect, selectType,
-    openPlanEditor, _closePlanEditor, _savePlanAndClose,
-    _switchPlanTab, _updatePlanName, _adjustPlan,
-    _addPlanEx, _deletePlanEx,
-    stepWeight, stepReps, editVal, commitVal,
-    setRPE, toggleSet, toggleCard, addSet,
-    completeSession, cancelSession,
+    init,
+    renderSelect,
+    selectType,
+    openPlanEditor,
+    _closePlanEditor,
+    _savePlanAndClose,
+    _switchPlanTab,
+    _updatePlanName,
+    _adjustPlan,
+    _addPlanEx,
+    _deletePlanEx,
+    stepWeight,
+    stepReps,
+    editVal,
+    commitVal,
+    setRPE,
+    toggleSet,
+    toggleCard,
+    addSet,
+    completeSession,
+    cancelSession,
+    openReplaceExModal,
   };
-
 })();
 
 /* ════════════════════════════════════════════════════════
@@ -884,12 +1246,15 @@ const Workout = (() => {
    ════════════════════════════════════════════════════════ */
 const RestTimer = (() => {
   'use strict';
-  let _raf = null, _end = 0, _total = 90, _tapTimer = 0;
+  let _raf = null,
+    _end = 0,
+    _total = 90,
+    _tapTimer = 0;
 
   function start(exName, setLabel, seconds) {
     seconds = seconds || 90;
-    _total  = seconds;
-    _end    = Date.now() + seconds * 1000;
+    _total = seconds;
+    _end = Date.now() + seconds * 1000;
     cancelAnimationFrame(_raf);
     _show(exName, setLabel);
     _tick();
@@ -897,33 +1262,43 @@ const RestTimer = (() => {
   }
 
   function stop() {
-    cancelAnimationFrame(_raf); _raf = null;
-    _hideBar(); _hideModal();
+    cancelAnimationFrame(_raf);
+    _raf = null;
+    _hideBar();
+    _hideModal();
   }
 
   function addTime(sec) {
-    _end   += sec * 1000;
+    _end += sec * 1000;
     _total += sec;
     navigator.vibrate?.([15]);
   }
 
   function tapSkip() {
     const now = Date.now();
-    if (now - _tapTimer < 380) { stop(); return; }
+    if (now - _tapTimer < 380) {
+      stop();
+      return;
+    }
     _tapTimer = now;
     stop();
   }
 
   function _tick() {
     const rem = Math.max(0, Math.ceil((_end - Date.now()) / 1000));
-    _updateBar(rem); _updateModal(rem);
-    if (rem <= 0) { _onDone(); return; }
+    _updateBar(rem);
+    _updateModal(rem);
+    if (rem <= 0) {
+      _onDone();
+      return;
+    }
     _raf = requestAnimationFrame(_tick);
   }
 
   function _onDone() {
     navigator.vibrate?.([100, 50, 100, 50, 200]);
-    _hideBar(); _hideModal();
+    _hideBar();
+    _hideModal();
   }
 
   function _fmt(s) {
@@ -949,11 +1324,11 @@ const RestTimer = (() => {
         <div class="rest-bar-track">
           <div class="rest-bar-fill" id="rb-fill"></div>
         </div>`;
-      bar.addEventListener('click', e => {
+      bar.addEventListener('click', (e) => {
         if (!e.target.closest('button')) _openModal(exName, setLabel);
       });
-      const hdr = document.getElementById('workout-header') ||
-                  document.querySelector('.workout-top');
+      const hdr =
+        document.getElementById('workout-header') || document.querySelector('.workout-top');
       if (hdr) hdr.after(bar);
       else document.getElementById('screen-workout')?.prepend(bar);
     }
@@ -965,7 +1340,7 @@ const RestTimer = (() => {
     const t = document.getElementById('rb-time');
     const f = document.getElementById('rb-fill');
     if (t) t.textContent = _fmt(rem);
-    if (f) f.style.width = (rem / _total * 100) + '%';
+    if (f) f.style.width = (rem / _total) * 100 + '%';
   }
 
   function _hideBar() {
@@ -1001,7 +1376,9 @@ const RestTimer = (() => {
           </button>
         </div>
       </div>`;
-    m.onclick = e => { if (e.target === m) m.remove(); };
+    m.onclick = (e) => {
+      if (e.target === m) m.remove();
+    };
     document.body.appendChild(m);
     requestAnimationFrame(() => m.classList.add('visible'));
   }
@@ -1015,7 +1392,10 @@ const RestTimer = (() => {
 
   function _hideModal() {
     const m = document.getElementById('rest-modal');
-    if (m) { m.classList.remove('visible'); setTimeout(() => m.remove(), 300); }
+    if (m) {
+      m.classList.remove('visible');
+      setTimeout(() => m.remove(), 300);
+    }
   }
 
   return { start, stop, addTime, tapSkip };
