@@ -2,7 +2,7 @@
 
 ## Current Position
 - Milestone: 1.0 — Elite Foundation
-- Phase: 01-architecture-foundation — Plan 1 of N complete
+- Phase: 01-architecture-foundation — Plan 2 of N complete
 - Last updated: 2026-03-17
 
 ## Project Context
@@ -12,7 +12,7 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| 1 — Architecture Foundation | 🔄 In progress | Plan 01 complete: server.js refactor |
+| 1 — Architecture Foundation | 🔄 In progress | Plan 02 complete: ES Modules + JSDoc |
 | 2 — Performance & Reliability | 🔲 Not started | |
 | 3 — Design System | 🔲 Not started | |
 | 4 — AI Autopilot | 🔲 Not started | |
@@ -28,6 +28,9 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 | AI autopilot as long-term goal | Primary differentiating feature | Phase 4 |
 | Express Router modules mounted at /api | Avoids prefix duplication; route files use suffix only (/coach, /supabase-status) | Phase 1, Plan 01 |
 | Anthropic client singleton in lib/ | One SDK instance per process shared via Node.js module cache | Phase 1, Plan 01 |
+| window.* bridge in app.js | Exposes ES Module exports to onclick= HTML attribute handlers without rewriting inline handlers | Phase 1, Plan 02 |
+| Lazy DOM ref in Toast.show() | Element resolved at call time, not module evaluation — safe because ES Modules are deferred | Phase 1, Plan 02 |
+| Module-level _planEditor vars in workout.js | Replaces window._planEditor globals with module-scoped closure variables | Phase 1, Plan 02 |
 
 ## Open Issues
 - None
@@ -37,8 +40,9 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 01-architecture-foundation | 01 | ~10min | 5 | 4 |
+| 01-architecture-foundation | 02 | ~8min | 5 | 13 |
 
 ## Session Continuity
-Last session: 2026-03-17 — Completed Phase 1 Plan 01: server.js refactor into routes/ + lib/
-Stopped at: Completed 01-01-PLAN.md
-Next action: /gsd:execute-phase for Phase 1 Plan 02
+Last session: 2026-03-17 — Completed Phase 1 Plan 02: ES Module entry point + JSDoc on db.js
+Stopped at: Completed 01-02-PLAN.md
+Next action: /gsd:execute-phase for Phase 1 Plan 03
