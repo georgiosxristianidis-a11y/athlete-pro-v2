@@ -2,7 +2,7 @@
 
 ## Current Position
 - Milestone: 1.0 — Elite Foundation
-- Phase: 01-architecture-foundation — Plan 2 of N complete
+- Phase: 01-architecture-foundation — Plan 3 of N complete
 - Last updated: 2026-03-17
 
 ## Project Context
@@ -12,7 +12,7 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| 1 — Architecture Foundation | 🔄 In progress | Plan 02 complete: ES Modules + JSDoc |
+| 1 — Architecture Foundation | 🔄 In progress | Plan 03 complete: Claude Store/View split + JSDoc |
 | 2 — Performance & Reliability | 🔲 Not started | |
 | 3 — Design System | 🔲 Not started | |
 | 4 — AI Autopilot | 🔲 Not started | |
@@ -31,6 +31,8 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 | window.* bridge in app.js | Exposes ES Module exports to onclick= HTML attribute handlers without rewriting inline handlers | Phase 1, Plan 02 |
 | Lazy DOM ref in Toast.show() | Element resolved at call time, not module evaluation — safe because ES Modules are deferred | Phase 1, Plan 02 |
 | Module-level _planEditor vars in workout.js | Replaces window._planEditor globals with module-scoped closure variables | Phase 1, Plan 02 |
+| fetchCoach uses onText/onDone/onError callbacks | DOM manipulation stays in view layer; store function has zero DOM references | Phase 1, Plan 03 |
+| ClaudeState uses getter/setter accessors | Enables future reactivity without changing public API | Phase 1, Plan 03 |
 
 ## Open Issues
 - None
@@ -41,8 +43,9 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 |-------|------|----------|-------|-------|
 | 01-architecture-foundation | 01 | ~10min | 5 | 4 |
 | 01-architecture-foundation | 02 | ~8min | 5 | 13 |
+| 01-architecture-foundation | 03 | ~12min | 3 | 4 |
 
 ## Session Continuity
-Last session: 2026-03-17 — Completed Phase 1 Plan 02: ES Module entry point + JSDoc on db.js
-Stopped at: Completed 01-02-PLAN.md
-Next action: /gsd:execute-phase for Phase 1 Plan 03
+Last session: 2026-03-17 — Completed Phase 1 Plan 03: Claude Store/View split + JSDoc
+Stopped at: Completed 01-03-PLAN.md
+Next action: /gsd:execute-phase for Phase 1 Plan 04
