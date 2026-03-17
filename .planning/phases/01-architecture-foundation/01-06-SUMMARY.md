@@ -51,7 +51,7 @@ completed: 2026-03-17
 
 # Phase 1 Plan 06: Service Worker Update + JSDoc Completion Summary
 
-**Service worker bumped to athlete-pro-v3 with all new split module paths; full JSDoc coverage added to dashboard.js, profile.js, timer.js, and shell.js**
+**Service worker bumped to athlete-pro-v4 with full split module paths (workout.store/view, analytics.store/view, claude.store/view); full JSDoc coverage added to dashboard.js, profile.js, timer.js, and shell.js**
 
 ## Performance
 
@@ -63,21 +63,22 @@ completed: 2026-03-17
 
 ## Accomplishments
 
-- sw.js cache name bumped from `athlete-pro-v2` to `athlete-pro-v3`, invalidating all stale offline caches
-- ASSETS list updated: old monolith paths (`analytics.js`, `claude.js`) removed; new split modules (`analytics.store.js`, `analytics.view.js`, `claude.store.js`, `claude.view.js`, `shell.js`, `app.js`, `rest-timer.js`) added
+- sw.js cache name bumped from `athlete-pro-v2` to `athlete-pro-v4`, invalidating all stale offline caches
+- ASSETS list updated: all three old monolith paths (`analytics.js`, `claude.js`, `workout.js`) removed; new split modules (`workout.store.js`, `workout.view.js`, `analytics.store.js`, `analytics.view.js`, `claude.store.js`, `claude.view.js`, `shell.js`, `app.js`, `rest-timer.js`) added
 - Previously uncached files (`db-firebase.js`, `supabase-check.js`, `plate-calc.js`) added to ASSETS (PERF-4 incidental fix)
 - JSDoc `@param`/`@returns` annotations added to all public and helper functions in dashboard.js (8), profile.js (22), timer.js (9), shell.js (7)
 - `// @ts-check` added to all four files enabling VS Code type inference without TypeScript compilation
 
 ## Task Commits
 
-1. **Task 06-01: Update sw.js ASSETS and cache name** - `6415d15` (chore)
+1. **Task 06-01: Update sw.js ASSETS and cache name (initial v3)** - `6415d15` (chore)
 2. **Task 06-02: JSDoc pass — dashboard.js** - `906baac` (docs)
 3. **Task 06-03: JSDoc pass — profile.js** - `de36bb2` (docs)
 4. **Task 06-04: JSDoc pass — timer.js and shell.js** - `def06f6` (docs)
 5. **Task 06-05: Final verification** - (no code changes — verification only)
+6. **Post-plan fix: sw.js to v4 with workout split paths** - `1f9b676` (fix)
 
-**Plan metadata:** (docs commit below)
+**Plan metadata:** `c75fda1` (docs: complete plan)
 
 ## Files Created/Modified
 
@@ -110,15 +111,38 @@ completed: 2026-03-17
 **Total deviations:** 1 auto-adapted (plan/codebase state mismatch)
 **Impact on plan:** Critical for offline correctness — sw.js must match actual deployed files. No scope creep.
 
+**2. [Rule 1 - Bug] sw.js bumped again to v4 after plan 05 completed concurrently**
+- **Found during:** Post-task verification
+- **Issue:** After initial sw.js v3 commit, plan 05 (workout split) completed concurrently — `workout.js` was deleted, `workout.store.js` and `workout.view.js` were added. sw.js still referenced `workout.js` (deleted) and was missing the two new files.
+- **Fix:** Bumped to `athlete-pro-v4`, replaced `workout.js` with `workout.store.js` + `workout.view.js`
+- **Files modified:** sw.js
+- **Verification:** grep confirmed v4, workout.store.js and workout.view.js in ASSETS, workout.js absent
+- **Committed in:** 1f9b676
+
+---
+
+**Total deviations:** 2 auto-fixed (2 × Rule 1 — codebase state corrections)
+**Impact on plan:** Both fixes critical for offline correctness. No scope creep.
+
+## Self-Check: PASSED
+
+- sw.js: FOUND, version v4, all split modules present
+- js/dashboard.js: FOUND, @ts-check + 8 @returns
+- js/profile.js: FOUND, @ts-check + 22 annotations
+- js/timer.js: FOUND, @ts-check + 9 annotations
+- js/shell.js: FOUND, @ts-check + 7 annotations
+- SUMMARY.md: FOUND
+- Commits 6415d15, 906baac, de36bb2, def06f6, c75fda1, 1f9b676: all FOUND in git log
+
 ## Issues Encountered
 
-- `js/workout.view.js` found as untracked file with 1282 lines — incomplete plan 05 artifact. Left untracked. `app.js` does not import from it, so it is not referenced at runtime. Plan 05 needs to be executed to completion before plan 06 ASSETS can be updated to reference `workout.store.js` and `workout.view.js`.
+- Plan 05 (workout split) was partially executed in a previous session: `rest-timer.js` and `workout.store.js` committed but `workout.view.js` untracked. When this plan 06 started, plan 05 appeared incomplete. During plan 06 execution, plan 05 completed concurrently, requiring a second sw.js update (v3 → v4).
 
 ## Next Phase Readiness
 
-- sw.js is correct for the current file structure; when plan 05 workout split is completed, sw.js will need another ASSETS update (bump to `v4`)
-- All JS modules now have full JSDoc coverage — VS Code type hints active across the codebase
-- Phase 2 (Performance & Reliability) can proceed — JSDoc foundation reduces risk of regressions
+- sw.js is fully correct (v4) — all split modules cached, no deleted monolith paths
+- All JS modules have full JSDoc coverage — VS Code type hints active across the codebase
+- Phase 2 (Performance & Reliability) can proceed with solid architecture foundation
 
 ---
 *Phase: 01-architecture-foundation*
