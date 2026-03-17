@@ -1,9 +1,8 @@
+// @ts-check
 /* ════════════════════════════════════════════════════════
    db.js — Athlete Pro  |  IndexedDB data layer
    Block 2 — all stores, all CRUD, Promise-based API
    ════════════════════════════════════════════════════════ */
-
-'use strict';
 
 const DB_NAME = 'athlete-pro';
 const DB_VERSION = 1;
@@ -17,11 +16,27 @@ const S = {
   SETTINGS: 'settings', // key-value prefs
 };
 
+/* ── Type definitions ── */
+/**
+ * @typedef {{ id: number, type: 'push'|'pull'|'legs', timestamp: number,
+ *   duration: number, tonnage: number,
+ *   exercises: Array<ExerciseRecord> }} WorkoutRecord
+ *
+ * @typedef {{ name: string, sets: Array<SetRecord> }} ExerciseRecord
+ *
+ * @typedef {{ weight: number, reps: number, rpe: number|null, done: boolean }} SetRecord
+ *
+ * @typedef {{ id: string, value: number, timestamp: number }} OneRMRecord
+ *
+ * @typedef {{ id: number, weight: number, height: number, bmi: number, timestamp: number }} MetricsRecord
+ */
+
 /* ════════════════════════════════════════════════════════
    OPEN
    ════════════════════════════════════════════════════════ */
 let _db = null;
 
+/** @returns {Promise<IDBDatabase>} */
 function openDB() {
   if (_db) return Promise.resolve(_db);
 
@@ -97,33 +112,55 @@ function getAll(store) {
    WORKOUTS
    ════════════════════════════════════════════════════════ */
 const Workouts = {
-  /** Save a completed session. Returns new id. */
+  /**
+   * Save a completed session. Returns new id.
+   * @param {WorkoutRecord} session
+   * @returns {Promise<number>}
+   */
   save(session) {
     session.timestamp = session.timestamp || Date.now();
     return tx(S.WORKOUTS, 'readwrite').then((s) => req2p(s.add(session)));
   },
 
-  /** Get all sessions, sorted newest first. */
+  /**
+   * Get all sessions, sorted newest first.
+   * @returns {Promise<WorkoutRecord[]>}
+   */
   getAll() {
     return getAll(S.WORKOUTS).then((list) => list.sort((a, b) => b.timestamp - a.timestamp));
   },
 
-  /** Get last N sessions. */
+  /**
+   * Get last N sessions.
+   * @param {number} n
+   * @returns {Promise<WorkoutRecord[]>}
+   */
   getLast(n = 5) {
     return this.getAll().then((list) => list.slice(0, n));
   },
 
-  /** Delete a workout by id. */
+  /**
+   * Delete a workout by id.
+   * @param {number} id
+   * @returns {Promise<void>}
+   */
   deleteById(id) {
     return tx(S.WORKOUTS, 'readwrite').then((s) => req2p(s.delete(id)));
   },
 
-  /** Get last session of a specific type (push/pull/legs). */
+  /**
+   * Get last session of a specific type (push/pull/legs).
+   * @param {'push'|'pull'|'legs'} type
+   * @returns {Promise<WorkoutRecord|undefined>}
+   */
   getLastByType(type) {
     return this.getAll().then((list) => list.find((w) => w.type === type) || null);
   },
 
-  /** Weekly volume (kg) — last 7 days. */
+  /**
+   * Weekly volume (kg) — last 7 days.
+   * @returns {Promise<number>}
+   */
   weeklyVolume() {
     const since = Date.now() - 7 * 86400000;
     return this.getAll().then((list) =>
@@ -131,7 +168,10 @@ const Workouts = {
     );
   },
 
-  /** Monthly volume (kg) — last 30 days. */
+  /**
+   * Monthly volume (kg) — last 30 days.
+   * @returns {Promise<number>}
+   */
   monthlyVolume() {
     const since = Date.now() - 30 * 86400000;
     return this.getAll().then((list) =>
@@ -139,14 +179,20 @@ const Workouts = {
     );
   },
 
-  /** Sessions this calendar month. */
+  /**
+   * Sessions this calendar month.
+   * @returns {Promise<number>}
+   */
   monthlyCount() {
     const now = new Date();
     const from = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     return this.getAll().then((list) => list.filter((w) => w.timestamp >= from).length);
   },
 
-  /** PPL split totals: { push, pull, legs } tonnage. */
+  /**
+   * PPL split totals: { push, pull, legs } tonnage.
+   * @returns {Promise<{push: number, pull: number, legs: number}>}
+   */
   pplTonnage() {
     return this.getAll().then((list) => {
       const r = { push: 0, pull: 0, legs: 0 };
@@ -157,7 +203,11 @@ const Workouts = {
     });
   },
 
-  /** Weekly tonnage per week for last 12 weeks (for chart). */
+  /**
+   * Weekly tonnage per week for last N weeks (for chart).
+   * @param {number} weeks
+   * @returns {Promise<Array<{label: string, kg: number}>>}
+   */
   weeklyTrend(weeks = 12) {
     return this.getAll().then((list) => {
       const buckets = Array.from({ length: weeks }, (_, i) => {
@@ -188,12 +238,24 @@ const Workouts = {
    ONE-REP MAX  (Epley: 1RM = w × (1 + r/30))
    ════════════════════════════════════════════════════════ */
 const OneRM = {
+  /**
+   * Epley formula: estimated 1RM from working weight and reps.
+   * @param {number} weight
+   * @param {number} reps
+   * @returns {number}
+   */
   epley(weight, reps) {
     if (reps === 1) return weight;
     return Math.round(weight * (1 + reps / 30));
   },
 
-  /** Update 1RM for an exercise if new value is higher. */
+  /**
+   * Update 1RM for an exercise if new value is higher.
+   * @param {string} name
+   * @param {number} weight
+   * @param {number} reps
+   * @returns {Promise<void>}
+   */
   update(exerciseName, weight, reps) {
     const value = this.epley(weight, reps);
     return tx(S.ORM, 'readwrite').then((s) => {
@@ -205,12 +267,19 @@ const OneRM = {
     });
   },
 
-  /** Get 1RM for one exercise. */
+  /**
+   * Get 1RM for one exercise.
+   * @param {string} name
+   * @returns {Promise<OneRMRecord|undefined>}
+   */
   get(exerciseName) {
     return tx(S.ORM).then((s) => req2p(s.get(exerciseName)));
   },
 
-  /** Get all 1RMs. */
+  /**
+   * Get all 1RMs.
+   * @returns {Promise<OneRMRecord[]>}
+   */
   getAll() {
     return getAll(S.ORM);
   },
@@ -225,12 +294,23 @@ const OneRM = {
    BODY METRICS
    ════════════════════════════════════════════════════════ */
 const Metrics = {
+  /**
+   * Calculate BMI.
+   * @param {number} weight
+   * @param {number} heightCm
+   * @returns {number}
+   */
   bmi(weight, heightCm) {
     const h = heightCm / 100;
     return Math.round((weight / (h * h)) * 10) / 10;
   },
 
-  /** Save a metrics entry. */
+  /**
+   * Save a metrics entry.
+   * @param {number} weight
+   * @param {number} heightCm
+   * @returns {Promise<void>}
+   */
   save(weight, heightCm) {
     const entry = {
       weight,
@@ -241,7 +321,10 @@ const Metrics = {
     return tx(S.METRICS, 'readwrite').then((s) => req2p(s.add(entry)));
   },
 
-  /** Get latest entry. */
+  /**
+   * Get latest entry.
+   * @returns {Promise<MetricsRecord|undefined>}
+   */
   latest() {
     return getAll(S.METRICS).then((list) => {
       if (!list.length) return null;
@@ -249,7 +332,10 @@ const Metrics = {
     });
   },
 
-  /** Get all entries sorted newest first (for chart). */
+  /**
+   * Get all entries sorted newest first (for chart).
+   * @returns {Promise<MetricsRecord[]>}
+   */
   getAll() {
     return getAll(S.METRICS).then((list) => list.sort((a, b) => b.timestamp - a.timestamp));
   },
@@ -264,14 +350,27 @@ const Metrics = {
    SETTINGS  (key-value store)
    ════════════════════════════════════════════════════════ */
 const Settings = {
+  /**
+   * @param {string} key
+   * @param {*} value
+   * @returns {Promise<void>}
+   */
   set(key, value) {
     return tx(S.SETTINGS, 'readwrite').then((s) => req2p(s.put({ key, value })));
   },
 
+  /**
+   * @param {string} key
+   * @param {*} [fallback]
+   * @returns {Promise<*>}
+   */
   get(key, fallback = null) {
     return tx(S.SETTINGS).then((s) => req2p(s.get(key)).then((r) => (r ? r.value : fallback)));
   },
 
+  /**
+   * @returns {Promise<Object<string, *>>}
+   */
   getAll() {
     return getAll(S.SETTINGS).then((list) => {
       const map = {};
@@ -310,7 +409,10 @@ const Events = {
    BACKUP / RESTORE
    ════════════════════════════════════════════════════════ */
 const Backup = {
-  /** Export full DB as JSON string. */
+  /**
+   * Export full DB as JSON string.
+   * @returns {Promise<string>}
+   */
   async export() {
     const [workouts, orm, metrics, settings] = await Promise.all([
       Workouts.getAll(),
@@ -332,7 +434,11 @@ const Backup = {
     );
   },
 
-  /** Import from JSON string. Merges — does NOT wipe first. */
+  /**
+   * Import from JSON string. Merges — does NOT wipe first.
+   * @param {string} jsonStr
+   * @returns {Promise<boolean>}
+   */
   async import(jsonStr) {
     const data = JSON.parse(jsonStr);
     if (!data.workouts) throw new Error('Invalid backup file');
@@ -360,6 +466,7 @@ const Backup = {
 /* ════════════════════════════════════════════════════════
    NUKE — clear everything (Danger Zone)
    ════════════════════════════════════════════════════════ */
+/** @returns {Promise<void>} */
 async function clearAll() {
   await Promise.all([
     Workouts.clear(),
@@ -370,8 +477,6 @@ async function clearAll() {
   ]);
 }
 
-/* ── Init DB on load ── */
-openDB().catch((err) => console.error('[db] open failed', err));
-
 /* ── Public API ── */
-const DB = { Workouts, OneRM, Metrics, Settings, Events, Backup, clearAll, openDB };
+export const DB = { Workouts, OneRM, Metrics, Settings, Events, Backup, clearAll, openDB };
+export { openDB };
