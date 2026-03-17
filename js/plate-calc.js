@@ -3,8 +3,7 @@
    FIX: correct plate mirroring on left side
    ════════════════════════════════════════════════════════ */
 
-const PlateCalc = (() => {
-  'use strict';
+export const PlateCalc = (() => {
 
   const PLATES = [
     [25, '#c62828', '#fff', 88, 17],

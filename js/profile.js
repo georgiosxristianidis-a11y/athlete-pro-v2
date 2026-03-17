@@ -3,9 +3,9 @@
    Profile: body metrics, measurements, export/import, settings
    ════════════════════════════════════════════════════════ */
 
-'use strict';
+import { DB } from './db.js';
 
-const Profile = (() => {
+export const Profile = (() => {
   /* ══════════════════════════════════════════════
      MAIN LOAD
      ══════════════════════════════════════════════ */

@@ -3,12 +3,12 @@
    Claude AI Assistant + Muscle Heatmap
    ════════════════════════════════════════════════════════ */
 
-'use strict';
+import { DB } from './db.js';
 
 /* ══════════════════════════════════════════════
    MUSCLE MAP — which exercises hit which muscles
    ══════════════════════════════════════════════ */
-const MUSCLE_MAP = {
+export const MUSCLE_MAP = {
   /* PUSH */
   'Bench Press': ['chest', 'front-delt', 'tricep'],
   'Incline DB Press': ['upper-chest', 'front-delt', 'tricep'],
@@ -39,7 +39,7 @@ const MUSCLE_MAP = {
    HEATMAP — muscle fatigue score per muscle
    Scale 0–1 based on recency + volume
    ══════════════════════════════════════════════ */
-const Heatmap = (() => {
+export const Heatmap = (() => {
   /* Compute fatigue scores from last 72h workouts */
   async function compute() {
     const since = Date.now() - 72 * 3600000;
@@ -87,7 +87,7 @@ const Heatmap = (() => {
    SVG BODY — front + back inline SVG
    Each muscle group has data-muscle attribute
    ══════════════════════════════════════════════ */
-function buildBodySVG(scores) {
+export function buildBodySVG(scores) {
   const f = (m) => Heatmap.scoreColor(scores[m]) || 'rgba(255,255,255,0.08)';
   const s = (m) => {
     const c = Heatmap.scoreColor(scores[m]);
@@ -296,7 +296,7 @@ function buildBodySVG(scores) {
 /* ══════════════════════════════════════════════
    RECOVERY LEGEND
    ══════════════════════════════════════════════ */
-function buildLegend(scores) {
+export function buildLegend(scores) {
   const groups = [
     {
       label: 'Chest & Shoulders',
@@ -332,7 +332,7 @@ function buildLegend(scores) {
 /* ══════════════════════════════════════════════
    CLAUDE ASSISTANT — AI Coach (real API)
    ══════════════════════════════════════════════ */
-const Claude = (() => {
+export const Claude = (() => {
   let _open = false;
   let _context = null; // { workouts, orms, scores }
   let _chatHistory = []; // [{ role, content }, ...]
@@ -750,9 +750,3 @@ const Claude = (() => {
   return { renderFAB, open, close, _sendChat };
 })();
 
-/* ── Auto-render FAB when DOM ready ── */
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => Claude.renderFAB());
-} else {
-  Claude.renderFAB();
-}

@@ -3,9 +3,13 @@
    Workout Engine: plan editor, set rows, RPE, timer sync
    ════════════════════════════════════════════════════════ */
 
-'use strict';
+import { DB } from './db.js';
+import { Timer } from './timer.js';
 
-const Workout = (() => {
+let _planEditorActiveTab = () => 'push';
+let _planEditorSetTab = () => {};
+
+export const Workout = (() => {
   /* ══════════════════════════════════════════════
      DEFAULT PPL PROGRAM
      ══════════════════════════════════════════════ */
@@ -247,6 +251,30 @@ const Workout = (() => {
           .join('')}
       </div>
 
+      <!-- Pre-workout checklist -->
+      <div class="section-header" style="margin-top:var(--sp-2);margin-bottom:var(--sp-1)">
+        <span class="section-label">Pre-Workout Checklist</span>
+      </div>
+      <div class="checklist-card" id="pre-checklist">
+        ${[
+          'Warmup — 10 min cardio or mobility',
+          'Hydration — 500ml water before start',
+          'Gear — shoes, belt, straps ready',
+          'Energy — meal 90 min before',
+          'Plan — exercises and target weights set',
+          'Focus — phone on Do Not Disturb',
+        ].map((text, i) => `
+          <div class="checklist-item" id="chk-pre-${i}" onclick="Workout.toggleChecklist(${i})">
+            <div class="checklist-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" width="13" height="13">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <span class="checklist-text">${text}</span>
+          </div>`).join('')}
+      </div>
+
       <!-- Last sessions preview -->
       <div class="section-header" style="margin-top:var(--sp-2)">
         <span class="section-label">Last Sessions</span>
@@ -326,11 +354,21 @@ const Workout = (() => {
     overlay.id = 'plan-editor-overlay';
 
     function tabContent(type) {
+      // Always reload fresh so add/delete immediately reflects
+      const p = loadPlan();
+      Object.assign(plan, p);
       return (
         plan[type]
           .map(
             (ex, i) => `
-        <div class="plan-row" id="plan-row-${type}-${i}">
+        <div class="plan-row" id="plan-row-${type}-${i}" data-pi="${i}">
+          <div class="plan-drag-handle">
+            <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
+              <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
+              <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
+              <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
+            </svg>
+          </div>
           <input class="plan-input" value="${ex.name}"
             onchange="Workout._updatePlanName('${type}',${i},this.value)">
           <div class="plan-row-meta">
@@ -406,26 +444,37 @@ const Workout = (() => {
     }
 
     render();
+    requestAnimationFrame(_initPlanDrag);
     document.body.appendChild(overlay);
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) _closePlanEditor();
     });
 
     // Expose tab switch
-    window._planEditorActiveTab = () => activeTab;
-    window._planEditorSetTab = (t) => {
+    _planEditorActiveTab = () => activeTab;
+    _planEditorSetTab = (t) => {
       activeTab = t;
       render();
+      requestAnimationFrame(_initPlanDrag);
     };
   }
 
   function _switchPlanTab(type) {
-    window._planEditorSetTab(type);
+    _planEditorSetTab(type);
   }
 
   function _closePlanEditor() {
     const el = document.getElementById('plan-editor-overlay');
     if (el) el.remove();
+  }
+
+  const _checklistState = new Array(6).fill(false);
+
+  function toggleChecklist(i) {
+    _checklistState[i] = !_checklistState[i];
+    const item = document.getElementById(`chk-pre-${i}`);
+    if (item) item.classList.toggle('checked', _checklistState[i]);
+    _haptic(8);
   }
 
   function _savePlanAndClose() {
@@ -461,7 +510,7 @@ const Workout = (() => {
     const plan = loadPlan();
     plan[type].splice(i, 1);
     savePlan(plan);
-    _switchPlanTab(window._planEditorActiveTab());
+    _switchPlanTab(_planEditorActiveTab());
   }
 
   /* ══════════════════════════════════════════════
@@ -1200,6 +1249,70 @@ const Workout = (() => {
   }
 
   /* ══════════════════════════════════════════════
+     DRAG-AND-DROP for Plan Editor
+     ══════════════════════════════════════════════ */
+  function _initPlanDrag() {
+    const list = document.getElementById('plan-list');
+    if (!list) return;
+
+    list.querySelectorAll('.plan-row').forEach((row) => {
+      const handle = row.querySelector('.plan-drag-handle');
+      if (!handle) return;
+
+      let dragging = false;
+      let startY = 0;
+      let srcIdx = parseInt(row.dataset.pi);
+
+      handle.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragging = true;
+        startY = e.clientY;
+        handle.setPointerCapture(e.pointerId);
+        row.classList.add('plan-row-dragging');
+        _haptic(15);
+      });
+
+      handle.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dy = e.clientY - startY;
+        row.style.transform = `translateY(${dy}px)`;
+        row.style.zIndex = '50';
+        list.querySelectorAll('.plan-row').forEach((other) => {
+          if (other === row) return;
+          const rect = other.getBoundingClientRect();
+          other.classList.toggle('plan-row-over', e.clientY >= rect.top && e.clientY <= rect.bottom);
+        });
+      });
+
+      handle.addEventListener('pointerup', () => {
+        if (!dragging) return;
+        dragging = false;
+        row.style.transform = '';
+        row.style.zIndex = '';
+        row.classList.remove('plan-row-dragging');
+
+        let dropIdx = srcIdx;
+        list.querySelectorAll('.plan-row').forEach((other) => {
+          if (other.classList.contains('plan-row-over')) {
+            dropIdx = parseInt(other.dataset.pi);
+            other.classList.remove('plan-row-over');
+          }
+        });
+
+        if (dropIdx !== srcIdx) {
+          const type = _planEditorActiveTab();
+          const p = loadPlan();
+          const moved = p[type].splice(srcIdx, 1)[0];
+          p[type].splice(dropIdx, 0, moved);
+          savePlan(p);
+          _switchPlanTab(type);
+        }
+      });
+    });
+  }
+
+  /* ══════════════════════════════════════════════
      HAPTIC
      ══════════════════════════════════════════════ */
   function _haptic(ms = 10) {
@@ -1226,6 +1339,7 @@ const Workout = (() => {
     _adjustPlan,
     _addPlanEx,
     _deletePlanEx,
+    toggleChecklist,
     stepWeight,
     stepReps,
     editVal,
@@ -1244,8 +1358,7 @@ const Workout = (() => {
    RestTimer — Block 9
    Floating bar autostart + modal ring. Per-set state.
    ════════════════════════════════════════════════════════ */
-const RestTimer = (() => {
-  'use strict';
+export const RestTimer = (() => {
   let _raf = null,
     _end = 0,
     _total = 90,

@@ -3,9 +3,9 @@
    Analytics: charts, calendar heatmap, 1RM, body weight
    ════════════════════════════════════════════════════════ */
 
-'use strict';
+import { DB } from './db.js';
 
-const Analytics = (() => {
+export const Analytics = (() => {
   const TYPE_COLOR = {
     push: '#00e676',
     pull: '#8b5cf6',

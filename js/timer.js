@@ -3,9 +3,7 @@
    Visibility API guard + localStorage persistence
    ════════════════════════════════════════════════════════ */
 
-'use strict';
-
-const Timer = (() => {
+export const Timer = (() => {
   let _start = null;
   let _elapsed = 0;
   let _interval = null;

@@ -4,7 +4,7 @@
    • Body Metrics tab — weight/height/measurements (moved from Profile)
    ════════════════════════════════════════════════════════ */
 
-'use strict';
+import { DB } from './db.js';
 
 const BS_KEY = 'ap-body-stats';
 let _bsActiveTab = 'stats';
@@ -104,7 +104,7 @@ function bsSwitchTab(tab) {
 /* ══════════════════════════════════════════════
    MAIN RENDER
    ══════════════════════════════════════════════ */
-function renderBodyStats() {
+export function renderBodyStats() {
   const root = document.getElementById('body-stats-root');
   if (!root) return;
 
@@ -549,6 +549,3 @@ function bsSaveEntry(editDate) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  renderBodyStats();
-});

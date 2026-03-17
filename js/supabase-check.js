@@ -3,9 +3,7 @@
    Supabase availability tester + status badge renderer
    ════════════════════════════════════════════════════════ */
 
-'use strict';
-
-const SupabaseCheck = (() => {
+export const SupabaseCheck = (() => {
   /* ── Last known result (cached for 60s) ── */
   let _cache = null;
   let _cacheTime = 0;

@@ -14,9 +14,9 @@
          All methods that accept/return `id` use string IDs.
    ════════════════════════════════════════════════════════ */
 
-'use strict';
+import { DB } from './db.js';
 
-const FirebaseDB = (() => {
+export const FirebaseDB = (() => {
   let _db = null;
   let _app = null;
   let _ready = false;

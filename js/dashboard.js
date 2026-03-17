@@ -2,7 +2,9 @@
    BLOCK 3 JS — DASHBOARD (fixed)
    ════════════════════════════════════════════════ */
 
-const Dashboard = (() => {
+import { DB } from './db.js';
+
+export const Dashboard = (() => {
   const TYPE_COLOR = {
     push: 'var(--c-accent)',
     pull: 'var(--c-purple)',
