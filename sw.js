@@ -3,7 +3,7 @@
    Service Worker: cache-first + offline fallback
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v3';
+const CACHE_NAME = 'athlete-pro-v4';
 
 const ASSETS = [
   '/index.html',
@@ -16,7 +16,8 @@ const ASSETS = [
   '/js/timer.js',
   '/js/rest-timer.js',
   '/js/dashboard.js',
-  '/js/workout.js',
+  '/js/workout.store.js',
+  '/js/workout.view.js',
   '/js/analytics.store.js',
   '/js/analytics.view.js',
   '/js/claude.store.js',
