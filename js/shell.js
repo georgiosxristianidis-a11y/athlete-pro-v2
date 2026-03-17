@@ -1,3 +1,4 @@
+// @ts-check
 /* ════════════════════════════════════════════════════════
    shell.js — Athlete Pro  |  Nav + Toast as ES Module exports
    ════════════════════════════════════════════════════════ */
@@ -12,6 +13,11 @@ const _handlers = {
   's-profile': () => window.Profile.load(),
 };
 
+/**
+ * Navigate to a screen by element ID, hiding the previous screen.
+ * @param {string} id — screen element ID (e.g. 's-home', 's-train')
+ * @returns {void}
+ */
 function go(id) {
   if (id === _current) return;
   document.getElementById(_current)?.classList.remove('active');
@@ -23,6 +29,10 @@ function go(id) {
   _handlers[id]?.();
 }
 
+/**
+ * Get the currently active screen ID.
+ * @returns {string}
+ */
 function current() {
   return _current;
 }
@@ -37,6 +47,13 @@ const ICONS = {
   info: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/>',
 };
 
+/**
+ * Show a toast notification message.
+ * @param {string} msg — message text to display
+ * @param {'success'|'error'|'info'} [type='info'] — toast type controls icon and color
+ * @param {number} [duration=2800] — display duration in milliseconds
+ * @returns {void}
+ */
 function show(msg, type = 'info', duration = 2800) {
   const wrap = document.getElementById('toast-wrap');
   const t = document.createElement('div');
