@@ -9,7 +9,7 @@ import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
 import { Dashboard } from './dashboard.js';
 import { Workout, RestTimer } from './workout.js';
-import { Analytics } from './analytics.js';
+import { Analytics } from './analytics.view.js';
 import { Profile } from './profile.js';
 import { Claude } from './claude.view.js';
 import { MUSCLE_MAP, Heatmap } from './claude.store.js';
