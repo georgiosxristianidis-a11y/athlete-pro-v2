@@ -1,6 +1,6 @@
+// @ts-check
 /* ════════════════════════════════════════════════════════
-   profile.js — Athlete Pro  |  Block 6
-   Profile: body metrics, measurements, export/import, settings
+   profile.js — Athlete Pro  |  Profile: settings, metrics, data management
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
@@ -9,6 +9,10 @@ export const Profile = (() => {
   /* ══════════════════════════════════════════════
      MAIN LOAD
      ══════════════════════════════════════════════ */
+  /**
+   * Load and render the profile screen.
+   * @returns {Promise<void>}
+   */
   async function load() {
     console.log('Profile.load() called');
     const screen = document.getElementById('s-profile');
@@ -169,6 +173,11 @@ export const Profile = (() => {
   /* ══════════════════════════════════════════════
      RENDER HELPERS
      ══════════════════════════════════════════════ */
+  /**
+   * Render the body summary card (weight, height, BMI).
+   * @param {{weight: number, height: number, bmi: number}|null} latest — latest body metric record
+   * @returns {string} — HTML string
+   */
   function _renderBodySummary(latest) {
     if (!latest)
       return `
@@ -213,6 +222,14 @@ export const Profile = (() => {
       </div>`;
   }
 
+  /**
+   * Build an input field HTML snippet for a body measurement.
+   * @param {string} id — element id
+   * @param {string} label — field label text
+   * @param {string|number} value — current value
+   * @param {string} unit — unit label (e.g. 'cm', 'kg')
+   * @returns {string} — HTML string
+   */
   function _measurementField(id, label, value, unit) {
     return `
       <div class="metric-field">
@@ -226,6 +243,11 @@ export const Profile = (() => {
       </div>`;
   }
 
+  /**
+   * Render the weight history section (last 5 entries).
+   * @param {Array<{timestamp: number, weight: number, bmi: number}>} metrics
+   * @returns {string} — HTML string
+   */
   function _renderMetricsHistory(metrics) {
     const recent = metrics.slice(0, 5);
     return `
@@ -255,6 +277,10 @@ export const Profile = (() => {
   /* ══════════════════════════════════════════════
      SAVE METRICS
      ══════════════════════════════════════════════ */
+  /**
+   * Save body metrics (weight, height) from form inputs.
+   * @returns {Promise<void>}
+   */
   async function saveMetrics() {
     const w = parseFloat(document.getElementById('m-weight')?.value);
     const h = parseFloat(document.getElementById('m-height')?.value);
@@ -267,6 +293,10 @@ export const Profile = (() => {
     load();
   }
 
+  /**
+   * Save body measurements from form inputs.
+   * @returns {Promise<void>}
+   */
   async function saveMeasurements() {
     const fields = [
       'm-chest',
@@ -289,6 +319,11 @@ export const Profile = (() => {
   /* ══════════════════════════════════════════════
      PREFERENCES
      ══════════════════════════════════════════════ */
+  /**
+   * Adjust the default rest duration by a delta value.
+   * @param {number} delta — seconds to add or subtract (e.g. 15 or -15)
+   * @returns {Promise<void>}
+   */
   async function adjustRest(delta) {
     const current = parseInt((await DB.Settings.get('rest-duration')) || 90);
     const next = Math.max(15, Math.min(300, current + delta));
@@ -297,6 +332,11 @@ export const Profile = (() => {
     if (el) el.textContent = next + 's';
   }
 
+  /**
+   * Set the preferred weight unit and update the toggle UI.
+   * @param {'kg'|'lbs'} unit
+   * @returns {Promise<void>}
+   */
   async function setUnit(unit) {
     await DB.Settings.set('weight-unit', unit);
     document.querySelectorAll('.toggle-btn').forEach((b) => {
@@ -304,6 +344,10 @@ export const Profile = (() => {
     });
   }
 
+  /**
+   * Toggle haptic feedback preference between on and off.
+   * @returns {Promise<void>}
+   */
   async function toggleHaptic() {
     const current = await DB.Settings.get('haptic', 'on');
     const next = current === 'off' ? 'on' : 'off';
@@ -315,6 +359,10 @@ export const Profile = (() => {
   /* ══════════════════════════════════════════════
      EXPORT / IMPORT
      ══════════════════════════════════════════════ */
+  /**
+   * Export all application data as a JSON file download.
+   * @returns {Promise<void>}
+   */
   async function exportData() {
     try {
       const json = await DB.Backup.export();
@@ -332,10 +380,19 @@ export const Profile = (() => {
     }
   }
 
+  /**
+   * Open the file picker to import a JSON backup file.
+   * @returns {void}
+   */
   function importData() {
     document.getElementById('import-file-input')?.click();
   }
 
+  /**
+   * Handle the file input change event to process a JSON import.
+   * @param {Event} e — file input change event
+   * @returns {Promise<void>}
+   */
   async function _onImportFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -354,6 +411,10 @@ export const Profile = (() => {
   /* ══════════════════════════════════════════════
      DANGER ZONE
      ══════════════════════════════════════════════ */
+  /**
+   * Clear all application data after user confirmation.
+   * @returns {Promise<void>}
+   */
   async function clearAllData() {
     const confirmed = confirm(
       'This will permanently delete ALL workouts, metrics, and settings. This cannot be undone.\n\nType OK to confirm.'
