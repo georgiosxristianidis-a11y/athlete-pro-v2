@@ -8,7 +8,8 @@ import { DB, openDB } from './db.js';
 import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
 import { Dashboard } from './dashboard.js';
-import { Workout, RestTimer } from './workout.js';
+import { Workout } from './workout.view.js';
+import { RestTimer } from './rest-timer.js';
 import { Analytics } from './analytics.view.js';
 import { Profile } from './profile.js';
 import { Claude } from './claude.view.js';
@@ -56,7 +57,13 @@ if (navigator.onLine) setOnline(); else setOffline();
 /* ── Boot ── */
 openDB()
   .then(() => {
-    if (!Workout.init()) {
+    if (Workout.init()) {
+      // Session restored — activate train screen without triggering renderSelect via Nav handler
+      document.getElementById('s-home')?.classList.remove('active');
+      document.getElementById('s-train')?.classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.nav-btn[data-s="s-train"]')?.classList.add('active');
+    } else {
       Dashboard.load();
     }
   })
