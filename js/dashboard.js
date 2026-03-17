@@ -1,5 +1,6 @@
+// @ts-check
 /* ════════════════════════════════════════════════
-   BLOCK 3 JS — DASHBOARD (fixed)
+   dashboard.js — Athlete Pro  |  Dashboard home screen
    ════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
@@ -11,7 +12,10 @@ export const Dashboard = (() => {
     legs: 'var(--c-blue)',
   };
 
-  /* ── Greeting ── */
+  /**
+   * Return a time-of-day greeting string.
+   * @returns {string}
+   */
   function greeting() {
     const h = new Date().getHours();
     if (h < 12) return 'Good morning';
@@ -19,13 +23,20 @@ export const Dashboard = (() => {
     return 'Good evening';
   }
 
-  /* ── Format volume ── */
+  /**
+   * Format a volume value for compact display (e.g. 1500 → '1.5k').
+   * @param {number} kg — volume in kilograms
+   * @returns {string}
+   */
   function fmtVol(kg) {
     if (kg >= 1000) return (kg / 1000).toFixed(1) + 'k';
     return Math.round(kg).toString();
   }
 
-  /* ── Build HTML template (FIX: screen was empty) ── */
+  /**
+   * Build the full HTML template for the dashboard screen.
+   * @returns {string} — HTML string
+   */
   function _buildTemplate() {
     return `
       <!-- Hero -->
@@ -123,7 +134,11 @@ export const Dashboard = (() => {
     `;
   }
 
-  /* ── 7-day streak strip ── */
+  /**
+   * Render the 7-day workout streak strip and streak count label.
+   * @param {Array<{timestamp: number, type: string}>} workouts — all recorded workouts
+   * @returns {void}
+   */
   function renderStreak(workouts) {
     const strip = document.getElementById('streak-strip');
     if (!strip) return;
@@ -191,7 +206,11 @@ export const Dashboard = (() => {
       .join('');
   }
 
-  /* ── PPL bars (FIX: width starts at 0% for animation) ── */
+  /**
+   * Render the Push/Pull/Legs volume bars with animation.
+   * @param {{push: number, pull: number, legs: number}} ppl — tonnage per type
+   * @returns {void}
+   */
   function renderPPL(ppl) {
     const max = Math.max(ppl.push, ppl.pull, ppl.legs, 1);
     ['push', 'pull', 'legs'].forEach((t) => {
@@ -212,7 +231,11 @@ export const Dashboard = (() => {
     }
   }
 
-  /* ── Top Lifts (1RM) ── */
+  /**
+   * Render the top 5 estimated 1RM lifts list.
+   * @param {Array<{id: string, value: number}>} orms — 1RM estimates
+   * @returns {void}
+   */
   function renderTopLifts(orms) {
     const el = document.getElementById('dash-orm-list');
     if (!el) return;
@@ -241,7 +264,11 @@ export const Dashboard = (() => {
       .join('');
   }
 
-  /* ── Recent sessions ── */
+  /**
+   * Render the most recent workout sessions list (up to 5).
+   * @param {Array<{timestamp: number, type: string, duration?: number, tonnage: number}>} workouts
+   * @returns {void}
+   */
   function renderRecent(workouts) {
     const el = document.getElementById('recent-list');
     if (!el) return;
@@ -290,7 +317,11 @@ export const Dashboard = (() => {
       .join('');
   }
 
-  /* ── Main load (FIX: build template first, then populate) ── */
+  /**
+   * Load and render the dashboard home screen.
+   * Fetches recent workouts, volume stats, streak data, and renders all sections.
+   * @returns {Promise<void>}
+   */
   async function load() {
     const screen = document.getElementById('s-home');
     if (!screen) return;
