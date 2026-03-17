@@ -1,22 +1,27 @@
 /* ════════════════════════════════════════════════════════
-   sw.js — Athlete Pro | Block 7 (fixed)
+   sw.js — Athlete Pro | Phase 1 architecture
    Service Worker: cache-first + offline fallback
 ════════════════════════════════════════════════════════ */
 
-'use strict';
-
-const CACHE_NAME = 'athlete-pro-v2';
+const CACHE_NAME = 'athlete-pro-v3';
 
 const ASSETS = [
   '/index.html',
   '/manifest.json',
+  '/js/app.js',
+  '/js/shell.js',
   '/js/db.js',
+  '/js/db-firebase.js',
+  '/js/supabase-check.js',
   '/js/timer.js',
+  '/js/rest-timer.js',
   '/js/dashboard.js',
   '/js/workout.js',
-  '/js/analytics.js',
+  '/js/analytics.store.js',
+  '/js/analytics.view.js',
+  '/js/claude.store.js',
+  '/js/claude.view.js',
   '/js/profile.js',
-  '/js/claude.js',
   '/js/body-stats.js',
   '/js/plate-calc.js',
   '/css/dashboard.css',
