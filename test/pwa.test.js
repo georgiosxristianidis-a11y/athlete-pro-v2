@@ -37,3 +37,16 @@ test('sw.js contains core service worker handlers', () => {
   assert.match(sw, /addEventListener\(['"]fetch['"]/);
   assert.match(sw, /caches\.open\(/);
 });
+
+test('sw.js ASSETS includes all js/*.js files', () => {
+  const sw = readText('sw.js');
+  const jsDir = path.join(__dirname, '..', 'js');
+  const jsFiles = fs.readdirSync(jsDir).filter(f => f.endsWith('.js'));
+
+  for (const file of jsFiles) {
+    assert.ok(
+      sw.includes('/js/' + file),
+      'sw.js ASSETS missing: /js/' + file
+    );
+  }
+});

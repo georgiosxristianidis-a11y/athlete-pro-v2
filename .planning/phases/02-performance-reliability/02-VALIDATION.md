@@ -3,7 +3,7 @@ phase: 2
 slug: performance-reliability
 status: draft
 nyquist_compliant: false
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-03-20
 ---
 
