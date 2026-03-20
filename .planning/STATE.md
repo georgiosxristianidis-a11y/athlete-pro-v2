@@ -3,28 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-20T20:01:32.477Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-20T20:04:21.130Z"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 9
-  completed_plans: 7
----
-
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: in-progress
-stopped_at: Completed 01-05-PLAN.md
-last_updated: "2026-03-17T21:21:41.900Z"
-progress:
-  total_phases: 4
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State — Fit Elite
@@ -42,7 +28,7 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 | Phase | Status | Notes |
 |-------|--------|-------|
 | 1 — Architecture Foundation | ✅ Complete | All 6 plans done: Plan 05 workout split complete + Plan 06 JSDoc/sw.js |
-| 2 — Performance & Reliability | 🔄 In progress | Plans 01-02 done: 02-01 TBD, 02-02 IDB coalescing + analytics lazy load |
+| 2 — Performance & Reliability | 🔄 In progress | Plans 01-02 done: 02-01 Firebase dynamic loading + Wave 0 test scaffold, 02-02 IDB coalescing + analytics lazy load |
 | 3 — Design System | 🔲 Not started | |
 | 4 — AI Autopilot | 🔲 Not started | |
 
@@ -68,6 +54,8 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 | Workout.init() activates DOM directly on session restore | Avoids Nav handler calling renderSelect when session needs renderActive | Phase 1, Plan 05 |
 | sw.js updated to workout.store/view/rest-timer | Plan 05 now complete — sw.js ASSETS should be updated to remove workout.js | Phase 1, Plan 06 |
 | db-firebase.js and supabase-check.js added to sw.js ASSETS | Previously missing from cache despite being deployed — PERF-4 incidental fix | Phase 1, Plan 06 |
+| Firebase SDK loaded dynamically via _loadFirebaseSDK() | Eliminates ~100KB synchronous CDN download for users without Firebase configured | Phase 2, Plan 01 |
+| PERF-3 test targets gstatic.com/firebasejs only | fonts.gstatic.com preconnect is unrelated to Firebase and must not trigger false failure | Phase 2, Plan 01 |
 | Pure aggregate helpers as named exports in db.js | No IDB access, accept pre-fetched list; existing Workouts methods preserved for analytics.store.js | Phase 2, Plan 02 |
 | Analytics lazy load via dynamic import() in shell.js | Defers analytics.view.js parse/eval to first Stats visit; Claude stays static (renderFAB is boot-critical) | Phase 2, Plan 02 |
 
@@ -84,9 +72,10 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 | 01-architecture-foundation | 04 | ~6min | 3 | 3 |
 | 01-architecture-foundation | 05 | ~20min | 4 | 5 |
 | 01-architecture-foundation | 06 | ~18min | 5 | 5 |
+| 02-performance-reliability | 01 | 6min | 3 | 5 |
 | 02-performance-reliability | 02 | ~4min | 2 | 4 |
 
 ## Session Continuity
-Last session: 2026-03-20T20:01:32.468Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-20T20:04:21.122Z
+Stopped at: Completed 02-01-PLAN.md
 Next action: Continue Phase 2 — next plan is 02-03 (if it exists) or phase complete
