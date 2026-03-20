@@ -3,7 +3,7 @@
    Service Worker: cache-first + offline fallback
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v4';
+const CACHE_NAME = 'athlete-pro-v5';
 
 const ASSETS = [
   '/index.html',
