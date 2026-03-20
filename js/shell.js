@@ -8,7 +8,13 @@ let _current = 's-home';
 const _handlers = {
   's-home':    () => window.Dashboard.load(),
   's-train':   () => window.Workout.renderSelect(),
-  's-stats':   () => window.Analytics.load(),
+  's-stats': async () => {
+    if (!window.Analytics) {
+      const { Analytics } = await import('./analytics.view.js');
+      window.Analytics = Analytics;
+    }
+    window.Analytics.load();
+  },
   's-body':    () => window.renderBodyStats(),
   's-profile': () => window.Profile.load(),
 };
