@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 01-05-PLAN.md
-last_updated: "2026-03-17T21:35:29.898Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-20T20:01:32.477Z"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 9
+  completed_plans: 7
 ---
 
 ---
@@ -31,8 +31,8 @@ progress:
 
 ## Current Position
 - Milestone: 1.0 — Elite Foundation
-- Phase: 01-architecture-foundation — Plan 6 of 6 complete
-- Last updated: 2026-03-17
+- Phase: 02-performance-reliability — Plan 2 of 3 complete
+- Last updated: 2026-03-20
 
 ## Project Context
 Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully functional at v0 — PPL logging, 1RM estimation, muscle fatigue heatmap, AI chat via Claude Opus (SSE), dashboard/analytics/body stats/profile screens, offline PWA, rest timer, plate calculator, and optional cloud sync (Supabase + Firebase). The v1 goal is to raise the architecture, performance, design, and AI capabilities to elite quality without introducing frameworks — Vanilla JS intentionally, complexity only when justified.
@@ -42,7 +42,7 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 | Phase | Status | Notes |
 |-------|--------|-------|
 | 1 — Architecture Foundation | ✅ Complete | All 6 plans done: Plan 05 workout split complete + Plan 06 JSDoc/sw.js |
-| 2 — Performance & Reliability | 🔲 Not started | |
+| 2 — Performance & Reliability | 🔄 In progress | Plans 01-02 done: 02-01 TBD, 02-02 IDB coalescing + analytics lazy load |
 | 3 — Design System | 🔲 Not started | |
 | 4 — AI Autopilot | 🔲 Not started | |
 
@@ -68,6 +68,8 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 | Workout.init() activates DOM directly on session restore | Avoids Nav handler calling renderSelect when session needs renderActive | Phase 1, Plan 05 |
 | sw.js updated to workout.store/view/rest-timer | Plan 05 now complete — sw.js ASSETS should be updated to remove workout.js | Phase 1, Plan 06 |
 | db-firebase.js and supabase-check.js added to sw.js ASSETS | Previously missing from cache despite being deployed — PERF-4 incidental fix | Phase 1, Plan 06 |
+| Pure aggregate helpers as named exports in db.js | No IDB access, accept pre-fetched list; existing Workouts methods preserved for analytics.store.js | Phase 2, Plan 02 |
+| Analytics lazy load via dynamic import() in shell.js | Defers analytics.view.js parse/eval to first Stats visit; Claude stays static (renderFAB is boot-critical) | Phase 2, Plan 02 |
 
 ## Open Issues
 - None — Plan 05 workout split now complete. workout.js deleted, workout.store.js + workout.view.js + rest-timer.js all in use. sw.js ASSETS list may need updating to remove workout.js and add the three new files.
@@ -82,8 +84,9 @@ Fit Elite is a personal PWA workout tracker with an AI coach. The app is fully f
 | 01-architecture-foundation | 04 | ~6min | 3 | 3 |
 | 01-architecture-foundation | 05 | ~20min | 4 | 5 |
 | 01-architecture-foundation | 06 | ~18min | 5 | 5 |
+| 02-performance-reliability | 02 | ~4min | 2 | 4 |
 
 ## Session Continuity
-Last session: 2026-03-17T21:21:41.895Z
-Stopped at: Completed 01-05-PLAN.md
-Next action: Complete plan 05 (workout split) then Phase 2 Performance & Reliability
+Last session: 2026-03-20T20:01:32.468Z
+Stopped at: Completed 02-02-PLAN.md
+Next action: Continue Phase 2 — next plan is 02-03 (if it exists) or phase complete
