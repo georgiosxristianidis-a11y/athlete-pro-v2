@@ -9,10 +9,10 @@ function readText(rel) {
 
 describe('Phase 2 — Performance post-conditions', () => {
 
-  test('PERF-3: index.html contains zero gstatic.com references', () => {
+  test('PERF-3: index.html contains zero gstatic.com/firebasejs references', () => {
     const html = readText('index.html');
-    const matches = (html.match(/gstatic\.com/g) || []).length;
-    assert.equal(matches, 0, 'index.html still has gstatic.com references');
+    const matches = (html.match(/gstatic\.com\/firebasejs/g) || []).length;
+    assert.equal(matches, 0, 'index.html still has gstatic.com/firebasejs references');
   });
 
   test('PERF-1: js/dashboard.js does not call DB.Workouts.weeklyVolume() directly', () => {

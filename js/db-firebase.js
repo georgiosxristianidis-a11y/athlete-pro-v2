@@ -31,6 +31,27 @@ export const FirebaseDB = (() => {
   };
 
   /* ════════════════════════════════════════════════════
+     DYNAMIC SDK LOADER — injects Firebase scripts only
+     when Firebase is configured and needed
+     ════════════════════════════════════════════════════ */
+
+  function _loadFirebaseSDK() {
+    if (window.firebase) return Promise.resolve();
+    const BASE = 'https://www.gstatic.com/firebasejs/10.12.0/';
+    function _injectScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('[FirebaseDB] Failed to load: ' + src));
+        document.head.appendChild(s);
+      });
+    }
+    return _injectScript(BASE + 'firebase-app-compat.js')
+      .then(() => _injectScript(BASE + 'firebase-firestore-compat.js'));
+  }
+
+  /* ════════════════════════════════════════════════════
      INIT — call once with Firebase project config
      ════════════════════════════════════════════════════ */
 
@@ -71,6 +92,7 @@ export const FirebaseDB = (() => {
         console.warn('[FirebaseDB] Not configured. Add Firebase vars to .env');
         return null;
       }
+      await _loadFirebaseSDK();
       return init(cfg);
     } catch (err) {
       console.error('[FirebaseDB] autoInit failed:', err.message);
