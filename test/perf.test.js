@@ -43,4 +43,12 @@ describe('Phase 2 — Performance post-conditions', () => {
     );
   });
 
+  test('PERF-3: js/app.js does not statically import db-firebase.js', () => {
+    const src = readText('js/app.js');
+    assert.ok(
+      !(/import\s.*from\s*['"]\.\/db-firebase\.js['"]/.test(src)),
+      'app.js still has a static import of db-firebase.js — Firebase module should be lazy-loaded'
+    );
+  });
+
 });

@@ -100,6 +100,7 @@ function bsSwitchTab(tab) {
   _bsActiveTab = tab;
   renderBodyStats();
 }
+window.bsSwitchTab = bsSwitchTab;
 
 /* ══════════════════════════════════════════════
    MAIN RENDER

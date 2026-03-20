@@ -3,7 +3,7 @@
    Service Worker: cache-first + offline fallback
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v5';
+const CACHE_NAME = 'athlete-pro-v6';
 
 const ASSETS = [
   '/index.html',
@@ -31,7 +31,8 @@ const ASSETS = [
   '/css/profile.css',
   '/css/claude.css',
   '/css/body-stats.css',
-  '/icons/favicon.png',
+  '/assets/panda-idle.mp4',
+  '/assets/panda-idle.webm',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/apple-touch-icon.png',

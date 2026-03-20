@@ -290,15 +290,19 @@ export const Claude = (() => {
     vid.playsInline = true;
     vid.setAttribute('playsinline', '');
     vid.onerror = () => {
-      // Fallback: try static image
-      const img = document.createElement('img');
-      img.src = 'assets/panda-idle.png';
-      img.alt = 'AI Coach';
-      img.onerror = () => {
+      // Fallback: try webm format, then icon
+      const vid2 = document.createElement('video');
+      vid2.src = 'assets/panda-idle.webm';
+      vid2.autoplay = true;
+      vid2.loop = true;
+      vid2.muted = true;
+      vid2.playsInline = true;
+      vid2.setAttribute('playsinline', '');
+      vid2.onerror = () => {
         fab.innerHTML = _claudeIcon();
       };
       fab.innerHTML = '';
-      fab.appendChild(img);
+      fab.appendChild(vid2);
     };
     fab.appendChild(vid);
 
