@@ -235,6 +235,52 @@ const Workouts = {
 };
 
 /* ════════════════════════════════════════════════════════
+   PURE AGGREGATE HELPERS  (no IDB — accept pre-fetched list)
+   ════════════════════════════════════════════════════════ */
+
+/**
+ * Compute weekly volume from pre-fetched workouts array.
+ * @param {WorkoutRecord[]} list
+ * @returns {number}
+ */
+export function weeklyVolumeFrom(list) {
+  const since = Date.now() - 7 * 86400000;
+  return list.filter(w => w.timestamp >= since).reduce((s, w) => s + (w.tonnage || 0), 0);
+}
+
+/**
+ * Compute monthly volume from pre-fetched workouts array.
+ * @param {WorkoutRecord[]} list
+ * @returns {number}
+ */
+export function monthlyVolumeFrom(list) {
+  const since = Date.now() - 30 * 86400000;
+  return list.filter(w => w.timestamp >= since).reduce((s, w) => s + (w.tonnage || 0), 0);
+}
+
+/**
+ * Compute sessions this calendar month from pre-fetched workouts array.
+ * @param {WorkoutRecord[]} list
+ * @returns {number}
+ */
+export function monthlyCountFrom(list) {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  return list.filter(w => w.timestamp >= from).length;
+}
+
+/**
+ * Compute PPL split tonnage from pre-fetched workouts array.
+ * @param {WorkoutRecord[]} list
+ * @returns {{push: number, pull: number, legs: number}}
+ */
+export function pplTonnageFrom(list) {
+  const r = { push: 0, pull: 0, legs: 0 };
+  list.forEach(w => { if (r[w.type] !== undefined) r[w.type] += w.tonnage || 0; });
+  return r;
+}
+
+/* ════════════════════════════════════════════════════════
    ONE-REP MAX  (Epley: 1RM = w × (1 + r/30))
    ════════════════════════════════════════════════════════ */
 const OneRM = {

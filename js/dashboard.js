@@ -3,7 +3,7 @@
    dashboard.js — Athlete Pro  |  Dashboard home screen
    ════════════════════════════════════════════════ */
 
-import { DB } from './db.js';
+import { DB, weeklyVolumeFrom, monthlyVolumeFrom, monthlyCountFrom, pplTonnageFrom } from './db.js';
 
 export const Dashboard = (() => {
   const TYPE_COLOR = {
@@ -343,15 +343,15 @@ export const Dashboard = (() => {
         day: 'numeric',
       });
 
-    // Fetch data in parallel
-    const [allWorkouts, weekVol, monthVol, monthCount, ppl, orms] = await Promise.all([
+    // Fetch data in parallel — single workouts transaction, derive stats in-memory
+    const [allWorkouts, orms] = await Promise.all([
       DB.Workouts.getAll(),
-      DB.Workouts.weeklyVolume(),
-      DB.Workouts.monthlyVolume(),
-      DB.Workouts.monthlyCount(),
-      DB.Workouts.pplTonnage(),
       DB.OneRM.getAll(),
     ]);
+    const weekVol    = weeklyVolumeFrom(allWorkouts);
+    const monthVol   = monthlyVolumeFrom(allWorkouts);
+    const monthCount = monthlyCountFrom(allWorkouts);
+    const ppl        = pplTonnageFrom(allWorkouts);
 
     // Stats
     const wv = document.getElementById('dash-vol-week');
