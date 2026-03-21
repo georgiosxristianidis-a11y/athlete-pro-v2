@@ -7,7 +7,10 @@
 let _current = 's-home';
 const _handlers = {
   's-home':    () => window.Dashboard.load(),
-  's-train':   () => window.Workout.renderSelect(),
+  's-train': async () => {
+    if (!window.Workout) await window._loadWorkout();
+    window.Workout.renderSelect();
+  },
   's-stats': async () => {
     if (!window.Analytics) {
       const { Analytics } = await import('./analytics.view.js');
@@ -15,8 +18,14 @@ const _handlers = {
     }
     window.Analytics.load();
   },
-  's-body':    () => window.renderBodyStats(),
-  's-profile': () => window.Profile.load(),
+  's-body': async () => {
+    if (!window.renderBodyStats) await window._loadBodyStats();
+    window.renderBodyStats();
+  },
+  's-profile': async () => {
+    if (!window.Profile) await window._loadProfile();
+    window.Profile.load();
+  },
 };
 
 /**

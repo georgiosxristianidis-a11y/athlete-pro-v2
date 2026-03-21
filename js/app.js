@@ -8,14 +8,38 @@ import { DB, openDB } from './db.js';
 import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
 import { Dashboard } from './dashboard.js';
-import { Workout } from './workout.view.js';
-import { RestTimer } from './rest-timer.js';
-import { Profile } from './profile.js';
-import { Claude } from './claude.view.js';
-import { MUSCLE_MAP, Heatmap } from './claude.store.js';
-import { renderBodyStats } from './body-stats.js';
-import { PlateCalc } from './plate-calc.js';
-import { SupabaseCheck } from './supabase-check.js';
+
+/* ── Lazy-loaded modules ── */
+async function _loadWorkout() {
+  if (window.Workout) return window.Workout;
+  const [{ Workout }, { RestTimer }, { PlateCalc }] = await Promise.all([
+    import('./workout.view.js'),
+    import('./rest-timer.js'),
+    import('./plate-calc.js'),
+  ]);
+  window.Workout = Workout;
+  window.RestTimer = RestTimer;
+  window.PlateCalc = PlateCalc;
+  return Workout;
+}
+
+async function _loadProfile() {
+  if (window.Profile) return window.Profile;
+  const [{ Profile }, { SupabaseCheck }] = await Promise.all([
+    import('./profile.js'),
+    import('./supabase-check.js'),
+  ]);
+  window.Profile = Profile;
+  window.SupabaseCheck = SupabaseCheck;
+  return Profile;
+}
+
+async function _loadBodyStats() {
+  if (window.renderBodyStats) return window.renderBodyStats;
+  const { renderBodyStats } = await import('./body-stats.js');
+  window.renderBodyStats = renderBodyStats;
+  return renderBodyStats;
+}
 
 /* ── Bridge: expose to window for onclick="" handlers ── */
 window.DB = DB;
@@ -23,13 +47,9 @@ window.Nav = Nav;
 window.Toast = Toast;
 window.Timer = Timer;
 window.Dashboard = Dashboard;
-window.Workout = Workout;
-window.RestTimer = RestTimer;
-window.Profile = Profile;
-window.Claude = Claude;
-window.renderBodyStats = renderBodyStats;
-window.PlateCalc = PlateCalc;
-window.SupabaseCheck = SupabaseCheck;
+window._loadWorkout = _loadWorkout;
+window._loadProfile = _loadProfile;
+window._loadBodyStats = _loadBodyStats;
 
 /* ── Clock ── */
 const clockEl = document.getElementById('status-time');
@@ -52,16 +72,19 @@ if (navigator.onLine) setOnline(); else setOffline();
 
 /* ── Boot ── */
 openDB()
-  .then(() => {
-    if (Workout.init()) {
-      // Session restored — activate train screen without triggering renderSelect via Nav handler
-      document.getElementById('s-home')?.classList.remove('active');
-      document.getElementById('s-train')?.classList.add('active');
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      document.querySelector('.nav-btn[data-s="s-train"]')?.classList.add('active');
-    } else {
-      Dashboard.load();
+  .then(async () => {
+    const hasSession = localStorage.getItem('ap-active-session');
+    if (hasSession) {
+      const Workout = await _loadWorkout();
+      if (Workout.init()) {
+        document.getElementById('s-home')?.classList.remove('active');
+        document.getElementById('s-train')?.classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.nav-btn[data-s="s-train"]')?.classList.add('active');
+        return;
+      }
     }
+    Dashboard.load();
   })
   .catch((err) => {
     console.error('[boot] DB failed', err);
@@ -73,8 +96,11 @@ openDB()
     }, 350);
   });
 
-/* ── Claude FAB ── */
-Claude.renderFAB();
+/* ── Claude FAB (lazy-loaded) ── */
+import('./claude.view.js').then(({ Claude }) => {
+  window.Claude = Claude;
+  Claude.renderFAB();
+});
 
 /* ── Service Worker ── */
 if ('serviceWorker' in navigator) {

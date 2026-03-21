@@ -282,9 +282,11 @@ export const Claude = (() => {
     fab.setAttribute('aria-label', 'AI Coach');
 
     // Try video first, fall back to static image, then icon
+    // preload="none" defers 1MB download until play — icon shown first
+    fab.innerHTML = _claudeIcon();
     const vid = document.createElement('video');
+    vid.preload = 'none';
     vid.src = 'assets/panda-idle.mp4';
-    vid.autoplay = true;
     vid.loop = true;
     vid.muted = true;
     vid.playsInline = true;
@@ -292,8 +294,8 @@ export const Claude = (() => {
     vid.onerror = () => {
       // Fallback: try webm format, then icon
       const vid2 = document.createElement('video');
+      vid2.preload = 'none';
       vid2.src = 'assets/panda-idle.webm';
-      vid2.autoplay = true;
       vid2.loop = true;
       vid2.muted = true;
       vid2.playsInline = true;
@@ -301,10 +303,12 @@ export const Claude = (() => {
       vid2.onerror = () => {
         fab.innerHTML = _claudeIcon();
       };
-      fab.innerHTML = '';
-      fab.appendChild(vid2);
+      vid2.oncanplay = () => { fab.innerHTML = ''; fab.appendChild(vid2); vid2.play(); };
+      vid2.load();
     };
-    fab.appendChild(vid);
+    vid.oncanplay = () => { fab.innerHTML = ''; fab.appendChild(vid); vid.play(); };
+    // Defer video load until after initial paint
+    requestIdleCallback(() => vid.load(), { timeout: 3000 });
 
     fab.addEventListener('click', open);
     document.body.appendChild(fab);

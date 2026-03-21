@@ -21,7 +21,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
+      rel="stylesheet" media="print" onload="this.media='all'"
     />
 
     <!-- ── BLOCK 0: Critical CSS (inline — zero flash) ──────────────── -->
@@ -644,13 +644,14 @@
       }
     </style>
 
-    <!-- Module CSS (non-critical, async-safe) -->
+    <!-- Critical CSS: dashboard (first screen) -->
     <link rel="stylesheet" href="css/dashboard.css" />
-    <link rel="stylesheet" href="css/workout.css" />
-    <link rel="stylesheet" href="css/analytics.css" />
-    <link rel="stylesheet" href="css/profile.css" />
-    <link rel="stylesheet" href="css/claude.css" />
-    <link rel="stylesheet" href="css/body-stats.css" />
+    <!-- Non-critical CSS: deferred to unblock first paint -->
+    <link rel="stylesheet" href="css/workout.css" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="css/analytics.css" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="css/profile.css" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="css/claude.css" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="css/body-stats.css" media="print" onload="this.media='all'" />
   </head>
 
   <body>
