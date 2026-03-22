@@ -57,6 +57,12 @@ Plans:
 
 **Requirements:** DESIGN-1, DESIGN-2, DESIGN-3, DESIGN-4, DESIGN-5, DESIGN-6
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Create css/base.css with shared components, contrast fix, and focus-visible
+- [ ] 03-02-PLAN.md — Aria-labels on all icon buttons, breakpoint system, streak dot touch targets
+
 **Tasks:**
 - Create css/base.css with canonical button, card, and input component styles; audit all 6 CSS files for token usage consistency
 - Raise --c-text-3 from #6b7280 (3.5:1 contrast) to #9ca3af (meets WCAG AA 4.5:1)
