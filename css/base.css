@@ -49,6 +49,9 @@
   --t-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --t-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --t-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Breakpoints (reference values — used in @media, documented here) */
+  --bp-sm: 360px;
+  --bp-md: 768px;
 }
 
 /* ── Section 2: Shared Component — Buttons ────────────── */
@@ -162,4 +165,22 @@ select:focus-visible {
 button:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--c-bg), 0 0 0 4px var(--c-accent);
+}
+
+/* ── Section 5: Responsive ────────────────────────────── */
+
+/* Small phone floor (<360px) — reduce spacing to prevent overflow */
+@media (max-width: 359px) {
+  :root {
+    --sp-2: 12px;
+    --sp-3: 16px;
+  }
+}
+
+/* Tablet (>=768px) — center content with max-width */
+@media (min-width: 768px) {
+  .screen {
+    max-width: 640px;
+    margin-inline: auto;
+  }
 }
