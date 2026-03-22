@@ -25,6 +25,7 @@ const ASSETS = [
   '/js/profile.js',
   '/js/body-stats.js',
   '/js/plate-calc.js',
+  '/css/base.css',
   '/css/dashboard.css',
   '/css/workout.css',
   '/css/analytics.css',

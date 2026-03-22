@@ -1,0 +1,165 @@
+/* ════════════════════════════════════════════════════════
+   base.css — Athlete Pro Design System
+   Design tokens, shared components, focus-visible styles
+   Loaded synchronously before all screen CSS files.
+════════════════════════════════════════════════════════ */
+
+/* ── Section 1: Design Tokens ─────────────────────────── */
+:root {
+  --c-bg: #0a0a0f;
+  --c-bg-1: #111118;
+  --c-bg-2: #16161f;
+  --c-bg-3: #1c1c28;
+  --c-surface: rgba(255, 255, 255, 0.04);
+  --c-surface-h: rgba(255, 255, 255, 0.07);
+  --c-border: rgba(255, 255, 255, 0.06);
+  --c-border-h: rgba(255, 255, 255, 0.12);
+  --c-text-1: #e8eaed;
+  --c-text-2: #9aa0ab;
+  --c-text-3: #9ca3af;
+  --c-accent: #00e676;
+  --c-accent-d: #00c260;
+  --c-accent-bg: rgba(0, 230, 118, 0.08);
+  --c-purple: #8b5cf6;
+  --c-purple-bg: rgba(139, 92, 246, 0.08);
+  --c-blue: #2979ff;
+  --c-blue-bg: rgba(41, 121, 255, 0.08);
+  --c-amber: #ffb300;
+  --c-amber-bg: rgba(255, 179, 0, 0.08);
+  --c-red: #ff4757;
+  --c-red-bg: rgba(255, 71, 87, 0.08);
+  --sh-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --sh-md: 0 4px 16px rgba(0, 0, 0, 0.22);
+  --sh-lg: 0 8px 32px rgba(0, 0, 0, 0.32);
+  --c-border-purple: rgba(139, 92, 246, 0.15);
+  --c-border-blue: rgba(41, 121, 255, 0.15);
+  --sp-1: 8px;
+  --sp-2: 16px;
+  --sp-3: 24px;
+  --sp-4: 32px;
+  --sp-5: 40px;
+  --sp-6: 48px;
+  --r-s: 10px;
+  --r-m: 14px;
+  --r-l: 18px;
+  --r-xl: 22px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-h: 68px;
+  --t-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --t-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --t-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Section 2: Shared Component — Buttons ────────────── */
+.btn-primary {
+  background: var(--c-accent);
+  color: #000;
+}
+.btn-primary:active {
+  background: var(--c-accent-d);
+  transform: scale(0.98);
+}
+.btn-icon-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-icon-sm:active {
+  background: var(--c-surface-h);
+}
+.btn-icon-nav {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-icon-nav:active {
+  background: var(--c-surface-h);
+}
+
+/* ── Section 3: Shared Component — Modals ─────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: overlay-in 0.2s ease forwards;
+}
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.modal-sheet {
+  width: 100%;
+  background: var(--c-bg-2);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  border-top: 1px solid var(--c-border);
+  padding: var(--sp-3) var(--sp-2) calc(var(--sp-3) + var(--safe-bottom));
+  animation: sheet-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.modal-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--c-border-h);
+  border-radius: 2px;
+  margin: 0 auto var(--sp-3);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-2);
+}
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--c-text-1);
+}
+
+/* ── Section 4: Focus-Visible Styles ──────────────────── */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-bg), 0 0 0 4px var(--c-accent);
+}
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-bg), 0 0 0 4px var(--c-accent);
+}

@@ -54,51 +54,13 @@
         user-select: none;
       }
 
-      /* DESIGN TOKENS */
+      /* DESIGN TOKENS — critical-path only (full tokens in css/base.css) */
       :root {
         --c-bg: #0a0a0f;
-        --c-bg-1: #111118;
-        --c-bg-2: #16161f;
-        --c-bg-3: #1c1c28;
-        --c-surface: rgba(255, 255, 255, 0.04);
-        --c-surface-h: rgba(255, 255, 255, 0.07);
-        --c-border: rgba(255, 255, 255, 0.06);
-        --c-border-h: rgba(255, 255, 255, 0.12);
         --c-text-1: #e8eaed;
-        --c-text-2: #9aa0ab;
-        --c-text-3: #6b7280;
-        --c-accent: #00e676;
-        --c-accent-d: #00c260;
-        --c-accent-bg: rgba(0, 230, 118, 0.08);
-        --c-purple: #8b5cf6;
-        --c-purple-bg: rgba(139, 92, 246, 0.08);
-        --c-blue: #2979ff;
-        --c-blue-bg: rgba(41, 121, 255, 0.08);
-        --c-amber: #ffb300;
-        --c-amber-bg: rgba(255, 179, 0, 0.08);
-        --c-red: #ff4757;
-        --c-red-bg: rgba(255, 71, 87, 0.08);
-        --sh-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
-        --sh-md: 0 4px 16px rgba(0, 0, 0, 0.22);
-        --sh-lg: 0 8px 32px rgba(0, 0, 0, 0.32);
-        --c-border-purple: rgba(139, 92, 246, 0.15);
-        --c-border-blue: rgba(41, 121, 255, 0.15);
-        --sp-1: 8px;
-        --sp-2: 16px;
-        --sp-3: 24px;
-        --sp-4: 32px;
-        --sp-5: 40px;
-        --sp-6: 48px;
-        --r-s: 10px;
-        --r-m: 14px;
-        --r-l: 18px;
-        --r-xl: 22px;
+        --nav-h: 68px;
         --safe-top: env(safe-area-inset-top, 0px);
         --safe-bottom: env(safe-area-inset-bottom, 0px);
-        --nav-h: 68px;
-        --t-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-        --t-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        --t-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       /* SHELL */
@@ -644,6 +606,8 @@
       }
     </style>
 
+    <!-- Design system: tokens + shared components (synchronous — required before all screen CSS) -->
+    <link rel="stylesheet" href="css/base.css" />
     <!-- Critical CSS: dashboard (first screen) -->
     <link rel="stylesheet" href="css/dashboard.css" />
     <!-- Non-critical CSS: deferred to unblock first paint -->
