@@ -334,7 +334,6 @@
   -webkit-appearance: none;
 }
 .bs-date-inp:focus {
-  outline: none;
   border-color: rgba(0, 230, 118, 0.4);
 }
 .bs-fields-scroll {
@@ -379,7 +378,6 @@
   transition: border-color var(--t-fast);
 }
 .bs-field-inp:focus {
-  outline: none;
   border-color: rgba(0, 230, 118, 0.4);
 }
 .bs-field-inp::placeholder {

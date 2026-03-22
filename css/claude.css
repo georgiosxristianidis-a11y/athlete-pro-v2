@@ -23,7 +23,6 @@
   justify-content: center;
   z-index: 500;
   -webkit-tap-highlight-color: transparent;
-  outline: none;
   border-radius: 50%;
   overflow: hidden;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5));
@@ -87,13 +86,7 @@
 .claude-sheet::-webkit-scrollbar {
   display: none;
 }
-.modal-handle {
-  width: 36px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--c-border);
-  margin: 0 auto 16px;
-}
+/* modal-handle — moved to css/base.css */
 
 /* ── Header ── */
 .claude-header {
@@ -118,21 +111,11 @@
   font-weight: 500;
   color: var(--c-text-3);
 }
-.btn-icon-sm {
+/* btn-icon-sm — moved to css/base.css; claude panel uses slightly larger variant */
+.claude-sheet .btn-icon-sm {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  color: var(--c-text-2);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-}
-.btn-icon-sm:active {
-  background: var(--c-surface-h);
 }
 
 /* ── Heatmap card ── */
@@ -449,7 +432,6 @@
   flex: 1;
   background: none;
   border: none;
-  outline: none;
   font-size: 14px;
   font-weight: 500;
   color: var(--c-text-1);

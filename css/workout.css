@@ -270,8 +270,8 @@
 /* ── Set row ── */
 .set-row {
   display: grid;
-  grid-template-columns: 20px 1fr 1fr 80px 44px;
-  gap: 8px;
+  grid-template-columns: 18px 1fr 1fr 76px 40px;
+  gap: 5px;
   align-items: center;
   padding: 6px 0;
   border-bottom: 1px solid var(--c-border);
@@ -304,7 +304,7 @@
   -webkit-user-select: none;
 }
 .stepper-btn {
-  width: 44px;
+  width: 36px;
   height: 44px;
   display: flex;
   align-items: center;
@@ -376,7 +376,7 @@
   display: block;
 }
 .stepper-input:focus {
-  outline: none;
+  /* focus-visible handled globally in base.css */
 }
 .stepper-btn + .stepper-val,
 .stepper-val + .stepper-btn {
@@ -413,7 +413,7 @@
 
 /* ── Set check button ── */
 .set-check {
-  width: 44px;
+  width: 40px;
   height: 44px;
   border-radius: var(--r-s);
   border: 1px solid var(--c-border);
@@ -470,78 +470,8 @@
 }
 
 /* ── Plan editor modal ── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  animation: overlay-in 0.2s ease forwards;
-}
-@keyframes overlay-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-.modal-sheet {
-  width: 100%;
-  background: var(--c-bg-2);
-  border-radius: var(--r-xl) var(--r-xl) 0 0;
-  border-top: 1px solid var(--c-border);
-  padding: var(--sp-3) var(--sp-2) calc(var(--sp-3) + var(--safe-bottom));
-  animation: sheet-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  max-height: 88vh;
-  overflow-y: auto;
-}
-@keyframes sheet-in {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-.modal-handle {
-  width: 36px;
-  height: 4px;
-  background: var(--c-border-h);
-  border-radius: 2px;
-  margin: 0 auto var(--sp-3);
-}
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--sp-2);
-}
-.modal-title {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--c-text-1);
-}
-.btn-icon-sm {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  color: var(--c-text-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.btn-icon-sm:active {
-  background: var(--c-surface-h);
-}
+/* modal-overlay, modal-sheet, modal-handle, modal-header, modal-title,
+   btn-icon-sm — moved to css/base.css */
 .plan-tabs {
   display: flex;
   gap: var(--sp-1);
@@ -566,12 +496,26 @@
   background: var(--c-surface-h);
 }
 .plan-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   padding: var(--sp-1) 0;
   border-bottom: 1px solid var(--c-border);
+  transition: opacity 0.15s, transform 0.15s;
 }
 .plan-row:last-of-type {
   border-bottom: none;
 }
+.plan-drag-handle {
+  width: 28px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--c-text-3); cursor: grab; flex-shrink: 0;
+  touch-action: none; -webkit-tap-highlight-color: transparent;
+}
+.plan-drag-handle:active { cursor: grabbing; }
+.plan-row-dragging { opacity: 0.55; }
+.plan-row-over { background: rgba(0,230,118,0.06); border-radius: var(--r-s); }
+.plan-row > .plan-input { flex: 1; }
 .plan-input {
   width: 100%;
   background: none;
@@ -586,7 +530,6 @@
   appearance: none;
 }
 .plan-input:focus {
-  outline: none;
   color: var(--c-accent);
 }
 .plan-row-meta {
@@ -705,14 +648,7 @@
   height: 18px;
   flex-shrink: 0;
 }
-.btn-primary {
-  background: var(--c-accent);
-  color: #000;
-}
-.btn-primary:active {
-  background: var(--c-accent-d);
-  transform: scale(0.98);
-}
+/* btn-primary — moved to css/base.css */
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--c-border);
@@ -1048,7 +984,6 @@
   color: var(--c-text-1);
   font-size: 15px;
   padding: 0 var(--sp-2);
-  outline: none;
   -webkit-appearance: none;
   appearance: none;
 }
@@ -1109,4 +1044,51 @@
 .add-ex-footer {
   width: 100%;
   padding-top: var(--sp-1);
+}
+
+/* ── Pre-workout checklist ── */
+.checklist-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-l);
+  overflow: hidden;
+  margin-bottom: var(--sp-2);
+}
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px var(--sp-2);
+  border-bottom: 1px solid var(--c-border);
+  cursor: pointer;
+  transition: background var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.checklist-item:last-child { border-bottom: none; }
+.checklist-item:active { background: var(--c-surface-h); }
+.checklist-box {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border-radius: 7px;
+  border: 2px solid var(--c-border);
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--t-fast);
+}
+.checklist-box svg { color: transparent; transition: color var(--t-fast); }
+.checklist-item.checked .checklist-box {
+  background: var(--c-accent-bg);
+  border-color: var(--c-accent);
+}
+.checklist-item.checked .checklist-box svg { color: var(--c-accent); }
+.checklist-text {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-2);
+  transition: all var(--t-fast);
+}
+.checklist-item.checked .checklist-text {
+  color: var(--c-text-3);
+  text-decoration: line-through;
 }
