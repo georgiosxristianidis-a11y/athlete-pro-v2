@@ -63,7 +63,7 @@ async function load() {
     <div class="section-header">
       <span class="section-label">Monthly Calendar</span>
       <div style="display:flex;align-items:center;gap:var(--sp-1)">
-        <button class="btn-icon-nav" id="cal-prev" onclick="Analytics.calPrev()">
+        <button class="btn-icon-nav" id="cal-prev" onclick="Analytics.calPrev()" aria-label="Previous month">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="14" height="14">
             <polyline points="15 18 9 12 15 6"/>
@@ -72,7 +72,7 @@ async function load() {
         <span id="cal-month-label" style="font-size:11px;font-weight:700;
           letter-spacing:0.08em;text-transform:uppercase;color:var(--c-text-2);
           min-width:80px;text-align:center"></span>
-        <button class="btn-icon-nav" id="cal-next" onclick="Analytics.calNext()">
+        <button class="btn-icon-nav" id="cal-next" onclick="Analytics.calNext()" aria-label="Next month">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="14" height="14">
             <polyline points="9 18 15 12 9 6"/>
@@ -303,7 +303,7 @@ function calDayClick(year, month, day, existingType, existingId) {
 
   const removeBtn = existingType
     ? `
-    <button class="cal-pick-remove" id="cal-pick-rm">
+    <button class="cal-pick-remove" id="cal-pick-rm" aria-label="Remove workout">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
            stroke-linecap="round" width="14" height="14">
         <polyline points="3 6 5 6 21 6"/>
@@ -318,7 +318,7 @@ function calDayClick(year, month, day, existingType, existingId) {
       <div class="modal-handle"></div>
       <div class="modal-header">
         <div class="modal-title">Log Workout</div>
-        <button class="btn-icon-sm" id="cal-pick-close">
+        <button class="btn-icon-sm" id="cal-pick-close" aria-label="Close picker">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="18" height="18">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

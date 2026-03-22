@@ -359,7 +359,7 @@ export const Claude = (() => {
               <div class="claude-sub">Powered by Claude Opus</div>
             </div>
           </div>
-          <button class="btn-icon-sm" onclick="Claude.close()">
+          <button class="btn-icon-sm" onclick="Claude.close()" aria-label="Close AI Coach">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.5" stroke-linecap="round" width="18" height="18">
               <line x1="18" y1="6" x2="6" y2="18"/>
@@ -413,7 +413,7 @@ export const Claude = (() => {
         <div class="chat-input-wrap">
           <input type="text" id="coach-input" class="chat-input"
                  placeholder="Ask your coach anything...">
-          <button id="coach-send" class="chat-send-btn" onclick="Claude._sendChat()">
+          <button id="coach-send" class="chat-send-btn" onclick="Claude._sendChat()" aria-label="Send message">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
                  width="15" height="15">

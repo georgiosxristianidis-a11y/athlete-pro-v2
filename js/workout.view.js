@@ -215,17 +215,17 @@ function openPlanEditor() {
         <div class="plan-row-meta">
           <span class="plan-meta-label">Sets</span>
           <div class="mini-stepper">
-            <button onclick="Workout._adjustPlan('${type}',${i},'sets',-1)">${svgArrow('minus')}</button>
+            <button onclick="Workout._adjustPlan('${type}',${i},'sets',-1)" aria-label="Decrease sets">${svgArrow('minus')}</button>
             <span id="ps-sets-${type}-${i}">${ex.sets}</span>
-            <button onclick="Workout._adjustPlan('${type}',${i},'sets',1)">${svgArrow('plus')}</button>
+            <button onclick="Workout._adjustPlan('${type}',${i},'sets',1)" aria-label="Increase sets">${svgArrow('plus')}</button>
           </div>
           <span class="plan-meta-label">Reps</span>
           <div class="mini-stepper">
-            <button onclick="Workout._adjustPlan('${type}',${i},'reps',-1)">${svgArrow('minus')}</button>
+            <button onclick="Workout._adjustPlan('${type}',${i},'reps',-1)" aria-label="Decrease reps">${svgArrow('minus')}</button>
             <span id="ps-reps-${type}-${i}">${ex.reps}</span>
-            <button onclick="Workout._adjustPlan('${type}',${i},'reps',1)">${svgArrow('plus')}</button>
+            <button onclick="Workout._adjustPlan('${type}',${i},'reps',1)" aria-label="Increase reps">${svgArrow('plus')}</button>
           </div>
-          <button class="plan-delete" onclick="Workout._deletePlanEx('${type}',${i})">
+          <button class="plan-delete" onclick="Workout._deletePlanEx('${type}',${i})" aria-label="Remove exercise">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.5" stroke-linecap="round" width="14" height="14">
               <polyline points="3 6 5 6 21 6"/>
@@ -254,7 +254,7 @@ function openPlanEditor() {
         <div class="modal-handle"></div>
         <div class="modal-header">
           <div class="modal-title">Edit Plan</div>
-          <button class="btn-icon-sm" onclick="Workout._closePlanEditor()">
+          <button class="btn-icon-sm" onclick="Workout._closePlanEditor()" aria-label="Close plan editor">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.5" stroke-linecap="round" width="18" height="18">
               <line x1="18" y1="6" x2="6" y2="18"/>
@@ -520,7 +520,7 @@ function renderExerciseCard(ex, ei) {
             </span>
           </div>
         </div>
-        <button class="ex-replace-btn" title="Replace exercise"
+        <button class="ex-replace-btn" title="Replace exercise" aria-label="Replace exercise"
                 onclick="event.stopPropagation();Workout.openReplaceExModal(${ei})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -548,7 +548,7 @@ function renderExerciseCard(ex, ei) {
           <span style="width:40px"></span>
         </div>
         ${ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)).join('')}
-        <button class="add-set-btn" onclick="Workout.addSet(${ei})">
+        <button class="add-set-btn" onclick="Workout.addSet(${ei})" aria-label="Add set">
           ${svgArrow('plus')} Add Set
         </button>
       </div>
@@ -564,7 +564,7 @@ function renderSetRow(ex, ei, set, si) {
       <div class="stepper" id="sw-${ei}-${si}">
         <button class="stepper-btn ${set.weight <= 0 ? 'at-min' : ''}"
           ontouchstart="Workout.stepWeight(${ei},${si},-2.5);event.preventDefault()"
-          onclick="Workout.stepWeight(${ei},${si},-2.5)">
+          onclick="Workout.stepWeight(${ei},${si},-2.5)" aria-label="Decrease weight">
           ${svgArrow('minus')}
         </button>
         <span class="stepper-val" id="swv-${ei}-${si}"
@@ -576,7 +576,7 @@ function renderSetRow(ex, ei, set, si) {
           onkeydown="if(event.key==='Enter')this.blur()">
         <button class="stepper-btn"
           ontouchstart="Workout.stepWeight(${ei},${si},2.5);event.preventDefault()"
-          onclick="Workout.stepWeight(${ei},${si},2.5)">
+          onclick="Workout.stepWeight(${ei},${si},2.5)" aria-label="Increase weight">
           ${svgArrow('plus')}
         </button>
       </div>
@@ -585,7 +585,7 @@ function renderSetRow(ex, ei, set, si) {
       <div class="stepper" id="sr-${ei}-${si}">
         <button class="stepper-btn ${set.reps <= 1 ? 'at-min' : ''}"
           ontouchstart="Workout.stepReps(${ei},${si},-1);event.preventDefault()"
-          onclick="Workout.stepReps(${ei},${si},-1)">
+          onclick="Workout.stepReps(${ei},${si},-1)" aria-label="Decrease reps">
           ${svgArrow('down')}
         </button>
         <span class="stepper-val" id="srv-${ei}-${si}"
@@ -597,7 +597,7 @@ function renderSetRow(ex, ei, set, si) {
           onkeydown="if(event.key==='Enter')this.blur()">
         <button class="stepper-btn"
           ontouchstart="Workout.stepReps(${ei},${si},1);event.preventDefault()"
-          onclick="Workout.stepReps(${ei},${si},1)">
+          onclick="Workout.stepReps(${ei},${si},1)" aria-label="Increase reps">
           ${svgArrow('up')}
         </button>
       </div>
@@ -617,7 +617,7 @@ function renderSetRow(ex, ei, set, si) {
 
       <!-- Done check -->
       <button class="set-check ${set.done ? 'done' : ''}" id="chk-${ei}-${si}"
-              onclick="Workout.toggleSet(${ei},${si})">
+              onclick="Workout.toggleSet(${ei},${si})" aria-label="Mark set complete">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2.5" stroke-linecap="round" width="16" height="16">
           <polyline points="20 6 9 17 4 12"/>
@@ -848,7 +848,7 @@ function openReplaceExModal(ei) {
       <div class="modal-handle"></div>
       <div class="modal-header">
         <div class="modal-title">Replace Exercise</div>
-        <button class="btn-icon-sm" id="replace-ex-close">
+        <button class="btn-icon-sm" id="replace-ex-close" aria-label="Close exercise picker">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="18" height="18">
             <line x1="18" y1="6" x2="6" y2="18"/>
