@@ -421,3 +421,231 @@
     transform: scale(1.02);
   }
 }
+
+/* ════════════════════════════════════════════════
+   RECOMMENDATIONS MODAL
+   ════════════════════════════════════════════════ */
+
+.recommendations-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: var(--sp-2) 0;
+  max-height: 35vh;
+  overflow-y: auto;
+}
+
+.rec-ex-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 12px var(--sp-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  transition: background var(--t-fast);
+}
+
+.rec-ex-row:hover {
+  background: var(--c-surface-h);
+}
+
+.rec-ex-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.rec-ex-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rec-ex-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rec-ex-reason {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-text-3);
+}
+
+.rec-ex-weights {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.rec-old {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text-3);
+  text-decoration: line-through;
+}
+
+.rec-arrow {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-accent);
+}
+
+.rec-new {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--c-accent);
+  text-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
+}
+
+.rec-more {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text-3);
+  text-align: center;
+  padding: var(--sp-1);
+}
+
+.ai-notes-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--r-m);
+  margin-bottom: var(--sp-1);
+}
+
+.ai-notes-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.ai-notes-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-text-2);
+  line-height: 1.5;
+}
+
+.ai-notes-text strong {
+  color: var(--c-text-1);
+  font-weight: 700;
+}
+
+.fatigue-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  background: rgba(255, 179, 0, 0.08);
+  border: 1px solid rgba(255, 179, 0, 0.2);
+  border-radius: var(--r-m);
+  margin-bottom: var(--sp-1);
+}
+
+.fatigue-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.fatigue-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-text-2);
+}
+
+/* Recommendations card on Dashboard */
+.recommendations-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-l);
+  padding: var(--sp-2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rec-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 10px var(--sp-2);
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  transition: background var(--t-fast);
+}
+
+.rec-item:hover {
+  background: var(--c-bg-3);
+}
+
+.rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.rec-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rec-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rec-reason {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-text-3);
+}
+
+.rec-weights {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.rec-old {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-text-3);
+  text-decoration: line-through;
+}
+
+.rec-arrow {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-accent);
+}
+
+.rec-new {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--c-accent);
+  text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+}

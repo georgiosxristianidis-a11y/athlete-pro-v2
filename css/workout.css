@@ -1092,3 +1092,235 @@
   color: var(--c-text-3);
   text-decoration: line-through;
 }
+
+/* ════════════════════════════════════════════════
+   IN-WORKOUT AI BUBLE + CHAT
+   ════════════════════════════════════════════════ */
+
+/* AI Bubble — floating button */
+.workout-ai-bubble {
+  position: fixed;
+  top: calc(var(--safe-top) + var(--sp-4));
+  right: var(--sp-4);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--c-accent), #00d486);
+  box-shadow: 0 4px 12px rgba(0, 200, 110, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: transform 0.2s, opacity 0.3s;
+  animation: ai-pulse 2s ease-in-out infinite;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.workout-ai-bubble[hidden] {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.8);
+}
+
+.workout-ai-bubble:hover {
+  transform: scale(1.05);
+}
+
+.bubble-icon {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes ai-pulse {
+  0%, 100% { box-shadow: 0 4px 12px rgba(0, 200, 110, 0.4); }
+  50% { box-shadow: 0 4px 20px rgba(0, 200, 110, 0.6); }
+}
+
+/* Mini Chat Overlay */
+.workout-ai-chat {
+  position: fixed;
+  bottom: calc(var(--safe-bottom) + var(--sp-2));
+  right: var(--sp-2);
+  left: var(--sp-2);
+  max-width: 400px;
+  margin: 0 auto;
+  background: var(--c-surface);
+  border-radius: var(--r-l);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 1001;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 60vh;
+  border: 1px solid var(--c-border);
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface);
+}
+
+.chat-title {
+  font-weight: 600;
+  color: var(--c-text-1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.chat-title::before {
+  content: '🤖';
+  font-size: 1.2rem;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-height: 120px;
+}
+
+.chat-message {
+  max-width: 85%;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-m);
+  line-height: 1.4;
+  font-size: 0.9rem;
+  word-wrap: break-word;
+}
+
+.chat-message.user {
+  align-self: flex-end;
+  background: var(--c-accent);
+  color: var(--c-text-inverse);
+  border-bottom-right-radius: var(--r-s);
+}
+
+.chat-message.ai {
+  align-self: flex-start;
+  background: var(--c-surface-2);
+  color: var(--c-text-1);
+  border-bottom-left-radius: var(--r-s);
+}
+
+.chat-input-row {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-top: 1px solid var(--c-border);
+}
+
+.chat-input {
+  flex: 1;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-full);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+  color: var(--c-text-1);
+  font-size: 0.9rem;
+}
+
+.chat-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--c-accent);
+}
+
+/* Quick Actions */
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-surface-2);
+  border-top: 1px solid var(--c-border);
+}
+
+.quick-action-chip {
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-full);
+  background: var(--c-surface);
+  color: var(--c-text-1);
+  border: 1px solid var(--c-border);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.quick-action-chip:hover {
+  background: var(--c-surface-3);
+  border-color: var(--c-accent);
+}
+
+.quick-action-chip:active {
+  transform: scale(0.95);
+}
+
+/* Tablet: larger bubble */
+@media (min-width: 768px) {
+  .workout-ai-bubble {
+    width: 64px;
+    height: 64px;
+  }
+
+  .bubble-icon {
+    font-size: 1.75rem;
+  }
+}
+
+/* ════════════════════════════════════════════════
+   PROGRESSIVE OVERLOAD — INLINE SUGGESTIONS
+   ════════════════════════════════════════════════ */
+
+.progression-suggestion {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border-radius: var(--r-s);
+  font-weight: 500;
+}
+
+.progression-pr {
+  background: rgba(0, 230, 118, 0.15);
+  color: #00e676;
+}
+
+.progression-recommended {
+  background: rgba(33, 150, 243, 0.15);
+  color: #2196f3;
+}
+
+.progression-normal {
+  background: var(--c-surface-2);
+  color: var(--c-text-3);
+}
+
+.progression-suggestion small {
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+/* Set card integration */
+.set-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-2);
+}
+
+.set-label {
+  font-weight: 600;
+  color: var(--c-text-2);
+}

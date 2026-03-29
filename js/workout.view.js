@@ -9,6 +9,8 @@ import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
 import { RestTimer } from './rest-timer.js'; // eslint-disable-line no-unused-vars
 import { State, EXERCISE_LIBRARY, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, tryRestoreSession } from './workout.store.js';
+import { generateRecommendations, getRecommendations } from './claude.store.js';
+import { Heatmap } from './claude.store.js';
 
 /* ── Plan editor tab closures (module-level) ── */
 let _planEditorActiveTab = () => 'push';
@@ -547,7 +549,7 @@ function renderExerciseCard(ex, ei) {
           <span class="set-col-label">RPE</span>
           <span style="width:40px"></span>
         </div>
-        ${ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)).join('')}
+        ${(await Promise.all(ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)))).join('')}
         <button class="add-set-btn" onclick="Workout.addSet(${ei})" aria-label="Add set">
           ${svgArrow('plus')} Add Set
         </button>
@@ -555,10 +557,25 @@ function renderExerciseCard(ex, ei) {
     </div>`;
 }
 
-function renderSetRow(ex, ei, set, si) {
+async function renderSetRow(ex, ei, set, si) {
+  // Get progression suggestion
+  const { renderInlineSuggestion } = await import('./progressive-overload.js');
+  const completedSets = ex.sets.filter((s, i) => i < si && s.done).length;
+  const suggestion = await renderInlineSuggestion(
+    ex.name,
+    set.weight,
+    completedSets,
+    ex.sets.length,
+    {
+      lastSessionWeight: await _getLastSessionWeight(ex.name),
+      history: await _getExerciseHistory(ex.name)
+    }
+  );
+
   return `
     <div class="set-row ${set.done ? 'set-done' : ''}" id="set-row-${ei}-${si}">
       <span class="set-num">${si + 1}</span>
+      ${suggestion.html}
 
       <!-- Weight stepper -->
       <div class="stepper" id="sw-${ei}-${si}">
@@ -779,8 +796,27 @@ function toggleSet(ei, si) {
   _updateLiveStats();
   persistSession();
 
-  if (set.done) _startRest(_restDuration);
-  else _stopRest();
+  // Trigger AI proactive check after set completion
+  if (set.done) {
+    _checkAIProactive();
+    _startRest(_restDuration);
+  } else {
+    _stopRest();
+  }
+}
+
+/**
+ * Check AI for proactive suggestions after set completion.
+ */
+async function _checkAIProactive() {
+  try {
+    const { checkProactiveTrigger } = await import('./workout-ai.view.js');
+    if (checkProactiveTrigger) {
+      await checkProactiveTrigger();
+    }
+  } catch (err) {
+    console.warn('[_checkAIProactive] Error:', err);
+  }
 }
 
 function _startRest(seconds) {
@@ -987,7 +1023,7 @@ function _updateLiveStats() {
    COMPLETE SESSION
    ════════════════════════════════════════════════════════ */
 /**
- * Complete the current workout session — save to DB, reset state, navigate home.
+ * Complete the current workout session — save to DB, generate recommendations, navigate home.
  * @returns {Promise<void>}
  */
 async function completeSession() {
@@ -1021,9 +1057,38 @@ async function completeSession() {
   await DB.Workouts.save(session);
   await DB.Events.log('workout_complete', { type: State.type, tonnage });
   localStorage.removeItem(SESSION_KEY);
+  localStorage.setItem('ap-last-workout-type', State.type);
 
   Toast.show(`Session saved — ${Math.round(tonnage)} kg`, 'success');
   _stopRest();
+
+  // Generate recommendations for next session of this type
+  const nextType = { push: 'pull', pull: 'legs', legs: 'push' }[State.type] || 'push';
+  const plan = loadPlan();
+  const nextSessionPlan = plan[nextType] || [];
+
+  if (nextSessionPlan.length) {
+    try {
+      const [fatigue, orms] = await Promise.all([
+        Heatmap.compute(),
+        DB.OneRM.getAll(),
+      ]);
+
+      const recommendations = await generateRecommendations(
+        session,
+        fatigue,
+        orms,
+        nextSessionPlan
+      );
+
+      if (recommendations) {
+        // Show modal before navigating away
+        await _showRecommendationsModal(recommendations);
+      }
+    } catch (err) {
+      console.warn('[completeSession] Recommendations failed:', err.message);
+    }
+  }
 
   // Back to home
   State.phase = 'select';
@@ -1231,11 +1296,52 @@ function _haptic(ms = 10) {
 /* ════════════════════════════════════════════════════════
    INIT — orchestrator
    ════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   PROGRESSIVE OVERLOAD HELPERS
+   ══════════════════════════════════════════════ */
+
+/**
+ * Get last session weight for an exercise.
+ * @param {string} exerciseName
+ * @returns {Promise<number>}
+ */
+async function _getLastSessionWeight(exerciseName) {
+  const workouts = await DB.Workouts.getAll();
+  const last = workouts.reverse().find(w =>
+    (w.exercises || []).some(e => e.name === exerciseName)
+  );
+  const ex = last?.exercises?.find(e => e.name === exerciseName);
+  return ex?.sets?.[0]?.weight || 0;
+}
+
+/**
+ * Get exercise history (last 10 sessions).
+ * @param {string} exerciseName
+ * @returns {Promise<Array<{weight: number, oneRM: number|null}>>}
+ */
+async function _getExerciseHistory(exerciseName) {
+  const workouts = await DB.Workouts.getAll();
+  return workouts
+    .filter(w => (w.exercises || []).some(e => e.name === exerciseName))
+    .slice(-10)
+    .map(w => {
+      const ex = w.exercises.find(e => e.name === exerciseName);
+      return {
+        weight: ex?.sets?.[0]?.weight || 0,
+        oneRM: null // Could calculate Epley if needed
+      };
+    });
+}
+
+/* ══════════════════════════════════════════════
+   INITIALIZATION
+   ══════════════════════════════════════════════ */
+
 /**
  * Initialize the workout module. Try to restore an interrupted session.
  * @returns {boolean} true if a session was restored
  */
-function init() {
+async function init() {
   const restored = tryRestoreSession();
   if (restored) {
     Timer.restore();
@@ -1245,10 +1351,109 @@ function init() {
     });
     renderActive();
     window.Toast?.show('Session restored', 'info');
+    // Initialize in-workout AI
+    const { init: initAI } = await import('./workout-ai.view.js');
+    initAI();
     return true;
   }
   renderSelect();
+  // Initialize in-workout AI (will show bubble when workout starts)
+  const { init: initAI } = await import('./workout-ai.view.js');
+  initAI();
   return false;
+}
+
+/* ════════════════════════════════════════════════════════
+   RECOMMENDATIONS MODAL
+   ════════════════════════════════════════════════════════ */
+/**
+ * Show modal with workout recommendations before navigating to Dashboard.
+ * @param {Object} recs — recommendations object
+ * @returns {Promise<void>}
+ */
+async function _showRecommendationsModal(recs) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '5000';
+
+    const nextTypeLabel = recs.type.charAt(0).toUpperCase() + recs.type.slice(1);
+
+    overlay.innerHTML = `
+      <div class="modal-sheet" style="max-width:520px;margin:auto;border-radius:var(--r-xl)">
+        <div class="modal-handle"></div>
+
+        <div class="section-header">
+          <span class="section-label">Next ${nextTypeLabel} Session</span>
+          <span class="badge badge-green">AI Powered</span>
+        </div>
+
+        <div class="recommendations-modal">
+          ${recs.exercises
+            .filter((ex) => ex.recommendedWeight > ex.currentWeight || ex.reason.includes('Progressive'))
+            .slice(0, 5)
+            .map(
+              (ex) => `
+              <div class="rec-ex-row">
+                <div class="rec-ex-dot" style="background:var(--c-accent)"></div>
+                <div class="rec-ex-info">
+                  <span class="rec-ex-name">${ex.name}</span>
+                  <span class="rec-ex-reason">${ex.reason}</span>
+                </div>
+                <div class="rec-ex-weights">
+                  <span class="rec-old">${ex.currentWeight}kg</span>
+                  <span class="rec-arrow">→</span>
+                  <span class="rec-new">${ex.recommendedWeight}kg</span>
+                </div>
+              </div>`
+            )
+            .join('')}
+          ${recs.exercises.filter((ex) => ex.recommendedWeight > ex.currentWeight).length > 5
+            ? `<div class="rec-more">+${recs.exercises.filter((ex) => ex.recommendedWeight > ex.currentWeight).length - 5} more exercises</div>`
+            : ''}
+        </div>
+
+        ${recs.aiNotes
+          ? `
+          <div class="ai-notes-card">
+            <div class="ai-notes-icon">💡</div>
+            <div class="ai-notes-text">
+              <strong>Coach's Note:</strong><br>
+              ${recs.aiNotes.substring(0, 200)}${recs.aiNotes.length > 200 ? '...' : ''}
+            </div>
+          </div>`
+          : ''}
+
+        ${recs.highFatigue?.length
+          ? `
+          <div class="fatigue-warning">
+            <span class="fatigue-icon">⚠️</span>
+            <span class="fatigue-text">High fatigue: ${recs.highFatigue.join(', ')}. Consider lighter weights.</span>
+          </div>`
+          : ''}
+
+        <button class="btn btn-primary btn-full" id="rec-got-it">
+          Got it — Let's go!
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('visible'));
+
+    const close = () => {
+      overlay.classList.remove('visible');
+      setTimeout(() => {
+        overlay.remove();
+        resolve();
+      }, 300);
+    };
+
+    overlay.querySelector('#rec-got-it')?.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close();
+    });
+  });
 }
 
 /* ── Public API ── */

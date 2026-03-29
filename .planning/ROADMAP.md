@@ -86,17 +86,46 @@ Plans:
 
 **Requirements:** AI-1, AI-2, AI-3, AI-4
 
+**Status:** Planning ✅ Complete — Ready for execute-phase
+
+**UX Decisions (Fixed 2026-03-28):**
+- **Program Generation:** Auto for new users + on-demand regeneration, JSON output via `/api/generate-plan`, preview + accept
+- **Post-workout Summary:** Auto-show after "Finish Workout" + "View Summary" button for reaccess
+- **AI Bubble:** Proactive-only (hidden by default, appears when AI has suggestion)
+- **Progressive Overload:** Inline suggestions in set cards, color-coded (🟢 PR / 🔵 Recommended / ⚪ Normal)
+- **Plateau Alert:** Weekly summary only (not per-session)
+
+**Plans:**
+- [x] 04-01-PLAN.md — AI Program Generation (AI-1)
+- [x] 04-02-PLAN.md — In-Workout AI Dialog (AI-3)
+- [x] 04-03-PLAN.md — Progressive Overload Engine (AI-4)
+- [x] 04-VERIFICATION.md — Phase 4 verification tests
+
 **Tasks:**
-- AI program generation: on first use (or on request), AI generates a full PPL weekly schedule tailored to user profile, goals, and available equipment
-- Adaptive load: after each completed workout, AI analyzes tonnage, fatigue scores, and RPE to recommend next-session weights and volume adjustments
-- In-workout dialog: AI coach accessible during active workout session — can answer questions, suggest modifications, and respond to RPE feedback in real time via SSE
-- Progressive overload engine: systematic recommendations for weight/rep increases based on historical 1RM trends and session performance
+- [x] ~~Adaptive load: after each completed workout, AI analyzes tonnage, fatigue scores, and RPE to recommend next-session weights and volume adjustments~~ ✅ DONE (AI-2)
+- [ ] AI program generation: on first use (or on request), AI generates a full PPL weekly schedule tailored to user profile, goals, and available equipment
+- [ ] In-workout dialog: AI coach accessible during active workout session — can answer questions, suggest modifications, and respond to RPE feedback in real time via SSE
+- [ ] Progressive overload engine: systematic recommendations for weight/rep increases based on historical 1RM trends and session performance
 
 **Success criteria:**
-1. New users receive a generated PPL program within their first session without manual configuration
-2. Post-workout summary includes AI-generated load recommendations for the next session of the same type
-3. AI chat is accessible and functional from within the active workout screen (not only from the AI panel)
-4. Progressive overload suggestions appear on the exercise selection screen based on 1RM history
+1. [x] ✅ Post-workout summary includes AI-generated load recommendations for the next session of the same type
+2. [ ] New users receive a generated PPL program within their first session without manual configuration
+3. [ ] AI chat is accessible and functional from within the active workout screen (not only from the AI panel)
+4. [ ] Progressive overload suggestions appear on the exercise selection screen based on 1RM history
+
+**Implementation notes (AI-2):**
+- Hybrid approach: simple progression (+2.5kg) baseline + AI for notes/warnings
+- Modal shown immediately after workout completion
+- Dashboard card displays recommendations (7-day expiry)
+- localStorage persistence: `ap-recommendations-{type}`
+
+**Documentation:**
+- `.planning/phases/04-ai-autopilot/04-CONTEXT.md` — Full UX decisions and research
+- `.planning/phases/04-ai-autopilot/04-01-PLAN.md` — AI Program Generation plan
+- `.planning/phases/04-ai-autopilot/04-02-PLAN.md` — In-Workout AI Dialog plan
+- `.planning/phases/04-ai-autopilot/04-03-PLAN.md` — Progressive Overload Engine plan
+- `.planning/phases/04-ai-autopilot/04-VERIFICATION.md` — Verification tests
+- `~/.claude/projects/memory/phase4_ux_decisions.md` — User memory reference
 
 ---
 

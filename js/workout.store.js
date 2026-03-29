@@ -205,6 +205,41 @@ export function persistSession() {
 }
 
 /**
+ * Check if user needs program generation (new user without custom plan).
+ * @returns {boolean}
+ */
+export function needsProgramGeneration() {
+  const hasCustomPlan = localStorage.getItem(PLAN_KEY);
+  return !hasCustomPlan;
+}
+
+/**
+ * Fetch AI-generated program from /api/generate-plan.
+ * @param {Object} options — { workoutHistory, oneRMs, goals, experience }
+ * @returns {Promise<Object>} — { push:[], pull:[], legs:[] }
+ */
+export async function fetchGeneratedPlan(options = {}) {
+  const response = await fetch('/api/generate-plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      workoutHistory: options.workoutHistory || [],
+      oneRMs: options.oneRMs || [],
+      goals: options.goals || 'strength',
+      experience: options.experience || 'intermediate'
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.plan;
+}
+
+/**
  * Try to restore an interrupted workout session from localStorage.
  * Returns the restored session data if found, null otherwise.
  * DOES NOT call Nav or Toast — caller handles navigation and notifications.

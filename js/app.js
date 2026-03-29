@@ -97,10 +97,56 @@ openDB()
   });
 
 /* ── Claude FAB (lazy-loaded) ── */
-import('./claude.view.js').then(({ Claude }) => {
+import('./claude.view.js').then(({ Claude, renderRegenerateButton }) => {
   window.Claude = Claude;
   Claude.renderFAB();
+  // Render regenerate button (hidden by default, shown when plan exists)
+  if (renderRegenerateButton) {
+    renderRegenerateButton();
+  }
 });
+
+/* ── New User Onboarding — AI Program Generation ── */
+(async function _checkNewUserOnboarding() {
+  const workoutStore = await import('./workout.store.js');
+  const claudeStore = await import('./claude.store.js');
+  const claudeView = await import('./claude.view.js');
+
+  // Check if user needs plan generation
+  if (!workoutStore.needsProgramGeneration()) {
+    return;
+  }
+
+  // Load context from DB
+  const [workoutHistory, oneRMs] = await Promise.all([
+    DB.Workouts.getAll(),
+    DB.OneRM.getAll()
+  ]);
+
+  // Generate plan silently in background
+  try {
+    const plan = await workoutStore.fetchGeneratedPlan({
+      workoutHistory: workoutHistory.slice(0, 10),
+      oneRMs: oneRMs.slice(0, 5)
+    });
+
+    // Auto-accept for new users (no history)
+    if (!workoutHistory.length) {
+      workoutStore.savePlan(plan);
+      Toast.show('🎉 Welcome! Your personalized PPL plan is ready', 'success');
+      // Update regenerate button visibility
+      if (claudeView.updateRegenerateButton) claudeView.updateRegenerateButton();
+    } else {
+      // Show preview for users with history
+      claudeStore.ClaudeState.generatedPlan = plan;
+      claudeView.showPlanPreview(plan);
+    }
+  } catch (err) {
+    console.warn('[_checkNewUserOnboarding] Generation failed:', err);
+    // Silently use DEFAULT_PLAN
+    workoutStore.savePlan(workoutStore.DEFAULT_PLAN);
+  }
+})();
 
 /* ── Service Worker ── */
 if ('serviceWorker' in navigator) {

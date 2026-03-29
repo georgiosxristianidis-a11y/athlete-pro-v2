@@ -469,3 +469,92 @@
     background: #7c3aed;
   }
 }
+
+/* ════════════════════════════════════════════════════════
+   PLAN PREVIEW MODAL — AI Program Generation
+   ════════════════════════════════════════════════════════ */
+
+.plan-preview details {
+  margin: var(--sp-3) 0;
+  border: 1px solid var(--c-surface-2);
+  border-radius: var(--r-m);
+  overflow: hidden;
+}
+
+.plan-preview summary {
+  padding: var(--sp-3);
+  background: var(--c-surface-1);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--c-text-1);
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.plan-preview summary::-webkit-details-marker {
+  display: none;
+}
+
+.plan-preview summary::after {
+  content: '▾';
+  font-size: 1.2rem;
+  transition: transform 0.2s;
+}
+
+.plan-preview details[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.plan-exercises {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.plan-exercises li {
+  padding: var(--sp-2) var(--sp-3);
+  border-top: 1px solid var(--c-surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plan-exercises li strong {
+  color: var(--c-text-1);
+  font-size: 0.95rem;
+}
+
+.plan-exercises li small {
+  color: var(--c-text-3);
+  font-size: 0.85rem;
+}
+
+/* Regenerate button in Claude panel */
+.regenerate-plan-btn {
+  position: fixed;
+  bottom: calc(var(--safe-bottom) + 180px);
+  right: calc(16px + 88px);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--c-surface-1);
+  border: 2px solid var(--c-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 499;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.regenerate-plan-btn:hover {
+  background: var(--c-surface-2);
+  transform: scale(1.05);
+}
+
+.regenerate-plan-btn:active {
+  transform: scale(0.95);
+}

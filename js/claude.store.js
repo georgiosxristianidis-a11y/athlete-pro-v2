@@ -111,6 +111,8 @@ let _context = null;
 let _chatHistory = [];
 /** @type {boolean} */
 let _streaming = false;
+/** @type {Object|null} */
+let _generatedPlan = null;
 
 export const ClaudeState = {
   /** @returns {boolean} */
@@ -129,7 +131,189 @@ export const ClaudeState = {
   get isStreaming() { return _streaming; },
   /** @param {boolean} v */
   set isStreaming(v) { _streaming = v; },
+  /** @returns {Object|null} */
+  get generatedPlan() { return _generatedPlan; },
+  /** @param {Object|null} v */
+  set generatedPlan(v) { _generatedPlan = v; },
 };
+
+/* ══════════════════════════════════════════════
+   RECOMMENDATIONS — generate adaptive load suggestions
+   ══════════════════════════════════════════════ */
+
+const REC_KEY = 'ap-recommendations';
+
+/**
+ * Generate workout recommendations using hybrid approach:
+ * - Simple progression for baseline weights
+ * - AI for complex cases (plateaus, fatigue management)
+ * @param {Object} workout — completed workout session
+ * @param {Object} fatigue — muscle fatigue scores
+ * @param {Array} orms — estimated 1RMs
+ * @param {Array} nextSessionPlan — planned exercises for next session
+ * @returns {Promise<Object>} Recommendations object
+ */
+export async function generateRecommendations(workout, fatigue, orms, nextSessionPlan) {
+  if (!workout || !nextSessionPlan?.length) {
+    console.warn('[generateRecommendations] Missing workout or plan');
+    return null;
+  }
+
+  // Step 1: Compute simple progression baseline
+  const simpleRecs = _computeSimpleProgression(workout, nextSessionPlan);
+
+  // Step 2: Get AI analysis for complex cases
+  let aiNotes = null;
+  try {
+    aiNotes = await _fetchAIRecommendations(workout, fatigue, orms, nextSessionPlan);
+  } catch (err) {
+    console.warn('[generateRecommendations] AI fallback:', err.message);
+  }
+
+  // Step 3: Merge simple recs with AI insights
+  const recommendations = {
+    type: workout.type,
+    generatedAt: Date.now(),
+    exercises: simpleRecs,
+    aiNotes: aiNotes?.notes || null,
+    highFatigue: Object.entries(fatigue)
+      .filter(([, v]) => v > 0.5)
+      .map(([m]) => m),
+  };
+
+  // Step 4: Save to localStorage
+  _saveRecommendations(recommendations);
+
+  return recommendations;
+}
+
+/**
+ * Compute simple progressive progression.
+ * @param {Object} lastWorkout — completed workout
+ * @param {Array} nextPlan — next session plan
+ * @returns {Array} Exercise recommendations
+ */
+function _computeSimpleProgression(lastWorkout, nextPlan) {
+  const lastExercises = lastWorkout.exercises || [];
+
+  return nextPlan.map((nextEx) => {
+    const lastEx = lastExercises.find((e) => e.name === nextEx.name);
+    const lastWeight = lastEx?.sets?.[0]?.weight || nextEx.weight;
+    const lastSets = lastEx?.sets?.filter((s) => s.done).length || 0;
+    const targetSets = nextEx.sets;
+
+    // Progressive overload: if all sets completed → +2.5kg
+    let recommendedWeight = lastWeight;
+    let reason = 'Maintain current weight';
+
+    if (lastSets >= targetSets && lastSets > 0) {
+      recommendedWeight = Math.round(lastWeight * 2 + 2.5) / 2; // Round to nearest 0.5
+      reason = 'Progressive overload: all sets completed';
+    } else if (lastSets > 0 && lastSets < targetSets) {
+      recommendedWeight = lastWeight;
+      reason = 'Build consistency at current weight';
+    }
+
+    return {
+      name: nextEx.name,
+      sets: nextEx.sets,
+      reps: nextEx.reps,
+      currentWeight: lastWeight,
+      recommendedWeight,
+      delta: recommendedWeight > lastWeight ? `+${(recommendedWeight - lastWeight).toFixed(1)}kg` : '0',
+      reason,
+    };
+  });
+}
+
+/**
+ * Fetch AI-powered recommendations for complex cases.
+ * @param {Object} workout — completed workout
+ * @param {Object} fatigue — muscle fatigue scores
+ * @param {Array} orms — estimated 1RMs
+ * @param {Array} nextPlan — next session plan
+ * @returns {Promise<{notes: string|null}>} AI insights
+ */
+async function _fetchAIRecommendations(workout, fatigue, orms, nextPlan) {
+  const history = await DB.Workouts.getAll();
+  const recentHistory = history.filter((w) => w.timestamp > Date.now() - 14 * 24 * 3600000);
+
+  const response = await fetch('/api/recommendations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      workout: {
+        type: workout.type,
+        tonnage: workout.tonnage,
+        duration: workout.duration,
+        exercises: (workout.exercises || []).map((ex) => ({
+          name: ex.name,
+          sets: (ex.sets || []).map((s) => ({
+            weight: s.weight,
+            reps: s.reps,
+            done: s.done,
+            rpe: s.rpe,
+          })),
+        })),
+      },
+      fatigue: Object.fromEntries(
+        Object.entries(fatigue).filter(([, v]) => v > 0.3).map(([k, v]) => [k, Math.round(v * 100)])
+      ),
+      topLifts: orms.slice(0, 5).map((o) => ({ exercise: o.id, oneRM: o.value })),
+      history: recentHistory.length,
+      nextSessionPlan: nextPlan.map((ex) => ({
+        name: ex.name,
+        weight: ex.weight,
+        sets: ex.sets,
+        reps: ex.reps,
+      })),
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  return { notes: data.aiNotes || null };
+}
+
+/**
+ * Save recommendations to localStorage.
+ * @param {Object} recs — recommendations object
+ */
+function _saveRecommendations(recs) {
+  try {
+    const key = `${REC_KEY}-${recs.type}`;
+    localStorage.setItem(key, JSON.stringify(recs));
+  } catch (err) {
+    console.warn('[saveRecommendations] localStorage failed:', err.message);
+  }
+}
+
+/**
+ * Get stored recommendations for a workout type.
+ * @param {string} type — 'push' | 'pull' | 'legs'
+ * @returns {Object|null} Recommendations or null
+ */
+export function getRecommendations(type) {
+  try {
+    const key = `${REC_KEY}-${type}`;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+
+    const recs = JSON.parse(raw);
+    // Expire after 7 days
+    if (Date.now() - recs.generatedAt > 7 * 24 * 3600000) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return recs;
+  } catch {
+    return null;
+  }
+}
 
 /* ══════════════════════════════════════════════
    FETCH COACH — SSE streaming from /api/coach

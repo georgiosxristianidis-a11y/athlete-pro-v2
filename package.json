@@ -1,7 +1,7 @@
 {
-  "name": "athlete-pro",
+  "name": "fit-elite",
   "version": "1.0.0",
-  "description": "PPL Workout Tracker with Claude AI Coach",
+  "description": "PPL Workout Tracker with AI Autopilot Coach",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

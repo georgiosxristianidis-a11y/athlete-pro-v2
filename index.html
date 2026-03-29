@@ -734,6 +734,21 @@
     <!-- Toast container -->
     <div id="toast-wrap"></div>
 
+    <!-- Plan Preview Modal (AI Program Generation) -->
+    <div id="plan-preview-modal" class="modal-overlay" hidden>
+      <div class="modal-sheet" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <div class="modal-header">
+          <h2>🏋️ Your Personalized PPL Plan</h2>
+          <button class="btn-icon-sm" onclick="window.ClaudeView?.hidePlanPreview()">✕</button>
+        </div>
+        <div class="modal-body" id="plan-preview-content"></div>
+        <div class="modal-footer">
+          <button class="btn-primary" onclick="window.ClaudeView?.acceptGeneratedPlan()">✅ Accept Plan</button>
+          <button class="btn-icon-nav" onclick="window.ClaudeView?.regeneratePlan()">🔄 Regenerate</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── App entry (ES Module) ── -->
     <script type="module" src="js/app.js"></script>
   </body>

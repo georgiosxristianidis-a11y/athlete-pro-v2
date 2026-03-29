@@ -4,6 +4,7 @@
    ════════════════════════════════════════════════ */
 
 import { DB, weeklyVolumeFrom, monthlyVolumeFrom, monthlyCountFrom, pplTonnageFrom } from './db.js';
+import { getRecommendations } from './claude.store.js';
 
 export const Dashboard = (() => {
   const TYPE_COLOR = {
@@ -72,6 +73,15 @@ export const Dashboard = (() => {
         </div>
       </div>
 
+      <!-- Weekly Summary Chip -->
+      <div class="stat-chip weekly-summary-chip" onclick="window.Dashboard.showWeeklySummary()" style="cursor:pointer;margin-top:var(--sp-2)">
+        <div class="stat-chip-icon">📈</div>
+        <div class="stat-chip-content">
+          <div class="stat-chip-label">This Week</div>
+          <div class="stat-chip-val" id="weekly-summary-value">--</div>
+        </div>
+      </div>
+
       <!-- Streak card -->
       <div class="streak-card">
         <div class="streak-header">
@@ -126,12 +136,34 @@ export const Dashboard = (() => {
       </div>
       <div id="dash-orm-list"></div>
 
+      <!-- Recommendations -->
+      <div id="recommendations-section" style="display:none;margin-top:var(--sp-2)"></div>
+
       <!-- Recent sessions -->
       <div class="section-header">
         <span class="section-label">Recent</span>
       </div>
       <div id="recent-list"></div>
     `;
+  }
+
+  function _buildEmptyState() {
+    return `
+      <div class="empty-dashboard">
+        <div class="empty-dash-mascot">
+          <video src="assets/panda-idle.mp4" autoplay loop muted playsinline></video>
+        </div>
+        <div class="empty-dash-title">Ready to crush it?</div>
+        <div class="empty-dash-sub">Your training log is empty. Time to fix that.</div>
+        <button class="btn-start-workout" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Start First Workout
+        </button>
+      </div>`;
   }
 
   /**
@@ -326,7 +358,24 @@ export const Dashboard = (() => {
     const screen = document.getElementById('s-home');
     if (!screen) return;
 
-    // Build HTML template if screen is empty
+    // Fetch data in parallel — single workouts transaction, derive stats in-memory
+    const [allWorkouts, orms] = await Promise.all([
+      DB.Workouts.getAll(),
+      DB.OneRM.getAll(),
+    ]);
+
+    // Empty state — first-time user
+    if (!allWorkouts.length) {
+      screen.innerHTML = _buildEmptyState();
+      screen.querySelector('.btn-start-workout')?.addEventListener('click', () => {
+        navigator.vibrate?.([15, 50, 15]);
+        window.Toast.show("Let's go!", 'success');
+        window.Nav.go('s-train');
+      });
+      return;
+    }
+
+    // Build full dashboard if needed
     if (!document.getElementById('dash-greeting-label')) {
       screen.innerHTML = _buildTemplate();
     }
@@ -334,20 +383,12 @@ export const Dashboard = (() => {
     // Static text
     const greet = document.getElementById('dash-greeting-label');
     if (greet) greet.textContent = greeting();
-
     const dateEl = document.getElementById('dash-date');
     if (dateEl)
       dateEl.textContent = new Date().toLocaleDateString('en', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
+        weekday: 'long', month: 'long', day: 'numeric',
       });
 
-    // Fetch data in parallel — single workouts transaction, derive stats in-memory
-    const [allWorkouts, orms] = await Promise.all([
-      DB.Workouts.getAll(),
-      DB.OneRM.getAll(),
-    ]);
     const weekVol    = weeklyVolumeFrom(allWorkouts);
     const monthVol   = monthlyVolumeFrom(allWorkouts);
     const monthCount = monthlyCountFrom(allWorkouts);
@@ -366,7 +407,192 @@ export const Dashboard = (() => {
     renderPPL(ppl);
     renderTopLifts(orms);
     renderRecent(allWorkouts);
+    renderRecommendations();
+
+    // Load weekly summary
+    loadWeeklySummary();
   }
 
-  return { load };
+  /**
+   * Render recommendations card for next session.
+   * @returns {void}
+   */
+  function renderRecommendations() {
+    const container = document.getElementById('recommendations-section');
+    if (!container) return;
+
+    // Determine next session type based on last workout
+    const lastType = localStorage.getItem('ap-last-workout-type');
+    if (!lastType) {
+      container.style.display = 'none';
+      return;
+    }
+
+    const nextType = { push: 'pull', pull: 'legs', legs: 'push' }[lastType];
+    const recs = getRecommendations(nextType);
+
+    if (!recs || !recs.exercises?.length) {
+      container.style.display = 'none';
+      return;
+    }
+
+    container.style.display = 'block';
+    const progressingExercises = recs.exercises.filter(
+      (ex) => ex.recommendedWeight > ex.currentWeight
+    );
+
+    if (!progressingExercises.length) {
+      container.style.display = 'none';
+      return;
+    }
+
+    const nextTypeLabel = nextType.charAt(0).toUpperCase() + nextType.slice(1);
+
+    container.innerHTML = `
+      <div class="section-header">
+        <span class="section-label">Next ${nextTypeLabel} Session</span>
+        <span class="badge badge-green">AI Powered</span>
+      </div>
+      <div class="recommendations-card">
+        ${progressingExercises.slice(0, 4).map((ex) => `
+          <div class="rec-item">
+            <div class="rec-dot" style="background: var(--c-accent)"></div>
+            <div class="rec-info">
+              <span class="rec-name">${ex.name}</span>
+              <span class="rec-reason">${ex.reason}</span>
+            </div>
+            <div class="rec-weights">
+              <span class="rec-old">${ex.currentWeight}kg</span>
+              <span class="rec-arrow">→</span>
+              <span class="rec-new">${ex.recommendedWeight}kg</span>
+            </div>
+          </div>
+        `).join('')}
+        ${progressingExercises.length > 4 ? `<div class="rec-more">+${progressingExercises.length - 4} more</div>` : ''}
+      </div>
+    `;
+  }
+
+  return { load, renderRecommendations, showWeeklySummary, loadWeeklySummary };
 })();
+
+/* ══════════════════════════════════════════════
+   WEEKLY SUMMARY
+   ══════════════════════════════════════════════ */
+
+/**
+ * Load and display weekly summary.
+ */
+async function loadWeeklySummary() {
+  const { generateWeeklySummary } = await import('./progressive-overload.js');
+  const workouts = await DB.Workouts.getAll();
+  const { summary, plateauAlerts, prs } = await generateWeeklySummary(workouts);
+
+  // Update chip
+  const chipValue = document.getElementById('weekly-summary-value');
+  if (chipValue) {
+    if (prs.length > 0) {
+      chipValue.textContent = `${prs.length} PR${prs.length > 1 ? 's' : ''}`;
+      chipValue.style.color = '#00e676';
+    } else if (plateauAlerts.length > 0) {
+      chipValue.textContent = `${plateauAlerts.length} plateau${plateauAlerts.length > 1 ? 's' : ''}`;
+      chipValue.style.color = '#ff4757';
+    } else {
+      const since = Date.now() - 7 * 24 * 3600000;
+      const count = workouts.filter(w => w.timestamp >= since).length;
+      chipValue.textContent = `${count} workout${count !== 1 ? 's' : ''}`;
+      chipValue.style.color = 'var(--c-text-1)';
+    }
+  }
+
+  // Store for modal
+  window._weeklySummary = { summary, plateauAlerts, prs };
+}
+
+/**
+ * Show weekly summary modal.
+ */
+async function showWeeklySummary() {
+  const { summary, plateauAlerts, prs } = window._weeklySummary || {};
+  if (!summary) {
+    await loadWeeklySummary();
+  }
+
+  const data = window._weeklySummary;
+  if (!data) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.zIndex = '5000';
+
+  overlay.innerHTML = `
+    <div class="modal-sheet" style="max-width:520px;margin:auto;border-radius:var(--r-xl)">
+      <div class="modal-handle"></div>
+
+      <div class="section-header">
+        <span class="section-label">📈 Weekly Summary</span>
+      </div>
+
+      <div class="weekly-summary-content" style="padding:var(--sp-3)">
+        <div class="summary-section">
+          <h3 style="font-size:0.95rem;color:var(--c-text-2);margin-bottom:var(--sp-2)">Overview</h3>
+          <p style="color:var(--c-text-1);line-height:1.5">${data.summary.replace(/\n/g, '<br>')}</p>
+        </div>
+
+        ${data.prs.length > 0 ? `
+          <div class="summary-section pr-section" style="margin-top:var(--sp-3)">
+            <h3 style="font-size:0.95rem;color:#00e676;margin-bottom:var(--sp-2)">🎉 Personal Records</h3>
+            <ul style="list-style:none;padding:0">
+              ${data.prs.map(pr => `<li style="padding:var(--sp-2);background:rgba(0,230,118,0.1);border-radius:var(--r-s);color:#00e676;margin-bottom:var(--sp-2)"><strong>${pr.exercise}</strong>: ${pr.weight}kg</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+
+        ${data.plateauAlerts.length > 0 ? `
+          <div class="summary-section plateau-section" style="margin-top:var(--sp-3)">
+            <h3 style="font-size:0.95rem;color:#ff4757;margin-bottom:var(--sp-2)">⚠️ Plateau Alerts</h3>
+            ${data.plateauAlerts.map(alert => `
+              <div class="plateau-alert" style="padding:var(--sp-3);background:rgba(255,71,87,0.1);border-radius:var(--r-m);border-left:3px solid #ff4757;margin-bottom:var(--sp-2)">
+                <strong style="color:var(--c-text-1);display:block;margin-bottom:4px">${alert.exercise}</strong>
+                <p style="color:var(--c-text-2);font-size:0.9rem;margin-bottom:4px">${alert.suggestion}</p>
+                <small style="color:var(--c-text-3);font-size:0.8rem">${alert.weeks} weeks since last progress</small>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="modal-footer" style="padding:var(--sp-2) var(--sp-3);display:flex;gap:var(--sp-2);justify-content:flex-end">
+        <button class="btn-icon-nav" onclick="window.Dashboard.askAIAboutSummary()" style="align-self:center">🤖 Ask Coach</button>
+        <button class="btn-primary" onclick="this.closest('.modal-overlay').remove()">Close</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+}
+
+/**
+ * Ask AI about weekly summary.
+ */
+async function askAIAboutSummary() {
+  const { summary, plateauAlerts, prs } = window._weeklySummary || {};
+
+  // Open Claude panel with context
+  const message = `Analyze my week: ${summary}. ${plateauAlerts.length > 0 ? 'Plateaus: ' + plateauAlerts.map(a => a.exercise).join(', ') : ''} ${prs.length > 0 ? 'PRs: ' + prs.map(p => `${p.exercise} ${p.weight}kg`).join(', ') : ''}`;
+
+  // Send to AI via fetchCoach
+  const { fetchCoach } = await import('./claude.store.js');
+  const { Claude } = await import('./claude.view.js');
+
+  Claude.open();
+
+  // Wait for panel to open then send message
+  setTimeout(async () => {
+    await fetchCoach(message, {
+      onText: (text) => console.log('[AI]', text),
+      onDone: () => {},
+      onError: (err) => Toast.show(`Error: ${err}`, 'error')
+    });
+  }, 500);
+}
