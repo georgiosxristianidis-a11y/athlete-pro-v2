@@ -194,7 +194,7 @@
 .ex-num {
   font-size: 15px;
   font-weight: 800;
-  color: #000;
+  color: var(--c-text-inverse);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -683,7 +683,7 @@
 .set-badge.done {
   background: var(--c-accent);
   border-color: var(--c-accent);
-  color: #000;
+  color: var(--c-text-inverse);
 }
 .set-badge:active {
   transform: scale(0.9);
@@ -714,7 +714,7 @@
 .rpe-seg.active {
   background: var(--c-amber);
   border-color: var(--c-amber);
-  color: #000;
+  color: var(--c-text-inverse);
 }
 .rpe-seg:active {
   transform: scale(0.9);
@@ -744,7 +744,7 @@
 
 /* Exercise card dark bg */
 .exercise-card {
-  background: #0d0d12 !important;
+  background: var(--c-surface-deep) !important;
   transition:
     border-color var(--t-normal),
     box-shadow var(--t-normal);
@@ -950,7 +950,7 @@
 }
 .rest-btn-primary:active {
   background: var(--c-accent);
-  color: #000;
+  color: var(--c-text-inverse);
 }
 
 /* ── Replace exercise button ── */
@@ -1105,7 +1105,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--c-accent), #00d486);
+  background: linear-gradient(135deg, var(--c-accent), var(--c-accent-light));
   box-shadow: 0 4px 12px rgba(0, 200, 110, 0.4);
   display: flex;
   align-items: center;
@@ -1323,4 +1323,31 @@
 .set-label {
   font-weight: 600;
   color: var(--c-text-2);
+}
+
+/* ════════════════════════════════════════════════
+   EXERCISE PICKER — PILL FILTERS
+   ════════════════════════════════════════════════ */
+.pill-filter {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--r-full);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-3);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pill-filter:active {
+  background: var(--c-surface-h);
+}
+
+.pill-filter.active {
+  background: rgba(0, 200, 110, 0.08);
+  border-color: var(--c-accent);
+  color: var(--c-accent);
 }

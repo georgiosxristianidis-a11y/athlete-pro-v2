@@ -8,7 +8,7 @@ import { DB } from './db.js';
 import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
 import { RestTimer } from './rest-timer.js'; // eslint-disable-line no-unused-vars
-import { State, EXERCISE_LIBRARY, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, tryRestoreSession } from './workout.store.js';
+import { State, EXERCISE_LIBRARY, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, tryRestoreSession, getExerciseLibrary, filterExercises, getUniqueValues } from './workout.store.js';
 import { generateRecommendations, getRecommendations } from './claude.store.js';
 import { Heatmap } from './claude.store.js';
 
@@ -374,17 +374,17 @@ function _adjustPlan(type, i, field, delta) {
 }
 
 /**
- * Add a new exercise to a plan tab.
+ * Add a new exercise to a plan tab — opens exercise picker modal.
  * @param {'push'|'pull'|'legs'} type
  * @returns {void}
  */
 function _addPlanEx(type) {
-  const plan = loadPlan();
-  plan[type].push({ name: 'New Exercise', sets: 3, reps: 10, weight: 0 });
-  savePlan(plan);
-  const el = document.getElementById('plan-list');
-  if (el) el.innerHTML = '';
-  _switchPlanTab(type);
+  openExercisePickerModal(type, (exercise) => {
+    const plan = loadPlan();
+    plan[type].push({ name: exercise.name, sets: 3, reps: 10, weight: 0 });
+    savePlan(plan);
+    _switchPlanTab(type);
+  });
 }
 
 /**
@@ -867,6 +867,193 @@ function toggleCard(ei) {
 }
 
 /* ════════════════════════════════════════════════════════
+   EXERCISE PICKER MODAL (with search & filters)
+   ════════════════════════════════════════════════════════ */
+/**
+ * Open exercise picker modal with search and category filters.
+ * @param {'push'|'pull'|'legs'} filterCategory — pre-filter by category
+ * @param {(exercise: any) => void} onSelect — callback when exercise selected
+ * @returns {void}
+ */
+async function openExercisePickerModal(filterCategory, onSelect) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'exercise-picker-overlay';
+
+  overlay.innerHTML = `
+    <div class="modal-sheet" style="max-height:85vh;display:flex;flex-direction:column">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">Add Exercise</div>
+        <button class="btn-icon-sm" id="picker-close" aria-label="Close exercise picker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" width="18" height="18">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Search -->
+      <div class="add-ex-search-wrap">
+        <input class="add-ex-search" id="picker-search"
+               type="text" placeholder="Search exercises…"
+               autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+
+      <!-- Category filters -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 4px">
+        <button class="pill-filter active" data-cat="all" style="border-color:var(--c-accent);color:var(--c-accent);background:rgba(0,200,110,0.08)">All</button>
+        <button class="pill-filter" data-cat="push" style="border-color:var(--c-indigo);color:var(--c-indigo);background:rgba(99,102,241,0.08)">Push</button>
+        <button class="pill-filter" data-cat="pull" style="border-color:var(--c-cyan);color:var(--c-cyan);background:rgba(6,182,212,0.08)">Pull</button>
+        <button class="pill-filter" data-cat="legs" style="border-color:var(--c-amber);color:var(--c-amber);background:rgba(245,158,11,0.08)">Legs</button>
+        <button class="pill-filter" data-cat="core" style="border-color:var(--c-yellow);color:var(--c-yellow);background:rgba(233,196,106,0.08)">Core</button>
+      </div>
+
+      <!-- Results count -->
+      <div style="font-size:11px;color:var(--c-text-3);padding:6px 0">
+        <span id="picker-count">Loading…</span>
+      </div>
+
+      <!-- Exercise list -->
+      <div class="add-ex-list" id="picker-list" style="flex:1;overflow-y:auto"></div>
+
+      <!-- Custom exercise -->
+      <div style="padding-top:12px;border-top:1px solid var(--c-surface-2)">
+        <input class="add-ex-search" id="picker-custom"
+               type="text" placeholder="Or type custom exercise name…"
+               autocomplete="off" style="margin-bottom:8px">
+        <button class="btn btn-primary btn-sm" id="picker-add-custom" style="width:100%">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" width="16" height="16">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Custom Exercise
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  const searchEl = overlay.querySelector('#picker-search');
+  const customEl = overlay.querySelector('#picker-custom');
+  const listEl = overlay.querySelector('#picker-list');
+  const countEl = overlay.querySelector('#picker-count');
+  const filterBtns = overlay.querySelectorAll('.pill-filter');
+
+  let activeFilter = filterCategory || 'all';
+  let allExercises = [];
+  let currentQuery = '';
+
+  // Load exercises
+  try {
+    allExercises = await getExerciseLibrary();
+    renderList();
+  } catch (err) {
+    listEl.innerHTML = `<div class="add-ex-empty">Failed to load exercises</div>`;
+    countEl.textContent = 'Error loading library';
+  }
+
+  function renderList() {
+    let filtered = allExercises;
+
+    // Apply category filter
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(ex => ex.category === activeFilter);
+    }
+
+    // Apply search query
+    if (currentQuery.trim()) {
+      const q = currentQuery.trim().toLowerCase();
+      filtered = filtered.filter(ex => {
+        const nameMatch = ex.name.toLowerCase().includes(q);
+        const tagsMatch = ex.tags?.some(t => t.toLowerCase().includes(q));
+        const muscleMatch = ex.primaryMuscles?.some(m => m.toLowerCase().includes(q)) ||
+                           ex.secondaryMuscles?.some(m => m.toLowerCase().includes(q));
+        return nameMatch || tagsMatch || muscleMatch;
+      });
+    }
+
+    countEl.textContent = `${filtered.length} exercises`;
+    listEl.innerHTML = '';
+
+    if (!filtered.length) {
+      listEl.innerHTML = `<div class="add-ex-empty">No exercises found</div>`;
+      return;
+    }
+
+    // Render list (limit 50 for performance)
+    filtered.slice(0, 50).forEach((ex) => {
+      const btn = document.createElement('button');
+      btn.className = 'add-ex-item';
+      btn.style.cssText = 'text-align:left;padding:10px 12px;height:auto';
+      btn.innerHTML = `
+        <div style="font-weight:700;font-size:13px;color:var(--c-text-1)">${ex.name}</div>
+        <div style="font-size:10px;color:var(--c-text-3);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
+          <span style="text-transform:capitalize">${ex.muscleGroup}</span>
+          <span>·</span>
+          <span style="text-transform:capitalize">${ex.equipment}</span>
+          <span>·</span>
+          <span style="text-transform:capitalize">${ex.mechanic}</span>
+        </div>
+      `;
+      btn.dataset.name = ex.name;
+      listEl.appendChild(btn);
+    });
+  }
+
+  // Search handler
+  searchEl.addEventListener('input', () => {
+    currentQuery = searchEl.value;
+    renderList();
+  });
+
+  // Category filter handlers
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => {
+        b.classList.remove('active');
+        b.style.cssText = '';
+      });
+      btn.classList.add('active');
+      const cat = btn.dataset.cat;
+      activeFilter = cat;
+      renderList();
+    });
+  });
+
+  // Custom exercise handler
+  const addCustomBtn = overlay.querySelector('#picker-add-custom');
+  addCustomBtn.addEventListener('click', () => {
+    const customName = customEl.value.trim();
+    if (customName) {
+      onSelect({ name: customName, id: customName.toLowerCase().replace(/[^a-z0-9]+/g, '-') });
+      overlay.remove();
+    }
+  });
+
+  // Select exercise handler
+  listEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-name]');
+    if (!btn) return;
+    const name = btn.dataset.name.trim();
+    if (name) {
+      const exercise = allExercises.find(ex => ex.name === name);
+      onSelect(exercise || { name });
+      overlay.remove();
+    }
+  });
+
+  // Close handlers
+  overlay.querySelector('#picker-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  requestAnimationFrame(() => searchEl.focus());
+}
+
+/* ════════════════════════════════════════════════════════
    REPLACE EXERCISE MODAL
    ════════════════════════════════════════════════════════ */
 /**
@@ -874,13 +1061,13 @@ function toggleCard(ei) {
  * @param {number} ei — exercise index to replace
  * @returns {void}
  */
-function openReplaceExModal(ei) {
+async function openReplaceExModal(ei) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.id = 'replace-ex-overlay';
 
   overlay.innerHTML = `
-    <div class="modal-sheet" style="max-height:82vh;display:flex;flex-direction:column">
+    <div class="modal-sheet" style="max-height:85vh;display:flex;flex-direction:column">
       <div class="modal-handle"></div>
       <div class="modal-header">
         <div class="modal-title">Replace Exercise</div>
@@ -892,72 +1079,167 @@ function openReplaceExModal(ei) {
           </svg>
         </button>
       </div>
+
+      <!-- Search -->
       <div class="add-ex-search-wrap">
         <input class="add-ex-search" id="replace-ex-search"
-               type="text" placeholder="Search or type a custom name…"
+               type="text" placeholder="Search exercises…"
                autocomplete="off" autocorrect="off" spellcheck="false">
       </div>
-      <div class="add-ex-list" id="replace-ex-list"></div>
+
+      <!-- Category filters -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 4px">
+        <button class="pill-filter active" data-cat="all" style="border-color:var(--c-accent);color:var(--c-accent);background:rgba(0,200,110,0.08)">All</button>
+        <button class="pill-filter" data-cat="push" style="border-color:var(--c-indigo);color:var(--c-indigo);background:rgba(99,102,241,0.08)">Push</button>
+        <button class="pill-filter" data-cat="pull" style="border-color:var(--c-cyan);color:var(--c-cyan);background:rgba(6,182,212,0.08)">Pull</button>
+        <button class="pill-filter" data-cat="legs" style="border-color:var(--c-amber);color:var(--c-amber);background:rgba(245,158,11,0.08)">Legs</button>
+        <button class="pill-filter" data-cat="core" style="border-color:var(--c-yellow);color:var(--c-yellow);background:rgba(233,196,106,0.08)">Core</button>
+      </div>
+
+      <!-- Results count -->
+      <div style="font-size:11px;color:var(--c-text-3);padding:6px 0">
+        <span id="replace-count">Loading…</span>
+      </div>
+
+      <!-- Exercise list -->
+      <div class="add-ex-list" id="replace-ex-list" style="flex:1;overflow-y:auto"></div>
+
+      <!-- Custom exercise -->
+      <div style="padding-top:12px;border-top:1px solid var(--c-surface-2)">
+        <input class="add-ex-search" id="replace-custom"
+               type="text" placeholder="Or type custom exercise name…"
+               autocomplete="off" style="margin-bottom:8px">
+        <button class="btn btn-primary btn-sm" id="replace-add-custom" style="width:100%">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" width="16" height="16">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Use Custom Exercise
+        </button>
+      </div>
     </div>`;
 
   document.body.appendChild(overlay);
 
   const searchEl = overlay.querySelector('#replace-ex-search');
+  const customEl = overlay.querySelector('#replace-custom');
   const listEl = overlay.querySelector('#replace-ex-list');
+  const countEl = overlay.querySelector('#replace-count');
+  const filterBtns = overlay.querySelectorAll('.pill-filter');
 
-  function renderList(query) {
-    const q = query.trim();
-    const ql = q.toLowerCase();
-    const matches = ql
-      ? EXERCISE_LIBRARY.filter((e) => e.toLowerCase().includes(ql))
-      : EXERCISE_LIBRARY;
+  let activeFilter = 'all';
+  let allExercises = [];
+  let currentQuery = '';
 
-    listEl.innerHTML = '';
-
-    // "Use custom" item when typed text isn't exact match in library
-    if (q && !EXERCISE_LIBRARY.some((e) => e.toLowerCase() === ql)) {
-      const btn = document.createElement('button');
-      btn.className = 'add-ex-item';
-      btn.style.cssText = 'border-color:rgba(0,230,118,0.35);color:var(--c-accent)';
-      btn.textContent = `+ Use "${q}"`;
-      btn.dataset.name = q;
-      listEl.appendChild(btn);
-    }
-
-    matches.slice(0, 40).forEach((name) => {
-      const btn = document.createElement('button');
-      btn.className = 'add-ex-item';
-      btn.textContent = name;
-      btn.dataset.name = name;
-      listEl.appendChild(btn);
-    });
-
-    if (!matches.length && !q) return;
-    if (!matches.length) {
-      const msg = document.createElement('div');
-      msg.className = 'add-ex-empty';
-      msg.textContent = 'No exercises found';
-      listEl.appendChild(msg);
-    }
+  // Load exercises
+  try {
+    allExercises = await getExerciseLibrary();
+    renderList();
+  } catch (err) {
+    listEl.innerHTML = `<div class="add-ex-empty">Failed to load exercises</div>`;
+    countEl.textContent = 'Error loading library';
   }
 
-  renderList('');
-  searchEl.addEventListener('input', () => renderList(searchEl.value));
+  function renderList() {
+    let filtered = allExercises;
 
+    // Apply category filter
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(ex => ex.category === activeFilter);
+    }
+
+    // Apply search query
+    if (currentQuery.trim()) {
+      const q = currentQuery.trim().toLowerCase();
+      filtered = filtered.filter(ex => {
+        const nameMatch = ex.name.toLowerCase().includes(q);
+        const tagsMatch = ex.tags?.some(t => t.toLowerCase().includes(q));
+        const muscleMatch = ex.primaryMuscles?.some(m => m.toLowerCase().includes(q)) ||
+                           ex.secondaryMuscles?.some(m => m.toLowerCase().includes(q));
+        return nameMatch || tagsMatch || muscleMatch;
+      });
+    }
+
+    countEl.textContent = `${filtered.length} exercises`;
+    listEl.innerHTML = '';
+
+    if (!filtered.length) {
+      listEl.innerHTML = `<div class="add-ex-empty">No exercises found</div>`;
+      return;
+    }
+
+    // Render list (limit 50 for performance)
+    filtered.slice(0, 50).forEach((ex) => {
+      const btn = document.createElement('button');
+      btn.className = 'add-ex-item';
+      btn.style.cssText = 'text-align:left;padding:10px 12px;height:auto';
+      btn.innerHTML = `
+        <div style="font-weight:700;font-size:13px;color:var(--c-text-1)">${ex.name}</div>
+        <div style="font-size:10px;color:var(--c-text-3);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
+          <span style="text-transform:capitalize">${ex.muscleGroup}</span>
+          <span>·</span>
+          <span style="text-transform:capitalize">${ex.equipment}</span>
+          <span>·</span>
+          <span style="text-transform:capitalize">${ex.mechanic}</span>
+        </div>
+      `;
+      btn.dataset.name = ex.name;
+      listEl.appendChild(btn);
+    });
+  }
+
+  // Search handler
+  searchEl.addEventListener('input', () => {
+    currentQuery = searchEl.value;
+    renderList();
+  });
+
+  // Category filter handlers
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => {
+        b.classList.remove('active');
+        b.style.cssText = '';
+      });
+      btn.classList.add('active');
+      activeFilter = btn.dataset.cat;
+      renderList();
+    });
+  });
+
+  // Custom exercise handler
+  const addCustomBtn = overlay.querySelector('#replace-add-custom');
+  addCustomBtn.addEventListener('click', () => {
+    const customName = customEl.value.trim();
+    if (customName) {
+      State.plan[ei].name = customName;
+      persistSession();
+      overlay.remove();
+      const nameEl = document.querySelector(`#ex-card-${ei} .exercise-name`);
+      if (nameEl) nameEl.textContent = customName;
+      _haptic(15);
+      Toast.show(`Replaced with ${customName}`, 'info');
+    }
+  });
+
+  // Select exercise handler
   listEl.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-name]');
     if (!btn) return;
     const name = btn.dataset.name.trim();
-    if (!name) return;
-    State.plan[ei].name = name;
-    persistSession();
-    overlay.remove();
-    const nameEl = document.querySelector(`#ex-card-${ei} .exercise-name`);
-    if (nameEl) nameEl.textContent = name;
-    _haptic(15);
-    Toast.show(`Replaced with ${name}`, 'info');
+    if (name) {
+      State.plan[ei].name = name;
+      persistSession();
+      overlay.remove();
+      const nameEl = document.querySelector(`#ex-card-${ei} .exercise-name`);
+      if (nameEl) nameEl.textContent = name;
+      _haptic(15);
+      Toast.show(`Replaced with ${name}`, 'info');
+    }
   });
 
+  // Close handlers
   overlay.querySelector('#replace-ex-close').addEventListener('click', () => overlay.remove());
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();

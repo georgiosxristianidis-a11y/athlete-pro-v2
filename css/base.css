@@ -28,6 +28,17 @@
   --c-amber-bg: rgba(255, 179, 0, 0.08);
   --c-red: #ff4757;
   --c-red-bg: rgba(255, 71, 87, 0.08);
+  /* Exercise category colors */
+  --c-indigo: #6366f1;
+  --c-indigo-bg: rgba(99, 102, 241, 0.08);
+  --c-cyan: #06b6d4;
+  --c-cyan-bg: rgba(6, 182, 212, 0.08);
+  --c-yellow: #e9c46a;
+  --c-yellow-bg: rgba(233, 196, 106, 0.08);
+  /* Additional tokens */
+  --c-text-inverse: #000;
+  --c-surface-deep: #0d0d12;
+  --c-accent-light: #00d486;
   --sh-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
   --sh-md: 0 4px 16px rgba(0, 0, 0, 0.22);
   --sh-lg: 0 8px 32px rgba(0, 0, 0, 0.32);
@@ -57,7 +68,7 @@
 /* ── Section 2: Shared Component — Buttons ────────────── */
 .btn-primary {
   background: var(--c-accent);
-  color: #000;
+  color: var(--c-text-inverse);
 }
 .btn-primary:active {
   background: var(--c-accent-d);
@@ -167,6 +178,26 @@ button:focus-visible {
   box-shadow: 0 0 0 2px var(--c-bg), 0 0 0 4px var(--c-accent);
 }
 
+/* Skip Link (accessibility) */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--c-accent);
+  color: var(--c-text-inverse);
+  padding: 12px 24px;
+  border-radius: var(--r-m);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  z-index: 10000;
+  transition: top var(--t-fast);
+}
+.skip-link:focus {
+  top: 50px;
+}
+
 /* ── Section 5: Responsive ────────────────────────────── */
 
 /* Small phone floor (<360px) — reduce spacing to prevent overflow */
@@ -182,5 +213,86 @@ button:focus-visible {
   .screen {
     max-width: 640px;
     margin-inline: auto;
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   MOBILE-CENTERED LAYOUT (Desktop / Windows)
+   Limits app width to 480px and centers it with phone-like frame
+   ════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════
+   MOBILE-CENTERED LAYOUT (Desktop / Windows)
+   Limits app width to 480px and centers it with phone-like frame
+   ════════════════════════════════════════════════════════ */
+@media (min-width: 481px) {
+  html {
+    background: var(--c-bg);
+  }
+
+  body {
+    background: var(--c-bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  #app {
+    max-width: 480px;
+    width: 100%;
+    height: 100vh;
+    max-height: 932px; /* iPhone 14 Pro Max height */
+    background: var(--c-bg);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.05),
+      0 20px 60px rgba(0, 0, 0, 0.6),
+      0 0 120px rgba(0, 200, 110, 0.1);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Status bar centering */
+  #status-bar {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    border-radius: 24px 24px 0 0;
+  }
+
+  /* Navigation bar centering */
+  #nav {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    border-radius: 0 0 24px 24px;
+  }
+
+  /* AI Coach FAB centering */
+  .workout-ai-bubble {
+    right: calc(50% - 240px + 64px);
+  }
+
+  /* Add rounded corners on tall screens */
+  @media (min-height: 900px) {
+    #app {
+      border-radius: 24px;
+      height: calc(100vh - 40px);
+      margin: 20px auto;
+    }
+
+    #status-bar,
+    #nav {
+      max-width: 480px;
+    }
+  }
+}
+
+/* Large desktop: Add side padding for breathing room */
+@media (min-width: 900px) {
+  body {
+    padding: 20px;
   }
 }

@@ -45,86 +45,123 @@ export const DEFAULT_PLAN = {
   ],
 };
 
-/** @type {string[]} */
-export const EXERCISE_LIBRARY = [
+/**
+ * Exercise library item structure
+ * @typedef {{ id: string, name: string, nameRu: string, category: string, muscleGroup: string, primaryMuscles: string[], secondaryMuscles: string[], equipment: string, mechanic: string, force: string, level: string, type: string, tags: string[] }} ExerciseItem
+ */
+
+/** @type {ExerciseItem[]} */
+let _exerciseLibrary = null;
+
+/**
+ * Get exercise library — loads from exercises-library.json on first call.
+ * Falls back to hardcoded list if JSON fails to load.
+ * @returns {Promise<ExerciseItem[]>}
+ */
+export async function getExerciseLibrary() {
+  if (_exerciseLibrary) return _exerciseLibrary;
+
+  try {
+    const response = await fetch('exercises-library.json');
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+    _exerciseLibrary = data.exercises || [];
+    return _exerciseLibrary;
+  } catch (err) {
+    console.warn('[getExerciseLibrary] Failed to load JSON, using fallback:', err.message);
+    // Fallback to hardcoded names
+    _exerciseLibrary = HARDCODED_LIBRARY.map(name => ({
+      id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      name,
+      nameRu: '',
+      category: 'push',
+      muscleGroup: 'unknown',
+      primaryMuscles: [],
+      secondaryMuscles: [],
+      equipment: 'other',
+      mechanic: 'unknown',
+      force: 'unknown',
+      level: 'beginner',
+      type: 'strength',
+      tags: []
+    }));
+    return _exerciseLibrary;
+  }
+}
+
+/**
+ * Filter exercises by category, muscle group, equipment.
+ * @param {Object} filters — { category?, muscleGroup?, equipment?, query? }
+ * @returns {Promise<ExerciseItem[]>}
+ */
+export async function filterExercises(filters = {}) {
+  const library = await getExerciseLibrary();
+  const { category, muscleGroup, equipment, query } = filters;
+
+  return library.filter(ex => {
+    if (category && ex.category !== category) return false;
+    if (muscleGroup && ex.muscleGroup !== muscleGroup) return false;
+    if (equipment && ex.equipment !== equipment) return false;
+    if (query) {
+      const q = query.toLowerCase();
+      const nameMatch = ex.name.toLowerCase().includes(q);
+      const tagsMatch = ex.tags.some(t => t.toLowerCase().includes(q));
+      const musclesMatch = ex.primaryMuscles.some(m => m.toLowerCase().includes(q)) ||
+                          ex.secondaryMuscles.some(m => m.toLowerCase().includes(q));
+      if (!nameMatch && !tagsMatch && !musclesMatch) return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * Get unique values for a field across all exercises.
+ * @param {'category'|'muscleGroup'|'equipment'|'level'|'type'} field
+ * @returns {Promise<string[]>}
+ */
+export async function getUniqueValues(field) {
+  const library = await getExerciseLibrary();
+  const values = new Set(library.map(ex => ex[field]));
+  return Array.from(values).sort();
+}
+
+/**
+ * Get exercise by name.
+ * @param {string} name
+ * @returns {Promise<ExerciseItem|undefined>}
+ */
+export async function getExerciseByName(name) {
+  const library = await getExerciseLibrary();
+  return library.find(ex => ex.name.toLowerCase() === name.toLowerCase());
+}
+
+/** @type {string[]} — Hardcoded fallback library */
+const HARDCODED_LIBRARY = [
   // Push — Chest
-  'Bench Press',
-  'Incline Bench Press',
-  'Decline Bench Press',
-  'Incline DB Press',
-  'DB Fly',
-  'Cable Fly',
-  'Pec Deck',
-  'Machine Chest Press',
+  'Bench Press', 'Incline Bench Press', 'Decline Bench Press', 'Incline DB Press',
+  'DB Fly', 'Cable Fly', 'Pec Deck', 'Machine Chest Press',
   // Push — Shoulders
-  'Overhead Press',
-  'DB Shoulder Press',
-  'Arnold Press',
-  'Lateral Raise',
-  'Front Raise',
-  'Cable Lateral Raise',
-  'Upright Row',
+  'Overhead Press', 'DB Shoulder Press', 'Arnold Press', 'Lateral Raise',
+  'Front Raise', 'Cable Lateral Raise', 'Upright Row',
   // Push — Triceps
-  'Tricep Pushdown',
-  'Overhead Tricep Ext.',
-  'Skull Crusher',
-  'Tricep Dip',
-  'Close-Grip Bench',
-  'Cable Overhead Ext.',
+  'Tricep Pushdown', 'Overhead Tricep Ext.', 'Skull Crusher', 'Tricep Dip',
+  'Close-Grip Bench', 'Cable Overhead Ext.',
   // Pull — Back
-  'Deadlift',
-  'Romanian Deadlift',
-  'Stiff-Leg Deadlift',
-  'Pull-up',
-  'Chin-up',
-  'Lat Pulldown',
-  'Barbell Row',
-  'DB Row',
-  'Cable Row',
-  'T-Bar Row',
-  'Seal Row',
-  'Meadows Row',
+  'Deadlift', 'Romanian Deadlift', 'Stiff-Leg Deadlift', 'Pull-up', 'Chin-up',
+  'Lat Pulldown', 'Barbell Row', 'DB Row', 'Cable Row', 'T-Bar Row', 'Seal Row', 'Meadows Row',
   // Pull — Rear delt / traps
-  'Face Pull',
-  'Rear Delt Fly',
-  'Shrug',
-  'Cable Shrug',
+  'Face Pull', 'Rear Delt Fly', 'Shrug', 'Cable Shrug',
   // Pull — Biceps
-  'Bicep Curl',
-  'Hammer Curl',
-  'Preacher Curl',
-  'Cable Curl',
-  'Incline DB Curl',
-  'Concentration Curl',
-  'Spider Curl',
+  'Bicep Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl',
+  'Incline DB Curl', 'Concentration Curl', 'Spider Curl',
   // Legs
-  'Squat',
-  'Front Squat',
-  'Hack Squat',
-  'Smith Machine Squat',
-  'Leg Press',
-  'Bulgarian Split Squat',
-  'Walking Lunge',
-  'Step-Up',
-  'Romanian Deadlift',
-  'Sumo Deadlift',
-  'Leg Curl',
-  'Leg Extension',
-  'Calf Raise',
-  'Seated Calf Raise',
-  'Hip Thrust',
-  'Glute Bridge',
+  'Squat', 'Front Squat', 'Hack Squat', 'Smith Machine Squat', 'Leg Press',
+  'Bulgarian Split Squat', 'Walking Lunge', 'Step-Up', 'Romanian Deadlift',
+  'Sumo Deadlift', 'Leg Curl', 'Leg Extension', 'Calf Raise', 'Seated Calf Raise',
+  'Hip Thrust', 'Glute Bridge',
   // Core
-  'Plank',
-  'Side Plank',
-  'Hanging Leg Raise',
-  'Cable Crunch',
-  'Russian Twist',
-  'Ab Wheel',
-  'Decline Crunch',
-  'Mountain Climber',
-  'Dragon Flag',
-  'Toes-to-Bar',
+  'Plank', 'Side Plank', 'Hanging Leg Raise', 'Cable Crunch', 'Russian Twist',
+  'Ab Wheel', 'Decline Crunch', 'Mountain Climber', 'Dragon Flag', 'Toes-to-Bar',
 ].sort();
 
 /**
@@ -267,3 +304,6 @@ export function tryRestoreSession() {
     return null;
   }
 }
+
+/* ── Public API ── */
+export { getExerciseLibrary, filterExercises, getUniqueValues, getExerciseByName };

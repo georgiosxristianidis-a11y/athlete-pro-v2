@@ -46,7 +46,7 @@
           -apple-system,
           BlinkMacSystemFont,
           sans-serif;
-        background: #0a0a0f;
+        background: #050508;
         color: #e8eaed;
         overflow: hidden;
         -webkit-font-smoothing: antialiased;
@@ -70,6 +70,8 @@
         height: 100%;
         padding-top: var(--safe-top);
       }
+
+      /* Desktop: Mobile-centered layout overrides are in css/base.css */
 
       /* STATUS BAR */
       #status-bar {
@@ -266,6 +268,43 @@
         }
         .nav-btn:hover svg {
           transform: translateY(-1px);
+        }
+      }
+
+      /* ════════════════════════════════════════════════════════
+         MOBILE-CENTERED LAYOUT — Desktop overrides
+         Must be inline to override base.css
+         ════════════════════════════════════════════════════════ */
+      @media (min-width: 481px) {
+        /* Status bar centering */
+        #status-bar {
+          max-width: 480px;
+          left: 50%;
+          right: auto;
+          transform: translateX(-50%);
+          border-radius: 24px 24px 0 0;
+        }
+
+        /* Navigation bar centering */
+        #nav {
+          max-width: 480px;
+          left: 50%;
+          right: auto;
+          transform: translateX(-50%);
+          border-radius: 0 0 24px 24px;
+        }
+
+        /* AI Coach FAB — reposition relative to centered app */
+        .workout-ai-bubble {
+          right: calc(50% - 240px + 64px);
+        }
+
+        /* Tall screens */
+        @media (min-height: 900px) {
+          #status-bar,
+          #nav {
+            max-width: 480px;
+          }
         }
       }
 
@@ -642,6 +681,9 @@
         <span id="status-time"></span>
       </div>
 
+      <!-- Skip Link (accessibility) -->
+      <a href="#screens" class="skip-link">Skip to content</a>
+
       <!-- Screens -->
       <div id="screens">
         <div id="s-home" class="screen active"></div>
@@ -733,21 +775,6 @@
 
     <!-- Toast container -->
     <div id="toast-wrap"></div>
-
-    <!-- Plan Preview Modal (AI Program Generation) -->
-    <div id="plan-preview-modal" class="modal-overlay" hidden>
-      <div class="modal-sheet" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
-        <div class="modal-header">
-          <h2>🏋️ Your Personalized PPL Plan</h2>
-          <button class="btn-icon-sm" onclick="window.ClaudeView?.hidePlanPreview()">✕</button>
-        </div>
-        <div class="modal-body" id="plan-preview-content"></div>
-        <div class="modal-footer">
-          <button class="btn-primary" onclick="window.ClaudeView?.acceptGeneratedPlan()">✅ Accept Plan</button>
-          <button class="btn-icon-nav" onclick="window.ClaudeView?.regeneratePlan()">🔄 Regenerate</button>
-        </div>
-      </div>
-    </div>
 
     <!-- ── App entry (ES Module) ── -->
     <script type="module" src="js/app.js"></script>
