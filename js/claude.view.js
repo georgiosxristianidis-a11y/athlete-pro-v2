@@ -771,3 +771,17 @@ export function renderRegenerateButton() {
   document.body.appendChild(btn);
   updateRegenerateButton();
 }
+
+/* ══════════════════════════════════════════════
+   EXPOSE TO WINDOW FOR ONCLICK HANDLERS
+   ══════════════════════════════════════════════ */
+
+// Expose functions for onclick="" handlers in index.html
+window.ClaudeView = {
+  showPlanPreview,
+  hidePlanPreview,
+  acceptGeneratedPlan,
+  regeneratePlan,
+  updateRegenerateButton,
+  renderRegenerateButton
+};
