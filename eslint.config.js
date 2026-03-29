@@ -18,16 +18,18 @@ module.exports = [
     },
   },
   {
-    files: ['server.js'],
+    files: ['server.js', 'routes/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'script',
       globals: {
         ...globals.node,
+        fetch: 'readonly',
+        AbortSignal: 'readonly',
       },
     },
     rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', caughtErrors: 'none' }],
       'no-console': 'off',
     },
   },
