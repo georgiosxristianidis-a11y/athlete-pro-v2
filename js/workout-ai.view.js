@@ -4,7 +4,7 @@
    AI bubble, mini chat overlay, quick actions
    ════════════════════════════════════════════════════════ */
 
-import { ClaudeState, fetchCoach } from './claude.store.js';
+import { fetchCoach, Heatmap } from './claude.store.js';
 import { State as WorkoutState } from './workout.store.js';
 import { DB } from './db.js';
 
@@ -303,25 +303,19 @@ async function _streamMessage(message) {
   _streaming = true;
 
   try {
-    // Load context
-    const [workouts, orms] = await Promise.all([
+    // Load context (same shape as dashboard coach — see claude.store fetchCoach)
+    const [workouts, orms, scores] = await Promise.all([
       DB.Workouts.getAll(),
-      DB.OneRM.getAll()
+      DB.OneRM.getAll(),
+      Heatmap.compute(),
     ]);
 
-    // Build context for AI
     const context = {
-      workouts: workouts.slice(0, 3).map(w => ({
-        type: w.type,
-        hoursAgo: Math.round((Date.now() - w.timestamp) / 3600000),
-        tonnageKg: Math.round(w.tonnage || 0),
-        exercises: (w.exercises || []).slice(0, 3).map(e => ({
-          name: e.name,
-          sets: (e.sets || []).filter(s => s.done).length
-        }))
-      })),
-      topLifts: orms.slice(0, 3).map(o => ({ exercise: o.id, oneRM: o.value })),
-      messages: [..._chatHistory]
+      workouts,
+      scores,
+      orms,
+      chatHistory: _chatHistory,
+      skipPersistChatHistory: true,
     };
 
     // Create AI message div
@@ -341,7 +335,11 @@ async function _streamMessage(message) {
         _streaming = false;
       },
       onError: (err) => {
-        aiDiv.innerHTML = `⚠️ Error: ${err}`;
+        aiDiv.replaceChildren();
+        const p = document.createElement('p');
+        p.className = 'workout-ai-error';
+        p.textContent = err;
+        aiDiv.appendChild(p);
         _streaming = false;
       }
     }, context);

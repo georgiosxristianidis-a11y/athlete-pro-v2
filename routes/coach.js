@@ -2,6 +2,88 @@
 const express = require('express');
 const router = express.Router();
 const anthropic = require('../lib/anthropicClient');
+const { record } = require('../lib/tokenUsage');
+const { logInfo, logWarn, logError } = require('../lib/logger');
+
+const COACH_STREAM_TIMEOUT_MS = Number(process.env.COACH_STREAM_TIMEOUT_MS) || 120000;
+const COACH_MAX_MESSAGES = 40;
+const COACH_MAX_CONTENT_LEN = 12000;
+
+/**
+ * @param {unknown} body
+ * @returns {{ ok: true } | { ok: false, code: number, error: string, detail: string }}
+ */
+function _validateCoachPayload(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return {
+      ok: false,
+      code: 400,
+      error: 'Body must be a JSON object',
+      detail: 'body_type',
+    };
+  }
+  const { messages } = body;
+  if (!Array.isArray(messages)) {
+    return {
+      ok: false,
+      code: 400,
+      error: 'messages must be an array',
+      detail: 'messages_type',
+    };
+  }
+  if (messages.length === 0) {
+    return {
+      ok: false,
+      code: 400,
+      error: 'messages array is required',
+      detail: 'messages_empty',
+    };
+  }
+  if (messages.length > COACH_MAX_MESSAGES) {
+    return {
+      ok: false,
+      code: 400,
+      error: `Too many messages (max ${COACH_MAX_MESSAGES})`,
+      detail: 'messages_limit',
+    };
+  }
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i];
+    if (!m || typeof m !== 'object' || Array.isArray(m)) {
+      return {
+        ok: false,
+        code: 400,
+        error: `messages[${i}] must be an object`,
+        detail: 'message_shape',
+      };
+    }
+    if (m.role !== 'user' && m.role !== 'assistant') {
+      return {
+        ok: false,
+        code: 400,
+        error: `messages[${i}].role must be "user" or "assistant"`,
+        detail: 'message_role',
+      };
+    }
+    if (typeof m.content !== 'string') {
+      return {
+        ok: false,
+        code: 400,
+        error: `messages[${i}].content must be a string`,
+        detail: 'message_content_type',
+      };
+    }
+    if (m.content.length === 0 || m.content.length > COACH_MAX_CONTENT_LEN) {
+      return {
+        ok: false,
+        code: 400,
+        error: `messages[${i}].content must be 1–${COACH_MAX_CONTENT_LEN} characters`,
+        detail: 'message_content_length',
+      };
+    }
+  }
+  return { ok: true };
+}
 
 /* ── POST /generate-plan — generate full PPL program ── */
 router.post('/generate-plan', async (req, res) => {
@@ -65,6 +147,7 @@ router.post('/generate-plan', async (req, res) => {
     });
 
     const content = response.content[0]?.text || '';
+    record('/api/generate-plan', response.usage);
     const plan = _parseGeneratedPlan(content, DEFAULT_PLAN);
 
     res.json({
@@ -74,7 +157,10 @@ router.post('/generate-plan', async (req, res) => {
       aiNotes: content
     });
   } catch (err) {
-    console.error('[/api/generate-plan]', err.message);
+    logError(req, 'generate_plan_error', err.message, {
+      name: err.name,
+      stack: err.stack && String(err.stack).slice(0, 800),
+    });
     // Fallback to default plan on error
     res.json({
       success: true,
@@ -96,7 +182,14 @@ router.post('/recommendations', async (req, res) => {
   } = req.body;
 
   if (!workout || !nextSessionPlan.length) {
-    return res.status(400).json({ error: 'workout and nextSessionPlan are required' });
+    logWarn(req, 'recommendations_bad_payload', 'workout or nextSessionPlan missing', {
+      hasWorkout: Boolean(workout),
+      planLen: Array.isArray(nextSessionPlan) ? nextSessionPlan.length : -1,
+    });
+    return res.status(400).json({
+      error: 'workout and nextSessionPlan are required',
+      requestId: req.correlationId,
+    });
   }
 
   // If no API key, return simple fallback recommendations
@@ -136,26 +229,59 @@ router.post('/recommendations', async (req, res) => {
 
     res.json({ success: true, recommendations, aiNotes: content });
   } catch (err) {
-    console.error('[/api/recommendations]', err.message);
-    res.status(500).json({ error: err.message });
+    logError(req, 'recommendations_error', err.message, {
+      name: err.name,
+      stack: err.stack && String(err.stack).slice(0, 800),
+    });
+    res.status(500).json({ error: err.message, requestId: req.correlationId });
   }
 });
 
 /* ── POST /coach — stream a coaching response ── */
 router.post('/coach', async (req, res) => {
-  const { workouts = [], fatigue = {}, topLifts = [], messages = [] } = req.body;
-
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set in .env' });
+  const validation = _validateCoachPayload(req.body);
+  if (!validation.ok) {
+    logWarn(req, 'coach_bad_payload', validation.detail, { clientError: validation.error });
+    return res.status(validation.code).json({
+      error: validation.error,
+      requestId: req.correlationId,
+    });
   }
 
-  if (!messages.length) {
-    return res.status(400).json({ error: 'messages array is required' });
+  let { workouts = [], fatigue = {}, topLifts = [], messages } = req.body;
+
+  if (!Array.isArray(workouts)) {
+    logWarn(req, 'coach_coerce_payload', 'workouts is not an array — using []');
+    workouts = [];
+  }
+  if (fatigue !== null && typeof fatigue === 'object' && !Array.isArray(fatigue)) {
+    /* ok */
+  } else {
+    logWarn(req, 'coach_coerce_payload', 'fatigue invalid — using {}');
+    fatigue = {};
+  }
+  if (!Array.isArray(topLifts)) {
+    logWarn(req, 'coach_coerce_payload', 'topLifts is not an array — using []');
+    topLifts = [];
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    logWarn(req, 'coach_no_api_key', 'ANTHROPIC_API_KEY missing');
+    return res.status(500).json({
+      error: 'ANTHROPIC_API_KEY not set in .env',
+      requestId: req.correlationId,
+    });
   }
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+
+  const t0 = Date.now();
+  logInfo(req, 'coach_stream_start', 'Coach SSE stream started', {
+    messageCount: messages.length,
+    workoutContextN: workouts.length,
+  });
 
   try {
     const system = _buildSystemPrompt(workouts, fatigue, topLifts);
@@ -171,12 +297,39 @@ router.post('/coach', async (req, res) => {
       res.write(`data: ${JSON.stringify({ text })}\n\n`);
     });
 
-    await stream.finalMessage();
+    const timeoutErr = new Error('COACH_TIMEOUT');
+    timeoutErr.code = 'COACH_TIMEOUT';
+
+    await Promise.race([
+      stream.finalMessage(),
+      new Promise((_, reject) => setTimeout(() => reject(timeoutErr), COACH_STREAM_TIMEOUT_MS)),
+    ]);
 
     res.write('data: [DONE]\n\n');
+    logInfo(req, 'coach_stream_ok', 'Coach stream completed', { ms: Date.now() - t0 });
   } catch (err) {
-    console.error('[/api/coach]', err.message);
-    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+    const isTimeout = err.code === 'COACH_TIMEOUT' || err.message === 'COACH_TIMEOUT';
+    if (isTimeout) {
+      logError(req, 'coach_timeout', 'Anthropic stream exceeded timeout', {
+        timeoutMs: COACH_STREAM_TIMEOUT_MS,
+        ms: Date.now() - t0,
+      });
+      res.write(
+        `data: ${JSON.stringify({
+          error: `Coach timed out after ${Math.round(COACH_STREAM_TIMEOUT_MS / 1000)}s`,
+          requestId: req.correlationId,
+        })}\n\n`
+      );
+    } else {
+      logError(req, 'coach_stream_error', err.message, {
+        name: err.name,
+        ms: Date.now() - t0,
+        stack: err.stack && String(err.stack).slice(0, 800),
+      });
+      res.write(
+        `data: ${JSON.stringify({ error: err.message, requestId: req.correlationId })}\n\n`
+      );
+    }
     res.write('data: [DONE]\n\n');
   }
 
@@ -196,7 +349,9 @@ function _parseGeneratedPlan(aiContent, defaultPlan) {
       }
     }
   } catch (e) {
-    console.warn('[_parseGeneratedPlan] JSON parse failed, using defaults');
+    logWarn(null, 'parse_generated_plan', 'JSON parse failed, using defaults', {
+      message: e.message,
+    });
   }
   // Fallback: return default plan
   return defaultPlan;
@@ -283,7 +438,7 @@ function _parseRecommendations(aiContent, defaultPlan) {
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       // Merge with default plan to ensure all fields exist
-      return defaultPlan.map((ex, i) => ({
+      return defaultPlan.map((ex) => ({
         name: ex.name,
         sets: ex.sets,
         reps: ex.reps,

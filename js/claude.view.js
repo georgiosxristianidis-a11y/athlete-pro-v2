@@ -576,7 +576,7 @@ export const Claude = (() => {
     return `
       <div class="section-header" style="margin-top:var(--sp-2)">
         <span class="section-label">Next Session Preview</span>
-        <button class="btn-text" onclick="Claude.close();Nav.go('s-train')">Start</button>
+        <button class="btn-text" onclick="Claude.close();Nav.go('s-train',{force:true})">Start</button>
       </div>
       <div class="next-session-card">
         ${exercises
@@ -635,153 +635,8 @@ export const Claude = (() => {
 })();
 
 /* ══════════════════════════════════════════════
-   PLAN PREVIEW — AI Program Generation
-   ══════════════════════════════════════════════ */
-
-/**
- * Show plan preview modal.
- * @param {Object} plan — { push:[], pull:[], legs:[] }
- */
-export function showPlanPreview(plan) {
-  const container = document.getElementById('plan-preview-content');
-  if (!container) return;
-
-  // Store plan in ClaudeState for accept action
-  ClaudeState.generatedPlan = plan;
-
-  // Render plan as accordion
-  container.innerHTML = `
-    <div class="plan-preview">
-      <details open>
-        <summary><strong>PUSH</strong> — Chest, Shoulders, Triceps (${plan.push.length} exercises)</summary>
-        <ul class="plan-exercises">
-          ${plan.push.map(ex => `
-            <li>
-              <strong>${ex.name}</strong>: ${ex.sets}×${ex.reps} @ ${ex.weight}kg
-              ${ex.notes ? `<small>${ex.notes}</small>` : ''}
-            </li>
-          `).join('')}
-        </ul>
-      </details>
-      <details>
-        <summary><strong>PULL</strong> — Back, Rear Delt, Biceps (${plan.pull.length} exercises)</summary>
-        <ul class="plan-exercises">
-          ${plan.pull.map(ex => `
-            <li>
-              <strong>${ex.name}</strong>: ${ex.sets}×${ex.reps} @ ${ex.weight}kg
-              ${ex.notes ? `<small>${ex.notes}</small>` : ''}
-            </li>
-          `).join('')}
-        </ul>
-      </details>
-      <details>
-        <summary><strong>LEGS</strong> — Quads, Hamstrings, Glutes, Calves (${plan.legs.length} exercises)</summary>
-        <ul class="plan-exercises">
-          ${plan.legs.map(ex => `
-            <li>
-              <strong>${ex.name}</strong>: ${ex.sets}×${ex.reps} @ ${ex.weight}kg
-              ${ex.notes ? `<small>${ex.notes}</small>` : ''}
-            </li>
-          `).join('')}
-        </ul>
-      </details>
-    </div>
-  `;
-
-  document.getElementById('plan-preview-modal').hidden = false;
-}
-
-/**
- * Hide plan preview modal.
- */
-export function hidePlanPreview() {
-  document.getElementById('plan-preview-modal').hidden = true;
-}
-
-/**
- * Accept generated plan and save to localStorage.
- */
-export async function acceptGeneratedPlan() {
-  const plan = ClaudeState.generatedPlan;
-  if (!plan) return;
-
-  // Import savePlan from workout.store
-  const { savePlan } = await import('./workout.store.js');
-  savePlan(plan);
-
-  // Hide modal
-  hidePlanPreview();
-
-  // Show success message
-  const { Toast } = await import('./app.js');
-  Toast.show('✅ Plan saved! Start your first session now.', 'success');
-
-  // Refresh regenerate button visibility
-  updateRegenerateButton();
-}
-
-/**
- * Request plan regeneration via AI chat.
- */
-export async function regeneratePlan() {
-  const plan = ClaudeState.generatedPlan;
-
-  // Open AI chat with pre-filled context
-  ClaudeState.isOpen = true;
-  ClaudeState.chatHistory = [
-    {
-      role: 'assistant',
-      content: 'I\\'ve generated a PPL plan for you. What would you like to adjust?\\n\\n- Change exercise selection\\n- Modify volume (sets/reps)\\n- Adjust for specific goals (strength/hypertrophy)\\n- Accommodate equipment limitations\\n\\nJust tell me what to change!'
-    }
-  ];
-
-  // Re-render chat
-  const { Claude } = await import('./claude.view.js');
-  Claude.close(); // Close existing
-  Claude.open(); // Re-open with new context
-
-  hidePlanPreview();
-}
-
-/**
- * Update regenerate button visibility.
- */
-export function updateRegenerateButton() {
-  const btn = document.getElementById('regenerate-plan-btn');
-  if (!btn) return;
-
-  const hasPlan = localStorage.getItem('ap-custom-plan');
-  btn.hidden = !hasPlan;
-}
-
-/**
- * Render regenerate button in Claude panel area.
- */
-export function renderRegenerateButton() {
-  if (document.getElementById('regenerate-plan-btn')) return;
-
-  const btn = document.createElement('button');
-  btn.id = 'regenerate-plan-btn';
-  btn.className = 'regenerate-plan-btn';
-  btn.setAttribute('aria-label', 'Regenerate PPL Plan');
-  btn.setAttribute('title', 'Regenerate PPL Plan');
-  btn.innerHTML = '🔄';
-  btn.onclick = regeneratePlan;
-
-  document.body.appendChild(btn);
-  updateRegenerateButton();
-}
-
-/* ══════════════════════════════════════════════
    EXPOSE TO WINDOW FOR ONCLICK HANDLERS
    ══════════════════════════════════════════════ */
 
-// Expose functions for onclick="" handlers in index.html
-window.ClaudeView = {
-  showPlanPreview,
-  hidePlanPreview,
-  acceptGeneratedPlan,
-  regeneratePlan,
-  updateRegenerateButton,
-  renderRegenerateButton
-};
+// Expose Claude for onclick handlers
+window.Claude = Claude;

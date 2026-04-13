@@ -3,13 +3,19 @@
    shell.js — Athlete Pro  |  Nav + Toast as ES Module exports
    ════════════════════════════════════════════════════════ */
 
+import { State } from './workout.store.js';
+
 /* ── Navigation ── */
 let _current = 's-home';
 const _handlers = {
   's-home':    () => window.Dashboard.load(),
   's-train': async () => {
     if (!window.Workout) await window._loadWorkout();
-    window.Workout.renderSelect();
+    if (State.phase === 'active') {
+      window.Workout.renderActive();
+    } else {
+      window.Workout.renderSelect();
+    }
   },
   's-stats': async () => {
     if (!window.Analytics) {
@@ -31,17 +37,20 @@ const _handlers = {
 /**
  * Navigate to a screen by element ID, hiding the previous screen.
  * @param {string} id — screen element ID (e.g. 's-home', 's-train')
- * @returns {void}
+ * @param {{ force?: boolean }} [opts] — force:true re-runs the screen handler even if already on that screen (recovers blank UI / desync)
+ * @returns {Promise<void>}
  */
-function go(id) {
-  if (id === _current) return;
+async function go(id, opts = {}) {
+  if (id === _current && !opts.force) return;
   document.getElementById(_current)?.classList.remove('active');
   document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
   document.querySelector(`.nav-btn[data-s="${id}"]`)?.classList.add('active');
   _current = id;
-  document.getElementById(id).scrollTop = 0;
-  _handlers[id]?.();
+  const panel = document.getElementById(id);
+  if (panel) panel.scrollTop = 0;
+  const fn = _handlers[id];
+  if (fn) await fn();
 }
 
 /**
