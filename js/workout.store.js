@@ -5,6 +5,7 @@
 
 export const SESSION_KEY = 'ap-active-session';
 export const PLAN_KEY = 'ap-custom-plan';
+export const CUSTOM_WORKOUTS_KEY = 'ap-custom-workouts';
 
 /** @type {Object<string, Array<{name: string, sets: number, reps: number, weight: number}>>} */
 export const DEFAULT_PLAN = {
@@ -307,3 +308,46 @@ export function tryRestoreSession() {
 
 /* ── Public API ── */
 export { getExerciseLibrary, filterExercises, getUniqueValues, getExerciseByName };
+
+/* ════════════════════════════════════════════════════════
+   CUSTOM WORKOUTS — User-created workout templates
+   ════════════════════════════════════════════════════════ */
+/**
+ * Get all custom workouts from localStorage.
+ * @returns {Array<{ id: string, name: string, type: 'push'|'pull'|'legs'|'custom', exercises: Array<{name: string, sets: number, reps: number, weight: number}> }>}
+ */
+export function getCustomWorkouts() {
+  try {
+    const raw = localStorage.getItem(CUSTOM_WORKOUTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Save a new custom workout or update existing.
+ * @param {{ id: string, name: string, type: string, exercises: Array }} workout
+ * @returns {void}
+ */
+export function saveCustomWorkout(workout) {
+  const workouts = getCustomWorkouts();
+  const existingIndex = workouts.findIndex(w => w.id === workout.id);
+  if (existingIndex >= 0) {
+    workouts[existingIndex] = workout;
+  } else {
+    workouts.push(workout);
+  }
+  localStorage.setItem(CUSTOM_WORKOUTS_KEY, JSON.stringify(workouts));
+}
+
+/**
+ * Delete a custom workout by id.
+ * @param {string} id
+ * @returns {void}
+ */
+export function deleteCustomWorkout(id) {
+  const workouts = getCustomWorkouts();
+  const filtered = workouts.filter(w => w.id !== id);
+  localStorage.setItem(CUSTOM_WORKOUTS_KEY, JSON.stringify(filtered));
+}

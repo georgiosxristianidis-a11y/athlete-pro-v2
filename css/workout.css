@@ -472,6 +472,49 @@
 /* ── Plan editor modal ── */
 /* modal-overlay, modal-sheet, modal-handle, modal-header, modal-title,
    btn-icon-sm — moved to css/base.css */
+
+/* Plan search */
+.plan-search-wrap {
+  position: relative;
+  margin-bottom: var(--sp-2);
+}
+.plan-search-icon {
+  position: absolute;
+  left: var(--sp-2);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--c-text-3);
+  pointer-events: none;
+  width: 18px;
+  height: 18px;
+}
+.plan-search-input {
+  width: 100%;
+  height: 44px;
+  padding-left: 44px;
+  padding-right: var(--sp-2);
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  color: var(--c-text-1);
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  transition: border-color var(--t-fast);
+}
+.plan-search-input:focus {
+  border-color: var(--c-accent);
+}
+.plan-search-input::placeholder {
+  color: var(--c-text-3);
+}
+.plan-empty {
+  text-align: center;
+  padding: var(--sp-3);
+  color: var(--c-text-3);
+  font-size: 13px;
+}
+
 .plan-tabs {
   display: flex;
   gap: var(--sp-1);
@@ -598,6 +641,54 @@
 .plan-delete:active {
   opacity: 0.7;
 }
+
+/* Custom workouts list */
+.custom-workouts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: var(--sp-2);
+}
+.custom-workout-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  transition: all var(--t-fast);
+}
+.custom-workout-item:active {
+  background: var(--c-surface-h);
+}
+.custom-workout-info {
+  flex: 1;
+  min-width: 0;
+}
+.custom-workout-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.custom-workout-meta {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-text-3);
+  margin-top: 2px;
+}
+.custom-workout-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .btn-add-ex {
   display: flex;
   align-items: center;

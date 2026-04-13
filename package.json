@@ -1,13 +1,11 @@
 {
-  "name": "fit-elite",
+  "name": "athlete-pro",
   "version": "1.0.0",
-  "description": "PPL Workout Tracker with AI Autopilot Coach",
+  "description": "PPL Workout Tracker with AI Coach (Frozen — see FIT ELITE for active dev)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "start:3100": "cross-env PORT=3100 node server.js",
-    "dev:3100": "cross-env PORT=3100 node --watch server.js",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -15,6 +13,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.51.0",
+    "@supabase/supabase-js": "^2.102.1",
     "dotenv": "^16.4.5",
     "express": "^4.21.2"
   },

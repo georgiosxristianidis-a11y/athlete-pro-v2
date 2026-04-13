@@ -1,17 +1,34 @@
-# Зависимости и сборка
+# 📦 Системный мусор и сборка
 node_modules/
 dist/
 build/
+.vercel/
+.cache/
+coverage/
 .git/
+
+# 🖼️ Бинарники и визуал (ИИ не умеет читать пиксели текстом)
+public/images/
+src/icons/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.ico
+*.svg
+
+# 🛑 Главные пожиратели токенов
+src/data/exercises.json
 *.log
 
-# 🛑 Твоя секретная база знаний (как ты и просил)
+# 🧠 Изоляция контекста (чтобы ИИ не путал черновики с боевыми правилами)
 .planning/
-
-# 🛑 Пожиратели токенов (LLM не нужно читать координаты SVG и 170 JSON-объектов)
-src/icons/
-src/data/exercises.json
-
-# PWA кэши и воркеры (чтобы ИИ не галлюцинировал в них без спроса)
 .workbox/
 sw.js
+
+# 🔒 Секреты (я — ИИ, мне не нужно видеть твои ключи Supabase)
+.env*
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

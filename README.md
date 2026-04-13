@@ -1,96 +1,43 @@
-# Athlete Pro — Complete Build for Testing
+# Athlete Pro — PPL Workout Tracker + AI Coach
 
-Generated: 2026-03-13
+> ⚠️ **Frozen project.** Active development moved to [FIT ELITE](../fit-elite/).
+> This codebase is functional and can be used for reference, testing, or resumed later.
 
-## Structure
+## Quick Start
 
-athlete-pro/
-├── index.html ← App shell
-├── sw.js ← ✅ FIXED Service Worker
-├── manifest.json
-├── js/
-│ ├── db.js ← IndexedDB layer
-│ ├── dashboard.js ← ✅ FIXED Dashboard
-│ ├── workout.js ← Workout engine
-│ ├── analytics.js ← Charts & stats
-│ ├── profile.js ← Profile & metrics
-│ ├── timer.js ← Timer module
-│ └── claude.js ← AI Coach + Muscle Heatmap
-├── css/
-│ ├── dashboard.css
-│ ├── workout.css
-│ ├── analytics.css
-│ ├── profile.css
-│ └── claude.css
-└── icons/
-├── icon-192.png
-├── icon-512.png
-└── apple-touch-icon.png
+```bash
+npm install
+cp .env.example .env       # fill in ANTHROPIC_API_KEY
+npm start                   # http://localhost:3000
+```
 
-## Local run (2 modes)
+## What's Here
 
-### Mode 1 — Static only (offline PWA, no `/api/*`)
+- PPL workout logging with 170-exercise library
+- AI coach via Claude Opus (SSE streaming)
+- 1RM estimation, muscle fatigue heatmap
+- Dashboard, analytics, body stats, profile
+- Offline PWA (Service Worker + IndexedDB)
+- Rest timer, plate calculator
+- Lighthouse 97/100, WCAG AA compliant
 
-Use this when you only need the frontend (no AI coach / no proxy endpoints).
+## Tech
 
-Option A — Python:
-`python -m http.server 8080`
-→ Open `http://localhost:8080`
+Vanilla JS frontend (no frameworks) + Express backend + IndexedDB.
+Optional cloud sync via Supabase or Firebase.
 
-Option B — VS Code Live Server:
-Open folder in VS Code → Go Live
+## Env Variables
 
-### Mode 2 — Express server (serves frontend + `/api/*`)
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `ANTHROPIC_API_KEY` | For AI coach | `POST /api/coach` |
+| `PORT` | No (default 3000) | Server port |
+| `SUPABASE_URL` | No | Cloud sync |
+| `SUPABASE_ANON_KEY` | No | Cloud sync |
 
-Use this when you need:
+## Docs
 
-- `POST /api/coach` (Anthropic AI Coach, optional)
-- `GET /api/supabase-status` (optional)
-- `GET /api/firebase-config` (optional)
-
-1. Install deps:
-   `npm install`
-
-2. Create `.env` (copy from `.env.example`):
-   `copy .env.example .env`
-
-3. Start:
-   `npm start`
-   → App at `http://localhost:3000` (unless `PORT` is set)
-
-If port 3000 is busy on your machine:
-
-- Set another port: `set PORT=3100` (cmd) or `$env:PORT=3100` (PowerShell) and start again
-- Or stop the other process using that port
-
-## Fixes applied
-
-- sw.js: cache install fixed, offline fallback fixed, ASSETS list complete
-- js/dashboard.js: empty screen fixed, PPL bar animation fixed
-
-## PWA Install test
-
-1. Open in Chrome on Android/iOS or Chrome desktop
-2. Look for "Add to Home Screen" prompt
-3. DevTools → Application → Manifest → check all green ✅
-
-## Environment variables
-
-All variables are optional unless you use the related feature.
-
-- `PORT`: server port (default `3000`)
-- `ANTHROPIC_API_KEY`: required for `POST /api/coach`
-- `SUPABASE_URL`, `SUPABASE_ANON_KEY`: required for `/api/supabase-status`
-- `FIREBASE_*`: required for `/api/firebase-config`
-
-## Deploy notes (example: Render)
-
-This app is a Node server that serves static files and exposes `/api/*` endpoints.
-
-- Build command: `npm ci`
-- Start command: `npm start`
-- Environment:
-  - `PORT` is provided by the platform (your app should respect it)
-  - Optional: `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `FIREBASE_*`
-
-If you don't set `ANTHROPIC_API_KEY`, the app still works, but `POST /api/coach` will return an error.
+- `CLAUDE.md` — dev guide for Claude Code
+- `DESIGN.md` — Vantablack Luxury design system
+- `ROADMAP_elite_athlete-pro.md` — 8-phase plan
+- `CHANGELOG.md` — version history

@@ -8,7 +8,7 @@ import { DB } from './db.js';
 import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
 import { RestTimer } from './rest-timer.js'; // eslint-disable-line no-unused-vars
-import { State, EXERCISE_LIBRARY, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, tryRestoreSession, getExerciseLibrary, filterExercises, getUniqueValues } from './workout.store.js';
+import { State, EXERCISE_LIBRARY, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, tryRestoreSession, getExerciseLibrary, filterExercises, getUniqueValues, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout } from './workout.store.js';
 import { generateRecommendations, getRecommendations } from './claude.store.js';
 import { Heatmap } from './claude.store.js';
 
@@ -200,11 +200,20 @@ function openPlanEditor() {
     // Always reload fresh so add/delete immediately reflects
     const p = loadPlan();
     Object.assign(plan, p);
-    return (
-      plan[type]
-        .map(
-          (ex, i) => `
-      <div class="plan-row" id="plan-row-${type}-${i}" data-pi="${i}">
+
+    // Filter exercises by search query
+    let exercises = plan[type] || [];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      exercises = exercises.filter(ex => ex.name.toLowerCase().includes(q));
+    }
+
+    const exercisesHTML = exercises.length > 0
+      ? exercises
+          .map((ex, filteredIndex) => {
+            const originalIndex = plan[type].indexOf(ex);
+            return `
+      <div class="plan-row" id="plan-row-${type}-${originalIndex}" data-pi="${originalIndex}">
         <div class="plan-drag-handle">
           <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
             <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
@@ -213,21 +222,21 @@ function openPlanEditor() {
           </svg>
         </div>
         <input class="plan-input" value="${ex.name}"
-          onchange="Workout._updatePlanName('${type}',${i},this.value)">
+          onchange="Workout._updatePlanName('${type}',${originalIndex},this.value)">
         <div class="plan-row-meta">
           <span class="plan-meta-label">Sets</span>
           <div class="mini-stepper">
-            <button onclick="Workout._adjustPlan('${type}',${i},'sets',-1)" aria-label="Decrease sets">${svgArrow('minus')}</button>
-            <span id="ps-sets-${type}-${i}">${ex.sets}</span>
-            <button onclick="Workout._adjustPlan('${type}',${i},'sets',1)" aria-label="Increase sets">${svgArrow('plus')}</button>
+            <button onclick="Workout._adjustPlan('${type}',${originalIndex},'sets',-1)" aria-label="Decrease sets">${svgArrow('minus')}</button>
+            <span id="ps-sets-${type}-${originalIndex}">${ex.sets}</span>
+            <button onclick="Workout._adjustPlan('${type}',${originalIndex},'sets',1)" aria-label="Increase sets">${svgArrow('plus')}</button>
           </div>
           <span class="plan-meta-label">Reps</span>
           <div class="mini-stepper">
-            <button onclick="Workout._adjustPlan('${type}',${i},'reps',-1)" aria-label="Decrease reps">${svgArrow('minus')}</button>
-            <span id="ps-reps-${type}-${i}">${ex.reps}</span>
-            <button onclick="Workout._adjustPlan('${type}',${i},'reps',1)" aria-label="Increase reps">${svgArrow('plus')}</button>
+            <button onclick="Workout._adjustPlan('${type}',${originalIndex},'reps',-1)" aria-label="Decrease reps">${svgArrow('minus')}</button>
+            <span id="ps-reps-${type}-${originalIndex}">${ex.reps}</span>
+            <button onclick="Workout._adjustPlan('${type}',${originalIndex},'reps',1)" aria-label="Increase reps">${svgArrow('plus')}</button>
           </div>
-          <button class="plan-delete" onclick="Workout._deletePlanEx('${type}',${i})" aria-label="Remove exercise">
+          <button class="plan-delete" onclick="Workout._deletePlanEx('${type}',${originalIndex})" aria-label="Remove exercise">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.5" stroke-linecap="round" width="14" height="14">
               <polyline points="3 6 5 6 21 6"/>
@@ -237,18 +246,21 @@ function openPlanEditor() {
           </button>
         </div>
       </div>`
-        )
-        .join('') +
-      `<button class="btn-add-ex" onclick="Workout._addPlanEx('${type}')">
+          }).join('')
+      : `<div class="plan-empty">No exercises found for "${searchQuery}"</div>`;
+
+    return exercisesHTML + `
+      <button class="btn-add-ex" onclick="Workout._addPlanEx('${type}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.5" stroke-linecap="round" width="16" height="16">
           <line x1="12" y1="5" x2="12" y2="19"/>
           <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
         Add Exercise
-      </button>`
-    );
+      </button>`;
   }
+
+  let searchQuery = '';
 
   function render() {
     overlay.innerHTML = `
@@ -264,6 +276,19 @@ function openPlanEditor() {
             </svg>
           </button>
         </div>
+
+        <!-- Search bar -->
+        <div class="plan-search-wrap">
+          <svg class="plan-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" width="18" height="18">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input class="plan-search-input" id="plan-search" type="text"
+                 placeholder="Search exercises..." value="${searchQuery}"
+                 oninput="Workout._setPlanSearch(this.value)">
+        </div>
+
         <div class="plan-tabs">
           ${['push', 'pull', 'legs']
             .map(
@@ -293,12 +318,16 @@ function openPlanEditor() {
     if (e.target === overlay) _closePlanEditor();
   });
 
-  // Expose tab switch
+  // Expose tab switch and search
   _planEditorActiveTab = () => activeTab;
   _planEditorSetTab = (t) => {
     activeTab = t;
     render();
     requestAnimationFrame(_initPlanDrag);
+  };
+  window._planSetSearch = (q) => {
+    searchQuery = q;
+    render();
   };
 }
 
@@ -309,6 +338,17 @@ function openPlanEditor() {
  */
 function _switchPlanTab(type) {
   _planEditorSetTab(type);
+}
+
+/**
+ * Set search query for filtering exercises in plan editor.
+ * @param {string} query
+ * @returns {void}
+ */
+function _setPlanSearch(query) {
+  if (window._planSetSearch) {
+    window._planSetSearch(query);
+  }
 }
 
 /**
@@ -1248,8 +1288,184 @@ async function openReplaceExModal(ei) {
 }
 
 /* ════════════════════════════════════════════════════════
-   ADD SET
+   CUSTOM WORKOUT MODAL — Create/Edit custom workouts
    ════════════════════════════════════════════════════════ */
+/**
+ * Open modal for creating/editing custom workouts.
+ * @returns {void}
+ */
+async function openCustomWorkoutModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'custom-workout-overlay';
+
+  const customWorkouts = getCustomWorkouts();
+
+  overlay.innerHTML = `
+    <div class="modal-sheet" style="max-height:85vh;display:flex;flex-direction:column">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">My Workouts</div>
+        <button class="btn-icon-sm" id="custom-wk-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" width="18" height="18">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Custom workouts list -->
+      <div class="section-header" style="margin-bottom:var(--sp-1)">
+        <span class="section-label">Your Custom Workouts</span>
+        <button class="btn-text" onclick="Workout._createNewCustomWorkout()" style="font-size:11px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" width="14" height="14">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          New
+        </button>
+      </div>
+
+      <div class="custom-workouts-list" id="custom-wk-list">
+        ${customWorkouts.length === 0
+          ? '<div class="plan-empty" style="padding:var(--sp-3)">No custom workouts yet. Create your first!</div>'
+          : customWorkouts.map(w => `
+            <div class="custom-workout-item" data-id="${w.id}">
+              <div class="custom-workout-info">
+                <div class="custom-workout-name">${w.name}</div>
+                <div class="custom-workout-meta">${w.exercises?.length || 0} exercises · ${w.type || 'custom'}</div>
+              </div>
+              <div class="custom-workout-actions">
+                <button class="btn-icon-sm" onclick="Workout._editCustomWorkout('${w.id}')" aria-label="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" width="16" height="16">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-icon-sm" onclick="Workout._deleteCustomWorkout('${w.id}')" aria-label="Delete" style="color:var(--c-red)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" width="16" height="16">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14H6L5 6"/>
+                  </svg>
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="Workout._startCustomWorkout('${w.id}')" style="margin-left:auto">
+                  Start
+                </button>
+              </div>
+            </div>
+          `).join('')}
+      </div>
+
+      <button class="btn btn-primary" style="margin-top:var(--sp-2)" onclick="Workout._closeCustomWorkoutModal()">
+        Close
+      </button>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#custom-wk-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
+/**
+ * Create a new empty custom workout.
+ * @returns {void}
+ */
+async function _createNewCustomWorkout() {
+  const name = prompt('Enter workout name:');
+  if (!name) return;
+
+  const type = prompt('Enter type (push/pull/legs/custom):', 'custom') || 'custom';
+
+  const newWorkout = {
+    id: 'custom-' + Date.now(),
+    name,
+    type,
+    exercises: []
+  };
+
+  // Open exercise picker to add exercises
+  await openExercisePickerModal(type, (exercise) => {
+    newWorkout.exercises.push({ name: exercise.name, sets: 3, reps: 10, weight: 0 });
+    saveCustomWorkout(newWorkout);
+    // Re-render modal
+    openCustomWorkoutModal();
+  });
+}
+
+/**
+ * Edit an existing custom workout.
+ * @param {string} id
+ * @returns {void}
+ */
+async function _editCustomWorkout(id) {
+  const workouts = getCustomWorkouts();
+  const workout = workouts.find(w => w.id === id);
+  if (!workout) return;
+
+  // Close current modal and open exercise picker
+  document.getElementById('custom-workout-overlay')?.remove();
+
+  await openExercisePickerModal(workout.type || 'custom', (exercise) => {
+    workout.exercises.push({ name: exercise.name, sets: 3, reps: 10, weight: 0 });
+    saveCustomWorkout(workout);
+    openCustomWorkoutModal();
+  });
+}
+
+/**
+ * Delete a custom workout.
+ * @param {string} id
+ * @returns {void}
+ */
+function _deleteCustomWorkout(id) {
+  if (confirm('Delete this workout?')) {
+    deleteCustomWorkout(id);
+    openCustomWorkoutModal();
+  }
+}
+
+/**
+ * Start a custom workout session.
+ * @param {string} id
+ * @returns {void}
+ */
+function _startCustomWorkout(id) {
+  const workouts = getCustomWorkouts();
+  const workout = workouts.find(w => w.id === id);
+  if (!workout) return;
+
+  // Build session from custom workout
+  State.type = workout.type || 'custom';
+  State.plan = workout.exercises.map(ex => ({
+    name: ex.name,
+    sets: Array.from({ length: ex.sets || 3 }, () => ({
+      weight: ex.weight || 0,
+      reps: ex.reps || 10,
+      rpe: null,
+      done: false,
+    })),
+  }));
+  State.phase = 'active';
+  State.startedAt = Date.now();
+
+  persistSession();
+  renderActive();
+}
+
+/**
+ * Close custom workout modal.
+ * @returns {void}
+ */
+function _closeCustomWorkoutModal() {
+  document.getElementById('custom-workout-overlay')?.remove();
+}
 /**
  * Add a new set to an exercise, copying the last set's weight/reps.
  * @param {number} ei — exercise index
@@ -1745,13 +1961,20 @@ export const Workout = {
   renderActive,
   selectType,
   openPlanEditor,
+  openCustomWorkoutModal,
   _closePlanEditor,
   _savePlanAndClose,
   _switchPlanTab,
+  _setPlanSearch,
   _updatePlanName,
   _adjustPlan,
   _addPlanEx,
   _deletePlanEx,
+  _createNewCustomWorkout,
+  _editCustomWorkout,
+  _deleteCustomWorkout,
+  _startCustomWorkout,
+  _closeCustomWorkoutModal,
   toggleChecklist,
   stepWeight,
   stepReps,

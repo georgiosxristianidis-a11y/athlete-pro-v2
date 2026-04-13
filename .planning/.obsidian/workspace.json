@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "778f4a710b5fed80",
+        "id": "0d141833c107ef7f",
         "type": "tabs",
         "children": [
           {
-            "id": "fa95d87a7aca32c0",
+            "id": "8fdaf9622a7ababf",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "audits/APP-AUDIT.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "APP-AUDIT"
             }
           }
         ]
@@ -176,8 +180,21 @@
       "bases:Create new base": false
     }
   },
-  "active": "fa95d87a7aca32c0",
+  "active": "de222a221dc815ea",
   "lastOpenFiles": [
+    "audits/APP-AUDIT 1.md",
+    "audits/APP-AUDIT.md",
+    "ROADMAP.md",
+    "Untitled.canvas",
+    "Untitled 1.canvas",
+    "Untitled.md",
+    "codebase/TESTING.md",
+    "PROJECT.md",
+    "2026-04-10.md",
+    "Untitled",
+    "USPECS.md",
+    "2026-04-09.md",
+    "ui-reviews/04-ui-review-20260329-222402/UI-REVIEW.md",
     "archive/02-performance-reliability/lighthouse-report.report.json",
     "archive/02-performance-reliability/lighthouse-report.report.html",
     "archive/02-performance-reliability/02-VALIDATION.md",
@@ -197,13 +214,6 @@
     "archive/01-architecture-foundation/01-05-SUMMARY.md",
     "archive/01-architecture-foundation/01-05-PLAN.md",
     "archive/01-architecture-foundation/01-04-SUMMARY.md",
-    "archive/01-architecture-foundation/01-04-PLAN.md",
-    "archive/01-architecture-foundation/01-03-SUMMARY.md",
-    "archive/01-architecture-foundation/01-03-PLAN.md",
-    "archive/01-architecture-foundation/01-02-SUMMARY.md",
-    "archive/01-architecture-foundation/01-02-PLAN.md",
-    "archive/01-architecture-foundation/01-01-SUMMARY.md",
-    "archive/01-architecture-foundation/01-01-PLAN.md",
     "archive/01-architecture-foundation",
     "archive"
   ]

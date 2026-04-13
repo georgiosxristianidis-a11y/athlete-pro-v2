@@ -217,15 +217,11 @@ button:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════
-   MOBILE-CENTERED LAYOUT (Desktop / Windows)
-   Limits app width to 480px and centers it with phone-like frame
+   MOBILE-CENTERED LAYOUT (Desktop / Windows ONLY)
+   Fixed width 412px — for devices with hover (mouse) capability
+   Mobile/tablet devices adapt automatically to screen width
    ════════════════════════════════════════════════════════ */
-
-/* ════════════════════════════════════════════════════════
-   MOBILE-CENTERED LAYOUT (Desktop / Windows)
-   Limits app width to 480px and centers it with phone-like frame
-   ════════════════════════════════════════════════════════ */
-@media (min-width: 481px) {
+@media (min-width: 481px) and (hover: hover) {
   html {
     background: var(--c-bg);
   }
@@ -236,13 +232,17 @@ button:focus-visible {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    /* Prevent body from shrinking */
+    flex-shrink: 0;
   }
 
   #app {
-    max-width: 480px;
-    width: 100%;
+    /* FIXED width — like mobile device, never shrinks */
+    width: 412px;
+    min-width: 412px;
+    max-width: 412px;
     height: 100vh;
-    max-height: 932px; /* iPhone 14 Pro Max height */
+    max-height: 932px;
     background: var(--c-bg);
     box-shadow:
       0 0 0 1px rgba(255, 255, 255, 0.05),
@@ -250,49 +250,45 @@ button:focus-visible {
       0 0 120px rgba(0, 200, 110, 0.1);
     border-left: 1px solid rgba(255, 255, 255, 0.05);
     border-right: 1px solid rgba(255, 255, 255, 0.05);
+    /* Prevent app from shrinking */
+    flex-shrink: 0;
   }
 
-  /* Status bar centering */
+  /* Status bar — fixed width inside app */
   #status-bar {
-    max-width: 480px;
-    left: 50%;
+    width: 100%;
+    max-width: none;
+    left: auto;
     right: auto;
-    transform: translateX(-50%);
-    border-radius: 24px 24px 0 0;
+    transform: none;
+    border-radius: 0;
   }
 
-  /* Navigation bar centering */
+  /* Navigation bar — fixed width inside app */
   #nav {
-    max-width: 480px;
-    left: 50%;
+    width: 100%;
+    max-width: none;
+    left: auto;
     right: auto;
-    transform: translateX(-50%);
-    border-radius: 0 0 24px 24px;
+    transform: none;
+    border-radius: 0;
   }
 
-  /* AI Coach FAB centering */
+  /* AI Coach FAB — fixed position relative to app */
   .workout-ai-bubble {
-    right: calc(50% - 240px + 64px);
+    right: 16px;
   }
 
-  /* Add rounded corners on tall screens */
+  /* Tall screens: rounded corners + padding */
   @media (min-height: 900px) {
+    body {
+      padding: 20px;
+    }
+
     #app {
       border-radius: 24px;
       height: calc(100vh - 40px);
-      margin: 20px auto;
+      margin: 0 auto;
     }
-
-    #status-bar,
-    #nav {
-      max-width: 480px;
-    }
-  }
-}
-
-/* Large desktop: Add side padding for breathing room */
-@media (min-width: 900px) {
-  body {
-    padding: 20px;
   }
 }
