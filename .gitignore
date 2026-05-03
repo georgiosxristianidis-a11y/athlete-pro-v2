@@ -13,6 +13,8 @@
 # settings.local.json = личные ключи/MCP → НЕ коммитить
 # settings.json = командные правила → КОММИТИТЬ
 .claude/settings.local.json
+# Worktrees: temporary copies created by Claude agents — never commit
+.claude/worktrees/
 
 # ===== Node =====
 node_modules/

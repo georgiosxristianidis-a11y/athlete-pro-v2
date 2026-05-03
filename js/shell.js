@@ -12,7 +12,7 @@ const _handlers = {
   's-train': async () => {
     if (!window.Workout) await window._loadWorkout();
     if (State.phase === 'active') {
-      window.Workout.renderActive();
+      await window.Workout.renderActive();
     } else {
       window.Workout.renderSelect();
     }

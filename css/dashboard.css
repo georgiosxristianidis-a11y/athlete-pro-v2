@@ -221,7 +221,7 @@
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-m);
-  margin-bottom: 6px;
+  margin-bottom: 10px; /* list-density: tighter than sp-2, breathier than original 6px */
   transition: background var(--t-fast);
   cursor: pointer;
 }
@@ -351,7 +351,7 @@
   color: var(--c-accent);
   border: 1.5px solid rgba(0, 230, 118, 0.25);
   border-radius: var(--r-l);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -359,6 +359,15 @@
   transition: transform var(--t-fast), box-shadow var(--t-normal);
   box-shadow: 0 0 20px rgba(0, 230, 118, 0.12), 0 4px 16px rgba(0, 0, 0, 0.3);
   animation: glowPulse 2.5s ease-in-out infinite;
+  pointer-events: auto;
+  user-select: none;
+}
+.btn-start-workout:hover {
+  background: rgba(0, 230, 118, 0.12);
+  transform: scale(1.02);
+}
+.btn-start-workout:active {
+  transform: scale(0.96);
 }
 .btn-start-workout svg {
   width: 18px;

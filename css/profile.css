@@ -130,7 +130,7 @@
 .history-row {
   display: flex;
   align-items: center;
-  padding: 8px 0;
+  padding: 12px 0; /* element-spacing: 24px between row centers */
   border-bottom: 1px solid var(--c-border);
   gap: var(--sp-1);
 }
@@ -161,7 +161,10 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 4px 0;
+  padding: 12px 0; /* settings rows: comfortable tap target + breathing room */
+}
+.pref-row + .pref-row {
+  border-top: 1px solid var(--c-border);
 }
 .pref-info {
   flex: 1;

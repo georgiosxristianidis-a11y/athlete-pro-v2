@@ -6,13 +6,15 @@
 
 /* ── Section 1: Design Tokens ─────────────────────────── */
 :root {
-  --c-bg: #0a0a0f;
-  --c-bg-1: #111118;
-  --c-bg-2: #16161f;
-  --c-bg-3: #1c1c28;
-  --c-surface: rgba(255, 255, 255, 0.04);
-  --c-surface-h: rgba(255, 255, 255, 0.07);
-  --c-border: rgba(255, 255, 255, 0.06);
+  /* OBSIDIAN palette — off-black with cool undertone (avoids OLED halation, gives depth).
+     Reference: Material Dark Theme #121212; we go slightly deeper for premium feel. */
+  --c-bg: #08080c;
+  --c-bg-1: #0c0c12;
+  --c-bg-2: #101018;
+  --c-bg-3: #16161f;
+  --c-surface: rgba(255, 255, 255, 0.022);
+  --c-surface-h: rgba(255, 255, 255, 0.05);
+  --c-border: rgba(255, 255, 255, 0.05);
   --c-border-h: rgba(255, 255, 255, 0.12);
   --c-text-1: #e8eaed;
   --c-text-2: #9aa0ab;
@@ -22,19 +24,21 @@
   --c-accent-bg: rgba(0, 230, 118, 0.08);
   --c-purple: #8b5cf6;
   --c-purple-bg: rgba(139, 92, 246, 0.08);
-  --c-blue: #2979ff;
-  --c-blue-bg: rgba(41, 121, 255, 0.08);
+  /* Lifted from #2979ff (3.9:1 fail AA) → #5a96ff (5.0:1 pass AA normal) */
+  --c-blue: #5a96ff;
+  --c-blue-bg: rgba(90, 150, 255, 0.08);
   --c-amber: #ffb300;
   --c-amber-bg: rgba(255, 179, 0, 0.08);
-  --c-red: #ff4757;
-  --c-red-bg: rgba(255, 71, 87, 0.08);
+  /* Softer coral instead of alarming crimson — less visually aggressive */
+  --c-red: #e8848c;
+  --c-red-bg: rgba(232, 132, 140, 0.10);
   /* Exercise category colors */
-  --c-indigo: #6366f1;
-  --c-indigo-bg: rgba(99, 102, 241, 0.08);
+  /* Lifted from #6366f1 (3.4:1 fail AA) → #8b8ff5 (5.3:1 pass AA normal) */
+  --c-indigo: #8b8ff5;
+  --c-indigo-bg: rgba(139, 143, 245, 0.10);
   --c-cyan: #06b6d4;
   --c-cyan-bg: rgba(6, 182, 212, 0.08);
-  --c-yellow: #e9c46a;
-  --c-yellow-bg: rgba(233, 196, 106, 0.08);
+  /* --c-yellow removed: redundant with --c-amber. Amber owns "warm achievement" slot. */
   /* Additional tokens */
   --c-text-inverse: #000;
   --c-surface-deep: #0d0d12;
@@ -43,9 +47,16 @@
   --sh-md: 0 4px 16px rgba(0, 0, 0, 0.22);
   --sh-lg: 0 8px 32px rgba(0, 0, 0, 0.32);
   --c-border-purple: rgba(139, 92, 246, 0.15);
-  --c-border-blue: rgba(41, 121, 255, 0.15);
+  --c-border-blue: rgba(90, 150, 255, 0.15);
+  --c-surface-2: rgba(255, 255, 255, 0.04);
+  /* ── Spacing system (8pt grid, Apple HIG / Material baseline) ──
+     3-tier rule:
+       • Atomic (inside component, icon+text, button parts) → sp-1 (8px)
+       • Element (between same-type elements: card→card, row→row) → sp-2 (16px) MINIMUM
+       • Section (between distinct groups) → sp-3 (24px) or larger
+     0.4cm physical ≈ sp-2; this is the floor for structural spacing. */
   --sp-1: 8px;
-  --sp-2: 16px;
+  --sp-2: 16px;     /* Element-spacing minimum (≈0.42cm) — enforce for card/row/section gaps */
   --sp-3: 24px;
   --sp-4: 32px;
   --sp-5: 40px;
@@ -198,6 +209,19 @@ button:focus-visible {
   top: 50px;
 }
 
+/* ── Section 4.5: Spacing safety net ──────────────────────
+   Lobotomized-owl pattern (Heydon Pickering): every direct child of a screen
+   gets a minimum 16px margin from its predecessor. Acts as a floor — explicit
+   margins on components still win, but nothing accidentally slips below sp-2. */
+.screen > * + * {
+  margin-top: var(--sp-2);
+}
+/* Opt-out: components that manage their own internal spacing */
+.screen > .live-bar + *,
+.screen > .screen-header + * {
+  /* keep their existing tight relationship */
+}
+
 /* ── Section 5: Responsive ────────────────────────────── */
 
 /* Small phone floor (<360px) — reduce spacing to prevent overflow */
@@ -291,4 +315,219 @@ button:focus-visible {
       margin: 0 auto;
     }
   }
+}
+
+/* ════════════════════════════════════════════════
+   GLASSMORPHISM — shared segment/tab plate
+   Applied to: week-segment, plan-tabs, stats-subnav,
+   bs-sex-segment, bs-tab-bar.
+   ════════════════════════════════════════════════ */
+.week-segment,
+.bs-sex-segment,
+.stats-subnav,
+.bs-tab-bar,
+.plan-tabs {
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 8px 24px rgba(0, 0, 0, 0.25);
+}
+/* Active pill on glass plate gets inner glow + soft frosted highlight */
+.week-seg-btn.active,
+.bs-sex-btn.active,
+.stats-subnav-btn.active,
+.bs-tab.active,
+.plan-tab.active {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.10) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 4px 14px rgba(0, 0, 0, 0.4);
+}
+/* Accent-tinted glass (Week A — emerald, Week B — purple) */
+.week-seg-btn.active {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 230, 118, 0.18) 0%,
+    rgba(0, 230, 118, 0.06) 100%
+  );
+  color: #fff;
+  text-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
+}
+.week-segment .week-seg-btn:nth-child(2).active {
+  background: linear-gradient(
+    180deg,
+    rgba(139, 92, 246, 0.20) 0%,
+    rgba(139, 92, 246, 0.08) 100%
+  );
+  text-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+}
+
+/* ════════════════════════════════════════════════
+   GLASSMORPHISM — extended to cards & sheets
+   ════════════════════════════════════════════════ */
+
+/* Surface cards: exercise-card, type-card, stat-chip, profile-card, plan-row, cal-card */
+.exercise-card,
+.type-card,
+.stat-chip,
+.profile-card,
+.plan-row,
+.cal-card,
+.heatmap-card,
+.coach-card,
+.chart-card,
+.checklist-card,
+.bs-stat-card {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.028) 0%,
+    rgba(255, 255, 255, 0.014) 100%
+  );
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Modal sheets — premium frosted plate */
+.modal-sheet,
+.claude-sheet {
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 28, 0.92) 0%,
+    rgba(12, 12, 18, 0.96) 100%
+  );
+  backdrop-filter: blur(40px) saturate(1.6);
+  -webkit-backdrop-filter: blur(40px) saturate(1.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 -20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Bottom nav — already glass, polish to consistent treatment */
+#nav {
+  background: linear-gradient(
+    180deg,
+    rgba(8, 8, 12, 0.72) 0%,
+    rgba(8, 8, 12, 0.94) 100%
+  ) !important;
+  backdrop-filter: blur(32px) saturate(1.8);
+  -webkit-backdrop-filter: blur(32px) saturate(1.8);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Status bar — subtle glass for consistency */
+#status-bar {
+  background: linear-gradient(
+    180deg,
+    rgba(8, 8, 12, 0.85) 0%,
+    rgba(8, 8, 12, 0.5) 100%
+  ) !important;
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ════════════════════════════════════════════════
+   PURPLE ACCENTS — balance green-heavy palette
+   Use violet for: weekly best badges, stat-chip purple
+   variant, calendar PR markers, chart accents.
+   ════════════════════════════════════════════════ */
+
+/* Stat-chip purple variant — gradient-tinted plate */
+.stat-chip-purple {
+  background: linear-gradient(
+    180deg,
+    rgba(139, 92, 246, 0.10) 0%,
+    rgba(139, 92, 246, 0.03) 100%
+  ) !important;
+  border-color: rgba(139, 92, 246, 0.18) !important;
+}
+.stat-chip-purple .stat-chip-val { color: var(--c-purple) !important; }
+
+/* Period badge — purple tone for "Last 30 days" */
+.badge-purple {
+  background: rgba(139, 92, 246, 0.10);
+  border: 1px solid rgba(139, 92, 246, 0.20);
+  color: var(--c-purple);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+/* AI Recommendation card — accent the Claude Opus brand with purple ring */
+.coach-card {
+  border-color: rgba(139, 92, 246, 0.10) !important;
+  box-shadow:
+    0 1px 0 rgba(139, 92, 246, 0.06) inset,
+    0 4px 20px rgba(139, 92, 246, 0.06) !important;
+}
+
+/* PR / Weekly best — amber→emerald achievement gradient (warm-to-cool, "ignite to win") */
+.badge-accent {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 179, 0, 0.20) 0%,
+    rgba(255, 179, 0, 0.10) 40%,
+    rgba(0, 230, 118, 0.12) 100%
+  );
+  border: 1px solid rgba(255, 179, 0, 0.30);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 10px rgba(255, 179, 0, 0.4);
+}
+
+/* Streak counter — amber "fire" tone for consecutive workout days */
+.streak-count,
+.streak-card .streak-count {
+  color: var(--c-amber);
+  font-weight: 800;
+  text-shadow: 0 0 12px rgba(255, 179, 0, 0.35);
+  letter-spacing: 0.01em;
+}
+
+/* Send button (chat input) — purple gradient instead of pure green */
+.chat-send-btn {
+  background: linear-gradient(
+    180deg,
+    var(--c-purple) 0%,
+    rgba(139, 92, 246, 0.85) 100%
+  ) !important;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35) !important;
+}
+
+/* Live-bar middle stat — tint purple to break up green dominance */
+.live-bar .live-stat:nth-child(3) .live-val {
+  background: linear-gradient(180deg, #fff 0%, #c084fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Coach pill on neutral exercises gets purple dot — already day-tinted, but
+   ensure the active session "Week B" pill text glow uses purple */
+.week-pill.week-B .week-pill-val {
+  text-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
+}
+.week-pill.week-A .week-pill-val {
+  text-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
 }

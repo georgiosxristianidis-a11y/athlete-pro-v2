@@ -70,7 +70,31 @@ window.addEventListener('online', setOnline);
 window.addEventListener('offline', setOffline);
 if (navigator.onLine) setOnline(); else setOffline();
 
-/* ── Boot ── */
+/* ── Nuke stale service workers & caches (dev-only) ── */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    regs.forEach((r) => r.unregister());
+  });
+  if ('caches' in window) {
+    caches.keys().then((names) => {
+      names.forEach((name) => caches.delete(name));
+    });
+  }
+}
+
+/* ── Boot — always hides loading screen within 5s ── */
+let booted = false;
+function hideLoading() {
+  if (booted) return;
+  booted = true;
+  setTimeout(() => {
+    document.getElementById('loading')?.classList.add('hidden');
+  }, 350);
+}
+
+// Force-hide loading after 5s no matter what
+const bootTimeout = setTimeout(hideLoading, 5000);
+
 openDB()
   .then(async () => {
     const hasSession = localStorage.getItem('ap-active-session');
@@ -89,9 +113,8 @@ openDB()
     Toast.show('Storage unavailable', 'error');
   })
   .finally(() => {
-    setTimeout(() => {
-      document.getElementById('loading')?.classList.add('hidden');
-    }, 350);
+    clearTimeout(bootTimeout);
+    hideLoading();
   });
 
 /* ── Claude FAB (lazy-loaded) ── */
@@ -102,7 +125,8 @@ import('./claude.view.js').then(({ Claude }) => {
 
 /* ── No auto plan generation — user manages plans manually ── */
 
-/* ── Service Worker ── */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
+/* ── Service Worker — disabled in development ── */
+// To enable for production PWA, uncomment:
+// if ('serviceWorker' in navigator) {
+//   navigator.serviceWorker.register('sw.js').catch(() => {});
+// }

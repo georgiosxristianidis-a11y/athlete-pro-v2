@@ -313,13 +313,22 @@ export const Claude = (() => {
     fab.addEventListener('click', open);
     document.body.appendChild(fab);
 
-    // Anchor FAB above nav bar — works in any window/fullscreen mode
+    // Anchor FAB above nav bar AND inside the app column (not viewport edge).
+    // On desktop the app is a centered 412px column — compute right offset from #app's bounding rect.
     function _snapFAB() {
       const nav = document.getElementById('nav');
+      const app = document.getElementById('app');
       if (!nav || !fab) return;
       const navH = nav.offsetHeight;
-      fab.style.bottom = navH + 10 + 'px';
-      fab.style.right = '16px';
+      fab.style.bottom = navH + 12 + 'px';
+      if (app && window.innerWidth > app.offsetWidth + 8) {
+        // Desktop: anchor 14px from app's right edge
+        const rect = app.getBoundingClientRect();
+        const rightOffset = Math.max(14, window.innerWidth - rect.right + 14);
+        fab.style.right = rightOffset + 'px';
+      } else {
+        fab.style.right = '14px';
+      }
     }
     _snapFAB();
     window.addEventListener('resize', _snapFAB);
@@ -426,7 +435,16 @@ export const Claude = (() => {
         <div style="height:var(--sp-3)"></div>
       </div>`;
 
-    document.body.appendChild(overlay);
+    // Anchor overlay inside #app on desktop so it stays in the centered column;
+    // fall back to body on mobile (full screen).
+    const app = document.getElementById('app');
+    const useAppContainer = app && window.innerWidth > app.offsetWidth + 8;
+    if (useAppContainer) {
+      overlay.classList.add('in-app');
+      app.appendChild(overlay);
+    } else {
+      document.body.appendChild(overlay);
+    }
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) close();
     });
