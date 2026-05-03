@@ -18,7 +18,7 @@ module.exports = [
     },
   },
   {
-    files: ['server.js', 'routes/**/*.js'],
+    files: ['server.js', 'routes/**/*.js', 'lib/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'script',

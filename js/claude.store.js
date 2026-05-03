@@ -144,6 +144,16 @@ export const ClaudeState = {
 const REC_KEY = 'ap-recommendations';
 
 /**
+ * @returns {string}
+ */
+function _newRequestId() {
+  return (
+    globalThis.crypto?.randomUUID?.() ||
+    `ap-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  );
+}
+
+/**
  * Generate workout recommendations using hybrid approach:
  * - Simple progression for baseline weights
  * - AI for complex cases (plateaus, fatigue management)
@@ -240,7 +250,10 @@ async function _fetchAIRecommendations(workout, fatigue, orms, nextPlan) {
 
   const response = await fetch('/api/recommendations', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Request-ID': _newRequestId(),
+    },
     body: JSON.stringify({
       workout: {
         type: workout.type,
@@ -272,7 +285,8 @@ async function _fetchAIRecommendations(workout, fatigue, orms, nextPlan) {
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.error || `HTTP ${response.status}`);
+    const ref = err.requestId ? ` Ref: ${err.requestId}` : '';
+    throw new Error((err.error || `HTTP ${response.status}`) + ref);
   }
 
   const data = await response.json();
@@ -319,6 +333,31 @@ export function getRecommendations(type) {
    FETCH COACH — SSE streaming from /api/coach
    ══════════════════════════════════════════════ */
 
+const COACH_CLIENT_TIMEOUT_MS = 130000;
+
+/**
+ * @param {Error} err
+ * @param {number} [status]
+ * @param {string} [bodyError]
+ * @returns {string}
+ */
+function _coachFetchErrorMessage(err, status, bodyError) {
+  if (err?.name === 'AbortError') {
+    return 'The coach took too long to respond. Try a shorter question or check your connection.';
+  }
+  const msg = err?.message || '';
+  if (msg === 'Failed to fetch' || /network|fetch/i.test(msg)) {
+    return "Can't reach the server. Run `npm run dev` (or `npm start`) and check your connection.";
+  }
+  if (status === 502 || status === 503) {
+    return 'The coach service is temporarily unavailable. Try again in a moment.';
+  }
+  if (status === 413) {
+    return 'Request too large. Shorten the message or clear some chat history.';
+  }
+  return bodyError || msg || 'Something went wrong talking to the coach.';
+}
+
 /**
  * Stream a coaching response from the server via SSE.
  * @param {string|null} message — user message, or null for initial load
@@ -326,32 +365,45 @@ export function getRecommendations(type) {
  * @param {function(string): void} opts.onText — called for each streamed text chunk
  * @param {function(string): void} opts.onDone — called when stream completes, with full text
  * @param {function(string): void} opts.onError — called on error with error message
+ * @param {Object|null} [contextOverride] — optional context when ClaudeState.context is not set (e.g. in-workout AI)
  * @returns {Promise<void>}
  */
-export async function fetchCoach(message, { onText, onDone, onError }) {
+export async function fetchCoach(message, { onText, onDone, onError }, contextOverride = null) {
   if (_streaming) return;
   _streaming = true;
 
-  const ctx = _context;
+  const ctx = contextOverride ?? _context;
   if (!ctx) {
     _streaming = false;
-    onError('No context loaded');
+    onError('No workout context loaded. Open the dashboard and try again.');
     return;
   }
 
   const { workouts, scores, orms } = ctx;
+  /** In-workout AI passes its own array so dashboard coach history stays separate */
+  const persistChatToStore = !ctx.skipPersistChatHistory;
+  const chatSource =
+    ctx.chatHistory != null && Array.isArray(ctx.chatHistory) ? ctx.chatHistory : _chatHistory;
+
+  const requestId = _newRequestId();
+  const ac = new AbortController();
+  const timeoutId = setTimeout(() => ac.abort(), COACH_CLIENT_TIMEOUT_MS);
 
   try {
     // Build messages array
     const apiMessages = [
       { role: 'user', content: 'What should I focus on today?' },
-      ..._chatHistory,
+      ...chatSource,
     ];
     if (message) apiMessages.push({ role: 'user', content: message });
 
     const response = await fetch('/api/coach', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      signal: ac.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Request-ID': requestId,
+      },
       body: JSON.stringify({
         workouts: workouts.slice(0, 5).map((w) => ({
           type: w.type,
@@ -375,9 +427,21 @@ export async function fetchCoach(message, { onText, onDone, onError }) {
       }),
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || `HTTP ${response.status}`);
+      const errJson = await response.json().catch(() => ({}));
+      const hint = _coachFetchErrorMessage(
+        new Error(errJson.error || `HTTP ${response.status}`),
+        response.status,
+        errJson.error
+      );
+      const ref = errJson.requestId ? ` Ref: ${errJson.requestId}` : '';
+      throw Object.assign(new Error(hint + ref), { requestId: errJson.requestId });
+    }
+
+    if (!response.body) {
+      throw new Error('No response body from coach. Check that the app server is running.');
     }
 
     // Read SSE stream
@@ -399,8 +463,12 @@ export async function fetchCoach(message, { onText, onDone, onError }) {
         const raw = line.slice(6).trim();
         if (raw === '[DONE]') break outer;
         try {
-          const { text, error } = JSON.parse(raw);
-          if (error) throw new Error(error);
+          const payload = JSON.parse(raw);
+          const { text, error, requestId: rid } = payload;
+          if (error) {
+            const ref = rid ? ` Ref: ${rid}` : '';
+            throw new Error(error + ref);
+          }
           if (text) {
             aiText += text;
             onText(text);
@@ -411,8 +479,8 @@ export async function fetchCoach(message, { onText, onDone, onError }) {
       }
     }
 
-    // Store in conversation history
-    if (aiText) {
+    // Store in conversation history (dashboard) unless caller owns history (in-workout AI)
+    if (aiText && persistChatToStore) {
       if (message === null) {
         _chatHistory = [{ role: 'assistant', content: aiText }];
       } else {
@@ -423,8 +491,10 @@ export async function fetchCoach(message, { onText, onDone, onError }) {
 
     onDone(aiText);
   } catch (err) {
-    onError(err.message);
+    const base = _coachFetchErrorMessage(err, undefined, err.message);
+    onError(base);
   } finally {
+    clearTimeout(timeoutId);
     _streaming = false;
   }
 }

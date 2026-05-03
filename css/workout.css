@@ -104,11 +104,16 @@
   justify-content: center;
   gap: var(--sp-3);
   background: var(--c-surface);
-  border: 1px solid var(--c-border);
+  border: 0;
+  border-top: 3px solid var(--c-accent);
   border-radius: var(--r-m);
   padding: 12px var(--sp-2);
   margin-bottom: var(--sp-2);
+  position: relative;
 }
+[data-day="push"] .live-bar { border-top-color: var(--c-accent); }
+[data-day="pull"] .live-bar { border-top-color: var(--c-purple); }
+[data-day="legs"] .live-bar { border-top-color: var(--c-blue); }
 .live-stat {
   display: flex;
   align-items: baseline;
@@ -163,7 +168,7 @@
   border: 1px solid var(--c-border);
   border-radius: var(--r-l);
   overflow: hidden;
-  margin-bottom: var(--sp-1);
+  margin-bottom: var(--sp-2); /* Element-spacing rule: card→card minimum 16px */
   transition:
     border-color var(--t-normal),
     box-shadow var(--t-normal);
@@ -249,11 +254,11 @@
 
 /* ── Sets wrap ── */
 .sets-wrap {
-  padding: 0 var(--sp-2) var(--sp-1);
+  padding: 4px var(--sp-2) var(--sp-2);
 }
 .set-header-row {
   display: grid;
-  grid-template-columns: 20px 1fr 1fr 80px 44px;
+  grid-template-columns: 20px 1fr 1fr 44px;
   gap: 8px;
   align-items: center;
   padding: 0 0 6px;
@@ -267,14 +272,15 @@
   text-align: center;
 }
 
-/* ── Set row ── */
+/* ── Set row ──
+   row→row minimum spacing achieved via padding (14px each side = 28px between centerlines) */
 .set-row {
   display: grid;
-  grid-template-columns: 18px 1fr 1fr 76px 40px;
-  gap: 5px;
+  grid-template-columns: 22px 1fr 1fr 44px;
+  gap: 10px;
   align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--c-border);
+  padding: 14px 0;
+  border-bottom: 0;
   transition: opacity var(--t-fast);
 }
 .set-row:last-of-type {
@@ -472,17 +478,230 @@
 /* ── Plan editor modal ── */
 /* modal-overlay, modal-sheet, modal-handle, modal-header, modal-title,
    btn-icon-sm — moved to css/base.css */
-.plan-tabs {
+
+/* Plan search */
+.plan-preset-row {
   display: flex;
+  align-items: center;
   gap: var(--sp-1);
   margin-bottom: var(--sp-2);
 }
+.plan-preset-label {
+  font-size: 12px;
+  color: var(--c-text-3);
+  white-space: nowrap;
+}
+.btn-preset {
+  height: 28px;
+  padding: 0 var(--sp-2);
+  border-radius: 6px;
+  border: none;
+  background: var(--c-accent-bg);
+  color: var(--c-accent);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-preset:active { opacity: 0.7; }
+
+/* ── Week A/B segment (plan editor) ── */
+.plan-week-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-1);
+}
+.week-segment {
+  display: inline-flex;
+  background: var(--c-surface-2);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.week-seg-btn {
+  min-width: 32px;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--c-text-3);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.week-seg-btn.active {
+  background: var(--c-accent);
+  color: #000;
+}
+.plan-week-hint {
+  font-size: 11px;
+  color: var(--c-text-3);
+  margin-left: auto;
+  letter-spacing: 0.01em;
+}
+
+/* ── Week pill (Train screen) ── */
+.header-chips {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.week-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 10px;
+  border: none;
+  background: var(--c-bg-3);
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-text-2);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.week-pill:active { transform: scale(0.96); }
+.week-pill-lbl {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-3);
+  font-size: 10px;
+}
+.week-pill-val {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.week-pill.week-A { background: var(--c-accent-bg); }
+.week-pill.week-A .week-pill-val { color: var(--c-accent); }
+.week-pill.week-B { background: var(--c-purple-bg); }
+.week-pill.week-B .week-pill-val { color: var(--c-purple); }
+
+/* ── Core section (visual checklist) ── */
+.core-section { margin-top: var(--sp-2); }
+.core-list {
+  display: flex;
+  flex-direction: column;
+  background: var(--c-surface);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.core-empty {
+  padding: var(--sp-2);
+  text-align: center;
+  color: var(--c-text-3);
+  font-size: 12px;
+}
+.core-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 12px var(--sp-2);
+  background: var(--c-surface);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.core-item + .core-item {
+  margin-top: 1px;
+}
+.core-item:active { background: var(--c-surface-h); }
+.core-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--c-surface-2);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.core-box svg { color: transparent; transition: color 0.15s; }
+.core-item.checked .core-box {
+  background: var(--c-accent-bg);
+}
+.core-item.checked .core-box svg { color: var(--c-accent); }
+.core-item.checked .core-name {
+  color: var(--c-text-3);
+  text-decoration: line-through;
+}
+.core-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--c-text);
+}
+.core-remove {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  background: transparent;
+  color: var(--c-text-3);
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s, background 0.15s;
+}
+.core-remove:hover { opacity: 1; background: var(--c-surface-2); }
+
+.plan-search-wrap {
+  position: relative;
+  margin-bottom: var(--sp-2);
+}
+.plan-search-icon {
+  position: absolute;
+  left: var(--sp-2);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--c-text-3);
+  pointer-events: none;
+  width: 18px;
+  height: 18px;
+}
+.plan-search-input {
+  width: 100%;
+  height: 44px;
+  padding-left: 44px;
+  padding-right: var(--sp-2);
+  background: var(--c-bg-3);
+  border: none;
+  border-radius: var(--r-m);
+  color: var(--c-text-1);
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  transition: background var(--t-fast);
+}
+.plan-search-input:focus {
+  background: var(--c-bg-2);
+}
+.plan-search-input::placeholder {
+  color: var(--c-text-3);
+}
+.plan-empty {
+  text-align: center;
+  padding: var(--sp-3);
+  color: var(--c-text-3);
+  font-size: 13px;
+}
+
+.plan-tabs {
+  display: flex;
+  gap: 3px;
+  margin-bottom: var(--sp-2);
+  background: var(--c-bg-3);
+  border-radius: var(--r-s);
+  padding: 3px;
+}
 .plan-tab {
   flex: 1;
-  height: 36px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-s);
+  height: 34px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -492,19 +711,19 @@
   transition: all var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
-.plan-tab:active {
-  background: var(--c-surface-h);
-}
+.plan-tab:active { background: var(--c-surface-h); }
+.plan-tab[data-type="push"].active { background: rgba(0, 230, 118, 0.12); color: var(--c-accent); }
+.plan-tab[data-type="pull"].active { background: rgba(139, 92, 246, 0.12); color: var(--c-purple); }
+.plan-tab[data-type="legs"].active { background: rgba(90, 150, 255, 0.12); color: var(--c-blue); }
 .plan-row {
   display: flex;
   align-items: flex-start;
   gap: 8px;
   padding: var(--sp-1) 0;
-  border-bottom: 1px solid var(--c-border);
   transition: opacity 0.15s, transform 0.15s;
 }
-.plan-row:last-of-type {
-  border-bottom: none;
+.plan-row + .plan-row {
+  margin-top: 2px;
 }
 .plan-drag-handle {
   width: 28px; height: 44px;
@@ -549,7 +768,7 @@
   align-items: center;
   gap: 8px;
   background: var(--c-bg-3);
-  border: 1px solid var(--c-border);
+  border: none;
   border-radius: 8px;
   padding: 4px 8px;
 }
@@ -598,6 +817,54 @@
 .plan-delete:active {
   opacity: 0.7;
 }
+
+/* Custom workouts list */
+.custom-workouts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: var(--sp-2);
+}
+.custom-workout-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  transition: all var(--t-fast);
+}
+.custom-workout-item:active {
+  background: var(--c-surface-h);
+}
+.custom-workout-info {
+  flex: 1;
+  min-width: 0;
+}
+.custom-workout-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.custom-workout-meta {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-text-3);
+  margin-top: 2px;
+}
+.custom-workout-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .btn-add-ex {
   display: flex;
   align-items: center;
@@ -742,26 +1009,38 @@
   letter-spacing: 0.04em;
 }
 
-/* Exercise card dark bg */
+/* Exercise card OBSIDIAN */
 .exercise-card {
   background: var(--c-surface-deep) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
   transition:
     border-color var(--t-normal),
     box-shadow var(--t-normal);
 }
 @media (hover: hover) {
   .exercise-card:hover {
-    border-color: var(--c-border-h) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
     box-shadow: var(--sh-md);
   }
 }
+/* Day-accent top stripe — 2px colored rule at card top */
+[data-day="push"].exercise-card { border-top-color: rgba(0, 200, 110, 0.40) !important; border-top-width: 2px !important; }
+[data-day="pull"].exercise-card { border-top-color: rgba(99, 102, 241, 0.40) !important; border-top-width: 2px !important; }
+[data-day="legs"].exercise-card { border-top-color: rgba(90, 150, 255, 0.40) !important; border-top-width: 2px !important; }
 
-/* ── Rest Bar (floating under header) ── */
+/* ── Rest Bar (floating under header) — OBSIDIAN glass ── */
 #rest-bar {
   display: none;
   width: 100%;
-  background: var(--c-bg-2);
-  border-bottom: 1px solid var(--c-border);
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 28, 0.85) 0%,
+    rgba(12, 12, 18, 0.92) 100%
+  );
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 6px 18px rgba(0,0,0,0.35);
   overflow: hidden;
   position: sticky;
   top: 0;
@@ -1140,21 +1419,31 @@
 /* Mini Chat Overlay */
 .workout-ai-chat {
   position: fixed;
-  bottom: calc(var(--safe-bottom) + var(--sp-2));
-  right: var(--sp-2);
-  left: var(--sp-2);
-  max-width: 400px;
-  margin: 0 auto;
-  background: var(--c-surface);
+  bottom: calc(var(--nav-h) + var(--safe-bottom) + var(--sp-1));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - var(--sp-2) * 2);
+  max-width: 380px; /* fits inside 412px app column on desktop */
+  background: linear-gradient(
+    180deg,
+    rgba(20, 20, 28, 0.95) 0%,
+    rgba(12, 12, 18, 0.98) 100%
+  );
+  backdrop-filter: blur(40px) saturate(1.6);
+  -webkit-backdrop-filter: blur(40px) saturate(1.6);
   border-radius: var(--r-l);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 12px 36px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(0, 230, 118, 0.08);
   z-index: 1001;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-height: 60vh;
-  border: 1px solid var(--c-border);
+  max-height: 56vh;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
+.workout-ai-chat[hidden] { display: none; }
 
 .chat-header {
   display: flex;
@@ -1174,10 +1463,7 @@
   font-size: 0.95rem;
 }
 
-.chat-title::before {
-  content: '🤖';
-  font-size: 1.2rem;
-}
+/* Robot emoji removed — inline SVG used in HTML instead (per CLAUDE.md no-emoji rule) */
 
 .chat-messages {
   flex: 1;
@@ -1245,17 +1531,23 @@
 }
 
 .quick-action-chip {
-  padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--r-full);
-  background: var(--c-surface);
-  color: var(--c-text-1);
-  border: 1px solid var(--c-border);
-  font-size: 0.8rem;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--c-text-2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition: all 0.15s;
   -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
 }
+.quick-action-chip svg { opacity: 0.7; }
 
 .quick-action-chip:hover {
   background: var(--c-surface-3);
@@ -1350,4 +1642,397 @@
   background: rgba(0, 200, 110, 0.08);
   border-color: var(--c-accent);
   color: var(--c-accent);
+}
+
+/* ════════════════════════════════════════════════
+   PHASE 2 — Level 1 polish
+   ════════════════════════════════════════════════ */
+
+/* Last-session reference line under exercise meta */
+.last-session-ref {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-text-3);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.last-session-ref .last-lbl {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--c-text-3);
+  opacity: 0.7;
+}
+
+/* Active set hero — emphasizes weight in current working set */
+.set-row.set-active {
+  background: linear-gradient(
+    to right,
+    rgba(0, 230, 118, 0.04),
+    transparent 60%
+  );
+  border-radius: 6px;
+}
+[data-day="pull"] .set-row.set-active {
+  background: linear-gradient(to right, rgba(139, 92, 246, 0.05), transparent 60%);
+}
+[data-day="legs"] .set-row.set-active {
+  background: linear-gradient(to right, rgba(90, 150, 255, 0.05), transparent 60%);
+}
+.set-row.set-active .set-num {
+  color: var(--c-accent);
+  font-weight: 800;
+}
+[data-day="pull"] .set-row.set-active .set-num { color: var(--c-purple); }
+[data-day="legs"] .set-row.set-active .set-num { color: var(--c-blue); }
+.set-row.set-active #sw-0-0 .stepper-val,
+.set-row.set-active .stepper:first-of-type .stepper-val {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--c-text-1);
+}
+
+/* PPL contextual color modifiers */
+[data-day="pull"] .exercise-icon { background: var(--c-purple); }
+[data-day="legs"] .exercise-icon { background: var(--c-blue); }
+
+[data-day="pull"] .rest-fill {
+  background: linear-gradient(90deg, var(--c-purple), rgba(139, 92, 246, 0.7));
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+}
+[data-day="legs"] .rest-fill {
+  background: linear-gradient(90deg, var(--c-blue), rgba(90, 150, 255, 0.7));
+  box-shadow: 0 0 8px rgba(90, 150, 255, 0.3);
+}
+
+[data-day="pull"] .ex-num,
+[data-day="legs"] .ex-num { color: #fff; }
+
+/* Replace 1px borders on set-row with subtle surface shift (per CLAUDE.md "no 1px borders" rule) */
+.set-row { border-bottom: 0; }
+.set-row + .set-row {
+  box-shadow: inset 0 1px 0 var(--c-surface-2, rgba(255,255,255,0.04));
+}
+
+/* ════════════════════════════════════════════════
+   PHASE 3 — Coach pill (next-target inline)
+   ════════════════════════════════════════════════ */
+.exercise-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.coach-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 11px;
+  background: var(--c-accent-bg, rgba(0,230,118,0.10));
+  color: var(--c-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  vertical-align: middle;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.coach-pill svg { opacity: 0.85; }
+.coach-pill-unit {
+  font-size: 9px;
+  font-weight: 600;
+  margin-left: 1px;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.coach-pill.overflow {
+  background: rgba(245, 158, 11, 0.10);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+[data-day="pull"] .coach-pill {
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--c-purple);
+}
+[data-day="legs"] .coach-pill {
+  background: rgba(90, 150, 255, 0.12);
+  color: var(--c-blue);
+}
+[data-day="pull"] .coach-pill.overflow,
+[data-day="legs"] .coach-pill.overflow {
+  background: rgba(245, 158, 11, 0.10);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+/* ════════════════════════════════════════════════
+   PHASE 4 — Set logger refinements
+   ════════════════════════════════════════════════ */
+
+/* Add-exercise during live session */
+.btn-add-live-ex {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  margin-top: var(--sp-2); /* element-spacing rule */
+  background: var(--c-surface);
+  border: 1.5px dashed var(--c-border-h);
+  border-radius: var(--r-m);
+  color: var(--c-text-2);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.btn-add-live-ex:hover {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+  background: rgba(0, 230, 118, 0.04);
+}
+.btn-add-live-ex:active { transform: scale(0.99); }
+[data-day="pull"] .btn-add-live-ex:hover {
+  border-color: var(--c-purple);
+  color: var(--c-purple);
+  background: rgba(139, 92, 246, 0.05);
+}
+[data-day="legs"] .btn-add-live-ex:hover {
+  border-color: var(--c-blue);
+  color: var(--c-blue);
+  background: rgba(90, 150, 255, 0.05);
+}
+
+/* ── Stats sub-nav (Performance / Measurements) ── */
+.stats-subnav {
+  display: flex;
+  gap: 4px;
+  background: var(--c-surface);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: var(--sp-2);
+}
+.stats-subnav-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--c-text-3);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.stats-subnav-btn:hover { color: var(--c-text-2); }
+.stats-subnav-btn.active {
+  background: var(--c-bg-2, var(--c-bg));
+  color: var(--c-text-1);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 1px 6px rgba(0,0,0,0.3);
+}
+.stats-subnav-btn svg { opacity: 0.85; }
+
+/* Soften coach-pill overflow color (replace alarming amber/red) */
+.coach-pill.overflow {
+  background: rgba(245, 158, 11, 0.08);
+  color: #f0b35d;
+  border-color: rgba(245, 158, 11, 0.20);
+}
+
+/* ── Body-stats: sex toggle + body-fat hint ── */
+.bs-sex-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 0 0 var(--sp-2);
+  border-bottom: 1px solid var(--c-border);
+  margin-bottom: var(--sp-2);
+}
+.bs-sex-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+.bs-sex-segment {
+  display: inline-flex;
+  background: var(--c-surface);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.bs-sex-btn {
+  min-width: 56px;
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--c-text-3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.bs-sex-btn.active {
+  background: var(--c-accent);
+  color: #000;
+}
+.bs-sex-hint {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--c-text-3);
+  opacity: 0.7;
+}
+.bs-fat-hint {
+  margin-top: -8px;
+  margin-bottom: var(--sp-2);
+  padding: 8px 12px;
+  background: var(--c-surface);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--c-text-3);
+  letter-spacing: 0.01em;
+}
+
+/* ════════════════════════════════════════════════
+   OBSIDIAN — hero numbers + cpill coach
+   ════════════════════════════════════════════════ */
+
+/* Hero weight: 24px / 900 / -0.04em for ALL sets, brighter on active */
+.stepper-val {
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+  color: rgba(255, 255, 255, 0.55) !important;
+  line-height: 44px;
+  transition: color 200ms;
+}
+.set-row.set-active .stepper-val {
+  color: rgba(255, 255, 255, 0.98) !important;
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.04);
+}
+.set-row.set-done .stepper-val {
+  color: rgba(255, 255, 255, 0.20) !important;
+}
+.set-row.set-active .stepper:first-of-type .stepper-val {
+  font-size: 26px !important;
+}
+
+/* Stepper buttons: more subtle, OBSIDIAN-tier */
+.stepper {
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+.set-row.set-active .stepper {
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  background: rgba(255, 255, 255, 0.015) !important;
+}
+.stepper-btn {
+  color: rgba(255, 255, 255, 0.18) !important;
+  transition: color 0.15s;
+}
+.stepper-btn:hover {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Coach pill OBSIDIAN-style — subtle plate with green dot, no bright fill */
+.coach-pill {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  padding: 4px 10px 4px 8px !important;
+  height: 24px !important;
+  border-radius: 10px !important;
+  position: relative;
+  padding-left: 18px !important;
+}
+.coach-pill::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  box-shadow: 0 0 6px rgba(0, 230, 118, 0.6);
+}
+.coach-pill svg { display: none; }
+[data-day="pull"] .coach-pill::before {
+  background: var(--c-purple);
+  box-shadow: 0 0 6px rgba(139, 92, 246, 0.6);
+}
+[data-day="legs"] .coach-pill::before {
+  background: var(--c-blue);
+  box-shadow: 0 0 6px rgba(90, 150, 255, 0.6);
+}
+.coach-pill.overflow::before {
+  background: #f0b35d;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+}
+
+/* Active set — softer inner glow plate (no harsh gradient) */
+.set-row.set-active {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.028) 0%,
+    rgba(255, 255, 255, 0.012) 100%
+  ) !important;
+  border-radius: 10px;
+  padding: 12px 8px !important;
+  margin: 0 -8px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+[data-day="pull"] .set-row.set-active {
+  box-shadow:
+    0 1px 0 rgba(139, 92, 246, 0.06) inset,
+    0 0 0 1px rgba(139, 92, 246, 0.08);
+}
+[data-day="legs"] .set-row.set-active {
+  box-shadow:
+    0 1px 0 rgba(90, 150, 255, 0.06) inset,
+    0 0 0 1px rgba(90, 150, 255, 0.08);
+}
+
+/* Set check button — OBSIDIAN rounded square */
+.set-check {
+  border-radius: 10px !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.07) !important;
+  background: transparent !important;
+  transition: all 200ms;
+}
+.set-row.set-active .set-check {
+  border-color: rgba(255, 255, 255, 0.20) !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+.set-check.done {
+  border-color: rgba(0, 230, 118, 0.30) !important;
+  background: rgba(0, 230, 118, 0.06) !important;
+  color: var(--c-accent) !important;
 }

@@ -20,7 +20,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet" media="print" onload="this.media='all'"
     />
 
@@ -42,11 +42,13 @@
       body {
         height: 100%;
         font-family:
-          'Outfit',
+          'Manrope',
           -apple-system,
           BlinkMacSystemFont,
           sans-serif;
-        background: #050508;
+        font-feature-settings: 'cv11', 'ss01';
+        font-variant-numeric: tabular-nums;
+        background: #08080c;
         color: #e8eaed;
         overflow: hidden;
         -webkit-font-smoothing: antialiased;
@@ -56,7 +58,7 @@
 
       /* DESIGN TOKENS — critical-path only (full tokens in css/base.css) */
       :root {
-        --c-bg: #0a0a0f;
+        --c-bg: #08080c;
         --c-text-1: #e8eaed;
         --nav-h: 68px;
         --safe-top: env(safe-area-inset-top, 0px);
@@ -71,7 +73,7 @@
         padding-top: var(--safe-top);
       }
 
-      /* Desktop: Mobile-centered layout overrides are in css/base.css */
+      /* Desktop: Nav and status bar inherit from #app width — no absolute positioning */
 
       /* STATUS BAR */
       #status-bar {
@@ -98,41 +100,60 @@
       }
       .status-logo-text {
         font-size: 14px;
-        font-weight: 800;
         letter-spacing: 0.08em;
-        color: var(--c-accent);
         text-transform: uppercase;
+        display: inline-flex;
+        gap: 5px;
+        align-items: baseline;
       }
+      /* Dual-tone wordmark: ATHLETE = bright white (primary), PRO = emerald accent (descriptor).
+         Letter-spacing differs to give "PRO" a tighter, badge-like feel. */
+      .logo-w1 {
+        color: var(--c-text-1);
+        font-weight: 800;
+      }
+      .logo-w2 {
+        color: var(--c-accent);
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-shadow: 0 0 12px rgba(0, 230, 118, 0.35);
+      }
+      /* Status pill — dark surface plate, WHITE text, colored dot signals state */
       .status-pill {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 6px;
         padding: 3px 10px;
         border-radius: 20px;
-        background: var(--c-surface);
+        background: var(--c-bg-2);
         border: 1px solid var(--c-border);
         font-size: 10px;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: 0.06em;
-        color: var(--c-text-2);
+        color: var(--c-text-1);
+        text-transform: uppercase;
         transition: all var(--t-fast);
       }
       .status-pill.online {
-        color: var(--c-accent);
-        border-color: rgba(0, 230, 118, 0.2);
-        background: var(--c-accent-bg);
+        border-color: rgba(0, 230, 118, 0.25);
+      }
+      .status-pill.online .status-dot {
+        background: var(--c-accent);
+        box-shadow: 0 0 6px var(--c-accent);
       }
       .status-pill.offline {
-        color: var(--c-red);
-        border-color: rgba(255, 71, 87, 0.2);
-        background: var(--c-red-bg);
+        border-color: rgba(232, 132, 140, 0.30);
+      }
+      .status-pill.offline .status-dot {
+        background: var(--c-red);
+        box-shadow: 0 0 6px rgba(232, 132, 140, 0.6);
       }
       .status-dot {
-        width: 5px;
-        height: 5px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
-        background: currentColor;
         flex-shrink: 0;
+        /* background set per status (online/offline) above */
       }
       .status-pill.online .status-dot {
         animation: pulse 2s infinite;
@@ -238,7 +259,7 @@
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        font-family: 'Outfit', sans-serif;
+        font-family: 'Manrope', sans-serif;
         transition: opacity var(--t-fast);
       }
       .nav-btn.active {
@@ -273,38 +294,23 @@
 
       /* ════════════════════════════════════════════════════════
          MOBILE-CENTERED LAYOUT — Desktop overrides
-         Must be inline to override base.css
+         Nav and status bar are children of #app, so they inherit its width
          ════════════════════════════════════════════════════════ */
       @media (min-width: 481px) {
-        /* Status bar centering */
+        /* Remove absolute positioning on desktop — let them flow within #app */
         #status-bar {
-          max-width: 480px;
-          left: 50%;
-          right: auto;
-          transform: translateX(-50%);
+          position: relative;
           border-radius: 24px 24px 0 0;
         }
 
-        /* Navigation bar centering */
         #nav {
-          max-width: 480px;
-          left: 50%;
-          right: auto;
-          transform: translateX(-50%);
+          position: relative;
           border-radius: 0 0 24px 24px;
         }
 
         /* AI Coach FAB — reposition relative to centered app */
         .workout-ai-bubble {
-          right: calc(50% - 240px + 64px);
-        }
-
-        /* Tall screens */
-        @media (min-height: 900px) {
-          #status-bar,
-          #nav {
-            max-width: 480px;
-          }
+          right: calc(50% - 206px + 64px); /* 412px / 2 = 206px */
         }
       }
 
@@ -672,7 +678,7 @@
       <div id="status-bar">
         <div class="status-logo">
           <img src="icons/icon-192.png" class="status-logo-img" alt="AP" />
-          <span class="status-logo-text">Athlete Pro</span>
+          <span class="status-logo-text"><span class="logo-w1">Athlete</span><span class="logo-w2">Pro</span></span>
         </div>
         <div id="status-pill" class="status-pill offline">
           <span class="status-dot"></span>
@@ -709,20 +715,20 @@
           </svg>
           <span>Home</span>
         </button>
-        <button class="nav-btn" data-s="s-train" onclick="Nav.go('s-train')" aria-label="Workout">
+        <button class="nav-btn" data-s="s-train" onclick="Nav.go('s-train',{force:true})" aria-label="Workout">
           <svg
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             stroke-width="1.5"
             stroke-linecap="round"
+            stroke-linejoin="round"
           >
-            <circle cx="7" cy="12" r="2.4" />
-            <circle cx="17" cy="12" r="2.4" />
-            <rect x="4.6" y="10.6" width="4.8" height="2.8" rx="1.2" />
-            <rect x="14.6" y="10.6" width="4.8" height="2.8" rx="1.2" />
-            <line x1="9.4" y1="12" x2="14.6" y2="12" />
-            <rect x="11" y="9" width="2" height="6" rx="0.8" />
+            <line x1="6.5" y1="12" x2="17.5" y2="12" />
+            <rect x="3" y="9" width="3" height="6" rx="1" />
+            <rect x="18" y="9" width="3" height="6" rx="1" />
+            <line x1="2" y1="11" x2="2" y2="13" />
+            <line x1="22" y1="11" x2="22" y2="13" />
           </svg>
           <span>Train</span>
         </button>
@@ -739,22 +745,8 @@
           </svg>
           <span>Stats</span>
         </button>
-        <button class="nav-btn" data-s="s-body" onclick="Nav.go('s-body')" aria-label="Body Stats">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="12" cy="5" r="2.5" />
-            <path d="M12 8v7" />
-            <path d="M8 11h8" />
-            <path d="M9 22l3-7 3 7" />
-          </svg>
-          <span>Body</span>
-        </button>
+        <!-- Body merged into Stats screen — see s-stats sub-nav -->
+
         <button class="nav-btn" data-s="s-profile" onclick="Nav.go('s-profile')" aria-label="Profile">
           <svg
             viewBox="0 0 24 24"

@@ -47,7 +47,7 @@ export const Dashboard = (() => {
           <div class="dash-hero-title" id="dash-greeting-label">${greeting()}</div>
           <div class="dash-hero-date" id="dash-date"></div>
         </div>
-        <button class="dash-cta" onclick="Nav.go('s-train')">
+        <button class="dash-cta" onclick="Nav.go('s-train',{force:true})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/>
@@ -370,7 +370,7 @@ export const Dashboard = (() => {
       screen.querySelector('.btn-start-workout')?.addEventListener('click', () => {
         navigator.vibrate?.([15, 50, 15]);
         window.Toast.show("Let's go!", 'success');
-        window.Nav.go('s-train');
+        window.Nav.go('s-train', { force: true });
       });
       return;
     }

@@ -3,18 +3,24 @@
    Claude Coach panel + Muscle Heatmap
    ════════════════════════════════════════════════════════ */
 
-/* ── FAB button (red panda character) ── */
+/* ── FAB button (red panda character) ──
+   Premium round button: solid surface plate, accent ring, panda contained inside. */
 .claude-fab {
   position: fixed;
   /* bottom/right set dynamically by JS — fallback below */
   bottom: 84px;
-  right: 16px;
-  width: 88px;
-  height: 88px;
-  background: transparent;
+  right: 14px;
+  width: 64px;
+  height: 64px;
+  background: radial-gradient(
+    circle at 30% 25%,
+    rgba(0, 230, 118, 0.18),
+    var(--c-surface) 65%,
+    var(--c-bg-2, #0d0d12) 100%
+  );
   -webkit-appearance: none;
   appearance: none;
-  border: none;
+  border: 1.5px solid rgba(0, 230, 118, 0.35);
   cursor: pointer;
   padding: 0;
   margin: 0;
@@ -25,11 +31,22 @@
   -webkit-tap-highlight-color: transparent;
   border-radius: 50%;
   overflow: hidden;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 8px 22px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(0, 230, 118, 0.18);
   animation: panda-float 3s ease-in-out infinite;
   transition:
     transform 0.15s ease,
-    filter 0.15s ease;
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+.claude-fab:hover {
+  border-color: rgba(0, 230, 118, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 10px 28px rgba(0, 0, 0, 0.6),
+    0 0 30px rgba(0, 230, 118, 0.28);
 }
 @keyframes panda-float {
   0%,
@@ -49,10 +66,15 @@
 .claude-fab img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   pointer-events: none;
   display: block;
   background: transparent;
+}
+.claude-fab svg {
+  width: 50%;
+  height: 50%;
+  color: var(--c-accent);
 }
 
 /* ── Overlay + sheet ── */
@@ -64,6 +86,21 @@
   transition: background 0.35s ease;
   display: flex;
   align-items: flex-end;
+  justify-content: center; /* Center sheet on wide screens */
+}
+/* Desktop: when overlay is mounted inside #app, it lives in the centered column only */
+.claude-overlay.in-app {
+  position: absolute;
+  inset: 0;
+  z-index: 600;
+  border-radius: 24px;
+  overflow: hidden;
+}
+/* Hard cap: sheet never wider than mobile column even when overlay is body-mounted */
+.claude-sheet {
+  max-width: 412px;
+  width: 100%;
+  border-radius: 24px 24px 0 0;
 }
 .claude-overlay.visible {
   background: rgba(0, 0, 0, 0.72);
@@ -187,7 +224,7 @@
     to right,
     rgba(0, 230, 118, 0.55),
     rgba(255, 179, 0, 0.65),
-    rgba(255, 71, 87, 0.75)
+    rgba(232, 132, 140, 0.75)
   );
   margin-bottom: 4px;
 }
@@ -435,7 +472,7 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--c-text-1);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Manrope', sans-serif;
   caret-color: var(--c-purple);
 }
 .chat-input::placeholder {

@@ -4,7 +4,7 @@
    AI bubble, mini chat overlay, quick actions
    ════════════════════════════════════════════════════════ */
 
-import { ClaudeState, fetchCoach } from './claude.store.js';
+import { fetchCoach, Heatmap } from './claude.store.js';
 import { State as WorkoutState } from './workout.store.js';
 import { DB } from './db.js';
 
@@ -37,7 +37,7 @@ const QUICK_QUESTIONS = {
 export function init() {
   _renderBubble();
   _renderChatOverlay();
-  _checkProactiveTrigger();
+  // _checkProactiveTrigger() — TODO: proactive AI suggestions (not implemented yet)
 }
 
 /**
@@ -51,7 +51,11 @@ function _renderBubble() {
   bubble.className = 'workout-ai-bubble';
   bubble.hidden = true;
   bubble.onclick = toggle;
-  bubble.innerHTML = '<span class="bubble-icon">✨</span>';
+  bubble.innerHTML = `<svg class="bubble-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+    <path d="M12 2L13.5 7.5L19 9L13.5 10.5L12 16L10.5 10.5L5 9L10.5 7.5L12 2Z"/>
+    <path d="M19 14L19.7 16L21.5 16.5L19.7 17L19 19L18.3 17L16.5 16.5L18.3 16L19 14Z"/>
+  </svg>`;
 
   document.body.appendChild(bubble);
 }
@@ -69,10 +73,50 @@ function _renderChatOverlay() {
 
   chat.innerHTML = `
     <div class="chat-header">
-      <span class="chat-title">Coach</span>
-      <button class="btn-icon-sm" onclick="window.WorkoutAI.toggle()">✕</button>
+      <span class="chat-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <path d="M12 2L13.5 7.5L19 9L13.5 10.5L12 16L10.5 10.5L5 9L10.5 7.5L12 2Z"/>
+        </svg>
+        Coach
+      </span>
+      <button class="btn-icon-sm" onclick="window.WorkoutAI.toggle()" aria-label="Close coach">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" width="16" height="16">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
     </div>
     <div class="chat-messages" id="workout-ai-messages"></div>
+    <div class="quick-actions">
+      <button class="quick-action-chip" onclick="window.WorkoutAI.quickAsk('weight')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+          <line x1="6.5" y1="12" x2="17.5" y2="12"/>
+          <rect x="3" y="9" width="3" height="6" rx="1"/>
+          <rect x="18" y="9" width="3" height="6" rx="1"/>
+        </svg>
+        Weight
+      </button>
+      <button class="quick-action-chip" onclick="window.WorkoutAI.quickAsk('form')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+          <rect x="5" y="3" width="14" height="18" rx="2"/>
+          <line x1="9" y1="9" x2="15" y2="9"/>
+          <line x1="9" y1="13" x2="15" y2="13"/>
+          <line x1="9" y1="17" x2="13" y2="17"/>
+        </svg>
+        Form
+      </button>
+      <button class="quick-action-chip" onclick="window.WorkoutAI.quickAsk('rest')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+          <circle cx="12" cy="12" r="9"/>
+          <polyline points="12 7 12 12 15 14"/>
+        </svg>
+        Rest
+      </button>
+    </div>
     <div class="chat-input-row">
       <input
         type="text"
@@ -81,12 +125,13 @@ function _renderChatOverlay() {
         placeholder="Ask about this set..."
         onkeydown="window.WorkoutAI.handleKey(event)"
       />
-      <button class="btn-icon-sm" onclick="window.WorkoutAI.send()">➤</button>
-    </div>
-    <div class="quick-actions">
-      <button class="quick-action-chip" onclick="window.WorkoutAI.quickAsk('weight')">🏋️ Weight</button>
-      <button class="quick-action-chip" onclick="window.WorkoutAI.quickAsk('form')">📋 Form</button>
-      <button class="quick-action-chip" onclick="window.WorkoutAI.quickAsk('rest')">⏱️ Rest</button>
+      <button class="btn-icon-sm" onclick="window.WorkoutAI.send()" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <line x1="12" y1="19" x2="12" y2="5"/>
+          <polyline points="5 12 12 5 19 12"/>
+        </svg>
+      </button>
     </div>
   `;
 
@@ -113,7 +158,7 @@ export async function checkProactiveTrigger() {
   for (const ex of plan) {
     const doneSets = (ex.sets || []).filter(s => s.done).length;
     if (doneSets === 0) {
-      suggestion = `💪 Starting **${ex.name}** today! Focus on controlled tempo — 3s down, 1s pause, explosive up.`;
+      suggestion = `Starting **${ex.name}** today — focus on controlled tempo: 3s down, 1s pause, explosive up.`;
       break;
     }
   }
@@ -135,7 +180,7 @@ export async function checkProactiveTrigger() {
 
         const allSame = lastWeights.every((w, _, arr) => Math.abs(w - arr[0]) < 0.5);
         if (allSame) {
-          suggestion = `📊 You've hit **${firstExercise}** at the same weight for 3 sessions. Want to try a deload or technique variation?`;
+          suggestion = `You've hit **${firstExercise}** at the same weight for 3 sessions. Try a deload or technique variation?`;
         }
       }
     }
@@ -303,25 +348,19 @@ async function _streamMessage(message) {
   _streaming = true;
 
   try {
-    // Load context
-    const [workouts, orms] = await Promise.all([
+    // Load context (same shape as dashboard coach — see claude.store fetchCoach)
+    const [workouts, orms, scores] = await Promise.all([
       DB.Workouts.getAll(),
-      DB.OneRM.getAll()
+      DB.OneRM.getAll(),
+      Heatmap.compute(),
     ]);
 
-    // Build context for AI
     const context = {
-      workouts: workouts.slice(0, 3).map(w => ({
-        type: w.type,
-        hoursAgo: Math.round((Date.now() - w.timestamp) / 3600000),
-        tonnageKg: Math.round(w.tonnage || 0),
-        exercises: (w.exercises || []).slice(0, 3).map(e => ({
-          name: e.name,
-          sets: (e.sets || []).filter(s => s.done).length
-        }))
-      })),
-      topLifts: orms.slice(0, 3).map(o => ({ exercise: o.id, oneRM: o.value })),
-      messages: [..._chatHistory]
+      workouts,
+      scores,
+      orms,
+      chatHistory: _chatHistory,
+      skipPersistChatHistory: true,
     };
 
     // Create AI message div
@@ -341,7 +380,11 @@ async function _streamMessage(message) {
         _streaming = false;
       },
       onError: (err) => {
-        aiDiv.innerHTML = `⚠️ Error: ${err}`;
+        aiDiv.replaceChildren();
+        const p = document.createElement('p');
+        p.className = 'workout-ai-error';
+        p.textContent = err;
+        aiDiv.appendChild(p);
         _streaming = false;
       }
     }, context);

@@ -107,3 +107,31 @@ export function weekLabel(bucket) {
   const d = new Date(bucket.start + 3 * 86400000);
   return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
 }
+
+/** Compound lifts to highlight in personal metrics (names match exercise / 1RM ids). */
+const MAIN_LIFT_IDS = ['Bench Press', 'Squat', 'Deadlift', 'Overhead Press'];
+
+/**
+ * Simple training snapshot for personal metrics (scripts, console, or future UI).
+ * IndexedDB stores one row per lift for 1RM — use Analytics / workouts for history charts.
+ * @returns {Promise<{
+ *   weekWorkouts: number,
+ *   monthWorkouts: number,
+ *   mainLifts: Array<{ id: string, oneRM: number | null, updatedAt: number | null }>
+ * }>}
+ */
+export async function getTrainingSnapshot() {
+  const workouts = await DB.Workouts.getAll();
+  const orms = await DB.OneRM.getAll();
+  const now = Date.now();
+  const weekMs = 7 * 86400000;
+  const monthMs = 30 * 86400000;
+  const weekWorkouts = workouts.filter((w) => w.timestamp >= now - weekMs).length;
+  const monthWorkouts = workouts.filter((w) => w.timestamp >= now - monthMs).length;
+  const byId = Object.fromEntries(orms.map((o) => [o.id, o]));
+  const mainLifts = MAIN_LIFT_IDS.map((id) => {
+    const r = byId[id];
+    return { id, oneRM: r ? r.value : null, updatedAt: r ? r.timestamp : null };
+  });
+  return { weekWorkouts, monthWorkouts, mainLifts };
+}
