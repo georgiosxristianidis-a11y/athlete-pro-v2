@@ -14,6 +14,8 @@ import {
   buildSession, persistSession,
   getWeekMode, loadCoreChecklist,
 } from '../workout.store.js';
+import { initDragNumbers } from '../ui/drag-number.js';
+import { initGravitySubmit } from '../ui/gravity-submit.js';
 
 /* ── Render helpers (exported so modals.js can re-use svgArrow) ── */
 export const TYPE_COLOR = {
@@ -375,7 +377,11 @@ export async function renderActive() {
     <div style="height:var(--sp-2)"></div>
   `;
 
-  requestAnimationFrame(_initDrag);
+  requestAnimationFrame(() => {
+    _initDrag();
+    initDragNumbers();
+    initGravitySubmit();
+  });
 }
 
 export async function renderExerciseCard(ex, ei) {
@@ -467,7 +473,7 @@ export async function renderSetRow(ex, ei, set, si) {
           ${svgArrow('minus')}
         </button>
         <span class="stepper-val" id="swv-${ei}-${si}"
-          ondblclick="Workout.editVal('w',${ei},${si})">${set.weight}</span>
+          data-type="w" data-ei="${ei}" data-si="${si}">${set.weight}</span>
         <input class="stepper-input" id="swi-${ei}-${si}"
           type="number" inputmode="decimal" step="2.5"
           value="${set.weight}"
@@ -488,7 +494,7 @@ export async function renderSetRow(ex, ei, set, si) {
           ${svgArrow('down')}
         </button>
         <span class="stepper-val" id="srv-${ei}-${si}"
-          ondblclick="Workout.editVal('r',${ei},${si})">${set.reps}</span>
+          data-type="r" data-ei="${ei}" data-si="${si}">${set.reps}</span>
         <input class="stepper-input" id="sri-${ei}-${si}"
           type="number" inputmode="numeric" step="1"
           value="${set.reps}"
