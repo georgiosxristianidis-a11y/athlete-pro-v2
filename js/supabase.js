@@ -1,3 +1,4 @@
+// @ts-check
 import { createClient } from '@supabase/supabase-js'
 
 // 1. ПРОВЕРЬ .env ФАЙЛ: Ключи должны называться VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY

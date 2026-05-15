@@ -5,7 +5,7 @@ import { Nav, Toast } from '../shell.js';
 import { State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout, loadCoreChecklist, saveCoreChecklist } from '../workout.store.js';
 import { generateRecommendations } from '../claude.store.js';
 import { Heatmap } from '../claude.store.js';
-import { renderSelect, renderActive, renderSetRow, _renderCoreSection, _coreCheckedState } from './render.js';
+import { renderSelect, renderActive, renderSetRow, renderFocusMode, _renderCoreSection, _coreCheckedState } from './render.js';
 import { openExercisePickerModal } from './modals.js';
 
 function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
@@ -686,4 +686,271 @@ export function _removeCoreItem(day, i) {
   saveCoreChecklist(day, items);
   const sec = document.getElementById('core-section');
   if (sec) sec.innerHTML = _renderCoreSection(day);
+}
+
+/* ════════════════════════════════════════════════════════
+   FOCUS MODE (Phase 3.A) — long-press + swipe + actions
+   ════════════════════════════════════════════════════════ */
+
+let _focusEi = null;
+let _focusTimerInterval = null;
+
+function _focusActiveSi() {
+  const ex = State.plan[_focusEi];
+  if (!ex) return -1;
+  const idx = ex.sets.findIndex(s => !s.done);
+  return idx < 0 ? ex.sets.length - 1 : idx;
+}
+
+function _updateFocusProgress() {
+  const totalSets = State.plan.reduce((acc, e) => acc + e.sets.length, 0);
+  const totalDone = State.plan.reduce((acc, e) => acc + e.sets.filter(s => s.done).length, 0);
+  const pct = totalSets ? (totalDone / totalSets) * 100 : 0;
+  const fill = document.getElementById('focus-progress-fill');
+  if (fill) fill.style.width = pct + '%';
+}
+
+export async function _openFocus(ei) {
+  if (_focusEi !== null) return;
+  _focusEi = ei;
+  const html = await renderFocusMode(ei);
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  const overlay = wrap.firstElementChild;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('visible'));
+  _haptic(20);
+
+  // Sync workout time every second
+  clearInterval(_focusTimerInterval);
+  _focusTimerInterval = setInterval(() => {
+    const el = document.getElementById('focus-hero-time');
+    if (el) el.textContent = Timer.fmt(Timer.seconds());
+  }, 1000);
+
+  _initFocusSwipe(overlay);
+}
+
+export function _closeFocus() {
+  const overlay = document.getElementById('focus-overlay');
+  if (!overlay) return;
+  overlay.classList.add('closing');
+  clearInterval(_focusTimerInterval);
+  _focusTimerInterval = null;
+  setTimeout(() => {
+    overlay.remove();
+    _focusEi = null;
+  }, 250);
+}
+
+export async function _focusNext() {
+  if (_focusEi === null) return;
+  if (_focusEi >= State.plan.length - 1) { _haptic(8); return; }
+  _focusEi++;
+  await _refocus();
+}
+
+export async function _focusPrev() {
+  if (_focusEi === null) return;
+  if (_focusEi <= 0) { _haptic(8); return; }
+  _focusEi--;
+  await _refocus();
+}
+
+async function _refocus() {
+  _haptic(12);
+  const ei = _focusEi;
+  const old = document.getElementById('focus-overlay');
+  const html = await renderFocusMode(ei);
+  if (!old) return;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  const next = wrap.firstElementChild;
+  next.classList.add('visible');
+  old.replaceWith(next);
+  _initFocusSwipe(next);
+}
+
+export function _focusStepW(delta) {
+  if (_focusEi === null) return;
+  const si = _focusActiveSi();
+  if (si < 0) return;
+  stepWeight(_focusEi, si, delta);
+  const set = State.plan[_focusEi].sets[si];
+  const el = document.getElementById('focus-w-val');
+  if (el) el.textContent = set.weight;
+}
+
+export function _focusStepR(delta) {
+  if (_focusEi === null) return;
+  const si = _focusActiveSi();
+  if (si < 0) return;
+  stepReps(_focusEi, si, delta);
+  const set = State.plan[_focusEi].sets[si];
+  const el = document.getElementById('focus-r-val');
+  if (el) el.textContent = set.reps;
+}
+
+export async function _focusCompleteSet() {
+  if (_focusEi === null) return;
+  const ex = State.plan[_focusEi];
+  if (!ex) return;
+  const si = ex.sets.findIndex(s => !s.done);
+  if (si < 0) {
+    // All sets done — auto-advance to next exercise
+    if (_focusEi < State.plan.length - 1) {
+      await _focusNext();
+    } else {
+      _haptic(40);
+      Toast.show('All exercises complete!', 'success');
+    }
+    return;
+  }
+
+  toggleSet(_focusEi, si);
+  _updateFocusProgress();
+
+  // Update focus card UI for next set or auto-advance
+  const ex2 = State.plan[_focusEi];
+  const nextSi = ex2.sets.findIndex(s => !s.done);
+
+  if (nextSi < 0) {
+    // Exercise complete — advance to next exercise after a brief moment
+    const cta = document.getElementById('focus-cta');
+    if (cta) cta.querySelector('.focus-cta-text').textContent = 'Exercise Done';
+    setTimeout(async () => {
+      if (_focusEi < State.plan.length - 1) {
+        await _focusNext();
+      } else {
+        const c = document.getElementById('focus-cta');
+        if (c) {
+          c.disabled = true;
+          c.querySelector('.focus-cta-text').textContent = 'All Sets Done';
+        }
+      }
+    }, 600);
+  } else {
+    // Update next-active-set UI in focus card
+    const set = ex2.sets[nextSi];
+    const wEl = document.getElementById('focus-w-val');
+    const rEl = document.getElementById('focus-r-val');
+    const sEl = document.getElementById('focus-set-cur');
+    if (wEl) wEl.textContent = set.weight;
+    if (rEl) rEl.textContent = set.reps;
+    if (sEl) sEl.textContent = nextSi + 1;
+    const overlay = document.getElementById('focus-overlay');
+    if (overlay) overlay.dataset.si = nextSi;
+  }
+
+  // Show rest timer card with countdown
+  _focusStartRestCountdown(90);
+}
+
+let _focusRestRaf = null;
+function _focusStartRestCountdown(seconds) {
+  const card = document.getElementById('focus-rest-card');
+  const valEl = document.getElementById('focus-rest-val');
+  if (!card || !valEl) return;
+  card.classList.remove('hidden');
+  const end = Date.now() + seconds * 1000;
+  cancelAnimationFrame(_focusRestRaf);
+  const tick = () => {
+    const rem = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    valEl.textContent = Math.floor(rem / 60) + ':' + String(rem % 60).padStart(2, '0');
+    if (rem <= 0) {
+      card.classList.add('hidden');
+      return;
+    }
+    _focusRestRaf = requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+/* ── Touch swipe inside focus overlay ── */
+function _initFocusSwipe(overlay) {
+  let sx = 0, sy = 0, dx = 0, dy = 0, active = false, scrolled = false;
+  const body = overlay.querySelector('.focus-body');
+
+  overlay.addEventListener('touchstart', (e) => {
+    if (e.target.closest('button') || e.target.closest('input')) return;
+    const t = e.touches[0];
+    sx = t.clientX; sy = t.clientY;
+    dx = 0; dy = 0;
+    active = true;
+    scrolled = false;
+  }, { passive: true });
+
+  overlay.addEventListener('touchmove', (e) => {
+    if (!active) return;
+    const t = e.touches[0];
+    dx = t.clientX - sx;
+    dy = t.clientY - sy;
+    // If user is scrolling vertically inside body, mark scrolled
+    if (body && Math.abs(dy) > Math.abs(dx) && body.scrollTop > 0 && dy < 0) scrolled = true;
+  }, { passive: true });
+
+  overlay.addEventListener('touchend', async () => {
+    if (!active) return;
+    active = false;
+    const absX = Math.abs(dx), absY = Math.abs(dy);
+    // Horizontal swipe — prev/next exercise
+    if (absX > 60 && absX > absY * 1.4) {
+      if (dx < 0) await _focusNext();
+      else await _focusPrev();
+      return;
+    }
+    // Swipe down — close (only if not scrolled inside body)
+    if (dy > 80 && absY > absX * 1.4 && !scrolled) {
+      _closeFocus();
+    }
+  }, { passive: true });
+}
+
+/* ── Long-press init for active exercise list ── */
+export function _initFocusLongPress() {
+  const list = document.getElementById('exercise-list');
+  if (!list) return;
+
+  list.querySelectorAll('.exercise-card').forEach((card) => {
+    const header = card.querySelector('.exercise-header');
+    if (!header || header.dataset.focusBound === '1') return;
+    header.dataset.focusBound = '1';
+
+    let timer = null;
+    let startX = 0, startY = 0;
+    let triggered = false;
+
+    const cancel = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+    };
+
+    header.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.drag-handle') || e.target.closest('.ex-replace-btn')) return;
+      startX = e.clientX; startY = e.clientY;
+      triggered = false;
+      timer = setTimeout(() => {
+        triggered = true;
+        const ei = parseInt(card.dataset.ei);
+        if (!isNaN(ei)) _openFocus(ei);
+      }, 400);
+    });
+
+    header.addEventListener('pointermove', (e) => {
+      if (!timer) return;
+      if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) cancel();
+    });
+
+    header.addEventListener('pointerup', () => cancel());
+    header.addEventListener('pointercancel', () => cancel());
+    header.addEventListener('pointerleave', () => cancel());
+
+    // Suppress click that follows long-press
+    header.addEventListener('click', (e) => {
+      if (triggered) {
+        e.stopPropagation();
+        e.preventDefault();
+        triggered = false;
+      }
+    }, true);
+  });
 }

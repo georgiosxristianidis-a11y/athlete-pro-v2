@@ -4,6 +4,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
+import { renderPrivacyCard } from './privacy.view.js';
 
 export const Profile = (() => {
   /* ══════════════════════════════════════════════
@@ -87,7 +88,22 @@ export const Profile = (() => {
             </div>
           </div>
         </div>
+
+        <div class="pref-row">
+          <div class="pref-info">
+            <div class="pref-title">AI Smart Progress</div>
+            <div class="pref-sub">Auto +2.5 kg when last set hit target with reps in reserve</div>
+          </div>
+          <div class="switch-wrap" onclick="Profile.toggleAutoProgress()">
+            <div class="switch ${settings['auto-progress'] !== 'off' ? 'on' : ''}" id="sw-auto-progress">
+              <div class="switch-thumb"></div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- ── Privacy ── -->
+      ${renderPrivacyCard()}
 
       <!-- ── Data Management ── -->
       <div class="section-header" style="margin-top:var(--sp-2)">
@@ -200,7 +216,7 @@ export const Profile = (() => {
         : latest.bmi < 25
           ? 'var(--c-accent)'
           : latest.bmi < 30
-            ? 'var(--c-amber)'
+            ? 'var(--c-red)'
             : 'var(--c-red)';
 
     return `
@@ -265,7 +281,7 @@ export const Profile = (() => {
               year: 'numeric',
             })}</span>
             <span class="history-val">${m.weight} kg</span>
-            <span class="history-bmi" style="color:${m.bmi < 25 ? 'var(--c-accent)' : 'var(--c-amber)'}">
+            <span class="history-bmi" style="color:${m.bmi < 25 ? 'var(--c-accent)' : 'var(--c-red)'}">
               BMI ${m.bmi}
             </span>
           </div>`
@@ -356,6 +372,19 @@ export const Profile = (() => {
     if (sw) sw.classList.toggle('on', next === 'on');
   }
 
+  /**
+   * Toggle AI Smart Progress: auto +2.5kg when last set hits target with reps in reserve.
+   * Read by buildSession() in workout.store.js when starting a session.
+   * @returns {Promise<void>}
+   */
+  async function toggleAutoProgress() {
+    const current = await DB.Settings.get('auto-progress', 'on');
+    const next = current === 'off' ? 'on' : 'off';
+    await DB.Settings.set('auto-progress', next);
+    const sw = document.getElementById('sw-auto-progress');
+    if (sw) sw.classList.toggle('on', next === 'on');
+  }
+
   /* ══════════════════════════════════════════════
      EXPORT / IMPORT
      ══════════════════════════════════════════════ */
@@ -433,6 +462,7 @@ export const Profile = (() => {
     adjustRest,
     setUnit,
     toggleHaptic,
+    toggleAutoProgress,
     exportData,
     importData,
     _onImportFile,

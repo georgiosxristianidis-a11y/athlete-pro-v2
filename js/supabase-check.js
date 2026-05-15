@@ -1,3 +1,4 @@
+// @ts-check
 /* ════════════════════════════════════════════════════════
    supabase-check.js — Athlete Pro
    Supabase availability tester + status badge renderer
@@ -17,14 +18,15 @@ export const SupabaseCheck = (() => {
     if (_cache && Date.now() - _cacheTime < CACHE_TTL) return _cache;
 
     try {
-      const res = await fetch('/api/supabase-status', {
+      const { safeFetch } = await import('./privacy.store.js');
+      const res = await safeFetch('/api/supabase-status', {
         signal: AbortSignal.timeout(8000),
-      });
+      }, 'sync');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       _cache = await res.json();
       _cacheTime = Date.now();
     } catch (err) {
-      _cache = { available: false, reason: err.message };
+      _cache = { available: false, reason: err.code === 'airgap' ? 'air-gapped' : err.message };
     }
 
     return _cache;

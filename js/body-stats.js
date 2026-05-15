@@ -1,3 +1,4 @@
+// @ts-check
 /* ════════════════════════════════════════════════════════
    Block 11.1 — Body Stats  v1.3  |  Athlete Pro
    • Body Stats tab — sparklines, history, add/edit/delete
@@ -102,12 +103,42 @@ function bsSwitchTab(tab) {
 }
 window.bsSwitchTab = bsSwitchTab;
 
+/**
+ * Set sex preference for Navy body-fat formula. Persisted to settings.
+ * @param {'m'|'f'} sex
+ * @returns {void}
+ */
+async function bsSetSex(sex) {
+  await DB.Settings.set('sex', sex === 'f' ? 'f' : 'm');
+  _bsRenderMetrics();
+}
+window.bsSetSex = bsSetSex;
+
 /* ══════════════════════════════════════════════
    MAIN RENDER
    ══════════════════════════════════════════════ */
 export function renderBodyStats() {
   const root = document.getElementById('body-stats-root');
   if (!root) return;
+
+  const subNav = `
+    <div class="stats-subnav">
+      <button class="stats-subnav-btn" onclick="Nav.go('s-stats')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        Performance
+      </button>
+      <button class="stats-subnav-btn active" onclick="Nav.go('s-body')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <circle cx="12" cy="5" r="2.5"/>
+          <path d="M12 8v7"/><path d="M8 11h8"/><path d="M9 22l3-7 3 7"/>
+        </svg>
+        Measurements
+      </button>
+    </div>`;
 
   const tabBar = `
     <div class="bs-tab-bar">
@@ -116,7 +147,7 @@ export function renderBodyStats() {
     </div>`;
 
   if (_bsActiveTab === 'metrics') {
-    root.innerHTML = `<div class="bs-wrap">${tabBar}<div id="bs-metrics-content"><div style="padding:var(--sp-3);text-align:center;color:var(--c-text-3);font-size:13px">Loading…</div></div></div>`;
+    root.innerHTML = `<div class="bs-wrap">${subNav}${tabBar}<div id="bs-metrics-content"><div style="padding:var(--sp-3);text-align:center;color:var(--c-text-3);font-size:13px">Loading…</div></div></div>`;
     _bsRenderMetrics();
     return;
   }
@@ -178,6 +209,7 @@ export function renderBodyStats() {
     .join('');
 
   root.innerHTML = `<div class="bs-wrap">
+    ${subNav}
     ${tabBar}
     <div class="bs-header">
       <h2 class="bs-title">Body Stats</h2>
@@ -219,6 +251,43 @@ export function renderBodyStats() {
 /* ══════════════════════════════════════════════
    BODY METRICS TAB
    ══════════════════════════════════════════════ */
+/**
+ * Navy method body-fat calculator (US Navy circumference).
+ * Source: Hodgdon & Beckett (1984) via medvisor.ru/services/navy-procent-zhira-v-tele.
+ * @param {{sex:'m'|'f', heightCm:number, waistCm:number, neckCm:number, hipCm?:number}} d
+ * @returns {number|null} percent body fat rounded to .1, or null if inputs invalid.
+ */
+function _bsBodyFatNavy({ sex, heightCm, waistCm, neckCm, hipCm }) {
+  if (!heightCm || !waistCm || !neckCm) return null;
+  if (sex === 'f' && !hipCm) return null;
+  let bf;
+  if (sex === 'f') {
+    const a = waistCm + hipCm - neckCm;
+    if (a <= 0) return null;
+    bf = 163.205 * Math.log10(a) - 97.684 * Math.log10(heightCm) - 78.387;
+  } else {
+    const a = waistCm - neckCm;
+    if (a <= 0) return null;
+    bf = 86.010 * Math.log10(a) - 70.041 * Math.log10(heightCm) + 36.76;
+  }
+  if (!isFinite(bf) || bf <= 0) return null;
+  return Math.round(bf * 10) / 10;
+}
+
+/**
+ * Categorize body-fat % per ACE/Navy interpretation.
+ * @param {number} bf
+ * @param {'m'|'f'} sex
+ * @returns {{label:string, color:string}}
+ */
+function _bsBodyFatCategory(bf, sex) {
+  const ranges = sex === 'f'
+    ? [[14, 'Essential', 'var(--c-blue)'], [21, 'Athletic', 'var(--c-accent)'], [25, 'Fitness', 'var(--c-accent)'], [32, 'Average', 'var(--c-red)'], [100, 'High', 'var(--c-red)']]
+    : [[6, 'Essential', 'var(--c-blue)'], [14, 'Athletic', 'var(--c-accent)'], [18, 'Fitness', 'var(--c-accent)'], [25, 'Average', 'var(--c-red)'], [100, 'High', 'var(--c-red)']];
+  for (const [max, label, color] of ranges) if (bf < max) return { label, color };
+  return { label: '—', color: 'var(--c-text-3)' };
+}
+
 async function _bsRenderMetrics() {
   const el = document.getElementById('bs-metrics-content');
   if (!el) return;
@@ -229,6 +298,14 @@ async function _bsRenderMetrics() {
     DB.Settings.getAll(),
   ]);
 
+  const sex = settings['sex'] === 'f' ? 'f' : 'm';
+  const heightCm = latest?.height || parseFloat(settings['m-height']) || null;
+  const waistCm = parseFloat(settings['m-waist']) || null;
+  const neckCm = parseFloat(settings['m-neck']) || null;
+  const hipCm = parseFloat(settings['m-hips']) || null;
+  const bodyFat = _bsBodyFatNavy({ sex, heightCm, waistCm, neckCm, hipCm });
+  const bfCat = bodyFat != null ? _bsBodyFatCategory(bodyFat, sex) : null;
+
   const bmiColor = !latest
     ? 'var(--c-text-3)'
     : latest.bmi < 18.5
@@ -236,8 +313,8 @@ async function _bsRenderMetrics() {
       : latest.bmi < 25
         ? 'var(--c-accent)'
         : latest.bmi < 30
-          ? 'var(--c-amber)'
-          : 'var(--c-red)';
+          ? 'var(--c-red)'
+          : 'var(--c-red)'; /* both 25-30 and 30+ → coral (overweight = soft warn, not achievement) */
   const bmiLabel = !latest
     ? ''
     : latest.bmi < 18.5
@@ -257,15 +334,18 @@ async function _bsRenderMetrics() {
       </div>
       <div class="body-stat-divider"></div>
       <div class="body-stat">
-        <div class="body-stat-val">${latest.height}<span class="body-stat-unit">cm</span></div>
-        <div class="body-stat-label">Height</div>
+        <div class="body-stat-val" style="color:${bmiColor}">${latest.bmi}</div>
+        <div class="body-stat-label">BMI · ${bmiLabel}</div>
       </div>
       <div class="body-stat-divider"></div>
       <div class="body-stat">
-        <div class="body-stat-val" style="color:${bmiColor}">${latest.bmi}</div>
-        <div class="body-stat-label">${bmiLabel}</div>
+        <div class="body-stat-val" style="color:${bfCat ? bfCat.color : 'var(--c-text-3)'}">
+          ${bodyFat != null ? bodyFat + '<span class="body-stat-unit">%</span>' : '—'}
+        </div>
+        <div class="body-stat-label">${bfCat ? 'Fat · ' + bfCat.label : 'Body Fat'}</div>
       </div>
-    </div>`
+    </div>
+    ${bodyFat == null ? `<div class="bs-fat-hint">Fill waist, neck${sex === 'f' ? ' and hips' : ''} below to compute body-fat %</div>` : ''}`
     : `
     <div class="body-summary empty-state" style="padding:var(--sp-3)">
       <div class="empty-title" style="font-size:13px">No body metrics yet</div>
@@ -297,7 +377,7 @@ async function _bsRenderMetrics() {
         <div class="history-row">
           <span class="history-date">${new Date(m.timestamp).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           <span class="history-val">${m.weight} kg</span>
-          <span class="history-bmi" style="color:${m.bmi < 25 ? 'var(--c-accent)' : 'var(--c-amber)'}">BMI ${m.bmi}</span>
+          <span class="history-bmi" style="color:${m.bmi < 25 ? 'var(--c-accent)' : 'var(--c-red)'}">BMI ${m.bmi}</span>
         </div>`
         )
         .join('')}
@@ -337,6 +417,14 @@ async function _bsRenderMetrics() {
       <button class="btn-text" onclick="bsSaveMeasurements()">Save</button>
     </div>
     <div class="profile-card">
+      <div class="bs-sex-row">
+        <span class="bs-sex-label">Sex</span>
+        <div class="bs-sex-segment" role="tablist">
+          <button class="bs-sex-btn ${sex === 'm' ? 'active' : ''}" onclick="bsSetSex('m')" role="tab">Male</button>
+          <button class="bs-sex-btn ${sex === 'f' ? 'active' : ''}" onclick="bsSetSex('f')" role="tab">Female</button>
+        </div>
+        <span class="bs-sex-hint">Used for Navy body-fat formula</span>
+      </div>
       <div class="metrics-grid">
         ${mField('bm-chest', 'Chest', settings['m-chest'], 'cm')}
         ${mField('bm-waist', 'Waist', settings['m-waist'], 'cm')}
@@ -363,6 +451,7 @@ async function bsSaveMetrics() {
   Toast.show('Body metrics saved', 'success');
   _bsRenderMetrics();
 }
+window.bsSaveMetrics = bsSaveMetrics;
 
 async function bsSaveMeasurements() {
   const map = {
@@ -382,7 +471,9 @@ async function bsSaveMeasurements() {
     })
   );
   Toast.show('Measurements saved', 'success');
+  _bsRenderMetrics(); // re-compute body-fat % with fresh values
 }
+window.bsSaveMeasurements = bsSaveMeasurements;
 
 /* ══════════════════════════════════════════════
    HISTORY / DELETE
@@ -549,4 +640,10 @@ function bsSaveEntry(editDate) {
     doSave();
   }
 }
+
+window.bsHistToggle = bsHistToggle;
+window.bsDeleteEntry = bsDeleteEntry;
+window.bsOpenForm = bsOpenForm;
+window.bsCloseForm = bsCloseForm;
+window.bsSaveEntry = bsSaveEntry;
 

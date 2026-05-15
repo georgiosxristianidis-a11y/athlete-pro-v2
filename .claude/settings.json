@@ -30,7 +30,15 @@
       "Bash(cat *.json)",
       "Bash(cat *.md)",
       "Read(//c/PROJECTS/FIT-ELITE/**)",
-      "Bash(gh repo:*)"
+      "Bash(gh repo:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(xxd -l 16 \"c:\\\\PROJECTS\\\\athlete-pro\\\\js\\\\workout.store.js\")",
+      "Bash(curl -s http://localhost:3000/js/workout.store.js)",
+      "Bash(curl -s http://localhost:3000/js/workout.view.js)",
+      "Bash(curl -s http://localhost:3000/js/app.js)",
+      "Bash(curl -sI http://localhost:3000/js/app.js)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(xargs kill:*)"
     ],
     "deny": [
       "Read(**/.env)",

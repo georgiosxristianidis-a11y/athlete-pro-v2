@@ -17,7 +17,15 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  },
+}));
 
 app.use('/api', require('./routes/coach'));
 app.use('/api', require('./routes/integrations'));

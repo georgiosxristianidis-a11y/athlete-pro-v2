@@ -5,6 +5,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
+import { safeFetch } from './privacy.store.js';
 
 /* ══════════════════════════════════════════════
    MUSCLE MAP — which exercises hit which muscles
@@ -248,7 +249,7 @@ async function _fetchAIRecommendations(workout, fatigue, orms, nextPlan) {
   const history = await DB.Workouts.getAll();
   const recentHistory = history.filter((w) => w.timestamp > Date.now() - 14 * 24 * 3600000);
 
-  const response = await fetch('/api/recommendations', {
+  const response = await safeFetch('/api/recommendations', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -281,7 +282,7 @@ async function _fetchAIRecommendations(workout, fatigue, orms, nextPlan) {
         reps: ex.reps,
       })),
     }),
-  });
+  }, 'ai');
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
@@ -359,6 +360,26 @@ function _coachFetchErrorMessage(err, status, bodyError) {
 }
 
 /**
+ * Render local insights as a markdown-ish text block for the chat UI.
+ * @param {Array<{title:string, body:string, action?:string}>} insights
+ * @param {'cloud'|'anon'|'airgap'} mode
+ * @returns {string}
+ */
+function _renderInsightsAsText(insights, mode) {
+  const banner = mode === 'airgap'
+    ? '**Air-Gapped — local insights only.** No data left this device.\n\n'
+    : '**AI Coach is off.** Showing rule-based insights from your local data.\n\n';
+  if (!insights.length) {
+    return banner + 'Not enough data yet. Log a few workouts and check back.';
+  }
+  const body = insights.map(i => {
+    const action = i.action ? `\n  → ${i.action}` : '';
+    return `**${i.title}**\n${i.body}${action}`;
+  }).join('\n\n');
+  return banner + body;
+}
+
+/**
  * Stream a coaching response from the server via SSE.
  * @param {string|null} message — user message, or null for initial load
  * @param {Object} opts — callback options
@@ -371,6 +392,27 @@ function _coachFetchErrorMessage(err, status, bodyError) {
 export async function fetchCoach(message, { onText, onDone, onError }, contextOverride = null) {
   if (_streaming) return;
   _streaming = true;
+
+  // Privacy gate: short-circuit to local Insights if AI is blocked
+  try {
+    const { getPrivacyMode, getAiEnabled } = await import('./privacy.store.js');
+    if (getPrivacyMode() === 'airgap' || !getAiEnabled()) {
+      const { generateInsights } = await import('./insights.engine.js');
+      const insights = await generateInsights();
+      const text = _renderInsightsAsText(insights, getPrivacyMode());
+      // Stream-like: chunk the local text so UI animation matches
+      let i = 0;
+      const chunk = () => {
+        if (i >= text.length) { _streaming = false; onDone?.(text); return; }
+        const slice = text.slice(i, i + 6);
+        i += 6;
+        onText(slice);
+        setTimeout(chunk, 18);
+      };
+      chunk();
+      return;
+    }
+  } catch { /* fall through to network coach */ }
 
   const ctx = contextOverride ?? _context;
   if (!ctx) {
@@ -397,7 +439,7 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
     ];
     if (message) apiMessages.push({ role: 'user', content: message });
 
-    const response = await fetch('/api/coach', {
+    const response = await safeFetch('/api/coach', {
       method: 'POST',
       signal: ac.signal,
       headers: {
@@ -425,7 +467,7 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
           .map((o) => ({ exercise: o.id, oneRM: o.value })),
         messages: apiMessages,
       }),
-    });
+    }, 'ai');
 
     clearTimeout(timeoutId);
 

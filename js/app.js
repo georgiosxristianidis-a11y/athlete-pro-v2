@@ -8,6 +8,8 @@ import { DB, openDB } from './db.js';
 import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
 import { Dashboard } from './dashboard.js';
+import { initPrivacy, getPrivacyMode, onPrivacyChange } from './privacy.store.js';
+import { Privacy } from './privacy.view.js';
 
 /* ── Lazy-loaded modules ── */
 async function _loadWorkout() {
@@ -47,6 +49,7 @@ window.Nav = Nav;
 window.Toast = Toast;
 window.Timer = Timer;
 window.Dashboard = Dashboard;
+window.Privacy = Privacy;
 window._loadWorkout = _loadWorkout;
 window._loadProfile = _loadProfile;
 window._loadBodyStats = _loadBodyStats;
@@ -95,7 +98,34 @@ function hideLoading() {
 // Force-hide loading after 5s no matter what
 const bootTimeout = setTimeout(hideLoading, 5000);
 
+/* ── Privacy indicator wiring ── */
+function _renderPrivacyIndicator() {
+  const el = document.getElementById('privacy-indicator');
+  if (!el) return;
+  const mode = getPrivacyMode();
+  el.classList.remove('mode-cloud', 'mode-anon', 'mode-airgap');
+  el.classList.add('mode-' + mode);
+  if (mode === 'cloud') {
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+  el.hidden = false;
+  const paths = mode === 'anon'
+    ? '<circle cx="12" cy="8" r="3.5"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/><line x1="3" y1="3" x2="21" y2="21"/>'
+    : '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>';
+  el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+    width="11" height="11">${paths}</svg>`;
+  el.title = mode === 'airgap' ? 'Air-Gapped — no network' : 'Anonymous — identifiers stripped';
+}
+
 openDB()
+  .then(initPrivacy)
+  .then(() => {
+    _renderPrivacyIndicator();
+    onPrivacyChange(_renderPrivacyIndicator);
+  })
   .then(async () => {
     const hasSession = localStorage.getItem('ap-active-session');
     if (hasSession) {

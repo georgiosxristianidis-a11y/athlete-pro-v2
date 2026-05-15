@@ -46,6 +46,19 @@
   --sh-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
   --sh-md: 0 4px 16px rgba(0, 0, 0, 0.22);
   --sh-lg: 0 8px 32px rgba(0, 0, 0, 0.32);
+  /* Neon glows — premium accent shadows for active/CTA elements.
+     Apply ACTIVELY in Focus Mode; SURGICALLY elsewhere (PR badge, primary CTAs). */
+  --glow-accent-sm: 0 0 10px rgba(0, 230, 118, 0.4);
+  --glow-accent-md: 0 0 20px rgba(0, 230, 118, 0.5);
+  --glow-accent-lg: 0 0 30px rgba(0, 230, 118, 0.6);
+  --glow-purple-sm: 0 0 10px rgba(139, 92, 246, 0.5);
+  --glow-purple-md: 0 0 20px rgba(139, 92, 246, 0.6);
+  --glow-purple-lg: 0 0 30px rgba(139, 92, 246, 0.7);
+  --glow-blue-sm: 0 0 10px rgba(90, 150, 255, 0.4);
+  --glow-blue-md: 0 0 20px rgba(90, 150, 255, 0.5);
+  --glow-blue-lg: 0 0 30px rgba(90, 150, 255, 0.6);
+  --glow-amber-md: 0 0 18px rgba(255, 179, 0, 0.45);
+  --glow-white-soft: 0 0 20px rgba(255, 255, 255, 0.10);
   --c-border-purple: rgba(139, 92, 246, 0.15);
   --c-border-blue: rgba(90, 150, 255, 0.15);
   --c-surface-2: rgba(255, 255, 255, 0.04);

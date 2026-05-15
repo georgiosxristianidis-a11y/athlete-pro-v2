@@ -1,0 +1,267 @@
+/* ════════════════════════════════════════════════════════
+   privacy.css — Privacy mode UI
+   Tri-state segmented control, Data Passport, Audit log,
+   Status bar indicator.
+   ════════════════════════════════════════════════════════ */
+
+/* ── Status bar indicator ─────────────────────────────── */
+.privacy-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 8px;
+  color: var(--c-text-2);
+  background: rgba(255, 255, 255, 0.04);
+  transition: background var(--t-fast), color var(--t-fast), box-shadow var(--t-normal);
+}
+.privacy-indicator[hidden] { display: none; }
+.privacy-indicator.mode-anon {
+  color: var(--c-purple);
+  background: rgba(139, 92, 246, 0.08);
+}
+.privacy-indicator.mode-airgap {
+  color: var(--c-accent);
+  background: rgba(0, 230, 118, 0.08);
+  box-shadow: 0 0 0 1px rgba(0, 230, 118, 0.15);
+}
+.privacy-indicator.flash {
+  animation: privacy-flash 0.5s ease;
+}
+@keyframes privacy-flash {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.25); box-shadow: 0 0 0 4px rgba(0, 230, 118, 0.18); }
+  100% { transform: scale(1); }
+}
+
+/* ── Privacy mode tag (Profile section header) ───────── */
+.privacy-mode-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: var(--c-text-2);
+}
+.privacy-mode-tag.privacy-mode-cloud {
+  background: rgba(255, 255, 255, 0.04);
+}
+.privacy-mode-tag.privacy-mode-anon {
+  background: rgba(139, 92, 246, 0.10);
+  color: var(--c-purple);
+}
+.privacy-mode-tag.privacy-mode-airgap {
+  background: rgba(0, 230, 118, 0.10);
+  color: var(--c-accent);
+}
+
+/* ── Privacy card + segmented control ─────────────────── */
+.privacy-card { padding: var(--sp-2); }
+
+.privacy-segment {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: var(--sp-2);
+}
+.privacy-seg-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border-radius: 9px;
+  background: transparent;
+  border: 0;
+  color: var(--c-text-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.privacy-seg-btn:active { transform: scale(0.97); }
+.privacy-seg-btn.active {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.10) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  color: var(--c-text-1);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.10) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 4px 14px rgba(0, 0, 0, 0.4);
+}
+/* Mode-specific accent on active button */
+.privacy-seg-btn[data-mode="airgap"].active {
+  color: var(--c-accent);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 230, 118, 0.15) 0%,
+    rgba(0, 230, 118, 0.05) 100%
+  );
+  text-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
+}
+.privacy-seg-btn[data-mode="anon"].active {
+  color: var(--c-purple);
+  background: linear-gradient(
+    180deg,
+    rgba(139, 92, 246, 0.18) 0%,
+    rgba(139, 92, 246, 0.06) 100%
+  );
+  text-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+}
+
+.privacy-desc {
+  font-size: 12px;
+  color: var(--c-text-2);
+  line-height: 1.5;
+  padding: 4px 8px var(--sp-1);
+}
+
+/* Disabled switch (when airgap forces AI off) */
+.switch-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ── Data Passport modal ──────────────────────────────── */
+.passport-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  margin: var(--sp-2) 0 var(--sp-1);
+  padding: 0 4px;
+}
+.passport-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.passport-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: var(--r-m);
+}
+.passport-tile.dim { opacity: 0.5; }
+.passport-num {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--c-text-1);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.passport-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+.passport-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 4px;
+  font-size: 12px;
+}
+.passport-row + .passport-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+.passport-row-key {
+  color: var(--c-text-2);
+  font-weight: 600;
+}
+.passport-row-val {
+  color: var(--c-text-3);
+  font-size: 11px;
+}
+
+/* ── Audit log modal ──────────────────────────────────── */
+.audit-summary {
+  font-size: 11px;
+  color: var(--c-text-3);
+  padding: 4px 8px var(--sp-2);
+  letter-spacing: 0.04em;
+}
+.audit-list {
+  display: flex;
+  flex-direction: column;
+}
+.audit-empty {
+  padding: var(--sp-3);
+  text-align: center;
+  color: var(--c-text-3);
+  font-size: 12px;
+}
+.audit-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 8px;
+}
+.audit-row + .audit-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+.audit-row-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.audit-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  flex-shrink: 0;
+}
+.audit-dot.blocked {
+  background: var(--c-amber);
+}
+.audit-url {
+  font-size: 13px;
+  color: var(--c-text-1);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'SF Mono', Menlo, monospace;
+}
+.audit-meta {
+  font-size: 10px;
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+.audit-status {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  flex-shrink: 0;
+}
+.audit-row.allowed .audit-status { color: var(--c-accent); }
+.audit-row.blocked .audit-status { color: var(--c-amber); }

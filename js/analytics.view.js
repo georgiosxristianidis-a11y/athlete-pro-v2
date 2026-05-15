@@ -43,6 +43,25 @@ async function load() {
       <div class="badge badge-purple" id="stats-period-badge">Last 30 days</div>
     </div>
 
+    <!-- Sub-nav: Performance | Measurements (Body merged into Stats) -->
+    <div class="stats-subnav">
+      <button class="stats-subnav-btn active" onclick="Nav.go('s-stats')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        Performance
+      </button>
+      <button class="stats-subnav-btn" onclick="Nav.go('s-body')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+          <circle cx="12" cy="5" r="2.5"/>
+          <path d="M12 8v7"/><path d="M8 11h8"/><path d="M9 22l3-7 3 7"/>
+        </svg>
+        Measurements
+      </button>
+    </div>
+
     <!-- ── Quick stats row ── -->
     <div class="stat-row" id="stats-quick-row">
       <div class="stat-chip">

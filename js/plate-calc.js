@@ -1,3 +1,4 @@
+// @ts-check
 /* ════════════════════════════════════════════════════════
    Block 10.1 — Plate Calculator  v1.1  |  Athlete Pro
    FIX: correct plate mirroring on left side

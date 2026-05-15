@@ -487,7 +487,8 @@ export function needsProgramGeneration() {
  * @returns {Promise<Object>} — { push:[], pull:[], legs:[] }
  */
 export async function fetchGeneratedPlan(options = {}) {
-  const response = await fetch('/api/generate-plan', {
+  const { safeFetch } = await import('./privacy.store.js');
+  const response = await safeFetch('/api/generate-plan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -496,7 +497,7 @@ export async function fetchGeneratedPlan(options = {}) {
       goals: options.goals || 'strength',
       experience: options.experience || 'intermediate'
     })
-  });
+  }, 'ai');
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));

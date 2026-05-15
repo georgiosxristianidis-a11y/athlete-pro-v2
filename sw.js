@@ -1,13 +1,16 @@
 /* ════════════════════════════════════════════════════════
    sw.js — Athlete Pro | Phase 1 architecture
    Service Worker: cache-first + offline fallback
+   Privacy-aware: never caches /api/*. Honors air-gapped mode
+   by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v6';
+const CACHE_NAME = 'athlete-pro-v9';
 
 const ASSETS = [
   '/index.html',
   '/manifest.json',
+  '/exercises-library.json',
   '/js/app.js',
   '/js/shell.js',
   '/js/db.js',
@@ -23,6 +26,9 @@ const ASSETS = [
   '/js/claude.store.js',
   '/js/claude.view.js',
   '/js/profile.js',
+  '/js/profile.store.js',
+  '/js/privacy.store.js',
+  '/js/strength-engine.js',
   '/js/body-stats.js',
   '/js/plate-calc.js',
   '/css/base.css',
@@ -39,13 +45,20 @@ const ASSETS = [
   '/icons/apple-touch-icon.png',
 ];
 
-/* ── Install ── */
+/* ── Privacy mode — synced from main thread via postMessage ── */
+let privacyMode = 'cloud'; // default; updated when client posts message
+
+self.addEventListener('message', (e) => {
+  if (e.data?.type === 'privacy-mode') {
+    privacyMode = e.data.mode || 'cloud';
+  }
+});
+
+/* ── Install: skip waiting immediately to force new version ── */
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => Promise.allSettled(ASSETS.map((url) => cache.add(url).catch(() => {}))))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => cache.delete('/index.html').catch(() => {}))
   );
 });
 
@@ -61,11 +74,35 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-/* ── Fetch: cache-first, network fallback ── */
+/* ── Fetch: cache-first, network fallback. /api/* never cached. ── */
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   if (e.request.url.startsWith('chrome-extension')) return;
 
+  const url = new URL(e.request.url);
+  const isApi = url.pathname.startsWith('/api/');
+
+  if (isApi) {
+    // Air-gapped mode: short-circuit /api/* with synthetic 503
+    if (privacyMode === 'airgap') {
+      e.respondWith(
+        new Response(
+          JSON.stringify({ error: 'air-gapped: network blocked', code: 'airgap' }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+      return;
+    }
+    // Otherwise: pass through, never cache
+    e.respondWith(fetch(e.request).catch(() =>
+      new Response(JSON.stringify({ error: 'network error' }), {
+        status: 503, headers: { 'Content-Type': 'application/json' }
+      })
+    ));
+    return;
+  }
+
+  // Static assets: cache-first
   e.respondWith(
     caches.match(e.request).then((cached) => {
       if (cached) return cached;

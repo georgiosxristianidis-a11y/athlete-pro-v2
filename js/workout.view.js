@@ -8,7 +8,7 @@ import { Timer } from './timer.js';
 import { RestTimer } from './rest-timer.js'; // eslint-disable-line no-unused-vars
 import { State, persistSession, tryRestoreSession } from './workout.store.js';
 
-export { renderSelect, renderActive, renderExerciseCard, renderSetRow } from './workout.view/render.js';
+export { renderSelect, renderActive, renderExerciseCard, renderSetRow, renderFocusMode } from './workout.view/render.js';
 
 export {
   openPlanEditor,
@@ -50,6 +50,14 @@ export {
   _toggleCoreItem,
   _addCoreItem,
   _removeCoreItem,
+  _openFocus,
+  _closeFocus,
+  _focusNext,
+  _focusPrev,
+  _focusStepW,
+  _focusStepR,
+  _focusCompleteSet,
+  _initFocusLongPress,
 } from './workout.view/handlers.js';
 
 /* ════════════════════════════════════════════════════════
@@ -98,6 +106,8 @@ import {
   openCustomWorkoutModal, _createNewCustomWorkout, _editCustomWorkout, _deleteCustomWorkout,
   _startCustomWorkout, _closeCustomWorkoutModal, addSet, completeSession, cancelSession,
   _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem, _removeCoreItem,
+  _openFocus, _closeFocus, _focusNext, _focusPrev,
+  _focusStepW, _focusStepR, _focusCompleteSet, _initFocusLongPress,
 } from './workout.view/handlers.js';
 
 export const Workout = {
@@ -139,4 +149,12 @@ export const Workout = {
   _toggleCoreItem,
   _addCoreItem,
   _removeCoreItem,
+  _openFocus,
+  _closeFocus,
+  _focusNext,
+  _focusPrev,
+  _focusStepW,
+  _focusStepR,
+  _focusCompleteSet,
+  _initFocusLongPress,
 };

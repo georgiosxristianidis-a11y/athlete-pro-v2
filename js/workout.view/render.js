@@ -376,6 +376,11 @@ export async function renderActive() {
   `;
 
   requestAnimationFrame(_initDrag);
+  requestAnimationFrame(() => {
+    if (typeof window !== 'undefined' && window.Workout?._initFocusLongPress) {
+      window.Workout._initFocusLongPress();
+    }
+  });
 }
 
 export async function renderExerciseCard(ex, ei) {
@@ -509,6 +514,154 @@ export async function renderSetRow(ex, ei, set, si) {
           <polyline points="20 6 9 17 4 12"/>
         </svg>
       </button>
+    </div>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   FOCUS MODE (Phase 3.A) — fullscreen single-exercise overlay
+   ════════════════════════════════════════════════════════ */
+
+function _focusSvg(name) {
+  const paths = {
+    close:  '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    minus:  '<line x1="5" y1="12" x2="19" y2="12"/>',
+    plus:   '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    check:  '<polyline points="20 6 9 17 4 12"/>',
+    timer:  '<circle cx="12" cy="13" r="8"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="9" y1="2" x2="15" y2="2"/>',
+    checkc: '<circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>',
+  };
+  const sw = name === 'check' || name === 'checkc' ? 2 : 1.6;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"
+    width="24" height="24">${paths[name]}</svg>`;
+}
+
+export async function renderFocusMode(ei) {
+  const ex = State.plan[ei];
+  if (!ex) return '';
+
+  const total = ex.sets.length;
+  const doneCount = ex.sets.filter(s => s.done).length;
+  const activeIdx = Math.min(ex.sets.findIndex(s => !s.done), total - 1);
+  const si = activeIdx < 0 ? total - 1 : activeIdx;
+  const set = ex.sets[si];
+
+  const totalSets = State.plan.reduce((acc, e) => acc + e.sets.length, 0);
+  const totalDone = State.plan.reduce((acc, e) => acc + e.sets.filter(s => s.done).length, 0);
+  const progressPct = totalSets ? Math.round((totalDone / totalSets) * 100) : 0;
+
+  const lastSummary = await _getLastSessionSummary(ex.name);
+  const lastRows = lastSummary
+    ? lastSummary.split(', ').slice(0, 3).map((s, i) => {
+        const [w, r] = s.split('×');
+        return `<div class="focus-last-row">
+          <div style="display:flex;align-items:center;gap:14px">
+            <span class="focus-last-num">${i + 1}</span>
+            <span>${w} kg</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span>${r} reps</span>
+            <span style="color:var(--c-accent);display:flex">${_focusSvg('check').replace('width="24" height="24"', 'width="14" height="14"')}</span>
+          </div>
+        </div>`;
+      }).join('')
+    : '';
+
+  const dayLabel = State.type.charAt(0).toUpperCase() + State.type.slice(1) + ' Day';
+  const sessionTime = Timer.fmt(Timer.seconds());
+
+  const allDone = doneCount >= total;
+
+  return `
+    <div class="focus-overlay" id="focus-overlay" data-day="${State.type}" data-ei="${ei}" data-si="${si}">
+      <div class="focus-header">
+        <button class="focus-close-btn" aria-label="Close focus mode"
+                onclick="Workout._closeFocus()">
+          ${_focusSvg('close')}
+        </button>
+        <div class="focus-header-title">
+          <span class="focus-header-day">${dayLabel}</span>
+          <span class="focus-header-name">${ex.name}</span>
+        </div>
+        <button class="focus-finish-btn" aria-label="Finish session"
+                onclick="Workout._closeFocus();Workout.completeSession()">Finish</button>
+      </div>
+
+      <div class="focus-progress">
+        <div class="focus-progress-fill" id="focus-progress-fill" style="width:${progressPct}%"></div>
+      </div>
+
+      <div class="focus-body">
+        <div class="focus-hero-timer">
+          <span class="focus-hero-label">Workout Time</span>
+          <span class="focus-hero-time" id="focus-hero-time">${sessionTime}</span>
+        </div>
+
+        <div class="focus-glass-card" id="focus-card">
+          <div class="focus-card-top">
+            <div>
+              <div class="focus-chip">
+                <span class="focus-chip-dot"></span>
+                <span>Exercise ${ei + 1}</span>
+              </div>
+              <div class="focus-ex-name">${ex.name}</div>
+            </div>
+            <div class="focus-set-counter">
+              <span class="focus-set-lbl">Set</span>
+              <span class="focus-set-val">
+                <span id="focus-set-cur">${si + 1}</span>
+                <span class="focus-set-total"> / ${total}</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="focus-numbers">
+            <div class="focus-num-col">
+              <span class="focus-num-lbl">Weight</span>
+              <div class="focus-num-row">
+                <button class="focus-num-btn" aria-label="Decrease weight"
+                        onclick="Workout._focusStepW(-2.5)">${_focusSvg('minus')}</button>
+                <span class="focus-num-val" id="focus-w-val">${set.weight}</span>
+                <button class="focus-num-btn" aria-label="Increase weight"
+                        onclick="Workout._focusStepW(2.5)">${_focusSvg('plus')}</button>
+              </div>
+              <span class="focus-num-unit">kg</span>
+            </div>
+            <div class="focus-num-col">
+              <span class="focus-num-lbl">Reps</span>
+              <div class="focus-num-row">
+                <button class="focus-num-btn" aria-label="Decrease reps"
+                        onclick="Workout._focusStepR(-1)">${_focusSvg('minus')}</button>
+                <span class="focus-num-val" id="focus-r-val">${set.reps}</span>
+                <button class="focus-num-btn" aria-label="Increase reps"
+                        onclick="Workout._focusStepR(1)">${_focusSvg('plus')}</button>
+              </div>
+              <span class="focus-num-unit">reps</span>
+            </div>
+          </div>
+        </div>
+
+        ${lastRows ? `
+        <div class="focus-last-ref">
+          <div class="focus-last-title">Last Session</div>
+          ${lastRows}
+        </div>` : ''}
+      </div>
+
+      <div class="focus-footer">
+        <div class="focus-rest-card hidden" id="focus-rest-card">
+          <div class="focus-rest-left">
+            ${_focusSvg('timer')}
+            <span class="focus-rest-lbl">Rest Timer</span>
+          </div>
+          <span class="focus-rest-val" id="focus-rest-val">0:00</span>
+        </div>
+        <button class="focus-cta" id="focus-cta" ${allDone ? 'disabled' : ''}
+                onclick="Workout._focusCompleteSet()">
+          <span class="focus-cta-icon">${_focusSvg('checkc')}</span>
+          <span class="focus-cta-text">${allDone ? 'All Sets Done' : 'Complete Set'}</span>
+        </button>
+      </div>
     </div>`;
 }
 
