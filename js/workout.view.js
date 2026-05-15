@@ -9,6 +9,7 @@ import { RestTimer } from './rest-timer.js'; // eslint-disable-line no-unused-va
 import { State, persistSession, tryRestoreSession } from './workout.store.js';
 
 export { renderSelect, renderActive, renderExerciseCard, renderSetRow, renderFocusMode } from './workout.view/render.js';
+export { initDragNumbers } from './ui/drag-number.js';
 
 export {
   openPlanEditor,

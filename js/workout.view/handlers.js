@@ -7,6 +7,9 @@ import { generateRecommendations } from '../claude.store.js';
 import { Heatmap } from '../claude.store.js';
 import { renderSelect, renderActive, renderSetRow, renderFocusMode, _renderCoreSection, _coreCheckedState } from './render.js';
 import { openExercisePickerModal } from './modals.js';
+import { initDragNumbers } from '../ui/drag-number.js';
+import { initGravitySubmit } from '../ui/gravity-submit.js';
+import { showReceipt } from '../ui/receipt.js';
 
 function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
 
@@ -41,10 +44,10 @@ export async function selectType(type) {
 /* ════════════════════════════════════════════════════════
    STEPPER — weight / reps
    ════════════════════════════════════════════════════════ */
-export function stepWeight(ei, si, delta) {
+export function stepWeight(ei, si, delta, isDrag = false) {
   const key = `w-${ei}-${si}`;
   const now = Date.now();
-  if (State.stepDebounce[key] && now - State.stepDebounce[key] < 250) return;
+  if (!isDrag && State.stepDebounce[key] && now - State.stepDebounce[key] < 250) return;
   State.stepDebounce[key] = now;
   _haptic(10);
   const set = State.plan[ei].sets[si];
@@ -54,10 +57,10 @@ export function stepWeight(ei, si, delta) {
   persistSession();
 }
 
-export function stepReps(ei, si, delta) {
+export function stepReps(ei, si, delta, isDrag = false) {
   const key = `r-${ei}-${si}`;
   const now = Date.now();
-  if (State.stepDebounce[key] && now - State.stepDebounce[key] < 250) return;
+  if (!isDrag && State.stepDebounce[key] && now - State.stepDebounce[key] < 250) return;
   State.stepDebounce[key] = now;
   _haptic(10);
   const set = State.plan[ei].sets[si];
@@ -373,6 +376,7 @@ export async function addSet(ei) {
     const rows = await Promise.all(rowPromises);
     wrap.innerHTML = headerRow + rows.join('') + addBtn;
   }
+  requestAnimationFrame(() => { initDragNumbers(); initGravitySubmit(); });
   _updateLiveStats();
   persistSession();
 }
@@ -473,6 +477,8 @@ export async function completeSession() {
       console.warn('[completeSession] Recommendations failed:', err.message);
     }
   }
+
+  await showReceipt(session);
 
   State.phase = 'select';
   Nav.go('s-home');

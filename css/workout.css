@@ -278,6 +278,7 @@
   display: grid;
   grid-template-columns: 22px 1fr 1fr 44px;
   gap: 10px;
+  will-change: transform, opacity;
   align-items: center;
   padding: 14px 0;
   border-bottom: 0;
@@ -359,6 +360,17 @@
   font-variant-numeric: tabular-nums;
   line-height: 44px;
   cursor: pointer;
+  transition: font-size 0.12s ease, color 200ms;
+}
+.stepper-val[data-type] {
+  touch-action: none;
+  user-select: none;
+  cursor: ns-resize;
+}
+.stepper-val.drag-active {
+  font-size: 34px !important;
+  line-height: 44px;
+  transition: font-size 0.08s ease !important;
 }
 .stepper-val.hidden {
   display: none;
@@ -2037,6 +2049,7 @@
   color: var(--c-accent) !important;
 }
 
+<<<<<<< HEAD
 
 /* ════════════════════════════════════════════════════════
    FOCUS MODE (Phase 3.A) — fullscreen single-exercise overlay
@@ -2456,3 +2469,47 @@
 }
 @keyframes focus-slide-left { to { transform: translateX(-110%); opacity: 0; } }
 @keyframes focus-slide-right { to { transform: translateX(110%); opacity: 0; } }
+
+/* ════════════════════════════════════════════════
+   RECEIPT MODAL
+   ════════════════════════════════════════════════ */
+.receipt-overlay {
+  z-index: 6000;
+}
+.receipt-sheet {
+  background: var(--c-surface);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 12px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.receipt-overlay.visible .receipt-sheet {
+  transform: translateY(0);
+}
+.receipt-canvas-wrap {
+  margin: 16px 0 8px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  width: 360px;
+  max-width: 100%;
+}
+.receipt-canvas-wrap canvas {
+  display: block;
+  max-width: 100%;
+  height: auto !important;
+}
+.receipt-swipe-hint {
+  font-size: 11px;
+  color: var(--c-text-3, #555);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 6px 0 4px;
+}
