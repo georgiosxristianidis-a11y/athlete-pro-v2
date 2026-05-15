@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { startServer } = require('../server');
 
 test('smoke: GET / returns 200', async () => {
-  const server = startServer(0);
+  const server = await startServer(0);
   try {
     const { port } = server.address();
     const res = await fetch(`http://127.0.0.1:${port}/`);
@@ -15,7 +15,7 @@ test('smoke: GET / returns 200', async () => {
 });
 
 test('smoke: /api/firebase-config returns configured false when missing env', async () => {
-  const server = startServer(0);
+  const server = await startServer(0);
   try {
     const { port } = server.address();
     const res = await fetch(`http://127.0.0.1:${port}/api/firebase-config`);
@@ -28,7 +28,7 @@ test('smoke: /api/firebase-config returns configured false when missing env', as
 });
 
 test('smoke: /api/supabase-status returns not_configured when missing env', async () => {
-  const server = startServer(0);
+  const server = await startServer(0);
   try {
     const { port } = server.address();
     const res = await fetch(`http://127.0.0.1:${port}/api/supabase-status`);
