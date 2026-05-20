@@ -544,3 +544,32 @@ button:focus-visible {
 .week-pill.week-A .week-pill-val {
   text-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
 }
+
+/* ── Micro-interactions: card entrance stagger ────────── */
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stat-chip {
+  animation: card-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.stat-chip:nth-child(1) { animation-delay: 0.06s; }
+.stat-chip:nth-child(2) { animation-delay: 0.11s; }
+.stat-chip:nth-child(3) { animation-delay: 0.16s; }
+.streak-card {
+  animation: card-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.08s both;
+}
+.ppl-chip {
+  animation: card-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.ppl-chip:nth-child(1) { animation-delay: 0.08s; }
+.ppl-chip:nth-child(2) { animation-delay: 0.14s; }
+.ppl-chip:nth-child(3) { animation-delay: 0.20s; }
+.session-item {
+  animation: card-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.session-item:nth-child(1) { animation-delay: 0.04s; }
+.session-item:nth-child(2) { animation-delay: 0.09s; }
+.session-item:nth-child(3) { animation-delay: 0.14s; }
+.session-item:nth-child(4) { animation-delay: 0.18s; }
+.session-item:nth-child(5) { animation-delay: 0.22s; }

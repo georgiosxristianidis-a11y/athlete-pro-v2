@@ -25,7 +25,7 @@ export function renderLiftBars(oneRMs, bw, sex, age, lang) {
   const names = ru ? LIFT_RU : LIFT_EN;
   const effectiveAge = age || 30;
 
-  const rows = ['bench', 'squat', 'deadlift', 'ohp'].map(lift => {
+  const rows = ['bench', 'squat', 'deadlift', 'ohp'].map((lift, idx) => {
     const rm = oneRMs[lift] || 0;
     const tier = rm
       ? exrxTier({ lift, sex, bodyweight: bw, oneRM: rm, age: effectiveAge })
@@ -33,6 +33,7 @@ export function renderLiftBars(oneRMs, bw, sex, age, lang) {
     const tierIdx = TIER_ORDER.indexOf(tier);
     const color = TIER_COLOR[tier];
     const pct = rm ? Math.round((tierIdx + 1) / TIER_ORDER.length * 100) : 0;
+    const barDelay = (0.15 + idx * 0.07).toFixed(2);
 
     const dots = TIER_ORDER.map((t, i) => {
       const filled = rm && i <= tierIdx;
@@ -44,7 +45,7 @@ export function renderLiftBars(oneRMs, bw, sex, age, lang) {
   <div class="lift-name">${names[lift]}</div>
   <div class="lift-bar-wrap">
     <div class="lift-bar-track">
-      <div class="lift-bar-fill" style="width:${pct}%;background:${color}"></div>
+      <div class="lift-bar-fill" style="--bar-w:${pct}%;--bar-delay:${barDelay}s;background:${color}"></div>
     </div>
   </div>
   <div class="lift-rm">${rm ? `${rm}<span class="lift-rm-u">kg</span>` : '—'}</div>

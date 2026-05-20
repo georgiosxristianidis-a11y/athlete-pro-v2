@@ -182,7 +182,7 @@
         padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + var(--sp-2));
         opacity: 0;
         pointer-events: none;
-        transform: translateY(6px);
+        transform: translateY(16px);
         transition:
           opacity 0.22s ease,
           transform 0.22s ease;
@@ -193,6 +193,10 @@
         opacity: 1;
         pointer-events: auto;
         transform: translateY(0);
+      }
+      .screen.out {
+        opacity: 0;
+        transform: translateY(-10px);
       }
       .screen::-webkit-scrollbar {
         width: 2px;

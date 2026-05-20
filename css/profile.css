@@ -546,7 +546,9 @@
 .lift-bar-fill {
   height: 100%;
   border-radius: 2px;
-  transition: width var(--t-slow);
+  width: var(--bar-w, 0%);
+  animation: bar-grow 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation-delay: var(--bar-delay, 0.1s);
 }
 .lift-rm {
   font-size: 13px;
@@ -576,3 +578,28 @@
   border: 1px solid var(--c-border);
 }
 .lift-dot.filled { border: none; }
+
+/* ── Micro-interactions: profile card stagger ── */
+.pp-bento-cell {
+  animation: card-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.pp-bento-cell:nth-child(1) { animation-delay: 0.06s; }
+.pp-bento-cell:nth-child(2) { animation-delay: 0.10s; }
+.pp-bento-cell:nth-child(3) { animation-delay: 0.14s; }
+.pp-bento-cell:nth-child(4) { animation-delay: 0.18s; }
+.pp-card {
+  animation: card-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.08s both;
+}
+.lift-row {
+  animation: card-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.lift-row:nth-child(1) { animation-delay: 0.06s; }
+.lift-row:nth-child(2) { animation-delay: 0.11s; }
+.lift-row:nth-child(3) { animation-delay: 0.16s; }
+.lift-row:nth-child(4) { animation-delay: 0.21s; }
+
+/* ── Lift bar grow animation ── */
+@keyframes bar-grow {
+  from { width: 0; }
+  to   { width: var(--bar-w, 0%); }
+}
