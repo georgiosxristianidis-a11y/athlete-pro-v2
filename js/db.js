@@ -83,6 +83,10 @@ function openDB() {
 
     req.onsuccess = (e) => {
       _db = e.target.result;
+      _db.onversionchange = () => {
+        _db.close();
+        _db = null;
+      };
       resolve(_db);
     };
     req.onerror = (e) => reject(e.target.error);
@@ -92,8 +96,13 @@ function openDB() {
 /* ── Internal helpers ── */
 function tx(store, mode = 'readonly') {
   return openDB().then((db) => {
-    const t = db.transaction(store, mode);
-    return t.objectStore(store);
+    try {
+      return db.transaction(store, mode).objectStore(store);
+    } catch (e) {
+      // Connection was closed externally (e.g. versionchange); reopen once
+      _db = null;
+      return openDB().then((db2) => db2.transaction(store, mode).objectStore(store));
+    }
   });
 }
 

@@ -147,12 +147,13 @@ export const Dashboard = (() => {
     `;
   }
 
-  function _buildEmptyState() {
+  function _buildEmptyState(showMascot = true) {
     return `
       <div class="empty-dashboard">
+        ${showMascot ? `
         <div class="empty-dash-mascot">
           <video src="assets/panda-idle.mp4" autoplay loop muted playsinline></video>
-        </div>
+        </div>` : ''}
         <div class="empty-dash-title">Ready to crush it?</div>
         <div class="empty-dash-sub">Your training log is empty. Time to fix that.</div>
         <button class="btn-start-workout" type="button">
@@ -359,14 +360,16 @@ export const Dashboard = (() => {
     if (!screen) return;
 
     // Fetch data in parallel — single workouts transaction, derive stats in-memory
-    const [allWorkouts, orms] = await Promise.all([
+    const [allWorkouts, orms, showMascotSetting] = await Promise.all([
       DB.Workouts.getAll(),
       DB.OneRM.getAll(),
+      DB.Settings.get('show-mascot').catch(() => 'on'),
     ]);
+    const showMascot = showMascotSetting !== 'off';
 
     // Empty state — first-time user
     if (!allWorkouts.length) {
-      screen.innerHTML = _buildEmptyState();
+      screen.innerHTML = _buildEmptyState(showMascot);
       screen.querySelector('.btn-start-workout')?.addEventListener('click', () => {
         navigator.vibrate?.([15, 50, 15]);
         window.Toast.show("Let's go!", 'success');

@@ -50,12 +50,21 @@ function _renderBubble() {
   bubble.id = 'workout-ai-bubble';
   bubble.className = 'workout-ai-bubble';
   bubble.hidden = true;
-  bubble.onclick = toggle;
-  bubble.innerHTML = `<svg class="bubble-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
-    <path d="M12 2L13.5 7.5L19 9L13.5 10.5L12 16L10.5 10.5L5 9L10.5 7.5L12 2Z"/>
-    <path d="M19 14L19.7 16L21.5 16.5L19.7 17L19 19L18.3 17L16.5 16.5L18.3 16L19 14Z"/>
-  </svg>`;
+  bubble.innerHTML = `
+    <button class="bubble-main" onclick="window.WorkoutAI.toggle()" aria-label="Open AI coach">
+      <svg class="bubble-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+        <path d="M12 2L13.5 7.5L19 9L13.5 10.5L12 16L10.5 10.5L5 9L10.5 7.5L12 2Z"/>
+        <path d="M19 14L19.7 16L21.5 16.5L19.7 17L19 19L18.3 17L16.5 16.5L18.3 16L19 14Z"/>
+      </svg>
+    </button>
+    <button class="bubble-close" aria-label="Dismiss coach"
+      onclick="event.stopPropagation();window.WorkoutAI.hideBubble()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" width="9" height="9">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>`;
 
   document.body.appendChild(bubble);
 }

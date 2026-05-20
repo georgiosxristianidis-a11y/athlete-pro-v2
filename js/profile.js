@@ -100,6 +100,20 @@ export const Profile = (() => {
             </div>
           </div>
         </div>
+
+        <div class="pref-divider"></div>
+
+        <div class="pref-row">
+          <div class="pref-info">
+            <div class="pref-title">Home Screen Mascot</div>
+            <div class="pref-sub">Show panda animation on empty home screen</div>
+          </div>
+          <div class="switch-wrap" onclick="Profile.toggleMascot()">
+            <div class="switch ${settings['show-mascot'] !== 'off' ? 'on' : ''}" id="sw-mascot">
+              <div class="switch-thumb"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ── Privacy ── -->
@@ -385,6 +399,18 @@ export const Profile = (() => {
     if (sw) sw.classList.toggle('on', next === 'on');
   }
 
+  /**
+   * Toggle the home screen mascot (panda video) on or off.
+   * @returns {Promise<void>}
+   */
+  async function toggleMascot() {
+    const current = await DB.Settings.get('show-mascot', 'on');
+    const next = current === 'off' ? 'on' : 'off';
+    await DB.Settings.set('show-mascot', next);
+    const sw = document.getElementById('sw-mascot');
+    if (sw) sw.classList.toggle('on', next === 'on');
+  }
+
   /* ══════════════════════════════════════════════
      EXPORT / IMPORT
      ══════════════════════════════════════════════ */
@@ -463,6 +489,7 @@ export const Profile = (() => {
     setUnit,
     toggleHaptic,
     toggleAutoProgress,
+    toggleMascot,
     exportData,
     importData,
     _onImportFile,

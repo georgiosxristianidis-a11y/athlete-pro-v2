@@ -37,23 +37,11 @@ export function svgArrow(dir) {
 }
 
 export function typeIcon(type, color) {
-  const icons = {
-    push: `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"
-             stroke-linecap="round" width="20" height="20">
-             <path d="M5 12H3M21 12h-2M12 3V5M12 19v2"/>
-             <circle cx="12" cy="12" r="4"/>
-           </svg>`,
-    pull: `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"
-             stroke-linecap="round" width="20" height="20">
-             <path d="M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h4M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
-             <path d="M9 12h6M12 9l3 3-3 3"/>
-           </svg>`,
-    legs: `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"
-             stroke-linecap="round" width="20" height="20">
-             <path d="M8 3s0 5-2 9-3 8-2 10M13 3s1 5 1 9-1 8 0 10M8 12c2 0 4 0 5 3"/>
-           </svg>`,
-  };
-  return icons[type] || '';
+  const known = ['push', 'pull', 'legs'];
+  if (!known.includes(type)) return '';
+  return `<span class="type-icon" style="background-color:${color};` +
+    `-webkit-mask-image:url(/icons/${type}.svg);mask-image:url(/icons/${type}.svg)" ` +
+    `aria-hidden="true"></span>`;
 }
 
 export function fmtVol(kg) {

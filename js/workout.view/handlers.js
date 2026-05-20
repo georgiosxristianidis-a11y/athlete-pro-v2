@@ -10,6 +10,7 @@ import { openExercisePickerModal } from './modals.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
 import { showReceipt } from '../ui/receipt.js';
+import { RestTimer } from '../rest-timer.js';
 
 function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
 
@@ -18,10 +19,12 @@ function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
    ════════════════════════════════════════════════════════ */
 export async function selectType(type) {
   State.type = type;
-  const [workouts, autoProgressFlag] = await Promise.all([
+  const [workouts, autoProgressFlag, restDurRaw] = await Promise.all([
     DB.Workouts.getAll().catch(() => []),
     DB.Settings.get('auto-progress', 'on').catch(() => 'on'),
+    DB.Settings.get('rest-duration').catch(() => null),
   ]);
+  _restDuration = parseInt(restDurRaw || 90);
   const autoProgress = autoProgressFlag !== 'off';
   State.plan = buildSession(type, { workouts, autoProgress });
   const bumpedCount = State.plan.filter(ex => ex.autoBumped).length;
@@ -127,7 +130,6 @@ export function setRPE(ei, si, val) {
 /* ════════════════════════════════════════════════════════
    TOGGLE SET DONE + REST TIMER
    ════════════════════════════════════════════════════════ */
-let _restInterval = null;
 let _restDuration = 90;
 
 export function toggleSet(ei, si) {
@@ -153,9 +155,10 @@ export function toggleSet(ei, si) {
 
   if (set.done) {
     _checkAIProactive();
-    _startRest(_restDuration);
+    const exName = State.plan[ei]?.name || '';
+    RestTimer.start(exName, `Set ${si + 1}`, _restDuration);
   } else {
-    _stopRest();
+    RestTimer.stop();
   }
 }
 
@@ -170,35 +173,6 @@ async function _checkAIProactive() {
   }
 }
 
-function _startRest(seconds) {
-  const wrap = document.getElementById('rest-timer-wrap');
-  if (!wrap) return;
-  wrap.style.display = 'block';
-  let remaining = seconds;
-  const valEl = document.getElementById('rest-val');
-  const fillEl = document.getElementById('rest-fill');
-
-  clearInterval(_restInterval);
-  _restInterval = setInterval(() => {
-    remaining--;
-    if (valEl) valEl.textContent = remaining + 's';
-    if (fillEl) fillEl.style.width = (remaining / seconds) * 100 + '%';
-    if (remaining <= 0) {
-      _stopRest();
-      _haptic(40);
-      Toast.show('Rest complete — next set!', 'info');
-    }
-  }, 1000);
-
-  if (valEl) valEl.textContent = seconds + 's';
-  if (fillEl) fillEl.style.width = '100%';
-}
-
-function _stopRest() {
-  clearInterval(_restInterval);
-  const wrap = document.getElementById('rest-timer-wrap');
-  if (wrap) wrap.style.display = 'none';
-}
 
 /* ════════════════════════════════════════════════════════
    CARD TOGGLE
@@ -450,7 +424,7 @@ export async function completeSession() {
   localStorage.setItem('ap-last-workout-type', State.type);
 
   Toast.show(`Session saved — ${Math.round(tonnage)} kg`, 'success');
-  _stopRest();
+  RestTimer.stop();
 
   const nextType = { push: 'pull', pull: 'legs', legs: 'push' }[State.type] || 'push';
   const plan = loadPlan();
@@ -494,7 +468,7 @@ export function cancelSession() {
     'Cancel Session',
     () => {
       Timer.reset();
-      _stopRest();
+      RestTimer.stop();
       localStorage.removeItem(SESSION_KEY);
       State.phase = 'select';
       renderSelect();
@@ -849,7 +823,7 @@ export async function _focusCompleteSet() {
   }
 
   // Show rest timer card with countdown
-  _focusStartRestCountdown(90);
+  _focusStartRestCountdown(_restDuration);
 }
 
 let _focusRestRaf = null;

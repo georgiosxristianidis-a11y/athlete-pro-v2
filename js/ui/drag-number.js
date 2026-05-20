@@ -42,6 +42,7 @@ function _attach(el) {
   let startY        = 0;
   let stepsApplied  = 0;
   let moved         = false;
+  let active        = false;
   let lastTap       = 0;
   let longTimer     = null;
 
@@ -49,6 +50,7 @@ function _attach(el) {
     startY       = e.clientY;
     stepsApplied = 0;
     moved        = false;
+    active       = true;
     el.setPointerCapture(e.pointerId);
 
     if (type === 'r' && si > 0) {
@@ -65,6 +67,7 @@ function _attach(el) {
   });
 
   el.addEventListener('pointermove', e => {
+    if (!active) return;
     const dy = startY - e.clientY; // up = positive = increase
 
     if (!moved && Math.abs(dy) < 5) return; // dead zone
@@ -94,6 +97,7 @@ function _attach(el) {
 
   el.addEventListener('pointerup', () => {
     clearTimeout(longTimer);
+    active = false;
     el.classList.remove('drag-active');
 
     if (moved) return; // was a real drag — no tap action
@@ -120,6 +124,7 @@ function _attach(el) {
 
   el.addEventListener('pointercancel', () => {
     clearTimeout(longTimer);
+    active = false;
     el.classList.remove('drag-active');
   });
 }

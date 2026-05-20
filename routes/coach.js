@@ -599,3 +599,4 @@ function _buildSystemPrompt(workouts, fatigue, topLifts) {
 }
 
 module.exports = router;
+module.exports._validateCoachPayload = _validateCoachPayload;

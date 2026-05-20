@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v9';
+const CACHE_NAME = 'athlete-pro-v10';
 
 const ASSETS = [
   '/index.html',
@@ -48,6 +48,9 @@ const ASSETS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/apple-touch-icon.png',
+  '/icons/push.svg',
+  '/icons/pull.svg',
+  '/icons/legs.svg',
 ];
 
 /* ── Privacy mode — synced from main thread via postMessage ── */

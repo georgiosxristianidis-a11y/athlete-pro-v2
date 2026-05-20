@@ -88,37 +88,25 @@ export const RestTimer = (() => {
     if (!bar) {
       bar = document.createElement('div');
       bar.id = 'rest-bar';
-      bar.innerHTML = `
-        <div class="rest-bar-inner">
-          <span class="rest-bar-label" id="rb-label"></span>
-          <div class="rest-bar-mid">
-            <span class="rest-bar-time" id="rb-time">0:00</span>
-            <button class="rest-bar-plus" onclick="RestTimer.addTime(30)">+30s</button>
-          </div>
-          <button class="rest-bar-skip"
-            ontouchstart="RestTimer.tapSkip();event.preventDefault()"
-            onclick="RestTimer.tapSkip()">Skip</button>
-        </div>
-        <div class="rest-bar-track">
-          <div class="rest-bar-fill" id="rb-fill"></div>
-        </div>`;
-      bar.addEventListener('click', (e) => {
-        if (!e.target.closest('button')) _openModal(exName, setLabel);
-      });
-      const hdr =
-        document.getElementById('workout-header') || document.querySelector('.workout-top');
+      bar.setAttribute('role', 'progressbar');
+      bar.setAttribute('aria-label', 'Rest timer');
+      bar.innerHTML = `<div class="rest-bar-fill" id="rb-fill"></div>`;
+      bar.addEventListener('click', () => _openModal(exName, setLabel));
+      bar.addEventListener('touchstart', () => _openModal(exName, setLabel), { passive: true });
+      // Insert after workout header, or before exercise list
+      const hdr = document.getElementById('workout-header') || document.querySelector('.workout-top');
       if (hdr) hdr.after(bar);
-      else document.getElementById('screen-workout')?.prepend(bar);
+      else document.getElementById('exercise-list')?.before(bar) || document.getElementById('s-train')?.prepend(bar);
     }
-    document.getElementById('rb-label').textContent = exName + ' · ' + setLabel;
+    // Update modal context when restarting
+    bar._exName = exName;
+    bar._setLabel = setLabel;
     bar.classList.add('visible');
   }
 
   function _updateBar(rem) {
-    const t = document.getElementById('rb-time');
     const f = document.getElementById('rb-fill');
-    if (t) t.textContent = _fmt(rem);
-    if (f) f.style.width = (rem / _total) * 100 + '%';
+    if (f) f.style.transform = `scaleX(${rem / _total})`;
   }
 
   function _hideBar() {
@@ -127,6 +115,12 @@ export const RestTimer = (() => {
 
   function _openModal(exName, setLabel) {
     if (document.getElementById('rest-modal')) return;
+    // Fall back to stored context if called without args (e.g. from bar click)
+    if (!exName) {
+      const bar = document.getElementById('rest-bar');
+      exName = bar?._exName || '';
+      setLabel = bar?._setLabel || '';
+    }
     const m = document.createElement('div');
     m.id = 'rest-modal';
     m.className = 'rest-modal-overlay';
