@@ -5,6 +5,7 @@
 
 import { DB } from './db.js';
 import { renderPrivacyCard } from './privacy.view.js';
+import { renderProfile } from './profile.view.js';
 
 export const Profile = (() => {
   /* ══════════════════════════════════════════════
@@ -23,14 +24,21 @@ export const Profile = (() => {
     }
 
     try {
-      const settings = await DB.Settings.getAll();
+      const [settings, lang] = await Promise.all([
+        DB.Settings.getAll(),
+        DB.Settings.get('lang', 'en'),
+      ]);
+      const ru = lang === 'ru';
       screen.innerHTML = `
       <div class="screen-header">
         <div>
-          <div class="screen-title">Profile</div>
-          <div class="screen-sub">Settings & data</div>
+          <div class="screen-title">${ru ? 'Профиль' : 'Profile'}</div>
+          <div class="screen-sub">${ru ? 'Настройки и данные' : 'Settings & data'}</div>
         </div>
       </div>
+
+      <!-- ── Passport UI (rendered async below) ── -->
+      <div id="profile-passport"></div>
 
       <!-- ── Settings ── -->
       <div class="section-header" style="margin-top:var(--sp-2)">
@@ -114,6 +122,21 @@ export const Profile = (() => {
             </div>
           </div>
         </div>
+
+        <div class="pref-divider"></div>
+
+        <div class="pref-row">
+          <div class="pref-info">
+            <div class="pref-title">Language / Язык</div>
+            <div class="pref-sub">Interface language</div>
+          </div>
+          <div class="toggle-group">
+            <button class="toggle-btn ${lang !== 'ru' ? 'active' : ''}"
+                    onclick="Profile.setLang('en')">EN</button>
+            <button class="toggle-btn ${lang === 'ru' ? 'active' : ''}"
+                    onclick="Profile.setLang('ru')">RU</button>
+          </div>
+        </div>
       </div>
 
       <!-- ── Privacy ── -->
@@ -194,6 +217,10 @@ export const Profile = (() => {
 
       <div style="height:var(--sp-4)"></div>
     `;
+
+      // Render passport UI async into its placeholder
+      const passportEl = document.getElementById('profile-passport');
+      if (passportEl) renderProfile(passportEl, lang).catch(console.error);
     } catch (err) {
       console.error('Profile load error', err);
       screen.innerHTML = '<div style="padding:20px;">Error loading profile</div>';
@@ -411,6 +438,16 @@ export const Profile = (() => {
     if (sw) sw.classList.toggle('on', next === 'on');
   }
 
+  /**
+   * Set the UI language and reload profile screen.
+   * @param {'en'|'ru'} lang
+   * @returns {Promise<void>}
+   */
+  async function setLang(lang) {
+    await DB.Settings.set('lang', lang);
+    load();
+  }
+
   /* ══════════════════════════════════════════════
      EXPORT / IMPORT
      ══════════════════════════════════════════════ */
@@ -490,6 +527,7 @@ export const Profile = (() => {
     toggleHaptic,
     toggleAutoProgress,
     toggleMascot,
+    setLang,
     exportData,
     importData,
     _onImportFile,

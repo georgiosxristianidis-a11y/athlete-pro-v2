@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v10';
+const CACHE_NAME = 'athlete-pro-v11';
 
 const ASSETS = [
   '/index.html',
@@ -27,6 +27,11 @@ const ASSETS = [
   '/js/claude.view.js',
   '/js/profile.js',
   '/js/profile.store.js',
+  '/js/profile.view.js',
+  '/js/profile.view/passport-hero.js',
+  '/js/profile.view/bento.js',
+  '/js/profile.view/hexagon-radar.js',
+  '/js/profile.view/lift-bars.js',
   '/js/privacy.store.js',
   '/js/privacy.view.js',
   '/js/strength-engine.js',

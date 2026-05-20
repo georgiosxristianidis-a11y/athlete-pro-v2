@@ -27,12 +27,14 @@ async function _loadWorkout() {
 
 async function _loadProfile() {
   if (window.Profile) return window.Profile;
-  const [{ Profile }, { SupabaseCheck }] = await Promise.all([
+  const [{ Profile }, { SupabaseCheck }, { renderProfile }] = await Promise.all([
     import('./profile.js'),
     import('./supabase-check.js'),
+    import('./profile.view.js'),
   ]);
   window.Profile = Profile;
   window.SupabaseCheck = SupabaseCheck;
+  window.ProfileView = { renderProfile };
   return Profile;
 }
 
