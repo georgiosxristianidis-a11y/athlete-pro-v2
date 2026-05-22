@@ -157,6 +157,75 @@ import('./claude.view.js').then(({ Claude }) => {
 
 /* ── No auto plan generation — user manages plans manually ── */
 
+/* ── Error boundary — F3 ─────────────────────────────────────────────────── */
+window.onerror = (_msg, _src, _line, _col, err) => {
+  console.error('[error]', err);
+  Toast.show('Something went wrong', 'error');
+  return false; // let default error reporting proceed
+};
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('[unhandledrejection]', e.reason);
+  Toast.show('Something went wrong', 'error');
+});
+
+/* ── Modal focus trap — F6 ───────────────────────────────────────────────── */
+// Selectors for keyboard-reachable elements
+const _FOCUSABLE = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+function _trapFocus(overlay) {
+  // Store previously focused element for restoration on close
+  overlay._prevFocus = document.activeElement;
+
+  // Move focus into the modal on next frame (after DOM paint)
+  requestAnimationFrame(() => {
+    const els = [...overlay.querySelectorAll(_FOCUSABLE)];
+    if (els.length) els[0].focus();
+  });
+
+  overlay.addEventListener('keydown', (e) => {
+    // Esc closes any modal — consistent UX
+    if (e.key === 'Escape') {
+      overlay.remove();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+
+    const els = [...overlay.querySelectorAll(_FOCUSABLE)];
+    if (!els.length) return;
+    const first = els[0];
+    const last  = els[els.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last)  { e.preventDefault(); first.focus(); }
+    }
+  });
+}
+
+// Watch document.body for modal-overlay additions / removals
+new MutationObserver((mutations) => {
+  for (const mut of mutations) {
+    for (const node of mut.addedNodes) {
+      if (node.nodeType === 1 && node.classList?.contains('modal-overlay')) {
+        _trapFocus(node);
+      }
+    }
+    for (const node of mut.removedNodes) {
+      if (node.nodeType === 1 && node.classList?.contains('modal-overlay')) {
+        node._prevFocus?.focus?.();
+      }
+    }
+  }
+}).observe(document.body, { childList: true });
+
 /* ── Service Worker — disabled in development ── */
 // To enable for production PWA, uncomment:
 // if ('serviceWorker' in navigator) {

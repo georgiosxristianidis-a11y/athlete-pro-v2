@@ -771,8 +771,8 @@
     </div>
     <!-- /app -->
 
-    <!-- Toast container -->
-    <div id="toast-wrap"></div>
+    <!-- Toast container — aria-live announces toasts to screen readers -->
+    <div id="toast-wrap" role="status" aria-live="polite" aria-atomic="false"></div>
 
     <!-- ── App entry (ES Module) ── -->
     <script type="module" src="js/app.js"></script>
