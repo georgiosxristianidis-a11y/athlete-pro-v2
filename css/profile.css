@@ -217,6 +217,50 @@
   color: var(--c-accent);
 }
 
+/* ── Segment variants (multi-button: mode, time cap) ── */
+.toggle-btn.seg-sm {
+  padding: 8px 6px;
+  min-height: 38px;
+  font-size: 11px;
+  flex: 1;
+}
+.seg-full {
+  width: 100%;
+}
+
+/* ── Column preference row (label above, control below) ── */
+.pref-col {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.pref-col .pref-info {
+  flex: none;
+}
+
+/* ── Limitations textarea ── */
+.pref-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-s);
+  color: var(--c-text-1);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  resize: none;
+  min-height: 60px;
+}
+.pref-textarea:focus {
+  outline: none;
+  border-color: var(--c-accent);
+}
+.pref-textarea::placeholder {
+  color: var(--c-text-3);
+}
+
 /* ── Switch ── */
 .switch-wrap {
   flex-shrink: 0;

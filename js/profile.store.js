@@ -21,6 +21,10 @@ const KEYS = {
   avatarBlobId: 'profile.avatarBlobId',
   onboardingCompleted: 'profile.onboardingCompleted',
   sealedEnvelope: 'profile.sealedEnvelope', // { goal, createdAt, revealAt }
+  // Phase 4: AI Coach Pro context fields
+  trainingMode: 'training-mode', // 'strength' | 'hypertrophy' | 'recovery' | 'maintenance'
+  limitationsText: 'coach.injuries', // free-text injuries/restrictions for AI coach
+  sessionTime: 'session-time', // number (minutes): 30 | 45 | 60 | 90 | 0 (unlimited)
 };
 
 /**
@@ -34,7 +38,10 @@ const KEYS = {
  *   injuries: string[],
  *   restingHr: number|null,
  *   avatarBlobId: string|null,
- *   onboardingCompleted: boolean
+ *   onboardingCompleted: boolean,
+ *   mode: 'strength'|'hypertrophy'|'recovery'|'maintenance',
+ *   limitationsText: string,
+ *   timeMin: number
  * }} ProfileData
  */
 
@@ -44,7 +51,7 @@ const KEYS = {
 
 /** @returns {Promise<ProfileData>} */
 export async function loadProfile() {
-  const [name, dob, sexProfile, sexLegacy, exp, goal, equip, injuries, hr, avatar, onb] =
+  const [name, dob, sexProfile, sexLegacy, exp, goal, equip, injuries, hr, avatar, onb, mode, limitationsText, sessionTime] =
     await Promise.all([
       DB.Settings.get(KEYS.name, ''),
       DB.Settings.get(KEYS.dob, null),
@@ -57,6 +64,9 @@ export async function loadProfile() {
       DB.Settings.get(KEYS.restingHr, null),
       DB.Settings.get(KEYS.avatarBlobId, null),
       DB.Settings.get(KEYS.onboardingCompleted, false),
+      DB.Settings.get(KEYS.trainingMode, 'strength'),
+      DB.Settings.get(KEYS.limitationsText, ''),
+      DB.Settings.get(KEYS.sessionTime, 0),
     ]);
   return {
     name: name || '',
@@ -69,6 +79,9 @@ export async function loadProfile() {
     restingHr: hr,
     avatarBlobId: avatar,
     onboardingCompleted: !!onb,
+    mode: /** @type {'strength'|'hypertrophy'|'recovery'|'maintenance'} */ (mode || 'strength'),
+    limitationsText: limitationsText || '',
+    timeMin: Number(sessionTime) || 0,
   };
 }
 
@@ -92,6 +105,9 @@ export async function updateProfile(patch) {
   if (patch.restingHr !== undefined)       writes.push(DB.Settings.set(KEYS.restingHr, patch.restingHr));
   if (patch.avatarBlobId !== undefined)    writes.push(DB.Settings.set(KEYS.avatarBlobId, patch.avatarBlobId));
   if (patch.onboardingCompleted !== undefined) writes.push(DB.Settings.set(KEYS.onboardingCompleted, patch.onboardingCompleted));
+  if (patch.mode !== undefined)             writes.push(DB.Settings.set(KEYS.trainingMode, patch.mode));
+  if (patch.limitationsText !== undefined)  writes.push(DB.Settings.set(KEYS.limitationsText, patch.limitationsText));
+  if (patch.timeMin !== undefined)          writes.push(DB.Settings.set(KEYS.sessionTime, patch.timeMin));
   await Promise.all(writes);
 }
 

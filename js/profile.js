@@ -28,6 +28,10 @@ export const Profile = (() => {
         DB.Settings.getAll(),
         DB.Settings.get('lang', 'en'),
       ]);
+      const trainingMode = settings['training-mode'] || 'strength';
+      const sessionTime  = Number(settings['session-time']) || 0;
+      const _modeActive  = (m) => trainingMode === m ? ' active' : '';
+      const _timeActive  = (t) => sessionTime === t ? ' active' : '';
       const ru = lang === 'ru';
       screen.innerHTML = `
       <div class="screen-header">
@@ -137,6 +141,58 @@ export const Profile = (() => {
                     onclick="Profile.setLang('ru')">RU</button>
           </div>
         </div>
+
+        <div class="pref-divider"></div>
+
+        <div class="pref-row pref-col">
+          <div class="pref-info">
+            <div class="pref-title">Training Mode</div>
+            <div class="pref-sub">Coach adapts advice to your current phase</div>
+          </div>
+          <div class="toggle-group seg-full">
+            <button class="toggle-btn seg-sm${_modeActive('strength')}"
+                    onclick="Profile.setTrainingMode('strength')">Strength</button>
+            <button class="toggle-btn seg-sm${_modeActive('hypertrophy')}"
+                    onclick="Profile.setTrainingMode('hypertrophy')">Hypertrophy</button>
+            <button class="toggle-btn seg-sm${_modeActive('recovery')}"
+                    onclick="Profile.setTrainingMode('recovery')">Recovery</button>
+            <button class="toggle-btn seg-sm${_modeActive('maintenance')}"
+                    onclick="Profile.setTrainingMode('maintenance')">Maint.</button>
+          </div>
+        </div>
+
+        <div class="pref-divider"></div>
+
+        <div class="pref-row pref-col">
+          <div class="pref-info">
+            <div class="pref-title">Limitations</div>
+            <div class="pref-sub">Injuries or equipment restrictions for Coach</div>
+          </div>
+          <textarea class="pref-textarea" id="pref-injuries" maxlength="200"
+                    placeholder="e.g. bad left shoulder, no barbell"
+                    onblur="Profile.saveInjuries(this.value)"></textarea>
+        </div>
+
+        <div class="pref-divider"></div>
+
+        <div class="pref-row">
+          <div class="pref-info">
+            <div class="pref-title">Session Length</div>
+            <div class="pref-sub">Max time cap for Coach suggestions</div>
+          </div>
+          <div class="toggle-group">
+            <button class="toggle-btn seg-sm${_timeActive(30)}"
+                    onclick="Profile.setSessionTime(30)">30</button>
+            <button class="toggle-btn seg-sm${_timeActive(45)}"
+                    onclick="Profile.setSessionTime(45)">45</button>
+            <button class="toggle-btn seg-sm${_timeActive(60)}"
+                    onclick="Profile.setSessionTime(60)">60</button>
+            <button class="toggle-btn seg-sm${_timeActive(90)}"
+                    onclick="Profile.setSessionTime(90)">90</button>
+            <button class="toggle-btn seg-sm${_timeActive(0)}"
+                    onclick="Profile.setSessionTime(0)">—</button>
+          </div>
+        </div>
       </div>
 
       <!-- ── Privacy ── -->
@@ -217,6 +273,10 @@ export const Profile = (() => {
 
       <div style="height:var(--sp-4)"></div>
     `;
+
+      // Populate injuries textarea with saved value (safe — set via .value, not innerHTML)
+      const injuriesEl = document.getElementById('pref-injuries');
+      if (injuriesEl) injuriesEl.value = settings['coach.injuries'] || '';
 
       // Render passport UI async into its placeholder
       const passportEl = document.getElementById('profile-passport');
@@ -449,6 +509,46 @@ export const Profile = (() => {
   }
 
   /* ══════════════════════════════════════════════
+     AI COACH PREFERENCES
+     ══════════════════════════════════════════════ */
+
+  /**
+   * Set the training mode (strength / hypertrophy / recovery / maintenance).
+   * @param {'strength'|'hypertrophy'|'recovery'|'maintenance'} mode
+   * @returns {Promise<void>}
+   */
+  async function setTrainingMode(mode) {
+    await DB.Settings.set('training-mode', mode);
+    document.querySelectorAll('[onclick^="Profile.setTrainingMode"]').forEach((b) => {
+      const btnMode = b.getAttribute('onclick').match(/'([^']+)'/)?.[1];
+      b.classList.toggle('active', btnMode === mode);
+    });
+  }
+
+  /**
+   * Save the free-text limitations/injuries note for AI Coach.
+   * @param {string} text — raw value from textarea
+   * @returns {Promise<void>}
+   */
+  async function saveInjuries(text) {
+    const trimmed = String(text || '').slice(0, 200).trim();
+    await DB.Settings.set('coach.injuries', trimmed);
+  }
+
+  /**
+   * Set the session time cap (minutes). 0 = unlimited.
+   * @param {number} minutes — 30 | 45 | 60 | 90 | 0
+   * @returns {Promise<void>}
+   */
+  async function setSessionTime(minutes) {
+    await DB.Settings.set('session-time', minutes);
+    document.querySelectorAll('[onclick^="Profile.setSessionTime"]').forEach((b) => {
+      const btnTime = Number(b.getAttribute('onclick').match(/\((\d+)\)/)?.[1] ?? -1);
+      b.classList.toggle('active', btnTime === minutes);
+    });
+  }
+
+  /* ══════════════════════════════════════════════
      EXPORT / IMPORT
      ══════════════════════════════════════════════ */
   /**
@@ -528,6 +628,9 @@ export const Profile = (() => {
     toggleAutoProgress,
     toggleMascot,
     setLang,
+    setTrainingMode,
+    saveInjuries,
+    setSessionTime,
     exportData,
     importData,
     _onImportFile,

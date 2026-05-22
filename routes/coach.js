@@ -248,7 +248,7 @@ router.post('/coach', async (req, res) => {
     });
   }
 
-  let { workouts = [], fatigue = {}, topLifts = [], messages } = req.body;
+  let { workouts = [], fatigue = {}, topLifts = [], messages, profile = {}, longTermStats = {} } = req.body;
 
   if (!Array.isArray(workouts)) {
     logWarn(req, 'coach_coerce_payload', 'workouts is not an array — using []');
@@ -264,6 +264,8 @@ router.post('/coach', async (req, res) => {
     logWarn(req, 'coach_coerce_payload', 'topLifts is not an array — using []');
     topLifts = [];
   }
+  if (!profile || typeof profile !== 'object' || Array.isArray(profile)) profile = {};
+  if (!longTermStats || typeof longTermStats !== 'object' || Array.isArray(longTermStats)) longTermStats = {};
 
   if (!process.env.ANTHROPIC_API_KEY) {
     logWarn(req, 'coach_no_api_key', 'ANTHROPIC_API_KEY missing');
@@ -284,11 +286,11 @@ router.post('/coach', async (req, res) => {
   });
 
   try {
-    const system = _buildSystemPrompt(workouts, fatigue, topLifts);
+    const system = _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats);
 
     const stream = anthropic.messages.stream({
       model: 'claude-opus-4-6',
-      max_tokens: 600,
+      max_tokens: 900,
       system,
       messages,
     });
@@ -534,33 +536,99 @@ function _buildRecommendationsPrompt(workout, fatigue, topLifts, history, nextSe
 }
 
 /* ── Build system prompt with athlete context ── */
-function _buildSystemPrompt(workouts, fatigue, topLifts) {
+/**
+ * @param {Array} workouts — recent workouts (72h window)
+ * @param {Object} fatigue — muscle fatigue percentages
+ * @param {Array} topLifts — estimated 1RMs
+ * @param {{ dots?: number, bw?: number, sex?: string, age?: number, goal?: string, mode?: string, injuries?: string, equipment?: string, timeMin?: number }} [profile]
+ * @param {{ sessions30d?: number, volumeTrend?: number|null, prCount30d?: number|null }} [longTermStats]
+ */
+function _buildSystemPrompt(workouts, fatigue, topLifts, profile = {}, longTermStats = {}) {
+  const { dots, bw, sex, age, goal, mode, injuries, equipment, timeMin } = profile;
+  const { sessions30d, volumeTrend, prCount30d } = longTermStats;
+
   const lines = [
     'You are an elite PPL (Push/Pull/Legs) strength & conditioning coach with 15+ years of experience.',
-    'Your name is Coach. You speak in a confident, motivating tone — like a real coach who cares about results.',
+    'Your name is Coach. You speak in a confident, direct tone — data-driven, no generic advice.',
     '',
     '## Communication Rules',
-    '- Use emojis to make responses visual and engaging (💪🔥📊🎯⚠️✅📈)',
-    '- Structure every response clearly: use bold headers, bullet points, and short paragraphs',
-    '- Keep responses concise but complete (3–6 sentences max)',
-    '- Be data-driven: reference the athlete\'s actual numbers when available',
-    '- Be specific and actionable — no generic advice',
+    '- Structure every response clearly: use bold headers and bullet points',
+    '- Keep responses concise but complete (3–6 sentences max per section)',
+    '- Reference the athlete\'s actual numbers whenever available',
+    '- Be specific and actionable — never give generic advice',
     '',
     '## Coaching Behavior',
     '- When the athlete asks a vague question, ask 1–2 clarifying questions before answering',
     '- Proactively flag: overtraining risks, muscle imbalances, missed muscle groups, stale weights',
     '- Suggest progressive overload when lifts plateau (same weight 3+ sessions)',
-    '- After answering, end with a focused follow-up question to keep the athlete thinking',
-    '- Examples of good follow-ups:',
-    '  "🤔 How does your sleep look this week?"',
-    '  "📊 Want me to break down your volume per muscle group?"',
-    '  "🎯 What\'s your target 1RM for bench this month?"',
+    '- After answering, end with one focused follow-up question to keep the athlete progressing',
     '',
-    '## Athlete Data',
   ];
 
+  // Training mode section
+  if (mode) {
+    const modeDescriptions = {
+      strength:    'Focus on 1–5 rep compound work, 85–95% 1RM, full recovery (3–5 min rest).',
+      hypertrophy: 'Focus on 6–15 rep ranges, moderate intensity (65–85% 1RM), 60–90 sec rest.',
+      recovery:    'Athlete is in a deload/recovery phase — reduce volume 40–50%, keep intensity low.',
+      maintenance: 'Maintain current strength and size — consistent stimulus, no progressive overload pressure.',
+    };
+    lines.push('## Training Mode');
+    lines.push(`Current phase: **${mode.charAt(0).toUpperCase() + mode.slice(1)}**`);
+    if (modeDescriptions[mode]) lines.push(modeDescriptions[mode]);
+    lines.push('');
+  }
+
+  // Athlete profile
+  const profileLines = [];
+  if (bw)        profileLines.push(`Bodyweight: ${bw}kg`);
+  if (sex)       profileLines.push(`Sex: ${sex === 'm' ? 'Male' : 'Female'}`);
+  if (age)       profileLines.push(`Age: ${age}`);
+  if (goal)      profileLines.push(`Goal: ${goal}`);
+  if (equipment) profileLines.push(`Equipment: ${equipment}`);
+  if (dots) {
+    const dotsTier =
+      dots < 300 ? 'Untrained' :
+      dots < 400 ? 'Novice' :
+      dots < 500 ? 'Intermediate' :
+      dots < 600 ? 'Advanced' : 'Elite';
+    profileLines.push(`DOTS score: ${Math.round(dots)} (${dotsTier})`);
+  }
+  if (profileLines.length) {
+    lines.push('## Athlete Profile');
+    profileLines.forEach((l) => lines.push(`- ${l}`));
+    lines.push('');
+  }
+
+  // Limitations
+  const limitLines = [];
+  if (injuries) limitLines.push(`Injuries/restrictions: ${injuries}`);
+  if (timeMin)  limitLines.push(`Session time cap: ${timeMin} min`);
+  if (limitLines.length) {
+    lines.push('## Limitations');
+    limitLines.forEach((l) => lines.push(`- ${l}`));
+    lines.push('');
+  }
+
+  // 30-day training context
+  const statsLines = [];
+  if (sessions30d != null) statsLines.push(`Sessions this month: ${sessions30d}`);
+  if (volumeTrend != null) {
+    const trend =
+      volumeTrend > 5  ? `+${Math.round(volumeTrend)}% (increasing)` :
+      volumeTrend < -5 ? `${Math.round(volumeTrend)}% (decreasing)` : 'stable';
+    statsLines.push(`Volume trend vs prior month: ${trend}`);
+  }
+  if (prCount30d != null) statsLines.push(`PRs set this month: ${prCount30d}`);
+  if (statsLines.length) {
+    lines.push('## 30-Day Context');
+    statsLines.forEach((l) => lines.push(`- ${l}`));
+    lines.push('');
+  }
+
+  // Recent workouts (72h)
+  lines.push('## Recent Workouts (72h)');
   if (workouts.length) {
-    lines.push('\n**Recent Workouts:**');
     for (const w of workouts) {
       const typeLabel = (w.type || '?').toUpperCase();
       lines.push(
@@ -576,22 +644,25 @@ function _buildSystemPrompt(workouts, fatigue, topLifts) {
       }
     }
   } else {
-    lines.push('\n**No workout history yet.**');
+    lines.push('No recent workouts.');
   }
 
+  // Muscle fatigue
   const fatiguedMuscles = Object.entries(fatigue)
     .sort(([, a], [, b]) => b - a)
     .filter(([, v]) => v > 10);
-
   if (fatiguedMuscles.length) {
+    lines.push('');
     lines.push(
-      `\n**Muscle Fatigue (72h window):** ${fatiguedMuscles.map(([m, v]) => `${m} ${v}%`).join(', ')}`
+      `**Muscle Fatigue (72h):** ${fatiguedMuscles.map(([m, v]) => `${m} ${v}%`).join(', ')}`
     );
   }
 
+  // Top 1RMs
   if (topLifts.length) {
+    lines.push('');
     lines.push(
-      `\n**Top Estimated 1RMs:** ${topLifts.map((l) => `${l.exercise} ${l.oneRM}kg`).join(', ')}`
+      `**Top Estimated 1RMs:** ${topLifts.map((l) => `${l.exercise} ${l.oneRM}kg`).join(', ')}`
     );
   }
 
