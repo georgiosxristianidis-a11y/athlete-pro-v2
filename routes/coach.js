@@ -1,13 +1,28 @@
 'use strict';
-const express = require('express');
-const router = express.Router();
-const anthropic = require('../lib/anthropicClient');
+const express    = require('express');
+const router     = express.Router();
+const rateLimit  = require('express-rate-limit');
+const anthropic  = require('../lib/anthropicClient');
 const { record } = require('../lib/tokenUsage');
 const { logInfo, logWarn, logError } = require('../lib/logger');
 
 const COACH_STREAM_TIMEOUT_MS = Number(process.env.COACH_STREAM_TIMEOUT_MS) || 120000;
-const COACH_MAX_MESSAGES = 40;
-const COACH_MAX_CONTENT_LEN = 12000;
+const PLAN_TIMEOUT_MS         = Number(process.env.PLAN_TIMEOUT_MS)         || 30000;
+const COACH_MAX_MESSAGES      = 40;
+const COACH_MAX_CONTENT_LEN   = 12000;
+
+// ── Rate limiters ────────────────────────────────────────────────────────────
+const _limitOpts = {
+  windowMs: 60 * 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) =>
+    res.status(429).json({ error: 'Too many requests — please slow down.', requestId: req.correlationId }),
+};
+/** 10 req/min — SSE streaming endpoint (expensive) */
+const coachLimiter = rateLimit({ ..._limitOpts, max: 10 });
+/** 20 req/min — non-streaming AI endpoints */
+const apiLimiter   = rateLimit({ ..._limitOpts, max: 20 });
 
 /**
  * @param {unknown} body
@@ -86,7 +101,7 @@ function _validateCoachPayload(body) {
 }
 
 /* ── POST /generate-plan — generate full PPL program ── */
-router.post('/generate-plan', async (req, res) => {
+router.post('/generate-plan', apiLimiter, async (req, res) => {
   const {
     workoutHistory = [],
     oneRMs = [],
@@ -134,17 +149,22 @@ router.post('/generate-plan', async (req, res) => {
   try {
     const system = _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience);
 
-    const response = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 1500,
-      system,
-      messages: [
-        {
-          role: 'user',
-          content: 'Generate a personalized PPL program. Return JSON only, no markdown.'
-        }
-      ]
-    });
+    const planTimeoutErr  = new Error('PLAN_TIMEOUT');
+    planTimeoutErr.code   = 'PLAN_TIMEOUT';
+    const response = await Promise.race([
+      anthropic.messages.create({
+        model: 'claude-opus-4-6',
+        max_tokens: 1500,
+        system,
+        messages: [
+          {
+            role: 'user',
+            content: 'Generate a personalized PPL program. Return JSON only, no markdown.'
+          }
+        ]
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(planTimeoutErr), PLAN_TIMEOUT_MS)),
+    ]);
 
     const content = response.content[0]?.text || '';
     record('/api/generate-plan', response.usage);
@@ -172,7 +192,7 @@ router.post('/generate-plan', async (req, res) => {
 });
 
 /* ── POST /recommendations — generate workout recommendations ── */
-router.post('/recommendations', async (req, res) => {
+router.post('/recommendations', apiLimiter, async (req, res) => {
   const {
     workout,
     fatigue = {},
@@ -212,17 +232,22 @@ router.post('/recommendations', async (req, res) => {
   try {
     const system = _buildRecommendationsPrompt(workout, fatigue, topLifts, history, nextSessionPlan);
 
-    const response = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 800,
-      system,
-      messages: [
-        {
-          role: 'user',
-          content: 'Generate personalized weight recommendations for the next session. Return JSON only, no markdown.',
-        },
-      ],
-    });
+    const recTimeoutErr  = new Error('REC_TIMEOUT');
+    recTimeoutErr.code   = 'REC_TIMEOUT';
+    const response = await Promise.race([
+      anthropic.messages.create({
+        model: 'claude-opus-4-6',
+        max_tokens: 800,
+        system,
+        messages: [
+          {
+            role: 'user',
+            content: 'Generate personalized weight recommendations for the next session. Return JSON only, no markdown.',
+          },
+        ],
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(recTimeoutErr), PLAN_TIMEOUT_MS)),
+    ]);
 
     const content = response.content[0]?.text || '';
     const recommendations = _parseRecommendations(content, nextSessionPlan);
@@ -238,7 +263,7 @@ router.post('/recommendations', async (req, res) => {
 });
 
 /* ── POST /coach — stream a coaching response ── */
-router.post('/coach', async (req, res) => {
+router.post('/coach', coachLimiter, async (req, res) => {
   const validation = _validateCoachPayload(req.body);
   if (!validation.ok) {
     logWarn(req, 'coach_bad_payload', validation.detail, { clientError: validation.error });

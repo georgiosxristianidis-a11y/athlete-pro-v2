@@ -1,12 +1,22 @@
 'use strict';
 require('dotenv').config();
-const express = require('express');
-const path = require('path');
+const express    = require('express');
+const helmet     = require('helmet');
+const compression = require('compression');
+const path       = require('path');
 const { correlationMiddleware, logWarn } = require('./lib/logger');
 
 const app = express();
+
+// ── Security headers (helmet defaults: X-Frame-Options, X-Content-Type-Options, etc.)
+// CSP and COEP disabled — PWA service worker requires relaxed policy; revisit with nonces
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+
+// ── gzip/brotli compression for all text responses
+app.use(compression());
+
 app.use(correlationMiddleware);
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     logWarn(req, 'json_parse_error', 'Invalid JSON body', { type: err.type });
@@ -19,10 +29,13 @@ app.use((err, req, res, next) => {
 });
 app.use(express.static(path.join(__dirname), {
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
+    if (filePath.endsWith('.html')) {
+      // HTML entry: always revalidate — never serve a stale app shell
+      res.setHeader('Cache-Control', 'no-store');
+    } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      // JS/CSS: allow conditional GET (304 Not Modified) on repeat visits
+      // SW precache handles offline; this cuts re-download cost when SW revalidates
+      res.setHeader('Cache-Control', 'no-cache');
     }
   },
 }));

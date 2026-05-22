@@ -658,3 +658,51 @@
   color: var(--c-accent);
   text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
 }
+
+/* ── Weekly Summary Chip — icon layout ── */
+.weekly-summary-chip {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 12px var(--sp-2);
+}
+.weekly-summary-chip .stat-chip-icon {
+  color: var(--c-accent);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.weekly-summary-chip .stat-chip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.weekly-summary-chip .stat-chip-val {
+  font-size: 14px;
+}
+
+/* ── Skeleton shimmer — P4: chip/list loading state ── */
+/* Keyframe `shimmer` is defined in the inline <style> in index.html */
+.sk {
+  position: relative;
+  overflow: hidden;
+  background: var(--c-bg-3) !important;
+  border-radius: 6px;
+  color: transparent !important;
+  pointer-events: none;
+  user-select: none;
+  min-width: 36px;
+  display: inline-block;
+}
+.sk::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.4s ease infinite;
+}

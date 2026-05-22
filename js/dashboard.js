@@ -103,21 +103,27 @@ export const Dashboard = (() => {
       <div class="stat-row">
         <div class="stat-chip">
           <div class="stat-chip-label">Week</div>
-          <div class="stat-chip-val" id="dash-vol-week">—</div>
+          <div class="stat-chip-val sk" id="dash-vol-week">&nbsp;&nbsp;&nbsp;&nbsp;</div>
         </div>
         <div class="stat-chip stat-chip-purple">
           <div class="stat-chip-label">Month</div>
-          <div class="stat-chip-val" id="dash-vol-month">—</div>
+          <div class="stat-chip-val sk" id="dash-vol-month">&nbsp;&nbsp;&nbsp;&nbsp;</div>
         </div>
         <div class="stat-chip stat-chip-blue">
           <div class="stat-chip-label">Sess / wk</div>
-          <div class="stat-chip-val" id="dash-sessions">—</div>
+          <div class="stat-chip-val sk" id="dash-sessions">&nbsp;&nbsp;</div>
         </div>
       </div>
 
       <!-- Weekly Summary Chip -->
       <div class="stat-chip weekly-summary-chip" onclick="window.Dashboard.showWeeklySummary()" style="cursor:pointer;margin-top:var(--sp-2)">
-        <div class="stat-chip-icon">📈</div>
+        <div class="stat-chip-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+               stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+            <polyline points="17 6 23 6 23 12"/>
+          </svg>
+        </div>
         <div class="stat-chip-content">
           <div class="stat-chip-label">This Week</div>
           <div class="stat-chip-val" id="weekly-summary-value">--</div>
@@ -448,13 +454,13 @@ export const Dashboard = (() => {
     const weekCount  = weeklyCountFrom(allWorkouts);
     const ppl        = pplTonnageFrom(allWorkouts);
 
-    // Stats
+    // Stats — remove skeleton class before populating
     const wv = document.getElementById('dash-vol-week');
     const mv = document.getElementById('dash-vol-month');
     const sc = document.getElementById('dash-sessions');
-    if (wv) wv.innerHTML = fmtVol(weekVol) + '<span class="stat-chip-unit">kg</span>';
-    if (mv) mv.innerHTML = fmtVol(monthVol) + '<span class="stat-chip-unit">kg</span>';
-    if (sc) sc.textContent = weekCount;
+    if (wv) { wv.classList.remove('sk'); wv.innerHTML = fmtVol(weekVol) + '<span class="stat-chip-unit">kg</span>'; }
+    if (mv) { mv.classList.remove('sk'); mv.innerHTML = fmtVol(monthVol) + '<span class="stat-chip-unit">kg</span>'; }
+    if (sc) { sc.classList.remove('sk'); sc.textContent = weekCount; }
 
     // Render sections
     renderStreak(allWorkouts);
@@ -584,7 +590,7 @@ async function showWeeklySummary() {
       <div class="modal-handle"></div>
 
       <div class="section-header">
-        <span class="section-label">📈 Weekly Summary</span>
+        <span class="section-label">Weekly Summary</span>
       </div>
 
       <div class="weekly-summary-content" style="padding:var(--sp-3)">
@@ -595,7 +601,7 @@ async function showWeeklySummary() {
 
         ${data.prs.length > 0 ? `
           <div class="summary-section pr-section" style="margin-top:var(--sp-3)">
-            <h3 style="font-size:0.95rem;color:#00e676;margin-bottom:var(--sp-2)">🎉 Personal Records</h3>
+            <h3 style="font-size:0.95rem;color:#00e676;margin-bottom:var(--sp-2)">Personal Records</h3>
             <ul style="list-style:none;padding:0">
               ${data.prs.map(pr => `<li style="padding:var(--sp-2);background:rgba(0,230,118,0.1);border-radius:var(--r-s);color:#00e676;margin-bottom:var(--sp-2)"><strong>${pr.exercise}</strong>: ${pr.weight}kg</li>`).join('')}
             </ul>
@@ -604,7 +610,7 @@ async function showWeeklySummary() {
 
         ${data.plateauAlerts.length > 0 ? `
           <div class="summary-section plateau-section" style="margin-top:var(--sp-3)">
-            <h3 style="font-size:0.95rem;color:#ff4757;margin-bottom:var(--sp-2)">⚠️ Plateau Alerts</h3>
+            <h3 style="font-size:0.95rem;color:#ff4757;margin-bottom:var(--sp-2)">Plateau Alerts</h3>
             ${data.plateauAlerts.map(alert => `
               <div class="plateau-alert" style="padding:var(--sp-3);background:rgba(255,71,87,0.1);border-radius:var(--r-m);border-left:3px solid #ff4757;margin-bottom:var(--sp-2)">
                 <strong style="color:var(--c-text-1);display:block;margin-bottom:4px">${alert.exercise}</strong>
@@ -617,7 +623,7 @@ async function showWeeklySummary() {
       </div>
 
       <div class="modal-footer" style="padding:var(--sp-2) var(--sp-3);display:flex;gap:var(--sp-2);justify-content:flex-end">
-        <button class="btn-icon-nav" onclick="window.Dashboard.askAIAboutSummary()" style="align-self:center">🤖 Ask Coach</button>
+        <button class="btn-icon-nav" onclick="window.Dashboard.askAIAboutSummary()" style="align-self:center">Ask Coach</button>
         <button class="btn-primary" onclick="this.closest('.modal-overlay').remove()">Close</button>
       </div>
     </div>
