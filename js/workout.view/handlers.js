@@ -9,6 +9,7 @@ import { renderSelect, renderActive, renderSetRow, renderFocusMode, _renderCoreS
 import { openExercisePickerModal } from './modals.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
+import { initDrumPickers, syncDrum } from '../ui/drum-picker.js';
 import { showReceipt } from '../ui/receipt.js';
 import { RestTimer } from '../rest-timer.js';
 
@@ -81,6 +82,7 @@ function _updateStepperUI(type, ei, si, val, atMin) {
   if (valEl) valEl.textContent = val;
   if (inpEl) inpEl.value = val;
   if (minBtn) minBtn.classList.toggle('at-min', atMin);
+  syncDrum(type, ei, si, val);
 }
 
 export function editVal(type, ei, si) {
@@ -350,7 +352,7 @@ export async function addSet(ei) {
     const rows = await Promise.all(rowPromises);
     wrap.innerHTML = headerRow + rows.join('') + addBtn;
   }
-  requestAnimationFrame(() => { initDragNumbers(); initGravitySubmit(); });
+  requestAnimationFrame(() => { initDragNumbers(); initGravitySubmit(); initDrumPickers(); });
   _updateLiveStats();
   persistSession();
 }

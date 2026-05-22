@@ -16,6 +16,7 @@ import {
 } from '../workout.store.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
+import { initDrumPickers } from '../ui/drum-picker.js';
 
 /* ── Render helpers (exported so modals.js can re-use svgArrow) ── */
 export const TYPE_COLOR = {
@@ -369,6 +370,7 @@ export async function renderActive() {
     _initDrag();
     initDragNumbers();
     initGravitySubmit();
+    initDrumPickers();
     if (typeof window !== 'undefined' && window.Workout?._initFocusLongPress) {
       window.Workout._initFocusLongPress();
     }
@@ -456,46 +458,26 @@ export async function renderSetRow(ex, ei, set, si) {
     <div class="set-row ${set.done ? 'set-done' : ''} ${isActive ? 'set-active' : ''}" id="set-row-${ei}-${si}">
       <span class="set-num">${si + 1}</span>
 
-      <!-- Weight stepper -->
-      <div class="stepper" id="sw-${ei}-${si}">
-        <button class="stepper-btn ${set.weight <= 0 ? 'at-min' : ''}"
-          ontouchstart="Workout.stepWeight(${ei},${si},-2.5);event.cancelable&&event.preventDefault()"
-          onclick="Workout.stepWeight(${ei},${si},-2.5)" aria-label="Decrease weight">
-          ${svgArrow('minus')}
-        </button>
-        <span class="stepper-val" id="swv-${ei}-${si}"
-          data-type="w" data-ei="${ei}" data-si="${si}">${set.weight}</span>
+      <!-- Weight drum -->
+      <div class="drum-wrap" id="sw-${ei}-${si}"
+           data-type="w" data-ei="${ei}" data-si="${si}" data-value="${set.weight}">
+        <div class="drum-sel"></div>
+        <div class="drum-track"></div>
+        <span class="stepper-val hidden" id="swv-${ei}-${si}" aria-hidden="true">${set.weight}</span>
         <input class="stepper-input" id="swi-${ei}-${si}"
-          type="number" inputmode="decimal" step="2.5"
-          value="${set.weight}"
-          onblur="Workout.commitVal('w',${ei},${si})"
-          onkeydown="if(event.key==='Enter')this.blur()">
-        <button class="stepper-btn"
-          ontouchstart="Workout.stepWeight(${ei},${si},2.5);event.cancelable&&event.preventDefault()"
-          onclick="Workout.stepWeight(${ei},${si},2.5)" aria-label="Increase weight">
-          ${svgArrow('plus')}
-        </button>
+          type="number" inputmode="decimal" step="2.5" value="${set.weight}"
+          tabindex="-1" aria-hidden="true" style="display:none">
       </div>
 
-      <!-- Reps stepper -->
-      <div class="stepper" id="sr-${ei}-${si}">
-        <button class="stepper-btn ${set.reps <= 1 ? 'at-min' : ''}"
-          ontouchstart="Workout.stepReps(${ei},${si},-1);event.cancelable&&event.preventDefault()"
-          onclick="Workout.stepReps(${ei},${si},-1)" aria-label="Decrease reps">
-          ${svgArrow('down')}
-        </button>
-        <span class="stepper-val" id="srv-${ei}-${si}"
-          data-type="r" data-ei="${ei}" data-si="${si}">${set.reps}</span>
+      <!-- Reps drum -->
+      <div class="drum-wrap" id="sr-${ei}-${si}"
+           data-type="r" data-ei="${ei}" data-si="${si}" data-value="${set.reps}">
+        <div class="drum-sel"></div>
+        <div class="drum-track"></div>
+        <span class="stepper-val hidden" id="srv-${ei}-${si}" aria-hidden="true">${set.reps}</span>
         <input class="stepper-input" id="sri-${ei}-${si}"
-          type="number" inputmode="numeric" step="1"
-          value="${set.reps}"
-          onblur="Workout.commitVal('r',${ei},${si})"
-          onkeydown="if(event.key==='Enter')this.blur()">
-        <button class="stepper-btn"
-          ontouchstart="Workout.stepReps(${ei},${si},1);event.cancelable&&event.preventDefault()"
-          onclick="Workout.stepReps(${ei},${si},1)" aria-label="Increase reps">
-          ${svgArrow('up')}
-        </button>
+          type="number" inputmode="numeric" step="1" value="${set.reps}"
+          tabindex="-1" aria-hidden="true" style="display:none">
       </div>
 
       <!-- Done check -->

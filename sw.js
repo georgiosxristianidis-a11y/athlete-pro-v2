@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v11';
+const CACHE_NAME = 'athlete-pro-v12';
 
 const ASSETS = [
   '/index.html',
@@ -41,6 +41,7 @@ const ASSETS = [
   '/js/workout-ai.view.js',
   '/js/body-stats.js',
   '/js/plate-calc.js',
+  '/js/ui/drum-picker.js',
   '/js/onboarding.js',
   '/css/base.css',
   '/css/dashboard.css',
