@@ -41,6 +41,7 @@ const ASSETS = [
   '/js/workout-ai.view.js',
   '/js/body-stats.js',
   '/js/plate-calc.js',
+  '/js/onboarding.js',
   '/css/base.css',
   '/css/dashboard.css',
   '/css/workout.css',

@@ -129,6 +129,10 @@ openDB()
     onPrivacyChange(_renderPrivacyIndicator);
   })
   .then(async () => {
+    const { needsOnboarding, showOnboarding } = await import('./onboarding.js');
+    if (await needsOnboarding()) await showOnboarding();
+  })
+  .then(async () => {
     const hasSession = localStorage.getItem('ap-active-session');
     if (hasSession) {
       const Workout = await _loadWorkout();
