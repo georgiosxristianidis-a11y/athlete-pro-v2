@@ -3,7 +3,7 @@
    dashboard.js — Athlete Pro  |  Dashboard home screen
    ════════════════════════════════════════════════ */
 
-import { DB, weeklyVolumeFrom, monthlyVolumeFrom, monthlyCountFrom, pplTonnageFrom } from './db.js';
+import { DB, weeklyVolumeFrom, monthlyVolumeFrom, weeklyCountFrom, pplTonnageFrom } from './db.js';
 import { getRecommendations } from './claude.store.js';
 
 export const Dashboard = (() => {
@@ -32,6 +32,48 @@ export const Dashboard = (() => {
   function fmtVol(kg) {
     if (kg >= 1000) return (kg / 1000).toFixed(1) + 'k';
     return Math.round(kg).toString();
+  }
+
+  /**
+   * Compute estimated 1RM deltas for top lifts between current 30d and prior 30d.
+   * Returns a map of exerciseName → delta (kg). Only populated when both periods have data.
+   * @param {Array<{timestamp: number, exercises: Array}>} allWorkouts
+   * @param {Set<string>} liftNames
+   * @returns {Object<string, number>}
+   */
+  function computeLiftDeltas(allWorkouts, liftNames) {
+    const now  = Date.now();
+    const d30  = now - 30 * 86400000;
+    const d60  = now - 60 * 86400000;
+    const epley = (w, r) => r === 1 ? w : Math.round(w * (1 + r / 30));
+
+    function bestInPeriod(workouts) {
+      const map = {};
+      for (const workout of workouts) {
+        for (const ex of (workout.exercises || [])) {
+          if (!liftNames.has(ex.name)) continue;
+          for (const set of (ex.sets || [])) {
+            if (!set.done || !set.weight || !set.reps) continue;
+            const orm = epley(set.weight, set.reps);
+            if (map[ex.name] === undefined || orm > map[ex.name]) map[ex.name] = orm;
+          }
+        }
+      }
+      return map;
+    }
+
+    const recent     = allWorkouts.filter(w => w.timestamp >= d30);
+    const prior      = allWorkouts.filter(w => w.timestamp >= d60 && w.timestamp < d30);
+    const recentBest = bestInPeriod(recent);
+    const priorBest  = bestInPeriod(prior);
+
+    const deltas = {};
+    for (const name of liftNames) {
+      if (recentBest[name] !== undefined && priorBest[name] !== undefined) {
+        deltas[name] = recentBest[name] - priorBest[name];
+      }
+    }
+    return deltas;
   }
 
   /**
@@ -68,7 +110,7 @@ export const Dashboard = (() => {
           <div class="stat-chip-val" id="dash-vol-month">—</div>
         </div>
         <div class="stat-chip stat-chip-blue">
-          <div class="stat-chip-label">Sessions</div>
+          <div class="stat-chip-label">Sess / wk</div>
           <div class="stat-chip-val" id="dash-sessions">—</div>
         </div>
       </div>
@@ -265,11 +307,12 @@ export const Dashboard = (() => {
   }
 
   /**
-   * Render the top 5 estimated 1RM lifts list.
+   * Render the top 5 estimated 1RM lifts list with 30-day progress deltas.
    * @param {Array<{id: string, value: number}>} orms — 1RM estimates
+   * @param {Array} allWorkouts — full workout history for delta computation
    * @returns {void}
    */
-  function renderTopLifts(orms) {
+  function renderTopLifts(orms, allWorkouts = []) {
     const el = document.getElementById('dash-orm-list');
     if (!el) return;
     if (!orms.length) {
@@ -277,22 +320,30 @@ export const Dashboard = (() => {
         color:var(--c-text-3);font-size:12px">Complete sets to see 1RM estimates</div>`;
       return;
     }
-    const top = orms.sort((a, b) => b.value - a.value).slice(0, 5);
+    const top = [...orms].sort((a, b) => b.value - a.value).slice(0, 5);
     const max = top[0].value;
+    const liftNames = new Set(top.map(o => o.id));
+    const deltas = computeLiftDeltas(allWorkouts, liftNames);
     el.innerHTML = top
       .map(
-        (o, i) => `
+        (o, i) => {
+          const delta = deltas[o.id];
+          const deltaHtml = delta != null
+            ? `<span class="orm-delta ${delta >= 0 ? 'orm-delta-up' : 'orm-delta-down'}">${delta >= 0 ? '+' : ''}${delta}kg</span>`
+            : '';
+          return `
       <div class="orm-row">
         <div class="orm-name">
           <span style="font-size:10px;font-weight:700;color:var(--c-text-3);
             margin-right:6px;font-variant-numeric:tabular-nums">#${i + 1}</span>${o.id}
         </div>
-        <div class="orm-val">${o.value}<span class="orm-unit">kg</span></div>
+        <div class="orm-val">${o.value}<span class="orm-unit">kg</span>${deltaHtml}</div>
         <div class="orm-bar-wrap">
           <div class="orm-bar-fill" style="width:${Math.round((o.value / max) * 100)}%;
             background:var(--c-purple)"></div>
         </div>
-      </div>`
+      </div>`;
+        }
       )
       .join('');
   }
@@ -394,7 +445,7 @@ export const Dashboard = (() => {
 
     const weekVol    = weeklyVolumeFrom(allWorkouts);
     const monthVol   = monthlyVolumeFrom(allWorkouts);
-    const monthCount = monthlyCountFrom(allWorkouts);
+    const weekCount  = weeklyCountFrom(allWorkouts);
     const ppl        = pplTonnageFrom(allWorkouts);
 
     // Stats
@@ -403,12 +454,12 @@ export const Dashboard = (() => {
     const sc = document.getElementById('dash-sessions');
     if (wv) wv.innerHTML = fmtVol(weekVol) + '<span class="stat-chip-unit">kg</span>';
     if (mv) mv.innerHTML = fmtVol(monthVol) + '<span class="stat-chip-unit">kg</span>';
-    if (sc) sc.textContent = monthCount;
+    if (sc) sc.textContent = weekCount;
 
     // Render sections
     renderStreak(allWorkouts);
     renderPPL(ppl);
-    renderTopLifts(orms);
+    renderTopLifts(orms, allWorkouts);
     renderRecent(allWorkouts);
     renderRecommendations();
 

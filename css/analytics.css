@@ -170,6 +170,20 @@
   color: var(--c-text-3);
   margin-left: 2px;
 }
+/* 30-day progress delta badge on each lift row */
+.orm-delta {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 4px;
+  margin-left: 5px;
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+.orm-delta-up   { color: var(--c-accent); background: var(--c-accent-bg); }
+.orm-delta-down { color: var(--c-red);    background: var(--c-red-bg); }
 .orm-bar-wrap {
   position: absolute;
   bottom: 0;

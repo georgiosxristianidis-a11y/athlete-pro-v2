@@ -289,6 +289,16 @@ export function pplTonnageFrom(list) {
   return r;
 }
 
+/**
+ * Compute session count for the last 7 days from pre-fetched workouts array.
+ * @param {WorkoutRecord[]} list
+ * @returns {number}
+ */
+export function weeklyCountFrom(list) {
+  const since = Date.now() - 7 * 86400000;
+  return list.filter(w => w.timestamp >= since).length;
+}
+
 /* ════════════════════════════════════════════════════════
    ONE-REP MAX  (Epley: 1RM = w × (1 + r/30))
    ════════════════════════════════════════════════════════ */
