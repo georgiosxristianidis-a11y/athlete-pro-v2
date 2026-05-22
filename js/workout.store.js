@@ -3,6 +3,8 @@
    workout.store.js — Workout state & plan management
    ════════════════════════════════════════════════════════ */
 
+import { DB } from './db.js';
+
 export const SESSION_KEY = 'ap-active-session';
 export const PLAN_KEY = 'ap-custom-plan';        // legacy — migrated → PLAN_KEY_A on first load
 export const PLAN_KEY_A = 'ap-custom-plan-A';
@@ -163,19 +165,72 @@ export const DEFAULT_PLAN = {
 /** @type {ExerciseItem[]} */
 let _exerciseLibrary = null;
 
+const LIBRARY_CACHE_KEY = 'exerciseLibraryCache';
+
 /**
- * Get exercise library — loads from exercises-library.json on first call.
- * Falls back to hardcoded list if JSON fails to load.
+ * Fetch library from network. Returns { exercises, etag } or throws.
+ * @param {string|null} ifNoneMatch — ETag for conditional GET; null = unconditional
+ * @returns {Promise<{ exercises: ExerciseItem[], etag: string|null, notModified: boolean }>}
+ */
+async function _fetchLibrary(ifNoneMatch) {
+  const headers = ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : {};
+  const response = await fetch('exercises-library.json', { headers });
+  if (response.status === 304) {
+    return { exercises: [], etag: ifNoneMatch, notModified: true };
+  }
+  if (!response.ok) throw new Error('HTTP ' + response.status);
+  const data = await response.json();
+  return {
+    exercises: data.exercises || [],
+    etag: response.headers.get('ETag'),
+    notModified: false,
+  };
+}
+
+/**
+ * Background revalidation — fire-and-forget. Updates IDB + in-memory if server
+ * has a newer version (ETag mismatch). Failures are silent.
+ * @param {string|null} etag
+ */
+function _revalidateLibrary(etag) {
+  _fetchLibrary(etag)
+    .then(({ exercises, etag: newEtag, notModified }) => {
+      if (notModified) return;
+      _exerciseLibrary = exercises;
+      return DB.Settings.set(LIBRARY_CACHE_KEY, {
+        exercises,
+        etag: newEtag,
+        fetchedAt: Date.now(),
+      });
+    })
+    .catch(() => { /* network blip — keep cached copy */ });
+}
+
+/**
+ * Get exercise library. Order: in-memory → IDB cache (+ bg revalidate) → network → hardcoded fallback.
  * @returns {Promise<ExerciseItem[]>}
  */
 export async function getExerciseLibrary() {
   if (_exerciseLibrary) return _exerciseLibrary;
 
+  // Try IDB cache first — survives page reload, avoids 85KB JSON parse on hot path
   try {
-    const response = await fetch('exercises-library.json');
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    const data = await response.json();
-    _exerciseLibrary = data.exercises || [];
+    const cached = await DB.Settings.get(LIBRARY_CACHE_KEY);
+    if (cached && Array.isArray(cached.exercises) && cached.exercises.length) {
+      _exerciseLibrary = cached.exercises;
+      _revalidateLibrary(cached.etag || null);
+      return _exerciseLibrary;
+    }
+  } catch { /* IDB unavailable — fall through to network */ }
+
+  try {
+    const { exercises, etag } = await _fetchLibrary(null);
+    _exerciseLibrary = exercises;
+    DB.Settings.set(LIBRARY_CACHE_KEY, {
+      exercises,
+      etag,
+      fetchedAt: Date.now(),
+    }).catch(() => { /* IDB write failure non-fatal */ });
     return _exerciseLibrary;
   } catch (err) {
     console.warn('[getExerciseLibrary] Failed to load JSON, using fallback:', err.message);
