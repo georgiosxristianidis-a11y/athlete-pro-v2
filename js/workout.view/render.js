@@ -166,6 +166,7 @@ export async function renderSelect() {
   const ru = lang === 'ru';
 
   const trainEl = document.getElementById('s-train');
+  if (!trainEl) return;
   trainEl.removeAttribute('data-day');
   trainEl.innerHTML = `
     <div class="screen-header">
@@ -225,7 +226,7 @@ export async function renderSelect() {
     </div>
 
     <div class="section-header" style="margin-top:var(--sp-3)">
-      <span class="section-label">Structured Programs</span>
+      <span class="section-label">${ru ? 'Программы' : 'Structured Programs'}</span>
     </div>
     <div class="programs-carousel">
       ${PROGRAMS.map(p => `
@@ -240,12 +241,12 @@ export async function renderSelect() {
     </div>
 
     <div class="section-header" style="margin-top:var(--sp-3)">
-      <span class="section-label">Last Sessions</span>
+      <span class="section-label">${ru ? 'Прошлые сессии' : 'Last Sessions'}</span>
     </div>
     <div id="last-sessions-preview"></div>
   `;
 
-  document.getElementById('train-date').textContent = new Date().toLocaleDateString('en', {
+  document.getElementById('train-date').textContent = new Date().toLocaleDateString(ru ? 'ru' : 'en', {
     weekday: 'long', month: 'long', day: 'numeric',
   });
 
@@ -258,7 +259,7 @@ export async function renderSelect() {
     }
     el.innerHTML = list.map((w) => {
       const dot = TYPE_COLOR[w.type] || 'var(--c-text-3)';
-      const date = new Date(w.timestamp).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
+      const date = new Date(w.timestamp).toLocaleDateString(ru ? 'ru' : 'en', { weekday: 'short', month: 'short', day: 'numeric' });
       const dur = w.duration ? Timer.fmt(Math.round(w.duration / 1000)) : '--';
       return `<div class="session-item">
         <div class="session-dot" style="background:${dot}"></div>
@@ -276,6 +277,8 @@ export async function renderSelect() {
    ACTIVE WORKOUT
    ════════════════════════════════════════════════════════ */
 export async function renderActive() {
+  const lang = await DB.Settings.get('lang', 'en');
+  const ru = lang === 'ru';
   const color = TYPE_COLOR[State.type];
   const exCount = State.plan.length;
   const totalSets = State.plan.reduce((s, e) => s + e.sets.length, 0);
@@ -286,12 +289,13 @@ export async function renderActive() {
   );
 
   const trainEl = document.getElementById('s-train');
+  if (!trainEl) return;
   trainEl.setAttribute('data-day', State.type);
   trainEl.innerHTML = `
     <div class="screen-header">
       <div>
-        <div class="screen-title">${State.type.charAt(0).toUpperCase() + State.type.slice(1)} Day</div>
-        <div class="screen-sub">${exCount} exercises · ${totalSets} sets</div>
+        <div class="screen-title">${ru ? (State.type === 'push' ? 'Жим' : State.type === 'pull' ? 'Тяга' : 'Ноги') : State.type.charAt(0).toUpperCase() + State.type.slice(1)} ${ru ? 'День' : 'Day'}</div>
+        <div class="screen-sub">${exCount} ${ru ? 'упражнений' : 'exercises'} · ${totalSets} ${ru ? 'подходов' : 'sets'}</div>
       </div>
       <div class="header-chips">
         <button class="week-pill week-${weekMode}" onclick="Workout._toggleWeek()">
@@ -334,8 +338,8 @@ export async function renderActive() {
     <div class="core-section" id="core-section">${_renderCoreSection(State.type)}</div>
 
     <div style="display:flex;flex-direction:column;gap:var(--sp-1);margin-top:var(--sp-2)">
-      <button class="btn btn-primary" onclick="Workout.completeSession()">Complete Session</button>
-      <button class="btn btn-ghost" onclick="Workout.cancelSession()">Cancel</button>
+      <button class="btn btn-primary" onclick="Workout.completeSession()">${ru ? 'Завершить тренировку' : 'Complete Session'}</button>
+      <button class="btn btn-ghost" onclick="Workout.cancelSession()">${ru ? 'Отмена' : 'Cancel'}</button>
     </div>
     <div style="height:var(--sp-2)"></div>
   `;
@@ -378,6 +382,9 @@ export async function renderExerciseCard(ex, ei) {
 
   const firstUndoneIdx = ex.sets.findIndex(s => !s.done);
   const targetSi = firstUndoneIdx === -1 ? 0 : firstUndoneIdx;
+
+  const lang = await DB.Settings.get('lang', 'en');
+  const ru = lang === 'ru';
 
   const iconCopy = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
   const iconCoach = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
@@ -432,34 +439,65 @@ export async function renderSetRow(ex, ei, set, si) {
     </div>`;
 }
 
+/**
+ * Render the fullscreen Focus Mode overlay.
+ * @param {number} ei
+ * @returns {Promise<string>}
+ */
+export async function renderFocusMode(ei) {
+  const ex = State.plan[ei];
+  if (!ex) return '';
+  const firstUndone = ex.sets.findIndex(s => !s.done);
+  const si = firstUndone === -1 ? ex.sets.length - 1 : firstUndone;
+  const set = ex.sets[si];
+  const lang = await DB.Settings.get('lang', 'en');
+  const ru = lang === 'ru';
+  const totalEx = State.plan.length;
+  const totalSets = ex.sets.length;
+
+  return `
+    <div class="focus-overlay animate-in" id="focus-overlay" data-ei="${ei}">
+      <div class="focus-header">
+        <div class="focus-meta">${ru ? 'Упражнение' : 'Exercise'} ${ei + 1} ${ru ? 'из' : 'of'} ${totalEx}</div>
+        <button class="focus-close" onclick="Workout._closeFocus()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="focus-glass-card">
+        <div class="focus-ex-name">${ex.name}</div>
+        <div class="focus-set-info">${ru ? 'Подход' : 'Set'} ${si + 1} ${ru ? 'из' : 'of'} ${totalSets}</div>
+        <div class="focus-hero-row">
+          <div class="focus-hero-item" onclick="Workout._focusStepW(-2.5)"><div class="focus-hero-val">${set.weight}<small>kg</small></div><div class="focus-hero-lbl">${ru ? 'Вес' : 'Weight'}</div></div>
+          <div class="focus-hero-divider"></div>
+          <div class="focus-hero-item" onclick="Workout._focusStepR(-1)"><div class="focus-hero-val">${set.reps}</div><div class="focus-hero-lbl">${ru ? 'Повторы' : 'Reps'}</div></div>
+        </div>
+        <button class="focus-cta ${set.done ? 'done' : ''}" onclick="Workout._focusCompleteSet()">${set.done ? (ru ? 'Готово!' : 'Set Complete') : (ru ? 'Завершить подход' : 'Complete Set')}</button>
+      </div>
+      <div class="focus-footer">
+        <div class="focus-progress-dots">${ex.sets.map((s, i) => `<div class="focus-dot ${s.done ? 'done' : ''} ${i === si ? 'active' : ''}"></div>`).join('')}</div>
+        <div class="focus-hint">${ru ? 'Свайп вниз — закрыть · Свайп влево — далее' : 'Swipe down to close · Swipe left to next'}</div>
+      </div>
+    </div>`;
+}
+
 function _initDrag() {
   const list = document.getElementById('exercise-list');
   if (!list) return;
   list.querySelectorAll('.exercise-card').forEach((card) => {
     const handle = card.querySelector('.drag-handle');
     if (!handle) return;
-    let dragging = false;
-    let startY = 0;
-    let srcIdx = parseInt(card.dataset.ei);
-
+    let dragging = false, startY = 0, srcIdx = parseInt(card.dataset.ei);
     handle.addEventListener('pointerdown', (e) => {
-      e.preventDefault(); e.stopPropagation();
-      dragging = true; startY = e.clientY;
-      handle.setPointerCapture(e.pointerId);
-      card.classList.add('ex-dragging');
+      e.preventDefault(); e.stopPropagation(); dragging = true; startY = e.clientY;
+      handle.setPointerCapture(e.pointerId); card.classList.add('ex-dragging');
     });
-
     handle.addEventListener('pointermove', (e) => {
       if (!dragging) return;
-      const dy = e.clientY - startY;
-      card.style.transform = `translateY(${dy}px)`;
+      const dy = e.clientY - startY; card.style.transform = `translateY(${dy}px)`;
       list.querySelectorAll('.exercise-card').forEach((other) => {
         if (other === card) return;
         const rect = other.getBoundingClientRect();
         other.classList.toggle('ex-drag-over', e.clientY >= rect.top && e.clientY <= rect.bottom);
       });
     });
-
     handle.addEventListener('pointerup', async () => {
       if (!dragging) return;
       dragging = false; card.style.transform = ''; card.classList.remove('ex-dragging');
@@ -468,8 +506,7 @@ function _initDrag() {
       if (dropIdx !== srcIdx) {
         const moved = State.plan.splice(srcIdx, 1)[0];
         State.plan.splice(dropIdx, 0, moved);
-        persistSession();
-        await renderActive();
+        persistSession(); await renderActive();
       }
     });
   });

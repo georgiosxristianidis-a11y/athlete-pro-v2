@@ -2,12 +2,17 @@
 import { DB } from '../db.js';
 import { Timer } from '../timer.js';
 import { Nav, Toast } from '../shell.js';
-import { State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout, loadCoreChecklist, saveCoreChecklist, getActivePlan, startPlan, advancePlan } from '../workout.store.js';
-import { renderSelect, renderActive, renderSetRow } from './render.js';
+import { 
+  State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, 
+  getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout, 
+  loadCoreChecklist, saveCoreChecklist, getActivePlan, startPlan, advancePlan 
+} from '../workout.store.js';
+import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
 import { showReceipt } from '../ui/receipt.js';
 
 let _restDuration = 90;
+let _focusEi = -1;
 
 function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
 
@@ -17,7 +22,9 @@ function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
 
 export function syncDrum(type, ei, si, val) {
   const ex = State.plan[ei];
+  if (!ex) return;
   const set = ex.sets[si];
+  if (!set) return;
   if (type === 'w') set.weight = parseFloat(val);
   else set.reps = parseInt(val);
   persistSession();
@@ -26,7 +33,9 @@ export function syncDrum(type, ei, si, val) {
 
 export function stepWeight(ei, si, delta) {
   const ex = State.plan[ei];
+  if (!ex) return;
   const set = ex.sets[si];
+  if (!set) return;
   set.weight = Math.max(0, (set.weight || 0) + delta);
   _updateStepperUI('w', ei, si, set.weight, set.weight <= 0);
   _updateLiveStats();
@@ -35,7 +44,9 @@ export function stepWeight(ei, si, delta) {
 
 export function stepReps(ei, si, delta) {
   const ex = State.plan[ei];
+  if (!ex) return;
   const set = ex.sets[si];
+  if (!set) return;
   set.reps = Math.max(1, (set.reps || 0) + delta);
   _updateStepperUI('r', ei, si, set.reps, set.reps <= 1);
   _updateLiveStats();
@@ -46,10 +57,8 @@ function _updateStepperUI(type, ei, si, val, atMin) {
   const prefix = type === 'w' ? 'sw' : 'sr';
   const valEl = document.getElementById(`${prefix}v-${ei}-${si}`);
   const inpEl = document.getElementById(`${prefix}i-${ei}-${si}`);
-  const minBtn = document.querySelector(`#${prefix}-${ei}-${si} .stepper-btn:first-child`);
   if (valEl) valEl.textContent = val;
   if (inpEl) inpEl.value = val;
-  if (minBtn) minBtn.classList.toggle('at-min', atMin);
   syncDrum(type, ei, si, val);
 }
 
@@ -68,7 +77,9 @@ export function editVal(ei, si, type) {
 
 export function commitVal(ei, si, type, val) {
   const ex = State.plan[ei];
+  if (!ex) return;
   const set = ex.sets[si];
+  if (!set) return;
   const num = parseFloat(val);
   if (type === 'w') set.weight = isNaN(num) ? 0 : num;
   else set.reps = isNaN(num) ? 1 : Math.round(num);
@@ -81,13 +92,14 @@ export function commitVal(ei, si, type, val) {
 
 export async function toggleSet(ei, si) {
   const ex = State.plan[ei];
+  if (!ex) return;
   const set = ex.sets[si];
+  if (!set) return;
   set.done = !set.done;
   persistSession();
   _updateLiveStats();
 
   if (set.done) {
-    _checkAIProactive();
     // @ts-ignore
     if (window.DynamicIsland) window.DynamicIsland.pulseSetComplete();
     RestTimer.start(ex.name, `Set ${si + 1}`, _restDuration);
@@ -115,6 +127,7 @@ export async function toggleSet(ei, si) {
 
 export async function addSet(ei) {
   const ex = State.plan[ei];
+  if (!ex) return;
   const lastSet = ex.sets[ex.sets.length - 1];
   ex.sets.push({
     weight: lastSet?.weight || 0,
@@ -139,15 +152,13 @@ export async function selectType(type) {
   const activePlan = getActivePlan();
   State.type = type === 'active' ? (activePlan?.type || 'push') : type;
   
-  const [workouts, autoProgressFlag, restDurRaw] = await Promise.all([
+  const [workouts, restDurRaw] = await Promise.all([
     DB.Workouts.getAll().catch(() => []),
-    DB.Settings.get('auto-progress', 'on').catch(() => 'on'),
     DB.Settings.get('rest-duration').catch(() => null),
   ]);
   _restDuration = parseInt(restDurRaw || 90);
-  const autoProgress = autoProgressFlag !== 'off';
 
-  State.plan = buildSession(type, { workouts, autoProgress });
+  State.plan = buildSession(type, { workouts });
   State.phase = 'active';
   State.startedAt = Date.now();
 
@@ -236,6 +247,122 @@ export async function cancelSession() {
 }
 
 /* ════════════════════════════════════════════════════════
+   CORE ITEMS
+   ════════════════════════════════════════════════════════ */
+
+export function _toggleCoreItem(day, idx) {
+  const items = loadCoreChecklist(day);
+  const name = items[idx];
+  const key = `${day}:${name}`;
+  // @ts-ignore
+  window._coreCheckedState = window._coreCheckedState || {};
+  // @ts-ignore
+  window._coreCheckedState[key] = !window._coreCheckedState[key];
+  _haptic(10);
+  const el = document.getElementById(`core-item-${idx}`);
+  // @ts-ignore
+  el?.classList.toggle('checked', window._coreCheckedState[key]);
+}
+
+export async function _addCoreItem(day) {
+  const name = prompt('Core exercise name:');
+  if (!name) return;
+  const items = loadCoreChecklist(day);
+  items.push(name.trim());
+  saveCoreChecklist(day, items);
+  const section = document.getElementById('core-section');
+  // @ts-ignore
+  if (section) section.innerHTML = (await import('./render.js'))._renderCoreSection(day);
+}
+
+export async function _removeCoreItem(day, idx) {
+  const items = loadCoreChecklist(day);
+  items.splice(idx, 1);
+  saveCoreChecklist(day, items);
+  const section = document.getElementById('core-section');
+  // @ts-ignore
+  if (section) section.innerHTML = (await import('./render.js'))._renderCoreSection(day);
+}
+
+/* ════════════════════════════════════════════════════════
+   FOCUS MODE
+   ════════════════════════════════════════════════════════ */
+
+export async function _openFocus(ei) {
+  _focusEi = ei;
+  const overlay = document.createElement('div');
+  overlay.id = 'focus-overlay-wrap';
+  overlay.innerHTML = await renderFocusMode(ei);
+  document.body.appendChild(overlay);
+  _haptic(30);
+}
+
+export function _closeFocus() {
+  const el = document.getElementById('focus-overlay-wrap');
+  el?.remove();
+  _focusEi = -1;
+}
+
+export async function _focusNext() {
+  if (_focusEi < State.plan.length - 1) _openFocus(_focusEi + 1);
+}
+export async function _focusPrev() {
+  if (_focusEi > 0) _openFocus(_focusEi - 1);
+}
+
+export function _focusStepW(delta) {
+  const ex = State.plan[_focusEi];
+  const firstUndone = ex?.sets.find(s => !s.done);
+  if (!firstUndone) return;
+  firstUndone.weight = Math.max(0, (firstUndone.weight || 0) + delta);
+  _refreshFocusUI();
+}
+
+export function _focusStepR(delta) {
+  const ex = State.plan[_focusEi];
+  const firstUndone = ex?.sets.find(s => !s.done);
+  if (!firstUndone) return;
+  firstUndone.reps = Math.max(1, (firstUndone.reps || 0) + delta);
+  _refreshFocusUI();
+}
+
+export async function _focusCompleteSet() {
+  const ex = State.plan[_focusEi];
+  const si = ex?.sets.findIndex(s => !s.done);
+  if (si === -1) return;
+  await toggleSet(_focusEi, si);
+  if (ex.sets.every(s => s.done)) {
+    if (_focusEi < State.plan.length - 1) _focusNext();
+    else _closeFocus();
+  } else {
+    _refreshFocusUI();
+  }
+}
+
+async function _refreshFocusUI() {
+  const wrap = document.getElementById('focus-overlay-wrap');
+  if (wrap) wrap.innerHTML = await renderFocusMode(_focusEi);
+}
+
+export function _initFocusLongPress() {
+  document.querySelectorAll('.exercise-card').forEach((card) => {
+    const header = card.querySelector('.exercise-header');
+    if (!header) return;
+    let timer, triggered = false;
+    header.addEventListener('pointerdown', (e) => {
+      triggered = false;
+      timer = setTimeout(() => {
+        triggered = true;
+        _openFocus(parseInt(card.dataset.ei || '0'));
+      }, 450);
+    });
+    header.addEventListener('pointerup', () => clearTimeout(timer));
+    header.addEventListener('pointerleave', () => clearTimeout(timer));
+    header.addEventListener('click', (e) => { if (triggered) { e.stopPropagation(); e.preventDefault(); } }, true);
+  });
+}
+
+/* ════════════════════════════════════════════════════════
    SMART ACTIONS
    ════════════════════════════════════════════════════════ */
 
@@ -317,4 +444,7 @@ export function _toggleWeek() {
   renderSelect();
 }
 
+export function _addLiveExercise() {
+  alert('Feature coming soon: Live exercise adding.');
+}
 async function _checkAIProactive() { /* placeholder */ }
