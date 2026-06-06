@@ -554,18 +554,28 @@ export const Claude = (() => {
       onError: (errMessage) => {
         const isOffline =
           errMessage.includes('fetch') || errMessage.includes('Failed to fetch');
-        const errHtml = isOffline
-          ? `<span class="ai-error">Start the server to enable AI Coach: <code>npm start</code></span>`
-          : `<span class="ai-error">Error: ${errMessage}</span>`;
+
+        // Build error element safely — errMessage goes via textContent, not innerHTML
+        const errSpan = document.createElement('span');
+        errSpan.className = 'ai-error';
+        if (isOffline) {
+          errSpan.textContent = 'Start the server to enable AI Coach: ';
+          const code = document.createElement('code');
+          code.textContent = 'npm start';
+          errSpan.appendChild(code);
+        } else {
+          errSpan.textContent = 'Error: ' + errMessage;
+        }
 
         if (message === null) {
           const thinking = document.getElementById('ai-thinking');
           const textEl = document.getElementById('ai-text');
           if (thinking) thinking.style.display = 'none';
-          if (textEl) textEl.innerHTML = errHtml;
+          if (textEl) { textEl.textContent = ''; textEl.appendChild(errSpan); }
         } else if (targetEl) {
           targetEl.className = 'chat-msg ai-msg';
-          targetEl.innerHTML = errHtml;
+          targetEl.textContent = '';
+          targetEl.appendChild(errSpan);
         }
       },
     });
