@@ -60,11 +60,13 @@ export const Profile = (() => {
                     onclick="Profile.setEngine('anthropic')" 
                     style="display: inline-flex; align-items: center; gap: 6px;">
               Anthropic
-              ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? '<span class="engine-dot" style="width: 6px; height: 6px; border-radius: 50%; background: #00e676; display: inline-block; box-shadow: 0 0 8px #00e676;"></span>' : ''}
+              ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? '<span class="engine-dot" style="width: 6px; height: 6px; border-radius: 50%; background: #00e676; display: inline-block; box-shadow: 0 0 8px #00e676; animation: engine-pulse 2s infinite;"></span>' : ''}
             </button>
             <button class="toggle-btn toggle-engine-btn ${settings['ai-engine'] === 'gemini' ? 'active' : ''}" 
-                    onclick="Profile.setEngine('gemini')">
+                    onclick="Profile.setEngine('gemini')"
+                    style="display: inline-flex; align-items: center; gap: 6px;">
               Gemini
+              ${settings['ai-engine'] === 'gemini' ? '<span class="engine-dot" style="width: 6px; height: 6px; border-radius: 50%; background: #0091ff; display: inline-block; box-shadow: 0 0 8px #0091ff; animation: engine-pulse 2s infinite;"></span>' : ''}
             </button>
           </div>
           <div class="pref-sub" style="color: var(--c-text-3); font-size: 11px; margin-top: 2px;">
