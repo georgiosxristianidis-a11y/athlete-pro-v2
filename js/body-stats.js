@@ -121,33 +121,16 @@ export function renderBodyStats() {
   const root = document.getElementById('body-stats-root');
   if (!root) return;
 
-  const subNav = `
-    <div class="stats-subnav">
-      <button class="stats-subnav-btn" onclick="Nav.go('s-stats')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-             stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-        </svg>
-        Performance
-      </button>
-      <button class="stats-subnav-btn active" onclick="Nav.go('s-body')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-             stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-          <circle cx="12" cy="5" r="2.5"/>
-          <path d="M12 8v7"/><path d="M8 11h8"/><path d="M9 22l3-7 3 7"/>
-        </svg>
-        Measurements
-      </button>
-    </div>`;
+  const ru = (localStorage.getItem('ap-settings-lang') === 'ru');
 
   const tabBar = `
-    <div class="bs-tab-bar">
-      <button class="bs-tab ${_bsActiveTab === 'stats' ? 'active' : ''}" onclick="bsSwitchTab('stats')">Body Stats</button>
-      <button class="bs-tab ${_bsActiveTab === 'metrics' ? 'active' : ''}" onclick="bsSwitchTab('metrics')">Body Metrics</button>
+    <div class="bs-tab-bar" style="margin-bottom:var(--sp-2)">
+      <button class="bs-tab ${_bsActiveTab === 'stats' ? 'active' : ''}" onclick="bsSwitchTab('stats')">${ru ? 'История замеров' : 'History'}</button>
+      <button class="bs-tab ${_bsActiveTab === 'metrics' ? 'active' : ''}" onclick="bsSwitchTab('metrics')">${ru ? 'Данные тела' : 'Metrics'}</button>
     </div>`;
 
   if (_bsActiveTab === 'metrics') {
-    root.innerHTML = `<div class="bs-wrap">${subNav}${tabBar}<div id="bs-metrics-content"><div style="padding:var(--sp-3);text-align:center;color:var(--c-text-3);font-size:13px">Loading…</div></div></div>`;
+    root.innerHTML = `<div class="bs-wrap">${tabBar}<div id="bs-metrics-content"></div></div>`;
     _bsRenderMetrics();
     return;
   }
@@ -156,6 +139,7 @@ export function renderBodyStats() {
   const entries = bsLoad().sort((a, b) => new Date(b.date) - new Date(a.date));
   const latest = entries[0] || null,
     prev = entries[1] || null;
+  const iconTrash = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="14" height="14"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>`;
 
   const summaryCards = BS_FIELDS.filter((f) => latest?.[f.id] != null)
     .map((f) => {
@@ -165,7 +149,7 @@ export function renderBodyStats() {
         .reverse();
       return `<div class="bs-stat-card">
       <div class="bs-stat-top">
-        <span class="bs-stat-label">${f.icon} ${f.label}</span>
+        <span class="bs-stat-label">${f.label}</span>
         ${bsDelta(latest[f.id], prev?.[f.id], f.unit)}
       </div>
       <div class="bs-stat-value">${latest[f.id]}<span class="bs-stat-unit">${f.unit}</span></div>
@@ -201,7 +185,7 @@ export function renderBodyStats() {
       <div class="bs-hist-body">${cells}
         <button class="bs-del-btn"
           onclick="event.stopPropagation(); bsDeleteEntry('${e.date}')">
-          🗑 Delete this entry
+          ${iconTrash} ${ru ? 'Удалить запись' : 'Delete entry'}
         </button>
       </div>
     </div>`;
@@ -209,14 +193,13 @@ export function renderBodyStats() {
     .join('');
 
   root.innerHTML = `<div class="bs-wrap">
-    ${subNav}
     ${tabBar}
     <div class="bs-header">
-      <h2 class="bs-title">Body Stats</h2>
+      <h2 class="bs-title">${ru ? 'Замеры' : 'Measurements'}</h2>
       <button class="btn-primary bs-add-btn" onclick="bsOpenForm()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
              stroke-linecap="round" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>
-        Add Entry
+        ${ru ? 'Добавить' : 'Add Entry'}
       </button>
     </div>
     ${
@@ -226,12 +209,12 @@ export function renderBodyStats() {
            <p class="bs-empty-title">No measurements yet</p>
            <p class="bs-empty-sub">Tap "Add Entry" to log your first body stats</p>
          </div>`
-        : `<div class="bs-last-date">Last updated: ${bsFmtDate(latest.date)}</div>
+        : `<div class="bs-last-date">${ru ? 'Последнее:' : 'Last updated:'} ${bsFmtDate(latest.date)}</div>
          <div class="bs-grid">${summaryCards}</div>`
     }
     ${
       entries.length > 0
-        ? `<div class="bs-section-title">History</div>
+        ? `<div class="bs-section-title">${ru ? 'История' : 'History'}</div>
          <div class="bs-history">${historyRows}</div>`
         : ''
     }

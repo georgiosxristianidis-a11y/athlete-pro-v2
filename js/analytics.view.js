@@ -26,6 +26,8 @@ const TYPE_COLOR = {
    MAIN LOAD
    ══════════════════════════════════════════════ */
 
+let _activeTab = 'performance'; // 'performance' | 'measurements'
+
 /**
  * Load and render the full analytics screen.
  * @returns {Promise<void>}
@@ -34,130 +36,117 @@ async function load() {
   const screen = document.getElementById('s-stats');
   if (!screen) return;
 
+  const lang = await DB.Settings.get('lang', 'en');
+  const ru = lang === 'ru';
+
   screen.innerHTML = `
     <div class="screen-header">
       <div>
-        <div class="screen-title">Analytics</div>
-        <div class="screen-sub">Performance overview</div>
+        <div class="screen-title">${ru ? 'Аналитика' : 'Analytics'}</div>
+        <div class="screen-sub">${ru ? 'Обзор прогресса' : 'Performance overview'}</div>
       </div>
-      <div class="badge badge-purple" id="stats-period-badge">Last 30 days</div>
     </div>
 
-    <!-- Sub-nav: Performance | Measurements (Body merged into Stats) -->
-    <div class="stats-subnav">
-      <button class="stats-subnav-btn active" onclick="Nav.go('s-stats')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-             stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-        </svg>
-        Performance
+    <!-- ── Premium XOR Sub-nav ── -->
+    <div class="stats-segmented-ctrl">
+      <button class="seg-btn ${_activeTab === 'performance' ? 'active' : ''}" 
+              onclick="Analytics.switchTab('performance')">
+        ${ru ? 'Результаты' : 'Performance'}
       </button>
-      <button class="stats-subnav-btn" onclick="Nav.go('s-body')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-             stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-          <circle cx="12" cy="5" r="2.5"/>
-          <path d="M12 8v7"/><path d="M8 11h8"/><path d="M9 22l3-7 3 7"/>
-        </svg>
-        Measurements
+      <button class="seg-btn ${_activeTab === 'measurements' ? 'active' : ''}" 
+              onclick="Analytics.switchTab('measurements')">
+        ${ru ? 'Замеры' : 'Measurements'}
       </button>
     </div>
 
-    <!-- ── Quick stats row ── -->
-    <div class="stat-row" id="stats-quick-row">
-      <div class="stat-chip">
-        <div class="stat-chip-val" id="an-total-sessions">—</div>
-        <div class="stat-chip-label">Sessions</div>
-      </div>
-      <div class="stat-chip stat-chip-purple">
-        <div class="stat-chip-val" id="an-total-vol">—<span class="stat-chip-unit">kg</span></div>
-        <div class="stat-chip-label">Total Vol</div>
-      </div>
-      <div class="stat-chip stat-chip-blue">
-        <div class="stat-chip-val" id="an-avg-time">—<span class="stat-chip-unit">m</span></div>
-        <div class="stat-chip-label">Avg Time</div>
-      </div>
+    <div id="stats-tab-content" class="animate-in">
+      <!-- Content injected by switchTab -->
     </div>
-
-    <!-- ── Monthly Calendar Heatmap ── -->
-    <div class="section-header">
-      <span class="section-label">Monthly Calendar</span>
-      <div style="display:flex;align-items:center;gap:var(--sp-1)">
-        <button class="btn-icon-nav" id="cal-prev" onclick="Analytics.calPrev()" aria-label="Previous month">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.5" stroke-linecap="round" width="14" height="14">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-        <span id="cal-month-label" style="font-size:11px;font-weight:700;
-          letter-spacing:0.08em;text-transform:uppercase;color:var(--c-text-2);
-          min-width:80px;text-align:center"></span>
-        <button class="btn-icon-nav" id="cal-next" onclick="Analytics.calNext()" aria-label="Next month">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.5" stroke-linecap="round" width="14" height="14">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-    <div class="cal-card" id="cal-card">
-      <!-- JS renders calendar -->
-    </div>
-
-    <!-- ── Weekly Volume Chart ── -->
-    <div class="section-header" style="margin-top:var(--sp-2)">
-      <span class="section-label">Weekly Volume</span>
-      <span class="badge badge-accent" id="an-week-best">—</span>
-    </div>
-    <div class="chart-card" id="chart-volume">
-      <canvas id="cv-volume" height="140"></canvas>
-    </div>
-
-    <!-- ── PPL Distribution ── -->
-    <div class="section-header" style="margin-top:var(--sp-2)">
-      <span class="section-label">Split Distribution</span>
-    </div>
-    <div class="chart-card ppl-dist-card" id="chart-ppl">
-      <canvas id="cv-ppl" width="120" height="120"></canvas>
-      <div class="ppl-legend" id="ppl-legend"></div>
-    </div>
-
-    <!-- ── 1RM Table ── -->
-    <div class="section-header" style="margin-top:var(--sp-2)">
-      <span class="section-label">Estimated 1RM</span>
-      <span class="badge badge-purple">Epley</span>
-    </div>
-    <div id="orm-list"></div>
-
-    <!-- ── Body Weight Trend ── -->
-    <div class="section-header" style="margin-top:var(--sp-2)">
-      <span class="section-label">Body Weight</span>
-    </div>
-    <div class="chart-card" id="chart-bw">
-      <canvas id="cv-bw" height="120"></canvas>
-    </div>
-
-    <!-- ── Training Time ── -->
-    <div class="section-header" style="margin-top:var(--sp-2)">
-      <span class="section-label">Training Time</span>
-    </div>
-    <div class="chart-card" id="chart-time">
-      <canvas id="cv-time" height="120"></canvas>
-    </div>
-
-    <div style="height:var(--sp-2)"></div>
   `;
 
-  const { workouts, orms, metrics } = await fetchAllData();
+  await switchTab(_activeTab);
+}
 
-  _renderQuickStats(workouts);
-  _renderCalendar(workouts);
-  const trend = await fetchWeeklyTrend(10);
-  _renderVolumeChart(workouts, trend);
-  const ppl = await fetchPPLTonnage();
-  _renderPPLDonut(workouts, ppl);
-  _renderORMList(orms);
-  _renderBWChart(metrics);
-  _renderTimeChart(workouts);
+/**
+ * Switch between Performance and Measurements tabs.
+ */
+async function switchTab(tab) {
+  _activeTab = tab;
+  const container = document.getElementById('stats-tab-content');
+  if (!container) return;
+
+  const lang = await DB.Settings.get('lang', 'en');
+  const ru = lang === 'ru';
+
+  // Update active state in UI
+  document.querySelectorAll('.seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim().toLowerCase().includes(tab.slice(0, 4)));
+  });
+
+  if (tab === 'performance') {
+    container.innerHTML = `
+      <!-- ── Quick stats row ── -->
+      <div class="stat-row" style="margin-top:var(--sp-2)">
+        <div class="stat-chip">
+          <div class="stat-chip-val" id="an-total-sessions">—</div>
+          <div class="stat-chip-label">${ru ? 'Тренировки' : 'Sessions'}</div>
+        </div>
+        <div class="stat-chip">
+          <div class="stat-chip-val" id="an-total-vol">—<span class="stat-chip-unit">kg</span></div>
+          <div class="stat-chip-label">${ru ? 'Общий объем' : 'Total Vol'}</div>
+        </div>
+        <div class="stat-chip">
+          <div class="stat-chip-val" id="an-avg-time">—<span class="stat-chip-unit">m</span></div>
+          <div class="stat-chip-label">${ru ? 'Ср. время' : 'Avg Time'}</div>
+        </div>
+      </div>
+
+      <!-- ── Calendar ── -->
+      <div class="section-header" style="margin-top:var(--sp-3)">
+        <span class="section-label">${ru ? 'Календарь' : 'Monthly Calendar'}</span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn-icon-nav" onclick="Analytics.calPrev()">${svgArrow('minus')}</button>
+          <span id="cal-month-label" style="font-size:11px;font-weight:800;color:var(--c-text-1);min-width:80px;text-align:center;text-transform:uppercase;"></span>
+          <button class="btn-icon-nav" onclick="Analytics.calNext()">${svgArrow('plus')}</button>
+        </div>
+      </div>
+      <div class="cal-card" id="cal-card"></div>
+
+      <!-- ── Weekly Volume ── -->
+      <div class="section-header" style="margin-top:var(--sp-4)">
+        <span class="section-label">${ru ? 'Недельный объем' : 'Weekly Volume'}</span>
+        <span class="badge badge-accent" id="an-week-best">—</span>
+      </div>
+      <div class="chart-card"><canvas id="cv-volume" height="140"></canvas></div>
+
+      <!-- ── 1RM Estimates ── -->
+      <div class="section-header" style="margin-top:var(--sp-4)">
+        <span class="section-label">${ru ? 'Рекорды (1RM)' : 'Estimated 1RM'}</span>
+      </div>
+      <div id="orm-list"></div>
+      
+      <div style="height:40px"></div>
+    `;
+
+    const { workouts, orms } = await fetchAllData();
+    _renderQuickStats(workouts);
+    _renderCalendar(workouts);
+    const trend = await fetchWeeklyTrend(10);
+    _renderVolumeChart(workouts, trend);
+    _renderORMList(orms);
+
+  } else {
+    // Measurements Tab
+    container.innerHTML = `
+      <div style="padding-top:var(--sp-2)">
+        <div id="body-metrics-root"></div>
+        <div id="body-history-root"></div>
+      </div>
+    `;
+    // Pull in body-stats logic
+    const { init: initBody } = await import('./body-stats.js');
+    initBody();
+  }
 }
 
 /* ══════════════════════════════════════════════
@@ -771,4 +760,4 @@ function _set(id, html) {
 /* ══════════════════════════════════════════════
    PUBLIC API
    ══════════════════════════════════════════════ */
-export const Analytics = { load, calPrev, calNext, calDayClick };
+export const Analytics = { load, calPrev, calNext, calDayClick, switchTab };

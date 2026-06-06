@@ -160,6 +160,13 @@ function _stepExp(ru) {
 }
 
 function _stepBio(ru) {
+  const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
+  const months = ru 
+    ? ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
+    : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  const [y, m, d] = _data.dob ? _data.dob.split('-') : ['', '', ''];
+
   return `
     <div class="animate-in">
       <h1 style="font-size:28px; font-weight:900; letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:8px">
@@ -168,26 +175,41 @@ function _stepBio(ru) {
       <p style="font-size:15px; font-weight:500; color:var(--c-text-3); margin-bottom:32px">
         ${ru ? 'Для точного расчета уровня силы.' : 'For accurate strength tier comparisons.'}
       </p>
-      <div style="display:grid; gap:var(--sp-2)">
+      <div style="display:grid; gap:var(--sp-3)">
         <div>
-          <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:8px">
+          <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:12px">
             ${ru ? 'Пол' : 'Sex'}
           </label>
-          <div style="display:flex; gap:10px">
-            <button class="ob-btn-tab ${_data.sex === 'm' ? 'active' : ''}" onclick="window._obSetData({sex:'m'})" style="flex:1">${ru ? 'М' : 'Male'}</button>
-            <button class="ob-btn-tab ${_data.sex === 'f' ? 'active' : ''}" onclick="window._obSetData({sex:'f'})" style="flex:1">${ru ? 'Ж' : 'Female'}</button>
+          <div style="display:flex; gap:12px">
+            <button class="ob-btn-tab ${_data.sex === 'm' ? 'active' : ''}" onclick="window._obSetData({sex:'m'})" style="flex:1; height:52px; border-radius:16px;">${ru ? 'М' : 'Male'}</button>
+            <button class="ob-btn-tab ${_data.sex === 'f' ? 'active' : ''}" onclick="window._obSetData({sex:'f'})" style="flex:1; height:52px; border-radius:16px;">${ru ? 'Ж' : 'Female'}</button>
           </div>
         </div>
         <div>
-          <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:8px">
+          <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:12px">
             ${ru ? 'Дата рождения' : 'Date of Birth'}
           </label>
-          <input type="date" value="${_data.dob}" onchange="window._obSetData({dob:this.value})" 
-                 style="width:100%; height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-1); font-family:inherit; font-size:16px; padding:0 16px; box-sizing:border-box">
+          <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr; gap:10px">
+            <select onchange="window._obSetDob('y', this.value)" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 12px; font-weight:700;">
+              <option value="">${ru ? 'Год' : 'Year'}</option>
+              ${years.map(year => `<option value="${year}" ${y === String(year) ? 'selected' : ''}>${year}</option>`).join('')}
+            </select>
+            <select onchange="window._obSetDob('m', this.value)" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 8px; font-weight:700;">
+              <option value="">${ru ? 'Мес' : 'Month'}</option>
+              ${months.map((name, i) => `<option value="${String(i + 1).padStart(2, '0')}" ${m === String(i + 1).padStart(2, '0') ? 'selected' : ''}>${name}</option>`).join('')}
+            </select>
+            <select onchange="window._obSetDob('d', this.value)" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 12px; font-weight:700;">
+              <option value="">${ru ? 'День' : 'Day'}</option>
+              ${Array.from({ length: 31 }, (_, i) => {
+                const val = String(i + 1).padStart(2, '0');
+                return `<option value="${val}" ${d === val ? 'selected' : ''}>${i + 1}</option>`;
+              }).join('')}
+            </select>
+          </div>
         </div>
       </div>
     </div>
-    ${_navButtons(ru, !!_data.sex && !!_data.dob)}
+    ${_navButtons(ru, !!_data.sex && !!_data.dob && _data.dob.split('-').length === 3)}
   `;
 }
 
@@ -286,6 +308,15 @@ function _navButtons(ru, canNext) {
 }
 
 /* ── Handlers ── */
+
+window._obSetDob = (part, val) => {
+  let [y, m, d] = _data.dob ? _data.dob.split('-') : ['', '', ''];
+  if (part === 'y') y = val;
+  if (part === 'm') m = val;
+  if (part === 'd') d = val;
+  _data.dob = `${y}-${m}-${d}`;
+  _render();
+};
 
 window._obQuickStart = () => {
   _step = 99; // Special Quick Confirm step

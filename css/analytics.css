@@ -77,7 +77,40 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
-/* btn-icon-nav — moved to css/base.css */
+/* ── Premium Segmented Control ── */
+.stats-segmented-ctrl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: var(--c-surface-deep);
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+  padding: 6px;
+  margin: var(--sp-2) 0 var(--sp-1);
+}
+
+.seg-btn {
+  height: 44px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--c-text-3);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.seg-btn.active {
+  background: var(--c-surface);
+  color: var(--c-text-1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.seg-btn:not(.active):active {
+  background: rgba(255, 255, 255, 0.05);
+}
 
 /* ── Chart cards ── */
 .chart-card {

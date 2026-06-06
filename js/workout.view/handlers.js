@@ -45,6 +45,9 @@ export async function selectType(type) {
     if (el) el.textContent = Timer.fmt(s);
   });
 
+  // @ts-ignore
+  if (window.DynamicIsland) window.DynamicIsland.show();
+
   await renderActive();
 }
 
