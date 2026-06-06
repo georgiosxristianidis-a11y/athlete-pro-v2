@@ -274,8 +274,10 @@ export const Claude = (() => {
    * Render the floating action button for the AI coach.
    * @returns {void}
    */
-  function renderFAB() {
+  async function renderFAB() {
     if (document.getElementById('claude-fab')) return;
+    const engine = await DB.Settings.get('ai-engine').catch(() => 'anthropic') || 'anthropic';
+    const isGemini = engine === 'gemini';
     const fab = document.createElement('button');
     fab.id = 'claude-fab';
     fab.className = 'claude-fab';
@@ -283,7 +285,7 @@ export const Claude = (() => {
 
     // Try video first, fall back to static image, then icon
     // preload="none" defers 1MB download until play — icon shown first
-    fab.innerHTML = _claudeIcon();
+    fab.innerHTML = isGemini ? _geminiIcon() : _claudeIcon();
     const vid = document.createElement('video');
     vid.preload = 'none';
     vid.src = 'assets/panda-idle.mp4';
@@ -301,7 +303,7 @@ export const Claude = (() => {
       vid2.playsInline = true;
       vid2.setAttribute('playsinline', '');
       vid2.onerror = () => {
-        fab.innerHTML = _claudeIcon();
+        fab.innerHTML = isGemini ? _geminiIcon() : _claudeIcon();
       };
       vid2.oncanplay = () => { fab.innerHTML = ''; fab.appendChild(vid2); vid2.play(); };
       vid2.load();
@@ -344,11 +346,13 @@ export const Claude = (() => {
     ClaudeState.isOpen = true;
     ClaudeState.chatHistory = [];
 
-    const [workouts, orms, scores] = await Promise.all([
+    const [workouts, orms, scores, engine] = await Promise.all([
       DB.Workouts.getLast(5),
       DB.OneRM.getAll(),
       Heatmap.compute(),
+      DB.Settings.get('ai-engine').catch(() => 'anthropic'),
     ]);
+    const isGemini = (engine || 'anthropic') === 'gemini';
     ClaudeState.context = { workouts, orms, scores };
 
     const overlay = document.createElement('div');
@@ -362,10 +366,10 @@ export const Claude = (() => {
         <!-- Header -->
         <div class="claude-header">
           <div class="claude-logo-wrap">
-            ${_claudeIcon(28)}
+            ${isGemini ? _geminiIcon(28) : _claudeIcon(28)}
             <div>
-              <div class="claude-title">Claude Coach</div>
-              <div class="claude-sub">Powered by Claude Opus</div>
+              <div class="claude-title">${isGemini ? 'Gemini Coach' : 'Claude Coach'}</div>
+              <div class="claude-sub">${isGemini ? 'Powered by Gemini 1.5 Pro' : 'Powered by Claude Opus'}</div>
             </div>
           </div>
           <button class="btn-icon-sm" onclick="Claude.close()" aria-label="Close AI Coach">
@@ -659,7 +663,14 @@ export const Claude = (() => {
     </svg>`;
   }
 
-  return { renderFAB, open, close, _sendChat };
+  function _geminiIcon(size = 22) {
+    return `<svg class="gemini-icon" width="${size}" height="${size}"
+      viewBox="0 0 24 24" fill="currentColor" style="color: #448aff;">
+      <path d="M12 2a1 1 0 0 1 1 .918l.067 1.5c.2 4.457 3.608 7.865 8.065 8.065l1.5.067a1 1 0 0 1 0 1.9l-1.5.067c-4.457.2-7.865 3.608-8.065 8.065l-.067 1.5a1 1 0 0 1-1.9 0l-.067-1.5c-.2-4.457-3.608-7.865-8.065-8.065l-1.5-.067a1 1 0 0 1 0-1.9l1.5-.067c4.457-.2 7.865-3.608 8.065-8.065l.067-1.5A1 1 0 0 1 12 2z"/>
+    </svg>`;
+  }
+
+  return { renderFAB, open, close, _sendChat, _claudeIcon, _geminiIcon };
 })();
 
 /* ══════════════════════════════════════════════

@@ -49,6 +49,30 @@ export const Profile = (() => {
         <span class="section-label">Preferences</span>
       </div>
       <div class="profile-card">
+        <div class="pref-row pref-col" style="gap: 10px;">
+          <div class="pref-info">
+            <div class="pref-title">AI Engine</div>
+            <div class="pref-sub">Select the brain for your Coach</div>
+          </div>
+          <div class="toggle-group" style="gap: 12px; margin-top: 4px;">
+            <button class="toggle-btn toggle-engine-btn ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? 'active' : ''}" 
+                    onclick="Profile.setEngine('anthropic')" 
+                    style="display: inline-flex; align-items: center; gap: 6px;">
+              Anthropic
+              ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? '<span class="engine-dot" style="width: 6px; height: 6px; border-radius: 50%; background: #00e676; display: inline-block; box-shadow: 0 0 8px #00e676;"></span>' : ''}
+            </button>
+            <button class="toggle-btn toggle-engine-btn ${settings['ai-engine'] === 'gemini' ? 'active' : ''}" 
+                    onclick="Profile.setEngine('gemini')">
+              Gemini
+            </button>
+          </div>
+          <div class="pref-sub" style="color: var(--c-text-3); font-size: 11px; margin-top: 2px;">
+            Gemini KEY missing.
+          </div>
+        </div>
+
+        <div class="pref-divider"></div>
+
         <div class="pref-row">
           <div class="pref-info">
             <div class="pref-title">Rest Duration</div>
@@ -513,6 +537,46 @@ export const Profile = (() => {
      ══════════════════════════════════════════════ */
 
   /**
+   * Set the active AI engine (anthropic or gemini)
+   * @param {'anthropic'|'gemini'} engine
+   * @returns {Promise<void>}
+   */
+  async function setEngine(engine) {
+    const { getPrivacyMode } = await import('./privacy.store.js');
+    if (getPrivacyMode() === 'airgap') {
+      if (confirm('AI Coach is blocked in Air-Gapped mode. Would you like to open Privacy settings to enable it?')) {
+        const card = document.querySelector('.privacy-card');
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth' });
+          card.style.transition = 'box-shadow 0.3s ease';
+          card.style.boxShadow = '0 0 15px var(--c-accent)';
+          setTimeout(() => {
+            card.style.boxShadow = '';
+          }, 1500);
+        }
+      }
+      return;
+    }
+
+    await DB.Settings.set('ai-engine', engine);
+
+    const fab = document.getElementById('claude-fab');
+    if (fab) {
+      const { Claude } = await import('./claude.view.js');
+      const vid = fab.querySelector('video');
+      if (!vid) {
+        if (engine === 'gemini') {
+          fab.innerHTML = Claude._geminiIcon();
+        } else {
+          fab.innerHTML = Claude._claudeIcon();
+        }
+      }
+    }
+
+    load();
+  }
+
+  /**
    * Set the training mode (strength / hypertrophy / recovery / maintenance).
    * @param {'strength'|'hypertrophy'|'recovery'|'maintenance'} mode
    * @returns {Promise<void>}
@@ -628,6 +692,7 @@ export const Profile = (() => {
     toggleAutoProgress,
     toggleMascot,
     setLang,
+    setEngine,
     setTrainingMode,
     saveInjuries,
     setSessionTime,

@@ -1,6 +1,7 @@
 // @ts-check
 import { computeAge } from '../profile.store.js';
-import { dotsScore } from '../strength-engine.js';
+import { dotsScore, exrxTier } from '../strength-engine.js';
+import { DB } from '../db.js';
 
 const TIER_COLOR = {
   Untrained:    'var(--c-text-3)',
@@ -10,23 +11,13 @@ const TIER_COLOR = {
   Elite:        'var(--c-accent)',
 };
 
-const GOAL_EN = { strength: 'Strength', hypertrophy: 'Hypertrophy', cut: 'Cut', maintain: 'Maintain' };
-const GOAL_RU = { strength: 'Сила', hypertrophy: 'Масса', cut: 'Сушка', maintain: 'Поддержание' };
-
-/** @param {number} dots */
-function _tierFromDots(dots) {
-  if (!dots) return 'Untrained';
-  if (dots < 200) return 'Untrained';
-  if (dots < 300) return 'Novice';
-  if (dots < 380) return 'Intermediate';
-  if (dots < 470) return 'Advanced';
-  return 'Elite';
-}
-
 const TIER_RU = {
   Untrained: 'Новичок', Novice: 'Начинающий',
   Intermediate: 'Средний', Advanced: 'Продвинутый', Elite: 'Элита',
 };
+
+const GOAL_EN = { strength: 'Strength', hypertrophy: 'Hypertrophy', cut: 'Cut', maintain: 'Maintain' };
+const GOAL_RU = { strength: 'Сила', hypertrophy: 'Масса', cut: 'Сушка', maintain: 'Поддержание' };
 
 /**
  * @param {import('../profile.store.js').ProfileData} profile
@@ -39,12 +30,24 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   const ru = lang === 'ru';
   const age = computeAge(profile.dob);
   const bw = metrics?.weight || 80;
+  
+  // Overall DOTS tier
   const total = (oneRMs.squat || 0) + (oneRMs.bench || 0) + (oneRMs.deadlift || 0);
   const dots = total ? dotsScore({ total, bodyweight: bw, sex: profile.sex }) : 0;
   const tier = _tierFromDots(dots);
   const tierColor = TIER_COLOR[tier];
   const tierLabel = ru ? TIER_RU[tier] : tier;
   const goalMap = ru ? GOAL_RU : GOAL_EN;
+
+  // Best lift percentile (Top X% logic)
+  let bestPercentile = 0;
+  ['bench', 'squat', 'deadlift', 'ohp'].forEach(lift => {
+    const rm = oneRMs[lift];
+    if (rm) {
+      const res = exrxTier({ lift, sex: profile.sex, bodyweight: bw, oneRM: rm, age: age || 30 });
+      if (res && res.percentile > bestPercentile) bestPercentile = res.percentile;
+    }
+  });
 
   const initials = (profile.name || '')
     .split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'A';
@@ -54,43 +57,66 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
     profile.experienceYears ? (ru ? `${profile.experienceYears} г. опыта` : `${profile.experienceYears}y exp`) : null,
   ].filter(Boolean).join(' · ');
 
-  const statsStrip = metrics ? `
-<div class="pp-stats-strip">
-  <div class="pp-stat">
-    <div class="pp-stat-val">${metrics.weight}<span class="pp-stat-u">kg</span></div>
-    <div class="pp-stat-lbl">${ru ? 'Вес' : 'Weight'}</div>
-  </div>
-  <div class="pp-stat-div"></div>
-  <div class="pp-stat">
-    <div class="pp-stat-val">${metrics.height}<span class="pp-stat-u">cm</span></div>
-    <div class="pp-stat-lbl">${ru ? 'Рост' : 'Height'}</div>
-  </div>
-  <div class="pp-stat-div"></div>
-  <div class="pp-stat">
-    <div class="pp-stat-val" style="color:${metrics.bmi < 25 ? 'var(--c-accent)' : 'var(--c-amber)'}">${metrics.bmi.toFixed(1)}</div>
-    <div class="pp-stat-lbl">BMI</div>
-  </div>
-  <div class="pp-stat-div"></div>
-  <div class="pp-stat">
-    <div class="pp-stat-val">${total ? Math.round(total) : '—'}<span class="pp-stat-u">kg</span></div>
-    <div class="pp-stat-lbl">${ru ? 'Сумма' : 'Total'}</div>
-  </div>
-</div>` : '';
-
+  // Photo & Color cycle integration from AthleteRoom
+  // We'll use a placeholder for the photo and ring color, to be populated by the caller if possible
+  // or just default to initials for now as we don't want to make renderPassportHero async
   return `
-<div class="pp-hero">
-  <div class="pp-avatar">${initials}</div>
-  <div class="pp-identity">
-    <div class="pp-name">${profile.name || (ru ? 'Атлет' : 'Athlete')}</div>
-    ${metaStr ? `<div class="pp-meta">${metaStr}</div>` : ''}
-    <div class="pp-tier-pill" style="color:${tierColor};border-color:${tierColor}20;background:${tierColor}0d">
-      ${tierLabel}${dots ? ` · ${dots}` : ''}
+<div class="pp-hero-v2">
+  <div class="pp-avatar-wrap">
+    <div class="pp-avatar-v2" id="pp-avatar-main" onclick="window.AthleteRoom?.open()">
+      <span class="pp-avatar-initials">${initials}</span>
+    </div>
+    <div class="pp-avatar-ring" id="pp-avatar-ring-main"></div>
+  </div>
+  
+  <div class="pp-identity-v2">
+    <div class="pp-name-v2">${profile.name || (ru ? 'Атлет' : 'Athlete')}</div>
+    <div class="pp-meta-v2">${metaStr || (ru ? 'Настрой профиль' : 'Set up your profile')}</div>
+    
+    <div class="pp-badge-row">
+      <div class="pp-tier-pill-v2" style="color:${tierColor}; border-color:${tierColor}20; background:${tierColor}0d">
+        ${tierLabel} ${dots ? `· ${dots}` : ''}
+      </div>
+      ${bestPercentile > 0 ? `
+        <div class="pp-percentile-pill">
+          ${ru ? 'Топ' : 'Top'} ${100 - bestPercentile}%
+        </div>
+      ` : ''}
     </div>
   </div>
-  <div class="pp-goal-badge">
-    <div class="pp-goal-label">${ru ? 'Цель' : 'Goal'}</div>
-    <div class="pp-goal-val">${goalMap[profile.goal] || profile.goal}</div>
+
+  <div class="pp-goal-v2">
+    <div class="pp-goal-lbl-v2">${ru ? 'Цель' : 'Goal'}</div>
+    <div class="pp-goal-val-v2">${goalMap[profile.goal] || profile.goal}</div>
   </div>
 </div>
-${statsStrip}`;
+
+<div class="pp-metrics-strip">
+  <div class="pp-m-item">
+    <div class="pp-m-val">${metrics?.weight || '—'}<span class="pp-m-u">kg</span></div>
+    <div class="pp-m-lbl">${ru ? 'Вес' : 'Weight'}</div>
+  </div>
+  <div class="pp-m-div"></div>
+  <div class="pp-m-item">
+    <div class="pp-m-val">${metrics?.height || '—'}<span class="pp-m-u">cm</span></div>
+    <div class="pp-m-lbl">${ru ? 'Рост' : 'Height'}</div>
+  </div>
+  <div class="pp-m-div"></div>
+  <div class="pp-m-item">
+    <div class="pp-m-val" style="color:${(metrics?.bmi || 0) < 25 ? 'var(--c-accent)' : 'var(--c-amber)'}">
+      ${metrics?.bmi ? metrics.bmi.toFixed(1) : '—'}
+    </div>
+    <div class="pp-m-lbl">BMI</div>
+  </div>
+</div>
+`;
+}
+
+/** @param {number} dots */
+function _tierFromDots(dots) {
+  if (!dots || dots < 200) return 'Untrained';
+  if (dots < 300) return 'Novice';
+  if (dots < 380) return 'Intermediate';
+  if (dots < 470) return 'Advanced';
+  return 'Elite';
 }

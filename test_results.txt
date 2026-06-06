@@ -1,0 +1,817 @@
+TAP version 13
+# {"level":"warn","ts":"2026-06-06T19:36:22.627Z","correlationId":"dccf8319-0d14-46fa-9735-759c77d9842b","event":"json_parse_error","message":"Invalid JSON body","type":"entity.parse.failed"}
+# Subtest: POST /api/coach — validation (400)
+    # Subtest: no body → 400
+    ok 1 - no body → 400
+      ---
+      duration_ms: 97.7443
+      type: 'test'
+      ...
+# {"level":"warn","ts":"2026-06-06T19:36:22.676Z","correlationId":"b2a6fe80-ae3e-4341-94cd-5f4f72b1612e","event":"coach_bad_payload","message":"messages_type","clientError":"messages must be an array"}
+    # Subtest: missing messages → 400
+    ok 2 - missing messages → 400
+      ---
+      duration_ms: 48.5079
+      type: 'test'
+      ...
+# {"level":"warn","ts":"2026-06-06T19:36:22.701Z","correlationId":"52e78e35-9553-42b4-8741-3a7af9ae40c9","event":"coach_bad_payload","message":"messages_empty","clientError":"messages array is required"}
+    # Subtest: empty messages array → 400
+    ok 3 - empty messages array → 400
+      ---
+      duration_ms: 10.7775
+      type: 'test'
+      ...
+# {"level":"warn","ts":"2026-06-06T19:36:22.711Z","correlationId":"0944d09b-e9d6-4126-b628-4297e27ba020","event":"coach_bad_payload","message":"message_role","clientError":"messages[0].role must be \\"user\\" or \\"assistant\\""}
+    # Subtest: invalid role → 400
+    ok 4 - invalid role → 400
+      ---
+      duration_ms: 12.5744
+      type: 'test'
+      ...
+# {"level":"warn","ts":"2026-06-06T19:36:22.726Z","correlationId":"49d8879f-b018-4386-9f5a-45a5a927170f","event":"coach_bad_payload","message":"message_content_length","clientError":"messages[0].content must be 1–12000 characters"}
+    # Subtest: content too long → 400
+    ok 5 - content too long → 400
+      ---
+      duration_ms: 12.4559
+      type: 'test'
+      ...
+# {"level":"warn","ts":"2026-06-06T19:36:22.735Z","correlationId":"f0127b18-5347-4048-9f20-dfde97425894","event":"coach_bad_payload","message":"message_shape","clientError":"messages[0] must be an object"}
+    # Subtest: message not an object → 400
+    ok 6 - message not an object → 400
+      ---
+      duration_ms: 7.9515
+      type: 'test'
+      ...
+    1..6
+ok 1 - POST /api/coach — validation (400)
+  ---
+  duration_ms: 192.1658
+  type: 'suite'
+  ...
+# {"level":"warn","ts":"2026-06-06T19:36:22.745Z","correlationId":"95d31015-da17-4e1f-baee-2757e22f8371","event":"coach_no_api_key","message":"ANTHROPIC_API_KEY missing"}
+# Subtest: POST /api/coach — no API key (500)
+    # Subtest: valid payload without ANTHROPIC_API_KEY → 500
+    ok 1 - valid payload without ANTHROPIC_API_KEY → 500
+      ---
+      duration_ms: 8.8229
+      type: 'test'
+      ...
+    1..1
+ok 2 - POST /api/coach — no API key (500)
+  ---
+  duration_ms: 9.4735
+  type: 'suite'
+  ...
+# Subtest: POST /api/generate-plan — fallback (no API key)
+    # Subtest: no history + no API key → 200 with default plan
+    ok 1 - no history + no API key → 200 with default plan
+      ---
+      duration_ms: 29.72
+      type: 'test'
+      ...
+    # Subtest: default plan has exercises in all splits
+    ok 2 - default plan has exercises in all splits
+      ---
+      duration_ms: 14.9668
+      type: 'test'
+      ...
+    1..2
+ok 3 - POST /api/generate-plan — fallback (no API key)
+  ---
+  duration_ms: 45.4348
+  type: 'suite'
+  ...
+# Subtest: POST /api/recommendations
+    # Subtest: valid request → 200 with recommendations array
+    ok 1 - valid request → 200 with recommendations array
+      ---
+      duration_ms: 7.5702
+      type: 'test'
+      ...
+# {"level":"warn","ts":"2026-06-06T19:36:22.807Z","correlationId":"980c835d-3779-4ef1-8450-7c67778e6357","event":"recommendations_bad_payload","message":"workout or nextSessionPlan missing","hasWorkout":true,"planLen":0}
+    # Subtest: missing nextSessionPlan → 400
+    ok 2 - missing nextSessionPlan → 400
+      ---
+      duration_ms: 8.2854
+      type: 'test'
+      ...
+    1..2
+ok 4 - POST /api/recommendations
+  ---
+  duration_ms: 16.5297
+  type: 'suite'
+  ...
+# Subtest: _validateCoachPayload — body shape
+    # Subtest: null body → body_type error
+    ok 1 - null body → body_type error
+      ---
+      duration_ms: 1.5242
+      type: 'test'
+      ...
+    # Subtest: array body → body_type error
+    ok 2 - array body → body_type error
+      ---
+      duration_ms: 0.449
+      type: 'test'
+      ...
+    # Subtest: string body → body_type error
+    ok 3 - string body → body_type error
+      ---
+      duration_ms: 0.3621
+      type: 'test'
+      ...
+    # Subtest: missing messages field → messages_type error
+    ok 4 - missing messages field → messages_type error
+      ---
+      duration_ms: 0.2657
+      type: 'test'
+      ...
+    # Subtest: messages is not array → messages_type error
+    ok 5 - messages is not array → messages_type error
+      ---
+      duration_ms: 0.216
+      type: 'test'
+      ...
+    1..5
+ok 5 - _validateCoachPayload — body shape
+  ---
+  duration_ms: 5.003
+  type: 'suite'
+  ...
+# Subtest: _validateCoachPayload — messages array
+    # Subtest: empty messages array → messages_empty error
+    ok 1 - empty messages array → messages_empty error
+      ---
+      duration_ms: 0.23
+      type: 'test'
+      ...
+    # Subtest: too many messages → messages_limit error
+    ok 2 - too many messages → messages_limit error
+      ---
+      duration_ms: 0.6132
+      type: 'test'
+      ...
+    # Subtest: exactly 40 messages → ok
+    ok 3 - exactly 40 messages → ok
+      ---
+      duration_ms: 0.7975
+      type: 'test'
+      ...
+    1..3
+ok 6 - _validateCoachPayload — messages array
+  ---
+  duration_ms: 2.403
+  type: 'suite'
+  ...
+# Subtest: _validateCoachPayload — message shape
+    # Subtest: message is not object → message_shape error
+    ok 1 - message is not object → message_shape error
+      ---
+      duration_ms: 0.4157
+      type: 'test'
+      ...
+    # Subtest: message is array → message_shape error
+    ok 2 - message is array → message_shape error
+      ---
+      duration_ms: 0.3732
+      type: 'test'
+      ...
+    # Subtest: invalid role → message_role error
+    ok 3 - invalid role → message_role error
+      ---
+      duration_ms: 0.1453
+      type: 'test'
+      ...
+    # Subtest: missing role → message_role error
+    ok 4 - missing role → message_role error
+      ---
+      duration_ms: 0.1393
+      type: 'test'
+      ...
+    # Subtest: content not a string → message_content_type error
+    ok 5 - content not a string → message_content_type error
+      ---
+      duration_ms: 0.127
+      type: 'test'
+      ...
+    # Subtest: empty content → message_content_length error
+    ok 6 - empty content → message_content_length error
+      ---
+      duration_ms: 0.1159
+      type: 'test'
+      ...
+    # Subtest: content over 12000 chars → message_content_length error
+    ok 7 - content over 12000 chars → message_content_length error
+      ---
+      duration_ms: 0.1438
+      type: 'test'
+      ...
+    # Subtest: content exactly 12000 chars → ok
+    ok 8 - content exactly 12000 chars → ok
+      ---
+      duration_ms: 0.1758
+      type: 'test'
+      ...
+    1..8
+ok 7 - _validateCoachPayload — message shape
+  ---
+  duration_ms: 2.0874
+  type: 'suite'
+  ...
+# Subtest: _validateCoachPayload — valid payloads
+    # Subtest: single user message → ok
+    ok 1 - single user message → ok
+      ---
+      duration_ms: 0.1905
+      type: 'test'
+      ...
+    # Subtest: user + assistant turn → ok
+    ok 2 - user + assistant turn → ok
+      ---
+      duration_ms: 0.1025
+      type: 'test'
+      ...
+    # Subtest: error on second invalid message reports correct index
+    ok 3 - error on second invalid message reports correct index
+      ---
+      duration_ms: 0.2208
+      type: 'test'
+      ...
+    1..3
+ok 8 - _validateCoachPayload — valid payloads
+  ---
+  duration_ms: 0.6568
+  type: 'suite'
+  ...
+# C:\\PROJECTS\\athlete-pro\\node_modules\\playwright\\lib\\common\\index.js:2221
+#       throw new Error([
+#       ^
+# Error: Playwright Test did not expect test.describe() to be called here.
+# Most common reasons include:
+# - You are calling test.describe() in a configuration file.
+# - You are calling test.describe() in a file that is imported by the configuration file.
+# - You have two different versions of @playwright/test. This usually happens
+#   when one of the dependencies in your package.json depends on @playwright/test.
+#     at _TestTypeImpl._currentSuite (C:\\PROJECTS\\athlete-pro\\node_modules\\playwright\\lib\\common\\index.js:2221:13)
+#     at _TestTypeImpl._describe (C:\\PROJECTS\\athlete-pro\\node_modules\\playwright\\lib\\common\\index.js:2261:24)
+#     at Function.describe (C:\\PROJECTS\\athlete-pro\\node_modules\\playwright\\lib\\common\\index.js:1111:12)
+#     at Object.<anonymous> (C:\\PROJECTS\\athlete-pro\\test\\e2e\\athlete-pro.spec.js:94:6)
+#     at Module._compile (node:internal/modules/cjs/loader:1705:14)
+#     at Object..js (node:internal/modules/cjs/loader:1838:10)
+#     at Module.load (node:internal/modules/cjs/loader:1441:32)
+#     at Function._load (node:internal/modules/cjs/loader:1263:12)
+#     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+#     at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+# Node.js v22.22.2
+# Subtest: test\\e2e\\athlete-pro.spec.js
+not ok 3 - test\\e2e\\athlete-pro.spec.js
+  ---
+  duration_ms: 842.347
+  type: 'test'
+  location: 'C:\\PROJECTS\\athlete-pro\\test\\e2e\\athlete-pro.spec.js:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: Phase 2 — Performance post-conditions
+    # Subtest: PERF-3: index.html contains zero gstatic.com/firebasejs references
+    ok 1 - PERF-3: index.html contains zero gstatic.com/firebasejs references
+      ---
+      duration_ms: 2.0217
+      type: 'test'
+      ...
+    # Subtest: PERF-1: js/dashboard.js does not call DB.Workouts.weeklyVolume() directly
+    ok 2 - PERF-1: js/dashboard.js does not call DB.Workouts.weeklyVolume() directly
+      ---
+      duration_ms: 0.9054
+      type: 'test'
+      ...
+    # Subtest: PERF-2: js/app.js does not statically import analytics.view.js
+    ok 3 - PERF-2: js/app.js does not statically import analytics.view.js
+      ---
+      duration_ms: 1.632
+      type: 'test'
+      ...
+    # Subtest: PERF-3: js/app.js does not statically import db-firebase.js
+    ok 4 - PERF-3: js/app.js does not statically import db-firebase.js
+      ---
+      duration_ms: 0.602
+      type: 'test'
+      ...
+    1..4
+ok 10 - Phase 2 — Performance post-conditions
+  ---
+  duration_ms: 8.3584
+  type: 'suite'
+  ...
+# (node:660) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/PROJECTS/athlete-pro/js/progressive-overload.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\PROJECTS\\athlete-pro\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: classifyExercise
+    # Subtest: Bench Press → upper
+    ok 1 - Bench Press → upper
+      ---
+      duration_ms: 1.4765
+      type: 'test'
+      ...
+    # Subtest: Incline DB Press → upper
+    ok 2 - Incline DB Press → upper
+      ---
+      duration_ms: 0.4393
+      type: 'test'
+      ...
+    # Subtest: Squat → lower
+    ok 3 - Squat → lower
+      ---
+      duration_ms: 0.2554
+      type: 'test'
+      ...
+    # Subtest: Deadlift → lower
+    ok 4 - Deadlift → lower
+      ---
+      duration_ms: 0.2065
+      type: 'test'
+      ...
+    # Subtest: Romanian Deadlift → lower
+    ok 5 - Romanian Deadlift → lower
+      ---
+      duration_ms: 0.2453
+      type: 'test'
+      ...
+    # Subtest: Hammer Curl → upper
+    ok 6 - Hammer Curl → upper
+      ---
+      duration_ms: 0.2551
+      type: 'test'
+      ...
+    # Subtest: Plank → accessory (unknown)
+    ok 7 - Plank → accessory (unknown)
+      ---
+      duration_ms: 0.5213
+      type: 'test'
+      ...
+    # Subtest: case-insensitive
+    ok 8 - case-insensitive
+      ---
+      duration_ms: 0.8853
+      type: 'test'
+      ...
+    1..8
+ok 11 - classifyExercise
+  ---
+  duration_ms: 7.3573
+  type: 'suite'
+  ...
+# Subtest: calculateProgression
+    # Subtest: all sets completed → recommends increment for upper body
+    ok 1 - all sets completed → recommends increment for upper body
+      ---
+      duration_ms: 0.7965
+      type: 'test'
+      ...
+    # Subtest: lower body gets 5 kg increment
+    ok 2 - lower body gets 5 kg increment
+      ---
+      duration_ms: 0.3502
+      type: 'test'
+      ...
+    # Subtest: incomplete sets → maintain weight (delta 0)
+    ok 3 - incomplete sets → maintain weight (delta 0)
+      ---
+      duration_ms: 0.1861
+      type: 'test'
+      ...
+    # Subtest: current > lastSessionWeight → PR type
+    ok 4 - current > lastSessionWeight → PR type
+      ---
+      duration_ms: 0.1757
+      type: 'test'
+      ...
+    # Subtest: plateau history → deload recommended
+    ok 5 - plateau history → deload recommended
+      ---
+      duration_ms: 0.2964
+      type: 'test'
+      ...
+    # Subtest: result always has recommended, delta, reason, type
+    ok 6 - result always has recommended, delta, reason, type
+      ---
+      duration_ms: 0.1812
+      type: 'test'
+      ...
+    1..6
+ok 12 - calculateProgression
+  ---
+  duration_ms: 2.6876
+  type: 'suite'
+  ...
+# Subtest: detectPlateau
+    # Subtest: 3 sessions at same weight → plateau detected
+    ok 1 - 3 sessions at same weight → plateau detected
+      ---
+      duration_ms: 1.3579
+      type: 'test'
+      ...
+    # Subtest: fewer than 3 sessions → no plateau
+    ok 2 - fewer than 3 sessions → no plateau
+      ---
+      duration_ms: 0.3298
+      type: 'test'
+      ...
+    # Subtest: increasing weight → no plateau
+    ok 3 - increasing weight → no plateau
+      ---
+      duration_ms: 0.2839
+      type: 'test'
+      ...
+    # Subtest: exercise not in history → no plateau
+    ok 4 - exercise not in history → no plateau
+      ---
+      duration_ms: 0.2023
+      type: 'test'
+      ...
+    # Subtest: result always has isPlateau boolean and suggestion string
+    ok 5 - result always has isPlateau boolean and suggestion string
+      ---
+      duration_ms: 0.1814
+      type: 'test'
+      ...
+    1..5
+ok 13 - detectPlateau
+  ---
+  duration_ms: 2.8804
+  type: 'suite'
+  ...
+# Subtest: generateWeeklySummary
+    # Subtest: empty history → no workouts message
+    ok 1 - empty history → no workouts message
+      ---
+      duration_ms: 1.1622
+      type: 'test'
+      ...
+    # Subtest: 2 workouts this week reflected in summary count
+    ok 2 - 2 workouts this week reflected in summary count
+      ---
+      duration_ms: 0.5747
+      type: 'test'
+      ...
+    # Subtest: workouts older than 7 days not counted
+    ok 3 - workouts older than 7 days not counted
+      ---
+      duration_ms: 0.2966
+      type: 'test'
+      ...
+    # Subtest: plateau detected and reported in plateauAlerts
+    ok 4 - plateau detected and reported in plateauAlerts
+      ---
+      duration_ms: 1.6827
+      type: 'test'
+      ...
+    1..4
+ok 14 - generateWeeklySummary
+  ---
+  duration_ms: 4.3892
+  type: 'suite'
+  ...
+# Subtest: getTypeClass / getTypeIcon
+    # Subtest: pr type → progression-pr class
+    ok 1 - pr type → progression-pr class
+      ---
+      duration_ms: 0.5588
+      type: 'test'
+      ...
+    # Subtest: recommended type → progression-recommended class
+    ok 2 - recommended type → progression-recommended class
+      ---
+      duration_ms: 0.2246
+      type: 'test'
+      ...
+    # Subtest: normal type → progression-normal class
+    ok 3 - normal type → progression-normal class
+      ---
+      duration_ms: 0.1772
+      type: 'test'
+      ...
+    # Subtest: getTypeIcon returns a non-empty string for all types
+    ok 4 - getTypeIcon returns a non-empty string for all types
+      ---
+      duration_ms: 0.2585
+      type: 'test'
+      ...
+    1..4
+ok 15 - getTypeClass / getTypeIcon
+  ---
+  duration_ms: 1.7054
+  type: 'suite'
+  ...
+# Subtest: manifest.json has required PWA fields
+ok 16 - manifest.json has required PWA fields
+  ---
+  duration_ms: 3.916
+  type: 'test'
+  ...
+# Subtest: sw.js contains core service worker handlers
+ok 17 - sw.js contains core service worker handlers
+  ---
+  duration_ms: 0.9235
+  type: 'test'
+  ...
+# Subtest: sw.js ASSETS includes all js/*.js files
+ok 18 - sw.js ASSETS includes all js/*.js files
+  ---
+  duration_ms: 1.1551
+  type: 'test'
+  ...
+# Subtest: smoke: GET / returns 200
+ok 19 - smoke: GET / returns 200
+  ---
+  duration_ms: 3121.2511
+  type: 'test'
+  ...
+# Subtest: smoke: /api/firebase-config returns configured false when missing env
+ok 20 - smoke: /api/firebase-config returns configured false when missing env
+  ---
+  duration_ms: 14.2294
+  type: 'test'
+  ...
+# Subtest: smoke: /api/supabase-status returns not_configured when missing env
+ok 21 - smoke: /api/supabase-status returns not_configured when missing env
+  ---
+  duration_ms: 9.3602
+  type: 'test'
+  ...
+# (node:32660) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/PROJECTS/athlete-pro/js/strength-engine.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to C:\\PROJECTS\\athlete-pro\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: estimate1RM (Epley)
+    # Subtest: 1 rep returns weight unchanged
+    ok 1 - 1 rep returns weight unchanged
+      ---
+      duration_ms: 1.2634
+      type: 'test'
+      ...
+    # Subtest: 5 reps at 80 kg → 93
+    ok 2 - 5 reps at 80 kg → 93
+      ---
+      duration_ms: 0.2631
+      type: 'test'
+      ...
+    # Subtest: 10 reps at 60 kg → 80
+    ok 3 - 10 reps at 60 kg → 80
+      ---
+      duration_ms: 0.2605
+      type: 'test'
+      ...
+    # Subtest: zero weight returns 0
+    ok 4 - zero weight returns 0
+      ---
+      duration_ms: 0.2001
+      type: 'test'
+      ...
+    # Subtest: zero reps returns 0
+    ok 5 - zero reps returns 0
+      ---
+      duration_ms: 0.1865
+      type: 'test'
+      ...
+    1..5
+ok 22 - estimate1RM (Epley)
+  ---
+  duration_ms: 4.1801
+  type: 'suite'
+  ...
+# Subtest: mcCullochAge
+    # Subtest: prime age (30) = 1.0
+    ok 1 - prime age (30) = 1.0
+      ---
+      duration_ms: 0.7503
+      type: 'test'
+      ...
+    # Subtest: age 40 = 1.0 (still prime)
+    ok 2 - age 40 = 1.0 (still prime)
+      ---
+      duration_ms: 0.4777
+      type: 'test'
+      ...
+    # Subtest: age 18 has bonus > 1
+    ok 3 - age 18 has bonus > 1
+      ---
+      duration_ms: 0.6785
+      type: 'test'
+      ...
+    # Subtest: age 50 has coefficient > 1.0 (decline multiplier)
+    ok 4 - age 50 has coefficient > 1.0 (decline multiplier)
+      ---
+      duration_ms: 0.5049
+      type: 'test'
+      ...
+    # Subtest: no age (undefined) returns 1.0
+    ok 5 - no age (undefined) returns 1.0
+      ---
+      duration_ms: 2.4326
+      type: 'test'
+      ...
+    # Subtest: age 80 returns capped value
+    ok 6 - age 80 returns capped value
+      ---
+      duration_ms: 0.2748
+      type: 'test'
+      ...
+    1..6
+ok 23 - mcCullochAge
+  ---
+  duration_ms: 5.9877
+  type: 'suite'
+  ...
+# Subtest: dotsScore
+    # Subtest: returns 0 for missing total
+    ok 1 - returns 0 for missing total
+      ---
+      duration_ms: 0.6398
+      type: 'test'
+      ...
+    # Subtest: returns 0 for missing bodyweight
+    ok 2 - returns 0 for missing bodyweight
+      ---
+      duration_ms: 0.2035
+      type: 'test'
+      ...
+    # Subtest: reasonable score for intermediate male lifter
+    ok 3 - reasonable score for intermediate male lifter
+      ---
+      duration_ms: 0.2341
+      type: 'test'
+      ...
+    # Subtest: higher total → higher score
+    ok 4 - higher total → higher score
+      ---
+      duration_ms: 0.2162
+      type: 'test'
+      ...
+    # Subtest: falls back to male coefficients for unknown sex
+    ok 5 - falls back to male coefficients for unknown sex
+      ---
+      duration_ms: 0.2031
+      type: 'test'
+      ...
+    1..5
+ok 24 - dotsScore
+  ---
+  duration_ms: 1.9871
+  type: 'suite'
+  ...
+# Subtest: exrxTier
+    # Subtest: returns null for unknown lift
+    ok 1 - returns null for unknown lift
+      ---
+      duration_ms: 0.8602
+      type: 'test'
+      ...
+    # Subtest: returns null for zero bodyweight
+    ok 2 - returns null for zero bodyweight
+      ---
+      duration_ms: 0.2214
+      type: 'test'
+      ...
+    # Subtest: untrained male bencher at 75 kg with 50 kg 1RM
+    ok 3 - untrained male bencher at 75 kg with 50 kg 1RM
+      ---
+      duration_ms: 0.3498
+      type: 'test'
+      ...
+    # Subtest: intermediate male bencher at 75 kg with 110 kg 1RM
+    ok 4 - intermediate male bencher at 75 kg with 110 kg 1RM
+      ---
+      duration_ms: 0.2405
+      type: 'test'
+      ...
+    # Subtest: result has all required fields
+    ok 5 - result has all required fields
+      ---
+      duration_ms: 0.403
+      type: 'test'
+      ...
+    # Subtest: percentile is clamped 0-99
+    ok 6 - percentile is clamped 0-99
+      ---
+      duration_ms: 0.1912
+      type: 'test'
+      ...
+    # Subtest: female lifter returns valid tier
+    ok 7 - female lifter returns valid tier
+      ---
+      duration_ms: 0.2769
+      type: 'test'
+      ...
+    1..7
+ok 25 - exrxTier
+  ---
+  duration_ms: 3.0228
+  type: 'suite'
+  ...
+# Subtest: ipfWeightClass
+    # Subtest: 66 kg male → 66
+    ok 1 - 66 kg male → 66
+      ---
+      duration_ms: 0.4357
+      type: 'test'
+      ...
+    # Subtest: 83 kg male → 83
+    ok 2 - 83 kg male → 83
+      ---
+      duration_ms: 0.1409
+      type: 'test'
+      ...
+    # Subtest: 130 kg male → 120+
+    ok 3 - 130 kg male → 120+
+      ---
+      duration_ms: 0.1251
+      type: 'test'
+      ...
+    # Subtest: 52 kg female → 52
+    ok 4 - 52 kg female → 52
+      ---
+      duration_ms: 0.1174
+      type: 'test'
+      ...
+    # Subtest: 90 kg female → 84+
+    ok 5 - 90 kg female → 84+
+      ---
+      duration_ms: 0.1114
+      type: 'test'
+      ...
+    1..5
+ok 26 - ipfWeightClass
+  ---
+  duration_ms: 1.1649
+  type: 'suite'
+  ...
+# Subtest: expectedFromDeadlift
+    # Subtest: returns null for zero deadlift
+    ok 1 - returns null for zero deadlift
+      ---
+      duration_ms: 0.2101
+      type: 'test'
+      ...
+    # Subtest: 100 kg deadlift → bench 55, squat 85, ohp 35
+    ok 2 - 100 kg deadlift → bench 55, squat 85, ohp 35
+      ---
+      duration_ms: 0.1238
+      type: 'test'
+      ...
+    # Subtest: returns rounded values
+    ok 3 - returns rounded values
+      ---
+      duration_ms: 0.125
+      type: 'test'
+      ...
+    1..3
+ok 27 - expectedFromDeadlift
+  ---
+  duration_ms: 0.619
+  type: 'suite'
+  ...
+# Subtest: symmetryIndex
+    # Subtest: perfectly symmetric arms → 100
+    ok 1 - perfectly symmetric arms → 100
+      ---
+      duration_ms: 0.2768
+      type: 'test'
+      ...
+    # Subtest: no measurements → null
+    ok 2 - no measurements → null
+      ---
+      duration_ms: 0.1189
+      type: 'test'
+      ...
+    # Subtest: large asymmetry → low score
+    ok 3 - large asymmetry → low score
+      ---
+      duration_ms: 0.1162
+      type: 'test'
+      ...
+    # Subtest: considers both arm and thigh pairs
+    ok 4 - considers both arm and thigh pairs
+      ---
+      duration_ms: 0.2106
+      type: 'test'
+      ...
+    1..4
+ok 28 - symmetryIndex
+  ---
+  duration_ms: 0.8855
+  type: 'suite'
+  ...
+1..28
+# tests 103
+# suites 21
+# pass 102
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3703.4023

@@ -13,6 +13,7 @@ import {
   loadPlan, savePlan,
   buildSession, persistSession,
   getWeekMode, loadCoreChecklist,
+  getExerciseLibrary,
 } from '../workout.store.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
@@ -377,6 +378,54 @@ export async function renderActive() {
   });
 }
 
+let _cachedLib = null;
+
+async function getMuscleBadge(exerciseName) {
+  if (!_cachedLib) {
+    _cachedLib = await getExerciseLibrary().catch(() => []);
+  }
+  const cleanName = exerciseName.toLowerCase().trim();
+  let matched = _cachedLib.find(item => item.name.toLowerCase().trim() === cleanName);
+  
+  if (!matched) {
+    matched = _cachedLib.find(item => {
+      const itemClean = item.name.toLowerCase().trim();
+      return itemClean.includes(cleanName) || cleanName.includes(itemClean);
+    });
+  }
+  
+  let muscle = 'unknown';
+  if (matched) {
+    muscle = matched.muscleGroup;
+  } else {
+    if (cleanName.includes('bench') || cleanName.includes('chest') || cleanName.includes('fly') || cleanName.includes('pec')) {
+      muscle = 'chest';
+    } else if (cleanName.includes('overhead') || cleanName.includes('shoulder') || cleanName.includes('lateral') || cleanName.includes('delt') || cleanName.includes('ohp') || cleanName.includes('upright row')) {
+      muscle = 'shoulders';
+    } else if (cleanName.includes('tricep') || cleanName.includes('pushdown')) {
+      muscle = 'triceps';
+    } else if (cleanName.includes('bicep') || cleanName.includes('curl') || cleanName.includes('row') || cleanName.includes('pull') || cleanName.includes('chin')) {
+      muscle = 'back';
+    } else if (cleanName.includes('squat') || cleanName.includes('leg') || cleanName.includes('lunge') || cleanName.includes('calf') || cleanName.includes('press') || cleanName.includes('extension')) {
+      if (cleanName.includes('tricep') || cleanName.includes('overhead cable extension')) {
+        muscle = 'triceps';
+      } else {
+        muscle = 'legs';
+      }
+    }
+  }
+
+  let normalized = muscle.toLowerCase();
+  if (normalized.includes('delt')) normalized = 'shoulders';
+  if (normalized === 'quads' || normalized === 'calves' || normalized === 'hamstrings' || normalized === 'glutes') normalized = 'legs';
+  if (normalized === 'biceps') normalized = 'back';
+
+  let label = muscle.toUpperCase();
+  if (label === 'REAR DELTS') label = 'SHOULDERS';
+
+  return `<span class="muscle-badge ${normalized}">${label}</span>`;
+}
+
 export async function renderExerciseCard(ex, ei) {
   const doneSets = ex.sets.filter((s) => s.done).length;
   const setRows = await Promise.all(ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)));
@@ -384,6 +433,7 @@ export async function renderExerciseCard(ex, ei) {
   const coach = await _computeCoachTarget(ex.name);
   const planMax = Math.max(0, ...ex.sets.map(s => s.weight || 0));
   const overflow = coach && planMax > coach.target;
+  const muscleBadge = await getMuscleBadge(ex.name);
 
   return `
     <div class="exercise-card" id="ex-card-${ei}" data-ei="${ei}" data-day="${State.type}">
@@ -400,7 +450,7 @@ export async function renderExerciseCard(ex, ei) {
         </div>
         <div class="exercise-info">
           <div class="exercise-name">
-            ${ex.name}
+            ${ex.name}${muscleBadge}
             ${coach ? `<span class="coach-pill ${overflow ? 'overflow' : ''}" title="Suggested target: ${coach.last}kg × 1.025">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                    stroke-linecap="round" width="10" height="10">

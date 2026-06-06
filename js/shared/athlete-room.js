@@ -175,7 +175,42 @@ export const AthleteRoom = (() => {
         </div>
       </div>
 
-      <!-- ... existing name editor ... -->
+      <!-- Name editor -->
+      <div class="ar-name-editor" id="ar-name-editor" style="display:none">
+        <div class="ar-editor-card">
+          <div class="ar-editor-label">${l?`Имя`:`Name`}</div>
+          <input type="text" id="ar-name-input" class="ar-name-input" value="${u}" maxlength="25">
+          
+          <div class="ar-editor-photo">
+            <div class="ar-editor-photo-label">${l?`Фото профиля`:`Profile Photo`}</div>
+            <div class="ar-photo-actions">
+              <button class="ar-btn-photo-upload" onclick="window.AthleteRoom.triggerPhotoUpload()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                </svg>
+                <span>${l?`Загрузить`:`Upload`}</span>
+              </button>
+              ${c?`
+              <button class="ar-btn-photo-remove" onclick="window.AthleteRoom.removePhoto()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <polyline points="3 6 5 6 21 6M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>
+                </svg>
+                <span>${l?`Удалить`:`Remove`}</span>
+              </button>`:``}
+            </div>
+          </div>
+
+          <div class="ar-editor-colors-label">${l?`Цвет аватара`:`Avatar Color`}</div>
+          <div class="ar-color-row">
+            ${$.map(([e,t],n)=>`<div class="ar-color-swatch ${n===parseInt(i||`0`)?`active`:``}" style="background:linear-gradient(135deg, ${e}, ${t})" onclick="window.AthleteRoom.selectColor(${n})"></div>`).join(``)}
+          </div>
+
+          <div class="ar-editor-actions">
+            <button class="ar-btn-save" onclick="window.AthleteRoom.saveName()">${l?`Применить`:`Apply`}</button>
+            <button class="ar-btn-cancel" onclick="window.AthleteRoom.cancelEdit()">${l?`Отмена`:`Cancel`}</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Achievements -->
       <div class="ar-section-label" style="margin-top:20px">${l?`Достижения`:`Achievements`} <span class="ar-ach-count">${ee.size}/${St.length}</span></div>
@@ -200,7 +235,7 @@ export const AthleteRoom = (() => {
     </div>
     
     <!-- Hidden file input -->
-    <input type="file" id="ar-photo-input" accept="image/*" style="display:none" onchange="window.AthleteRoom.handlePhotoSelected(event)">`,m()}function i(){document.getElementById(`ar-name-editor`).style.display=`block`,document.getElementById(`ar-name-input`)?.focus()}function a(){document.getElementById(`ar-name-editor`).style.display=`none`}async function o(){let e=document.getElementById(`ar-name-input`)?.value?.trim();if(!e){a();return}await S.Settings.set(`athlete-name`,e),await dt({name:e}).catch(()=>{}),document.getElementById(`ar-name-display`).textContent=e;let t=e.split(` `).map(e=>e[0]).filter(Boolean).slice(0,2).join(``).toUpperCase()||`A`;if(!await S.Settings.get(`athlete-photo`).catch(()=>null)){let e=document.getElementById(`ar-initials`);e&&(e.textContent=t)}let n=document.getElementById(`athlete-avatar-initials`);n&&(n.textContent=t),a()}async function s(){await c((parseInt(await S.Settings.get(`avatar-color`).catch(()=>`0`)||`0`)+1)%$.length)}async function c(e){await S.Settings.set(`avatar-color`,String(e));let[t,n]=$[e%$.length],r=document.getElementById(`ar-avatar`),i=await S.Settings.get(`athlete-photo`).catch(()=>null);r&&!i&&(r.style.background=`linear-gradient(135deg, ${t}, ${n})`);let a=r?.querySelector(`.ar-avatar-ring`);a&&(a.style.setProperty(`--c1`,t),a.style.setProperty(`--c2`,n)),await l(e),document.querySelectorAll(`.ar-color-swatch`).forEach((t,n)=>{t.classList.toggle(`active`,n===e)})}async function l(e){let t=document.getElementById(`athlete-avatar-btn`);if(!t)return;let n=e??parseInt(await S.Settings.get(`avatar-color`).catch(()=>`0`)||`0`),[r,i]=$[isNaN(n)?0:n%$.length],a=await S.Settings.get(`athlete-photo`).catch(()=>null),o=document.getElementById(`athlete-avatar-initials`);a?(t.classList.add(`has-photo`),t.style.setProperty(`--avatar-img`,`url(${a})`),t.style.background=``,o&&(o.style.display=`none`)):(t.classList.remove(`has-photo`),t.style.removeProperty(`--avatar-img`),t.style.background=`linear-gradient(135deg, ${r}, ${i})`,o&&(o.style.display=``))}async function u(){let[e,t]=await Promise.all([S.Settings.get(`athlete-name`).catch(()=>null),S.Settings.get(`avatar-color`).catch(()=>null)]),n=(e||`A`).split(` `).map(e=>e[0]).filter(Boolean).slice(0,2).join(``).toUpperCase()||`A`,r=document.getElementById(`athlete-avatar-initials`);r&&(r.textContent=n),await l(parseInt(t||`0`)||0)}function d(){let e=document.getElementById(`ar-photo-input`);e&&e.click()}function f(e){let t=e.target?.files?.[0];if(!t)return;if(!t.type.startsWith(`image/`)){alert(`Please select an image file`);return}let n=new FileReader;n.onload=async function(e){let t=new Image;t.onload=function(){S.Settings.get(`lang`,`en`).then(n=>{let i=n===`ru`,a=document.createElement(`div`);a.className=`ar-crop-modal`,a.innerHTML=`
+    <input type="file" id="ar-photo-input" accept="image/*" style="display:none" onchange="window.AthleteRoom.handlePhotoSelected(event)">`,m()}function i(){document.getElementById(`ar-name-editor`).style.display=`block`,document.getElementById(`ar-name-input`)?.focus()}function a(){document.getElementById(`ar-name-editor`).style.display=`none`}async function o(){let e=document.getElementById(`ar-name-input`)?.value?.trim();if(!e){a();return}await S.Settings.set(`athlete-name`,e),await dt({name:e}).catch(()=>{}),document.getElementById(`ar-name-display`).textContent=e;let t=e.split(` `).map(e=>e[0]).filter(Boolean).slice(0,2).join(``).toUpperCase()||`A`;if(!await S.Settings.get(`athlete-photo`).catch(()=>null)){let e=document.getElementById(`ar-initials`);e&&(e.textContent=t)}let n=document.getElementById(`athlete-avatar-initials`);n&&(n.textContent=t);a();window.Profile?.load?.();}async function s(){await c((parseInt(await S.Settings.get(`avatar-color`).catch(()=>`0`)||`0`)+1)%$.length)}async function c(e){await S.Settings.set(`avatar-color`,String(e));let[t,n]=$[e%$.length],r=document.getElementById(`ar-avatar`),i=await S.Settings.get(`athlete-photo`).catch(()=>null);r&&!i&&(r.style.background=`linear-gradient(135deg, ${t}, ${n})`);let a=r?.querySelector(`.ar-avatar-ring`);a&&(a.style.setProperty(`--c1`,t),a.style.setProperty(`--c2`,n)),await l(e),document.querySelectorAll(`.ar-color-swatch`).forEach((t,n)=>{t.classList.toggle(`active`,n===e)})}async function l(e){let t=document.getElementById(`athlete-avatar-btn`);if(!t)return;let n=e??parseInt(await S.Settings.get(`avatar-color`).catch(()=>`0`)||`0`),[r,i]=$[isNaN(n)?0:n%$.length],a=await S.Settings.get(`athlete-photo`).catch(()=>null),o=document.getElementById(`athlete-avatar-initials`);a?(t.classList.add(`has-photo`),t.style.setProperty(`--avatar-img`,`url(${a})`),t.style.background=``,o&&(o.style.display=`none`)):(t.classList.remove(`has-photo`),t.style.removeProperty(`--avatar-img`),t.style.background=`linear-gradient(135deg, ${r}, ${i})`,o&&(o.style.display=``))}async function u(){let[e,t]=await Promise.all([S.Settings.get(`athlete-name`).catch(()=>null),S.Settings.get(`avatar-color`).catch(()=>null)]),n=(e||`A`).split(` `).map(e=>e[0]).filter(Boolean).slice(0,2).join(``).toUpperCase()||`A`,r=document.getElementById(`athlete-avatar-initials`);r&&(r.textContent=n),await l(parseInt(t||`0`)||0)}function d(){let e=document.getElementById(`ar-photo-input`);e&&e.click()}function f(e){let t=e.target?.files?.[0];if(!t)return;if(!t.type.startsWith(`image/`)){alert(`Please select an image file`);return}let n=new FileReader;n.onload=async function(e){let t=new Image;t.onload=function(){S.Settings.get(`lang`,`en`).then(n=>{let i=n===`ru`,a=document.createElement(`div`);a.className=`ar-crop-modal`,a.innerHTML=`
             <div class="ar-crop-card">
               <div class="ar-crop-header">
                 <div class="ar-crop-title">${i?`Масштаб и положение`:`Scale and position`}</div>
