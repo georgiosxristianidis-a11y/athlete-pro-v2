@@ -693,6 +693,9 @@
         </div>
         <div id="privacy-indicator" class="privacy-indicator" role="status" title="Privacy mode" aria-label="Privacy mode" hidden></div>
         <span id="status-time"></span>
+        <button id="athlete-avatar-btn" class="athlete-avatar-btn" onclick="window.AthleteRoom.open()" aria-label="Athlete Room">
+          <span id="athlete-avatar-initials">A</span>
+        </button>
       </div>
 
       <!-- Skip Link (accessibility) -->
@@ -768,8 +771,8 @@
             <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
           </svg>
           <span>Profile</span>
-        </button>
       </nav>
+      <div id="athlete-room" class="athlete-room-overlay"></div>
     </div>
     <!-- /app -->
 

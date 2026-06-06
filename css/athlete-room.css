@@ -544,6 +544,9 @@
   background-image: var(--avatar-img);
   background-size: cover;
   background-position: center;
+  border: 1.5px solid var(--c-accent, #00e676);
+  box-shadow: 0 0 8px rgba(0, 230, 118, 0.5), 0 2px 8px rgba(0,0,0,0.35);
+  box-sizing: border-box;
 }
 .athlete-avatar-btn.has-photo #athlete-avatar-initials {
   display: none;
@@ -552,6 +555,9 @@
 .ar-avatar.has-photo {
   background-size: cover;
   background-position: center;
+  border: 2px solid var(--c-accent, #00e676);
+  box-shadow: 0 0 15px rgba(0, 230, 118, 0.6), 0 4px 12px rgba(0,0,0,0.5);
+  box-sizing: border-box;
 }
 .ar-avatar.has-photo .ar-avatar-initials {
   display: none;
