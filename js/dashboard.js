@@ -199,8 +199,15 @@ export const Dashboard = (() => {
     return `
       <div class="empty-dashboard">
         ${showMascot ? `
-        <div class="empty-dash-mascot">
-          <video src="assets/panda-idle.mp4" autoplay loop muted playsinline></video>
+        <div class="empty-dash-mascot-wrap" id="mascot-draggable">
+          <button class="mascot-close-btn" onclick="window.Dashboard.closeMascot()" title="Close mascot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <div class="empty-dash-mascot">
+            <video src="assets/panda-idle.mp4" autoplay loop muted playsinline></video>
+          </div>
         </div>` : ''}
         <div class="empty-dash-title">Ready to crush it?</div>
         <div class="empty-dash-sub">Your training log is empty. Time to fix that.</div>
@@ -213,6 +220,54 @@ export const Dashboard = (() => {
           Start First Workout
         </button>
       </div>`;
+  }
+
+  /**
+   * Initialize dragging for the mascot.
+   */
+  function _initMascotDrag() {
+    const el = document.getElementById('mascot-draggable');
+    if (!el) return;
+
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let currentX = 0, currentY = 0;
+
+    el.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.mascot-close-btn')) return;
+      isDragging = true;
+      startX = e.clientX - currentX;
+      startY = e.clientY - currentY;
+      el.style.transition = 'none';
+      el.setPointerCapture(e.pointerId);
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      currentX = e.clientX - startX;
+      currentY = e.clientY - startY;
+      el.style.transform = `translate(${currentX}px, ${currentY}px)`;
+    });
+
+    window.addEventListener('pointerup', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      el.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+    });
+  }
+
+  /**
+   * Close the mascot and persist the setting.
+   */
+  async function closeMascot() {
+    const el = document.getElementById('mascot-draggable');
+    if (el) {
+      el.style.opacity = '0';
+      el.style.transform = 'scale(0.8)';
+      setTimeout(() => el.remove(), 400);
+    }
+    await DB.Settings.set('show-mascot', 'off');
+    window.Toast?.show('Mascot hidden', 'info');
   }
 
   /**
@@ -427,6 +482,7 @@ export const Dashboard = (() => {
     // Empty state — first-time user
     if (!allWorkouts.length) {
       screen.innerHTML = _buildEmptyState(showMascot);
+      _initMascotDrag();
       screen.querySelector('.btn-start-workout')?.addEventListener('click', () => {
         navigator.vibrate?.([15, 50, 15]);
         window.Toast.show("Let's go!", 'success');
@@ -533,7 +589,7 @@ export const Dashboard = (() => {
     `;
   }
 
-  return { load, renderRecommendations, showWeeklySummary, loadWeeklySummary };
+  return { load, renderRecommendations, showWeeklySummary, loadWeeklySummary, closeMascot, _initMascotDrag };
 })();
 
 /* ══════════════════════════════════════════════
