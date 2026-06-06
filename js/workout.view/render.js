@@ -441,6 +441,19 @@ async function getMuscleBadge(exerciseName) {
   return `<span class="muscle-badge ${normalized}">${label}</span>`;
 }
 
+const BLOCK_LABELS = {
+  power: 'Block I · Power',
+  shape: 'Block II · Shape',
+  width: 'Block I · Width',
+  thickness: 'Block II · Thickness',
+  heavy: 'Block I · Heavy',
+  iso: 'Block II · Isolation',
+  shoulders: 'Block III · Shoulders',
+  arms: 'Block III · Arms',
+  core: 'Block IV · Core (Discipline)',
+  align: 'Block IV · Alignment',
+};
+
 export async function renderExerciseCard(ex, ei) {
   const doneSets = ex.sets.filter((s) => s.done).length;
   const setRows = await Promise.all(ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)));
@@ -449,9 +462,11 @@ export async function renderExerciseCard(ex, ei) {
   const planMax = Math.max(0, ...ex.sets.map(s => s.weight || 0));
   const overflow = coach && planMax > coach.target;
   const muscleBadge = await getMuscleBadge(ex.name);
+  const blockLabel = BLOCK_LABELS[ex.block] || '';
 
   return `
-    <div class="exercise-card" id="ex-card-${ei}" data-ei="${ei}" data-day="${State.type}">
+    <div class="exercise-card ${ex.noDb ? 'ex-no-db' : ''}" id="ex-card-${ei}" data-ei="${ei}" data-day="${State.type}">
+      ${blockLabel ? `<div class="ex-block-tag">${blockLabel}</div>` : ''}
       <div class="exercise-header" onclick="Workout.toggleCard(${ei})">
         <div class="drag-handle" onclick="event.stopPropagation()">
           <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
@@ -505,6 +520,8 @@ export async function renderExerciseCard(ex, ei) {
           <span style="width:20px"></span>
           <span class="set-col-label">Weight kg</span>
           <span class="set-col-label">Reps</span>
+          <span style="width:34px"></span>
+          <span style="width:34px"></span>
           <span style="width:40px"></span>
         </div>
         ${setRows.join('')}
@@ -518,6 +535,9 @@ export async function renderExerciseCard(ex, ei) {
 export async function renderSetRow(ex, ei, set, si) {
   const firstUndoneIdx = ex.sets.findIndex(s => !s.done);
   const isActive = !set.done && si === firstUndoneIdx;
+
+  const iconCopy = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+  const iconCoach = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
 
   return `
     <div class="set-row ${set.done ? 'set-done' : ''} ${isActive ? 'set-active' : ''}" id="set-row-${ei}-${si}">
@@ -544,6 +564,16 @@ export async function renderSetRow(ex, ei, set, si) {
           type="number" inputmode="numeric" step="1" value="${set.reps}"
           tabindex="-1" aria-hidden="true" style="display:none">
       </div>
+
+      <!-- Smart Copy -->
+      <button class="btn-smart-action" title="Smart Copy" onclick="Workout.smartCopy(${ei},${si})">
+        ${iconCopy}
+      </button>
+
+      <!-- Smart Coach -->
+      <button class="btn-smart-action coach" title="Smart Coach" onclick="Workout.smartCoach(${ei},${si})">
+        ${iconCoach}
+      </button>
 
       <!-- Done check -->
       <button class="set-check ${set.done ? 'done' : ''}" id="chk-${ei}-${si}"

@@ -376,6 +376,66 @@ export async function addSet(ei) {
 }
 
 /* ════════════════════════════════════════════════════════
+   SMART ACTIONS (Smart Copy & Smart Coach)
+   ════════════════════════════════════════════════════════ */
+
+/**
+ * Copy weight/reps from previous filled set in this session.
+ */
+export function smartCopy(ei, si) {
+  _haptic(15);
+  const ex = State.plan[ei];
+  const set = ex.sets[si];
+  
+  // 1. Try to find the closest previous set that is DONE
+  let source = [...ex.sets].reverse().find((s, idx) => (ex.sets.length - 1 - idx) < si && s.done);
+  
+  // 2. If no DONE sets, just take the set immediately above
+  if (!source && si > 0) source = ex.sets[si - 1];
+
+  if (source) {
+    set.weight = source.weight;
+    set.reps = source.reps;
+    _updateStepperUI('w', ei, si, set.weight, set.weight <= 0);
+    _updateStepperUI('r', ei, si, set.reps, set.reps <= 1);
+    _updateLiveStats();
+    persistSession();
+    Toast.show('Data copied', 'info', 1000);
+  }
+}
+
+/**
+ * Intelligent weight bump based on history.
+ */
+export async function smartCoach(ei, si) {
+  _haptic(20);
+  const ex = State.plan[ei];
+  const set = ex.sets[si];
+
+  const workouts = await DB.Workouts.getAll().catch(() => []);
+  const lastSession = [...workouts].reverse().find(w => 
+    (w.exercises || []).some(e => e.name === ex.name)
+  );
+  const lastEx = lastSession?.exercises?.find(e => e.name === ex.name);
+  
+  if (!lastEx || !lastEx.sets?.length) {
+    Toast.show('No history found', 'info');
+    return;
+  }
+
+  // Linear progression: if last session was successful, +2.5kg
+  const success = lastEx.sets.every(s => s.done); // simplified check
+  const lastWeight = Math.max(...lastEx.sets.map(s => s.weight));
+  
+  set.weight = success ? lastWeight + 2.5 : lastWeight;
+  _updateStepperUI('w', ei, si, set.weight, set.weight <= 0);
+  _updateLiveStats();
+  persistSession();
+  
+  Toast.show(success ? 'Turbo Boost: +2.5kg' : 'Target Restored', 'success');
+}
+
+/* ════════════════════════════════════════════════════════
    LIVE STATS
    ════════════════════════════════════════════════════════ */
 export function _updateLiveStats() {
@@ -429,15 +489,17 @@ export async function completeSession() {
     timestamp: State.startedAt,
     duration,
     tonnage,
-    exercises: State.plan.map((ex) => ({
-      name: ex.name,
-      sets: ex.sets.map((s) => ({
-        weight: s.weight,
-        reps: s.reps,
-        rpe: s.rpe,
-        done: s.done,
+    exercises: State.plan
+      .filter(ex => !ex.noDb) // Filter out Core/Alignment from DB
+      .map((ex) => ({
+        name: ex.name,
+        sets: ex.sets.map((s) => ({
+          weight: s.weight,
+          reps: s.reps,
+          rpe: s.rpe,
+          done: s.done,
+        })),
       })),
-    })),
   };
 
   await DB.Workouts.save(session);

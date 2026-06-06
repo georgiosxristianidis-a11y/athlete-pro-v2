@@ -270,7 +270,7 @@
 }
 .set-header-row {
   display: grid;
-  grid-template-columns: 20px 1fr 1fr 44px;
+  grid-template-columns: 20px 1fr 1fr 34px 34px 44px;
   gap: 8px;
   align-items: center;
   padding: 0 0 6px;
@@ -288,7 +288,7 @@
    row→row minimum spacing achieved via padding (14px each side = 28px between centerlines) */
 .set-row {
   display: grid;
-  grid-template-columns: 22px 1fr 1fr 44px;
+  grid-template-columns: 22px 1fr 1fr 34px 34px 44px;
   gap: 10px;
   will-change: transform, opacity;
   align-items: center;
@@ -2759,5 +2759,57 @@
   color: var(--c-accent);
   text-transform: uppercase;
   margin-top: 12px;
+}
+
+/* ── Exercise block tag ── */
+.ex-block-tag {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-text-3);
+  margin: 12px var(--sp-2) 0;
+  padding: 4px 8px;
+  background: var(--c-bg-3);
+  border-radius: 6px;
+  display: inline-block;
+  opacity: 0.8;
+}
+
+/* ── Smart actions ── */
+.btn-smart-action {
+  width: 34px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--r-m);
+  color: var(--c-text-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-smart-action:active {
+  transform: scale(0.92);
+  background: var(--c-bg-3);
+}
+
+.btn-smart-action.coach {
+  color: var(--c-accent);
+  background: var(--c-accent-bg);
+  border-color: rgba(0,230,118,0.2);
+}
+
+/* ── UI-only exercise style ── */
+.ex-no-db {
+  border-style: dashed !important;
+  opacity: 0.9;
+}
+
+.ex-no-db .exercise-name {
+  color: var(--c-text-3);
 }
 

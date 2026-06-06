@@ -58,86 +58,104 @@ export const PPL_GIO_PLAN = {
   weekA: {
     push: [
       // Block I — Chest Power
-      { name: 'Flat Barbell Bench Press',     sets: 3, reps: 8,  weight: 0 },
-      { name: 'Incline Dumbbell Press',        sets: 3, reps: 10, weight: 0 },
+      { name: 'Flat Barbell Bench Press',     sets: 3, reps: 8,  weight: 0, block: 'power' },
+      { name: 'Incline Dumbbell Press',        sets: 3, reps: 10, weight: 0, block: 'power' },
       // Block II — Chest Shape
-      { name: 'Butterfly Machine',             sets: 3, reps: 12, weight: 0 },
-      { name: 'Dips',                          sets: 3, reps: 10, weight: 0 },
-      { name: 'Dumbbell Pullover',             sets: 3, reps: 12, weight: 0 },
+      { name: 'Butterfly Machine',             sets: 3, reps: 12, weight: 0, block: 'shape' },
+      { name: 'Dips',                          sets: 3, reps: 10, weight: 0, block: 'shape' },
+      { name: 'Dumbbell Pullover',             sets: 3, reps: 12, weight: 0, block: 'shape' },
       // Block III — Biceps (Week A)
-      { name: 'Alternating Dumbbell Curls',    sets: 3, reps: 10, weight: 0 },
-      { name: 'Hammer Curls',                  sets: 3, reps: 10, weight: 0 },
-      { name: 'Preacher Curls',                sets: 3, reps: 12, weight: 0 },
+      { name: 'Alternating Dumbbell Curls',    sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true },
+      { name: 'Hammer Curls',                  sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true },
+      { name: 'Preacher Curls',                sets: 3, reps: 12, weight: 0, block: 'arms' },
+      // Block IV — Core (UI only)
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
     ],
     pull: [
       // Block I — Back Width
-      { name: 'Pull-ups (Weighted)',           sets: 3, reps: 8,  weight: 0 },
-      { name: 'Lat Pulldown',                  sets: 3, reps: 10, weight: 0 },
+      { name: 'Pull-ups (Weighted)',           sets: 3, reps: 8,  weight: 0, block: 'width' },
+      { name: 'Lat Pulldown',                  sets: 3, reps: 10, weight: 0, block: 'width' },
       // Block II — Back Thickness
-      { name: 'Chest-Supported T-Bar Row',     sets: 3, reps: 8,  weight: 0 },
-      { name: 'Low Block Cable Row',           sets: 3, reps: 10, weight: 0 },
-      { name: 'Iso-Lateral Seated Row',        sets: 3, reps: 12, weight: 0, isUnilateral: true },
+      { name: 'Chest-Supported T-Bar Row',     sets: 3, reps: 8,  weight: 0, block: 'thickness' },
+      { name: 'Low Block Cable Row',           sets: 3, reps: 10, weight: 0, block: 'thickness' },
+      { name: 'Iso-Lateral Seated Row',        sets: 3, reps: 12, weight: 0, block: 'thickness', isUnilateral: true },
       // Block III — Triceps + Traps (Week A)
-      { name: 'Triceps Rope Pushdown',         sets: 3, reps: 12, weight: 0 },
-      { name: 'Overhead Cable Extension',      sets: 3, reps: 12, weight: 0 },
-      { name: 'Dumbbell Shrugs',               sets: 3, reps: 12, weight: 0 },
+      { name: 'Triceps Rope Pushdown',         sets: 3, reps: 12, weight: 0, block: 'arms' },
+      { name: 'Overhead Cable Extension',      sets: 3, reps: 12, weight: 0, block: 'arms' },
+      { name: 'Dumbbell Shrugs',               sets: 3, reps: 12, weight: 0, block: 'arms', isUnilateral: true },
+      // Block IV — Core (UI only)
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
     ],
     legs: [
       // Block I — Heavy
-      { name: 'Leg Press',                     sets: 3, reps: 10, weight: 0 },
-      { name: 'Barbell Hip Thrust',            sets: 3, reps: 10, weight: 0 },
+      { name: 'Leg Press',                     sets: 3, reps: 10, weight: 0, block: 'heavy' },
+      { name: 'Barbell Hip Thrust',            sets: 3, reps: 10, weight: 0, block: 'heavy' },
       // Block II — Isolation
-      { name: 'Leg Extensions',                sets: 3, reps: 12, weight: 0 },
-      { name: 'Lying Leg Curls',               sets: 3, reps: 10, weight: 0 },
-      { name: 'Hip Adductor Machine',          sets: 3, reps: 15, weight: 0 },
-      { name: 'Hip Abductor Machine',          sets: 3, reps: 15, weight: 0 },
-      { name: 'Standing Calf Raises',          sets: 3, reps: 15, weight: 0 },
+      { name: 'Leg Extensions',                sets: 3, reps: 12, weight: 0, block: 'iso' },
+      { name: 'Lying Leg Curls',               sets: 3, reps: 10, weight: 0, block: 'iso' },
+      { name: 'Hip Adductor Machine',          sets: 3, reps: 15, weight: 0, block: 'iso' },
+      { name: 'Hip Abductor Machine',          sets: 3, reps: 15, weight: 0, block: 'iso' },
+      { name: 'Standing Calf Raises',          sets: 3, reps: 15, weight: 0, block: 'iso' },
       // Block III — Shoulders
-      { name: 'Machine Lateral Raises',        sets: 3, reps: 12, weight: 0 },
-      { name: 'Wide-Grip Upright Row',         sets: 3, reps: 10, weight: 0 },
-      { name: 'Reverse Pec Deck',              sets: 3, reps: 12, weight: 0 },
+      { name: 'Machine Lateral Raises',        sets: 3, reps: 12, weight: 0, block: 'shoulders', isUnilateral: true },
+      { name: 'Wide-Grip Upright Row',         sets: 3, reps: 10, weight: 0, block: 'shoulders' },
+      { name: 'Reverse Pec Deck',              sets: 3, reps: 12, weight: 0, block: 'shoulders' },
+      // Block IV — Alignment (UI only)
+      { name: 'Dead Bug',                      sets: 3, reps: 10, weight: 0, block: 'align', noDb: true, isUnilateral: true },
+      { name: 'Plank',                         sets: 1, reps: 60, weight: 0, block: 'align', noDb: true },
     ],
   },
   weekB: {
     push: [
       // Block I — Chest Power (same as A)
-      { name: 'Flat Barbell Bench Press',     sets: 3, reps: 8,  weight: 0 },
-      { name: 'Incline Dumbbell Press',        sets: 3, reps: 10, weight: 0 },
+      { name: 'Flat Barbell Bench Press',     sets: 3, reps: 8,  weight: 0, block: 'power' },
+      { name: 'Incline Dumbbell Press',        sets: 3, reps: 10, weight: 0, block: 'power' },
       // Block II — Chest Shape (same as A)
-      { name: 'Butterfly Machine',             sets: 3, reps: 12, weight: 0 },
-      { name: 'Dips',                          sets: 3, reps: 10, weight: 0 },
-      { name: 'Dumbbell Pullover',             sets: 3, reps: 12, weight: 0 },
+      { name: 'Butterfly Machine',             sets: 3, reps: 12, weight: 0, block: 'shape' },
+      { name: 'Dips',                          sets: 3, reps: 10, weight: 0, block: 'shape' },
+      { name: 'Dumbbell Pullover',             sets: 3, reps: 12, weight: 0, block: 'shape' },
       // Block III — Triceps focus (Week B swap)
-      { name: 'Triceps Rope Pushdown',         sets: 3, reps: 12, weight: 0 },
-      { name: 'Overhead Cable Extension',      sets: 3, reps: 12, weight: 0 },
-      { name: 'Close-Grip Bench Press',        sets: 3, reps: 10, weight: 0 },
+      { name: 'Triceps Rope Pushdown',         sets: 3, reps: 12, weight: 0, block: 'arms' },
+      { name: 'Overhead Cable Extension',      sets: 3, reps: 12, weight: 0, block: 'arms' },
+      { name: 'Close-Grip Bench Press',        sets: 3, reps: 10, weight: 0, block: 'arms' },
+      // Block IV — Core (UI only)
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
     ],
     pull: [
       // Block I — Back Width (same as A)
-      { name: 'Pull-ups (Weighted)',           sets: 3, reps: 8,  weight: 0 },
-      { name: 'Lat Pulldown',                  sets: 3, reps: 10, weight: 0 },
+      { name: 'Pull-ups (Weighted)',           sets: 3, reps: 8,  weight: 0, block: 'width' },
+      { name: 'Lat Pulldown',                  sets: 3, reps: 10, weight: 0, block: 'width' },
       // Block II — Back Thickness (same as A)
-      { name: 'Chest-Supported T-Bar Row',     sets: 3, reps: 8,  weight: 0 },
-      { name: 'Low Block Cable Row',           sets: 3, reps: 10, weight: 0 },
-      { name: 'Iso-Lateral Seated Row',        sets: 3, reps: 12, weight: 0, isUnilateral: true },
+      { name: 'Chest-Supported T-Bar Row',     sets: 3, reps: 8,  weight: 0, block: 'thickness' },
+      { name: 'Low Block Cable Row',           sets: 3, reps: 10, weight: 0, block: 'thickness' },
+      { name: 'Iso-Lateral Seated Row',        sets: 3, reps: 12, weight: 0, block: 'thickness', isUnilateral: true },
       // Block III — Biceps focus + Shrugs stay (Week B swap)
-      { name: 'Alternating Dumbbell Curls',    sets: 3, reps: 10, weight: 0 },
-      { name: 'Hammer Curls',                  sets: 3, reps: 10, weight: 0 },
-      { name: 'Preacher Curls',                sets: 3, reps: 12, weight: 0 },
-      { name: 'Dumbbell Shrugs',               sets: 3, reps: 12, weight: 0 },
+      { name: 'Alternating Dumbbell Curls',    sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true },
+      { name: 'Hammer Curls',                  sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true },
+      { name: 'Preacher Curls',                sets: 3, reps: 12, weight: 0, block: 'arms' },
+      { name: 'Dumbbell Shrugs',               sets: 3, reps: 12, weight: 0, block: 'arms', isUnilateral: true },
+      // Block IV — Core (UI only)
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
     ],
     legs: [
-      // Identical to Week A — no arms in legs Block III
-      { name: 'Leg Press',                     sets: 3, reps: 10, weight: 0 },
-      { name: 'Barbell Hip Thrust',            sets: 3, reps: 10, weight: 0 },
-      { name: 'Leg Extensions',                sets: 3, reps: 12, weight: 0 },
-      { name: 'Lying Leg Curls',               sets: 3, reps: 10, weight: 0 },
-      { name: 'Hip Adductor Machine',          sets: 3, reps: 15, weight: 0 },
-      { name: 'Hip Abductor Machine',          sets: 3, reps: 15, weight: 0 },
-      { name: 'Standing Calf Raises',          sets: 3, reps: 15, weight: 0 },
-      { name: 'Machine Lateral Raises',        sets: 3, reps: 12, weight: 0 },
-      { name: 'Wide-Grip Upright Row',         sets: 3, reps: 10, weight: 0 },
-      { name: 'Reverse Pec Deck',              sets: 3, reps: 12, weight: 0 },
+      // Identical to Week A
+      { name: 'Leg Press',                     sets: 3, reps: 10, weight: 0, block: 'heavy' },
+      { name: 'Barbell Hip Thrust',            sets: 3, reps: 10, weight: 0, block: 'heavy' },
+      { name: 'Leg Extensions',                sets: 3, reps: 12, weight: 0, block: 'iso' },
+      { name: 'Lying Leg Curls',               sets: 3, reps: 10, weight: 0, block: 'iso' },
+      { name: 'Hip Adductor Machine',          sets: 3, reps: 15, weight: 0, block: 'iso' },
+      { name: 'Hip Abductor Machine',          sets: 3, reps: 15, weight: 0, block: 'iso' },
+      { name: 'Standing Calf Raises',          sets: 3, reps: 15, weight: 0, block: 'iso' },
+      { name: 'Machine Lateral Raises',        sets: 3, reps: 12, weight: 0, block: 'shoulders', isUnilateral: true },
+      { name: 'Wide-Grip Upright Row',         sets: 3, reps: 10, weight: 0, block: 'shoulders' },
+      { name: 'Reverse Pec Deck',              sets: 3, reps: 12, weight: 0, block: 'shoulders' },
+      // Block IV — Alignment (UI only)
+      { name: 'Dead Bug',                      sets: 3, reps: 10, weight: 0, block: 'align', noDb: true, isUnilateral: true },
+      { name: 'Plank',                         sets: 1, reps: 60, weight: 0, block: 'align', noDb: true },
     ],
   },
 };
@@ -529,6 +547,9 @@ export function buildSession(type, opts = {}) {
         const progression = prog.getProgression(ex, lastEx);
         return {
           name: ex.name,
+          block: ex.block || null,
+          noDb: ex.noDb || false,
+          isUnilateral: ex.isUnilateral || false,
           autoBumped: progression.autoBumped || false,
           sets: Array.from({ length: progression.sets }, () => ({
             weight: progression.weight,
@@ -559,6 +580,8 @@ export function buildSession(type, opts = {}) {
     }
     return {
       name: ex.name,
+      block: ex.block || null,
+      noDb: ex.noDb || false,
       isUnilateral: ex.isUnilateral || false,
       autoBumped: bumped,
       sets: Array.from({ length: ex.sets }, () => ({
