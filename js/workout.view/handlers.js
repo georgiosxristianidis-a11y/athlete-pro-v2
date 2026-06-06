@@ -432,9 +432,16 @@ export function _updateLiveStats() {
   const tEl = document.getElementById('live-tonnage');
   const sEl = document.getElementById('live-sets-done');
   const eEl = document.getElementById('live-ex-done');
+  const pEl = document.getElementById('workout-progress-fill');
+  
   if (tEl) tEl.textContent = tonnage.toLocaleString();
   if (sEl) sEl.textContent = String(setsDone);
   if (eEl) eEl.textContent = String(exDone);
+  
+  if (pEl && State.plan.length > 0) {
+    const pct = (exDone / State.plan.length) * 100;
+    pEl.style.width = `${pct}%`;
+  }
 }
 
 export function _toggleWeek() {

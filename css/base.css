@@ -8,25 +8,24 @@
 :root {
   /* OBSIDIAN palette — off-black with cool undertone (avoids OLED halation, gives depth).
      Reference: Material Dark Theme #121212; we go slightly deeper for premium feel. */
-  --c-bg: #08080c;
-  --c-bg-1: #0c0c12;
-  --c-bg-2: #101018;
-  --c-bg-3: #16161f;
-  --c-surface: rgba(255, 255, 255, 0.022);
-  --c-surface-h: rgba(255, 255, 255, 0.05);
-  --c-border: rgba(255, 255, 255, 0.05);
-  --c-border-h: rgba(255, 255, 255, 0.12);
-  --c-text-1: #e8eaed;
-  --c-text-2: #9aa0ab;
-  --c-text-3: #9ca3af;
+  --c-bg: #050507;
+  --c-bg-1: #08080c;
+  --c-bg-2: #0c0c12;
+  --c-bg-3: #12121a;
+  --c-surface: rgba(255, 255, 255, 0.035);
+  --c-surface-h: rgba(255, 255, 255, 0.07);
+  --c-border: rgba(255, 255, 255, 0.08);
+  --c-border-h: rgba(255, 255, 255, 0.15);
+  --c-text-1: #ffffff;
+  --c-text-2: #a1a1aa;
+  --c-text-3: #71717a;
   --c-accent: #00e676;
   --c-accent-d: #00c260;
-  --c-accent-bg: rgba(0, 230, 118, 0.08);
-  --c-purple: #8b5cf6;
-  --c-purple-bg: rgba(139, 92, 246, 0.08);
-  /* Lifted from #2979ff (3.9:1 fail AA) → #5a96ff (5.0:1 pass AA normal) */
-  --c-blue: #5a96ff;
-  --c-blue-bg: rgba(90, 150, 255, 0.08);
+  --c-accent-bg: rgba(0, 230, 118, 0.12);
+  --c-purple: #a78bfa;
+  --c-purple-bg: rgba(167, 139, 250, 0.12);
+  --c-blue: #60a5fa;
+  --c-blue-bg: rgba(96, 165, 250, 0.12);
   --c-amber: #ffb300;
   --c-amber-bg: rgba(255, 179, 0, 0.08);
   /* Elite Pink — Sophisticated replacement for aggressive red */

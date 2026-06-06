@@ -326,6 +326,13 @@ export async function renderActive() {
       </div>
     </div>
 
+    <!-- ── Global Workout Progress ── -->
+    <div class="workout-progress-wrap">
+      <div class="workout-progress-track">
+        <div class="workout-progress-fill" id="workout-progress-fill"></div>
+      </div>
+    </div>
+
     <div id="exercise-list">${exerciseCards.join('')}</div>
 
     <button class="btn-add-live-ex" onclick="Workout._addLiveExercise()">
