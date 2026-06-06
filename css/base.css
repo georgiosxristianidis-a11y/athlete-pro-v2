@@ -29,9 +29,9 @@
   --c-blue-bg: rgba(90, 150, 255, 0.08);
   --c-amber: #ffb300;
   --c-amber-bg: rgba(255, 179, 0, 0.08);
-  /* Softer coral instead of alarming crimson — less visually aggressive */
-  --c-red: #e8848c;
-  --c-red-bg: rgba(232, 132, 140, 0.10);
+  /* Elite Pink — Sophisticated replacement for aggressive red */
+  --c-red: #ff4d88;
+  --c-red-bg: rgba(255, 77, 136, 0.12);
   /* Exercise category colors */
   /* Lifted from #6366f1 (3.4:1 fail AA) → #8b8ff5 (5.3:1 pass AA normal) */
   --c-indigo: #8b8ff5;
@@ -58,7 +58,25 @@
   --glow-blue-md: 0 0 20px rgba(90, 150, 255, 0.5);
   --glow-blue-lg: 0 0 30px rgba(90, 150, 255, 0.6);
   --glow-amber-md: 0 0 18px rgba(255, 179, 0, 0.45);
+  --glow-pink-md: 0 0 20px rgba(255, 77, 136, 0.45);
   --glow-white-soft: 0 0 20px rgba(255, 255, 255, 0.10);
+... [TRUNCATED] ...
+@keyframes engine-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.armed {
+  animation: armed-pulse 1.5s infinite;
+  border-color: var(--c-red) !important;
+  box-shadow: var(--glow-pink-md) !important;
+}
+
+@keyframes armed-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
   --c-border-purple: rgba(139, 92, 246, 0.15);
   --c-border-blue: rgba(90, 150, 255, 0.15);
   --c-surface-2: rgba(255, 255, 255, 0.04);

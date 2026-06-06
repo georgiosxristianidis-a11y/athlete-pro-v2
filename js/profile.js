@@ -277,8 +277,8 @@ export const Profile = (() => {
       <div class="section-header" style="margin-top:var(--sp-2)">
         <span class="section-label" style="color:var(--c-red)">Danger Zone</span>
       </div>
-      <div class="profile-card" style="border-color:rgba(255,71,87,0.15)">
-        <button class="data-btn" onclick="Profile.clearAllData()">
+      <div class="profile-card" style="border-color:rgba(255,77,136,0.15)">
+        <button class="data-btn" id="clear-data-btn" onclick="Profile.clearAllData()">
           <div class="data-btn-icon" style="background:var(--c-red-bg)">
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-red)"
                  stroke-width="1.5" stroke-linecap="round" width="18" height="18">
@@ -301,7 +301,7 @@ export const Profile = (() => {
       <div style="height:var(--sp-4)"></div>
       
       <!-- ── Version Footer ── -->
-      <div style="margin-top: 80px; padding-bottom: 40px; text-align: center; opacity: 0.15; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--c-text-3); text-transform: uppercase;">
+      <div style="margin-top: 80px; padding-bottom: 60px; text-align: center; opacity: 0.25; font-size: 11px; font-weight: 800; letter-spacing: 0.15em; color: var(--c-text-3); text-transform: uppercase;">
         Athlete Pro v${VERSION} · Elite Edition
       </div>
     `;
@@ -675,19 +675,42 @@ export const Profile = (() => {
   /* ══════════════════════════════════════════════
      DANGER ZONE
      ══════════════════════════════════════════════ */
+  let _deleteTapTimer = null;
   /**
-   * Clear all application data after user confirmation.
-   * @returns {Promise<void>}
+   * Clear all application data with a double-tap confirmation.
+   * UX: First tap arms the button (Elite Pink + Pulse), second tap confirms.
    */
   async function clearAllData() {
-    const confirmed = confirm(
-      'This will permanently delete ALL workouts, metrics, and settings. This cannot be undone.\n\nType OK to confirm.'
-    );
-    if (!confirmed) return;
-    await DB.clearAll();
-    Toast.show('All data cleared', 'info');
-    load();
-    Dashboard.load();
+    const btn = document.getElementById('clear-data-btn');
+    if (!btn) return;
+
+    if (_deleteTapTimer) {
+      // Second tap: EXECUTE
+      clearTimeout(_deleteTapTimer);
+      _deleteTapTimer = null;
+      await DB.clearAll();
+      window.Toast?.show('All data cleared', 'info');
+      load();
+      window.Dashboard?.load?.();
+    } else {
+      // First tap: ARM
+      _haptic(40);
+      btn.classList.add('armed');
+      const label = btn.querySelector('.data-btn-title');
+      const sub   = btn.querySelector('.data-btn-sub');
+      const icon  = btn.querySelector('.data-btn-icon');
+      if (label) label.textContent = 'Tap again to WIPE ALL';
+      if (sub)   sub.textContent = 'Action cannot be undone';
+      if (icon)  icon.style.background = 'var(--c-red)'; // Elite Pink
+
+      _deleteTapTimer = setTimeout(() => {
+        _deleteTapTimer = null;
+        btn.classList.remove('armed');
+        if (label) label.textContent = 'Clear All Data';
+        if (sub)   sub.textContent = 'Permanently delete everything';
+        if (icon)  icon.style.background = 'var(--c-red-bg)';
+      }, 3000);
+    }
   }
 
   return {
@@ -710,3 +733,5 @@ export const Profile = (() => {
     clearAllData,
   };
 })();
+
+function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
