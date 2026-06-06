@@ -243,9 +243,9 @@ export const Profile = (() => {
         </button>
       </div>
 
-      <!-- ── Version (Barely visible) ── -->
-      <div style="margin-top: 12px; padding-bottom: 40px; text-align: center; opacity: 0.15; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--c-text-3); text-transform: uppercase;">
-        Athlete Pro v${VERSION} · Elite
+      <!-- ── Version (Subtle Elite) ── -->
+      <div style="margin-top: 12px; padding-bottom: 80px; text-align: center; opacity: 0.25; font-size: 10px; font-weight: 800; letter-spacing: 0.15em; color: var(--c-text-2); text-transform: uppercase;">
+        Athlete Pro v${VERSION} · Elite Edition
       </div>
     `;
 
