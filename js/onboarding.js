@@ -320,7 +320,7 @@ window._obFinish = async () => {
     DB.Settings.set('profile.experienceYears', _data.exp === 'beginner' ? 0 : _data.exp === 'intermediate' ? 2 : 5),
     DB.Settings.set('profile.sex', _data.sex),
     DB.Settings.set('profile.dob', _data.dob),
-    DB.Metrics.save({ weight: Number(_data.weight), height: Number(_data.height), timestamp: Date.now() }),
+    DB.Metrics.save(Number(_data.weight), Number(_data.height)),
     setPrivacyMode(_data.privacy),
     setAiEnabled(_data.privacy !== 'airgap'),
     DB.Settings.set('onboarding-complete', true),

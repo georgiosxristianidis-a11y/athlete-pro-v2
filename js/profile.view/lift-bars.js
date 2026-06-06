@@ -4,10 +4,10 @@ import { exrxTier } from '../strength-engine.js';
 const TIER_ORDER = ['untrained', 'novice', 'intermediate', 'advanced', 'elite'];
 const TIER_COLOR = {
   untrained:    'var(--c-text-3)',
-  novice:       'var(--c-blue)',
-  intermediate: 'var(--c-amber)',
-  advanced:     'var(--c-purple)',
-  elite:        'var(--c-accent)',
+  novice:       'var(--c-text-2)',
+  intermediate: 'var(--c-text-2)',
+  advanced:     'var(--c-text-1)',
+  elite:        'var(--c-text-1)',
 };
 
 const TIER_RU = {

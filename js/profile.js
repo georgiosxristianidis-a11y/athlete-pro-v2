@@ -238,17 +238,14 @@ export const Profile = (() => {
       </div>
       <div class="profile-card" style="border-color:rgba(255,77,136,0.15)">
         <button class="data-btn" id="clear-data-btn" onclick="Profile.clearAllData()">
-          <div class="data-btn-icon" style="background:var(--c-red-bg)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-red)" stroke-width="1.5" stroke-linecap="round" width="18" height="18"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></div>
+          <div class="data-btn-icon" style="background:var(--c-red-bg)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-red)" stroke-width="1.5" stroke-linecap="round" width="18" height="18"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></div>
           <div class="data-btn-info"><div class="data-btn-title" style="color:var(--c-red)">${ru ? 'Сброс всех данных' : 'Clear All Data'}</div><div class="data-btn-sub">${ru ? 'Безвозвратное удаление' : 'Permanently delete everything'}</div></div>
         </button>
       </div>
 
-      <div style="height:var(--sp-4)"></div>
-      
-      <!-- ── Version Footer ── -->
-      <div style="margin-top: 100px; padding: 40px 20px; border-top: 1px solid var(--c-border); text-align: center; opacity: 0.4; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; color: var(--c-text-3); text-transform: uppercase;">
-        Athlete Pro v${VERSION} <br>
-        <span style="font-size: 9px; opacity: 0.8; letter-spacing: 0.1em; margin-top: 6px; display: block;">Elite Edition · Dynamic Core v1.6</span>
+      <!-- ── Version (Barely visible) ── -->
+      <div style="margin-top: 12px; padding-bottom: 40px; text-align: center; opacity: 0.15; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--c-text-3); text-transform: uppercase;">
+        Athlete Pro v${VERSION} · Elite
       </div>
     `;
 
@@ -306,7 +303,6 @@ export const Profile = (() => {
   async function setEngine(engine) {
     const { getPrivacyMode } = await import('./privacy.store.js');
     if (getPrivacyMode() === 'airgap') {
-      alert('AI Coach is disabled in Air-Gap mode.');
       return;
     }
     await DB.Settings.set('ai-engine', engine);

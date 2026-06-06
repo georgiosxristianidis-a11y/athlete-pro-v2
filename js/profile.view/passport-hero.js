@@ -5,10 +5,10 @@ import { DB } from '../db.js';
 
 const TIER_COLOR = {
   Untrained:    'var(--c-text-3)',
-  Novice:       'var(--c-blue)',
-  Intermediate: 'var(--c-amber)',
-  Advanced:     'var(--c-purple)',
-  Elite:        'var(--c-accent)',
+  Novice:       'var(--c-text-2)',
+  Intermediate: 'var(--c-text-2)',
+  Advanced:     'var(--c-text-1)',
+  Elite:        'var(--c-text-1)',
 };
 
 const TIER_RU = {
