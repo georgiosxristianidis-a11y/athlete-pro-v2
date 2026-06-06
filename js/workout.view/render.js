@@ -464,6 +464,12 @@ export async function renderExerciseCard(ex, ei) {
   const muscleBadge = await getMuscleBadge(ex.name);
   const blockLabel = BLOCK_LABELS[ex.block] || '';
 
+  const firstUndoneIdx = ex.sets.findIndex(s => !s.done);
+  const targetSi = firstUndoneIdx === -1 ? 0 : firstUndoneIdx;
+
+  const iconCopy = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+  const iconCoach = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
+
   return `
     <div class="exercise-card ${ex.noDb ? 'ex-no-db' : ''}" id="ex-card-${ei}" data-ei="${ei}" data-day="${State.type}">
       ${blockLabel ? `<div class="ex-block-tag">${blockLabel}</div>` : ''}
@@ -496,17 +502,29 @@ export async function renderExerciseCard(ex, ei) {
           </div>
           ${lastSummary ? `<div class="last-session-ref" title="Last session"><span class="last-lbl">Last</span> · ${lastSummary}</div>` : ''}
         </div>
-        <button class="ex-replace-btn" title="Replace exercise" aria-label="Replace exercise"
-                onclick="event.stopPropagation();Workout.openReplaceExModal(${ei})">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-               width="15" height="15">
-            <path d="M17 1l4 4-4 4"/>
-            <path d="M3 11V9a4 4 0 014-4h14"/>
-            <path d="M7 23l-4-4 4-4"/>
-            <path d="M21 13v2a4 4 0 01-4 4H3"/>
-          </svg>
-        </button>
+        
+        <div class="ex-header-actions" onclick="event.stopPropagation()">
+          <button class="ex-action-btn coach" title="Smart Coach" 
+                  onclick="Workout.smartCoach(${ei},${targetSi})">
+            ${iconCoach}
+          </button>
+          <button class="ex-action-btn" title="Smart Copy" 
+                  onclick="Workout.smartCopy(${ei},${targetSi})">
+            ${iconCopy}
+          </button>
+          <button class="ex-action-btn replace" title="Replace exercise" 
+                  onclick="Workout.openReplaceExModal(${ei})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                 width="15" height="15">
+              <path d="M17 1l4 4-4 4"/>
+              <path d="M3 11V9a4 4 0 014-4h14"/>
+              <path d="M7 23l-4-4 4-4"/>
+              <path d="M21 13v2a4 4 0 01-4 4H3"/>
+            </svg>
+          </button>
+        </div>
+
         <div class="exercise-chevron" id="ex-chevron-${ei}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="16" height="16">
@@ -520,9 +538,7 @@ export async function renderExerciseCard(ex, ei) {
           <span style="width:20px"></span>
           <span class="set-col-label">Weight kg</span>
           <span class="set-col-label">Reps</span>
-          <span style="width:34px"></span>
-          <span style="width:34px"></span>
-          <span style="width:40px"></span>
+          <span style="width:44px"></span>
         </div>
         ${setRows.join('')}
         <button class="add-set-btn" onclick="Workout.addSet(${ei})" aria-label="Add set">
@@ -535,9 +551,6 @@ export async function renderExerciseCard(ex, ei) {
 export async function renderSetRow(ex, ei, set, si) {
   const firstUndoneIdx = ex.sets.findIndex(s => !s.done);
   const isActive = !set.done && si === firstUndoneIdx;
-
-  const iconCopy = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
-  const iconCoach = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
 
   return `
     <div class="set-row ${set.done ? 'set-done' : ''} ${isActive ? 'set-active' : ''}" id="set-row-${ei}-${si}">
@@ -564,16 +577,6 @@ export async function renderSetRow(ex, ei, set, si) {
           type="number" inputmode="numeric" step="1" value="${set.reps}"
           tabindex="-1" aria-hidden="true" style="display:none">
       </div>
-
-      <!-- Smart Copy -->
-      <button class="btn-smart-action" title="Smart Copy" onclick="Workout.smartCopy(${ei},${si})">
-        ${iconCopy}
-      </button>
-
-      <!-- Smart Coach -->
-      <button class="btn-smart-action coach" title="Smart Coach" onclick="Workout.smartCoach(${ei},${si})">
-        ${iconCoach}
-      </button>
 
       <!-- Done check -->
       <button class="set-check ${set.done ? 'done' : ''}" id="chk-${ei}-${si}"
