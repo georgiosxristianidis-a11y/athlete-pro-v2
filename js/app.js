@@ -10,6 +10,8 @@ import { Nav, Toast } from './shell.js';
 import { Dashboard } from './dashboard.js';
 import { initPrivacy, getPrivacyMode, onPrivacyChange } from './privacy.store.js';
 import { Privacy } from './privacy.view.js';
+import { DynamicIsland } from './shared/dynamic-island.js';
+import { AthleteRoom } from './shared/athlete-room.js';
 
 /* ── Lazy-loaded modules ── */
 async function _loadWorkout() {
@@ -52,6 +54,8 @@ window.Toast = Toast;
 window.Timer = Timer;
 window.Dashboard = Dashboard;
 window.Privacy = Privacy;
+window.DynamicIsland = DynamicIsland;
+window.AthleteRoom = AthleteRoom;
 window._loadWorkout = _loadWorkout;
 window._loadProfile = _loadProfile;
 window._loadBodyStats = _loadBodyStats;
@@ -75,17 +79,6 @@ window.addEventListener('online', setOnline);
 window.addEventListener('offline', setOffline);
 if (navigator.onLine) setOnline(); else setOffline();
 
-/* ── Nuke stale service workers & caches (dev-only) ── */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then((regs) => {
-    regs.forEach((r) => r.unregister());
-  });
-  if ('caches' in window) {
-    caches.keys().then((names) => {
-      names.forEach((name) => caches.delete(name));
-    });
-  }
-}
 
 /* ── Boot — always hides loading screen within 5s ── */
 let booted = false;
@@ -125,6 +118,8 @@ function _renderPrivacyIndicator() {
 openDB()
   .then(initPrivacy)
   .then(() => {
+    DynamicIsland.init();
+    AthleteRoom.initAvatar().catch(() => {});
     _renderPrivacyIndicator();
     onPrivacyChange(_renderPrivacyIndicator);
   })
@@ -230,8 +225,7 @@ new MutationObserver((mutations) => {
   }
 }).observe(document.body, { childList: true });
 
-/* ── Service Worker — disabled in development ── */
-// To enable for production PWA, uncomment:
-// if ('serviceWorker' in navigator) {
-//   navigator.serviceWorker.register('sw.js').catch(() => {});
-// }
+/* ── Service Worker ── */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
