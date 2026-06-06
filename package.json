@@ -1,6 +1,6 @@
 {
   "name": "athlete-pro",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "type": "module",
   "description": "PPL Workout Tracker with AI Coach (Frozen — see FIT ELITE for active dev)",
   "main": "server.js",
