@@ -14,7 +14,9 @@ import {
   buildSession, persistSession,
   getWeekMode, loadCoreChecklist,
   getExerciseLibrary,
+  getActivePlan, getPlanStats
 } from '../workout.store.js';
+import { PROGRAMS } from '../workout-plans.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
 import { initDrumPickers } from '../ui/drum-picker.js';
@@ -159,13 +161,15 @@ export function renderSelect() {
   State.phase = 'select';
   const plan = loadPlan();
   const weekMode = getWeekMode();
+  const activePlan = getActivePlan();
+  const stats = getPlanStats();
 
   const trainEl = document.getElementById('s-train');
   trainEl.removeAttribute('data-day');
   trainEl.innerHTML = `
     <div class="screen-header">
       <div>
-        <div class="screen-title">Workout</div>
+        <div class="screen-title">Training Hub</div>
         <div class="screen-sub" id="train-date"></div>
       </div>
       <button class="week-pill week-${weekMode}" onclick="Workout._toggleWeek()"
@@ -175,9 +179,28 @@ export function renderSelect() {
       </button>
     </div>
 
-    <!-- Type selector -->
-    <div class="section-header" style="margin-bottom:var(--sp-1)">
-      <span class="section-label">Select Type</span>
+    <!-- 1. Active Program Dashboard (if any) -->
+    ${stats ? `
+    <div class="active-plan-card" onclick="Workout.selectType('active')">
+      <div class="active-plan-info">
+        <div class="active-plan-title">${stats.name}</div>
+        <div class="active-plan-meta">Week ${stats.week} · Day ${stats.day} of ${stats.totalDays}</div>
+      </div>
+      <div class="active-plan-progress">
+        <div class="active-plan-progress-fill" style="width:${stats.progress}%"></div>
+      </div>
+      <button class="btn-next-session">
+        Next Session
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+    ` : ''}
+
+    <!-- 2. Free Training (The Default) -->
+    <div class="section-header" style="margin-top:var(--sp-2)">
+      <span class="section-label">${activePlan ? 'Free Training' : 'Select Type'}</span>
       <button class="btn-text" onclick="Workout.openPlanEditor()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -205,32 +228,24 @@ export function renderSelect() {
         .join('')}
     </div>
 
-    <!-- Pre-workout checklist -->
-    <div class="section-header" style="margin-top:var(--sp-2);margin-bottom:var(--sp-1)">
-      <span class="section-label">Pre-Workout Checklist</span>
+    <!-- 3. Training Programs (Phase 5) -->
+    <div class="section-header" style="margin-top:var(--sp-3)">
+      <span class="section-label">Structured Programs</span>
     </div>
-    <div class="checklist-card" id="pre-checklist">
-      ${[
-        'Warmup — 10 min cardio or mobility',
-        'Hydration — 500ml water before start',
-        'Gear — shoes, belt, straps ready',
-        'Energy — meal 90 min before',
-        'Plan — exercises and target weights set',
-        'Focus — phone on Do Not Disturb',
-      ].map((text, i) => `
-        <div class="checklist-item" id="chk-pre-${i}" onclick="Workout.toggleChecklist(${i})">
-          <div class="checklist-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2.5" stroke-linecap="round" width="13" height="13">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          </div>
-          <span class="checklist-text">${text}</span>
-        </div>`).join('')}
+    <div class="programs-carousel">
+      ${PROGRAMS.map(p => `
+        <div class="program-card ${activePlan?.id === p.id ? 'active' : ''}" 
+             onclick="Workout._startProgram('${p.id}')">
+          <div class="program-type">${p.type.toUpperCase()}</div>
+          <div class="program-name">${p.name}</div>
+          <div class="program-dur">${p.durationWeeks} weeks · ${p.days.length} days/split</div>
+          ${activePlan?.id === p.id ? '<div class="program-status">Active Cycle</div>' : ''}
+        </div>
+      `).join('')}
     </div>
 
-    <!-- Last sessions preview -->
-    <div class="section-header" style="margin-top:var(--sp-2)">
+    <!-- 4. Last sessions preview -->
+    <div class="section-header" style="margin-top:var(--sp-3)">
       <span class="section-label">Last Sessions</span>
     </div>
     <div id="last-sessions-preview">

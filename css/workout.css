@@ -2632,3 +2632,132 @@
   color: #d1d5db;
 }
 
+/* ════════════════════════════════════════════════
+   TRAINING HUB V2 (Phase 5)
+   ════════════════════════════════════════════════ */
+
+.active-plan-card {
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-accent);
+  border-radius: var(--r-xl);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  box-shadow: 0 12px 24px rgba(0,230,118,0.12);
+}
+
+.active-plan-card:active { transform: scale(0.98); }
+
+.active-plan-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.active-plan-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--c-text-1);
+  letter-spacing: -0.04em;
+}
+
+.active-plan-meta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-3);
+  margin-top: 2px;
+}
+
+.active-plan-progress {
+  height: 6px;
+  background: var(--c-bg-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.active-plan-progress-fill {
+  height: 100%;
+  background: var(--c-accent);
+  border-radius: 3px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-next-session {
+  height: 48px;
+  background: var(--c-accent-bg);
+  border: none;
+  border-radius: var(--r-l);
+  color: var(--c-accent);
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* ── Programs Carousel ── */
+.programs-carousel {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-1) 0;
+  margin-bottom: var(--sp-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.programs-carousel::-webkit-scrollbar { display: none; }
+
+.program-card {
+  min-width: 220px;
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--r-xl);
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.program-card.active {
+  border-color: var(--c-accent);
+  background: var(--c-accent-bg);
+}
+
+.program-type {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--c-text-3);
+}
+
+.program-name {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--c-text-1);
+  letter-spacing: -0.03em;
+  margin-top: 4px;
+}
+
+.program-dur {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text-3);
+}
+
+.program-status {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--c-accent);
+  text-transform: uppercase;
+  margin-top: 12px;
+}
+

@@ -2,7 +2,7 @@
 import { DB } from '../db.js';
 import { Timer } from '../timer.js';
 import { Nav, Toast } from '../shell.js';
-import { State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout, loadCoreChecklist, saveCoreChecklist } from '../workout.store.js';
+import { State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout, loadCoreChecklist, saveCoreChecklist, getActivePlan, startPlan, advancePlan } from '../workout.store.js';
 import { generateRecommendations } from '../claude.store.js';
 import { Heatmap } from '../claude.store.js';
 import { renderSelect, renderActive, renderSetRow, renderFocusMode, _renderCoreSection, _coreCheckedState } from './render.js';
@@ -19,7 +19,9 @@ function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
    SELECT TYPE
    ════════════════════════════════════════════════════════ */
 export async function selectType(type) {
-  State.type = type;
+  const activePlan = getActivePlan();
+  State.type = type === 'active' ? (activePlan?.type || 'push') : type;
+  
   const [workouts, autoProgressFlag, restDurRaw] = await Promise.all([
     DB.Workouts.getAll().catch(() => []),
     DB.Settings.get('auto-progress', 'on').catch(() => 'on'),
@@ -27,6 +29,7 @@ export async function selectType(type) {
   ]);
   _restDuration = parseInt(restDurRaw || 90);
   const autoProgress = autoProgressFlag !== 'off';
+
   State.plan = buildSession(type, { workouts, autoProgress });
   const bumpedCount = State.plan.filter(ex => ex.autoBumped).length;
   if (bumpedCount > 0 && autoProgress) {
@@ -43,6 +46,21 @@ export async function selectType(type) {
   });
 
   await renderActive();
+}
+
+/**
+ * Start a structured training program from the hub.
+ * @param {string} id
+ */
+export async function _startProgram(id) {
+  const active = getActivePlan();
+  if (active && active.id !== id) {
+    if (!confirm('Switching programs will reset your current cycle. Proceed?')) return;
+  }
+  _haptic(20);
+  startPlan(id);
+  await selectType('active');
+  Toast.show('Program Cycle Started', 'success');
 }
 
 /* ════════════════════════════════════════════════════════
@@ -404,8 +422,10 @@ export async function completeSession() {
     });
   });
 
+  const activePlan = getActivePlan();
   const session = {
     type: State.type,
+    planId: activePlan?.id || null, // Link session to specific program
     timestamp: State.startedAt,
     duration,
     tonnage,
@@ -421,6 +441,7 @@ export async function completeSession() {
   };
 
   await DB.Workouts.save(session);
+  if (activePlan) advancePlan(); // Move cycle forward
   await DB.Events.log('workout_complete', { type: State.type, tonnage });
   localStorage.removeItem(SESSION_KEY);
   localStorage.setItem('ap-last-workout-type', State.type);
