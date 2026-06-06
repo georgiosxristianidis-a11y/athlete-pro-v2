@@ -125,6 +125,18 @@ export const Profile = (() => {
 
         <div class="pref-row">
           <div class="pref-info">
+            <div class="pref-title">${ru ? 'Не выключать экран' : 'Keep Screen Awake'}</div>
+            <div class="pref-sub">${ru ? 'Предотвращать засыпание во время тренировки' : 'Prevent screen timeout during workout'}</div>
+          </div>
+          <div class="switch-wrap" onclick="Profile.toggleKeepAwake()">
+            <div class="switch ${settings['keep-awake'] === 'on' ? 'on' : ''}" id="sw-keep-awake">
+              <div class="switch-thumb"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pref-row">
+          <div class="pref-info">
             <div class="pref-title">${ru ? 'Умная прогрессия' : 'AI Smart Progress'}</div>
             <div class="pref-sub">${ru ? 'Авто +2.5 кг при успехе' : 'Auto +2.5 kg on success'}</div>
           </div>
@@ -365,8 +377,15 @@ export const Profile = (() => {
     }
   }
 
+  async function toggleKeepAwake() {
+    const current = await DB.Settings.get('keep-awake', 'off');
+    const next = current === 'off' ? 'on' : 'off';
+    await DB.Settings.set('keep-awake', next);
+    load();
+  }
+
   return {
-    load, adjustRest, setUnit, toggleHaptic, toggleAutoProgress,
+    load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
     toggleMascot, setLang, setEngine, setTrainingMode,
     saveInjuries, setSessionTime, exportData, importData,
     _onImportFile, clearAllData,

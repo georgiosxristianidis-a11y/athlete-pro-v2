@@ -10,6 +10,7 @@ import {
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
 import { showReceipt } from '../ui/receipt.js';
+import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
 
 let _restDuration = 90;
 let _focusEi = -1;
@@ -152,9 +153,10 @@ export async function selectType(type) {
   const activePlan = getActivePlan();
   State.type = type === 'active' ? (activePlan?.type || 'push') : type;
   
-  const [workouts, restDurRaw] = await Promise.all([
+  const [workouts, restDurRaw, keepAwake] = await Promise.all([
     DB.Workouts.getAll().catch(() => []),
     DB.Settings.get('rest-duration').catch(() => null),
+    DB.Settings.get('keep-awake').catch(() => 'off'),
   ]);
   _restDuration = parseInt(restDurRaw || 90);
 
@@ -171,6 +173,8 @@ export async function selectType(type) {
 
   // @ts-ignore
   if (window.DynamicIsland) window.DynamicIsland.show();
+
+  if (keepAwake === 'on') acquireWakeLock();
 
   await renderActive();
 }
@@ -228,6 +232,7 @@ export async function completeSession() {
 
   // @ts-ignore
   if (window.DynamicIsland) window.DynamicIsland.hide();
+  releaseWakeLock();
 
   Timer.stop();
   await renderSelect();
@@ -243,6 +248,7 @@ export async function cancelSession() {
   Timer.stop();
   // @ts-ignore
   if (window.DynamicIsland) window.DynamicIsland.hide();
+  releaseWakeLock();
   await renderSelect();
 }
 

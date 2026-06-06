@@ -17,6 +17,7 @@ export const DynamicIsland = (() => {
 
   // Dragging state
   let _isDragging = false;
+  let _movedPastThreshold = false;
   let _startX = 0;
   let _startY = 0;
   let _currentX = 0;
@@ -202,16 +203,32 @@ export const DynamicIsland = (() => {
 
   function _onDragMove(e) {
     if (!_isDragging) return;
+    const dx = e.clientX - (_startX + _currentX);
+    const dy = e.clientY - (_startY + _currentY);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    
+    // Only move if past 6px threshold
+    if (!_movedPastThreshold && dist > 6) {
+      _movedPastThreshold = true;
+    }
+    
+    if (!_movedPastThreshold) return;
+
     _currentX = e.clientX - _startX;
     _currentY = e.clientY - _startY;
     
-    // Boundary check (keep on screen)
+    // Strict bounds clamping (within #app)
+    const appEl = document.getElementById('app') || document.body;
+    const appRect = appEl.getBoundingClientRect();
     const bounds = _island.getBoundingClientRect();
-    const winW = window.innerWidth;
-    const winH = window.innerHeight;
     
-    if (bounds.left + _currentX < 0) _currentX = -bounds.left;
-    if (bounds.right + _currentX > winW) _currentX = winW - bounds.right;
+    const minX = -bounds.left + appRect.left + 10;
+    const maxX = appRect.right - bounds.right - 10;
+    const minY = -bounds.top + appRect.top + 10;
+    const maxY = appRect.bottom - bounds.bottom - 10;
+
+    _currentX = Math.max(minX, Math.min(maxX, _currentX));
+    _currentY = Math.max(minY, Math.min(maxY, _currentY));
     
     if (_island) {
       _island.style.transform = `translate(${_currentX}px, ${_currentY}px)`;
@@ -222,6 +239,7 @@ export const DynamicIsland = (() => {
     if (!_isDragging) return;
     _isDragging = false;
     _island?.style.setProperty('transition', 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)');
+    _movedPastThreshold = false;
   }
 
   function _renderTimer() {

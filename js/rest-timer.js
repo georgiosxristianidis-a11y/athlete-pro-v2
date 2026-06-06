@@ -4,64 +4,21 @@
    ════════════════════════════════════════════════════════ */
 
 export const RestTimer = (() => {
-  let _raf = null,
-    _end = 0,
-    _total = 90,
-    _tapTimer = 0;
+  let _end = 0;
+  let _total = 0;
+  let _raf = null;
 
-  /**
-   * Start the rest timer with exercise context.
-   * @param {string} exName — exercise name for display
-   * @param {string} setLabel — set label for display (e.g., "Set 3")
-   * @param {number} [seconds=90] — rest duration in seconds
-   * @returns {void}
-   */
-  function start(exName, setLabel, seconds) {
-    seconds = seconds || 90;
-    _total = seconds;
-    _end = Date.now() + seconds * 1000;
-    cancelAnimationFrame(_raf);
-    _show(exName, setLabel);
+  function start(exName, setLabel, duration) {
+    _total = duration;
+    _end = Date.now() + duration * 1000;
+    _showBar(duration);
+    _showModal(exName, setLabel);
     _tick();
-    navigator.vibrate?.([30]);
-  }
-
-  /**
-   * Stop the rest timer and hide all UI.
-   * @returns {void}
-   */
-  function stop() {
-    cancelAnimationFrame(_raf);
-    _raf = null;
-    _hideBar();
-    _hideModal();
-    // @ts-ignore
-    if (window.DynamicIsland) window.DynamicIsland.stopTimer();
-  }
-
-  /**
-   * Add time to the running rest timer.
-   * @param {number} sec — seconds to add
-   * @returns {void}
-   */
-  function addTime(sec) {
-    _end += sec * 1000;
-    _total += sec;
-    navigator.vibrate?.([15]);
-  }
-
-  /**
-   * Tap to skip rest (double-tap to stop).
-   * @returns {void}
-   */
-  function tapSkip() {
-    const now = Date.now();
-    if (now - _tapTimer < 380) {
-      stop();
-      return;
+    
+    // Proactively request notification permission on first rest
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
     }
-    _tapTimer = now;
-    stop();
   }
 
   function _tick() {
@@ -78,93 +35,100 @@ export const RestTimer = (() => {
     _raf = requestAnimationFrame(_tick);
   }
 
-  function _onDone() {
-    navigator.vibrate?.([100, 50, 100, 50, 200]);
+  function stop() {
+    cancelAnimationFrame(_raf);
+    _raf = null;
     _hideBar();
     _hideModal();
+    // @ts-ignore
+    if (window.DynamicIsland) window.DynamicIsland.stopTimer();
   }
 
-  function _fmt(s) {
-    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  function addTime(secs) {
+    _end += secs * 1000;
+    _total += secs;
   }
 
-  function _show(exName, setLabel) {
-    let bar = document.getElementById('rest-bar');
-    if (!bar) {
-      bar = document.createElement('div');
-      bar.id = 'rest-bar';
-      bar.setAttribute('role', 'progressbar');
-      bar.setAttribute('aria-label', 'Rest timer');
-      bar.innerHTML = `<div class="rest-bar-fill" id="rb-fill"></div>`;
-      bar.addEventListener('click', () => _openModal(exName, setLabel));
-      bar.addEventListener('touchstart', () => _openModal(exName, setLabel), { passive: true });
-      // Insert after workout header, or before exercise list
-      const hdr = document.getElementById('workout-header') || document.querySelector('.workout-top');
-      if (hdr) hdr.after(bar);
-      else document.getElementById('exercise-list')?.before(bar) || document.getElementById('s-train')?.prepend(bar);
+  function tapSkip() {
+    stop();
+  }
+
+  function _onDone() {
+    stop();
+    _haptic(100);
+    _triggerNotification();
+  }
+
+  async function _triggerNotification() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    const ru = (localStorage.getItem('ap-settings-lang') === 'ru');
+    const title = ru ? 'Отдых завершен!' : 'Rest Complete';
+    const body = ru ? 'Пора начинать следующий подход.' : 'Time to start your next set.';
+
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) {
+      reg.showNotification(title, {
+        body,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        vibrate: [200, 100, 200],
+        tag: 'rest-alarm',
+        renotify: true
+      });
     }
-    // Update modal context when restarting
-    bar._exName = exName;
-    bar._setLabel = setLabel;
-    bar.classList.add('visible');
+  }
+
+  function _showBar(max) {
+    if (document.getElementById('rest-bar')) return;
+    const bar = document.createElement('div');
+    bar.id = 'rest-bar';
+    bar.innerHTML = `
+      <div class="rest-bar-fill" id="rest-bar-fill"></div>
+      <div class="rest-bar-info">
+        <span id="rest-bar-time"></span>
+        <button class="rest-bar-plus" onclick="RestTimer.addTime(15)">+15s</button>
+        <button class="rest-bar-skip" onclick="RestTimer.tapSkip()">Skip</button>
+      </div>`;
+    document.body.appendChild(bar);
   }
 
   function _updateBar(rem) {
-    const f = document.getElementById('rb-fill');
-    if (f) f.style.transform = `scaleX(${rem / _total})`;
+    const bar = document.getElementById('rest-bar');
+    const fill = document.getElementById('rest-bar-fill');
+    const time = document.getElementById('rest-bar-time');
+    if (!bar || !fill || !time) return;
+    const pct = (rem / _total) * 100;
+    fill.style.width = `${pct}%`;
+    time.textContent = `Rest: ${rem}s`;
   }
 
   function _hideBar() {
-    document.getElementById('rest-bar')?.classList.remove('visible');
+    document.getElementById('rest-bar')?.remove();
   }
 
-  function _openModal(exName, setLabel) {
+  function _showModal(ex, set) {
     if (document.getElementById('rest-modal')) return;
-    // Fall back to stored context if called without args (e.g. from bar click)
-    if (!exName) {
-      const bar = document.getElementById('rest-bar');
-      exName = bar?._exName || '';
-      setLabel = bar?._setLabel || '';
-    }
-    const m = document.createElement('div');
-    m.id = 'rest-modal';
-    m.className = 'rest-modal-overlay';
-    m.innerHTML = `
-      <div class="rest-modal-sheet">
-        <div class="modal-handle"></div>
-        <p class="rest-modal-sub" id="rm-sub">${exName} · ${setLabel}</p>
-        <div class="rest-ring-wrap">
-          <svg viewBox="0 0 120 120" class="rest-ring-svg">
-            <circle cx="60" cy="60" r="52" class="ring-track"/>
-            <circle cx="60" cy="60" r="52" class="ring-prog" id="rm-ring"
-              stroke-dasharray="326.7" stroke-dashoffset="0"/>
-          </svg>
-          <div class="rest-ring-inner">
-            <span class="rest-modal-time" id="rm-time">0:00</span>
-            <span class="rest-modal-lbl">REST</span>
-          </div>
-        </div>
-        <div class="rest-modal-btns">
-          <button class="rest-btn-sec" onclick="RestTimer.addTime(30)">+30s</button>
-          <button class="rest-btn-primary"
-            ontouchstart="RestTimer.tapSkip();event.preventDefault()"
-            onclick="RestTimer.tapSkip()">
-            Skip<br><small>×2 = Stop</small>
-          </button>
+    const modal = document.createElement('div');
+    modal.id = 'rest-modal';
+    modal.className = 'rest-overlay';
+    modal.innerHTML = `
+      <div class="rest-card">
+        <div class="rest-card-ex">${ex}</div>
+        <div class="rest-card-set">${set} complete</div>
+        <div class="rest-card-timer" id="rest-modal-time"></div>
+        <div class="rest-card-actions">
+          <button class="rest-btn-sec" onclick="RestTimer.addTime(15)">+15s</button>
+          <button class="rest-btn-primary" onclick="RestTimer.tapSkip()">Next Set</button>
         </div>
       </div>`;
-    m.onclick = (e) => {
-      if (e.target === m) m.remove();
-    };
-    document.body.appendChild(m);
-    requestAnimationFrame(() => m.classList.add('visible'));
+    document.body.appendChild(modal);
+    requestAnimationFrame(() => modal.classList.add('visible'));
   }
 
   function _updateModal(rem) {
-    const t = document.getElementById('rm-time');
-    const r = document.getElementById('rm-ring');
-    if (t) t.textContent = _fmt(rem);
-    if (r) r.style.strokeDashoffset = 326.7 * (1 - rem / _total);
+    const el = document.getElementById('rest-modal-time');
+    if (el) el.textContent = rem + 's';
   }
 
   function _hideModal() {
@@ -174,6 +138,8 @@ export const RestTimer = (() => {
       setTimeout(() => m.remove(), 300);
     }
   }
+
+  function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
 
   return { start, stop, addTime, tapSkip };
 })();

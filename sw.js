@@ -5,8 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v29';
-
+const CACHE_NAME = 'athlete-pro-v32';
 
 const ASSETS = [
   '/index.html',
@@ -45,6 +44,7 @@ const ASSETS = [
   '/js/plate-calc.js',
   '/js/ui/drum-picker.js',
   '/js/onboarding.js',
+  '/js/features/wake-lock.js',
   '/css/base.css',
   '/css/dashboard.css',
   '/css/workout.css',
@@ -140,6 +140,17 @@ self.addEventListener('fetch', (e) => {
           }
           return new Response('Network error', { status: 408 });
         });
+    })
+  );
+});
+
+/* ── Notifications — Background rest alarm ── */
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      if (list.length) return list[0].focus();
+      return clients.openWindow('/');
     })
   );
 });
