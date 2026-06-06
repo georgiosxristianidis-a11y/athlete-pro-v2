@@ -6,6 +6,7 @@
 import { DB } from './db.js';
 import { renderPrivacyCard } from './privacy.view.js';
 import { renderProfile } from './profile.view.js';
+import { VERSION } from './version.js';
 
 export const Profile = (() => {
   /* ══════════════════════════════════════════════
@@ -296,6 +297,11 @@ export const Profile = (() => {
       </div>
 
       <div style="height:var(--sp-4)"></div>
+      
+      <!-- ── Version Footer ── -->
+      <div style="margin-top: 80px; padding-bottom: 40px; text-align: center; opacity: 0.15; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--c-text-3); text-transform: uppercase;">
+        Athlete Pro v${VERSION} · Elite Edition
+      </div>
     `;
 
       // Populate injuries textarea with saved value (safe — set via .value, not innerHTML)

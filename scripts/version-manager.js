@@ -4,6 +4,7 @@ import path from 'path';
 const action = process.argv[2] || 'patch'; // 'patch' or 'minor'
 const pkgPath = path.resolve('package.json');
 const manifestPath = path.resolve('manifest.json');
+const jsVersionPath = path.resolve('js/version.js');
 
 function bump(version, type) {
   let [major, minor, patch] = version.split('.').map(Number);
@@ -26,8 +27,13 @@ function updateFile(filePath, type) {
   return { oldVersion, newVersion };
 }
 
+function updateJsVersion(filePath, newVersion) {
+  fs.writeFileSync(filePath, `export const VERSION = '${newVersion}';\n`);
+}
+
 const pkgUpdate = updateFile(pkgPath, action);
 const manifestUpdate = updateFile(manifestPath, action);
+if (pkgUpdate) updateJsVersion(jsVersionPath, pkgUpdate.newVersion);
 
 if (pkgUpdate) {
   console.log(`Version bumped: ${pkgUpdate.oldVersion} -> ${pkgUpdate.newVersion}`);
