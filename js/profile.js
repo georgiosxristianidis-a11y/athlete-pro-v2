@@ -50,27 +50,27 @@ export const Profile = (() => {
         <span class="section-label">Preferences</span>
       </div>
       <div class="profile-card">
-        <div class="pref-row pref-col" style="gap: 10px;">
+        <div class="pref-row pref-col" style="gap: 12px; margin-bottom: var(--sp-1);">
           <div class="pref-info">
             <div class="pref-title">AI Engine</div>
             <div class="pref-sub">Select the brain for your Coach</div>
           </div>
-          <div class="toggle-group" style="gap: 12px; margin-top: 4px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%;">
             <button class="toggle-btn toggle-engine-btn ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? 'active' : ''}" 
                     onclick="Profile.setEngine('anthropic')" 
-                    style="display: inline-flex; align-items: center; gap: 6px;">
-              Anthropic
-              ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? '<span class="engine-dot" style="width: 6px; height: 6px; border-radius: 50%; background: #00e676; display: inline-block; box-shadow: 0 0 8px #00e676; animation: engine-pulse 2s infinite;"></span>' : ''}
+                    style="height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 16px; font-weight: 800; border: 1px solid var(--c-border);">
+              Claude
+              ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? '<span class="engine-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #00e676; box-shadow: 0 0 12px #00e676; animation: engine-pulse 2s infinite;"></span>' : ''}
             </button>
             <button class="toggle-btn toggle-engine-btn ${settings['ai-engine'] === 'gemini' ? 'active' : ''}" 
                     onclick="Profile.setEngine('gemini')"
-                    style="display: inline-flex; align-items: center; gap: 6px;">
+                    style="height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 16px; font-weight: 800; border: 1px solid var(--c-border);">
               Gemini
-              ${settings['ai-engine'] === 'gemini' ? '<span class="engine-dot" style="width: 6px; height: 6px; border-radius: 50%; background: #0091ff; display: inline-block; box-shadow: 0 0 8px #0091ff; animation: engine-pulse 2s infinite;"></span>' : ''}
+              ${settings['ai-engine'] === 'gemini' ? '<span class="engine-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #0091ff; box-shadow: 0 0 12px #0091ff; animation: engine-pulse 2s infinite;"></span>' : ''}
             </button>
           </div>
-          <div class="pref-sub" style="color: var(--c-text-3); font-size: 11px; margin-top: 2px;">
-            Gemini KEY missing.
+          <div class="pref-sub" style="color: var(--c-text-3); font-size: 11px;">
+            ${settings['ai-engine'] === 'gemini' ? 'Gemini KEY missing.' : 'Claude 3.5 Sonnet active.'}
           </div>
         </div>
 
@@ -301,8 +301,9 @@ export const Profile = (() => {
       <div style="height:var(--sp-4)"></div>
       
       <!-- ── Version Footer ── -->
-      <div style="margin-top: 80px; padding-bottom: 60px; text-align: center; opacity: 0.25; font-size: 11px; font-weight: 800; letter-spacing: 0.15em; color: var(--c-text-3); text-transform: uppercase;">
-        Athlete Pro v${VERSION} · Elite Edition
+      <div style="margin-top: 100px; padding: 40px 20px; border-top: 1px solid var(--c-border); text-align: center; opacity: 0.4; font-size: 11px; font-weight: 800; letter-spacing: 0.2em; color: var(--c-text-3); text-transform: uppercase;">
+        Athlete Pro v${VERSION} <br>
+        <span style="font-size: 9px; opacity: 0.8; letter-spacing: 0.1em; margin-top: 6px; display: block;">Elite Edition · Dynamic Core v1.4</span>
       </div>
     `;
 

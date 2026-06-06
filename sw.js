@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v22';
+const CACHE_NAME = 'athlete-pro-v24';
 
 const ASSETS = [
   '/index.html',
@@ -132,9 +132,10 @@ self.addEventListener('fetch', (e) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
           return response;
         })
-        .catch(() => {
+        .catch(async () => {
           if (e.request.destination === 'document') {
-            return caches.match('/index.html');
+            const fallback = await caches.match('/index.html');
+            return fallback || new Response('Offline', { status: 200, headers: {'Content-Type': 'text/html'} });
           }
           return new Response('Network error', { status: 408 });
         });
