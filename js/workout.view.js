@@ -68,7 +68,7 @@ export async function init() {
     initAI();
     return true;
   }
-  renderSelect();
+  await renderSelect();
   const { init: initAI } = await import('./workout-ai.view.js');
   initAI();
   return false;
