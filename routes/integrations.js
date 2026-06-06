@@ -1,5 +1,5 @@
 'use strict';
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
 /* ── GET /supabase-status — proxy health check (avoids browser CORS) ── */
@@ -50,4 +50,4 @@ router.get('/firebase-config', (req, res) => {
   });
 });
 
-module.exports = router;
+export default router;

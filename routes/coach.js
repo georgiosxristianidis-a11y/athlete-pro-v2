@@ -1,10 +1,11 @@
 'use strict';
-const express    = require('express');
-const router     = express.Router();
-const rateLimit  = require('express-rate-limit');
-const anthropic  = require('../lib/anthropicClient');
-const { record } = require('../lib/tokenUsage');
-const { logInfo, logWarn, logError } = require('../lib/logger');
+import express from 'express';
+import rateLimit from 'express-rate-limit';
+import anthropic from '../lib/anthropicClient.js';
+import { record } from '../lib/tokenUsage.js';
+import { logInfo, logWarn, logError } from '../lib/logger.js';
+
+const router = express.Router();
 
 const COACH_STREAM_TIMEOUT_MS = Number(process.env.COACH_STREAM_TIMEOUT_MS) || 120000;
 const PLAN_TIMEOUT_MS         = Number(process.env.PLAN_TIMEOUT_MS)         || 30000;
@@ -28,7 +29,7 @@ const apiLimiter   = rateLimit({ ..._limitOpts, max: 20 });
  * @param {unknown} body
  * @returns {{ ok: true } | { ok: false, code: number, error: string, detail: string }}
  */
-function _validateCoachPayload(body) {
+export function _validateCoachPayload(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return {
       ok: false,
@@ -694,5 +695,4 @@ function _buildSystemPrompt(workouts, fatigue, topLifts, profile = {}, longTermS
   return lines.join('\n');
 }
 
-module.exports = router;
-module.exports._validateCoachPayload = _validateCoachPayload;
+export default router;

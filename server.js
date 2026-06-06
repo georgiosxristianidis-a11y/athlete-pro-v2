@@ -1,11 +1,16 @@
 'use strict';
-require('dotenv').config();
-const express    = require('express');
-const helmet     = require('helmet');
-const compression = require('compression');
-const path       = require('path');
-const { correlationMiddleware, logWarn } = require('./lib/logger');
+import 'dotenv/config';
+import express from 'express';
+import helmet from 'helmet';
+import compression from 'compression';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { correlationMiddleware, logWarn } from './lib/logger.js';
 
+import coachRouter from './routes/coach.js';
+import integrationsRouter from './routes/integrations.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 // ── Security headers (helmet defaults: X-Frame-Options, X-Content-Type-Options, etc.)
@@ -27,7 +32,8 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
-app.use(express.static(path.join(__dirname), {
+
+app.use(express.static(__dirname, {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
       // HTML entry: always revalidate — never serve a stale app shell
@@ -40,10 +46,10 @@ app.use(express.static(path.join(__dirname), {
   },
 }));
 
-app.use('/api', require('./routes/coach'));
-app.use('/api', require('./routes/integrations'));
+app.use('/api', coachRouter);
+app.use('/api', integrationsRouter);
 
-function startServer(port = process.env.PORT || 3000) {
+export function startServer(port = process.env.PORT || 3000) {
   return new Promise((resolve) => {
     const server = app.listen(port, '127.0.0.1', () => {
       if (port !== 0) console.log(`\n  Athlete Pro  →  http://localhost:${server.address().port}\n`);
@@ -52,8 +58,9 @@ function startServer(port = process.env.PORT || 3000) {
   });
 }
 
-module.exports = { app, startServer };
-
-if (require.main === module) {
+// Node.js ESM equivalent of require.main === module
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   startServer();
 }
+
+export default app;
