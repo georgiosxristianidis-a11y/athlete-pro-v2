@@ -27,9 +27,12 @@
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  background: #000;
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  height: 34px;
+  height: 36px;
   width: 220px;
   overflow: hidden;
   cursor: grab;
@@ -37,20 +40,25 @@
   pointer-events: auto;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.2);
 
   /* Spring-based transitions inherited from FIT-ELITE */
   transition:
     width  0.5s cubic-bezier(0.47, 1.64, 0.41, 0.8),
     height 0.5s cubic-bezier(0.47, 1.64, 0.41, 0.8),
-    border-radius 0.5s cubic-bezier(0.47, 1.64, 0.41, 0.8);
+    border-radius 0.5s cubic-bezier(0.47, 1.64, 0.41, 0.8),
+    background 0.3s ease;
 }
 .island:active {
   cursor: grabbing;
+  background: rgba(15, 15, 22, 0.95);
 }
 
 .island.expanded {
-  height: 54px;
-  width: 310px;
+  height: 60px;
+  width: 320px;
   border-radius: 24px;
 }
 

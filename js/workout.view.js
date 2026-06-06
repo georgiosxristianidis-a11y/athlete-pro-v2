@@ -9,7 +9,7 @@ import { RestTimer } from './rest-timer.js'; // eslint-disable-line no-unused-va
 import { State, persistSession, tryRestoreSession } from './workout.store.js';
 
 import { 
-  renderSelect, renderActive, renderExerciseCard, renderSetRow, renderFocusMode 
+  renderSelect, renderActive, renderExerciseCard, renderSetRow, renderFocusMode, _renderCoreSection
 } from './workout.view/render.js';
 
 import { initDragNumbers } from './ui/drag-number.js';
@@ -124,6 +124,7 @@ export const Workout = {
   _focusStepR,
   _focusCompleteSet,
   _initFocusLongPress,
+  _renderCoreSection,
 };
 
 // Expose to window
@@ -142,5 +143,5 @@ export {
   _startCustomWorkout, _startProgram, _closeCustomWorkoutModal, addSet, smartCopy, smartCoach,
   completeSession, cancelSession, _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem,
   _removeCoreItem, _openFocus, _closeFocus, _focusNext, _focusPrev,
-  _focusStepW, _focusStepR, _focusCompleteSet, _initFocusLongPress
+  _focusStepW, _focusStepR, _focusCompleteSet, _initFocusLongPress, _renderCoreSection
 };
