@@ -156,24 +156,26 @@ export function _renderCoreSection(day) {
 /* ════════════════════════════════════════════════════════
    SELECT TYPE
    ════════════════════════════════════════════════════════ */
-export function renderSelect() {
+export async function renderSelect() {
   State.phase = 'select';
   const plan = loadPlan();
   const weekMode = getWeekMode();
   const activePlan = getActivePlan();
   const stats = getPlanStats();
+  const lang = await DB.Settings.get('lang', 'en');
+  const ru = lang === 'ru';
 
   const trainEl = document.getElementById('s-train');
   trainEl.removeAttribute('data-day');
   trainEl.innerHTML = `
     <div class="screen-header">
       <div>
-        <div class="screen-title">Training Hub</div>
+        <div class="screen-title">${ru ? 'Тренировки' : 'Training Hub'}</div>
         <div class="screen-sub" id="train-date"></div>
       </div>
       <button class="week-pill week-${weekMode}" onclick="Workout._toggleWeek()"
               aria-label="Toggle Week A/B" title="Tap to switch week">
-        <span class="week-pill-lbl">Week</span>
+        <span class="week-pill-lbl">${ru ? 'Неделя' : 'Week'}</span>
         <span class="week-pill-val">${weekMode}</span>
       </button>
     </div>
@@ -182,13 +184,13 @@ export function renderSelect() {
     <div class="active-plan-card" onclick="Workout.selectType('active')">
       <div class="active-plan-info">
         <div class="active-plan-title">${stats.name}</div>
-        <div class="active-plan-meta">Week ${stats.week} · Day ${stats.day} of ${stats.totalDays}</div>
+        <div class="active-plan-meta">${ru ? 'Неделя' : 'Week'} ${stats.week} · ${ru ? 'День' : 'Day'} ${stats.day} ${ru ? 'из' : 'of'} ${stats.totalDays}</div>
       </div>
       <div class="active-plan-progress">
         <div class="active-plan-progress-fill" style="width:${stats.progress}%"></div>
       </div>
       <button class="btn-next-session">
-        Next Session
+        ${ru ? 'Следующая тренировка' : 'Next Session'}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
           <polyline points="9 18 15 12 9 6"/>
         </svg>
@@ -197,7 +199,7 @@ export function renderSelect() {
     ` : ''}
 
     <div class="section-header" style="margin-top:var(--sp-2)">
-      <span class="section-label">${activePlan ? 'Free Training' : 'Select Type'}</span>
+      <span class="section-label">${activePlan ? (ru ? 'Свободная тренировка' : 'Free Training') : (ru ? 'Выбор типа' : 'Select Type')}</span>
       <button class="btn-text" onclick="Workout.openPlanEditor()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -205,7 +207,7 @@ export function renderSelect() {
           <line x1="12" y1="5" x2="12" y2="19"/>
           <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
-        Edit Plan
+        ${ru ? 'План' : 'Edit Plan'}
       </button>
     </div>
 
@@ -407,8 +409,8 @@ export async function renderExerciseCard(ex, ei) {
       <div class="sets-wrap" id="sets-wrap-${ei}">
         <div class="set-header-row">
           <span style="width:20px"></span>
-          <span class="set-col-label">Weight kg</span>
-          <span class="set-col-label">Reps</span>
+          <span class="set-col-label">${ru ? 'Вес kg' : 'Weight kg'}</span>
+          <span class="set-col-label">${ru ? 'Повторы' : 'Reps'}</span>
           <span style="width:44px"></span>
         </div>
         ${setRows.join('')}

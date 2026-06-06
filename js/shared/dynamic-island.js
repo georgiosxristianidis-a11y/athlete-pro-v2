@@ -48,9 +48,15 @@ export const DynamicIsland = (() => {
       <div class="island" id="dynamic-island" role="status" aria-live="polite" style="pointer-events: auto;">
         <div class="island-dot online" id="di-dot"></div>
         <div class="island-time" id="di-time">00:00</div>
-        <div class="island-sets" id="di-sets"></div>
-        <div class="island-name" id="di-name"></div>
-        <div class="island-sublabel" id="di-sublabel"></div>
+        
+        <div class="island-expanded-content">
+          <div class="island-status-line">
+            <span class="island-sets-badge" id="di-sets">0/0</span>
+            <span class="island-ex-name" id="di-name">Exercise</span>
+          </div>
+          <div class="island-sublabel" id="di-sublabel">Week 1 · PUSH · next: Bench</div>
+        </div>
+
         <div class="island-timer-display" id="di-timer-display"></div>
         <div class="island-timer-progress" id="di-timer-progress"></div>
         <div class="island-progress-track">
@@ -112,7 +118,9 @@ export const DynamicIsland = (() => {
   function update() {
     if (!State.plan || !State.plan.length || !_wrap || !_wrap.classList.contains('visible')) return;
 
-    // Time
+    const ru = (localStorage.getItem('ap-settings-lang') === 'ru'); // Safe check
+
+    // Time (emphasized in compact)
     if (_timeEl) _timeEl.textContent = Timer.fmt(Timer.seconds());
 
     // Current Exercise
@@ -136,9 +144,9 @@ export const DynamicIsland = (() => {
 
     // Sublabel (Week + Day + Next)
     const nextEx = State.plan[activeIdx + 1];
-    const status = nextEx ? `next: ${nextEx.name}` : 'complete!';
+    const status = nextEx ? `${ru ? 'далее' : 'next'}: ${nextEx.name}` : (ru ? 'готово!' : 'complete!');
     if (_sublabelEl) {
-      _sublabelEl.textContent = `Week ${getWeekMode()} · ${String(State.type).toUpperCase()} · ${status}`;
+      _sublabelEl.textContent = `W${getWeekMode()} · ${String(State.type).toUpperCase()} · ${status}`;
     }
 
     // Progress bar

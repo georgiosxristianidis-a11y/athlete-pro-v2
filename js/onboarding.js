@@ -61,7 +61,7 @@ export function showOnboarding() {
 }
 
 function _render() {
-  const ru = (navigator.language || '').startsWith('ru');
+  const ru = false; // Default to English for first-run
   _overlay.innerHTML = `
     <div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:var(--sp-4); padding-top:20px">
       <!-- Progress Bar -->
