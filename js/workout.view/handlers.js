@@ -88,6 +88,28 @@ export function commitVal(ei, si, type, val) {
 }
 
 /* ════════════════════════════════════════════════════════
+   RPE
+   ════════════════════════════════════════════════════════ */
+
+export function setRPE(ei, si, val) {
+  _haptic(8);
+  const ex = State.plan[ei];
+  if (!ex) return;
+  const set = ex.sets[si];
+  if (!set) return;
+  set.rpe = set.rpe === val ? null : val;
+  const row = document.getElementById(`rpe-${ei}-${si}`);
+  if (row) {
+    row.querySelectorAll('.rpe-btn').forEach((btn) => {
+      // @ts-ignore
+      const v = parseInt(btn.dataset.val);
+      btn.classList.toggle('rpe-active', v === set.rpe);
+    });
+  }
+  persistSession();
+}
+
+/* ════════════════════════════════════════════════════════
    SET MANAGEMENT
    ════════════════════════════════════════════════════════ */
 
@@ -147,7 +169,7 @@ export async function addSet(ei) {
 }
 
 /* ════════════════════════════════════════════════════════
-   SELECT TYPE
+   SELECT TYPE & PROGRAMS
    ════════════════════════════════════════════════════════ */
 export async function selectType(type) {
   const activePlan = getActivePlan();
@@ -173,7 +195,6 @@ export async function selectType(type) {
 
   // @ts-ignore
   if (window.DynamicIsland) window.DynamicIsland.show();
-
   if (keepAwake === 'on') acquireWakeLock();
 
   await renderActive();
@@ -191,7 +212,26 @@ export async function _startProgram(id) {
 }
 
 /* ════════════════════════════════════════════════════════
-   COMPLETE SESSION
+   CUSTOM WORKOUTS
+   ════════════════════════════════════════════════════════ */
+
+export async function openCustomWorkoutModal() {
+  const { openCustomWorkoutModal: open } = await import('./modals.js').catch(() => ({ openCustomWorkoutModal: () => alert('Custom workouts coming soon') }));
+  // @ts-ignore
+  open();
+}
+
+export async function _createNewCustomWorkout() { alert('Not implemented'); }
+export async function _editCustomWorkout(id) { alert('Not implemented'); }
+export async function _deleteCustomWorkout(id) { alert('Not implemented'); }
+export async function _startCustomWorkout(id) { alert('Not implemented'); }
+export function _closeCustomWorkoutModal() {
+  const el = document.getElementById('custom-workout-overlay');
+  el?.remove();
+}
+
+/* ════════════════════════════════════════════════════════
+   COMPLETE / CANCEL
    ════════════════════════════════════════════════════════ */
 export async function completeSession() {
   const doneSets = State.plan.reduce((sum, ex) => sum + ex.sets.filter(s => s.done).length, 0);

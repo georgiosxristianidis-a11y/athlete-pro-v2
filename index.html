@@ -60,7 +60,19 @@
       :root {
         --c-bg: #050507;
         --c-text-1: #ffffff;
+        --c-text-2: #a1a1aa;
+        --c-text-3: #71717a;
+        --c-accent: #00e676;
+        --c-accent-bg: rgba(0, 230, 118, 0.12);
+        --c-purple: #a78bfa;
+        --c-purple-bg: rgba(167, 139, 250, 0.12);
+        --c-blue: #60a5fa;
+        --c-blue-bg: rgba(96, 165, 250, 0.12);
+        --c-red: #ff4d88;
+        --c-red-bg: rgba(255, 77, 136, 0.12);
+        --c-border: rgba(255, 255, 255, 0.08);
         --nav-h: 72px;
+        --sp-1: 8px; --sp-2: 16px; --sp-3: 24px; --sp-4: 32px;
         --safe-top: env(safe-area-inset-top, 0px);
         --safe-bottom: env(safe-area-inset-bottom, 0px);
       }
@@ -110,6 +122,38 @@
       }
       .logo-w1 { color: var(--c-text-1); font-weight: 800; }
       .logo-w2 { color: var(--c-accent); font-weight: 900; letter-spacing: 0.12em; text-shadow: 0 0 12px rgba(0, 230, 118, 0.35); }
+
+      /* Status Pill */
+      .status-pill {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--c-border);
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--c-text-1);
+        text-transform: uppercase;
+        opacity: 0.8;
+      }
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--c-text-3);
+      }
+      .status-pill.online .status-dot { background: var(--c-accent); box-shadow: 0 0 6px var(--c-accent); }
+      .status-pill.offline .status-dot { background: var(--c-red); }
+
+      #status-time {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--c-text-1);
+        font-variant-numeric: tabular-nums;
+        opacity: 0.8;
+      }
 
       /* SCREENS */
       #screens {
@@ -174,6 +218,14 @@
         z-index: 9000; transition: opacity 0.5s ease;
       }
       #loading.hidden { opacity: 0; pointer-events: none; }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+      /* Avatar Btn */
+      .athlete-avatar-btn {
+        width: 32px; height: 32px; border-radius: 10px;
+        background: var(--c-accent-bg); border: 1px solid rgba(0, 230, 118, 0.2);
+        color: var(--c-accent); font-size: 13px; font-weight: 800; cursor: pointer;
+      }
     </style>
 
     <!-- Design system & screen styles -->
@@ -184,6 +236,9 @@
     <link rel="stylesheet" href="css/profile.css" media="print" onload="this.media='all'" />
     <link rel="stylesheet" href="css/body-stats.css" media="print" onload="this.media='all'" />
     <link rel="stylesheet" href="css/dynamic-island.css" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="css/privacy.css" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="css/claude.css" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="css/athlete-room.css" media="print" onload="this.media='all'" />
   </head>
 
   <body>
@@ -199,6 +254,12 @@
           <img src="icons/icon-192.png" class="status-logo-img" alt="AP" />
           <span class="status-logo-text"><span class="logo-w1">Athlete</span><span class="logo-w2">Pro</span></span>
         </div>
+        <div id="status-pill" class="status-pill offline">
+          <span class="status-dot"></span>
+          <span id="status-text">Offline</span>
+        </div>
+        <div id="privacy-indicator" class="privacy-indicator" hidden></div>
+        <span id="status-time"></span>
         <button id="athlete-avatar-btn" class="athlete-avatar-btn" onclick="window.AthleteRoom.open()">
           <span id="athlete-avatar-initials">A</span>
         </button>
