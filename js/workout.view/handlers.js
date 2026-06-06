@@ -175,6 +175,8 @@ export function toggleSet(ei, si) {
 
   if (set.done) {
     _checkAIProactive();
+    // @ts-ignore
+    if (window.DynamicIsland) window.DynamicIsland.pulseSetComplete();
     const exName = State.plan[ei]?.name || '';
     RestTimer.start(exName, `Set ${si + 1}`, _restDuration);
   } else {

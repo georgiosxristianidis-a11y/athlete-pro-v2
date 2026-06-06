@@ -1,10 +1,51 @@
-import { getWeekMode, State } from '../workout.store.js';
+// @ts-check
+import { State, getWeekMode } from '../workout.store.js';
 import { Timer } from '../timer.js';
 
-const e = getWeekMode;
-const t = State;
-const n = Timer;var r=(()=>{let r=!1,i=!1,a=0,o=0,s=null,c=null,l=!1,u=0,d=0,f=0,p=0,m=0,h=0,g=0,_=!1,v=null,y=null,b=null,x=null,S=null,C=null,w=null,T=null,E=null,D=null;function O(){if(document.getElementById(`dynamic-island-wrap`))return;v=document.createElement(`div`),v.id=`dynamic-island-wrap`,v.style.position=`absolute`,v.style.top=`0`,v.style.left=`0`,v.style.right=`0`,v.style.bottom=`0`,v.style.pointerEvents=`none`,v.innerHTML=`
-      <div class="island" id="dynamic-island" role="status" aria-live="polite">
+/**
+ * dynamic-island.js — Interactive session overlay (PIP)
+ * Shows: Timer, Sets done/total, Current exercise, Next exercise
+ * Interactions: Draggable, Tap to expand, Set complete pulse
+ */
+
+export const DynamicIsland = (() => {
+  let _expanded = false;
+  let _timerActive = false;
+  let _timerSecs = 0;
+  let _timerMax = 0;
+  let _setCompleteTimeout = null;
+
+  // Dragging state
+  let _isDragging = false;
+  let _startX = 0;
+  let _startY = 0;
+  let _currentX = 0;
+  let _currentY = 0;
+
+  // DOM elements cache
+  let _wrap = null;
+  let _island = null;
+  let _dot = null;
+  let _timeEl = null;
+  let _setsEl = null;
+  let _nameEl = null;
+  let _sublabelEl = null;
+  let _progressFill = null;
+  let _timerDisp = null;
+  let _timerProg = null;
+
+  function init() {
+    if (document.getElementById('dynamic-island-wrap')) return;
+
+    _wrap = document.createElement('div');
+    _wrap.id = 'dynamic-island-wrap';
+    _wrap.style.cssText = `
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none; z-index: 9999; overflow: hidden;
+    `;
+    
+    _wrap.innerHTML = `
+      <div class="island" id="dynamic-island" role="status" aria-live="polite" style="pointer-events: auto;">
         <div class="island-dot online" id="di-dot"></div>
         <div class="island-time" id="di-time">00:00</div>
         <div class="island-sets" id="di-sets"></div>
@@ -16,4 +57,193 @@ const n = Timer;var r=(()=>{let r=!1,i=!1,a=0,o=0,s=null,c=null,l=!1,u=0,d=0,f=0
           <div class="island-progress-fill" id="di-progress-fill"></div>
         </div>
       </div>
-    `;let e=document.getElementById(`app`);e?e.appendChild(v):document.body.appendChild(v),y=document.getElementById(`dynamic-island`),b=document.getElementById(`di-dot`),x=document.getElementById(`di-time`),S=document.getElementById(`di-sets`),C=document.getElementById(`di-name`),w=document.getElementById(`di-sublabel`),T=document.getElementById(`di-progress-fill`),E=document.getElementById(`di-timer-display`),D=document.getElementById(`di-timer-progress`),y.addEventListener(`click`,I),y.addEventListener(`contextmenu`,e=>e.preventDefault()),y.addEventListener(`pointerdown`,L),y.addEventListener(`pointermove`,R),y.addEventListener(`pointerup`,z),y.addEventListener(`pointercancel`,B),window.addEventListener(`online`,K),window.addEventListener(`offline`,q),G()}function k(){v||O(),v.classList.add(`visible`),v.style.display=`block`,j()}function A(){v&&(v.classList.remove(`visible`),r=!1,y&&(y.classList.remove(`expanded`),y.classList.remove(`timer-mode`),m=0,h=0,y.style.transform=``),v.style.display=`none`)}function j(){if(!t.plan||!t.plan.length||!v||!v.classList.contains(`visible`))return;x.textContent=n.fmt(n.seconds());let r=t.plan.findIndex(e=>e.sets.some(e=>!e.done));r===-1&&(r=t.plan.length-1);let i=t.plan[r];C.textContent=i?i.name:``;let a=0,o=0;t.plan.forEach(e=>{e.sets.forEach(e=>{o++,e.done&&a++})}),S.textContent=o?`${a}/${o}`:``,S.style.color=W(a,o);let s=t.plan[r+1],c=s?`next: ${s.name}`:`complete!`;w.textContent=`Week ${e()} · ${t.type.toUpperCase()} · ${c}`;let l=o?a/o*100:0;T.style.width=`${l}%`;let u={push:`var(--c-accent)`,pull:`var(--c-purple)`,legs:`var(--c-blue)`};T.style.background=u[t.type]||`var(--c-accent)`,G()}function M(e){x&&!i&&v&&v.classList.contains(`visible`)&&(x.textContent=n.fmt(e))}function N(e,t){v||O(),i=!0,a=e,o=t,y&&y.classList.add(`timer-mode`),U()}function P(){i=!1,y&&y.classList.remove(`timer-mode`),U()}function F(){y&&(clearTimeout(c),y.classList.add(`set-complete`),c=setTimeout(()=>{y.classList.remove(`set-complete`)},2e3))}function I(){if(!_){if(i){H();return}r=!r,y&&y.classList.toggle(`expanded`,r)}}function L(e){e.isPrimary&&(i&&(s=setTimeout(()=>{H()},500)),l=!0,u=e.clientX,d=e.clientY,f=m,p=h,g=0,_=!1,y.style.transition=`none`,y.setPointerCapture(e.pointerId))}function R(e){if(!l)return;let t=e.clientX-u,n=e.clientY-d;if(g=Math.hypot(t,n),g>6){V();let e=f+t,r=p+n,i=(document.getElementById(`app`)||document.body).getBoundingClientRect(),a=y.getBoundingClientRect(),o=i.width,s=i.height,c=a.width,l=a.height,u=document.getElementById(`nav`),d=u?u.getBoundingClientRect().height:56,g=12-o/2+c/2,_=o/2-c/2-12,v=s-d-12-10-l;m=Math.max(g,Math.min(_,e)),h=Math.max(2,Math.min(v,r)),y.style.transform=`translateX(-50%) translate3d(${m}px, ${h}px, 0)`}}function z(e){l&&(l=!1,V(),y.releasePointerCapture(e.pointerId),y.style.transition=``,g>6&&(_=!0,setTimeout(()=>{_=!1},50)))}function B(e){l&&(l=!1,V(),y.releasePointerCapture(e.pointerId),y.style.transition=``,_=!1)}function V(){clearTimeout(s)}function H(){V(),i=!1,y&&y.classList.remove(`timer-mode`),window.RestTimer&&window.RestTimer.tapSkip()}function U(){if(!i||!E||!D)return;let e=a<=0?`done`:a<=15?`warning`:``,t=Math.floor(a/60),n=a%60,r=`${t}:${String(n).padStart(2,`0`)}`;E.textContent=a<=0?`GO!`:r,E.className=`island-timer-display ${e}`.trim();let s=o>0?a/o*100:0;D.style.width=`${s}%`,D.className=`island-timer-progress ${e}`.trim()}function W(e,t){return t<=0?`var(--c-text-3)`:e>=t?`var(--c-accent)`:`var(--c-text-2)`}function G(){if(!b)return;let e=navigator.onLine;b.className=`island-dot ${e?`online`:`offline`}`}function K(){G()}function q(){G()}return{init:O,show:k,hide:A,update:j,updateTime:M,setTimer:N,clearTimer:P,triggerSetComplete:F}})();export const DynamicIsland = r;
+    `;
+
+    const appEl = document.getElementById('app') || document.body;
+    appEl.appendChild(_wrap);
+
+    // Cache elements
+    _island = document.getElementById('dynamic-island');
+    _dot = document.getElementById('di-dot');
+    _timeEl = document.getElementById('di-time');
+    _setsEl = document.getElementById('di-sets');
+    _nameEl = document.getElementById('di-name');
+    _sublabelEl = document.getElementById('di-sublabel');
+    _progressFill = document.getElementById('di-progress-fill');
+    _timerDisp = document.getElementById('di-timer-display');
+    _timerProg = document.getElementById('di-timer-progress');
+
+    // Drag events
+    _island?.addEventListener('pointerdown', _onDragStart);
+    window.addEventListener('pointermove', _onDragMove);
+    window.addEventListener('pointerup', _onDragEnd);
+    window.addEventListener('pointercancel', _onDragEnd);
+
+    // Expand toggle (only if not dragged significantly)
+    _island?.addEventListener('click', (e) => {
+      if (Math.abs(_currentX) > 5 || Math.abs(_currentY) > 5) return;
+      toggleExpand();
+    });
+
+    _updateNetworkStatus();
+    window.addEventListener('online', _updateNetworkStatus);
+    window.addEventListener('offline', _updateNetworkStatus);
+  }
+
+  function show() {
+    if (!_wrap) init();
+    _wrap.style.display = 'block';
+    _wrap.classList.add('visible');
+    update();
+  }
+
+  function hide() {
+    if (!_wrap) return;
+    _wrap.classList.remove('visible');
+    _expanded = false;
+    _island?.classList.remove('expanded');
+    _island?.classList.remove('timer-mode');
+    _currentX = 0;
+    _currentY = 0;
+    if (_island) _island.style.transform = '';
+    _wrap.style.display = 'none';
+  }
+
+  function update() {
+    if (!State.plan || !State.plan.length || !_wrap || !_wrap.classList.contains('visible')) return;
+
+    // Time
+    if (_timeEl) _timeEl.textContent = Timer.fmt(Timer.seconds());
+
+    // Current Exercise
+    let activeIdx = State.plan.findIndex(ex => ex.sets.some(s => !s.done));
+    if (activeIdx === -1) activeIdx = State.plan.length - 1;
+    const currentEx = State.plan[activeIdx];
+    if (_nameEl) _nameEl.textContent = currentEx ? currentEx.name : '';
+
+    // Sets Progress
+    let done = 0, total = 0;
+    State.plan.forEach(ex => {
+      ex.sets.forEach(s => {
+        total++;
+        if (s.done) done++;
+      });
+    });
+    if (_setsEl) {
+      _setsEl.textContent = total ? `${done}/${total}` : '';
+      _setsEl.style.color = _getSetsColor(done, total);
+    }
+
+    // Sublabel (Week + Day + Next)
+    const nextEx = State.plan[activeIdx + 1];
+    const status = nextEx ? `next: ${nextEx.name}` : 'complete!';
+    if (_sublabelEl) {
+      _sublabelEl.textContent = `Week ${getWeekMode()} · ${String(State.type).toUpperCase()} · ${status}`;
+    }
+
+    // Progress bar
+    if (_progressFill) {
+      const pct = total ? (done / total) * 100 : 0;
+      _progressFill.style.width = `${pct}%`;
+      const colors = { push: 'var(--c-accent)', pull: 'var(--c-purple)', legs: 'var(--c-blue)' };
+      _progressFill.style.background = colors[State.type] || 'var(--c-accent)';
+    }
+
+    _updateNetworkStatus();
+  }
+
+  // Timer mode (Rest Timer)
+  function setTimer(secs, max) {
+    if (!_wrap) init();
+    _timerActive = true;
+    _timerSecs = secs;
+    _timerMax = max;
+    _island?.classList.add('timer-mode');
+    _renderTimer();
+  }
+
+  function stopTimer() {
+    _timerActive = false;
+    _island?.classList.remove('timer-mode');
+    _renderTimer();
+  }
+
+  function pulseSetComplete() {
+    if (!_island) return;
+    clearTimeout(_setCompleteTimeout);
+    _island.classList.add('set-complete');
+    _setCompleteTimeout = setTimeout(() => {
+      _island?.classList.remove('set-complete');
+    }, 2000);
+  }
+
+  function toggleExpand() {
+    _expanded = !_expanded;
+    _island?.classList.toggle('expanded', _expanded);
+  }
+
+  /* ── Internal Helpers ── */
+
+  function _onDragStart(e) {
+    _isDragging = true;
+    _startX = e.clientX - _currentX;
+    _startY = e.clientY - _currentY;
+    _island?.style.setProperty('transition', 'none');
+    _island?.setPointerCapture(e.pointerId);
+  }
+
+  function _onDragMove(e) {
+    if (!_isDragging) return;
+    _currentX = e.clientX - _startX;
+    _currentY = e.clientY - _startY;
+    
+    // Boundary check (keep on screen)
+    const bounds = _island.getBoundingClientRect();
+    const winW = window.innerWidth;
+    const winH = window.innerHeight;
+    
+    if (bounds.left + _currentX < 0) _currentX = -bounds.left;
+    if (bounds.right + _currentX > winW) _currentX = winW - bounds.right;
+    
+    if (_island) {
+      _island.style.transform = `translate(${_currentX}px, ${_currentY}px)`;
+    }
+  }
+
+  function _onDragEnd(e) {
+    if (!_isDragging) return;
+    _isDragging = false;
+    _island?.style.setProperty('transition', 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)');
+  }
+
+  function _renderTimer() {
+    if (!_timerDisp || !_timerProg) return;
+    if (!_timerActive) {
+      _timerDisp.textContent = '';
+      _timerProg.style.width = '0%';
+      return;
+    }
+    _timerDisp.textContent = Timer.fmt(_timerSecs);
+    const pct = _timerMax ? (_timerSecs / _timerMax) * 100 : 0;
+    _timerProg.style.width = `${pct}%`;
+  }
+
+  function _updateNetworkStatus() {
+    if (!_dot) return;
+    const online = navigator.onLine;
+    _dot.className = `island-dot ${online ? 'online' : 'offline'}`;
+  }
+
+  function _getSetsColor(done, total) {
+    if (!total) return 'var(--c-text-3)';
+    const pct = done / total;
+    if (pct >= 1) return 'var(--c-accent)';
+    if (pct > 0.5) return 'var(--c-text-1)';
+    return 'var(--c-text-3)';
+  }
+
+  return { init, show, hide, update, setTimer, stopTimer, pulseSetComplete, toggleExpand };
+})();
+
+// @ts-ignore
+window.DynamicIsland = DynamicIsland;

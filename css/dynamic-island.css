@@ -35,6 +35,7 @@
   cursor: grab;
   user-select: none;
   pointer-events: auto;
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
 
   /* Spring-based transitions inherited from FIT-ELITE */

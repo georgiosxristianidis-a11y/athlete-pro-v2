@@ -87,6 +87,8 @@ export const Timer = (() => {
 
   function _tick() {
     if (_onTick) _onTick(seconds());
+    // @ts-ignore
+    if (window.DynamicIsland) window.DynamicIsland.update();
   }
 
   function _persist() {

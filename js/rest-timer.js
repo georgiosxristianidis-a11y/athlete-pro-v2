@@ -35,6 +35,8 @@ export const RestTimer = (() => {
     _raf = null;
     _hideBar();
     _hideModal();
+    // @ts-ignore
+    if (window.DynamicIsland) window.DynamicIsland.stopTimer();
   }
 
   /**
@@ -66,6 +68,9 @@ export const RestTimer = (() => {
     const rem = Math.max(0, Math.ceil((_end - Date.now()) / 1000));
     _updateBar(rem);
     _updateModal(rem);
+    // @ts-ignore
+    if (window.DynamicIsland) window.DynamicIsland.setTimer(rem, _total);
+
     if (rem <= 0) {
       _onDone();
       return;

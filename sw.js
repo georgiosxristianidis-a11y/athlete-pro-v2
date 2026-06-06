@@ -39,6 +39,7 @@ const ASSETS = [
   '/js/progressive-overload.js',
   '/js/supabase.js',
   '/js/workout-ai.view.js',
+  '/js/shared/dynamic-island.js',
   '/js/body-stats.js',
   '/js/plate-calc.js',
   '/js/ui/drum-picker.js',
@@ -135,6 +136,7 @@ self.addEventListener('fetch', (e) => {
           if (e.request.destination === 'document') {
             return caches.match('/index.html');
           }
+          return new Response('Network error', { status: 408 });
         });
     })
   );
