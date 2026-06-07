@@ -590,3 +590,18 @@ button:focus-visible {
 .session-item:nth-child(3) { animation-delay: 0.14s; }
 .session-item:nth-child(4) { animation-delay: 0.18s; }
 .session-item:nth-child(5) { animation-delay: 0.22s; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-1);
+}
+.section-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-3);
+  opacity: 0.8;
+}

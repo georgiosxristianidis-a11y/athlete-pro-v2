@@ -8,7 +8,8 @@
 .type-card-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
 .type-icon { display: inline-block; width: 20px; height: 20px; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-size: contain; mask-size: contain; }
 
-.btn-text { display: flex; align-items: center; gap: 4px; background: none; border: none; font-size: 11px; font-weight: 700; color: var(--c-accent); cursor: pointer; text-transform: uppercase; }
+.btn-text { display: flex; align-items: center; gap: 4px; background: none; border: none; font-size: 11px; font-weight: 800; color: var(--c-accent); cursor: pointer; text-transform: uppercase; line-height: 1; transition: opacity 0.2s; }
+.btn-text:active { opacity: 0.6; }
 
 .session-timer-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-m); }
 .session-timer-dot { width: 6px; height: 6px; border-radius: 50%; animation: pulse 1.5s infinite; }
@@ -39,13 +40,13 @@
 }
 
 .exercise-card { background: var(--c-surface-deep) !important; border: 1.5px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; margin-bottom: var(--sp-3); transition: transform 0.2s, border-color 0.2s; }
-.exercise-header { display: flex; align-items: center; padding: 14px var(--sp-2); gap: var(--sp-1); cursor: pointer; }
+.exercise-header { display: flex; align-items: center; padding: 12px var(--sp-2); gap: var(--sp-1); cursor: pointer; min-height: 56px; }
 .exercise-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--c-accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .ex-num { font-size: 14px; font-weight: 800; color: var(--c-text-inverse); opacity: 0.15; }
 
-.exercise-info { flex: 1; min-width: 0; }
-.exercise-name { font-size: 16px; font-weight: 700; color: var(--c-text-1); display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.exercise-meta { font-size: 10px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.15; margin-top: 2px; transition: opacity 0.3s; }
+.exercise-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.exercise-name { font-size: 16px; font-weight: 700; color: var(--c-text-1); display: flex; align-items: center; gap: 8px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exercise-meta { font-size: 10px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.15; margin-top: 1px; transition: opacity 0.3s; line-height: 1; }
 .exercise-meta.done { opacity: 0.25 !important; }
 
 /* ── Header Actions — Premium Distribution ── */
