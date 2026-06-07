@@ -189,8 +189,7 @@ export async function selectType(type) {
   persistSession();
 
   Timer.start((s) => {
-    const el = document.getElementById('session-timer-val');
-    if (el) el.textContent = Timer.fmt(s);
+    // Session timer val removed from header, now in PIP only
   });
 
   // @ts-ignore
