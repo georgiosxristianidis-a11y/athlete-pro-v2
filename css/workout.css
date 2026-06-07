@@ -19,8 +19,54 @@
 .btn-text { display: flex; align-items: center; gap: 4px; background: none; border: none; font-size: 11px; font-weight: 800; color: var(--c-accent); cursor: pointer; text-transform: uppercase; line-height: 1; transition: opacity 0.2s; }
 .btn-text:active { opacity: 0.6; }
 
-.session-timer-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-m); }
-.session-timer-dot { width: 6px; height: 6px; border-radius: 50%; animation: pulse 1.5s infinite; }
+.week-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.week-pill:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.08);
+}
+.week-pill-lbl {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.week-pill-val {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--c-text-1);
+}
+
+/* Week-specific neon states */
+.week-pill.week-A {
+  border-color: rgba(0, 230, 118, 0.25);
+  box-shadow: 0 0 12px rgba(0, 230, 118, 0.08);
+}
+.week-pill.week-A .week-pill-val {
+  color: var(--c-accent);
+  text-shadow: 0 0 8px rgba(0, 230, 118, 0.3);
+}
+
+.week-pill.week-B {
+  border-color: rgba(167, 139, 250, 0.3);
+  box-shadow: 0 0 12px rgba(167, 139, 250, 0.08);
+}
+.week-pill.week-B .week-pill-val {
+  color: var(--c-purple);
+  text-shadow: 0 0 8px rgba(167, 139, 250, 0.4);
+}
 
 .live-bar { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); background: var(--c-surface); border-radius: 16px; padding: 16px var(--sp-2); margin-bottom: var(--sp-2); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
 

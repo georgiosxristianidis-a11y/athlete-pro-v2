@@ -188,11 +188,12 @@
   justify-content: space-between;
 }
 .ppl-chip-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   text-transform: uppercase;
-  color: var(--c-text-3);
+  color: var(--c-text-1);
 }
 .ppl-chip-val {
   font-size: 13px;
