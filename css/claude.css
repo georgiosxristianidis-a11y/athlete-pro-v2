@@ -136,6 +136,34 @@
   display: flex;
   align-items: center;
   gap: var(--sp-1);
+  position: relative;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+.claude-logo-wrap:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.claude-logo-wrap:active {
+  transform: scale(0.98);
+}
+.engine-switch-hint {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  color: var(--c-text-3);
+  margin-left: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.claude-logo-wrap:hover .engine-switch-hint {
+  opacity: 1;
+  transform: translateX(2px);
 }
 .claude-title {
   font-size: 17px;

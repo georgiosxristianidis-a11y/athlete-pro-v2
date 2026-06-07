@@ -24,9 +24,9 @@ import { initDrumPickers } from '../ui/drum-picker.js';
 
 /* ── Render helpers ── */
 export const TYPE_COLOR = {
-  push: 'var(--c-accent)',
-  pull: 'var(--c-purple)',
-  legs: 'var(--c-blue)',
+  push: '#00e676', // Neon Green
+  pull: '#8b5cf6', // Electric Purple
+  legs: '#ff4d88', // Elite Pink
 };
 
 export function svgArrow(dir) {

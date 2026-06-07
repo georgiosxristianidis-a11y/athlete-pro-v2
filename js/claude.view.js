@@ -366,11 +366,14 @@ export const Claude = (() => {
 
         <!-- Header -->
         <div class="claude-header">
-          <div class="claude-logo-wrap">
+          <div class="claude-logo-wrap" onclick="Claude._toggleEngine()" style="cursor:pointer" title="Switch AI Engine">
             ${isGemini ? _geminiIcon(28) : _claudeIcon(28)}
             <div>
               <div class="claude-title">${isGemini ? 'Gemini Coach' : 'Claude Coach'}</div>
               <div class="claude-sub">${isGemini ? 'Powered by Gemini 1.5 Pro' : 'Powered by Claude Opus'}</div>
+            </div>
+            <div class="engine-switch-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M7 16V4M7 4L3 8M7 4L11 8M17 8v12M17 20l4-4M17 20l-4-4"/></svg>
             </div>
           </div>
           <button class="btn-icon-sm" onclick="Claude.close()" aria-label="Close AI Coach">
@@ -671,7 +674,17 @@ export const Claude = (() => {
     </svg>`;
   }
 
-  return { renderFAB, open, close, _sendChat, _claudeIcon, _geminiIcon };
+  async function _toggleEngine() {
+    const curr = await DB.Settings.get('ai-engine', 'anthropic');
+    const next = curr === 'gemini' ? 'anthropic' : 'gemini';
+    await DB.Settings.set('ai-engine', next);
+    if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
+    // Re-open to refresh UI
+    close();
+    setTimeout(() => open(), 300);
+  }
+
+  return { renderFAB, open, close, _sendChat, _claudeIcon, _geminiIcon, _toggleEngine };
 })();
 
 /* ══════════════════════════════════════════════
