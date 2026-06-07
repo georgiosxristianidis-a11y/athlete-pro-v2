@@ -1,38 +1,21 @@
-// @ts-check
+'use strict';
+import { State } from './workout.store.js';
+
 /* ════════════════════════════════════════════════════════
    shell.js — Athlete Pro  |  Nav + Toast as ES Module exports
    ════════════════════════════════════════════════════════ */
 
-import { State } from './workout.store.js';
-
-/* ── Navigation ── */
 let _current = 's-home';
-const _handlers = {
-  's-home':    () => window.Dashboard.load(),
-  's-train': async () => {
-    if (!window.Workout) await window._loadWorkout();
-    if (State.phase === 'active') {
-      await window.Workout.renderActive();
-    } else {
-      window.Workout.renderSelect();
-    }
-  },
-  's-stats': async () => {
-    if (!window.Analytics) {
-      const { Analytics } = await import('./analytics.view.js');
-      window.Analytics = Analytics;
-    }
-    window.Analytics.load();
-  },
-  's-body': async () => {
-    if (!window.renderBodyStats) await window._loadBodyStats();
-    window.renderBodyStats();
-  },
-  's-profile': async () => {
-    if (!window.Profile) await window._loadProfile();
-    window.Profile.load();
-  },
-};
+const _handlers = {};
+
+/**
+ * Register a screen init handler.
+ * @param {string} id 
+ * @param {Function} fn 
+ */
+function on(id, fn) {
+  _handlers[id] = fn;
+}
 
 /**
  * Navigate to a screen by element ID, hiding the previous screen.
@@ -65,51 +48,46 @@ async function go(id, opts = {}) {
   if (!document.startViewTransition) {
     await performNav();
   } else {
-    const transition = document.startViewTransition(() => performNav());
-    try {
-      await transition.finished;
-    } catch (e) {
-      // Transition failed or was skipped
-    }
+    document.startViewTransition(() => performNav());
   }
 }
 
-/**
- * Get the currently active screen ID.
- * @returns {string}
- */
-function current() {
-  return _current;
-}
+export const Nav = { on, go, current: () => _current };
 
-export const Nav = { go, current };
+/* ════════════════════════════════════════════════
+   TOAST SYSTEM (Elite v2)
+   ════════════════════════════════════════════════ */
 
-/* ── Toast ── */
 const ICONS = {
-  success: '<path d="M20 6L9 17l-5-5"/>',
-  error:
-    '<circle cx="12" cy="12" r="9"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
-  info: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/>',
+  success: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+  error: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
+  info: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`
 };
 
 /**
- * Show a toast notification message.
- * @param {string} msg — message text to display
- * @param {'success'|'error'|'info'} [type='info'] — toast type controls icon and color
- * @param {number} [duration=2800] — display duration in milliseconds
- * @returns {void}
+ * Show a premium toast notification.
+ * @param {string} msg 
+ * @param {'success'|'error'|'info'} [type='info'] 
+ * @param {number} [duration=3000] 
  */
-function show(msg, type = 'info', duration = 2800) {
-  const wrap = document.getElementById('toast-wrap');
+function show(msg, type = 'info', duration = 3000) {
+  let wrap = document.getElementById('toast-wrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'toast-wrap';
+    document.body.appendChild(wrap);
+  }
+
   const t = document.createElement('div');
-  t.className = `toast ${type}`;
-  t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    ${ICONS[type] || ICONS.info}</svg>${msg}`;
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `${ICONS[type] || ICONS.info}<span>${msg}</span>`;
+  
   wrap.appendChild(t);
+
+  // Auto-remove
   setTimeout(() => {
     t.classList.add('out');
-    setTimeout(() => t.remove(), 320);
+    setTimeout(() => t.remove(), 400);
   }, duration);
 }
 

@@ -213,20 +213,20 @@
   transform: scale(0.96);
 }
 
-/* Claude Active State */
+/* Claude Active State (Warm Amber/Orange Glow) */
 .engine-toggle-btn.active.claude-active {
-  background: var(--c-accent-bg);
-  border-color: var(--c-accent);
-  color: var(--c-accent);
-  box-shadow: 0 0 16px rgba(0, 230, 118, 0.15);
+  background: var(--c-amber-bg);
+  border-color: var(--c-amber);
+  color: var(--c-amber);
+  box-shadow: 0 0 20px rgba(255, 179, 0, 0.2);
 }
 
-/* Gemini Active State */
+/* Gemini Active State (Neon Blue Glow) */
 .engine-toggle-btn.active.gemini-active {
   background: rgba(68, 138, 255, 0.12);
   border-color: #448aff;
   color: #448aff;
-  box-shadow: 0 0 16px rgba(68, 138, 255, 0.15);
+  box-shadow: 0 0 20px rgba(68, 138, 255, 0.2);
 }
 
 .engine-dot {
@@ -236,8 +236,8 @@
   animation: engine-pulse 2s infinite;
 }
 .claude-active .engine-dot {
-  background: var(--c-accent);
-  box-shadow: 0 0 12px var(--c-accent);
+  background: var(--c-amber);
+  box-shadow: 0 0 12px var(--c-amber);
 }
 .gemini-active .engine-dot {
   background: #448aff;

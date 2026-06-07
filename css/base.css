@@ -23,79 +23,33 @@
   
   --c-surface: rgba(255, 255, 255, 0.035);
   --c-surface-h: rgba(255, 255, 255, 0.07);
-  --c-border: rgba(255, 255, 255, 0.08);
-  --c-border-h: rgba(255, 255, 255, 0.15);
-  --c-text-1: #ffffff;
-  --c-text-2: #a1a1aa;
-  --c-text-3: #71717a;
-  --c-accent: #00e676;
+  --c-border: rgba(255, 255, 255, 0.06);
+  --c-border-h: rgba(255, 255, 255, 0.12);
+
+  /* Elite Palette — calibrated for high-contrast OLED/HDR displays. */
+  --c-accent: #00e676; /* Neon Emerald */
   --c-accent-d: #00c260;
   --c-accent-bg: rgba(0, 230, 118, 0.12);
-  --c-purple: #8b5cf6;
+  --c-purple: #8b5cf6; /* Electric Violet */
   --c-purple-bg: rgba(139, 92, 246, 0.12);
-  --c-blue: #00b8d4;
+  --c-blue: #00b8d4; /* Deep Cyan */
   --c-blue-bg: rgba(0, 184, 212, 0.12);
-  --c-amber: #ffb300;
+  --c-amber: #ffb300; /* Safety Amber */
   --c-amber-bg: rgba(255, 179, 0, 0.08);
   /* Elite Pink — Sophisticated replacement for aggressive red */
   --c-red: #ff4d88;
   --c-red-bg: rgba(255, 77, 136, 0.12);
-  /* Exercise category colors */
-  /* Lifted from #6366f1 (3.4:1 fail AA) → #8b8ff5 (5.3:1 pass AA normal) */
-  --c-indigo: #8b8ff5;
-  --c-indigo-bg: rgba(139, 143, 245, 0.10);
-  --c-cyan: #06b6d4;
-  --c-cyan-bg: rgba(6, 182, 212, 0.08);
-  /* --c-yellow removed: redundant with --c-amber. Amber owns "warm achievement" slot. */
-  /* Additional tokens */
-  --c-text-inverse: #000;
-  --c-surface-deep: #0d0d12;
-  --c-accent-light: #00d486;
-  --sh-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
-  --sh-md: 0 4px 16px rgba(0, 0, 0, 0.22);
-  --sh-lg: 0 8px 32px rgba(0, 0, 0, 0.32);
-  /* Neon glows — premium accent shadows for active/CTA elements.
-     Apply ACTIVELY in Focus Mode; SURGICALLY elsewhere (PR badge, primary CTAs). */
-  --glow-accent-sm: 0 0 10px rgba(0, 230, 118, 0.4);
-  --glow-accent-md: 0 0 20px rgba(0, 230, 118, 0.5);
-  --glow-accent-lg: 0 0 30px rgba(0, 230, 118, 0.6);
-  --glow-purple-sm: 0 0 10px rgba(139, 92, 246, 0.5);
-  --glow-purple-md: 0 0 20px rgba(139, 92, 246, 0.6);
-  --glow-purple-lg: 0 0 30px rgba(139, 92, 246, 0.7);
-  --glow-blue-sm: 0 0 10px rgba(90, 150, 255, 0.4);
-  --glow-blue-md: 0 0 20px rgba(90, 150, 255, 0.5);
-  --glow-blue-lg: 0 0 30px rgba(90, 150, 255, 0.6);
-  --glow-amber-md: 0 0 18px rgba(255, 179, 0, 0.45);
-  --glow-pink-md: 0 0 20px rgba(255, 77, 136, 0.45);
-  --glow-white-soft: 0 0 20px rgba(255, 255, 255, 0.10);
-... [TRUNCATED] ...
-@keyframes engine-pulse {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.2); }
-}
 
-.armed {
-  animation: armed-pulse 1.5s infinite;
-  border-color: var(--c-red) !important;
-  box-shadow: var(--glow-pink-md) !important;
-}
+  --c-text-1: #ffffff;
+  --c-text-2: #a1a1aa;
+  --c-text-3: #71717a;
+  --c-text-inverse: #050507;
 
-@keyframes armed-pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-  --c-border-purple: rgba(139, 92, 246, 0.15);
-  --c-border-blue: rgba(90, 150, 255, 0.15);
-  --c-surface-2: rgba(255, 255, 255, 0.04);
-  /* ── Spacing system (8pt grid, Apple HIG / Material baseline) ──
-     3-tier rule:
-       • Atomic (inside component, icon+text, button parts) → sp-1 (8px)
-       • Element (between same-type elements: card→card, row→row) → sp-2 (16px) MINIMUM
-       • Section (between distinct groups) → sp-3 (24px) or larger
-     0.4cm physical ≈ sp-2; this is the floor for structural spacing. */
+  /* Spacing Scale (8px base) */
+  --sp-0-5: 4px;
   --sp-1: 8px;
-  --sp-2: 16px;     /* Element-spacing minimum (≈0.42cm) — enforce for card/row/section gaps */
+  --sp-1-5: 12px;
+  --sp-2: 16px;
   --sp-3: 24px;
   --sp-4: 32px;
   --sp-5: 40px;
@@ -213,12 +167,8 @@
   animation: overlay-in 0.2s ease forwards;
 }
 @keyframes overlay-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .modal-sheet {
   width: 100%;
@@ -231,12 +181,8 @@
   overflow-y: auto;
 }
 @keyframes sheet-in {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 .modal-handle {
   width: 36px;
@@ -324,6 +270,69 @@ button:focus-visible {
   margin-top: var(--sp-island);
 }
 
+/* ── Section 10: Toast Notifications ─────────────────── */
+#toast-wrap {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  z-index: 10000;
+  pointer-events: none;
+  width: 100%;
+  max-width: 320px;
+  padding: 0 20px;
+}
+
+.toast {
+  background: rgba(18, 18, 26, 0.85);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--c-text-1);
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  animation: toast-in 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+.toast.out {
+  animation: toast-out 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.toast-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.toast-success { border-color: rgba(0, 230, 118, 0.2); }
+.toast-success .toast-icon { color: var(--c-accent); }
+
+.toast-error { border-color: rgba(255, 77, 136, 0.2); }
+.toast-error .toast-icon { color: var(--c-red); }
+
+.toast-info { border-color: rgba(68, 138, 255, 0.2); }
+.toast-info .toast-icon { color: #448aff; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.9); }
+}
+
 /* ── Section 5: Responsive ────────────────────────────── */
 
 /* Small phone floor (<360px) — reduce spacing to prevent overflow */
@@ -348,9 +357,7 @@ button:focus-visible {
    Mobile/tablet devices adapt automatically to screen width
    ════════════════════════════════════════════════════════ */
 @media (min-width: 481px) and (hover: hover) {
-  html {
-    background: var(--c-bg);
-  }
+  html { background: var(--c-bg); }
 
   body {
     background: var(--c-bg);
@@ -358,12 +365,10 @@ button:focus-visible {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    /* Prevent body from shrinking */
     flex-shrink: 0;
   }
 
   #app {
-    /* FIXED width — like mobile device, never shrinks */
     width: 412px;
     min-width: 412px;
     max-width: 412px;
@@ -376,11 +381,9 @@ button:focus-visible {
       0 0 120px rgba(0, 200, 110, 0.1);
     border-left: 1px solid rgba(255, 255, 255, 0.05);
     border-right: 1px solid rgba(255, 255, 255, 0.05);
-    /* Prevent app from shrinking */
     flex-shrink: 0;
   }
 
-  /* Status bar — fixed width inside app */
   #status-bar {
     width: 100%;
     max-width: none;
@@ -390,7 +393,6 @@ button:focus-visible {
     border-radius: 0;
   }
 
-  /* Navigation bar — fixed width inside app */
   #nav {
     width: 100%;
     max-width: none;
@@ -400,17 +402,10 @@ button:focus-visible {
     border-radius: 0;
   }
 
-  /* AI Coach FAB — fixed position relative to app */
-  .workout-ai-bubble {
-    right: 16px;
-  }
+  .workout-ai-bubble { right: 16px; }
 
-  /* Tall screens: rounded corners + padding */
   @media (min-height: 900px) {
-    body {
-      padding: 20px;
-    }
-
+    body { padding: 20px; }
     #app {
       border-radius: 24px;
       height: calc(100vh - 40px);
@@ -437,7 +432,6 @@ button:focus-visible {
     0 1px 0 rgba(255, 255, 255, 0.04) inset,
     0 8px 24px rgba(0, 0, 0, 0.25);
 }
-/* Active pill on glass plate gets inner glow + soft frosted highlight */
 .week-seg-btn.active,
 .bs-sex-btn.active,
 .stats-subnav-btn.active,
@@ -453,7 +447,6 @@ button:focus-visible {
     0 0 0 1px rgba(255, 255, 255, 0.06),
     0 4px 14px rgba(0, 0, 0, 0.4);
 }
-/* Accent-tinted glass (Week A — emerald, Week B — purple) */
 .week-seg-btn.active {
   background: linear-gradient(
     180deg,
@@ -475,8 +468,6 @@ button:focus-visible {
 /* ════════════════════════════════════════════════
    GLASSMORPHISM — extended to cards & sheets
    ════════════════════════════════════════════════ */
-
-/* Surface cards: exercise-card, type-card, stat-chip, profile-card, plan-row, cal-card */
 .exercise-card,
 .type-card,
 .stat-chip,
@@ -502,7 +493,6 @@ button:focus-visible {
     0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
-/* Modal sheets — premium frosted plate */
 .modal-sheet,
 .claude-sheet {
   background: linear-gradient(
@@ -518,77 +508,9 @@ button:focus-visible {
     0 -20px 60px rgba(0, 0, 0, 0.5);
 }
 
-/* Bottom nav — already glass, polish to consistent treatment */
-#nav {
-  background: linear-gradient(
-    180deg,
-    rgba(8, 8, 12, 0.72) 0%,
-    rgba(8, 8, 12, 0.94) 100%
-  ) !important;
-  backdrop-filter: blur(32px) saturate(1.8);
-  -webkit-backdrop-filter: blur(32px) saturate(1.8);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* Status bar — subtle glass for consistency */
-#status-bar {
-  background: linear-gradient(
-    180deg,
-    rgba(8, 8, 12, 0.85) 0%,
-    rgba(8, 8, 12, 0.5) 100%
-  ) !important;
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-/* ════════════════════════════════════════════════
-   PURPLE ACCENTS — balance green-heavy palette
-   Use violet for: weekly best badges, stat-chip purple
-   variant, calendar PR markers, chart accents.
-   ════════════════════════════════════════════════ */
-
-/* Stat-chip purple variant — gradient-tinted plate */
-.stat-chip-purple {
-  background: linear-gradient(
-    180deg,
-    rgba(139, 92, 246, 0.10) 0%,
-    rgba(139, 92, 246, 0.03) 100%
-  ) !important;
-  border-color: rgba(139, 92, 246, 0.18) !important;
-}
-.stat-chip-purple .stat-chip-val { color: var(--c-purple) !important; }
-
-/* Period badge — purple tone for "Last 30 days" */
-.badge-purple {
-  background: rgba(139, 92, 246, 0.10);
-  border: 1px solid rgba(139, 92, 246, 0.20);
-  color: var(--c-purple);
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
-}
-
-/* AI Recommendation card — accent the Claude Opus brand with purple ring */
-.coach-card {
-  border-color: rgba(139, 92, 246, 0.10) !important;
-  box-shadow:
-    0 1px 0 rgba(139, 92, 246, 0.06) inset,
-    0 4px 20px rgba(139, 92, 246, 0.06) !important;
-}
-
-/* PR / Weekly best — amber→emerald achievement gradient (warm-to-cool, "ignite to win") */
+/* PR / achievement gradient */
 .badge-accent {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 179, 0, 0.20) 0%,
-    rgba(255, 179, 0, 0.10) 40%,
-    rgba(0, 230, 118, 0.12) 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 179, 0, 0.20) 0%, rgba(255, 179, 0, 0.10) 40%, rgba(0, 230, 118, 0.12) 100%);
   border: 1px solid rgba(255, 179, 0, 0.30);
   color: #fff;
   padding: 4px 10px;
@@ -599,77 +521,27 @@ button:focus-visible {
   text-shadow: 0 0 10px rgba(255, 179, 0, 0.4);
 }
 
-/* Streak counter — amber "fire" tone for consecutive workout days */
-.streak-count,
-.streak-card .streak-count {
+.streak-count {
   color: var(--c-amber);
   font-weight: 800;
   text-shadow: 0 0 12px rgba(255, 179, 0, 0.35);
-  letter-spacing: 0.01em;
 }
 
-/* Send button (chat input) — purple gradient instead of pure green */
 .chat-send-btn {
-  background: linear-gradient(
-    180deg,
-    var(--c-purple) 0%,
-    rgba(139, 92, 246, 0.85) 100%
-  ) !important;
+  background: linear-gradient(180deg, var(--c-purple) 0%, rgba(139, 92, 246, 0.85) 100%) !important;
   box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35) !important;
 }
 
-/* Live-bar middle stat — tint purple to break up green dominance */
-.live-bar .live-stat:nth-child(3) .live-val {
-  background: linear-gradient(180deg, #fff 0%, #c084fc 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* Coach pill on neutral exercises gets purple dot — already day-tinted, but
-   ensure the active session "Week B" pill text glow uses purple */
-.week-pill.week-B .week-pill-val {
-  text-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
-}
-.week-pill.week-A .week-pill-val {
-  text-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
-}
-
-/* ── Micro-interactions: card entrance stagger ────────── */
 @keyframes card-in {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.stat-chip {
-  animation: card-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
+
+.stat-chip { animation: card-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) both; }
 .stat-chip:nth-child(1) { animation-delay: 0.06s; }
 .stat-chip:nth-child(2) { animation-delay: 0.11s; }
 .stat-chip:nth-child(3) { animation-delay: 0.16s; }
-.streak-card {
-  animation: card-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.08s both;
-}
-.ppl-chip {
-  animation: card-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-.ppl-chip:nth-child(1) { animation-delay: 0.08s; }
-.ppl-chip:nth-child(2) { animation-delay: 0.14s; }
-.ppl-chip:nth-child(3) { animation-delay: 0.20s; }
-.session-item {
-  animation: card-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-.session-item:nth-child(1) { animation-delay: 0.04s; }
-.session-item:nth-child(2) { animation-delay: 0.09s; }
-.session-item:nth-child(3) { animation-delay: 0.14s; }
-.session-item:nth-child(4) { animation-delay: 0.18s; }
-.session-item:nth-child(5) { animation-delay: 0.22s; }
 
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--sp-1);
-}
 /* ── Section 6: Data & Digits ─────────────────────────── */
 .sw-val, .sr-val, .stepper-val, .live-val, .orm-val, .focus-hero-val {
   font-family: var(--font-heading);

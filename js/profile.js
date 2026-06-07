@@ -263,8 +263,15 @@ export const Profile = (() => {
       </div>
       <div class="profile-card" style="border-color:rgba(255,77,136,0.15)">
         <button class="data-btn" id="clear-data-btn" onclick="Profile.clearAllData()">
-          <div class="data-btn-icon" style="background:var(--c-red-bg)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-red)" stroke-width="1.5" stroke-linecap="round" width="18" height="18"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></div>
-          <div class="data-btn-info"><div class="data-btn-title" style="color:var(--c-red)">${ru ? 'Сброс всех данных' : 'Clear All Data'}</div><div class="data-btn-sub">${ru ? 'Безвозвратное удаление' : 'Permanently delete everything'}</div></div>
+          <div class="data-btn-icon" style="background:var(--c-red-bg)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <path d="M3 6h18M19 6l-1.2 13.2a2 2 0 01-2 1.8H8.2a2 2 0 01-2-1.8L5 6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
+            </svg>
+          </div>
+          <div class="data-btn-info">
+            <div class="data-btn-title" style="color:var(--c-red)">${ru ? 'Сброс всех данных' : 'Clear All Data'}</div>
+            <div class="data-btn-sub">${ru ? 'Безвозвратное удаление' : 'Permanently delete everything'}</div>
+          </div>
         </button>
       </div>
 
@@ -327,27 +334,36 @@ export const Profile = (() => {
 
   async function setEngine(engine) {
     const { getPrivacyMode } = await import('./privacy.store.js');
-    if (getPrivacyMode() === 'airgap') {
+    const mode = getPrivacyMode();
+    
+    // 🛡️ Elite Logic: Handle Privacy Restrictions
+    if (mode === 'airgap') {
+      Toast.show('AI disabled in Airgap mode', 'error');
       return;
     }
+    
+    if (mode === 'anon' && engine === 'gemini') {
+      Toast.show('Gemini requires Cloud or Anon mode', 'info');
+    }
+
     await DB.Settings.set('ai-engine', engine);
     
-    // Sync FAB state
+    // Sync FAB state & Branding
     const fab = document.getElementById('claude-fab');
     if (fab) {
+      const { Claude } = await import('./claude.view.js');
       if (engine === 'gemini') {
         fab.classList.add('gemini-mode');
         const content = fab.querySelector('.fab-content');
-        const { Claude } = await import('./claude.view.js');
         if (content) content.innerHTML = Claude._geminiIcon();
       } else {
         fab.classList.remove('gemini-mode');
         const content = fab.querySelector('.fab-content');
-        const { Claude } = await import('./claude.view.js');
         if (content) content.innerHTML = Claude._claudeIcon();
       }
     }
     
+    _haptic(20);
     load();
   }
 
