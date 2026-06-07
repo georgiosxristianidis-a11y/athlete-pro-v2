@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v37';
+const CACHE_NAME = 'athlete-pro-v38';
 
 const ASSETS = [
   '/index.html',

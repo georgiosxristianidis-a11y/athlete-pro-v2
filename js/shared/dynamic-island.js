@@ -1,11 +1,12 @@
 // @ts-check
 import { State, getWeekMode } from '../workout.store.js';
 import { Timer } from '../timer.js';
+import { RestTimer } from '../rest-timer.js';
 
 /**
  * dynamic-island.js — Interactive session overlay (PIP)
  * Shows: Timer (Total Session Time ONLY), Sets done/total, Current exercise
- * Interactions: Draggable, Tap to expand, Set complete pulse
+ * Interactions: Draggable, Tap to expand, Long-press for Settings, Set complete pulse
  */
 
 export const DynamicIsland = (() => {
@@ -15,13 +16,15 @@ export const DynamicIsland = (() => {
   let _timerMax = 0;
   let _setCompleteTimeout = null;
 
-  // Dragging state
+  // Dragging & Long-press state
   let _isDragging = false;
   let _movedPastThreshold = false;
   let _startX = 0;
   let _startY = 0;
   let _currentX = 0;
   let _currentY = 0;
+  let _longPressTimer = null;
+  let _isLongPress = false;
 
   // DOM elements cache
   let _wrap = null;
@@ -55,6 +58,16 @@ export const DynamicIsland = (() => {
             <span class="island-ex-name" id="di-name">Exercise</span>
           </div>
           <div class="island-sublabel" id="di-sublabel">Week 1 · PUSH · next: Bench</div>
+          
+          <div class="island-actions">
+            <button class="island-action-btn skip" title="Skip Exercise" onclick="window.Workout?._focusNext()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+            </button>
+            <button class="island-action-btn plus" title="+30s Rest" onclick="window.RestTimer?.addTime(30)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>30s</span>
+            </button>
+          </div>
         </div>
 
         <!-- Timer progress line (for Rest intervals) -->
@@ -80,15 +93,15 @@ export const DynamicIsland = (() => {
     _progressFill = document.getElementById('di-progress-fill');
     _timerProg = document.getElementById('di-timer-progress');
 
-    // Drag events
-    _island?.addEventListener('pointerdown', _onDragStart);
-    window.addEventListener('pointermove', _onDragMove);
-    window.addEventListener('pointerup', _onDragEnd);
-    window.addEventListener('pointercancel', _onDragEnd);
+    // Drag & Long-press events
+    _island?.addEventListener('pointerdown', _onPointerDown);
+    window.addEventListener('pointermove', _onPointerMove);
+    window.addEventListener('pointerup', _onPointerUp);
+    window.addEventListener('pointercancel', _onPointerUp);
 
-    // Expand toggle
+    // Expand toggle (only if not long-pressed or dragged)
     _island?.addEventListener('click', (e) => {
-      if (_movedPastThreshold) return;
+      if (_isLongPress || _movedPastThreshold) return;
       toggleExpand();
     });
 
@@ -193,15 +206,25 @@ export const DynamicIsland = (() => {
 
   /* ── Internal Helpers ── */
 
-  function _onDragStart(e) {
+  function _onPointerDown(e) {
     _isDragging = true;
+    _isLongPress = false;
     _startX = e.clientX - _currentX;
     _startY = e.clientY - _currentY;
     _island?.style.setProperty('transition', 'none');
     _island?.setPointerCapture(e.pointerId);
+
+    // Start long-press timer
+    clearTimeout(_longPressTimer);
+    _longPressTimer = setTimeout(() => {
+      if (!_movedPastThreshold) {
+        _isLongPress = true;
+        _onLongPress();
+      }
+    }, 450);
   }
 
-  function _onDragMove(e) {
+  function _onPointerMove(e) {
     if (!_isDragging) return;
     const dx = e.clientX - (_startX + _currentX);
     const dy = e.clientY - (_startY + _currentY);
@@ -209,6 +232,7 @@ export const DynamicIsland = (() => {
     
     if (!_movedPastThreshold && dist > 6) {
       _movedPastThreshold = true;
+      clearTimeout(_longPressTimer);
     }
     
     if (!_movedPastThreshold) return;
@@ -233,11 +257,19 @@ export const DynamicIsland = (() => {
     }
   }
 
-  function _onDragEnd(e) {
+  function _onPointerUp(e) {
     if (!_isDragging) return;
     _isDragging = false;
+    clearTimeout(_longPressTimer);
     _island?.style.setProperty('transition', 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)');
     setTimeout(() => { _movedPastThreshold = false; }, 50);
+  }
+
+  function _onLongPress() {
+    if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+    // Navigate to timer settings
+    window.location.hash = 'timer-settings';
+    window.Toast?.show('Timer Settings', 'info');
   }
 
   function _renderRestProgress() {

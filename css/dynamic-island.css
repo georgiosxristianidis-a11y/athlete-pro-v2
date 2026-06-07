@@ -147,9 +147,40 @@
   margin-top: 12px;
 }
 
-.island.expanded .island-expanded-content {
+.island-actions {
   display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  padding: 0 4px;
 }
+.island-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 6px 12px;
+  color: var(--c-text-2);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.island-action-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0.92);
+}
+.island-action-btn.skip {
+  padding: 6px;
+  color: var(--c-text-3);
+}
+.island-action-btn.plus {
+  color: var(--c-accent);
+  border-color: var(--c-accent-bg);
+}
+.island-action-btn svg { width: 14px; height: 14px; }
 
 .island-status-line {
   display: flex;
