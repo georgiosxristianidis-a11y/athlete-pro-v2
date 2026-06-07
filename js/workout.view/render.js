@@ -403,7 +403,7 @@ export async function renderExerciseCard(ex, ei) {
             ${ex.name}${muscleBadge}
             ${coach ? `<span class="coach-pill">${coach.target}<span class="coach-pill-unit">kg</span></span>` : ''}
           </div>
-          <div class="exercise-meta">${ex.sets.length} sets ${doneSets > 0 ? ' · ' + doneSets + ' done' : ''}</div>
+          <div class="exercise-meta ${doneSets === ex.sets.length ? 'done' : ''}" id="ex-meta-${ei}">${doneSets}/${ex.sets.length}</div>
         </div>
         
         <div class="ex-header-actions" onclick="event.stopPropagation()">

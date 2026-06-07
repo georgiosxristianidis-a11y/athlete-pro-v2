@@ -144,8 +144,11 @@ export async function toggleSet(ei, si) {
   const doneSets = ex.sets.filter(s => s.done).length;
   const card = document.getElementById(`ex-card-${ei}`);
   if (card) {
-    const meta = card.querySelector('#ex-done-count-' + ei);
-    if (meta) meta.textContent = doneSets > 0 ? ` · ${doneSets} done` : '';
+    const meta = card.querySelector('.exercise-meta');
+    if (meta) {
+      meta.textContent = `${doneSets}/${ex.sets.length}`;
+      meta.classList.toggle('done', doneSets === ex.sets.length);
+    }
   }
 }
 

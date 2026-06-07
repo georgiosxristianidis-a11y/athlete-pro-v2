@@ -45,10 +45,11 @@
 
 .exercise-info { flex: 1; min-width: 0; }
 .exercise-name { font-size: 16px; font-weight: 700; color: var(--c-text-1); display: flex; align-items: center; gap: 8px; }
-.exercise-meta { font-size: 10px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.15; margin-top: 2px; }
+.exercise-meta { font-size: 10px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.15; margin-top: 2px; transition: opacity 0.3s; }
+.exercise-meta.done { opacity: 0.25 !important; }
 
 /* ── Header Actions — Premium Distribution ── */
-.ex-header-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; padding-right: 4px; }
+.ex-header-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; padding-left: 20px; padding-right: 4px; }
 .ex-action-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--c-text-3); cursor: pointer; transition: all 0.2s ease; border-radius: 10px; opacity: 0.4; }
 .ex-action-btn:active { transform: scale(0.85); background: var(--c-bg-3); opacity: 1; color: var(--c-text-1); }
 .ex-action-btn.coach { color: var(--c-accent); opacity: 0.7; }
@@ -68,6 +69,7 @@
 .stepper-val { font-size: 22px !important; font-weight: 900 !important; letter-spacing: -0.04em !important; color: rgba(255,255,255,0.6) !important; }
 .set-row.set-active .stepper-val { color: #fff !important; }
 .set-row.set-done { opacity: 0.3; }
+.set-row.set-done .drum-wrap { pointer-events: none; filter: grayscale(1); }
 
 /* ── Drum Picker — Elite Refinement ── */
 .drum-wrap {
