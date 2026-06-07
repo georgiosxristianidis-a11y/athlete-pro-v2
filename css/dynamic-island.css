@@ -135,11 +135,8 @@
   transition: all 0.5s cubic-bezier(0.2, 0, 0.2, 1);
 }
 .island.expanded .island-time {
-  left: 20px;
-  top: 14px;
-  transform: none;
-  font-size: 11px;
-  color: var(--c-text-3);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .island-expanded-content {
@@ -147,7 +144,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 0 16px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .island.expanded .island-expanded-content {

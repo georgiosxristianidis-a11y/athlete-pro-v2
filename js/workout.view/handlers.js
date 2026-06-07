@@ -463,18 +463,22 @@ export function toggleCard(ei) {
 
 export function _updateLiveStats() {
   let tonnage = 0, setsDone = 0, exDone = 0;
+  let totalSets = 0;
+
   State.plan.forEach((ex) => {
     const mul = ex.isUnilateral ? 2 : 1;
-    let allDone = true, anyDone = false;
+    let allExDone = true, anyDone = false;
     ex.sets.forEach((s) => {
+      totalSets++;
       if (s.done) {
         tonnage += (s.weight || 0) * (s.reps || 0) * mul;
         setsDone++;
         anyDone = true;
-      } else allDone = false;
+      } else allExDone = false;
     });
-    if (anyDone && allDone) exDone++;
+    if (anyDone && allExDone) exDone++;
   });
+
   const tEl = document.getElementById('live-tonnage');
   const sEl = document.getElementById('live-sets-done');
   const eEl = document.getElementById('live-ex-done');
@@ -484,8 +488,8 @@ export function _updateLiveStats() {
   if (sEl) sEl.textContent = String(setsDone);
   if (eEl) eEl.textContent = String(exDone);
   
-  if (pEl && State.plan.length > 0) {
-    const pct = (exDone / State.plan.length) * 100;
+  if (pEl && totalSets > 0) {
+    const pct = (setsDone / totalSets) * 100;
     pEl.style.width = `${pct}%`;
   }
 }

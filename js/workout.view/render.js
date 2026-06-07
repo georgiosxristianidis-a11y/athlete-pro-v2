@@ -302,10 +302,6 @@ export async function renderActive() {
           <span class="week-pill-lbl">W</span>
           <span class="week-pill-val">${weekMode}</span>
         </button>
-        <div class="session-timer-chip" style="border-color:${color}20">
-          <div class="session-timer-dot" style="background:${color}"></div>
-          <span id="session-timer-val" style="color:${color}">00:00</span>
-        </div>
       </div>
     </div>
 
