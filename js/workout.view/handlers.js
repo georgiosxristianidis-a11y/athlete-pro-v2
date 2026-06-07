@@ -11,6 +11,7 @@ import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './ren
 import { RestTimer } from '../rest-timer.js';
 import { showReceipt } from '../ui/receipt.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
+import { syncDrumUI } from '../ui/drum-picker.js';
 
 let _restDuration = 90;
 let _focusEi = -1;

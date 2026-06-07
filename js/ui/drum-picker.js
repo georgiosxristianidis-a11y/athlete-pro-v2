@@ -14,7 +14,7 @@ export function initDrumPickers() {
   });
 }
 
-export function syncDrum(type, ei, si, value) {
+export function syncDrumUI(type, ei, si, value) {
   const key = `${type}-${ei}-${si}`;
   const d   = _drums.get(key);
   if (!d) return;
