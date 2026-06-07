@@ -29,6 +29,9 @@ export function syncDrum(type, ei, si, val) {
   if (!set) return;
   if (type === 'w') set.weight = parseFloat(val);
   else set.reps = parseInt(val);
+  
+  syncDrumUI(type, ei, si, val);
+  
   persistSession();
   _updateLiveStats();
 }
@@ -127,6 +130,14 @@ export async function toggleSet(ei, si) {
     // @ts-ignore
     if (window.DynamicIsland) window.DynamicIsland.pulseSetComplete();
     RestTimer.start(ex.name, `Set ${si + 1}`, _restDuration);
+    
+    // Auto-collapse logic: close card after a set is completed
+    const wrap = document.getElementById(`sets-wrap-${ei}`);
+    const chev = document.getElementById(`ex-chevron-${ei}`);
+    if (wrap && chev) {
+      wrap.style.display = 'none';
+      chev.style.transform = 'rotate(0deg)';
+    }
   } else {
     RestTimer.stop();
   }
@@ -170,6 +181,15 @@ export async function addSet(ei) {
     wrap.innerHTML = headerRow + rows + addBtn;
   }
   _updateLiveStats();
+}
+
+export function _toggleUnilateral(ei) {
+  const ex = State.plan[ei];
+  if (!ex) return;
+  ex.isUnilateral = !ex.isUnilateral;
+  persistSession();
+  renderActive();
+  Toast.show(ex.isUnilateral ? 'Dumbbells: 2x Volume' : 'Standard: 1x Volume', 'info');
 }
 
 /* ════════════════════════════════════════════════════════

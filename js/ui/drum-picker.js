@@ -31,7 +31,7 @@ function _buildDrum(wrap) {
   const type    = wrap.dataset.type;           // 'w' | 'r'
   const ei      = parseInt(wrap.dataset.ei);
   const si      = parseInt(wrap.dataset.si);
-  const step    = type === 'w' ? W_STEP : R_STEP;
+  const step    = parseFloat(wrap.dataset.step) || (type === 'w' ? W_STEP : R_STEP);
   const min     = type === 'w' ? W_MIN  : R_MIN;
   const max     = type === 'w' ? W_MAX  : R_MAX;
   const key     = `${type}-${ei}-${si}`;

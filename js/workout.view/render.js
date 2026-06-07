@@ -407,6 +407,7 @@ export async function renderExerciseCard(ex, ei) {
         </div>
         
         <div class="ex-header-actions" onclick="event.stopPropagation()">
+          <button class="ex-action-btn ${ex.isUnilateral ? 'active' : ''}" title="Dumbbells (2x volume)" onclick="Workout._toggleUnilateral(${ei})">DB</button>
           <button class="ex-action-btn coach" title="Smart Coach" onclick="Workout.smartCoach(${ei},${targetSi})">${iconCoach}</button>
           <button class="ex-action-btn" title="Smart Copy" onclick="Workout.smartCopy(${ei},${targetSi})">${iconCopy}</button>
           <button class="ex-action-btn replace" title="Replace exercise" onclick="Workout.openReplaceExModal(${ei})">
@@ -416,7 +417,7 @@ export async function renderExerciseCard(ex, ei) {
 
         <div class="exercise-chevron" id="ex-chevron-${ei}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></div>
       </div>
-      <div class="sets-wrap" id="sets-wrap-${ei}">
+      <div class="sets-wrap" id="sets-wrap-${ei}" style="display:${doneSets === ex.sets.length ? 'none' : 'block'}">
         <div class="set-header-row">
           <span style="width:20px"></span>
           <span class="set-col-label">${ru ? 'Вес kg' : 'Weight kg'}</span>
@@ -436,8 +437,13 @@ export async function renderSetRow(ex, ei, set, si) {
   return `
     <div class="set-row ${set.done ? 'set-done' : ''} ${isActive ? 'set-active' : ''}" id="set-row-${ei}-${si}">
       <span class="set-num">${si + 1}</span>
-      <div class="drum-wrap" id="sw-${ei}-${si}" data-type="w" data-ei="${ei}" data-si="${si}" data-value="${set.weight}"><div class="drum-sel"></div><div class="drum-track"></div><span class="stepper-val hidden">${set.weight}</span></div>
-      <div class="drum-wrap" id="sr-${ei}-${si}" data-type="r" data-ei="${ei}" data-si="${si}" data-value="${set.reps}"><div class="drum-sel"></div><div class="drum-track"></div><span class="stepper-val hidden">${set.reps}</span></div>
+      <div class="drum-wrap" id="sw-${ei}-${si}" 
+           data-type="w" data-ei="${ei}" data-si="${si}" 
+           data-value="${set.weight}" 
+           data-step="${ex.isUnilateral ? 2 : 2.5}"><div class="drum-sel"></div><div class="drum-track"></div><span class="stepper-val hidden">${set.weight}</span></div>
+      <div class="drum-wrap" id="sr-${ei}-${si}" 
+           data-type="r" data-ei="${ei}" data-si="${si}" 
+           data-value="${set.reps}"><div class="drum-sel"></div><div class="drum-track"></div><span class="stepper-val hidden">${set.reps}</span></div>
       <button class="set-check ${set.done ? 'done' : ''}" id="chk-${ei}-${si}" onclick="Workout.toggleSet(${ei},${si})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg></button>
     </div>`;
 }
