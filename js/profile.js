@@ -58,18 +58,16 @@ export const Profile = (() => {
             <div class="pref-title">AI Engine</div>
             <div class="pref-sub">${ru ? 'Выберите "мозг" вашего тренера' : 'Select the brain for your Coach'}</div>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%;">
-            <button class="toggle-btn toggle-engine-btn ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? 'active' : ''}" 
-                    onclick="Profile.setEngine('anthropic')" 
-                    style="height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 16px; font-weight: 800; border: 1px solid var(--c-border); ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? 'background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent);' : ''}">
+          <div class="engine-toggle-grid">
+            <button class="engine-toggle-btn claude-active ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? 'active' : ''}" 
+                    onclick="Profile.setEngine('anthropic')">
               Claude
-              ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? '<span class="engine-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #00e676; box-shadow: 0 0 12px #00e676; animation: engine-pulse 2s infinite;"></span>' : ''}
+              ${(settings['ai-engine'] || 'anthropic') === 'anthropic' ? '<span class="engine-dot"></span>' : ''}
             </button>
-            <button class="toggle-btn toggle-engine-btn ${settings['ai-engine'] === 'gemini' ? 'active' : ''}" 
-                    onclick="Profile.setEngine('gemini')"
-                    style="height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 16px; font-weight: 800; border: 1px solid var(--c-border); ${settings['ai-engine'] === 'gemini' ? 'background: rgba(0, 145, 255, 0.15); border-color: #0091ff; color: #0091ff;' : ''}">
+            <button class="engine-toggle-btn gemini-active ${settings['ai-engine'] === 'gemini' ? 'active' : ''}" 
+                    onclick="Profile.setEngine('gemini')">
               Gemini
-              ${settings['ai-engine'] === 'gemini' ? '<span class="engine-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #0091ff; box-shadow: 0 0 12px #0091ff; animation: engine-pulse 2s infinite;"></span>' : ''}
+              ${settings['ai-engine'] === 'gemini' ? '<span class="engine-dot"></span>' : ''}
             </button>
           </div>
           <div class="pref-sub" style="color: var(--c-text-3); font-size: 11px;">

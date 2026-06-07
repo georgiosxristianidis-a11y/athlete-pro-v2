@@ -186,6 +186,70 @@
   margin: 8px 0;
 }
 
+/* ── AI Engine Toggles ── */
+.engine-toggle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+.engine-toggle-btn {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 16px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  border: 1.5px solid var(--c-border);
+  background: transparent;
+  color: var(--c-text-3);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  position: relative;
+}
+.engine-toggle-btn:active {
+  transform: scale(0.96);
+}
+
+/* Claude Active State */
+.engine-toggle-btn.active.claude-active {
+  background: var(--c-accent-bg);
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+  box-shadow: 0 0 16px rgba(0, 230, 118, 0.15);
+}
+
+/* Gemini Active State */
+.engine-toggle-btn.active.gemini-active {
+  background: rgba(68, 138, 255, 0.12);
+  border-color: #448aff;
+  color: #448aff;
+  box-shadow: 0 0 16px rgba(68, 138, 255, 0.15);
+}
+
+.engine-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: engine-pulse 2s infinite;
+}
+.claude-active .engine-dot {
+  background: var(--c-accent);
+  box-shadow: 0 0 12px var(--c-accent);
+}
+.gemini-active .engine-dot {
+  background: #448aff;
+  box-shadow: 0 0 12px #448aff;
+}
+
+@keyframes engine-pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 /* ── Toggle group ── */
 .toggle-group {
   display: flex;
