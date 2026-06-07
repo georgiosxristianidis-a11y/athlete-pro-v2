@@ -109,18 +109,27 @@ async function switchTab(tab) {
         </div>
       </div>
 
+      <!-- ── PPL Balance ── -->
       <div class="section-header" style="margin-top:var(--sp-3)">
-        <span class="section-label">${ru ? 'Календарь' : 'Monthly Calendar'}</span>
-        <div style="display:flex;align-items:center;gap:12px">
-          <button class="btn-icon-nav" onclick="Analytics.calPrev()">${svgArrow('minus')}</button>
-          <span id="cal-month-label" style="font-size:11px;font-weight:800;color:var(--c-text-1);min-width:80px;text-align:center;text-transform:uppercase;"></span>
-          <button class="btn-icon-nav" onclick="Analytics.calNext()">${svgArrow('plus')}</button>
+        <span class="section-label">${ru ? 'Баланс PPL' : 'PPL Balance'}</span>
+      </div>
+      <div class="chart-card bento-grid" style="padding:16px;gap:12px;display:grid;grid-template-columns:1fr 1fr 1fr">
+        <div class="ppl-bal-item">
+          <div class="ppl-bal-val" id="ppl-bal-push" style="color:var(--c-accent)">0%</div>
+          <div class="ppl-bal-lbl">${ru ? 'Жим' : 'Push'}</div>
+        </div>
+        <div class="ppl-bal-item">
+          <div class="ppl-bal-val" id="ppl-bal-pull" style="color:var(--c-purple)">0%</div>
+          <div class="ppl-bal-lbl">${ru ? 'Тяга' : 'Pull'}</div>
+        </div>
+        <div class="ppl-bal-item">
+          <div class="ppl-bal-val" id="ppl-bal-legs" style="color:var(--c-blue)">0%</div>
+          <div class="ppl-bal-lbl">${ru ? 'Ноги' : 'Legs'}</div>
         </div>
       </div>
-      <div class="cal-card" id="cal-card"></div>
 
       <div class="section-header" style="margin-top:var(--sp-4)">
-        <span class="section-label">${ru ? 'Недельный объем' : 'Weekly Volume'}</span>
+        <span class="section-label">${ru ? 'Прогресс объема' : 'Weekly Progress'}</span>
         <span class="badge badge-accent" id="an-week-best">—</span>
       </div>
       <div class="chart-card"><canvas id="cv-volume" height="140"></canvas></div>
@@ -135,10 +144,22 @@ async function switchTab(tab) {
 
     const { workouts, orms } = await fetchAllData();
     _renderQuickStats(workouts);
+    _renderPPLBalance(workouts);
     _renderCalendar(workouts);
     const trend = await fetchWeeklyTrend(10);
     _renderVolumeChart(workouts, trend);
     _renderORMList(orms);
+... [TRUNCATED] ...
+function _renderPPLBalance(workouts) {
+  const ppl = { push: 0, pull: 0, legs: 0 };
+  workouts.forEach(w => {
+    if (ppl[w.type] !== undefined) ppl[w.type] += w.tonnage || 0;
+  });
+  const total = ppl.push + ppl.pull + ppl.legs || 1;
+  _set('ppl-bal-push', Math.round((ppl.push / total) * 100) + '%');
+  _set('ppl-bal-pull', Math.round((ppl.pull / total) * 100) + '%');
+  _set('ppl-bal-legs', Math.round((ppl.legs / total) * 100) + '%');
+}
 
   } else {
     container.innerHTML = `<div id="body-stats-root"></div>`;
