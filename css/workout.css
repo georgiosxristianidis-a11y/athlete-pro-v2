@@ -6,7 +6,15 @@
 .type-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; height: 120px; max-width: 160px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-l); cursor: pointer; transition: all var(--t-fast); -webkit-tap-highlight-color: transparent; }
 .type-card:active { transform: scale(0.95); background: var(--c-surface-h); }
 .type-card-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+.type-card-name { font-size: 14px; font-weight: 800; color: var(--c-text-1); letter-spacing: -0.02em; }
+.type-card-meta { font-size: 10px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.6; }
 .type-icon { display: inline-block; width: 20px; height: 20px; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-size: contain; mask-size: contain; }
+... [TRUNCATED] ...
+.programs-carousel { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: var(--sp-2); scroll-snap-type: x mandatory; }
+.program-card { flex: 0 0 240px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 18px; padding: 16px; scroll-snap-align: start; cursor: pointer; }
+.program-type { font-size: 9px; font-weight: 800; color: var(--c-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+.program-name { font-size: 16px; font-weight: 800; color: var(--c-text-1); letter-spacing: -0.02em; margin-bottom: 2px; }
+.program-dur { font-size: 11px; font-weight: 600; color: var(--c-text-3); }
 
 .btn-text { display: flex; align-items: center; gap: 4px; background: none; border: none; font-size: 11px; font-weight: 800; color: var(--c-accent); cursor: pointer; text-transform: uppercase; line-height: 1; transition: opacity 0.2s; }
 .btn-text:active { opacity: 0.6; }
