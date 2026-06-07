@@ -131,12 +131,17 @@ export async function toggleSet(ei, si) {
     if (window.DynamicIsland) window.DynamicIsland.pulseSetComplete();
     RestTimer.start(ex.name, `Set ${si + 1}`, _restDuration);
     
-    // Auto-collapse logic: close card after a set is completed
-    const wrap = document.getElementById(`sets-wrap-${ei}`);
-    const chev = document.getElementById(`ex-chevron-${ei}`);
-    if (wrap && chev) {
-      wrap.style.display = 'none';
-      chev.style.transform = 'rotate(0deg)';
+    // 🛡️ Elite Auto-collapse logic: ONLY if ALL sets are done (e.g. 4/4)
+    const allDone = ex.sets.every(s => s.done);
+    if (allDone) {
+      setTimeout(() => {
+        const wrap = document.getElementById(`sets-wrap-${ei}`);
+        const chev = document.getElementById(`ex-chevron-${ei}`);
+        if (wrap && wrap.style.display !== 'none') {
+          wrap.style.display = 'none';
+          if (chev) chev.style.transform = 'rotate(0deg)';
+        }
+      }, 500); // 400ms delay for visual feedback
     }
   } else {
     RestTimer.stop();

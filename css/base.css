@@ -12,6 +12,15 @@
   --c-bg-1: #08080c;
   --c-bg-2: #0c0c12;
   --c-bg-3: #12121a;
+  
+  /* Typography Mix */
+  --font-main: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Instrument Sans', sans-serif;
+  
+  /* Spatial Rhythm */
+  --side-padding: 20px;
+  --sp-island: 32px;
+  
   --c-surface: rgba(255, 255, 255, 0.035);
   --c-surface-h: rgba(255, 255, 255, 0.07);
   --c-border: rgba(255, 255, 255, 0.08);
@@ -101,39 +110,51 @@
   --t-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --t-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --t-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  /* Breakpoints (reference values — used in @media, documented here) */
-  --bp-sm: 360px;
-  --bp-md: 768px;
 }
 
 /* ── Section 2: Shared Component — Buttons ────────────── */
 .btn-primary {
+  height: 48px;
   background: var(--c-accent);
   color: var(--c-text-inverse);
-}
-.btn-primary:active {
-  background: var(--c-accent-d);
-  transform: scale(0.98);
-}
-.btn-icon-sm {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  color: var(--c-text-2);
+  border-radius: 14px;
+  border: none;
+  font-family: var(--font-main);
+  font-size: 15px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   cursor: pointer;
+  transition: transform var(--t-fast), background var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
-.btn-icon-sm:active {
-  background: var(--c-surface-h);
+.btn-primary:active {
+  background: var(--c-accent-d);
+  transform: scale(0.96);
 }
-.btn-icon-nav {
-  width: 36px;
-  height: 36px;
+
+.btn-ghost {
+  height: 48px;
+  background: transparent;
+  border: 1px solid var(--c-border);
+  color: var(--c-text-2);
+  border-radius: 14px;
+  font-family: var(--font-main);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.btn-ghost:active {
+  background: var(--c-surface-h);
+  transform: scale(0.96);
+}
+
+.btn-icon-sm {
+  width: 32px;
+  height: 32px;
   border-radius: 10px;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
@@ -142,11 +163,32 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: transform var(--t-fast), background var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-icon-sm:active {
+  background: var(--c-surface-h);
+  transform: scale(0.92);
+}
+
+.btn-icon-nav {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   flex-shrink: 0;
+  transition: transform var(--t-fast), background var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
 .btn-icon-nav:active {
   background: var(--c-surface-h);
+  transform: scale(0.92);
 }
 
 /* ── Section 3.5: View Transitions ───────────────────────
@@ -166,8 +208,8 @@
   z-index: 1000;
   display: flex;
   align-items: flex-end;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   animation: overlay-in 0.2s ease forwards;
 }
 @keyframes overlay-in {
@@ -181,7 +223,7 @@
 .modal-sheet {
   width: 100%;
   background: var(--c-bg-2);
-  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  border-radius: 24px 24px 0 0;
   border-top: 1px solid var(--c-border);
   padding: var(--sp-3) var(--sp-2) calc(var(--sp-3) + var(--safe-bottom));
   animation: sheet-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
@@ -210,6 +252,7 @@
   margin-bottom: var(--sp-2);
 }
 .modal-title {
+  font-family: var(--font-heading);
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -248,17 +291,37 @@ button:focus-visible {
   top: 50px;
 }
 
-/* ── Section 4.5: Spacing safety net ──────────────────────
-   Lobotomized-owl pattern (Heydon Pickering): every direct child of a screen
-   gets a minimum 16px margin from its predecessor. Acts as a floor — explicit
-   margins on components still win, but nothing accidentally slips below sp-2. */
+/* ── Section 4.5: Layout & Spacing ────────────────────────
+   Apple-inspired 'Air' logic: 20px side margins, 40px screen headers. */
+.screen {
+  padding: 64px var(--side-padding) 120px;
+}
+.screen-header {
+  margin-bottom: var(--sp-island);
+}
+.screen-title {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--c-text-1);
+}
+.section-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-text-3);
+  opacity: 0.6;
+}
+
 .screen > * + * {
   margin-top: var(--sp-2);
 }
-/* Opt-out: components that manage their own internal spacing */
-.screen > .live-bar + *,
-.screen > .screen-header + * {
-  /* keep their existing tight relationship */
+/* Islands: blocks that need more air */
+.screen > .section-header {
+  margin-top: var(--sp-island);
 }
 
 /* ── Section 5: Responsive ────────────────────────────── */
@@ -367,8 +430,8 @@ button:focus-visible {
 .bs-tab-bar,
 .plan-tabs {
   background: rgba(255, 255, 255, 0.025);
-  backdrop-filter: blur(18px) saturate(1.4);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(25px) saturate(1.6);
+  -webkit-backdrop-filter: blur(25px) saturate(1.6);
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.04) inset,
@@ -430,9 +493,10 @@ button:focus-visible {
     rgba(255, 255, 255, 0.028) 0%,
     rgba(255, 255, 255, 0.014) 100%
   );
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--r-l) !important;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.04) inset,
     0 4px 16px rgba(0, 0, 0, 0.25);
@@ -606,11 +670,13 @@ button:focus-visible {
   justify-content: space-between;
   margin-bottom: var(--sp-1);
 }
-.section-label {
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--c-text-3);
-  opacity: 0.8;
+/* ── Section 6: Data & Digits ─────────────────────────── */
+.sw-val, .sr-val, .stepper-val, .live-val, .orm-val, .focus-hero-val {
+  font-family: var(--font-heading);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.drum-wrap {
+  font-family: var(--font-heading);
+  font-weight: 600;
 }

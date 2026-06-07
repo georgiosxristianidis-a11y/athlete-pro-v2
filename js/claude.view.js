@@ -276,17 +276,27 @@ export const Claude = (() => {
    * @returns {void}
    */
   async function renderFAB() {
+    const isHidden = await DB.Settings.get('ai-panda-hidden', false);
+    if (isHidden) return;
     if (document.getElementById('claude-fab')) return;
+
     const engine = await DB.Settings.get('ai-engine').catch(() => 'anthropic') || 'anthropic';
     const isGemini = engine === 'gemini';
+    
     const fab = document.createElement('button');
     fab.id = 'claude-fab';
-    fab.className = 'claude-fab';
-    fab.setAttribute('aria-label', 'AI Coach');
+    fab.className = 'claude-fab' + (isGemini ? ' gemini-mode' : '');
+    fab.setAttribute('aria-label', 'AI Assistant');
 
-    // Try video first, fall back to static image, then icon
-    // preload="none" defers 1MB download until play — icon shown first
-    fab.innerHTML = isGemini ? _geminiIcon() : _claudeIcon();
+    fab.innerHTML = `
+      <div class="fab-close-btn" onclick="event.stopPropagation(); Claude.dismissFAB()" title="Hide Assistant">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div class="fab-content">
+        ${isGemini ? _geminiIcon() : _claudeIcon()}
+      </div>
+    `;
+
     const vid = document.createElement('video');
     vid.preload = 'none';
     vid.src = 'assets/panda-idle.mp4';
@@ -295,7 +305,6 @@ export const Claude = (() => {
     vid.playsInline = true;
     vid.setAttribute('playsinline', '');
     vid.onerror = () => {
-      // Fallback: try webm format, then icon
       const vid2 = document.createElement('video');
       vid2.preload = 'none';
       vid2.src = 'assets/panda-idle.webm';
@@ -304,38 +313,76 @@ export const Claude = (() => {
       vid2.playsInline = true;
       vid2.setAttribute('playsinline', '');
       vid2.onerror = () => {
-        fab.innerHTML = isGemini ? _geminiIcon() : _claudeIcon();
+        fab.querySelector('.fab-content').innerHTML = isGemini ? _geminiIcon() : _claudeIcon();
       };
-      vid2.oncanplay = () => { fab.innerHTML = ''; fab.appendChild(vid2); vid2.play(); };
+      vid2.oncanplay = () => { fab.querySelector('.fab-content').innerHTML = ''; fab.querySelector('.fab-content').appendChild(vid2); vid2.play(); };
       vid2.load();
     };
-    vid.oncanplay = () => { fab.innerHTML = ''; fab.appendChild(vid); vid.play(); };
-    // Defer video load until after initial paint
+    vid.oncanplay = () => { fab.querySelector('.fab-content').innerHTML = ''; fab.querySelector('.fab-content').appendChild(vid); vid.play(); };
     requestIdleCallback(() => vid.load(), { timeout: 3000 });
 
     fab.addEventListener('click', open);
     document.body.appendChild(fab);
 
-    // Anchor FAB above nav bar AND inside the app column (not viewport edge).
-    // On desktop the app is a centered 412px column — compute right offset from #app's bounding rect.
-    function _snapFAB() {
-      const nav = document.getElementById('nav');
-      const app = document.getElementById('app');
-      if (!nav || !fab) return;
-      const navH = nav.offsetHeight;
-      fab.style.bottom = navH + 12 + 'px';
-      if (app && window.innerWidth > app.offsetWidth + 8) {
-        // Desktop: anchor 14px from app's right edge
-        const rect = app.getBoundingClientRect();
-        const rightOffset = Math.max(14, window.innerWidth - rect.right + 14);
-        fab.style.right = rightOffset + 'px';
-      } else {
-        fab.style.right = '14px';
-      }
+    _initDraggable(fab);
+    _snapFAB(fab);
+    window.addEventListener('resize', () => _snapFAB(fab));
+  }
+
+  function _snapFAB(fab) {
+    const nav = document.getElementById('nav');
+    const app = document.getElementById('app');
+    if (!nav || !fab) return;
+    const navH = nav.offsetHeight;
+    fab.style.bottom = navH + 12 + 'px';
+    if (app && window.innerWidth > app.offsetWidth + 8) {
+      const rect = app.getBoundingClientRect();
+      const rightOffset = Math.max(14, window.innerWidth - rect.right + 14);
+      fab.style.right = rightOffset + 'px';
+    } else {
+      fab.style.right = '14px';
     }
-    _snapFAB();
-    window.addEventListener('resize', _snapFAB);
-    document.addEventListener('fullscreenchange', _snapFAB);
+  }
+
+  function _initDraggable(el) {
+    let x = 0, y = 0, startX = 0, startY = 0;
+    let moved = false;
+    
+    el.onpointerdown = (e) => {
+      e.preventDefault();
+      startX = e.clientX;
+      startY = e.clientY;
+      moved = false;
+      document.onpointermove = (ev) => {
+        moved = true;
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
+        x = dx; y = dy;
+      };
+      document.onpointerup = () => {
+        document.onpointermove = null;
+        document.onpointerup = null;
+      };
+    };
+    
+    el.addEventListener('click', (e) => {
+      if (moved) {
+        e.stopImmediatePropagation();
+        moved = false;
+      }
+    }, true);
+  }
+
+  async function dismissFAB() {
+    const fab = document.getElementById('claude-fab');
+    if (fab) {
+      fab.style.transform = 'scale(0) rotate(-90deg)';
+      fab.style.opacity = '0';
+      setTimeout(() => fab.remove(), 300);
+    }
+    await DB.Settings.set('ai-panda-hidden', true);
+    window.Toast?.show('Assistant hidden. Enable in Settings.', 'info');
   }
 
   /**
@@ -684,7 +731,7 @@ export const Claude = (() => {
     setTimeout(() => open(), 300);
   }
 
-  return { renderFAB, open, close, _sendChat, _claudeIcon, _geminiIcon, _toggleEngine };
+  return { renderFAB, open, close, _sendChat, _claudeIcon, _geminiIcon, _toggleEngine, dismissFAB, _snapFAB };
 })();
 
 /* ══════════════════════════════════════════════

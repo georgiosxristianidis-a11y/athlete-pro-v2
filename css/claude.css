@@ -39,8 +39,58 @@
   transition:
     transform 0.15s ease,
     box-shadow 0.2s ease,
-    border-color 0.2s ease;
+    border-color 0.2s ease,
+    background 0.3s ease;
 }
+
+/* Gemini Neon State */
+.claude-fab.gemini-mode {
+  background: radial-gradient(
+    circle at 30% 25%,
+    rgba(68, 138, 255, 0.2),
+    var(--c-surface) 65%,
+    var(--c-bg-2, #0d0d12) 100%
+  );
+  border-color: rgba(68, 138, 255, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 8px 22px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(68, 138, 255, 0.25);
+}
+.claude-fab.gemini-mode svg {
+  color: #448aff;
+  filter: drop-shadow(0 0 8px rgba(68, 138, 255, 0.4));
+}
+
+.fab-close-btn {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s ease;
+  z-index: 501;
+  pointer-events: auto;
+}
+.claude-fab:hover .fab-close-btn {
+  opacity: 1;
+  transform: scale(1);
+}
+.fab-close-btn:hover {
+  background: var(--c-red-bg);
+  color: var(--c-red);
+  border-color: var(--c-red);
+}
+
 .claude-fab:hover {
   border-color: rgba(0, 230, 118, 0.55);
   box-shadow:

@@ -18,7 +18,8 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline may be needed for some vanilla patterns, revisit with nonces
+      scriptSrc: ["'self'", "'unsafe-inline'"], 
+      scriptSrcAttr: ["'unsafe-inline'"], // Required for onclick handlers in templates
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "https://*.supabase.co"],
       connectSrc: [

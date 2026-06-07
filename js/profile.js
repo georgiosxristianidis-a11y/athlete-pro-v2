@@ -25,9 +25,10 @@ export const Profile = (() => {
     }
 
     try {
-      const [settings, langRaw] = await Promise.all([
+      const [settings, langRaw, pandaHidden] = await Promise.all([
         DB.Settings.getAll(),
         DB.Settings.get('lang', 'en'),
+        DB.Settings.get('ai-panda-hidden', false),
       ]);
       const lang = langRaw || 'en'; // Absolute default
       const ru = lang === 'ru';
@@ -134,6 +135,20 @@ export const Profile = (() => {
             </div>
           </div>
         </div>
+
+        <div class="pref-row">
+          <div class="pref-info">
+            <div class="setting-title">${ru ? 'AI Panda Помощник' : 'AI Panda Assistant'}</div>
+            <div class="setting-desc">${ru ? 'Показывать панду на экране' : 'Show floating assistant'}</div>
+          </div>
+          <div class="switch-wrap" onclick="Profile._togglePanda()">
+            <div class="switch ${!pandaHidden ? 'on' : ''}" id="sw-panda">
+              <div class="switch-thumb"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pref-divider"></div>
 
         <div class="pref-row">
           <div class="pref-info">
@@ -318,6 +333,23 @@ export const Profile = (() => {
       return;
     }
     await DB.Settings.set('ai-engine', engine);
+    
+    // Sync FAB state
+    const fab = document.getElementById('claude-fab');
+    if (fab) {
+      if (engine === 'gemini') {
+        fab.classList.add('gemini-mode');
+        const content = fab.querySelector('.fab-content');
+        const { Claude } = await import('./claude.view.js');
+        if (content) content.innerHTML = Claude._geminiIcon();
+      } else {
+        fab.classList.remove('gemini-mode');
+        const content = fab.querySelector('.fab-content');
+        const { Claude } = await import('./claude.view.js');
+        if (content) content.innerHTML = Claude._claudeIcon();
+      }
+    }
+    
     load();
   }
 
@@ -384,11 +416,28 @@ export const Profile = (() => {
     load();
   }
 
+  async function _togglePanda() {
+    const current = await DB.Settings.get('ai-panda-hidden', false);
+    const next = !current;
+    await DB.Settings.set('ai-panda-hidden', next);
+    
+    // Trigger FAB update
+    const { Claude } = await import('./claude.view.js');
+    if (next) {
+      const fab = document.getElementById('claude-fab');
+      if (fab) fab.remove();
+    } else {
+      Claude.renderFAB();
+    }
+    
+    load();
+  }
+
   return {
     load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
     toggleMascot, setLang, setEngine, setTrainingMode,
     saveInjuries, setSessionTime, exportData, importData,
-    _onImportFile, clearAllData,
+    _onImportFile, clearAllData, _togglePanda
   };
 })();
 
