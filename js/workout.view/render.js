@@ -37,7 +37,7 @@ export function svgArrow(dir) {
   };
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-    style="pointer-events:none">${p[dir]}</svg>`;
+    width="14" height="14" style="pointer-events:none">${p[dir]}</svg>`;
 }
 
 export function typeIcon(type, color) {
