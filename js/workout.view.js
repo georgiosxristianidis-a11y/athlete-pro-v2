@@ -24,7 +24,7 @@ import {
   selectType, stepWeight, stepReps, editVal, commitVal, setRPE, toggleSet, toggleCard,
   openCustomWorkoutModal, _createNewCustomWorkout, _editCustomWorkout, _deleteCustomWorkout,
   _startCustomWorkout, _startProgram, _closeCustomWorkoutModal, addSet, smartCopy, smartCoach,
-  completeSession, cancelSession, _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem,
+  completeSession, cancelSession, _toggleUnilateral, _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem,
   _removeCoreItem, _openFocus, _closeFocus, _focusNext, _focusPrev,
   _focusStepW, _focusStepR, _focusCompleteSet, _initFocusLongPress,
 } from './workout.view/handlers.js';
@@ -142,7 +142,7 @@ export {
   selectType, stepWeight, stepReps, editVal, commitVal, setRPE, toggleSet, toggleCard,
   openCustomWorkoutModal, _createNewCustomWorkout, _editCustomWorkout, _deleteCustomWorkout,
   _startCustomWorkout, _startProgram, _closeCustomWorkoutModal, addSet, smartCopy, smartCoach,
-  completeSession, cancelSession, _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem,
+  completeSession, cancelSession, _toggleUnilateral, _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem,
   _removeCoreItem, _openFocus, _closeFocus, _focusNext, _focusPrev,
   _focusStepW, _focusStepR, _focusCompleteSet, _initFocusLongPress, _renderCoreSection
 };
