@@ -213,7 +213,7 @@
   font-size: 18px;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
-  color: var(--c-accent);
+  color: var(--c-text-1);
   opacity: 0;
   pointer-events: none;
   z-index: 3;
