@@ -4,7 +4,7 @@ import { Timer } from '../timer.js';
 
 /**
  * dynamic-island.js — Interactive session overlay (PIP)
- * Shows: Timer, Sets done/total, Current exercise, Next exercise
+ * Shows: Timer (Total Session Time ONLY), Sets done/total, Current exercise
  * Interactions: Draggable, Tap to expand, Set complete pulse
  */
 
@@ -32,7 +32,6 @@ export const DynamicIsland = (() => {
   let _nameEl = null;
   let _sublabelEl = null;
   let _progressFill = null;
-  let _timerDisp = null;
   let _timerProg = null;
 
   function init() {
@@ -58,8 +57,10 @@ export const DynamicIsland = (() => {
           <div class="island-sublabel" id="di-sublabel">Week 1 · PUSH · next: Bench</div>
         </div>
 
-        <div class="island-timer-display" id="di-timer-display"></div>
+        <!-- Timer progress line (for Rest intervals) -->
         <div class="island-timer-progress" id="di-timer-progress"></div>
+        
+        <!-- Global Workout Progress (Bottom strip) -->
         <div class="island-progress-track">
           <div class="island-progress-fill" id="di-progress-fill"></div>
         </div>
@@ -77,7 +78,6 @@ export const DynamicIsland = (() => {
     _nameEl = document.getElementById('di-name');
     _sublabelEl = document.getElementById('di-sublabel');
     _progressFill = document.getElementById('di-progress-fill');
-    _timerDisp = document.getElementById('di-timer-display');
     _timerProg = document.getElementById('di-timer-progress');
 
     // Drag events
@@ -86,9 +86,9 @@ export const DynamicIsland = (() => {
     window.addEventListener('pointerup', _onDragEnd);
     window.addEventListener('pointercancel', _onDragEnd);
 
-    // Expand toggle (only if not dragged significantly)
+    // Expand toggle
     _island?.addEventListener('click', (e) => {
-      if (Math.abs(_currentX) > 5 || Math.abs(_currentY) > 5) return;
+      if (_movedPastThreshold) return;
       toggleExpand();
     });
 
@@ -119,9 +119,9 @@ export const DynamicIsland = (() => {
   function update() {
     if (!State.plan || !State.plan.length || !_wrap || !_wrap.classList.contains('visible')) return;
 
-    const ru = (localStorage.getItem('ap-settings-lang') === 'ru'); // Safe check
+    const ru = (localStorage.getItem('ap-settings-lang') === 'ru');
 
-    // Time (emphasized in compact)
+    // Time (Total Session Time ONLY)
     if (_timeEl) _timeEl.textContent = Timer.fmt(Timer.seconds());
 
     // Current Exercise
@@ -143,14 +143,14 @@ export const DynamicIsland = (() => {
       _setsEl.style.color = _getSetsColor(done, total);
     }
 
-    // Sublabel (Week + Day + Next)
+    // Sublabel
     const nextEx = State.plan[activeIdx + 1];
     const status = nextEx ? `${ru ? 'далее' : 'next'}: ${nextEx.name}` : (ru ? 'готово!' : 'complete!');
     if (_sublabelEl) {
       _sublabelEl.textContent = `W${getWeekMode()} · ${String(State.type).toUpperCase()} · ${status}`;
     }
 
-    // Progress bar
+    // Progress bar (Total workout progress)
     if (_progressFill) {
       const pct = total ? (done / total) * 100 : 0;
       _progressFill.style.width = `${pct}%`;
@@ -161,20 +161,20 @@ export const DynamicIsland = (() => {
     _updateNetworkStatus();
   }
 
-  // Timer mode (Rest Timer)
-  function setTimer(secs, max) {
+  // Rest Timer progress line
+  function setRestProgress(secs, max) {
     if (!_wrap) init();
     _timerActive = true;
     _timerSecs = secs;
     _timerMax = max;
     _island?.classList.add('timer-mode');
-    _renderTimer();
+    _renderRestProgress();
   }
 
   function stopTimer() {
     _timerActive = false;
     _island?.classList.remove('timer-mode');
-    _renderTimer();
+    _renderRestProgress();
   }
 
   function pulseSetComplete() {
@@ -207,7 +207,6 @@ export const DynamicIsland = (() => {
     const dy = e.clientY - (_startY + _currentY);
     const dist = Math.sqrt(dx * dx + dy * dy);
     
-    // Only move if past 6px threshold
     if (!_movedPastThreshold && dist > 6) {
       _movedPastThreshold = true;
     }
@@ -217,7 +216,6 @@ export const DynamicIsland = (() => {
     _currentX = e.clientX - _startX;
     _currentY = e.clientY - _startY;
     
-    // Strict bounds clamping (within #app)
     const appEl = document.getElementById('app') || document.body;
     const appRect = appEl.getBoundingClientRect();
     const bounds = _island.getBoundingClientRect();
@@ -239,17 +237,15 @@ export const DynamicIsland = (() => {
     if (!_isDragging) return;
     _isDragging = false;
     _island?.style.setProperty('transition', 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)');
-    _movedPastThreshold = false;
+    setTimeout(() => { _movedPastThreshold = false; }, 50);
   }
 
-  function _renderTimer() {
-    if (!_timerDisp || !_timerProg) return;
+  function _renderRestProgress() {
+    if (!_timerProg) return;
     if (!_timerActive) {
-      _timerDisp.textContent = '';
       _timerProg.style.width = '0%';
       return;
     }
-    _timerDisp.textContent = Timer.fmt(_timerSecs);
     const pct = _timerMax ? (_timerSecs / _timerMax) * 100 : 0;
     _timerProg.style.width = `${pct}%`;
   }
@@ -268,7 +264,7 @@ export const DynamicIsland = (() => {
     return 'var(--c-text-3)';
   }
 
-  return { init, show, hide, update, setTimer, stopTimer, pulseSetComplete, toggleExpand };
+  return { init, show, hide, update, setRestProgress, stopTimer, pulseSetComplete, toggleExpand };
 })();
 
 // @ts-ignore

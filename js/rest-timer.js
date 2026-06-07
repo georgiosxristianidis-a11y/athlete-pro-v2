@@ -26,7 +26,7 @@ export const RestTimer = (() => {
     _updateBar(rem);
     _updateModal(rem);
     // @ts-ignore
-    if (window.DynamicIsland) window.DynamicIsland.setTimer(rem, _total);
+    if (window.DynamicIsland) window.DynamicIsland.setRestProgress(rem, _total);
 
     if (rem <= 0) {
       _onDone();
