@@ -296,7 +296,6 @@ export async function renderActive() {
     <div class="screen-header">
       <div>
         <div class="screen-title">${ru ? (State.type === 'push' ? 'Жим' : State.type === 'pull' ? 'Тяга' : 'Ноги') : State.type.charAt(0).toUpperCase() + State.type.slice(1)} ${ru ? 'День' : 'Day'}</div>
-        <div class="screen-sub">${exCount} ${ru ? 'упражнений' : 'exercises'} · ${totalSets} ${ru ? 'подходов' : 'sets'}</div>
       </div>
       <div class="header-chips">
         <button class="week-pill week-${weekMode}" onclick="Workout._toggleWeek()">

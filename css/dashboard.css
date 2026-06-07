@@ -188,29 +188,32 @@
   justify-content: space-between;
 }
 .ppl-chip-label {
-  font-family: 'Manrope', sans-serif;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--c-text-1);
 }
 .ppl-chip-val {
-  font-size: 13px;
+  font-family: var(--font-heading);
+  font-size: 15px;
   font-weight: 700;
-  color: var(--c-text-1);
+  color: var(--c-text-2);
   font-variant-numeric: tabular-nums;
 }
 .ppl-bar {
-  height: 2px;
-  background: var(--c-border);
-  border-radius: 2px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
   overflow: hidden;
+  margin-top: 4px;
 }
 .ppl-bar-fill {
   height: 100%;
-  border-radius: 2px;
-  transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 4px;
+  transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.15);
 }
 
 /* ── Recent session items ── */

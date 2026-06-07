@@ -16,35 +16,37 @@ import { AthleteRoom } from './shared/athlete-room.js';
 /* ── Lazy-loaded modules ── */
 async function _loadWorkout() {
   if (window.Workout) return window.Workout;
-  const [{ Workout }, { RestTimer }, { PlateCalc }] = await Promise.all([
+  const [WorkoutMod, { RestTimer }, { PlateCalc }] = await Promise.all([
     import('./workout.view.js'),
     import('./rest-timer.js'),
     import('./plate-calc.js'),
   ]);
-  window.Workout = Workout;
+  const W = WorkoutMod.Workout || WorkoutMod.default || WorkoutMod;
+  window.Workout = W;
   window.RestTimer = RestTimer;
   window.PlateCalc = PlateCalc;
-  return Workout;
+  return W;
 }
 
 async function _loadProfile() {
   if (window.Profile) return window.Profile;
-  const [{ Profile }, { SupabaseCheck }, { renderProfile }] = await Promise.all([
+  const [ProfileMod, { SupabaseCheck }, { renderProfile }] = await Promise.all([
     import('./profile.js'),
     import('./supabase-check.js'),
     import('./profile.view.js'),
   ]);
-  window.Profile = Profile;
+  const P = ProfileMod.Profile || ProfileMod.default || ProfileMod;
+  window.Profile = P;
   window.SupabaseCheck = SupabaseCheck;
   window.ProfileView = { renderProfile };
-  return Profile;
+  return P;
 }
 
 async function _loadBodyStats() {
-  if (window.renderBodyStats) return window.renderBodyStats;
-  const { renderBodyStats } = await import('./body-stats.js');
-  window.renderBodyStats = renderBodyStats;
-  return renderBodyStats;
+  const mod = await import('./body-stats.js');
+  const fn = mod.renderBodyStats || mod.default || mod;
+  window.renderBodyStats = fn;
+  return fn;
 }
 
 /* ── Bridge: expose to window for onclick="" handlers ── */
@@ -131,7 +133,7 @@ openDB()
     const hasSession = localStorage.getItem('ap-active-session');
     if (hasSession) {
       const Workout = await _loadWorkout();
-      const restored = await Workout.init();
+      const restored = await Workout.load();
       if (restored) {
         await Nav.go('s-train');
         return;
@@ -147,6 +149,26 @@ openDB()
     clearTimeout(bootTimeout);
     hideLoading();
   });
+
+/* ── Navigation Handlers ── */
+Nav.on('s-home', () => Dashboard.load());
+Nav.on('s-train', async () => {
+  const Workout = await _loadWorkout();
+  await Workout.load();
+});
+Nav.on('s-stats', async () => {
+  const { Analytics } = await import('./analytics.view.js');
+  window.Analytics = Analytics;
+  await Analytics.load();
+});
+Nav.on('s-body', async () => {
+  const renderBodyStats = await _loadBodyStats();
+  renderBodyStats();
+});
+Nav.on('s-profile', async () => {
+  const Profile = await _loadProfile();
+  await Profile.load();
+});
 
 /* ── Claude FAB (lazy-loaded) ── */
 import('./claude.view.js').then(({ Claude }) => {

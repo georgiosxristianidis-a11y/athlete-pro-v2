@@ -32,11 +32,11 @@ import {
 /* ── Public API (window.Workout) ── */
 
 /**
- * Initialize the workout view.
+ * Initialize and load the workout view.
  * @returns {Promise<boolean>} — true if a session was restored
  */
-export async function init() {
-  console.log('Workout.init() called');
+export async function load() {
+  console.log('Workout.load() called');
   const screen = document.getElementById('s-train');
   if (!screen) return false;
 
@@ -75,7 +75,7 @@ export async function init() {
 }
 
 export const Workout = {
-  init,
+  load,
   renderSelect,
   renderActive,
   selectType,
@@ -111,6 +111,7 @@ export const Workout = {
   completeSession,
   cancelSession,
   openReplaceExModal,
+  _toggleUnilateral,
   _toggleWeek,
   _addLiveExercise,
   _toggleCoreItem,

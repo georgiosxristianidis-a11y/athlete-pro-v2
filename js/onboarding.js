@@ -22,9 +22,10 @@ const SVG = {
   intermediate: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
   advanced: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
   check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
-  shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-  cloud: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.3-1.7-4.2-3.9-4.5-1.1-3.1-4-5.4-7.4-5.4-4 0-7.3 3.1-7.7 7.1C1.1 12.3 0 14 0 16c0 3.3 2.7 6 6 6h11.5"/></svg>`,
-};
+  shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  cloud: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.3-1.7-4.2-3.9-4.5-1.1-3.1-4-5.4-7.4-5.4-4 0-7.3 3.1-7.7 7.1-2 .3-3.5 2-3.5 4 0 2.2 1.8 4 4 4h11.5"/></svg>`,
+  back: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>`,
+  };
 
 const STEPS = 6;
 let _step = 1;
@@ -131,9 +132,12 @@ function _stepQuickConfirm(ru) {
       </p>
     </div>
     <div style="display:flex; gap:12px; margin-top:auto; padding-top:32px">
-      <button onclick="window._obPrev()" style="flex:1; height:52px; background:none; border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-2); font-size:15px; font-weight:700; cursor:pointer">${ru ? 'Назад' : 'Back'}</button>
+      <button onclick="window._obPrev()" 
+              style="width:52px; height:52px; background:none; border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-2); display:flex; align-items:center; justify-content:center; cursor:pointer">
+        ${SVG.back}
+      </button>
       <button onclick="window._obFinish()" 
-              style="flex:2; height:52px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 8px 16px rgba(0,230,118,0.2)">
+              style="flex:1; height:52px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 8px 16px rgba(0,230,118,0.2)">
         ${ru ? 'Погнали!' : 'Let\'s Go!'}
       </button>
     </div>
@@ -284,13 +288,13 @@ function _choiceCard(key, icon, label, sub, color) {
   const active = _step === 1 ? _data.goal === key : _step === 2 ? _data.exp === key : _data.privacy === key;
   return `
     <button class="ob-card ${active ? 'active' : ''}" onclick="window._obSelect('${key}')" 
-            style="--active-c:${color}; display:flex; align-items:center; gap:16px; padding:20px; background:var(--c-surface); border:1.5px solid ${active ? color : 'var(--c-border)'}; border-radius:var(--r-l); cursor:pointer; text-align:left; transition:all 0.2s ease;">
-      <div style="width:48px; height:48px; border-radius:14px; background:${color}15; color:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0">
+            style="--active-c:${color}; display:flex; align-items:center; justify-content:center; text-align:left; gap:32px; padding:24px 32px; background:var(--c-surface); border:1.5px solid ${active ? color : 'var(--c-border)'}; border-radius:24px; cursor:pointer; width:100%; transition:all 0.2s ease;">
+      <div style="width:52px; height:52px; border-radius:16px; background:${color}15; color:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0">
         ${icon}
       </div>
-      <div style="flex:1">
-        <div style="font-size:16px; font-weight:800; color:var(--c-text-1)">${label}</div>
-        <div style="font-size:13px; font-weight:500; color:var(--c-text-3); margin-top:2px">${sub}</div>
+      <div style="min-width:140px">
+        <div style="font-size:18px; font-weight:800; color:var(--c-text-1); letter-spacing:-0.02em">${label}</div>
+        <div style="font-size:14px; font-weight:500; color:var(--c-text-3); margin-top:2px; line-height:1.4">${sub}</div>
       </div>
     </button>`;
 }
@@ -298,9 +302,14 @@ function _choiceCard(key, icon, label, sub, color) {
 function _navButtons(ru, canNext) {
   return `
     <div style="display:flex; gap:12px; margin-top:auto; padding-top:32px">
-      ${_step > 1 ? `<button onclick="window._obPrev()" style="flex:1; height:52px; background:none; border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-2); font-size:15px; font-weight:700; cursor:pointer">${ru ? 'Назад' : 'Back'}</button>` : ''}
+      ${_step > 1 ? `
+        <button onclick="window._obPrev()" 
+                style="width:52px; height:52px; background:none; border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-2); display:flex; align-items:center; justify-content:center; cursor:pointer">
+          ${SVG.back}
+        </button>
+      ` : ''}
       <button onclick="window._obNext()" ${canNext ? '' : 'disabled'} 
-              style="flex:2; height:52px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:15px; font-weight:800; cursor:pointer; opacity:${canNext ? 1 : 0.4}">
+              style="flex:1; height:52px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:15px; font-weight:800; cursor:pointer; opacity:${canNext ? 1 : 0.4}">
         ${ru ? 'Продолжить' : 'Continue'}
       </button>
     </div>

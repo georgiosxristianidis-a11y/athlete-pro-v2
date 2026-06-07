@@ -27,7 +27,8 @@ app.use(helmet({
         "https://api.anthropic.com",
         "https://*.supabase.co",
         "https://*.firebaseio.com",
-        "https://*.googleapis.com"
+        "https://*.googleapis.com",
+        "https://fonts.gstatic.com"
       ],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],

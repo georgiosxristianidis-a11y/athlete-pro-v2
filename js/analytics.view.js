@@ -19,7 +19,7 @@ import {
 const TYPE_COLOR = {
   push: '#00e676',
   pull: '#8b5cf6',
-  legs: '#2979ff',
+  legs: '#ff4d88',
 };
 
 function svgArrow(dir) {
@@ -40,7 +40,7 @@ let _activeTab = 'performance'; // 'performance' | 'measurements'
  * Load and render the full analytics screen.
  * @returns {Promise<void>}
  */
-async function load() {
+export async function load() {
   const screen = document.getElementById('s-stats');
   if (!screen) return;
 
@@ -78,7 +78,7 @@ async function load() {
 /**
  * Switch between Performance and Measurements tabs.
  */
-async function switchTab(tab) {
+export async function switchTab(tab) {
   _activeTab = tab;
   const container = document.getElementById('stats-tab-content');
   if (!container) return;
@@ -116,15 +116,15 @@ async function switchTab(tab) {
       </div>
       <div class="chart-card bento-grid" style="padding:16px;gap:12px;display:grid;grid-template-columns:1fr 1fr 1fr">
         <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-push" style="color:var(--c-accent)">0%</div>
+          <div class="ppl-bal-val" id="ppl-bal-push" style="color:#00e676">0%</div>
           <div class="ppl-bal-lbl">${ru ? 'Жим' : 'Push'}</div>
         </div>
         <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-pull" style="color:var(--c-purple)">0%</div>
+          <div class="ppl-bal-val" id="ppl-bal-pull" style="color:#8b5cf6">0%</div>
           <div class="ppl-bal-lbl">${ru ? 'Тяга' : 'Pull'}</div>
         </div>
         <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-legs" style="color:var(--c-blue)">0%</div>
+          <div class="ppl-bal-val" id="ppl-bal-legs" style="color:#ff4d88">0%</div>
           <div class="ppl-bal-lbl">${ru ? 'Ноги' : 'Legs'}</div>
         </div>
       </div>
@@ -150,17 +150,6 @@ async function switchTab(tab) {
     const trend = await fetchWeeklyTrend(10);
     _renderVolumeChart(workouts, trend);
     _renderORMList(orms);
-... [TRUNCATED] ...
-function _renderPPLBalance(workouts) {
-  const ppl = { push: 0, pull: 0, legs: 0 };
-  workouts.forEach(w => {
-    if (ppl[w.type] !== undefined) ppl[w.type] += w.tonnage || 0;
-  });
-  const total = ppl.push + ppl.pull + ppl.legs || 1;
-  _set('ppl-bal-push', Math.round((ppl.push / total) * 100) + '%');
-  _set('ppl-bal-pull', Math.round((ppl.pull / total) * 100) + '%');
-  _set('ppl-bal-legs', Math.round((ppl.legs / total) * 100) + '%');
-}
 
   } else {
     container.innerHTML = `<div id="body-stats-root"></div>`;
@@ -179,13 +168,24 @@ function _renderQuickStats(workouts) {
   _set('an-avg-time', Math.round(avgMs / 60000) + '<span class="stat-chip-unit">m</span>');
 }
 
+function _renderPPLBalance(workouts) {
+  const ppl = { push: 0, pull: 0, legs: 0 };
+  workouts.forEach(w => {
+    if (ppl[w.type] !== undefined) ppl[w.type] += w.tonnage || 0;
+  });
+  const total = ppl.push + ppl.pull + ppl.legs || 1;
+  _set('ppl-bal-push', Math.round((ppl.push / total) * 100) + '%');
+  _set('ppl-bal-pull', Math.round((ppl.pull / total) * 100) + '%');
+  _set('ppl-bal-legs', Math.round((ppl.legs / total) * 100) + '%');
+}
+
 function _renderCalendar(workouts) {
   CalState.workouts = workouts;
   _drawCalendar();
 }
 
-function calPrev() { storePrev(); _drawCalendar(); }
-function calNext() { storeNext(); _drawCalendar(); }
+export function calPrev() { storePrev(); _drawCalendar(); }
+export function calNext() { storeNext(); _drawCalendar(); }
 
 function _drawCalendar() {
   const card = document.getElementById('cal-card');
@@ -217,7 +217,7 @@ function _drawCalendar() {
   });
 }
 
-function calDayClick(year, month, day, type, wid) { /* modal logic unchanged */ }
+export function calDayClick(year, month, day, type, wid) { /* modal logic unchanged */ }
 
 function _renderVolumeChart(workouts, buckets) {
   const canvas = document.getElementById('cv-volume');

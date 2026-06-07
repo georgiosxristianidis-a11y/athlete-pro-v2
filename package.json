@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.51.0",
-    "@google/genai": "^1.50.1",
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.102.1",
     "compression": "^1.8.1",
     "dotenv": "^16.4.5",
