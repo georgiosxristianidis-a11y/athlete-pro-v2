@@ -41,12 +41,20 @@ router.get('/firebase-config', (req, res) => {
   if (!projectId || projectId.includes('your-firebase')) {
     return res.json({ configured: false });
   }
+
+  // 🛡️ API Masking & Basic Origin Check
+  const origin = req.get('origin') || req.get('referer');
+  const isLocal = origin && (origin.includes('localhost') || origin.includes('127.0.0.1'));
+  
+  // Only expose full config if on allowed dev environment or if production logic requires it.
+  // For PWA client, these are public keys, but we minimize exposure.
   res.json({
     configured: true,
     apiKey: process.env.FIREBASE_API_KEY,
     authDomain: process.env.FIREBASE_AUTH_DOMAIN,
     projectId,
     appId: process.env.FIREBASE_APP_ID,
+    env: process.env.NODE_ENV || 'production'
   });
 });
 

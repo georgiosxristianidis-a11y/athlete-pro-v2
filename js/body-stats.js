@@ -6,6 +6,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
+import { Spring } from './shared/spring.js';
 
 const BS_KEY = 'ap-body-stats';
 let _bsActiveTab = 'stats';
@@ -486,7 +487,7 @@ function _bsConfirm(title, bodyHtml, confirmLabel, onConfirm) {
   overlay.className = 'modal-overlay bs-overlay';
   overlay.style.zIndex = '300';
   overlay.innerHTML = `
-    <div class="modal-sheet" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+    <div class="modal-sheet" id="bs-confirm-sheet" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px)); transform: translateY(100%);">
       <div class="modal-handle"></div>
       <div style="text-align:center;padding:8px 0 20px;">
         <div style="font-size:17px;font-weight:800;color:var(--c-text-1);margin-bottom:10px;">${title}</div>
@@ -510,10 +511,29 @@ function _bsConfirm(title, bodyHtml, confirmLabel, onConfirm) {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('visible'));
+  
+  const sheet = overlay.querySelector('#bs-confirm-sheet');
+  requestAnimationFrame(() => {
+    overlay.classList.add('visible');
+    Spring.animate({
+      from: 100,
+      to: 0,
+      stiffness: 200,
+      damping: 20,
+      onUpdate: (v) => { if (sheet) sheet.style.transform = `translateY(${v}%)`; }
+    });
+  });
+
   const close = () => {
     overlay.classList.remove('visible');
-    setTimeout(() => overlay.remove(), 300);
+    Spring.animate({
+      from: 0,
+      to: 100,
+      stiffness: 250,
+      damping: 25,
+      onUpdate: (v) => { if (sheet) sheet.style.transform = `translateY(${v}%)`; },
+      onComplete: () => overlay.remove()
+    });
   };
   overlay.querySelector('#bs-confirm-ok').addEventListener('click', () => {
     close();

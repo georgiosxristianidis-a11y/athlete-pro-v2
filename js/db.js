@@ -506,7 +506,16 @@ const Backup = {
    */
   async import(jsonStr) {
     const data = JSON.parse(jsonStr);
-    if (!data.workouts) throw new Error('Invalid backup file');
+    
+    // 🛡️ Structural Validation Guard
+    if (!data || typeof data !== 'object') throw new Error('Invalid backup format');
+    if (!Array.isArray(data.workouts)) throw new Error('Missing workouts array');
+    
+    // Validate core data integrity
+    const validWorkouts = data.workouts.filter(w => w && w.type && Array.isArray(w.exercises));
+    const validORM = Array.isArray(data.orm) ? data.orm.filter(o => o && o.id && typeof o.value === 'number') : [];
+    const validMetrics = Array.isArray(data.metrics) ? data.metrics.filter(m => m && typeof m.weight === 'number') : [];
+    const validSettings = (data.settings && typeof data.settings === 'object') ? data.settings : {};
 
     const [wsStore, ormStore, metStore, setStore] = await Promise.all([
       tx(S.WORKOUTS, 'readwrite'),
@@ -516,10 +525,10 @@ const Backup = {
     ]);
 
     const puts = [
-      ...data.workouts.map((w) => req2p(wsStore.put(w))),
-      ...data.orm.map((o) => req2p(ormStore.put(o))),
-      ...data.metrics.map((m) => req2p(metStore.put(m))),
-      ...Object.entries(data.settings || {}).map(([key, value]) =>
+      ...validWorkouts.map((w) => req2p(wsStore.put(w))),
+      ...validORM.map((o) => req2p(ormStore.put(o))),
+      ...validMetrics.map((m) => req2p(metStore.put(m))),
+      ...Object.entries(validSettings).map(([key, value]) =>
         req2p(setStore.put({ key, value }))
       ),
     ];

@@ -5,6 +5,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
+import { esc } from './shared/utils.js';
 import {
   CalState,
   calPrev as storePrev,
@@ -243,7 +244,7 @@ function _renderORMList(orms) {
   if (!el || !orms.length) return;
   el.innerHTML = orms.sort((a, b) => b.value - a.value).map((o) => `
     <div class="orm-row">
-      <div class="orm-name">${o.id}</div>
+      <div class="orm-name">${esc(o.id)}</div>
       <div class="orm-val">${o.value}<span class="orm-unit">kg</span></div>
       <div class="orm-bar-wrap"><div class="orm-bar-fill" style="width:${Math.min(100, o.value / 3)}%;background:var(--c-purple)"></div></div>
     </div>`).join('');

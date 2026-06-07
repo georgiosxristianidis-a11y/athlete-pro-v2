@@ -5,6 +5,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
+import { esc } from './shared/utils.js';
 import { MUSCLE_MAP, Heatmap, ClaudeState, fetchCoach } from './claude.store.js';
 
 /* ══════════════════════════════════════════════
@@ -623,7 +624,7 @@ export const Claude = (() => {
                   ? 'var(--c-purple)'
                   : 'var(--c-blue)'
             }"></div>
-            <span class="next-ex-name">${ex.name}</span>
+            <span class="next-ex-name">${esc(ex.name)}</span>
             <span class="next-ex-meta">${ex.sets}×${ex.reps} @ ${ex.weight}kg</span>
           </div>`
           )
@@ -645,7 +646,7 @@ export const Claude = (() => {
             (o, i) => `
           <div class="top-lift-row">
             <span class="top-lift-rank">#${i + 1}</span>
-            <span class="top-lift-name">${o.id}</span>
+            <span class="top-lift-name">${esc(o.id)}</span>
             <span class="top-lift-val">${o.value} <span style="font-size:10px;color:var(--c-text-3)">kg</span></span>
           </div>`
           )

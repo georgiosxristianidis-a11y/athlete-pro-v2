@@ -13,9 +13,28 @@ import integrationsRouter from './routes/integrations.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// ── Security headers (helmet defaults: X-Frame-Options, X-Content-Type-Options, etc.)
-// CSP and COEP disabled — PWA service worker requires relaxed policy; revisit with nonces
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+// ── Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline may be needed for some vanilla patterns, revisit with nonces
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https://*.supabase.co"],
+      connectSrc: [
+        "'self'",
+        "https://api.anthropic.com",
+        "https://*.supabase.co",
+        "https://*.firebaseio.com",
+        "https://*.googleapis.com"
+      ],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
 
 // ── gzip/brotli compression for all text responses
 app.use(compression());

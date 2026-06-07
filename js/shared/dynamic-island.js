@@ -2,6 +2,7 @@
 import { State, getWeekMode } from '../workout.store.js';
 import { Timer } from '../timer.js';
 import { RestTimer } from '../rest-timer.js';
+import { Spring } from './spring.js';
 
 /**
  * dynamic-island.js — Interactive session overlay (PIP)
@@ -36,6 +37,16 @@ export const DynamicIsland = (() => {
   let _sublabelEl = null;
   let _progressFill = null;
   let _timerProg = null;
+
+  // Animation tracking
+  const _anims = {
+    y: null,
+    scale: null,
+    dot: null,
+    drag: null
+  };
+  let _animY = -100;
+  let _animScale = 1;
 
   function init() {
     if (document.getElementById('dynamic-island-wrap')) return;
@@ -93,6 +104,9 @@ export const DynamicIsland = (() => {
     _progressFill = document.getElementById('di-progress-fill');
     _timerProg = document.getElementById('di-timer-progress');
 
+    // Set initial transform
+    _applyTransform();
+
     // Drag & Long-press events
     _island?.addEventListener('pointerdown', _onPointerDown);
     window.addEventListener('pointermove', _onPointerMove);
@@ -110,10 +124,32 @@ export const DynamicIsland = (() => {
     window.addEventListener('offline', _updateNetworkStatus);
   }
 
+  function _applyTransform() {
+    if (!_island) return;
+    // We use translateX(-50%) because the element is left:50% in CSS
+    // animY is the entry/exit offset, currentX/Y are dragging offsets
+    _island.style.transform = `translate(calc(-50% + ${_currentX}px), ${_animY + _currentY}px) scale(${_animScale})`;
+  }
+
   function show() {
     if (!_wrap) init();
     _wrap.style.display = 'block';
     _wrap.classList.add('visible');
+    
+    // Animate entry
+    if (_island) {
+      _anims.y?.stop();
+      _anims.y = Spring.animate({
+        from: _animY,
+        to: 0,
+        stiffness: 150,
+        damping: 15,
+        onUpdate: (v) => { 
+          _animY = v;
+          _applyTransform();
+        }
+      });
+    }
     update();
   }
 
@@ -123,10 +159,29 @@ export const DynamicIsland = (() => {
     _expanded = false;
     _island?.classList.remove('expanded');
     _island?.classList.remove('timer-mode');
-    _currentX = 0;
-    _currentY = 0;
-    if (_island) _island.style.transform = '';
-    _wrap.style.display = 'none';
+    
+    // Animate exit
+    if (_island) {
+       _anims.y?.stop();
+       _anims.y = Spring.animate({
+        from: _animY,
+        to: -100,
+        stiffness: 200,
+        damping: 20,
+        onUpdate: (v) => { 
+          _animY = v;
+          _applyTransform();
+        },
+        onComplete: () => { 
+          _wrap.style.display = 'none'; 
+          _currentX = 0;
+          _currentY = 0;
+          _animY = -100;
+        }
+      });
+    } else {
+      _wrap.style.display = 'none';
+    }
   }
 
   function update() {
@@ -202,6 +257,19 @@ export const DynamicIsland = (() => {
   function toggleExpand() {
     _expanded = !_expanded;
     _island?.classList.toggle('expanded', _expanded);
+    
+    // Subtle spring scale pop on expand
+    _anims.scale?.stop();
+    _anims.scale = Spring.animate({
+      from: _expanded ? 0.95 : 1.05,
+      to: 1,
+      stiffness: 300,
+      damping: 15,
+      onUpdate: (v) => { 
+        _animScale = v;
+        _applyTransform();
+      }
+    });
   }
 
   /* ── Internal Helpers ── */
@@ -226,41 +294,53 @@ export const DynamicIsland = (() => {
 
   function _onPointerMove(e) {
     if (!_isDragging) return;
-    const dx = e.clientX - (_startX + _currentX);
-    const dy = e.clientY - (_startY + _currentY);
-    const dist = Math.sqrt(dx * dx + dy * dy);
     
-    if (!_movedPastThreshold && dist > 6) {
-      _movedPastThreshold = true;
-      clearTimeout(_longPressTimer);
+    if (!_movedPastThreshold) {
+      const dx = e.clientX - (_startX + _currentX);
+      const dy = e.clientY - (_startY + _currentY);
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 6) {
+        _movedPastThreshold = true;
+        clearTimeout(_longPressTimer);
+      } else {
+        return;
+      }
     }
-    
-    if (!_movedPastThreshold) return;
 
     _currentX = e.clientX - _startX;
     _currentY = e.clientY - _startY;
     
+    // Boundary checks to keep island within viewport
     const appEl = document.getElementById('app') || document.body;
     const appRect = appEl.getBoundingClientRect();
-    const bounds = _island.getBoundingClientRect();
+    const halfW = (_island?.offsetWidth || 220) / 2;
     
-    const minX = -bounds.left + appRect.left + 10;
-    const maxX = appRect.right - bounds.right - 10;
-    const minY = -bounds.top + appRect.top + 10;
-    const maxY = appRect.bottom - bounds.bottom - 10;
+    const minX = -appRect.width / 2 + halfW + 10;
+    const maxX = appRect.width / 2 - halfW - 10;
+    const minY = -10; // Allow slight pull above
+    const maxY = appRect.height - 100;
 
     _currentX = Math.max(minX, Math.min(maxX, _currentX));
     _currentY = Math.max(minY, Math.min(maxY, _currentY));
     
-    if (_island) {
-      _island.style.transform = `translate(${_currentX}px, ${_currentY}px)`;
-    }
+    _applyTransform();
   }
 
   function _onPointerUp(e) {
     if (!_isDragging) return;
     _isDragging = false;
     clearTimeout(_longPressTimer);
+    
+    // Snappy return to bounds if we let go
+    _anims.drag?.stop();
+    _anims.drag = Spring.animate({
+      from: 0,
+      to: 0, 
+      stiffness: 200,
+      damping: 20,
+      onUpdate: (v) => { /* snap logic could go here */ }
+    });
+
     _island?.style.setProperty('transition', 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)');
     setTimeout(() => { _movedPastThreshold = false; }, 50);
   }
@@ -285,7 +365,21 @@ export const DynamicIsland = (() => {
   function _updateNetworkStatus() {
     if (!_dot) return;
     const online = navigator.onLine;
+    const wasOffline = _dot.classList.contains('offline');
+    
     _dot.className = `island-dot ${online ? 'online' : 'offline'}`;
+    
+    // Pulse animation on reconnect
+    if (online && wasOffline) {
+       _anims.dot?.stop();
+       _anims.dot = Spring.animate({
+        from: 0.5,
+        to: 1,
+        stiffness: 400,
+        damping: 10,
+        onUpdate: (v) => { _dot.style.scale = String(v); }
+      });
+    }
   }
 
   function _getSetsColor(done, total) {

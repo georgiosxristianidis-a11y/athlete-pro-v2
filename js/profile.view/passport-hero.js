@@ -2,6 +2,7 @@
 import { computeAge } from '../profile.store.js';
 import { dotsScore, exrxTier } from '../strength-engine.js';
 import { DB } from '../db.js';
+import { esc } from '../shared/utils.js';
 
 const TIER_COLOR = {
   Untrained:    'var(--c-text-3)',
@@ -64,18 +65,18 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
 <div class="pp-hero-v2">
   <div class="pp-avatar-wrap">
     <div class="pp-avatar-v2" id="pp-avatar-main" onclick="window.AthleteRoom?.open()">
-      <span class="pp-avatar-initials">${initials}</span>
+      <span class="pp-avatar-initials">${esc(initials)}</span>
     </div>
     <div class="pp-avatar-ring" id="pp-avatar-ring-main"></div>
   </div>
   
   <div class="pp-identity-v2">
-    <div class="pp-name-v2">${profile.name || (ru ? 'Атлет' : 'Athlete')}</div>
-    <div class="pp-meta-v2">${metaStr || (ru ? 'Настрой профиль' : 'Set up your profile')}</div>
+    <div class="pp-name-v2">${esc(profile.name || (ru ? 'Атлет' : 'Athlete'))}</div>
+    <div class="pp-meta-v2">${esc(metaStr) || (ru ? 'Настрой профиль' : 'Set up your profile')}</div>
     
     <div class="pp-badge-row">
       <div class="pp-tier-pill-v2" style="color:${tierColor}; border-color:${tierColor}20; background:${tierColor}0d">
-        ${tierLabel} ${dots ? `· ${dots}` : ''}
+        ${esc(tierLabel)} ${dots ? `· ${dots}` : ''}
       </div>
       ${bestPercentile > 0 ? `
         <div class="pp-percentile-pill">
@@ -87,7 +88,7 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
 
   <div class="pp-goal-v2">
     <div class="pp-goal-lbl-v2">${ru ? 'Цель' : 'Goal'}</div>
-    <div class="pp-goal-val-v2">${goalMap[profile.goal] || profile.goal}</div>
+    <div class="pp-goal-val-v2">${esc(goalMap[profile.goal] || profile.goal)}</div>
   </div>
 </div>
 

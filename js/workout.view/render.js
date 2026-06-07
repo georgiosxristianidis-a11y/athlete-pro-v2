@@ -8,6 +8,7 @@
 import { DB } from '../db.js';
 import { Timer } from '../timer.js';
 import { Toast } from '../shell.js';
+import { esc } from '../shared/utils.js';
 import {
   State,
   loadPlan, savePlan,
@@ -124,7 +125,7 @@ export function _renderCoreSection(day) {
             <polyline points="20 6 9 17 4 12"/>
           </svg>
         </div>
-        <span class="core-name">${name}</span>
+        <span class="core-name">${esc(name)}</span>
         <button class="core-remove" onclick="event.stopPropagation();Workout._removeCoreItem('${day}',${i})"
                 aria-label="Remove">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -184,7 +185,7 @@ export async function renderSelect() {
     ${stats ? `
     <div class="active-plan-card" onclick="Workout.selectType('active')">
       <div class="active-plan-info">
-        <div class="active-plan-title">${stats.name}</div>
+        <div class="active-plan-title">${esc(stats.name)}</div>
         <div class="active-plan-meta">${ru ? 'Неделя' : 'Week'} ${stats.week} · ${ru ? 'День' : 'Day'} ${stats.day} ${ru ? 'из' : 'of'} ${stats.totalDays}</div>
       </div>
       <div class="active-plan-progress">
@@ -400,7 +401,7 @@ export async function renderExerciseCard(ex, ei) {
         <div class="exercise-icon"><span class="ex-num">${ei + 1}</span></div>
         <div class="exercise-info">
           <div class="exercise-name">
-            ${ex.name}${muscleBadge}
+            ${esc(ex.name)}${muscleBadge}
             ${coach ? `<span class="coach-pill">${coach.target}<span class="coach-pill-unit">kg</span></span>` : ''}
           </div>
           <div class="exercise-meta ${doneSets === ex.sets.length ? 'done' : ''}" id="ex-meta-${ei}">${doneSets}/${ex.sets.length}</div>
@@ -471,7 +472,7 @@ export async function renderFocusMode(ei) {
         <button class="focus-close" onclick="Workout._closeFocus()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="focus-glass-card">
-        <div class="focus-ex-name">${ex.name}</div>
+        <div class="focus-ex-name">${esc(ex.name)}</div>
         <div class="focus-set-info">${ru ? 'Подход' : 'Set'} ${si + 1} ${ru ? 'из' : 'of'} ${totalSets}</div>
         <div class="focus-hero-row">
           <div class="focus-hero-item" onclick="Workout._focusStepW(-2.5)"><div class="focus-hero-val">${set.weight}<small>kg</small></div><div class="focus-hero-lbl">${ru ? 'Вес' : 'Weight'}</div></div>

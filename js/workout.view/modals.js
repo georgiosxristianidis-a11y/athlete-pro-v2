@@ -5,6 +5,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { Toast } from '../shell.js';
+import { esc } from '../shared/utils.js';
 import {
   State,
   loadPlan, savePlan,
@@ -63,7 +64,7 @@ export function openPlanEditor() {
             <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
           </svg>
         </div>
-        <input class="plan-input" value="${ex.name}"
+        <input class="plan-input" value="${esc(ex.name)}"
           onchange="Workout._updatePlanName('${type}',${originalIndex},this.value)">
         <div class="plan-row-meta">
           <span class="plan-meta-label">Sets</span>
@@ -89,7 +90,7 @@ export function openPlanEditor() {
         </div>
       </div>`
           }).join('')
-      : `<div class="plan-empty">No exercises found for "${searchQuery}"</div>`;
+      : `<div class="plan-empty">No exercises found for "${esc(searchQuery)}"</div>`;
 
     return exercisesHTML + `
       <button class="btn-add-ex" onclick="Workout._addPlanEx('${type}')">
@@ -147,7 +148,7 @@ export function openPlanEditor() {
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input class="plan-search-input" id="plan-search" type="text"
-                 placeholder="Search exercises..." value="${searchQuery}"
+                 placeholder="Search exercises..." value="${esc(searchQuery)}"
                  oninput="Workout._setPlanSearch(this.value)">
         </div>
 
@@ -455,13 +456,13 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       btn.className = 'add-ex-item';
       btn.style.cssText = 'text-align:left;padding:10px 12px;height:auto';
       btn.innerHTML = `
-        <div style="font-weight:700;font-size:13px;color:var(--c-text-1)">${ex.name}</div>
+        <div style="font-weight:700;font-size:13px;color:var(--c-text-1)">${esc(ex.name)}</div>
         <div style="font-size:10px;color:var(--c-text-3);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
-          <span style="text-transform:capitalize">${ex.muscleGroup}</span>
+          <span style="text-transform:capitalize">${esc(ex.muscleGroup)}</span>
           <span>·</span>
-          <span style="text-transform:capitalize">${ex.equipment}</span>
+          <span style="text-transform:capitalize">${esc(ex.equipment)}</span>
           <span>·</span>
-          <span style="text-transform:capitalize">${ex.mechanic}</span>
+          <span style="text-transform:capitalize">${esc(ex.mechanic)}</span>
         </div>
       `;
       btn.dataset.name = ex.name;
@@ -627,13 +628,13 @@ export async function openReplaceExModal(ei) {
       btn.className = 'add-ex-item';
       btn.style.cssText = 'text-align:left;padding:10px 12px;height:auto';
       btn.innerHTML = `
-        <div style="font-weight:700;font-size:13px;color:var(--c-text-1)">${ex.name}</div>
+        <div style="font-weight:700;font-size:13px;color:var(--c-text-1)">${esc(ex.name)}</div>
         <div style="font-size:10px;color:var(--c-text-3);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
-          <span style="text-transform:capitalize">${ex.muscleGroup}</span>
+          <span style="text-transform:capitalize">${esc(ex.muscleGroup)}</span>
           <span>·</span>
-          <span style="text-transform:capitalize">${ex.equipment}</span>
+          <span style="text-transform:capitalize">${esc(ex.equipment)}</span>
           <span>·</span>
-          <span style="text-transform:capitalize">${ex.mechanic}</span>
+          <span style="text-transform:capitalize">${esc(ex.mechanic)}</span>
         </div>
       `;
       btn.dataset.name = ex.name;

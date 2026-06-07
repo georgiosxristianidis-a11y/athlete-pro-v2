@@ -42,22 +42,36 @@ const _handlers = {
  */
 async function go(id, opts = {}) {
   if (id === _current && !opts.force) return;
-  const prev = document.getElementById(_current);
-  if (prev) {
-    prev.classList.remove('active');
-    prev.classList.add('out');
+
+  const performNav = async () => {
+    const prev = document.getElementById(_current);
+    if (prev) {
+      prev.classList.remove('active');
+      prev.classList.add('out');
+    }
+    document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('active'));
+    const next = document.getElementById(id);
+    if (next) {
+      next.classList.remove('out');
+      next.classList.add('active');
+      next.scrollTop = 0;
+    }
+    document.querySelector(`.nav-btn[data-s="${id}"]`)?.classList.add('active');
+    _current = id;
+    const fn = _handlers[id];
+    if (fn) await fn();
+  };
+
+  if (!document.startViewTransition) {
+    await performNav();
+  } else {
+    const transition = document.startViewTransition(() => performNav());
+    try {
+      await transition.finished;
+    } catch (e) {
+      // Transition failed or was skipped
+    }
   }
-  document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('active'));
-  const next = document.getElementById(id);
-  if (next) {
-    next.classList.remove('out');
-    next.classList.add('active');
-    next.scrollTop = 0;
-  }
-  document.querySelector(`.nav-btn[data-s="${id}"]`)?.classList.add('active');
-  _current = id;
-  const fn = _handlers[id];
-  if (fn) await fn();
 }
 
 /**

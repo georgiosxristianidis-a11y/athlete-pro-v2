@@ -149,6 +149,15 @@
   background: var(--c-surface-h);
 }
 
+/* ── Section 3.5: View Transitions ───────────────────────
+   Native cross-fade for seamless screen navigation.
+   Required for Nav.go() with document.startViewTransition. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* ── Section 3: Shared Component — Modals ─────────────── */
 .modal-overlay {
   position: fixed;
