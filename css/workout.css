@@ -58,7 +58,7 @@
 .exercise-meta.done { opacity: 0.25 !important; }
 
 /* ── Header Actions — Premium Distribution ── */
-.ex-header-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; padding-left: 20px; padding-right: 4px; flex-shrink: 0; }
+.ex-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; padding-left: 20px; padding-right: 4px; flex-shrink: 0; }
 .ex-action-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--c-text-3); cursor: pointer; transition: all 0.2s ease; border-radius: 10px; opacity: 0.4; font-size: 9px; font-weight: 900; }
 .ex-action-btn:active { transform: scale(0.85); background: var(--c-bg-3); opacity: 1; color: var(--c-text-1); }
 .ex-action-btn.active { color: var(--c-accent); opacity: 0.9; }
