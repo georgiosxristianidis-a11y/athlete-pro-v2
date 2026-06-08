@@ -129,6 +129,27 @@ Plans:
 
 ---
 
+### Phase 5: Smart UX & Micro-interactions
+**Goal:** Make the application feel "alive" and elite through sophisticated animations, responsive feedback, and polished loading states.
+
+**Requirements:** UX-1, UX-2, UX-3 (Implicit in Phase 5)
+
+**Tasks:**
+- [x] **Workout Creation Flow:** Staggered entry animations for Training Hub and spring-animated progress bars.
+- [x] **Profile Update UX:** Immediate visual feedback (toasts) and auto-refresh for profile changes.
+- [x] **Entry Animations:** Global `stagger-item` pattern for all main screens.
+- [x] **Progress Bar Polish:** Spring physics for all data-driven bars (Dashboard, Analytics).
+- [x] **Empty States Upgrade:** Descriptive, motivational empty states for new users in Analytics.
+- [x] **Skeleton Loaders:** Multi-line shimmering skeletons for AI responses and heavy content cards.
+
+**Success criteria:**
+1. All main screens have staggered entry animations (60fps).
+2. Progress bars use spring physics (non-linear, organic movement).
+3. AI responses show shimmering skeletons while "thinking".
+4. Profile updates show immediate haptic + toast + visual confirmation.
+
+---
+
 ## Requirement Coverage
 
 | REQ-ID | Requirement | Phase |

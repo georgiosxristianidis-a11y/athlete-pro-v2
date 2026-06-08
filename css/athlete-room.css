@@ -252,6 +252,55 @@
   font-weight: 500;
 }
 
+/* ── Editable Stats ── */
+.ar-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 24px 0 32px;
+}
+.ar-stat {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ar-stat:active { transform: scale(0.96); background: rgba(255,255,255,0.07); }
+.ar-stat-val {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--c-text-1);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.ar-stat-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Stat Editor (inline card) ── */
+.ar-stat-editor {
+  padding: 0 16px 12px;
+}
+.ar-stat-input-row {
+  display: flex;
+  gap: 8px;
+}
+.ar-stat-input-row .ar-name-input {
+  flex: 1;
+}
+.ar-stat-input-row .ar-btn-save {
+  flex: 0 0 80px;
+}
+
 /* ── Name editor ── */
 .ar-name-editor {
   padding: 0 16px 12px;

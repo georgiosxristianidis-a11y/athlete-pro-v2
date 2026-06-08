@@ -7,6 +7,7 @@
 
 import { DB } from './db.js';
 import { Spring } from './shared/spring.js';
+import { Toast } from './shell.js';
 
 const BS_KEY = 'ap-body-stats';
 let _bsActiveTab = 'stats';

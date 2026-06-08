@@ -70,6 +70,10 @@ app.use(express.static(__dirname, {
 app.use('/api', coachRouter);
 app.use('/api', integrationsRouter);
 
+// ── Global Error Handling
+import { errorMiddleware } from './lib/errors.js';
+app.use(errorMiddleware);
+
 export function startServer(port = process.env.PORT || 3000) {
   return new Promise((resolve) => {
     const server = app.listen(port, '127.0.0.1', () => {

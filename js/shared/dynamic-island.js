@@ -3,6 +3,7 @@ import { State, getWeekMode } from '../workout.store.js';
 import { Timer } from '../timer.js';
 import { RestTimer } from '../rest-timer.js';
 import { Spring } from './spring.js';
+import { PiP } from '../features/pip.js';
 
 /**
  * dynamic-island.js — Interactive session overlay (PIP)
@@ -122,6 +123,9 @@ export const DynamicIsland = (() => {
     _updateNetworkStatus();
     window.addEventListener('online', _updateNetworkStatus);
     window.addEventListener('offline', _updateNetworkStatus);
+
+    // Initialize PiP canvas
+    PiP.init();
   }
 
   function _applyTransform() {
@@ -227,6 +231,13 @@ export const DynamicIsland = (() => {
     }
 
     _updateNetworkStatus();
+
+    // Push state to PiP Canvas
+    PiP.drawFrame({
+      time: _timeEl?.textContent || '00:00',
+      name: currentEx ? currentEx.name : 'Workout',
+      sets: total ? `${done}/${total}` : ''
+    });
   }
 
   // Rest Timer progress line
@@ -390,7 +401,11 @@ export const DynamicIsland = (() => {
     return 'var(--c-text-3)';
   }
 
-  return { init, show, hide, update, setRestProgress, stopTimer, pulseSetComplete, toggleExpand };
+  function triggerPiP() {
+    PiP.requestPiP();
+  }
+
+  return { init, show, hide, update, setRestProgress, stopTimer, pulseSetComplete, toggleExpand, triggerPiP };
 })();
 
 // @ts-ignore

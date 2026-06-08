@@ -282,15 +282,24 @@ export const Claude = (() => {
 
     const engine = await DB.Settings.get('ai-engine').catch(() => 'anthropic') || 'anthropic';
     const isGemini = engine === 'gemini';
+    const hasKey = isGemini ? !!(await DB.Settings.get('gemini-key')) : true; // Anthropic assumed server-side
     
     const fab = document.createElement('button');
     fab.id = 'claude-fab';
-    fab.className = 'claude-fab' + (isGemini ? ' gemini-mode' : '');
+    
+    // Status Logic: Only Claude glows when selected. Gemini glows only on error.
+    let glowClass = isGemini ? '' : 'ai-glow-selection';
+    if (isGemini && !hasKey) glowClass = 'ai-glow-error';
+
+    fab.className = `claude-fab ${isGemini ? 'gemini-mode' : ''} ${glowClass}`;
     fab.setAttribute('aria-label', 'AI Assistant');
 
     fab.innerHTML = `
       <div class="fab-close-btn" onclick="event.stopPropagation(); Claude.dismissFAB()" title="Hide Assistant">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div class="ai-status-wrap">
+        <span class="ai-indicator ${hasKey ? 'active' : 'missing'}"></span>
       </div>
       <div class="fab-content">
         ${isGemini ? _geminiIcon() : _claudeIcon()}
@@ -459,7 +468,11 @@ export const Claude = (() => {
         </div>
         <div class="coach-card" id="coach-card">
           <div class="ai-thinking" id="ai-thinking">
-            <div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div>
+            <div class="sk-lines">
+              <div class="sk-line sk"></div>
+              <div class="sk-line sk"></div>
+              <div class="sk-line sk"></div>
+            </div>
           </div>
           <div class="ai-text" id="ai-text"></div>
         </div>
@@ -581,8 +594,11 @@ export const Claude = (() => {
 
       const aiBubble = document.createElement('div');
       aiBubble.className = 'chat-msg ai-msg thinking';
-      aiBubble.innerHTML =
-        '<div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div>';
+      aiBubble.innerHTML = `
+        <div class="sk-lines" style="gap:5px">
+          <div class="sk-line sk" style="height:10px;width:100%"></div>
+          <div class="sk-line sk" style="height:10px;width:70%"></div>
+        </div>`;
       hist.appendChild(aiBubble);
       targetEl = aiBubble;
 

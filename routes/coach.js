@@ -1,19 +1,11 @@
 'use strict';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import anthropic from '../lib/anthropicClient.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { record } from '../lib/tokenUsage.js';
-import { logInfo, logWarn, logError } from '../lib/logger.js';
+import { AIOrchestrator } from '../lib/aiOrchestrator.js';
+import { logInfo, logWarn } from '../lib/logger.js';
+import { asyncHandler } from '../lib/errors.js';
 
 const router = express.Router();
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || '');
-
-const COACH_STREAM_TIMEOUT_MS = Number(process.env.COACH_STREAM_TIMEOUT_MS) || 120000;
-const PLAN_TIMEOUT_MS         = Number(process.env.PLAN_TIMEOUT_MS)         || 30000;
-const COACH_MAX_MESSAGES      = 40;
-const COACH_MAX_CONTENT_LEN   = 12000;
 
 // ── Rate limiters ────────────────────────────────────────────────────────────
 const _limitOpts = {
@@ -26,22 +18,8 @@ const _limitOpts = {
 const coachLimiter = rateLimit({ ..._limitOpts, max: 10 });
 const apiLimiter   = rateLimit({ ..._limitOpts, max: 20 });
 
-/**
- * @param {unknown} body
- */
-export function _validateCoachPayload(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return { ok: false, code: 400, error: 'Body must be a JSON object' };
-  }
-  const { messages } = body;
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return { ok: false, code: 400, error: 'messages array is required' };
-  }
-  return { ok: true };
-}
-
 /* ── POST /generate-plan ── */
-router.post('/generate-plan', apiLimiter, async (req, res) => {
+router.post('/generate-plan', apiLimiter, asyncHandler(async (req, res) => {
   const {
     workoutHistory = [],
     oneRMs = [],
@@ -50,164 +28,122 @@ router.post('/generate-plan', apiLimiter, async (req, res) => {
     engine = 'anthropic'
   } = req.body;
 
+  logInfo(req, 'plan_generation_started', `Generating plan for ${goals}`);
+
   const DEFAULT_PLAN = {
     push: [{ name: 'Bench Press', sets: 4, reps: 8, weight: 80, notes: '' }],
     pull: [{ name: 'Deadlift', sets: 4, reps: 5, weight: 120, notes: '' }],
     legs: [{ name: 'Squat', sets: 4, reps: 6, weight: 100, notes: '' }]
   };
 
-  const isGemini = engine === 'gemini';
-  const apiKey = isGemini ? process.env.GOOGLE_GENERATIVE_AI_API_KEY : process.env.ANTHROPIC_API_KEY;
+  const system = _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience);
+  const content = await AIOrchestrator.generateJSON({
+    system,
+    prompt: 'Generate a highly personalized 3-day PPL rotation. Return JSON only.',
+    engine
+  }, req);
 
-  if (!apiKey || !workoutHistory.length) {
-    return res.json({ success: true, plan: DEFAULT_PLAN, generated: true });
-  }
-
-  try {
-    const system = _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience);
-    let content = '';
-
-    if (isGemini) {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
-      const result = await model.generateContent(`${system}\n\nGenerate a personalized PPL program. Return JSON only.`);
-      content = result.response.text();
-    } else {
-      const response = await anthropic.messages.create({
-        model: 'claude-opus-4-6',
-        max_tokens: 1500,
-        system,
-        messages: [{ role: 'user', content: 'Generate a personalized PPL program. Return JSON only.' }]
-      });
-      content = response.content[0]?.text || '';
-    }
-
-    const plan = _parseGeneratedPlan(content, DEFAULT_PLAN);
-    res.json({ success: true, plan, generated: true, aiNotes: content });
-  } catch (err) {
-    res.json({ success: true, plan: DEFAULT_PLAN, generated: true });
-  }
-});
+  const plan = _parseGeneratedPlan(content, DEFAULT_PLAN);
+  res.json({ success: true, plan, generated: true, aiNotes: content });
+}));
 
 /* ── POST /recommendations ── */
-router.post('/recommendations', apiLimiter, async (req, res) => {
-  const { workout, fatigue = {}, topLifts = [], history = [], nextSessionPlan = [], engine = 'anthropic' } = req.body;
+router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
+  const { workout, fatigue = {}, topLifts = [], nextSessionPlan = [], engine = 'anthropic' } = req.body;
   
-  const isGemini = engine === 'gemini';
-  const apiKey = isGemini ? process.env.GOOGLE_GENERATIVE_AI_API_KEY : process.env.ANTHROPIC_API_KEY;
+  const system = _buildRecommendationsPrompt(workout, fatigue, topLifts, nextSessionPlan);
+  const content = await AIOrchestrator.generateJSON({
+    system,
+    prompt: 'Generate weight recommendations for the next session. Return JSON only.',
+    engine
+  }, req);
 
-  if (!apiKey) return res.status(500).json({ error: 'AI API key not set' });
-
-  try {
-    const system = _buildRecommendationsPrompt(workout, fatigue, topLifts, history, nextSessionPlan);
-    let content = '';
-
-    if (isGemini) {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      const result = await model.generateContent(`${system}\n\nGenerate weight recommendations. Return JSON only.`);
-      content = result.response.text();
-    } else {
-      const response = await anthropic.messages.create({
-        model: 'claude-opus-4-6',
-        max_tokens: 800,
-        system,
-        messages: [{ role: 'user', content: 'Generate weight recommendations. Return JSON only.' }],
-      });
-      content = response.content[0]?.text || '';
-    }
-
-    const recommendations = _parseRecommendations(content, nextSessionPlan);
-    res.json({ success: true, recommendations, aiNotes: content });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  const recommendations = _parseRecommendations(content, nextSessionPlan);
+  res.json({ success: true, recommendations, aiNotes: content });
+}));
 
 /* ── POST /coach ── */
-router.post('/coach', coachLimiter, async (req, res) => {
-  const validation = _validateCoachPayload(req.body);
-  if (!validation.ok) return res.status(validation.code).json({ error: validation.error });
+router.post('/coach', coachLimiter, asyncHandler(async (req, res) => {
+  const { workouts = [], fatigue = {}, topLifts = [], messages, profile = {}, longTermStats = {}, engine = 'anthropic' } = req.body;
 
-  let { workouts = [], fatigue = {}, topLifts = [], messages, profile = {}, longTermStats = {}, engine = 'anthropic' } = req.body;
-
-  const isGemini = engine === 'gemini';
-  const apiKey = isGemini ? process.env.GOOGLE_GENERATIVE_AI_API_KEY : process.env.ANTHROPIC_API_KEY;
-
-  if (!apiKey) return res.status(500).json({ error: 'AI API key not set' });
+  if (!Array.isArray(messages) || !messages.length) {
+    return res.status(400).json({ error: 'messages array is required' });
+  }
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  try {
-    const system = _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats);
+  const system = _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats);
 
-    if (isGemini) {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
-      const chat = model.startChat({
-        history: messages.slice(0, -1).map(m => ({
-          role: m.role === 'user' ? 'user' : 'model',
-          parts: [{ text: m.content }]
-        })),
-        systemInstruction: system
-      });
-      const result = await chat.sendMessageStream(messages[messages.length-1].content);
-      for await (const chunk of result.stream) {
-        const text = chunk.text();
-        res.write(`data: ${JSON.stringify({ text })}\n\n`);
-      }
-    } else {
-      const stream = anthropic.messages.stream({
-        model: 'claude-opus-4-6',
-        max_tokens: 900,
-        system,
-        messages,
-      });
-      stream.on('text', (text) => res.write(`data: ${JSON.stringify({ text })}\n\n`));
-      await stream.finalMessage();
-    }
-    res.write('data: [DONE]\n\n');
-  } catch (err) {
-    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-    res.write('data: [DONE]\n\n');
-  }
+  await AIOrchestrator.streamResponse({
+    system,
+    messages,
+    engine,
+    onChunk: (text) => res.write(`data: ${JSON.stringify({ text })}\n\n`)
+  }, req);
+
+  res.write('data: [DONE]\n\n');
   res.end();
-});
+}));
 
-function _parseGeneratedPlan(aiContent, defaultPlan) {
-  try {
-    const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
-    if (jsonMatch) return JSON.parse(jsonMatch[0]);
-  } catch (e) {}
-  return defaultPlan;
+// ── Private Prompt Helpers ───────────────────────────────────────────────────
+
+function _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats) {
+  return `You are "Athlete Pro Coach", a premium AI strength & conditioning expert.
+Context:
+- History: ${JSON.stringify(workouts.slice(0, 5))}
+- Fatigue: ${JSON.stringify(fatigue)}
+- 1RMs: ${JSON.stringify(topLifts)}
+- User Profile: ${JSON.stringify(profile)}
+
+Rules:
+1. Tone: Professional, analytical, but motivating.
+2. Language: Match user language (Russian if Cyrillic detected).
+3. Focus: Progressive overload and safety.
+4. Strategy: Consider long-term trends if provided. Current goal: ${profile.goal || 'General Health'}.`;
 }
 
 function _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience) {
-  return `Goal: ${goals}, Experience: ${experience}. History: ${workoutHistory.length} sessions.`;
+  return `You are an elite PPL programmer.
+Experience: ${experience}
+Goal: ${goals}
+1RMs: ${JSON.stringify(oneRMs)}
+
+Generate a 3-day PPL rotation (Push, Pull, Legs) in valid JSON.
+Fields: name, sets, reps, weight, notes.`;
 }
 
-function _parseRecommendations(aiContent, defaultPlan) {
+function _buildRecommendationsPrompt(workout, fatigue, topLifts, nextPlan) {
+  return `Performance Analyst.
+Last Workout: ${JSON.stringify(workout)}
+Fatigue: ${JSON.stringify(fatigue)}
+Plan: ${nextPlan.map(e => e.name).join(', ')}
+
+Recommend weights and reasons in JSON format.`;
+}
+
+function _parseGeneratedPlan(content, fallback) {
   try {
-    const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return defaultPlan.map((ex) => ({
-        name: ex.name,
-        sets: ex.sets,
-        reps: ex.reps,
-        recommendedWeight: parsed[ex.name] || ex.weight,
-        reason: parsed.reasons?.[ex.name] || 'Standard progression',
-      }));
-    }
-  } catch (e) {}
-  return defaultPlan.map(ex => ({ ...ex, recommendedWeight: ex.weight, reason: 'Maintain' }));
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : fallback;
+  } catch { return fallback; }
 }
 
-function _buildRecommendationsPrompt(workout, fatigue, topLifts, history, nextSessionPlan) {
-  return `Recommend weights for next session.`;
-}
-
-function _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats) {
-  return `You are a coach. Context: ${workouts.length} workouts, ${Object.keys(fatigue).length} fatigued muscles.`;
+function _parseRecommendations(content, plan) {
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return plan.map(ex => ({ ...ex, recommendedWeight: ex.weight, reason: 'Maintain' }));
+    
+    const parsed = JSON.parse(jsonMatch[0]);
+    return plan.map(ex => ({
+      ...ex,
+      recommendedWeight: parsed[ex.name] || ex.weight,
+      reason: parsed.reasons?.[ex.name] || 'Standard progression'
+    }));
+  } catch {
+    return plan.map(ex => ({ ...ex, recommendedWeight: ex.weight, reason: 'Maintain' }));
+  }
 }
 
 export default router;

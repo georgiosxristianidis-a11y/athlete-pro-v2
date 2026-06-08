@@ -9,6 +9,7 @@ import { DB } from '../db.js';
 import { Timer } from '../timer.js';
 import { Toast } from '../shell.js';
 import { esc } from '../shared/utils.js';
+import { Spring } from '../shared/spring.js';
 import {
   State,
   loadPlan, savePlan,
@@ -25,8 +26,8 @@ import { initDrumPickers } from '../ui/drum-picker.js';
 /* ── Render helpers ── */
 export const TYPE_COLOR = {
   push: '#00e676', // Neon Green
-  pull: '#8b5cf6', // Electric Purple
-  legs: '#ff4d88', // Elite Pink
+  pull: '#00e5ff', // Neon Cyan
+  legs: '#bc13fe', // Neon Purple
 };
 
 export function svgArrow(dir) {
@@ -42,11 +43,32 @@ export function svgArrow(dir) {
 }
 
 export function typeIcon(type, color) {
-  const known = ['push', 'pull', 'legs'];
-  if (!known.includes(type)) return '';
-  return `<span class="type-icon" style="background-color:${color};` +
-    `-webkit-mask-image:url(/icons/${type}.svg);mask-image:url(/icons/${type}.svg)" ` +
-    `aria-hidden="true"></span>`;
+  const icons = {
+    push: `<svg viewBox="0 0 48 48" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M16 32 L32 32 L36 18 L12 18 Z" stroke-dasharray="3 3" opacity="0.3"/>
+             <line x1="18" y1="36" x2="18" y2="12"/><polyline points="14 16 18 12 22 16"/><circle cx="18" cy="36" r="1.5" fill="${color}"/>
+             <line x1="30" y1="36" x2="30" y2="12"/><polyline points="26 16 30 12 34 16"/><circle cx="30" cy="36" r="1.5" fill="${color}"/>
+             <line x1="24" y1="38" x2="24" y2="18"/><circle cx="24" cy="38" r="1.5" fill="${color}"/>
+           </svg>`,
+    pull: `<svg viewBox="0 0 48 48" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M12 20 L36 20 L32 34 L16 34 Z" stroke-dasharray="3 3" opacity="0.3"/>
+             <line x1="18" y1="12" x2="18" y2="36"/><polyline points="14 32 18 36 22 32"/><circle cx="18" cy="12" r="1.5" fill="${color}"/>
+             <line x1="30" y1="12" x2="30" y2="36"/><polyline points="26 32 30 36 34 32"/><circle cx="30" cy="12" r="1.5" fill="${color}"/>
+             <line x1="24" y1="10" x2="24" y2="30"/><circle cx="24" cy="10" r="1.5" fill="${color}"/>
+           </svg>`,
+    legs: `<svg viewBox="0 0 48 48" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M24 12 L34 36 L14 36 Z" stroke-dasharray="3 3" opacity="0.3"/>
+             <line x1="16" y1="20" x2="32" y2="20"/>
+             <line x1="24" y1="38" x2="24" y2="14"/>
+             <polyline points="20 18 24 14 28 18"/>
+             <circle cx="18" cy="36" r="1.5" fill="${color}"/>
+             <circle cx="30" cy="36" r="1.5" fill="${color}"/>
+           </svg>`
+  };
+  
+  if (!icons[type]) return '';
+  // Refined, single-layer glow to prevent "doubling" effect
+  return `<span class="type-icon kinetic-svg" style="color:${color}; filter: drop-shadow(0 0 10px ${color}80);" aria-hidden="true">${icons[type]}</span>`;
 }
 
 export function fmtVol(kg) {
@@ -183,13 +205,13 @@ export async function renderSelect() {
     </div>
 
     ${stats ? `
-    <div class="active-plan-card" onclick="Workout.selectType('active')">
+    <div class="active-plan-card stagger-item" onclick="Workout.selectType('active')">
       <div class="active-plan-info">
         <div class="active-plan-title">${esc(stats.name)}</div>
         <div class="active-plan-meta">${ru ? 'Неделя' : 'Week'} ${stats.week} · ${ru ? 'День' : 'Day'} ${stats.day} ${ru ? 'из' : 'of'} ${stats.totalDays}</div>
       </div>
       <div class="active-plan-progress">
-        <div class="active-plan-progress-fill" style="width:${stats.progress}%"></div>
+        <div class="active-plan-progress-fill" id="active-plan-bar" style="width:0%"></div>
       </div>
       <button class="btn-next-session">
         ${ru ? 'Следующая тренировка' : 'Next Session'}
@@ -200,7 +222,7 @@ export async function renderSelect() {
     </div>
     ` : ''}
 
-    <div class="section-header" style="margin-top:var(--sp-2)">
+    <div class="section-header stagger-item" style="margin-top:var(--sp-2)">
       <span class="section-label">${activePlan ? (ru ? 'Свободная тренировка' : 'Free Training') : (ru ? 'Выбор типа' : 'Select Type')}</span>
       <button class="btn-text" onclick="Workout.openPlanEditor()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -213,23 +235,28 @@ export async function renderSelect() {
       </button>
     </div>
 
-    <div class="type-grid">
+    <div class="type-grid stagger-item">
       ${['push', 'pull', 'legs']
-        .map((t) => `
+        .map((t) => {
+          const color = t === 'push' ? '#00e676' : t === 'pull' ? '#00e5ff' : '#bc13fe';
+          return `
         <button class="type-card" data-type="${t}" onclick="Workout.selectType('${t}')">
-          <div class="type-card-icon" style="background:${t === 'push' ? 'var(--c-accent-bg)' : t === 'pull' ? 'var(--c-purple-bg)' : 'var(--c-blue-bg)'}">
-            ${typeIcon(t, t === 'push' ? 'var(--c-accent)' : t === 'pull' ? 'var(--c-purple)' : 'var(--c-blue)')}
+          <div class="type-card-icon" style="color: ${color}">
+            ${typeIcon(t, color)}
           </div>
-          <div class="type-card-name">${t.charAt(0).toUpperCase() + t.slice(1)}</div>
-          <div class="type-card-meta">${(plan[t] || []).length} exercises</div>
-        </button>`)
-        .join('')}
-    </div>
+          <div class="type-card-text">
+            <div class="type-card-name">${t.toUpperCase()}</div>
+            <div class="type-card-meta">${t === 'push' ? (ru ? 'ГРУДЬ' : 'CHEST') : t === 'pull' ? (ru ? 'СПИНА' : 'BACK') : (ru ? 'ПЛЕЧИ' : 'SHOULDERS')}</div>
+          </div>
+        </button>`;
+    })
+    .join('')}
+</div>
 
-    <div class="section-header" style="margin-top:var(--sp-3)">
+    <div class="section-header stagger-item" style="margin-top:var(--sp-3)">
       <span class="section-label">${ru ? 'Программы' : 'Structured Programs'}</span>
     </div>
-    <div class="programs-carousel">
+    <div class="programs-carousel stagger-item">
       ${PROGRAMS.map(p => `
         <div class="program-card ${activePlan?.id === p.id ? 'active' : ''}" 
              onclick="Workout._startProgram('${p.id}')">
@@ -241,10 +268,10 @@ export async function renderSelect() {
       `).join('')}
     </div>
 
-    <div class="section-header" style="margin-top:var(--sp-3)">
+    <div class="section-header stagger-item" style="margin-top:var(--sp-3)">
       <span class="section-label">${ru ? 'Прошлые сессии' : 'Last Sessions'}</span>
     </div>
-    <div id="last-sessions-preview"></div>
+    <div id="last-sessions-preview" class="stagger-item"></div>
   `;
 
   document.getElementById('train-date').textContent = new Date().toLocaleDateString(ru ? 'ru' : 'en', {
@@ -272,6 +299,19 @@ export async function renderSelect() {
       </div>`;
     }).join('');
   });
+
+  if (stats) {
+    requestAnimationFrame(() => {
+      const bar = document.getElementById('active-plan-bar');
+      if (bar) {
+        Spring.animate({
+          from: 0,
+          to: stats.progress,
+          onUpdate: (v) => { bar.style.width = `${v}%`; }
+        });
+      }
+    });
+  }
 }
 
 /* ════════════════════════════════════════════════════════
@@ -329,7 +369,44 @@ export async function renderActive() {
       </div>
     </div>
 
-    <div id="exercise-list">${exerciseCards.join('')}</div>
+    <div id="exercise-list">
+      ${await (async () => {
+        let currentBlock = '';
+        const cards = [];
+        for (let ei = 0; ei < State.plan.length; ei++) {
+          const ex = State.plan[ei];
+          
+          // Map internal block IDs to display labels
+          const blockMap = {
+            'power': ru ? 'БЛОК I: СИЛА' : 'BLOCK I: POWER',
+            'shape': ru ? 'БЛОК II: ОБЪЕМ' : 'BLOCK II: VOLUME',
+            'width': ru ? 'БЛОК I: ШИРИНА' : 'BLOCK I: WIDTH',
+            'thickness': ru ? 'БЛОК II: ТОЛЩИНА' : 'BLOCK II: THICKNESS',
+            'heavy': ru ? 'БЛОК I: ТЯЖЕЛЫЙ' : 'BLOCK I: HEAVY',
+            'iso': ru ? 'БЛОК II: ИЗОЛЯЦИЯ' : 'BLOCK II: ISOLATION',
+            'arms': ru ? 'БЛОК III: РУКИ' : 'BLOCK III: ARMS',
+            'shoulders': ru ? 'БЛОК III: ПЛЕЧИ' : 'BLOCK III: SHOULDERS',
+            'core': ru ? 'БЛОК IV: КОР' : 'BLOCK IV: CORE',
+            'align': ru ? 'БЛОК IV: ОСАНКА' : 'BLOCK IV: ALIGNMENT'
+          };
+
+          const blockLabel = blockMap[ex.block] || '';
+          
+          if (blockLabel && blockLabel !== currentBlock) {
+            currentBlock = blockLabel;
+            cards.push(`
+              <div class="workout-block-header stagger-item">
+                <span class="block-indicator"></span>
+                ${blockLabel}
+              </div>
+            `);
+          }
+          
+          cards.push(await renderExerciseCard(ex, ei));
+        }
+        return cards.join('');
+      })()}
+    </div>
 
     <button class="btn-add-live-ex" onclick="Workout._addLiveExercise()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="16" height="16">

@@ -136,7 +136,10 @@ const Workouts = {
    * @returns {Promise<WorkoutRecord[]>}
    */
   getAll() {
-    return getAll(S.WORKOUTS).then((list) => list.sort((a, b) => b.timestamp - a.timestamp));
+    return tx(S.WORKOUTS).then(s => {
+      const idx = s.index('timestamp');
+      return req2p(idx.getAll()).then(list => list.reverse());
+    });
   },
 
   /**
@@ -145,7 +148,23 @@ const Workouts = {
    * @returns {Promise<WorkoutRecord[]>}
    */
   getLast(n = 5) {
-    return this.getAll().then((list) => list.slice(0, n));
+    return tx(S.WORKOUTS).then(s => {
+      const idx = s.index('timestamp');
+      return new Promise((res, rej) => {
+        const list = [];
+        const req = idx.openCursor(null, 'prev');
+        req.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor && list.length < n) {
+            list.push(cursor.value);
+            cursor.continue();
+          } else {
+            res(list);
+          }
+        };
+        req.onerror = (e) => rej(e.target.error);
+      });
+    });
   },
 
   /**
@@ -163,7 +182,14 @@ const Workouts = {
    * @returns {Promise<WorkoutRecord|undefined>}
    */
   getLastByType(type) {
-    return this.getAll().then((list) => list.find((w) => w.type === type) || null);
+    return tx(S.WORKOUTS).then(s => {
+      const idx = s.index('type');
+      const req = idx.openCursor(IDBKeyRange.only(type), 'prev');
+      return new Promise((res, rej) => {
+        req.onsuccess = (e) => res(e.target.result?.value || null);
+        req.onerror = (e) => rej(e.target.error);
+      });
+    });
   },
 
   /**
@@ -172,9 +198,22 @@ const Workouts = {
    */
   weeklyVolume() {
     const since = Date.now() - 7 * 86400000;
-    return this.getAll().then((list) =>
-      list.filter((w) => w.timestamp >= since).reduce((sum, w) => sum + (w.tonnage || 0), 0)
-    );
+    return tx(S.WORKOUTS).then(s => {
+      const idx = s.index('timestamp');
+      const req = idx.openCursor(IDBKeyRange.lowerBound(since));
+      return new Promise((res) => {
+        let total = 0;
+        req.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            total += (cursor.value.tonnage || 0);
+            cursor.continue();
+          } else {
+            res(total);
+          }
+        };
+      });
+    });
   },
 
   /**
@@ -183,9 +222,22 @@ const Workouts = {
    */
   monthlyVolume() {
     const since = Date.now() - 30 * 86400000;
-    return this.getAll().then((list) =>
-      list.filter((w) => w.timestamp >= since).reduce((sum, w) => sum + (w.tonnage || 0), 0)
-    );
+    return tx(S.WORKOUTS).then(s => {
+      const idx = s.index('timestamp');
+      const req = idx.openCursor(IDBKeyRange.lowerBound(since));
+      return new Promise((res) => {
+        let total = 0;
+        req.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            total += (cursor.value.tonnage || 0);
+            cursor.continue();
+          } else {
+            res(total);
+          }
+        };
+      });
+    });
   },
 
   /**
@@ -195,21 +247,35 @@ const Workouts = {
   monthlyCount() {
     const now = new Date();
     const from = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    return this.getAll().then((list) => list.filter((w) => w.timestamp >= from).length);
+    return tx(S.WORKOUTS).then(s => {
+      const idx = s.index('timestamp');
+      return req2p(idx.count(IDBKeyRange.lowerBound(from)));
+    });
   },
 
   /**
    * PPL split totals: { push, pull, legs } tonnage.
    * @returns {Promise<{push: number, pull: number, legs: number}>}
    */
-  pplTonnage() {
-    return this.getAll().then((list) => {
-      const r = { push: 0, pull: 0, legs: 0 };
-      list.forEach((w) => {
-        if (r[w.type] !== undefined) r[w.type] += w.tonnage || 0;
-      });
-      return r;
-    });
+  async pplTonnage() {
+    const r = { push: 0, pull: 0, legs: 0 };
+    await Promise.all(['push', 'pull', 'legs'].map(async (type) => {
+        const s = await tx(S.WORKOUTS);
+        const idx = s.index('type');
+        const req = idx.openCursor(IDBKeyRange.only(type));
+        return new Promise((res) => {
+            req.onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    r[type] += (cursor.value.tonnage || 0);
+                    cursor.continue();
+                } else {
+                    res();
+                }
+            };
+        });
+    }));
+    return r;
   },
 
   /**

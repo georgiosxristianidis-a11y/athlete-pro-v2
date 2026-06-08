@@ -112,18 +112,91 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* ── Quick Stats ── */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: var(--sp-3);
+}
+.stat-chip {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+  padding: 12px;
+  text-align: center;
+}
+.stat-chip-val {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 20px;
+  line-height: 1.2;
+  color: var(--c-text-1);
+}
+.stat-chip-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+.stat-chip-unit {
+  font-size: 11px;
+  color: var(--c-text-3);
+  margin-left: 2px;
+}
+
+/* ── PPL Balance (Bento) ── */
+.ppl-bal-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.ppl-bal-val {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 20px;
+  line-height: 1;
+}
+.ppl-bal-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+}
+
 /* ── Chart cards ── */
 .chart-card {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-l);
+  border-radius: 20px;
   padding: var(--sp-2);
   margin-bottom: var(--sp-2);
   overflow: hidden;
+  position: relative;
 }
+.chart-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top left, rgba(255,255,255,0.03), transparent 70%);
+  pointer-events: none;
+}
+
 .chart-card canvas {
   width: 100%;
   display: block;
+  position: relative;
+  z-index: 1;
 }
 .ppl-dist-card {
   display: flex;

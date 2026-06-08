@@ -58,4 +58,14 @@ router.get('/firebase-config', (req, res) => {
   });
 });
 
+/* ── GET /ai-status — check for server-side API keys ── */
+router.get('/ai-status', (req, res) => {
+  const hasGemini = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY && !process.env.GOOGLE_GENERATIVE_AI_API_KEY.includes('your-');
+  const hasAnthropic = !!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('your-');
+  res.json({
+    gemini: hasGemini,
+    anthropic: hasAnthropic
+  });
+});
+
 export default router;

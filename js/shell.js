@@ -1,5 +1,6 @@
 'use strict';
 import { State } from './workout.store.js';
+import { haptic } from './shared/utils.js';
 
 /* ════════════════════════════════════════════════════════
    shell.js — Athlete Pro  |  Nav + Toast as ES Module exports
@@ -25,6 +26,7 @@ function on(id, fn) {
  */
 async function go(id, opts = {}) {
   if (id === _current && !opts.force) return;
+  haptic(10);
 
   const performNav = async () => {
     const prev = document.getElementById(_current);
@@ -71,6 +73,10 @@ const ICONS = {
  * @param {number} [duration=3000] 
  */
 function show(msg, type = 'info', duration = 3000) {
+  if (type === 'error') haptic([20, 50, 20]);
+  else if (type === 'success') haptic(15);
+  else haptic(5);
+
   let wrap = document.getElementById('toast-wrap');
   if (!wrap) {
     wrap = document.createElement('div');

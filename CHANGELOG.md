@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.17.0] — 2026-06-08
+
+### Phase 5: Smart UX & Micro-interactions — COMPLETE
+
+#### Added
+
+**Phase 5.1: Core Scenario Optimization**
+- **Workout Creation Flow:** Staggered entry animations for Training Hub sections.
+- **Profile Update UX:** Responsive feedback loop for stat/name updates (toast + auto-refresh).
+- **Spring Progress Bar:** Dynamic animation for active plan progress in Training Hub.
+
+**Phase 5.2: Elite Micro-interactions**
+- **Staggered Animations:** Applied `stagger-item` globally for smoother screen transitions.
+- **Progress Bar Polish:** Integrated `Spring` physics for Dashboard 1RM bars and Analytics progress bars.
+- **View Transitions API:** Verified and optimized native cross-fade transitions.
+
+**Phase 5.3: Feedback & Empty States**
+- **Elite Empty States:** Upgraded Analytics screen with helpful guidance and calls-to-action for new users.
+- **Skeleton Loaders:** Multi-line shimmering skeletons for AI responses (Claude Coach, Workout AI) and heavy stats cards.
+
+#### Technical Details
+
+**Modified Files (Phase 5):**
+- `js/workout.view/render.js` — Added Training Hub animations and Spring progress bar.
+- `js/dashboard.js` — Added Spring physics to 1RM bars.
+- `js/analytics.view.js` — Added elite empty states and animated ORM bars.
+- `js/shared/athlete-room.js` — Improved stat saving responsiveness with toasts and auto-refresh.
+- `js/claude.view.js` — Replaced dots with multi-line skeleton loaders.
+- `js/workout-ai.view.js` — Integrated proactive skeleton loaders for AI messages.
+- `css/base.css` — Centralized global skeleton (`.sk`, `.sk-lines`) and shimmer animation.
+- `css/dashboard.css` — Cleaned up redundant skeleton styles.
+
+#### Verified
+- ✅ All Phase 5 requirements met.
+- ✅ GIO Standards (Minimalism & Air, No System Emojis) applied.
+- ✅ Animations verified at 60fps.
+
+---
+
 ## [1.0.0] — 2026-03-29
 
 ### 🎉 Milestone 1.0 — Elite Foundation — COMPLETE

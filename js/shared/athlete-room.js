@@ -1,7 +1,8 @@
 // @ts-check
 import { DB } from '../db.js';
 import { dotsScore } from '../strength-engine.js';
-import { loadProfile, updateProfile } from '../profile.store.js';
+import { loadProfile, updateProfile, updateWeightAndHeight } from '../profile.store.js';
+import { esc, haptic } from './utils.js';
 
 /* ════════════════════════════════════════════════════════
    athlete-room.js — Athlete Room: личный кабинет атлета
@@ -87,6 +88,7 @@ export const AthleteRoom = (() => {
   let _overlay = null;
 
   async function open() {
+    haptic(15);
     _overlay = document.getElementById('athlete-room');
     if (!_overlay) return;
 
@@ -98,6 +100,7 @@ export const AthleteRoom = (() => {
   }
 
   function close() {
+    haptic(10);
     if (!_overlay) return;
     _overlay.classList.remove('open');
     document.body.style.overflow = '';
@@ -139,90 +142,184 @@ export const AthleteRoom = (() => {
 
     const unlockedAch = new Set(ACHIEVEMENTS.filter(a => a.check(workouts)).map(a => a.id));
 
+    const activeTab = window._arActiveTab || 'profile';
+
     _overlay.innerHTML = `
       <div class="ar-sheet">
-        <div class="ar-header">
-          <button class="ar-back-btn" onclick="window.AthleteRoom.close()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          </button>
-          <div class="ar-header-title">${ru ? 'Кабинет Атлета' : 'Athlete Room'}</div>
-          <div style="width:38px"></div>
-        </div>
-
-        <div class="ar-hero">
-          <div class="ar-avatar ${photo ? 'has-photo' : ''}" 
-               style="background: linear-gradient(135deg, ${c1}, ${c2})"
-               id="ar-avatar" onclick="window.AthleteRoom.cycleColor()">
-            ${photo ? `<div class="ar-avatar-photo" style="background-image: url(${photo})"></div>` : ''}
-            <span class="ar-avatar-initials">${photo ? '' : esc(initials)}</span>
-            <div class="ar-avatar-ring" style="--c1:${c1};--c2:${c2}"></div>
-            <button class="ar-avatar-upload-overlay" onclick="event.stopPropagation(); window.AthleteRoom.triggerPhotoUpload()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <div class="ar-header" style="flex-direction: column; align-items: flex-start; padding-bottom: 0;">
+          <div style="display: flex; align-items: center; width: 100%; justify-content: space-between; margin-bottom: 16px;">
+            <button class="ar-back-btn" onclick="window.AthleteRoom.close()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
+            <div style="font-weight: 700; font-size: 16px;">${ru ? 'Мой профиль' : 'Athlete Room'}</div>
+            <div style="width: 44px;"></div> <!-- spacer -->
           </div>
-          <div class="ar-hero-info">
-            <div class="ar-name-wrap">
-              <div class="ar-name" onclick="window.AthleteRoom.editName()">${esc(name)}</div>
-              <button class="ar-edit-btn" onclick="window.AthleteRoom.editName()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-            </div>
-            <div class="ar-level-badge" style="--lc:${tierColor}; border-color:${tierColor}30; background:${tierColor}15">
-              <span class="ar-level-dot" style="background:${tierColor}"></span>
-              ${tierLabel.toUpperCase()}${dots ? ` • ${dots}` : ''}
-            </div>
-            <div class="ar-streak-mini">${streak} ${ru ? (streak === 1 ? 'день' : streak < 5 ? 'дня' : 'дней') : 'day' + (streak === 1 ? '' : 's')} ${ru ? 'подряд' : 'streak'}</div>
+          
+          <div class="bs-tab-bar" style="margin-bottom: 0; width: 100%; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+            <button class="bs-tab ${activeTab === 'profile' ? 'active' : ''}" onclick="window.AthleteRoom.switchTab('profile')">${ru ? 'Профиль' : 'Profile'}</button>
+            <button class="bs-tab ${activeTab === 'metrics' ? 'active' : ''}" onclick="window.AthleteRoom.switchTab('metrics')">${ru ? 'Замеры' : 'Body Metrics'}</button>
           </div>
         </div>
 
-        <div class="ar-name-editor" id="ar-name-editor" style="display:none">
-          <div class="ar-editor-card">
-            <div class="ar-editor-label">${ru ? 'Имя' : 'Name'}</div>
-            <input type="text" id="ar-name-input" class="ar-name-input" value="${name}" maxlength="25">
+        <div class="ar-content" id="ar-tab-content" style="padding: 16px; overflow-y: auto; flex: 1;">
+          <!-- Content injected by switchTab -->
+        </div>
+      </div>
+    `;
+
+    _initSheetDrag();
+    await switchTab(activeTab, { workouts, name, initials, c1, c2, tierLabel, tierColor, streak, total, dots, unlockedAch, metrics, photo, ru });
+  }
+
+  async function switchTab(tabId, dataContext = null) {
+    haptic(10);
+    window._arActiveTab = tabId === 'settings' ? 'profile' : tabId; // Fallback if settings was active
+    
+    // Update active state in UI if overlay is open
+    if (_overlay) {
+      _overlay.querySelectorAll('.bs-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${window._arActiveTab}'`));
+      });
+    }
+
+    const container = document.getElementById('ar-tab-content');
+    if (!container) return;
+
+    // Use passed context or fetch fresh if undefined
+    let ctx = dataContext;
+    if (!ctx) {
+      const [workouts, orms, customName, colorIdx, lang, profile, metrics, photo] = await Promise.all([
+        DB.Workouts.getAll().catch(() => []),
+        DB.OneRM.getAll().catch(() => []),
+        DB.Settings.get('athlete-name', ''),
+        DB.Settings.get('avatar-color', '0'),
+        DB.Settings.get('lang', 'en'),
+        loadProfile().catch(() => null),
+        DB.Metrics.latest().catch(() => null),
+        DB.Settings.get('athlete-photo', null)
+      ]);
+      const ru = lang === 'ru';
+      const name = customName || profile?.name || (ru ? 'Атлет' : 'Athlete');
+      const [c1, c2] = AVATAR_COLORS[(parseInt(colorIdx) || 0) % AVATAR_COLORS.length];
+      const initials = name.split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'A';
+      
+      const bestORM = orms.reduce((acc, curr) => {
+        if (curr.id.match(/bench/i)) acc.bench = Math.max(acc.bench || 0, curr.value);
+        if (curr.id.match(/squat/i)) acc.squat = Math.max(acc.squat || 0, curr.value);
+        if (curr.id.match(/deadlift/i)) acc.deadlift = Math.max(acc.deadlift || 0, curr.value);
+        return acc;
+      }, { bench: 0, squat: 0, deadlift: 0 });
+
+      const total = (bestORM.bench || 0) + (bestORM.squat || 0) + (bestORM.deadlift || 0);
+      const weight = metrics?.weight || 80;
+      const dots = total ? dotsScore({ total, bodyweight: weight, sex: profile?.sex || 'm' }) : 0;
+      const tier = _tierFromDots(dots);
+      const tierColor = TIER_COLOR[tier];
+      const tierLabel = ru ? TIER_RU[tier] : tier;
+      const streak = _calcStreak(workouts);
+      const unlockedAch = new Set(ACHIEVEMENTS.filter(a => a.check(workouts)).map(a => a.id));
+
+      ctx = { workouts, name, initials, c1, c2, tierLabel, tierColor, streak, total, dots, unlockedAch, metrics, photo, ru };
+    }
+
+    if (window._arActiveTab === 'profile') {
+      _renderProfileTab(container, ctx);
+    } else if (window._arActiveTab === 'metrics') {
+      _renderMetricsTab(container, ctx);
+    }
+  }
+
+  function _renderProfileTab(container, ctx) {
+    const { name, initials, c1, c2, tierLabel, tierColor, streak, total, dots, unlockedAch, photo, ru } = ctx;
+    
+    // Use the existing avatar init logic but wrap the HTML
+    const avatarHtml = photo
+      ? `<img src="${photo}" class="ar-avatar" style="object-fit:cover" onclick="window.AthleteRoom.triggerPhotoUpload()">`
+      : `<div class="ar-avatar" id="ar-avatar-circle" style="background: linear-gradient(135deg, ${c1}, ${c2})" onclick="window.AthleteRoom.cycleColor()">${initials}</div>`;
+
+    container.innerHTML = `
+          <div class="ar-passport">
+            <div style="position:relative">
+              ${avatarHtml}
+              ${photo ? `<button class="ar-remove-photo" onclick="window.AthleteRoom.removePhoto(event)" title="Remove photo">&times;</button>` : ''}
+              <input type="file" id="ar-photo-input" accept="image/jpeg, image/png, image/webp" style="display:none" onchange="window.AthleteRoom.handlePhotoSelected(event)">
+            </div>
             
-            <div class="ar-editor-photo">
-              <div class="ar-editor-photo-label">${ru ? 'Фото профиля' : 'Profile Photo'}</div>
-              <div class="ar-photo-actions">
-                <button class="ar-btn-photo-upload" onclick="window.AthleteRoom.triggerPhotoUpload()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                  <span>${ru ? 'Загрузить' : 'Upload'}</span>
-                </button>
-                ${photo ? `<button class="ar-btn-photo-remove" onclick="window.AthleteRoom.removePhoto()"><span>${ru ? 'Удалить' : 'Remove'}</span></button>` : ''}
+            <div class="ar-name" onclick="window.AthleteRoom.editName()">
+              <span>${esc(name)}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            
+            <div class="ar-tier" style="color: ${tierColor}">
+              <div class="ar-tier-dot" style="background: ${tierColor}; box-shadow: 0 0 8px ${tierColor};"></div>
+              ${tierLabel}
+            </div>
+          </div>
+
+          <div class="ar-stats">
+            <div class="ar-stat">
+              <div class="ar-stat-val">${streak} <span style="font-size:12px;opacity:0.6">d</span></div>
+              <div class="ar-stat-lbl">${ru ? 'Стрик' : 'Streak'}</div>
+            </div>
+            <div class="ar-stat">
+              <div class="ar-stat-val">${total} <span style="font-size:12px;opacity:0.6">kg</span></div>
+              <div class="ar-stat-lbl">${ru ? 'Сумма 1RM' : '1RM Total'}</div>
+            </div>
+            <div class="ar-stat" style="box-shadow: 0 4px 16px ${tierColor}20; border-color: ${tierColor}40">
+              <div class="ar-stat-val" style="color: ${tierColor}; text-shadow: 0 0 12px ${tierColor}80">${Math.round(dots)}</div>
+              <div class="ar-stat-lbl">DOTS</div>
+            </div>
+          </div>
+
+          <div class="ar-section-label">${ru ? 'Достижения' : 'Achievements'}</div>
+          <div class="ar-achievements">
+            ${ACHIEVEMENTS.map(a => {
+              const unlocked = unlockedAch.has(a.id);
+              return `
+                <div class="ar-ach-card ${unlocked ? 'unlocked' : 'locked'}">
+                  <div class="ar-ach-icon">${a.icon}</div>
+                  <div class="ar-ach-title">${ru ? a.ru : a.en}</div>
+                  <div class="ar-ach-status">${unlocked ? '✅' : '🔒'}</div>
+                </div>`;
+            }).join('')}
+          </div>
+
+          <div class="ar-name-editor" id="ar-name-editor" style="display:none; position:absolute; inset:0; background:var(--c-bg-1); z-index:10; padding:16px;">
+            <div class="ar-editor-card">
+              <div class="ar-editor-label">${ru ? 'Имя' : 'Name'}</div>
+              <input type="text" id="ar-name-input" class="ar-name-input" value="${name}" maxlength="25">
+              
+              <div class="ar-editor-colors-label" style="margin-top:16px">${ru ? 'Цвет аватара' : 'Avatar Color'}</div>
+              <div class="ar-color-row">
+                ${AVATAR_COLORS.map(([e, t], i) => `
+                  <div class="ar-color-swatch ${i === (parseInt(ctx.colorIdx) || 0) ? 'active' : ''}" 
+                       style="background:linear-gradient(135deg, ${e}, ${t})" 
+                       onclick="window.AthleteRoom.selectColor(${i})"></div>`).join('')}
+              </div>
+
+              <div class="ar-editor-actions" style="margin-top:24px">
+                <button class="ar-btn-save" onclick="window.AthleteRoom.saveName()">${ru ? 'Применить' : 'Apply'}</button>
+                <button class="ar-btn-cancel" onclick="window.AthleteRoom.cancelEdit()">${ru ? 'Отмена' : 'Cancel'}</button>
               </div>
             </div>
-
-            <div class="ar-editor-colors-label">${ru ? 'Цвет аватара' : 'Avatar Color'}</div>
-            <div class="ar-color-row">
-              ${AVATAR_COLORS.map(([e, t], i) => `
-                <div class="ar-color-swatch ${i === (parseInt(colorIdx) || 0) ? 'active' : ''}" 
-                     style="background:linear-gradient(135deg, ${e}, ${t})" 
-                     onclick="window.AthleteRoom.selectColor(${i})"></div>`).join('')}
-            </div>
-
-            <div class="ar-editor-actions">
-              <button class="ar-btn-save" onclick="window.AthleteRoom.saveName()">${ru ? 'Применить' : 'Apply'}</button>
-              <button class="ar-btn-cancel" onclick="window.AthleteRoom.cancelEdit()">${ru ? 'Отмена' : 'Cancel'}</button>
-            </div>
           </div>
-        </div>
-
-        <div class="ar-section-label" style="margin-top:20px">${ru ? 'Достижения' : 'Achievements'} <span class="ar-ach-count">${unlockedAch.size}/${ACHIEVEMENTS.length}</span></div>
-        <div class="ar-achievements">
-          ${ACHIEVEMENTS.map(a => {
-            const unlocked = unlockedAch.has(a.id);
-            return `
-              <div class="ar-ach-card ${unlocked ? 'unlocked' : 'locked'}">
-                <div class="ar-ach-icon">${a.icon}</div>
-                <div class="ar-ach-title">${ru ? a.ru : a.en}</div>
-                <div class="ar-ach-status">${unlocked ? '✅' : '🔒'}</div>
-              </div>`;
-          }).join('')}
-        </div>
-        <div style="height:40px"></div>
-      </div>
-      <input type="file" id="ar-photo-input" accept="image/*" style="display:none" onchange="window.AthleteRoom.handlePhotoSelected(event)">
     `;
-    _initSheetDrag();
+    setTimeout(initAvatar, 50);
+  }
+
+  function _renderMetricsTab(container, ctx) {
+    const { ru } = ctx;
+    container.innerHTML = `<div id="ar-body-stats-root" style="margin-top: -16px;"></div>`;
+    // We dynamically load the existing body-stats logic to render inside this tab
+    import('../body-stats.js').then(mod => {
+      // Modify root ID momentarily or let body-stats handle it if we update body-stats.js
+      // To keep it simple, body-stats.js looks for 'body-stats-root'. We'll temporarily change our ID or update body-stats.js
+      const root = document.getElementById('ar-body-stats-root');
+      if(root) {
+        root.id = 'body-stats-root'; // Hijack the ID so body-stats renders here
+        mod.renderBodyStats();
+      }
+    });
   }
 
   function editName() {
@@ -236,7 +333,50 @@ export const AthleteRoom = (() => {
     if (ed) ed.style.display = 'none';
   }
 
+  let _currentStat = null;
+  function editStat(type, val) {
+    _currentStat = type;
+    const ed = document.getElementById('ar-stat-editor');
+    const lbl = document.getElementById('ar-stat-label');
+    const inp = /** @type {HTMLInputElement} */ (document.getElementById('ar-stat-input'));
+    if (!ed || !lbl || !inp) return;
+    lbl.textContent = type === 'weight' ? 'Weight (kg)' : 'Height (cm)';
+    inp.value = val;
+    ed.style.display = 'block';
+    inp.focus();
+  }
+
+  function cancelStatEdit() {
+    const ed = document.getElementById('ar-stat-editor');
+    if (ed) ed.style.display = 'none';
+    _currentStat = null;
+  }
+
+  async function saveStat() {
+    haptic(15);
+    const val = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('ar-stat-input'))?.value);
+    if (!val || val <= 0) { cancelStatEdit(); return; }
+    
+    const latest = await DB.Metrics.latest();
+    const w = _currentStat === 'weight' ? val : (latest?.weight || 80);
+    const h = _currentStat === 'height' ? val : (latest?.height || 180);
+    
+    await updateWeightAndHeight(w, h);
+    cancelStatEdit();
+    render();
+
+    // UI Refresh
+    if (window.Dashboard?.load) window.Dashboard.load();
+    const sProfile = document.getElementById('s-profile');
+    if (sProfile && sProfile.classList.contains('active')) {
+      const { renderProfile } = await import('../profile.view.js');
+      renderProfile(sProfile);
+    }
+    window.Toast?.show(`${_currentStat === 'weight' ? 'Weight' : 'Height'} updated`, 'success');
+  }
+
   async function saveName() {
+    haptic(15);
     const val = document.getElementById('ar-name-input')?.value?.trim();
     if (!val) { cancelEdit(); return; }
     await DB.Settings.set('athlete-name', val);
@@ -244,14 +384,24 @@ export const AthleteRoom = (() => {
     cancelEdit();
     render();
     initAvatar();
+
+    // UI Refresh
+    const sProfile = document.getElementById('s-profile');
+    if (sProfile && sProfile.classList.contains('active')) {
+      const { renderProfile } = await import('../profile.view.js');
+      renderProfile(sProfile);
+    }
+    window.Toast?.show('Name updated', 'success');
   }
 
   async function cycleColor() {
+    haptic(5);
     const curr = parseInt(await DB.Settings.get('avatar-color', '0')) || 0;
     await selectColor((curr + 1) % AVATAR_COLORS.length);
   }
 
   async function selectColor(idx) {
+    haptic(10);
     await DB.Settings.set('avatar-color', String(idx));
     render();
     initAvatar();
@@ -335,5 +485,5 @@ export const AthleteRoom = (() => {
     });
   }
 
-  return { open, close, editName, cancelEdit, saveName, cycleColor, selectColor, initAvatar, triggerPhotoUpload, handlePhotoSelected, removePhoto };
+  return { open, close, switchTab, editName, cancelEdit, saveName, cycleColor, selectColor, initAvatar, triggerPhotoUpload, handlePhotoSelected, removePhoto, editStat, cancelStatEdit, saveStat };
 })();

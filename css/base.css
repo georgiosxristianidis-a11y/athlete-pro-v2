@@ -66,6 +66,50 @@
   --t-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ── Section 1.5: Global Skeletons ──────────────────── */
+.sk {
+  position: relative;
+  overflow: hidden;
+  background: var(--c-bg-3) !important;
+  border-radius: 6px;
+  color: transparent !important;
+  pointer-events: none;
+  user-select: none;
+  display: inline-block;
+}
+.sk::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+.sk-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.sk-line {
+  height: 12px;
+  border-radius: 4px;
+  background: var(--c-bg-3);
+  width: 100%;
+}
+.sk-line:last-child {
+  width: 65%;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* ── Section 2: Shared Component — Buttons ────────────── */
 .btn-primary {
   height: 48px;
@@ -563,6 +607,57 @@ button:focus-visible {
 .stat-chip:nth-child(1) { animation-delay: 0.06s; }
 .stat-chip:nth-child(2) { animation-delay: 0.11s; }
 .stat-chip:nth-child(3) { animation-delay: 0.16s; }
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stagger-item {
+  animation: fadeSlideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.stagger-item:nth-child(1) { animation-delay: 0.05s; }
+.stagger-item:nth-child(2) { animation-delay: 0.1s; }
+.stagger-item:nth-child(3) { animation-delay: 0.15s; }
+.stagger-item:nth-child(4) { animation-delay: 0.2s; }
+.stagger-item:nth-child(5) { animation-delay: 0.25s; }
+.stagger-item:nth-child(6) { animation-delay: 0.3s; }
+
+/* ── AI Status Indicators ── */
+@keyframes ai-blink-blue {
+  0%, 100% { background-color: var(--c-blue); box-shadow: 0 0 6px var(--c-blue); }
+  50% { background-color: rgba(0, 184, 212, 0.2); box-shadow: 0 0 0px transparent; }
+}
+@keyframes ai-blink-grey {
+  0%, 100% { background-color: #666; }
+  50% { background-color: #222; }
+}
+.ai-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.ai-indicator.active { animation: ai-blink-blue 2s infinite; }
+.ai-indicator.missing { animation: ai-blink-grey 2s infinite; }
+
+.ai-status-wrap {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 502;
+  pointer-events: none;
+}
+
+.ai-glow-selection {
+  box-shadow: 0 0 15px var(--c-accent) !important;
+}
+.ai-glow-gemini {
+  box-shadow: 0 0 15px var(--c-blue) !important;
+}
+.ai-glow-error {
+  box-shadow: 0 0 20px var(--c-red) !important;
+}
 
 /* ── Section 6: Data & Digits ─────────────────────────── */
 .sw-val, .sr-val, .stepper-val, .live-val, .orm-val, .focus-hero-val {

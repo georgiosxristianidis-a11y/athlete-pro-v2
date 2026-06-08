@@ -5,7 +5,8 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
-import { esc } from './shared/utils.js';
+import { esc, haptic } from './shared/utils.js';
+import { Spring } from './shared/spring.js';
 import {
   CalState,
   calPrev as storePrev,
@@ -55,47 +56,16 @@ export async function load() {
       </div>
     </div>
 
-    <!-- ── Premium XOR Sub-nav ── -->
-    <div class="stats-segmented-ctrl">
-      <button class="seg-btn ${_activeTab === 'performance' ? 'active' : ''}" 
-              onclick="Analytics.switchTab('performance')">
-        ${ru ? 'Результаты' : 'Performance'}
-      </button>
-      <button class="seg-btn ${_activeTab === 'measurements' ? 'active' : ''}" 
-              onclick="Analytics.switchTab('measurements')">
-        ${ru ? 'Замеры' : 'Measurements'}
-      </button>
-    </div>
-
     <div id="stats-tab-content" class="animate-in">
-      <!-- Content injected by switchTab -->
+      <!-- Content injected by load -->
     </div>
   `;
 
-  await switchTab(_activeTab);
-}
-
-/**
- * Switch between Performance and Measurements tabs.
- */
-export async function switchTab(tab) {
-  _activeTab = tab;
   const container = document.getElementById('stats-tab-content');
   if (!container) return;
 
-  const lang = await DB.Settings.get('lang', 'en');
-  const ru = lang === 'ru';
-
-  // Update active state in UI
-  document.querySelectorAll('.seg-btn').forEach(btn => {
-    const isPerf = btn.textContent.trim().toLowerCase().includes(ru ? 'рез' : 'perf');
-    const targetIsPerf = tab === 'performance';
-    btn.classList.toggle('active', isPerf === targetIsPerf);
-  });
-
-  if (tab === 'performance') {
-    container.innerHTML = `
-      <div class="stat-row" style="margin-top:var(--sp-2)">
+  container.innerHTML = `
+    <div class="stat-row stagger-item" style="margin-top:var(--sp-2); animation-delay: 0.05s">
         <div class="stat-chip">
           <div class="stat-chip-val" id="an-total-sessions">—</div>
           <div class="stat-chip-label">${ru ? 'Тренировки' : 'Sessions'}</div>
@@ -111,10 +81,10 @@ export async function switchTab(tab) {
       </div>
 
       <!-- ── PPL Balance ── -->
-      <div class="section-header" style="margin-top:var(--sp-3)">
+      <div class="section-header stagger-item" style="margin-top:var(--sp-3); animation-delay: 0.1s">
         <span class="section-label">${ru ? 'Баланс PPL' : 'PPL Balance'}</span>
       </div>
-      <div class="chart-card bento-grid" style="padding:16px;gap:12px;display:grid;grid-template-columns:1fr 1fr 1fr">
+      <div class="chart-card bento-grid stagger-item" style="padding:16px;gap:12px;display:grid;grid-template-columns:1fr 1fr 1fr; animation-delay: 0.1s">
         <div class="ppl-bal-item">
           <div class="ppl-bal-val" id="ppl-bal-push" style="color:#00e676">0%</div>
           <div class="ppl-bal-lbl">${ru ? 'Жим' : 'Push'}</div>
@@ -129,13 +99,13 @@ export async function switchTab(tab) {
         </div>
       </div>
 
-      <div class="section-header" style="margin-top:var(--sp-4)">
+      <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.15s">
         <span class="section-label">${ru ? 'Прогресс объема' : 'Weekly Progress'}</span>
         <span class="badge badge-accent" id="an-week-best">—</span>
       </div>
-      <div class="chart-card"><canvas id="cv-volume" height="140"></canvas></div>
+      <div class="chart-card stagger-item" style="animation-delay: 0.15s"><canvas id="cv-volume" height="140"></canvas></div>
 
-      <div class="section-header" style="margin-top:var(--sp-4)">
+      <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.2s">
         <span class="section-label">${ru ? 'Рекорды (1RM)' : 'Estimated 1RM'}</span>
       </div>
       <div id="orm-list"></div>
@@ -144,18 +114,35 @@ export async function switchTab(tab) {
     `;
 
     const { workouts, orms } = await fetchAllData();
+
+    if (!workouts.length) {
+      container.innerHTML = `
+        <div class="empty-state" style="padding: var(--sp-6) var(--sp-4); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px;">
+          <div class="empty-icon-wrap" style="width: 80px; height: 80px; background: var(--c-surface-h); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: var(--sp-3); color: var(--c-accent);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="40" height="40">
+              <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/>
+            </svg>
+          </div>
+          <div class="empty-title" style="font-size: 1.25rem; font-weight: 700; color: var(--c-text-1); margin-bottom: var(--sp-1);">
+            ${ru ? 'Данных пока нет' : 'No Data Yet'}
+          </div>
+          <div class="empty-desc" style="color: var(--c-text-3); max-width: 240px; line-height: 1.4; margin-bottom: var(--sp-4);">
+            ${ru ? 'Завершите свою первую тренировку, чтобы увидеть статистику.' : 'Complete your first workout to see your progress insights here.'}
+          </div>
+          <button class="btn-primary" onclick="window.Nav.go('s-train', { force: true })">
+            ${ru ? 'Начать тренировку' : 'Start First Session'}
+          </button>
+        </div>
+      `;
+      return;
+    }
+
     _renderQuickStats(workouts);
     _renderPPLBalance(workouts);
     _renderCalendar(workouts);
     const trend = await fetchWeeklyTrend(10);
     _renderVolumeChart(workouts, trend);
     _renderORMList(orms);
-
-  } else {
-    container.innerHTML = `<div id="body-stats-root"></div>`;
-    const mod = await import('./body-stats.js');
-    mod.renderBodyStats();
-  }
 }
 
 function _renderQuickStats(workouts) {
@@ -228,29 +215,69 @@ function _renderVolumeChart(workouts, buckets) {
   const W = canvas.offsetWidth || 320;
   canvas.width = W * devicePixelRatio; canvas.height = 140 * devicePixelRatio;
   const ctx = canvas.getContext('2d'); ctx.scale(devicePixelRatio, devicePixelRatio);
-  const pad = { t: 20, b: 28, l: 8, r: 8 }, bW = (W - pad.l - pad.r) / buckets.length, gap = bW * 0.25, chartH = 140 - pad.t - pad.b;
+  const pad = { t: 24, b: 28, l: 8, r: 8 }, bW = (W - pad.l - pad.r) / buckets.length, gap = bW * 0.3, chartH = 140 - pad.t - pad.b;
+  
   buckets.forEach((b, i) => {
     const x = pad.l + i * bW + gap / 2, bw = bW - gap, bh = b.tonnage ? Math.max(4, (b.tonnage / max) * chartH) : 2, y = pad.t + chartH - bh;
-    ctx.fillStyle = (b.tonnage === best && best > 0) ? '#00e676' : 'rgba(0,230,118,0.25)';
-    _roundRect(ctx, x, y, bw, bh, 3); ctx.fill();
-    ctx.fillStyle = 'rgba(90,96,112,0.8)'; ctx.font = `600 9px sans-serif`; ctx.textAlign = 'center';
-    ctx.fillText(weekLabel(b), x + bw / 2, 140 - pad.b + 12);
-    if (b.tonnage > 0) { ctx.fillStyle = '#fff'; ctx.fillText(fmtVol(b.tonnage), x + bw / 2, y - 4); }
+    
+    // Gradient bar
+    const isBest = b.tonnage === best && best > 0;
+    const grad = ctx.createLinearGradient(x, y, x, y + bh);
+    if (isBest) {
+      grad.addColorStop(0, '#00e676');
+      grad.addColorStop(1, '#00c853');
+    } else {
+      grad.addColorStop(0, 'rgba(0,230,118,0.2)');
+      grad.addColorStop(1, 'rgba(0,230,118,0.05)');
+    }
+    
+    ctx.fillStyle = grad;
+    _roundRect(ctx, x, y, bw, bh, 4); ctx.fill();
+    
+    // Label: Week
+    ctx.fillStyle = 'rgba(161,161,170,0.8)'; 
+    ctx.font = `700 9px 'Manrope', sans-serif`; 
+    ctx.textAlign = 'center';
+    ctx.fillText(weekLabel(b), x + bw / 2, 140 - 10);
+    
+    // Value on top
+    if (b.tonnage > 0) { 
+      ctx.fillStyle = isBest ? '#fff' : 'rgba(255,255,255,0.6)';
+      ctx.font = `800 10px 'Instrument Sans', sans-serif`;
+      ctx.fillText(fmtVol(b.tonnage), x + bw / 2, y - 6); 
+    }
   });
 }
 
 function _renderORMList(orms) {
   const el = document.getElementById('orm-list');
   if (!el || !orms.length) return;
-  el.innerHTML = orms.sort((a, b) => b.value - a.value).map((o) => `
-    <div class="orm-row">
+  const sorted = orms.sort((a, b) => b.value - a.value);
+  el.innerHTML = sorted.map((o, i) => `
+    <div class="orm-row stagger-item" style="animation-delay: ${0.2 + i * 0.05}s">
       <div class="orm-name">${esc(o.id)}</div>
       <div class="orm-val">${o.value}<span class="orm-unit">kg</span></div>
-      <div class="orm-bar-wrap"><div class="orm-bar-fill" style="width:${Math.min(100, o.value / 3)}%;background:var(--c-purple)"></div></div>
+      <div class="orm-bar-wrap"><div class="orm-bar-fill" id="an-orm-bar-${i}" style="width:0%;background:linear-gradient(90deg, var(--c-purple), #8b5cf6)"></div></div>
     </div>`).join('');
+
+  // Spring animation for bars
+  setTimeout(() => {
+    sorted.forEach((o, i) => {
+      const bar = document.getElementById(`an-orm-bar-${i}`);
+      if (!bar) return;
+      const targetWidth = Math.min(100, (o.value / 250) * 100);
+      Spring.animate({
+        from: 0,
+        to: targetWidth,
+        stiffness: 80,
+        damping: 15,
+        onUpdate: (v) => { bar.style.width = v + '%'; }
+      });
+    });
+  }, 150);
 }
 
 function _roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); }
 function _set(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = String(html); }
 
-export const Analytics = { load, calPrev, calNext, calDayClick, switchTab };
+export const Analytics = { load, calPrev, calNext, calDayClick };

@@ -25,6 +25,7 @@ const SVG = {
   shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
   cloud: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.3-1.7-4.2-3.9-4.5-1.1-3.1-4-5.4-7.4-5.4-4 0-7.3 3.1-7.7 7.1-2 .3-3.5 2-3.5 4 0 2.2 1.8 4 4 4h11.5"/></svg>`,
   back: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>`,
+  anonymous: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M18 21a6 6 0 0 0-12 0"/><line x1="3" y1="3" x2="21" y2="21"/></svg>`,
   };
 
 const STEPS = 6;
@@ -257,7 +258,7 @@ function _stepPrivacy(ru) {
         ${ru ? 'Где хранить твои данные?' : 'Where should we store your data?'}
       </p>
       <div style="display:grid; gap:var(--sp-1)">
-        ${_choiceCard('airgap', SVG.shield, ru ? 'Анонимно (Off-line)' : 'Private (Offline)', ru ? 'Все данные только в телефоне.' : 'All data stays on this device.', 'var(--c-accent)')}
+        ${_choiceCard('airgap', SVG.anonymous, ru ? 'Анонимно (Off-line)' : 'Anonymous (Offline)', ru ? 'Полная приватность. Только локально.' : 'Full privacy. Local storage only.', '#8b5cf6')}
         ${_choiceCard('cloud', SVG.cloud, ru ? 'Облако (Опционально)' : 'Cloud (Optional)', ru ? 'Синхронизация между устройствами.' : 'Sync data across devices.', 'var(--c-blue)')}
       </div>
     </div>

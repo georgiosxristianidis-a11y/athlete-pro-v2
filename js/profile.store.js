@@ -111,6 +111,16 @@ export async function updateProfile(patch) {
   await Promise.all(writes);
 }
 
+/**
+ * Update weight and height metrics and trigger re-render.
+ * @param {number} weight 
+ * @param {number} height 
+ */
+export async function updateWeightAndHeight(weight, height) {
+  if (!weight || !height) return;
+  await DB.Metrics.save(weight, height);
+}
+
 /* ════════════════════════════════════════════════════════
    COMPUTED — age, BMI, LBM, FFMI
    ════════════════════════════════════════════════════════ */

@@ -7,6 +7,7 @@
 
 const CACHE_NAME = 'athlete-pro-v38';
 
+// eslint-disable-next-line no-unused-vars
 const ASSETS = [
   '/index.html',
   '/manifest.json',

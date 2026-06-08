@@ -3,6 +3,8 @@
    rest-timer.js — Per-set rest timer with bar + modal UI
    ════════════════════════════════════════════════════════ */
 
+import { PiP } from './features/pip.js';
+
 export const RestTimer = (() => {
   let _end = 0;
   let _total = 0;

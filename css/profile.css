@@ -325,42 +325,83 @@
   color: var(--c-text-3);
 }
 
-/* ── Switch ── */
+/* ── Elite Switch (iOS Style) ── */
 .switch-wrap {
   flex-shrink: 0;
   cursor: pointer;
-  padding: 8px;
-  margin: -8px;
-}
-.switch-wrap:active .switch {
-  opacity: 0.8;
+  padding: 4px;
 }
 .switch {
-  width: 44px;
-  height: 26px;
-  border-radius: 13px;
-  background: var(--c-bg-3);
-  border: 1px solid var(--c-border);
+  width: 54px;   /* Increased length */
+  height: 28px;  /* Decreased height (~5-10% for sleeker look) */
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
   position: relative;
-  transition: all var(--t-normal);
+  transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .switch.on {
-  background: var(--c-accent-bg);
-  border-color: rgba(0, 230, 118, 0.3);
+  background: #34C759; /* Vivid iOS Green */
 }
 .switch-thumb {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 18px;
-  height: 18px;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--c-text-3);
-  transition: all var(--t-normal);
+  background: white;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .switch.on .switch-thumb {
-  transform: translateX(18px);
-  background: var(--c-accent);
+  transform: translateX(26px);
+}
+.switch-wrap:active .switch-thumb {
+  width: 28px;
+}
+.switch.on:active .switch-thumb {
+  transform: translateX(22px);
+}
+
+/* ── Section Label (All Caps Minimal) ── */
+.section-label-alt {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--c-text-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 24px 16px 8px;
+}
+
+/* ── Row with Icon (Reference Pattern) ── */
+.pref-row-icon {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+}
+.pref-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pref-row-icon .pref-info {
+  flex: 1;
+}
+.pref-row-icon .pref-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--c-text-1);
+}
+.pref-row-icon .pref-sub {
+  font-size: 12px;
+  color: var(--c-text-3);
+  margin-top: 2px;
 }
 
 /* ── Data buttons ── */
@@ -411,6 +452,44 @@
   font-weight: 500;
   color: var(--c-text-3);
   margin-top: 1px;
+}
+
+/* ── Danger Zone ── */
+.danger-btn {
+  width: calc(100% - 64px); /* Increased side margins */
+  height: 38px;             /* Reduced height from 46px (~20%) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(255, 77, 136, 0.05);
+  border: 1.2px solid rgba(255, 77, 136, 0.3);
+  border-radius: 12px;
+  color: var(--c-red);
+  font-size: 13px;          /* Slightly smaller font */
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  margin: 8px auto 0;       /* Centered with air */
+}
+.danger-btn svg {
+  width: 15px;              /* Slightly smaller icon */
+  height: 15px;
+}
+.danger-btn:active {
+  transform: scale(0.98);
+  background: rgba(255, 77, 136, 0.1);
+  border-color: var(--c-red);
+}
+.danger-btn.armed {
+  background: var(--c-red);
+  color: white;
+  border-color: var(--c-red);
+  animation: pulse-red 1s infinite;
+}
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 /* ════════════════════════════════════════════════

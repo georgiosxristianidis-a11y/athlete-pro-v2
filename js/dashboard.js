@@ -5,6 +5,9 @@
 
 import { DB, weeklyVolumeFrom, monthlyVolumeFrom, weeklyCountFrom, pplTonnageFrom } from './db.js';
 import { getRecommendations } from './claude.store.js';
+import { Spring } from './shared/spring.js';
+import { esc } from './shared/utils.js';
+import { Toast } from './shell.js';
 
 export const Dashboard = (() => {
   const TYPE_COLOR = {
@@ -12,6 +15,8 @@ export const Dashboard = (() => {
     pull: 'var(--c-purple)',
     legs: 'var(--c-blue)',
   };
+
+  const _activeSprings = new Map();
 
   /**
    * Return a time-of-day greeting string.
@@ -78,29 +83,31 @@ export const Dashboard = (() => {
 
   /**
    * Build the full HTML template for the dashboard screen.
+   * @param {string} nextType — 'push'|'pull'|'legs'
    * @returns {string} — HTML string
    */
-  function _buildTemplate() {
+  function _buildTemplate(nextType = 'push') {
+    const nextLabel = nextType.charAt(0).toUpperCase() + nextType.slice(1);
     return `
       <!-- Hero -->
-      <div class="dash-hero">
+      <div class="dash-hero stagger-item">
         <div>
-          <div class="dash-hero-label">Today</div>
+          <div class="dash-hero-label">Today · ${nextLabel} Day</div>
           <div class="dash-hero-title" id="dash-greeting-label">${greeting()}</div>
           <div class="dash-hero-date" id="dash-date"></div>
         </div>
-        <button class="dash-cta" onclick="Nav.go('s-train',{force:true})">
+        <button class="dash-cta" onclick="window.Dashboard.directLaunch('${nextType}')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="5 12 12 5 19 12"/>
+            <path d="M12 5v14"/>
           </svg>
-          Start
+          Go
         </button>
       </div>
 
       <!-- Stat chips -->
-      <div class="stat-row">
+      <div class="stat-row stagger-item">
         <div class="stat-chip">
           <div class="stat-chip-label">Week</div>
           <div class="stat-chip-val sk" id="dash-vol-week">&nbsp;&nbsp;&nbsp;&nbsp;</div>
@@ -116,7 +123,7 @@ export const Dashboard = (() => {
       </div>
 
       <!-- Weekly Summary Chip -->
-      <div class="stat-chip weekly-summary-chip" onclick="window.Dashboard.showWeeklySummary()" style="cursor:pointer;margin-top:var(--sp-2)">
+      <div class="stat-chip weekly-summary-chip stagger-item" onclick="window.Dashboard.showWeeklySummary()" style="cursor:pointer;margin-top:var(--sp-2)">
         <div class="stat-chip-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
                stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
@@ -131,7 +138,7 @@ export const Dashboard = (() => {
       </div>
 
       <!-- Streak card -->
-      <div class="streak-card">
+      <div class="streak-card stagger-item">
         <div class="streak-header">
           <span class="section-label">This Week</span>
           <span class="streak-count" id="streak-count"></span>
@@ -140,11 +147,11 @@ export const Dashboard = (() => {
       </div>
 
       <!-- PPL split -->
-      <div class="section-header">
+      <div class="section-header stagger-item">
         <span class="section-label">PPL Split</span>
         <span class="badge badge-accent" id="dash-total"></span>
       </div>
-      <div class="ppl-row">
+      <div class="ppl-row stagger-item">
         <div class="ppl-chip">
           <div class="ppl-chip-top">
             <span class="ppl-chip-label">Push</span>
@@ -349,17 +356,31 @@ export const Dashboard = (() => {
    */
   function renderPPL(ppl) {
     const max = Math.max(ppl.push, ppl.pull, ppl.legs, 1);
+    
     ['push', 'pull', 'legs'].forEach((t) => {
       const val = document.getElementById(`ppl-${t}-val`);
-      const bar = document.getElementById(`ppl-${t}-bar`);
+      const bar = /** @type {HTMLElement} */ (document.getElementById(`ppl-${t}-bar`));
       if (val) val.textContent = fmtVol(ppl[t]);
       if (bar) {
-        bar.style.width = '0%';
-        requestAnimationFrame(() => {
-          bar.style.width = Math.round((ppl[t] / max) * 100) + '%';
+        // Cancel existing spring for this bar if any
+        if (_activeSprings.has(t)) _activeSprings.get(t).stop();
+
+        const targetPct = Math.round((ppl[t] / max) * 100);
+        const currentWidth = parseFloat(bar.style.width) || 0;
+
+        const spring = Spring.animate({
+          from: currentWidth,
+          to: targetPct,
+          stiffness: 120,
+          damping: 20,
+          onUpdate: (v) => {
+            bar.style.width = v + '%';
+          }
         });
+        _activeSprings.set(t, spring);
       }
     });
+
     const total = document.getElementById('dash-total');
     if (total) {
       const sum = ppl.push + ppl.pull + ppl.legs;
@@ -396,17 +417,33 @@ export const Dashboard = (() => {
       <div class="orm-row">
         <div class="orm-name">
           <span style="font-size:10px;font-weight:700;color:var(--c-text-3);
-            margin-right:6px;font-variant-numeric:tabular-nums">#${i + 1}</span>${o.id}
+            margin-right:6px;font-variant-numeric:tabular-nums">#${i + 1}</span>${esc(o.id)}
         </div>
         <div class="orm-val">${o.value}<span class="orm-unit">kg</span>${deltaHtml}</div>
         <div class="orm-bar-wrap">
-          <div class="orm-bar-fill" style="width:${Math.round((o.value / max) * 100)}%;
+          <div class="orm-bar-fill" id="dash-orm-bar-${i}" style="width:0%;
             background:var(--c-purple)"></div>
         </div>
       </div>`;
         }
       )
       .join('');
+
+    // Animate bars
+    requestAnimationFrame(() => {
+      top.forEach((o, i) => {
+        const bar = document.getElementById(`dash-orm-bar-${i}`);
+        if (bar) {
+          Spring.animate({
+            from: 0,
+            to: Math.round((o.value / max) * 100),
+            stiffness: 100 + i * 10,
+            damping: 15,
+            onUpdate: (v) => { bar.style.width = v + '%'; }
+          });
+        }
+      });
+    });
   }
 
   /**
@@ -463,6 +500,20 @@ export const Dashboard = (() => {
   }
 
   /**
+   * Directly launch a workout session of a given type.
+   * @param {string} type — 'push'|'pull'|'legs'
+   */
+  async function directLaunch(type) {
+    if (window.haptic) window.haptic(15);
+    window.Toast?.show(`Launching ${type.charAt(0).toUpperCase() + type.slice(1)} Session`, 'success');
+    
+    // We need to ensure Workout logic is loaded
+    const { Workout } = await import('./workout.view.js');
+    await Workout.selectType(type);
+    window.Nav.go('s-train', { force: true });
+  }
+
+  /**
    * Load and render the dashboard home screen.
    * Fetches recent workouts, volume stats, streak data, and renders all sections.
    * @returns {Promise<void>}
@@ -471,7 +522,7 @@ export const Dashboard = (() => {
     const screen = document.getElementById('s-home');
     if (!screen) return;
 
-    // Fetch data in parallel — single workouts transaction, derive stats in-memory
+    // Fetch data in parallel — optimized native queries
     const [allWorkouts, orms, showMascotSetting] = await Promise.all([
       DB.Workouts.getAll(),
       DB.OneRM.getAll(),
@@ -484,19 +535,24 @@ export const Dashboard = (() => {
       screen.innerHTML = _buildEmptyState(showMascot);
       _initMascotDrag();
       screen.querySelector('.btn-start-workout')?.addEventListener('click', () => {
-        navigator.vibrate?.([15, 50, 15]);
+        if (window.haptic) window.haptic([15, 50, 15]);
         window.Toast.show("Let's go!", 'success');
         window.Nav.go('s-train', { force: true });
       });
       return;
     }
 
-    // Build full dashboard if needed
+    // Determine nextType based on last workout (DB already sorted)
+    const lastWorkout = allWorkouts[0];
+    const lastType = lastWorkout?.type || 'legs';
+    const nextType = { push: 'pull', pull: 'legs', legs: 'push' }[lastType] || 'push';
+
+    // Build full dashboard frame if needed
     if (!document.getElementById('dash-greeting-label')) {
-      screen.innerHTML = _buildTemplate();
+      screen.innerHTML = _buildTemplate(nextType);
     }
 
-    // Static text
+    // Phase 1: Static / Fast data
     const greet = document.getElementById('dash-greeting-label');
     if (greet) greet.textContent = greeting();
     const dateEl = document.getElementById('dash-date');
@@ -518,15 +574,18 @@ export const Dashboard = (() => {
     if (mv) { mv.classList.remove('sk'); mv.innerHTML = fmtVol(monthVol) + '<span class="stat-chip-unit">kg</span>'; }
     if (sc) { sc.classList.remove('sk'); sc.textContent = weekCount; }
 
-    // Render sections
-    renderStreak(allWorkouts);
-    renderPPL(ppl);
-    renderTopLifts(orms, allWorkouts);
-    renderRecent(allWorkouts);
-    renderRecommendations();
-
-    // Load weekly summary
-    loadWeeklySummary();
+    // Phase 2: Deferred rendering to keep UI responsive
+    requestAnimationFrame(() => {
+      renderStreak(allWorkouts);
+      renderPPL(ppl);
+      
+      requestAnimationFrame(() => {
+        renderTopLifts(orms, allWorkouts);
+        renderRecent(allWorkouts);
+        renderRecommendations();
+        loadWeeklySummary();
+      });
+    });
   }
 
   /**
@@ -589,7 +648,7 @@ export const Dashboard = (() => {
     `;
   }
 
-  return { load, renderRecommendations, showWeeklySummary, loadWeeklySummary, closeMascot, _initMascotDrag };
+  return { load, renderRecommendations, showWeeklySummary, loadWeeklySummary, closeMascot, _initMascotDrag, directLaunch };
 })();
 
 /* ══════════════════════════════════════════════

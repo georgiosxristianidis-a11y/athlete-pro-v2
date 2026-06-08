@@ -2,14 +2,57 @@
    BLOCK 4 CSS — WORKOUT ENGINE
    ════════════════════════════════════════════════ */
 
-.type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-1); margin-bottom: var(--sp-2); max-width: 480px; }
-.type-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; height: 120px; max-width: 160px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-l); cursor: pointer; transition: all var(--t-fast); -webkit-tap-highlight-color: transparent; }
-.type-card:active { transform: scale(0.95); background: var(--c-surface-h); }
-.type-card-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
-.type-card-name { font-size: 14px; font-weight: 800; color: var(--c-text-1); letter-spacing: -0.02em; }
-.type-card-meta { font-size: 10px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.6; }
-.type-icon { display: inline-block; width: 20px; height: 20px; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-size: contain; mask-size: contain; }
-... [TRUNCATED] ...
+.type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; max-width: 480px; }
+.type-card { 
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between; 
+  height: 200px; padding: 32px 8px 24px;
+  background: rgba(255,255,255,0.02); 
+  border: 1px solid rgba(255,255,255,0.05); 
+  border-radius: 24px; cursor: pointer; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  -webkit-tap-highlight-color: transparent; 
+  position: relative;
+  overflow: hidden;
+}
+.type-card:hover { background: rgba(255,255,255,0.04); transform: translateY(-2px); }
+.type-card:active { transform: scale(0.96); background: rgba(255,255,255,0.06); }
+
+/* Glow variants — Refined Intensity */
+.type-card[data-type="push"]:hover, .type-card[data-type="push"]:active { border-color: rgba(0,230,118,0.25); box-shadow: 0 10px 30px rgba(0,230,118,0.12); }
+.type-card[data-type="pull"]:hover, .type-card[data-type="pull"]:active { border-color: rgba(0,229,255,0.25); box-shadow: 0 10px 30px rgba(0,229,255,0.12); }
+.type-card[data-type="legs"]:hover, .type-card[data-type="legs"]:active { border-color: rgba(188,19,254,0.25); box-shadow: 0 10px 30px rgba(188,19,254,0.12); }
+
+.type-card-icon { 
+  flex: 1; display: flex; align-items: center; justify-content: center; width: 100%;
+  position: relative;
+}
+/* Removed redundant pseudo-element glow to clean up the look */
+
+.type-card-text { display: flex; flex-direction: column; align-items: center; gap: 4px; z-index: 1; }
+.type-card-name { font-family: var(--font-heading); font-size: 26px; font-weight: 900; color: var(--c-text-1); letter-spacing: 0.12em; text-transform: uppercase; }
+.type-card-meta { font-size: 9px; font-weight: 800; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.45em; opacity: 0.7; text-align: center; line-height: 1.4; }
+
+.kinetic-svg svg {
+  width: 56px; height: 56px;
+  filter: drop-shadow(0 0 8px currentColor);
+  /* Animation paused by default */
+  animation: kinetic-pulse 2s ease-in-out infinite;
+  animation-play-state: paused;
+  transition: transform 0.3s ease;
+}
+
+.type-card:hover .kinetic-svg svg,
+.type-card:active .kinetic-svg svg {
+  animation-play-state: running;
+}
+
+@keyframes kinetic-pulse {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.type-icon { display: block; width: 64px; height: 64px; }
+
 .programs-carousel { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: var(--sp-2); scroll-snap-type: x mandatory; }
 .program-card { flex: 0 0 240px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 18px; padding: 16px; scroll-snap-align: start; cursor: pointer; }
 .program-type { font-size: 9px; font-weight: 800; color: var(--c-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
@@ -96,11 +139,11 @@
 .exercise-card { background: var(--c-surface-deep) !important; border: 1.5px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; margin-bottom: var(--sp-3); transition: transform 0.2s, border-color 0.2s; }
 .exercise-header { display: flex; align-items: center; padding: 12px var(--sp-2); gap: var(--sp-1); cursor: pointer; min-height: 56px; }
 .exercise-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--c-accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.ex-num { font-size: 14px; font-weight: 800; color: var(--c-text-inverse); opacity: 0.15; }
+.ex-num { font-size: 14px; font-weight: 800; color: var(--c-text-inverse); opacity: 0.35; }
 
 .exercise-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .exercise-name { font-size: 16px; font-weight: 700; color: var(--c-text-1); display: flex; align-items: center; gap: 8px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.exercise-meta { font-size: 10px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.15; margin-top: 1px; transition: opacity 0.3s; line-height: 1; }
+.exercise-meta { font-size: 10px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.3; margin-top: 1px; transition: opacity 0.3s; line-height: 1; }
 .exercise-meta.done { opacity: 0.25 !important; }
 
 /* ── Header Actions — Premium Distribution ── */
@@ -116,10 +159,10 @@
 /* ── Sets Section ── */
 .sets-wrap { padding: 4px var(--sp-2) var(--sp-2); }
 .set-header-row { display: grid; grid-template-columns: 20px 1fr 1fr 44px; gap: 12px; align-items: center; padding: 0 0 8px; }
-.set-col-label { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-text-3); text-align: center; opacity: 0.15; }
+.set-col-label { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-text-3); text-align: center; opacity: 0.3; }
 
 .set-row { display: grid; grid-template-columns: 20px 1fr 1fr 44px; gap: 12px; align-items: center; padding: 14px 0; border-bottom: 0; }
-.set-num { font-size: 10px; font-weight: 800; color: var(--c-text-3); text-align: center; opacity: 0.15; }
+.set-num { font-size: 10px; font-weight: 800; color: var(--c-text-3); text-align: center; opacity: 0.35; }
 .set-row.set-active { background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%); border-radius: 10px; margin: 0 -8px; padding: 14px 8px; }
 
 .stepper-val { font-size: 22px !important; font-weight: 900 !important; letter-spacing: -0.04em !important; color: rgba(255,255,255,0.6) !important; }

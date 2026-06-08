@@ -253,7 +253,12 @@
           <img src="icons/icon-192.png" class="status-logo-img" alt="AP" />
           <span class="status-logo-text"><span class="logo-w1">Athlete</span><span class="logo-w2">Pro</span></span>
         </div>
-        <div id="status-pill" class="status-pill offline">
+        <div id="status-pill" class="status-pill offline" 
+             ondblclick="window.PrivacyRapid?.toggle()"
+             onpointerdown="window.PrivacyRapid?.startLongPress(event)"
+             onpointerup="window.PrivacyRapid?.cancelLongPress()"
+             onpointerleave="window.PrivacyRapid?.cancelLongPress()"
+             style="cursor:pointer">
           <span class="status-dot"></span>
           <span id="status-text">Offline</span>
         </div>

@@ -375,11 +375,18 @@ async function _streamMessage(message) {
     // Create AI message div
     const aiDiv = document.createElement('div');
     aiDiv.className = 'chat-message ai';
+    aiDiv.innerHTML = `
+      <div class="sk-lines" style="gap:5px;width:120px;padding:4px 0">
+        <div class="sk-line sk" style="height:10px;width:100%"></div>
+        <div class="sk-line sk" style="height:10px;width:70%"></div>
+      </div>`;
     document.getElementById('workout-ai-messages')?.appendChild(aiDiv);
 
     // Stream response
+    let firstToken = true;
     await fetchCoach(message, {
       onText: (text) => {
+        if (firstToken) { aiDiv.innerHTML = ''; firstToken = false; }
         aiDiv.innerHTML = _markdownToHtml(text);
         const container = document.getElementById('workout-ai-messages');
         if (container) container.scrollTop = container.scrollHeight;

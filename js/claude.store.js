@@ -436,6 +436,15 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
   // ... (enriched profile logic) ...
 
   try {
+    const profileObj = await loadProfile();
+    const coachProfile = {
+      name: profileObj.name,
+      age: computeAge(profileObj.dob),
+      sex: profileObj.sex,
+      goal: profileObj.goal
+    };
+    const longTermStats = {}; // To be populated in Phase 7 (Deep Analytics)
+
     // Build messages array
     const apiMessages = [
       { role: 'user', content: 'What should I focus on today?' },

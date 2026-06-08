@@ -8,10 +8,11 @@ import { DB, openDB } from './db.js';
 import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
 import { Dashboard } from './dashboard.js';
-import { initPrivacy, getPrivacyMode, onPrivacyChange } from './privacy.store.js';
+import { initPrivacy, getPrivacyMode, setPrivacyMode, onPrivacyChange } from './privacy.store.js';
 import { Privacy } from './privacy.view.js';
 import { DynamicIsland } from './shared/dynamic-island.js';
 import { AthleteRoom } from './shared/athlete-room.js';
+import { haptic } from './shared/utils.js';
 
 /* ── Lazy-loaded modules ── */
 async function _loadWorkout() {
@@ -120,10 +121,22 @@ function _renderPrivacyIndicator() {
 openDB()
   .then(initPrivacy)
   .then(() => {
-    DynamicIsland.init();
-    AthleteRoom.initAvatar().catch(() => {});
+    // Initial UI Setup (Synchronous)
     _renderPrivacyIndicator();
     onPrivacyChange(_renderPrivacyIndicator);
+
+    // Defer non-critical logic to improve boot performance
+    const defer = window.requestIdleCallback || ((fn) => setTimeout(fn, 200));
+    defer(() => {
+      DynamicIsland.init();
+      AthleteRoom.initAvatar().catch(() => {});
+      
+      /* ── Claude FAB (lazy-loaded) ── */
+      import('./claude.view.js').then(({ Claude }) => {
+        window.Claude = Claude;
+        Claude.renderFAB();
+      });
+    });
   })
   .then(async () => {
     const { needsOnboarding, showOnboarding } = await import('./onboarding.js');
@@ -169,14 +182,6 @@ Nav.on('s-profile', async () => {
   const Profile = await _loadProfile();
   await Profile.load();
 });
-
-/* ── Claude FAB (lazy-loaded) ── */
-import('./claude.view.js').then(({ Claude }) => {
-  window.Claude = Claude;
-  Claude.renderFAB();
-});
-
-/* ── No auto plan generation — user manages plans manually ── */
 
 /* ── Error boundary — F3 ─────────────────────────────────────────────────── */
 window.onerror = (_msg, _src, _line, _col, err) => {
@@ -246,6 +251,39 @@ new MutationObserver((mutations) => {
     }
   }
 }).observe(document.body, { childList: true });
+
+/* ════════════════════════════════════════════════
+   RAPID PRIVACY SWITCHING
+   ════════════════════════════════════════════════ */
+const PrivacyRapid = (() => {
+  let _timer = null;
+
+  async function toggle() {
+    haptic([30, 50, 30]);
+    const current = getPrivacyMode();
+    const next = current === 'airgap' ? 'cloud' : 'airgap';
+    await setPrivacyMode(next);
+    Toast.show(`Privacy: ${next.toUpperCase()}`, next === 'airgap' ? 'success' : 'info');
+  }
+
+  function startLongPress(e) {
+    if (_timer) clearTimeout(_timer);
+    _timer = setTimeout(() => {
+      toggle();
+      _timer = null;
+    }, 3000);
+  }
+
+  function cancelLongPress() {
+    if (_timer) {
+      clearTimeout(_timer);
+      _timer = null;
+    }
+  }
+
+  return { toggle, startLongPress, cancelLongPress };
+})();
+window.PrivacyRapid = PrivacyRapid;
 
 /* ── Service Worker ── */
 if ('serviceWorker' in navigator) {
