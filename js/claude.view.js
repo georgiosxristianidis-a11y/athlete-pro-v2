@@ -153,70 +153,8 @@ export const Claude = (() => {
    * Open the AI coach panel.
    */
   async function open() {
-    if (ClaudeState.isOpen) return;
-    ClaudeState.isOpen = true;
-    ClaudeState.chatHistory = [];
-
-    const [workouts, orms, scores, engine] = await Promise.all([
-      DB.Workouts.getLast(5),
-      DB.OneRM.getAll(),
-      Heatmap.compute(),
-      DB.Settings.get('ai-engine').catch(() => 'anthropic'),
-    ]);
-    const isGemini = (engine || 'anthropic') === 'gemini';
-    ClaudeState.context = { workouts, orms, scores };
-
-    const overlay = document.createElement('div');
-    overlay.id = 'claude-overlay';
-    overlay.className = 'claude-overlay';
-
-    overlay.innerHTML = `
-      <div class="claude-sheet" id="claude-sheet">
-        <div class="modal-handle"></div>
-        <div class="claude-header">
-          <div class="claude-logo-wrap" onclick="Claude._toggleEngine()" style="cursor:pointer">
-            ${isGemini ? _geminiIcon(28) : _claudeIcon(28)}
-            <div>
-              <div class="claude-title">${isGemini ? 'Gemini Coach' : 'Claude Coach'}</div>
-              <div class="claude-sub">${isGemini ? 'Powered by Gemini 1.5 Pro' : 'Powered by Claude Opus'}</div>
-            </div>
-          </div>
-          <button class="btn-icon-sm" aria-label="Close AI Coach" onclick="Claude.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-        </div>
-
-        <div class="heatmap-card">${buildBodySVG(scores)}</div>
-
-        <div class="coach-card" id="coach-card">
-          <div class="ai-thinking" id="ai-thinking">
-            <div class="sk-lines"><div class="sk-line sk"></div><div class="sk-line sk"></div><div class="sk-line sk"></div></div>
-          </div>
-          <div class="ai-text" id="ai-text"></div>
-        </div>
-
-        <div class="chat-history" id="chat-history"></div>
-
-        <div class="chat-input-wrap">
-          <input type="text" class="chat-input" id="chat-input" placeholder="Ask your coach..." autocomplete="off">
-          <button class="chat-send-btn" id="chat-send" onclick="Claude._sendChat()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-          </button>
-        </div>
-        <div style="height:var(--sp-3)"></div>
-      </div>`;
-
-    document.body.appendChild(overlay);
-    setTimeout(() => overlay.classList.add('visible'), 10);
-    document.getElementById('chat-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') _sendChat(); });
-
-    _initialGreeting();
-  }
-
-  async function _initialGreeting() {
-    const { context } = ClaudeState;
-    const msg = `Based on your recent ${context.workouts.length} workouts, I'm ready to help. What's on your mind?`;
-    document.getElementById('ai-thinking')?.remove();
-    const txt = document.getElementById('ai-text');
-    if (txt) txt.textContent = msg;
+    // Redirection to the new Neural Command Center
+    window.Nav.go('s-intel');
   }
 
   async function _sendChat() {

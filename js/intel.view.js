@@ -19,12 +19,15 @@ export const IntelView = (() => {
     }
 
     screen.innerHTML = `
-      <header class="intel-header">
-        <h1 class="intel-title">Athlete Intel</h1>
-        <div class="intel-sub">
-          <span class="intel-indicator"></span>
-          <span id="intel-status-text">${IntelStore.getStatus()}</span>
+      <header class="intel-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <h1 class="intel-title">Athlete Intel</h1>
+          <div class="intel-sub">
+            <span class="intel-indicator"></span>
+            <span id="intel-status-text">${IntelStore.getStatus()}</span>
+          </div>
         </div>
+        <button onclick="Nav.go('s-home')" style="background:none; border:none; color:var(--c-text-3); font-size:24px; cursor:pointer;">&times;</button>
       </header>
 
       <div id="intel-feedback-feed"></div>
@@ -301,11 +304,11 @@ export const IntelView = (() => {
 
        const { report } = await response.json();
        
-       IntelStore.addLog('AI', \`Weekly report generated. Performance Score: \${report.score}\`);
+       IntelStore.addLog('AI', `Weekly report generated. Performance Score: ${report.score}`);
        IntelStore.setStatus('SYSTEM STANDBY');
 
        _renderReportOverlay(report);
-       speakText(\`Твой прогресс за неделю: \${report.score} баллов. \${report.summary}\`);
+       speakText(`Твой прогресс за неделю: ${report.score} баллов. ${report.summary}`);
 
      } catch (err) {
        IntelStore.addLog('ERROR', 'Failed to generate weekly intel');
@@ -318,37 +321,37 @@ export const IntelView = (() => {
     overlay.className = 'intel-report-overlay animate-in fade-in duration-500';
     overlay.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(5,5,7,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:20px;';
     
-    overlay.innerHTML = \`
+    overlay.innerHTML = `
       <div style="background:#0a0a0a; width:100%; max-width:500px; border-radius:32px; border:1px solid rgba(255,255,255,0.1); padding:40px; position:relative; max-height:90vh; overflow-y:auto;">
         <button onclick="this.closest('.intel-report-overlay').remove()" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:24px; cursor:pointer;">&times;</button>
         <div style="text-align:center; margin-bottom:32px;">
            <h2 style="font-family:var(--font-intel); font-size:24px; font-style:italic; color:var(--c-text-1); text-transform:uppercase; margin-bottom:16px;">Weekly Intel</h2>
            <div style="display:flex; flex-direction:column; align-items:center;">
-             <span style="font-size:72px; font-weight:900; color:var(--c-intel); text-shadow:0 0 20px rgba(0,209,255,0.4); line-height:1;">\${report.score}</span>
+             <span style="font-size:72px; font-weight:900; color:var(--c-intel); text-shadow:0 0 20px rgba(0,209,255,0.4); line-height:1;">${report.score}</span>
              <span style="font-size:10px; font-weight:900; color:var(--c-text-3); text-transform:uppercase; letter-spacing:0.5em; margin-top:8px;">Performance Score</span>
            </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:24px;">
           <section style="background:rgba(255,255,255,0.05); padding:24px; border-radius:24px; border:1px solid rgba(255,255,255,0.05);">
-            <p style="font-size:14px; font-style:italic; color:var(--c-text-2); line-height:1.6; font-weight:600;">"\${esc(report.summary)}"</p>
+            <p style="font-size:14px; font-style:italic; color:var(--c-text-2); line-height:1.6; font-weight:600;">"${esc(report.summary)}"</p>
           </section>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
             <div style="background:rgba(0,230,118,0.05); padding:20px; border-radius:24px; border:1px solid rgba(0,230,118,0.1);">
                <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:var(--c-accent); margin-bottom:12px; letter-spacing:0.2em;">Wins</h4>
                <ul style="font-size:12px; color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
-                 \${report.pros.map(p => \`<li style="display:flex; gap:8px;"><span style="color:var(--c-accent)">+</span>\${esc(p)}</li>\`).join('')}
+                 ${report.pros.map(p => `<li style="display:flex; gap:8px;"><span style="color:var(--c-accent)">+</span>${esc(p)}</li>`).join('')}
                </ul>
             </div>
             <div style="background:rgba(255,77,136,0.05); padding:20px; border-radius:24px; border:1px solid rgba(255,77,136,0.1);">
                <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:var(--c-red); margin-bottom:12px; letter-spacing:0.2em;">Leaks</h4>
                <ul style="font-size:12px; color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
-                 \${report.cons.map(c => \`<li style="display:flex; gap:8px;"><span style="color:var(--c-red)">-</span>\${esc(c)}</li>\`).join('')}
+                 ${report.cons.map(c => `<li style="display:flex; gap:8px;"><span style="color:var(--c-red)">-</span>${esc(c)}</li>`).join('')}
                </ul>
             </div>
           </div>
         </div>
       </div>
-    \`;
+    `;
     document.body.appendChild(overlay);
   }
 
