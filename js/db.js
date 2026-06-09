@@ -5,7 +5,7 @@
    ════════════════════════════════════════════════════════ */
 
 const DB_NAME = 'athlete-pro';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 /* ── Store names ── */
 const S = {
@@ -14,6 +14,8 @@ const S = {
   METRICS: 'bodyMetrics', // weight / height over time
   EVENTS: 'events', // audit log
   SETTINGS: 'settings', // key-value prefs
+  NUTRITION: 'nutritionLogs', // tracked meals
+  PLANS: 'plannedWorkouts', // AI generated plans
 };
 
 /* ── Type definitions ── */
@@ -29,6 +31,10 @@ const S = {
  * @typedef {{ id: string, value: number, timestamp: number }} OneRMRecord
  *
  * @typedef {{ id: number, weight: number, height: number, bmi: number, timestamp: number }} MetricsRecord
+ *
+ * @typedef {{ id: number, timestamp: number, payload: Object }} NutritionRecord
+ * 
+ * @typedef {{ id: number, timestamp: number, name: string, payload: Object }} PlanRecord
  */
 
 /* ════════════════════════════════════════════════════════
@@ -78,6 +84,18 @@ function openDB() {
       /* settings  { key, value } */
       if (!db.objectStoreNames.contains(S.SETTINGS)) {
         db.createObjectStore(S.SETTINGS, { keyPath: 'key' });
+      }
+
+      /* nutritionLogs */
+      if (!db.objectStoreNames.contains(S.NUTRITION)) {
+        const ns = db.createObjectStore(S.NUTRITION, { keyPath: 'id', autoIncrement: true });
+        ns.createIndex('timestamp', 'timestamp');
+      }
+
+      /* plannedWorkouts */
+      if (!db.objectStoreNames.contains(S.PLANS)) {
+        const ps = db.createObjectStore(S.PLANS, { keyPath: 'id', autoIncrement: true });
+        ps.createIndex('timestamp', 'timestamp');
       }
     };
 
@@ -603,6 +621,56 @@ const Events = {
 };
 
 /* ════════════════════════════════════════════════════════
+   NUTRITION LOGS
+   ════════════════════════════════════════════════════════ */
+const NutritionLogs = {
+  save(payload) {
+    const entry = { payload, timestamp: Date.now() };
+    return tx(S.NUTRITION, 'readwrite').then((s) =>
+      req2p(s.add(entry)).then((id) => {
+        entry.id = id;
+        _triggerSync(S.NUTRITION, entry);
+        return id;
+      })
+    );
+  },
+  getAll() {
+    return tx(S.NUTRITION).then(s => {
+      const idx = s.index('timestamp');
+      return req2p(idx.getAll()).then(list => list.reverse());
+    });
+  },
+  clear() {
+    return tx(S.NUTRITION, 'readwrite').then((s) => req2p(s.clear()));
+  }
+};
+
+/* ════════════════════════════════════════════════════════
+   PLANNED WORKOUTS (AI Generated)
+   ════════════════════════════════════════════════════════ */
+const PlannedWorkouts = {
+  save(name, payload) {
+    const entry = { name, payload, timestamp: Date.now() };
+    return tx(S.PLANS, 'readwrite').then((s) =>
+      req2p(s.add(entry)).then((id) => {
+        entry.id = id;
+        _triggerSync(S.PLANS, entry);
+        return id;
+      })
+    );
+  },
+  getAll() {
+    return tx(S.PLANS).then(s => {
+      const idx = s.index('timestamp');
+      return req2p(idx.getAll()).then(list => list.reverse());
+    });
+  },
+  clear() {
+    return tx(S.PLANS, 'readwrite').then((s) => req2p(s.clear()));
+  }
+};
+
+/* ════════════════════════════════════════════════════════
    BACKUP / RESTORE
    ════════════════════════════════════════════════════════ */
 const Backup = {
@@ -684,5 +752,5 @@ async function clearAll() {
 }
 
 /* ── Public API ── */
-export const DB = { Workouts, OneRM, Metrics, Settings, Events, Backup, clearAll, openDB };
+export const DB = { Workouts, OneRM, Metrics, Settings, Events, NutritionLogs, PlannedWorkouts, Backup, clearAll, openDB };
 export { openDB };

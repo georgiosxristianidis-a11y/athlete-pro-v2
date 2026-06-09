@@ -29,6 +29,8 @@ export const SyncManager = (() => {
     if (store === 'oneRM')       return `oneRM::${data.id}`;
     if (store === 'bodyMetrics') return `bodyMetrics::${data.id ?? data.timestamp}`;
     if (store === 'settings')    return `settings::${data.key}`;
+    if (store === 'nutritionLogs') return `nutritionLogs::${data.id ?? data.timestamp}`;
+    if (store === 'plannedWorkouts') return `plannedWorkouts::${data.id ?? data.timestamp}`;
     return `${store}::${JSON.stringify(data).slice(0, 60)}`;
   }
 
@@ -216,6 +218,8 @@ export const SyncManager = (() => {
       'oneRM':       'one_rm',
       'bodyMetrics': 'body_metrics',
       'settings':    'settings',
+      'nutritionLogs': 'nutrition_logs',
+      'plannedWorkouts': 'planned_workouts'
     };
     return maps[store];
   }
