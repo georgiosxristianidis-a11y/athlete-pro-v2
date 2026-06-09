@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v39';
+const CACHE_NAME = 'athlete-pro-v40';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -15,7 +15,6 @@ const ASSETS = [
   '/js/app.js',
   '/js/shell.js',
   '/js/db.js',
-  '/js/db-firebase.js',
   '/js/supabase-check.js',
   '/js/timer.js',
   '/js/rest-timer.js',
