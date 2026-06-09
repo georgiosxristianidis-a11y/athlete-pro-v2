@@ -3,8 +3,7 @@
    ════════════════════════════════════════════════════════ */
 
 .intel-screen {
-  background: radial-gradient(circle at top right, rgba(0, 209, 255, 0.05), transparent 400px),
-              linear-gradient(to bottom, #050507, #0a0a0f);
+  background: var(--c-bg);
   padding: 72px var(--sp-2) 140px;
 }
 
@@ -13,73 +12,57 @@
 }
 
 .intel-title {
-  font-family: var(--font-intel);
-  font-size: 32px;
-  font-weight: 900;
-  font-style: italic;
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 800;
   color: var(--c-intel);
-  text-transform: uppercase;
   letter-spacing: -0.02em;
-  text-shadow: 0 0 20px rgba(0, 209, 255, 0.4);
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .intel-sub {
-  font-size: 10px;
-  font-weight: 800;
+  font-family: var(--font-main);
+  font-size: 11px;
+  font-weight: 700;
   color: var(--c-text-3);
   text-transform: uppercase;
-  letter-spacing: 0.3em;
-  margin-top: var(--sp-1);
+  letter-spacing: 0.1em;
+  margin-top: 4px;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.intel-indicator {
-  width: 6px;
-  height: 6px;
-  background: var(--c-intel);
-  border-radius: 50%;
-  box-shadow: 0 0 10px var(--c-intel);
-  animation: intel-pulse 2s infinite;
-}
-
-@keyframes intel-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
+  gap: 6px;
 }
 
 /* ── Feedback Feed ── */
 .intel-feedback {
   margin-bottom: var(--sp-3);
   padding: var(--sp-2);
-  border-radius: 20px;
-  background: linear-gradient(90deg, rgba(0, 209, 255, 0.08), transparent);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
   border-left: 3px solid var(--c-intel);
-  animation: intel-slide-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: intel-slide-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @keyframes intel-slide-in {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .intel-feedback-label {
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 800;
   text-transform: uppercase;
   color: var(--c-intel);
   letter-spacing: 0.1em;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .intel-feedback-text {
-  font-size: 16px;
-  font-weight: 600;
-  font-style: italic;
+  font-size: 15px;
+  font-weight: 500;
   color: var(--c-text-1);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 /* ── Command Bar ── */
@@ -93,17 +76,16 @@
   align-items: center;
   gap: 12px;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--c-surface);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  transition: all 0.3s ease;
+  border: 1px solid var(--c-border);
+  border-radius: 20px;
+  transition: all var(--t-normal);
 }
 
 .intel-cmd-bar:focus-within {
-  border-color: rgba(0, 209, 255, 0.3);
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 30px rgba(0, 209, 255, 0.1);
+  border-color: rgba(0, 209, 255, 0.4);
+  background: var(--c-surface-h);
 }
 
 .intel-cmd-input {
@@ -112,7 +94,7 @@
   border: none;
   padding: 8px 4px;
   color: var(--c-text-1);
-  font-size: 16px;
+  font-size: 15px;
   font-family: var(--font-main);
 }
 
@@ -121,9 +103,9 @@
 }
 
 .intel-btn-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 18px;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -131,12 +113,12 @@
   border: none;
   color: var(--c-text-3);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--t-fast);
 }
 
 .intel-btn-icon:hover {
   color: var(--c-text-1);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--c-surface-h);
 }
 
 .intel-btn-icon.active {
@@ -156,10 +138,10 @@
 
 /* ── Logs ── */
 .intel-logs {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 24px;
-  padding: var(--sp-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-l);
+  padding: var(--sp-3) var(--sp-2);
 }
 
 .intel-logs-header {
@@ -167,23 +149,25 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--sp-2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--c-border);
   padding-bottom: var(--sp-1);
 }
 
 .intel-logs-title {
-  font-family: var(--font-intel);
-  font-size: 10px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
   color: var(--c-text-3);
-  letter-spacing: 0.2em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .intel-logs-status {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
   background: var(--c-intel-bg);
   color: var(--c-intel);
 }
@@ -192,8 +176,8 @@
   display: flex;
   gap: 12px;
   font-family: monospace;
-  font-size: 10px;
-  margin-bottom: 6px;
+  font-size: 11px;
+  margin-bottom: 8px;
   animation: intel-log-in 0.3s ease;
 }
 
@@ -203,22 +187,23 @@
 }
 
 .intel-log-time { color: var(--c-text-3); }
-.intel-log-type { font-weight: 900; text-transform: uppercase; }
+.intel-log-type { font-weight: 800; text-transform: uppercase; min-width: 32px; }
 .intel-log-type.sys { color: var(--c-intel); }
 .intel-log-type.db { color: var(--c-accent); }
 .intel-log-type.ai { color: var(--c-purple); }
+.intel-log-type.error { color: var(--c-red); }
 .intel-log-msg { color: var(--c-text-2); }
 
 /* ── Vision Preview ── */
 .intel-vision-preview {
   position: relative;
-  width: 160px;
-  height: 160px;
+  width: 140px;
+  height: 140px;
   margin: 0 auto var(--sp-3);
-  border-radius: 24px;
+  border-radius: var(--r-m);
   overflow: hidden;
   border: 2px solid var(--c-intel);
-  box-shadow: 0 0 30px var(--c-intel-bg);
+  box-shadow: 0 4px 20px var(--c-intel-bg);
 }
 
 .intel-vision-img {
@@ -242,3 +227,4 @@
   0% { top: 0; }
   100% { top: 100%; }
 }
+

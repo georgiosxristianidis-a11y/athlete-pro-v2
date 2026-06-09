@@ -1,6 +1,7 @@
 // @ts-check
 import { IntelStore } from './intel.store.js';
 import { esc } from './shared/utils.js';
+import { DB } from './db.js';
 
 /**
  * IntelView — Athlete Pro
@@ -8,6 +9,17 @@ import { esc } from './shared/utils.js';
  */
 export const IntelView = (() => {
   let _initialized = false;
+  let _hasValidKey = false;
+
+  async function _checkApiKey() {
+    const { DB } = await import('./db.js');
+    const engine = await DB.Settings.get('ai-engine') || 'anthropic';
+    const key = engine === 'gemini' 
+      ? await DB.Settings.get('gemini-key') 
+      : await DB.Settings.get('anthropic-key');
+    
+    _hasValidKey = !!key && key.trim().length > 10;
+  }
 
   async function load() {
     const screen = document.getElementById('s-intel');
@@ -18,16 +30,18 @@ export const IntelView = (() => {
       _initialized = true;
     }
 
+    await _checkApiKey();
+
     screen.innerHTML = `
       <header class="intel-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
         <div>
           <h1 class="intel-title">Athlete Intel</h1>
           <div class="intel-sub">
-            <span class="intel-indicator"></span>
-            <span id="intel-status-text">${IntelStore.getStatus()}</span>
+            <span class="intel-indicator" style="background: ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-red)'}; box-shadow: 0 0 10px ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-red)'}; animation: ${_hasValidKey ? 'intel-pulse' : 'none'} 2s infinite;"></span>
+            <span id="intel-status-text" style="color: ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-red)'}; font-weight:800;">${_hasValidKey ? 'API SECURE' : 'KEY MISSING'}</span>
           </div>
         </div>
-        <button onclick="Nav.go('s-home')" style="background:none; border:none; color:var(--c-text-3); font-size:24px; cursor:pointer;">&times;</button>
+        <button onclick="Nav.go('s-home')" style="background:none; border:none; color:var(--c-text-3); font-size:28px; font-weight:200; cursor:pointer; padding:0 8px;">&times;</button>
       </header>
 
       <div id="intel-feedback-feed"></div>
