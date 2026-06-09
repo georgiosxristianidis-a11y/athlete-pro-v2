@@ -253,6 +253,11 @@ export async function renderSelect() {
 </div>
 
     <div class="section-header stagger-item" style="margin-top:var(--sp-3)">
+      <span class="section-label">${ru ? 'Прошлые сессии' : 'Last Sessions'}</span>
+    </div>
+    <div id="last-sessions-preview" class="stagger-item"></div>
+
+    <div class="section-header stagger-item" style="margin-top:var(--sp-3)">
       <span class="section-label">${ru ? 'Программы' : 'Structured Programs'}</span>
     </div>
     <div class="programs-carousel stagger-item">
@@ -266,11 +271,6 @@ export async function renderSelect() {
         </div>
       `).join('')}
     </div>
-
-    <div class="section-header stagger-item" style="margin-top:var(--sp-3)">
-      <span class="section-label">${ru ? 'Прошлые сессии' : 'Last Sessions'}</span>
-    </div>
-    <div id="last-sessions-preview" class="stagger-item"></div>
   `;
 
   document.getElementById('train-date').textContent = new Date().toLocaleDateString(ru ? 'ru' : 'en', {
@@ -331,8 +331,7 @@ export async function renderActive() {
         <div class="screen-title">${ru ? (State.type === 'push' ? 'Жим' : State.type === 'pull' ? 'Тяга' : 'Ноги') : State.type.charAt(0).toUpperCase() + State.type.slice(1)} ${ru ? 'День' : 'Day'}</div>
       </div>
       <div class="header-chips">
-        <!-- Focused header: Week toggle removed -->
-        <div class="live-timer" id="workout-timer" style="font-variant-numeric: tabular-nums; font-weight: 800; color: var(--c-accent)">00:00</div>
+        <!-- Focused header: Week toggle removed, live-timer moved to dynamic island -->
       </div>
     </div>
 

@@ -299,6 +299,13 @@ button:focus-visible {
   color: var(--c-text-1);
   line-height: 1.2;
 }
+.screen-sub {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-text-3);
+  margin-top: 6px;
+  letter-spacing: 0.02em;
+}
 
 .week-pill {
   position: absolute;

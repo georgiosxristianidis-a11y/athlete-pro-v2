@@ -711,28 +711,56 @@ async function showWeeklySummary() {
       <div class="weekly-summary-content" style="padding:var(--sp-3)">
         <div class="summary-section">
           <h3 style="font-size:0.95rem;color:var(--c-text-2);margin-bottom:var(--sp-2)">Overview</h3>
-          <p style="color:var(--c-text-1);line-height:1.5">${data.summary.replace(/\n/g, '<br>')}</p>
+          <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:var(--sp-3)">
+            ${data.workoutCount > 0 ? `
+              <div style="display:flex; align-items:center; gap:12px; color:var(--c-text-1); font-size:14px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+                <span><strong>${data.workoutCount} workouts</strong> this week</span>
+              </div>
+            ` : `<div style="color:var(--c-text-3); font-size:14px;">No workouts this week — rest is important too!</div>`}
+            
+            ${data.prs.length > 0 ? `
+              <div style="display:flex; align-items:flex-start; gap:12px; color:var(--c-text-1); font-size:14px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span><strong>${data.prs.length} PRs</strong>: ${data.prs.map(p => `${p.exercise} ${p.weight}kg`).join(', ')}</span>
+              </div>
+            ` : ''}
+
+            ${data.plateauAlerts.length > 0 ? `
+              <div style="display:flex; align-items:center; gap:12px; color:var(--c-text-1); font-size:14px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span><strong>${data.plateauAlerts.length} plateaus</strong> detected</span>
+              </div>
+            ` : ''}
+          </div>
         </div>
 
         ${data.prs.length > 0 ? `
           <div class="summary-section pr-section" style="margin-top:var(--sp-3)">
-            <h3 style="font-size:0.95rem;color:#00e676;margin-bottom:var(--sp-2)">Personal Records</h3>
-            <ul style="list-style:none;padding:0">
-              ${data.prs.map(pr => `<li style="padding:var(--sp-2);background:rgba(0,230,118,0.1);border-radius:var(--r-s);color:#00e676;margin-bottom:var(--sp-2)"><strong>${pr.exercise}</strong>: ${pr.weight}kg</li>`).join('')}
-            </ul>
+            <h3 style="font-size:0.95rem;color:var(--c-accent);margin-bottom:var(--sp-2)">Personal Records</h3>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              ${data.prs.map(pr => `
+                <div style="display:flex; justify-content:space-between; padding:var(--sp-2); background:var(--c-surface-h); border-radius:var(--r-s); border-left:2px solid var(--c-accent);">
+                  <span style="color:var(--c-text-1); font-weight:700;">${pr.exercise}</span>
+                  <span style="color:var(--c-accent); font-weight:800; font-variant-numeric:tabular-nums;">${pr.weight}kg</span>
+                </div>
+              `).join('')}
+            </div>
           </div>
         ` : ''}
 
         ${data.plateauAlerts.length > 0 ? `
-          <div class="summary-section plateau-section" style="margin-top:var(--sp-3)">
-            <h3 style="font-size:0.95rem;color:#ff4757;margin-bottom:var(--sp-2)">Plateau Alerts</h3>
-            ${data.plateauAlerts.map(alert => `
-              <div class="plateau-alert" style="padding:var(--sp-3);background:rgba(255,71,87,0.1);border-radius:var(--r-m);border-left:3px solid #ff4757;margin-bottom:var(--sp-2)">
-                <strong style="color:var(--c-text-1);display:block;margin-bottom:4px">${alert.exercise}</strong>
-                <p style="color:var(--c-text-2);font-size:0.9rem;margin-bottom:4px">${alert.suggestion}</p>
-                <small style="color:var(--c-text-3);font-size:0.8rem">${alert.weeks} weeks since last progress</small>
-              </div>
-            `).join('')}
+          <div class="summary-section plateau-section" style="margin-top:var(--sp-4)">
+            <h3 style="font-size:0.95rem;color:var(--c-amber);margin-bottom:var(--sp-2)">Plateau Alerts</h3>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              ${data.plateauAlerts.map(alert => `
+                <div class="plateau-alert" style="padding:var(--sp-2); background:var(--c-surface-h); border-radius:var(--r-s); border-left:2px solid var(--c-amber);">
+                  <strong style="color:var(--c-text-1);display:block;margin-bottom:4px;font-size:14px;">${alert.exercise}</strong>
+                  <p style="color:var(--c-text-2);font-size:13px;margin-bottom:4px">${alert.suggestion}</p>
+                  <small style="color:var(--c-text-3);font-size:11px">${alert.weeks} weeks since last progress</small>
+                </div>
+              `).join('')}
+            </div>
           </div>
         ` : ''}
       </div>

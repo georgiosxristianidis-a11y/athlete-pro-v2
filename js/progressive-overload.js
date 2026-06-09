@@ -273,17 +273,18 @@ export async function generateWeeklySummary(workoutHistory) {
   // Build summary
   const summaryParts = [];
   if (recent.length > 0) {
-    summaryParts.push(`📊 **${recent.length} workouts** this week`);
+    summaryParts.push(`**${recent.length} workouts** this week`);
   }
   if (prs.length > 0) {
-    summaryParts.push(`🎉 **${prs.length} PRs**: ${prs.map(p => `${p.exercise} ${p.weight}kg`).join(', ')}`);
+    summaryParts.push(`**${prs.length} PRs**: ${prs.map(p => `${p.exercise} ${p.weight}kg`).join(', ')}`);
   }
   if (plateauAlerts.length > 0) {
-    summaryParts.push(`⚠️ **${plateauAlerts.length} plateaus** detected`);
+    summaryParts.push(`**${plateauAlerts.length} plateaus** detected`);
   }
 
   return {
     summary: summaryParts.join('\n') || 'No workouts this week — rest is important too!',
+    workoutCount: recent.length,
     plateauAlerts,
     prs
   };

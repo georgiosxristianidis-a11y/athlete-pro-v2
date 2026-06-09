@@ -64,7 +64,7 @@ export function renderHexagonRadar(oneRMs, bw, sex, age, workouts, lang) {
     return i === 4 ? volPct : consPct;
   });
 
-  const cx = 110, cy = 110, R = 82;
+  const cx = 120, cy = 120, R = 75;
   const rings = [20, 40, 60, 80, 100];
 
   const ringSVG = rings.map(p =>
@@ -79,15 +79,15 @@ export function renderHexagonRadar(oneRMs, bw, sex, age, workouts, lang) {
   const dataPts = _polygon(cx, cy, R, pcts);
 
   const labelSVG = axes.map((a, i) => {
-    const { x, y } = _polar(cx, cy, R + 20, i * 60);
+    const { x, y } = _polar(cx, cy, R + 18, i * 60);
     const anchor = x < cx - 4 ? 'end' : x > cx + 4 ? 'start' : 'middle';
-    return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}" class="radar-lbl">${a.label}</text>`;
+    return `<text x="${x.toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="${anchor}" fill="var(--c-text-3)" font-size="10" font-weight="700" letter-spacing="0.04em" class="radar-lbl">${a.label}</text>`;
   }).join('');
 
   return `
 <div class="pp-section-lbl" style="margin-top:var(--sp-3)">${ru ? 'Профиль силы' : 'Strength Profile'}</div>
 <div class="pp-radar-wrap">
-  <svg class="pp-radar" viewBox="0 0 220 220" role="img" aria-label="${ru ? 'Радар силы' : 'Strength radar'}">
+  <svg class="pp-radar" viewBox="0 0 240 240" role="img" aria-label="${ru ? 'Радар силы' : 'Strength radar'}">
     ${ringSVG}
     ${spokeSVG}
     <polygon points="${dataPts}" fill="var(--c-accent-bg)" stroke="var(--c-accent)" stroke-width="1.5" stroke-linejoin="round">

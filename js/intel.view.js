@@ -13,12 +13,20 @@ export const IntelView = (() => {
 
   async function _checkApiKey() {
     const { DB } = await import('./db.js');
-    const engine = await DB.Settings.get('ai-engine') || 'anthropic';
-    const key = engine === 'gemini' 
-      ? await DB.Settings.get('gemini-key') 
-      : await DB.Settings.get('anthropic-key');
+    const localKey = await DB.Settings.get('gemini-key');
     
-    _hasValidKey = !!key && key.trim().length > 10;
+    // 1. Check local browser storage first
+    _hasValidKey = !!localKey && localKey.trim().length > 10;
+
+    // 2. If no local key, ALWAYS check server status (for .env keys)
+    if (!_hasValidKey) {
+      try {
+        const serverStatus = await fetch('/api/ai-status').then(r => r.json());
+        _hasValidKey = serverStatus.gemini; // Specifically check for Gemini
+      } catch (e) {
+        console.warn('Failed to fetch /api/ai-status', e);
+      }
+    }
   }
 
   async function load() {
@@ -38,7 +46,7 @@ export const IntelView = (() => {
           <h1 class="intel-title">P.A.N.D.A. Core</h1>
           <div class="intel-sub">
             <span class="ai-indicator ${_hasValidKey ? 'active' : 'missing'}" style="margin-right:4px;"></span>
-            <span id="intel-status-text" style="color: ${_hasValidKey ? 'var(--c-text-1)' : 'var(--c-text-3)'}; font-weight:800;">${_hasValidKey ? 'SYSTEM SECURE' : 'KEY MISSING'}</span>
+            <span id="intel-status-text" style="color: ${_hasValidKey ? 'var(--c-text-1)' : 'var(--c-text-3)'}; font-weight:800; text-transform:lowercase;">${_hasValidKey ? 'system secure' : 'key missing'}</span>
           </div>
         </div>
         <button onclick="Nav.go('s-home')" style="background:none; border:none; color:var(--c-text-3); font-size:28px; font-weight:200; cursor:pointer; padding:0 8px;">&times;</button>

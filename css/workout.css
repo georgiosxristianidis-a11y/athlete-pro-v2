@@ -57,8 +57,8 @@
 
 .type-icon { display: block; width: 64px; height: 64px; }
 
-.programs-carousel { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: var(--sp-2); scroll-snap-type: x mandatory; }
-.program-card { flex: 0 0 240px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 18px; padding: 16px; scroll-snap-align: start; cursor: pointer; }
+.programs-carousel { display: flex; flex-direction: column; gap: var(--sp-2); padding-bottom: var(--sp-2); }
+.program-card { width: 100%; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 18px; padding: 16px; cursor: pointer; }
 .program-type { font-size: 9px; font-weight: 800; color: var(--c-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
 .program-name { font-size: 16px; font-weight: 800; color: var(--c-text-1); letter-spacing: -0.02em; margin-bottom: 2px; }
 .program-dur { font-size: 11px; font-weight: 600; color: var(--c-text-3); }
