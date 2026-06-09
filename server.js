@@ -43,6 +43,9 @@ app.use(helmet({
 // ── gzip/brotli compression for all text responses
 app.use(compression());
 
+// Handle favicon.ico explicitly
+app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'icons', 'icon-192.png')));
+
 app.use(correlationMiddleware);
 app.use(express.json({ limit: '100kb' }));
 app.use((err, req, res, next) => {

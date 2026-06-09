@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v38';
+const CACHE_NAME = 'athlete-pro-v39';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -40,6 +40,8 @@ const ASSETS = [
   '/js/progressive-overload.js',
   '/js/supabase.js',
   '/js/workout-ai.view.js',
+  '/js/intel.store.js',
+  '/js/intel.view.js',
   '/js/shared/dynamic-island.js',
   '/js/body-stats.js',
   '/js/plate-calc.js',
@@ -53,6 +55,7 @@ const ASSETS = [
   '/css/profile.css',
   '/css/claude.css',
   '/css/body-stats.css',
+  '/css/intel.css',
   '/assets/panda-idle.mp4',
   '/assets/panda-idle.webm',
   '/icons/icon-192.png',
@@ -72,11 +75,14 @@ self.addEventListener('message', (e) => {
   }
 });
 
-/* ── Install: skip waiting immediately to force new version ── */
+/* ── Install: Precache all assets and skip waiting ── */
 self.addEventListener('install', (e) => {
   self.skipWaiting();
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.delete('/index.html').catch(() => {}))
+    caches.open(CACHE_NAME).then((cache) => {
+      // Use allSettled so one missing file doesn't crash the whole cache
+      return Promise.allSettled(ASSETS.map(url => cache.add(url).catch(err => console.warn('SW cache add failed:', url, err))));
+    })
   );
 });
 
