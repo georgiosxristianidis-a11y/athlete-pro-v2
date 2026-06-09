@@ -108,6 +108,8 @@ export const IntelView = (() => {
     document.getElementById('intel-file-input')?.click();
   }
 
+  let _pendingImage = null;
+
   async function onFileSelected(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -116,6 +118,7 @@ export const IntelView = (() => {
     const reader = new FileReader();
     reader.onload = (event) => {
       const base64 = event.target.result;
+      _pendingImage = base64;
       _showVisionPreview(base64);
     };
     reader.readAsDataURL(file);
@@ -128,29 +131,101 @@ export const IntelView = (() => {
       <div class="intel-vision-preview animate-in zoom-in">
         <img src="${base64}" class="intel-vision-img" alt="Vision Input">
         <div class="intel-scanner-bar"></div>
-        <button onclick="this.parentElement.remove()" style="position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.5); border:none; color:white; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;">&times;</button>
+        <button onclick="document.getElementById('intel-vision-preview-wrap').innerHTML=''; window.IntelView._clearImage();" style="position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.5); border:none; color:white; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;">&times;</button>
       </div>
     `;
     IntelStore.setStatus('VISION READY');
   }
 
-  function submit() {
-    const input = document.getElementById('intel-input');
-    // @ts-ignore
-    if (!input || !input.value.trim()) return;
-    // @ts-ignore
-    const text = input.value.trim();
+  async function submit() {
+    const input = /** @type {HTMLInputElement} */ (document.getElementById('intel-input'));
+    if (!input || (!input.value.trim() && !_pendingImage)) return;
+    
+    const text = input.value.trim() || "Analyze this photo";
+    const image = _pendingImage;
     
     IntelStore.addLog('USER', text);
-    // @ts-ignore
-    input.value = '';
+    if (image) IntelStore.addLog('SYS', 'Attaching vision packet...');
     
+    input.value = '';
+    _pendingImage = null;
+    const previewWrap = document.getElementById('intel-vision-preview-wrap');
+    if (previewWrap) previewWrap.innerHTML = '';
+
     IntelStore.setStatus('AI SCANNING...');
-    setTimeout(() => {
-        IntelStore.addLog('AI', 'Command received. Processing context...');
-        IntelStore.setStatus('SYSTEM STANDBY');
-    }, 1000);
+    
+    const feedbackFeed = document.getElementById('intel-feedback-feed');
+    const feedbackEl = document.createElement('div');
+    feedbackEl.className = 'intel-feedback';
+    feedbackEl.innerHTML = `
+      <div class="intel-feedback-label">AI Feedback</div>
+      <div class="intel-feedback-text">...</div>
+    `;
+    feedbackFeed?.prepend(feedbackEl);
+    const feedbackText = feedbackEl.querySelector('.intel-feedback-text');
+
+    try {
+      const { DB } = await import('./db.js');
+      const workouts = await DB.Workouts.getLast(5);
+      const profile = await DB.Settings.getAll();
+      const topLifts = await DB.OneRM.getAll();
+
+      const response = await fetch('/api/coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: text }],
+          images: image ? [image] : [],
+          workouts,
+          profile,
+          topLifts,
+          engine: 'gemini'
+        })
+      });
+
+      if (!response.ok) throw new Error('API Error');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') break;
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.text) {
+                  fullText += parsed.text;
+                  if (feedbackText) feedbackText.innerHTML = fullText.replace(/\\n/g, '<br>');
+                }
+              } catch (e) {}
+            }
+          }
+        }
+      }
+
+      IntelStore.addLog('AI', 'Insight received.');
+      IntelStore.setStatus('SYSTEM STANDBY');
+
+    } catch (err) {
+      console.error(err);
+      IntelStore.addLog('SYS', 'Connection failed');
+      IntelStore.setStatus('ERROR');
+      if (feedbackText) feedbackText.textContent = 'Failed to connect to Neural Command Center.';
+    }
   }
+
+  function _clearImage() { _pendingImage = null; }
+
 
   function generateWeekly() {
      IntelStore.addLog('SYS', 'Computing weekly intelligence...');
@@ -172,7 +247,7 @@ export const IntelView = (() => {
      }
   }
 
-  return { load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout };
+  return { load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, _clearImage };
 })();
 
 // Expose to window for onclick

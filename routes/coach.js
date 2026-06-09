@@ -64,7 +64,7 @@ router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
 
 /* ── POST /coach ── */
 router.post('/coach', coachLimiter, asyncHandler(async (req, res) => {
-  const { workouts = [], fatigue = {}, topLifts = [], messages, profile = {}, longTermStats = {}, engine = 'anthropic' } = req.body;
+  const { workouts = [], fatigue = {}, topLifts = [], messages, images = [], profile = {}, longTermStats = {}, engine = 'anthropic' } = req.body;
 
   if (!Array.isArray(messages) || !messages.length) {
     return res.status(400).json({ error: 'messages array is required' });
@@ -79,6 +79,7 @@ router.post('/coach', coachLimiter, asyncHandler(async (req, res) => {
   await AIOrchestrator.streamResponse({
     system,
     messages,
+    images,
     engine,
     onChunk: (text) => res.write(`data: ${JSON.stringify({ text })}\n\n`)
   }, req);
