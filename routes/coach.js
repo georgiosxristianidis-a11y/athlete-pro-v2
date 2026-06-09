@@ -88,6 +88,82 @@ router.post('/coach', coachLimiter, asyncHandler(async (req, res) => {
   res.end();
 }));
 
+/* ── POST /tts (Gemini 2.5 Flash Preview TTS) ── */
+router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: 'text is required' });
+
+  const { gemini } = await import('../lib/geminiClient.js');
+  const apiKey = gemini.apiKey;
+  
+  if (!apiKey || apiKey === 'dummy-key') {
+    return res.status(500).json({ error: 'GOOGLE_GENERATIVE_AI_API_KEY is not configured.' });
+  }
+
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: `Скажи мотивирующим и суровым голосом тренера: ${text}` }] }],
+      generationConfig: { 
+        responseModalities: ["AUDIO"], 
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Fenrir" } } } 
+      },
+      model: "gemini-2.5-flash-preview-tts"
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    logWarn(req, 'tts_failed', `TTS API error: ${errText}`);
+    return res.status(response.status).json({ error: 'TTS Generation failed' });
+  }
+
+  const result = await response.json();
+  const pcmData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  
+  if (!pcmData) {
+    return res.status(500).json({ error: 'No audio data returned from Gemini' });
+  }
+
+  res.json({ success: true, audioBase64: pcmData });
+}));
+
+/* ── POST /weekly-report ── */
+router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
+  const { workouts = [], profile = {}, engine = 'anthropic' } = req.body;
+
+  logInfo(req, 'weekly_report_started', `Generating weekly report`);
+
+  const system = `You are "Athlete Pro Analyst", an elite sports data scientist.
+Analyze the user's past 7 days of workouts. 
+Return ONLY JSON with this exact schema:
+{
+  "score": <number 0-100 representing overall performance and consistency>,
+  "summary": "<string, 2-3 sentences of harsh but motivating feedback>",
+  "pros": ["<string>", "<string>"],
+  "cons": ["<string>", "<string>"]
+}
+If no workouts exist, set score to 0 and encourage them to start.`;
+
+  const prompt = `Workouts (Last 7 Days): ${JSON.stringify(workouts)}
+Profile: ${JSON.stringify(profile)}`;
+
+  const content = await AIOrchestrator.generateJSON({
+    system,
+    prompt,
+    engine
+  }, req);
+
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const report = jsonMatch ? JSON.parse(jsonMatch[0]) : { score: 0, summary: "Data unreadable. Push harder.", pros: [], cons: [] };
+    res.json({ success: true, report });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to parse AI report' });
+  }
+}));
+
 // ── Private Prompt Helpers ───────────────────────────────────────────────────
 
 function _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats) {

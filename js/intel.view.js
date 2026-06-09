@@ -226,15 +226,132 @@ export const IntelView = (() => {
 
   function _clearImage() { _pendingImage = null; }
 
+  let _isSpeaking = false;
 
-  function generateWeekly() {
+  async function speakText(textToSpeak) {
+    if (!textToSpeak || _isSpeaking) return;
+    _isSpeaking = true;
+    IntelStore.addLog('SYS', 'Synthesizing coach voice...');
+
+    try {
+      const response = await fetch('/api/coach/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: textToSpeak })
+      });
+
+      if (!response.ok) throw new Error('Voice sync failed');
+
+      const result = await response.json();
+      const pcmData = result.audioBase64;
+      if (!pcmData) throw new Error("Audio data not found");
+
+      const audioBlob = pcmToWav(pcmData, 24000); 
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.onended = () => { _isSpeaking = false; URL.revokeObjectURL(audioUrl); };
+      await audio.play();
+    } catch (err) { 
+      IntelStore.addLog('ERROR', 'Voice synthesis failed'); 
+      _isSpeaking = false; 
+    }
+  }
+
+  function pcmToWav(base64Pcm, sampleRate) {
+    const pcmBuffer = Uint8Array.from(atob(base64Pcm), c => c.charCodeAt(0)).buffer;
+    const wavBuffer = new ArrayBuffer(44 + pcmBuffer.byteLength);
+    const view = new DataView(wavBuffer);
+    const writeString = (offset, string) => { for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i)); };
+    writeString(0, 'RIFF'); 
+    view.setUint32(4, 36 + pcmBuffer.byteLength, true); 
+    writeString(8, 'WAVE'); 
+    writeString(12, 'fmt '); 
+    view.setUint32(16, 16, true); 
+    view.setUint16(20, 1, true); 
+    view.setUint16(22, 1, true); 
+    view.setUint32(24, sampleRate, true); 
+    view.setUint32(28, sampleRate * 2, true); 
+    view.setUint16(32, 2, true); 
+    view.setUint16(34, 16, true); 
+    writeString(36, 'data'); 
+    view.setUint32(40, pcmBuffer.byteLength, true);
+    new Uint8Array(wavBuffer).set(new Uint8Array(pcmBuffer), 44);
+    return new Blob([wavBuffer], { type: 'audio/wav' });
+  }
+
+  async function generateWeekly() {
      IntelStore.addLog('SYS', 'Computing weekly intelligence...');
      IntelStore.setStatus('COMPUTING INTEL...');
-     setTimeout(() => {
-         IntelStore.addLog('AI', 'Weekly report generated. Performance Score: 88');
-         IntelStore.setStatus('SYSTEM STANDBY');
-     }, 1500);
+     
+     try {
+       const { DB } = await import('./db.js');
+       const workouts = await DB.Workouts.getAll();
+       // Filter for last 7 days
+       const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+       const recentWorkouts = workouts.filter(w => new Date(w.date).getTime() > sevenDaysAgo);
+       const profile = await DB.Settings.getAll();
+
+       const response = await fetch('/api/coach/weekly-report', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ workouts: recentWorkouts, profile, engine: 'gemini' })
+       });
+
+       if (!response.ok) throw new Error('Report generation failed');
+
+       const { report } = await response.json();
+       
+       IntelStore.addLog('AI', \`Weekly report generated. Performance Score: \${report.score}\`);
+       IntelStore.setStatus('SYSTEM STANDBY');
+
+       _renderReportOverlay(report);
+       speakText(\`Твой прогресс за неделю: \${report.score} баллов. \${report.summary}\`);
+
+     } catch (err) {
+       IntelStore.addLog('ERROR', 'Failed to generate weekly intel');
+       IntelStore.setStatus('ERROR');
+     }
   }
+
+  function _renderReportOverlay(report) {
+    const overlay = document.createElement('div');
+    overlay.className = 'intel-report-overlay animate-in fade-in duration-500';
+    overlay.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(5,5,7,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:20px;';
+    
+    overlay.innerHTML = \`
+      <div style="background:#0a0a0a; width:100%; max-width:500px; border-radius:32px; border:1px solid rgba(255,255,255,0.1); padding:40px; position:relative; max-height:90vh; overflow-y:auto;">
+        <button onclick="this.closest('.intel-report-overlay').remove()" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:24px; cursor:pointer;">&times;</button>
+        <div style="text-align:center; margin-bottom:32px;">
+           <h2 style="font-family:var(--font-intel); font-size:24px; font-style:italic; color:var(--c-text-1); text-transform:uppercase; margin-bottom:16px;">Weekly Intel</h2>
+           <div style="display:flex; flex-direction:column; align-items:center;">
+             <span style="font-size:72px; font-weight:900; color:var(--c-intel); text-shadow:0 0 20px rgba(0,209,255,0.4); line-height:1;">\${report.score}</span>
+             <span style="font-size:10px; font-weight:900; color:var(--c-text-3); text-transform:uppercase; letter-spacing:0.5em; margin-top:8px;">Performance Score</span>
+           </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          <section style="background:rgba(255,255,255,0.05); padding:24px; border-radius:24px; border:1px solid rgba(255,255,255,0.05);">
+            <p style="font-size:14px; font-style:italic; color:var(--c-text-2); line-height:1.6; font-weight:600;">"\${esc(report.summary)}"</p>
+          </section>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div style="background:rgba(0,230,118,0.05); padding:20px; border-radius:24px; border:1px solid rgba(0,230,118,0.1);">
+               <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:var(--c-accent); margin-bottom:12px; letter-spacing:0.2em;">Wins</h4>
+               <ul style="font-size:12px; color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
+                 \${report.pros.map(p => \`<li style="display:flex; gap:8px;"><span style="color:var(--c-accent)">+</span>\${esc(p)}</li>\`).join('')}
+               </ul>
+            </div>
+            <div style="background:rgba(255,77,136,0.05); padding:20px; border-radius:24px; border:1px solid rgba(255,77,136,0.1);">
+               <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:var(--c-red); margin-bottom:12px; letter-spacing:0.2em;">Leaks</h4>
+               <ul style="font-size:12px; color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
+                 \${report.cons.map(c => \`<li style="display:flex; gap:8px;"><span style="color:var(--c-red)">-</span>\${esc(c)}</li>\`).join('')}
+               </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    \`;
+    document.body.appendChild(overlay);
+  }
+
 
   function createWorkout() {
      IntelStore.addLog('SYS', 'Ready to generate workout plan');
