@@ -139,6 +139,14 @@ export const DynamicIsland = (() => {
     if (!_wrap) init();
     _wrap.style.display = 'block';
     _wrap.classList.add('visible');
+
+    // Logic Fix: Focus on Island by blurring the Status Bar
+    const statusBar = document.getElementById('status-bar');
+    if (statusBar) {
+      statusBar.classList.add('status-bar-focused');
+      // Clicking the blurred header clears the focus effect
+      statusBar.onclick = () => statusBar.classList.remove('status-bar-focused');
+    }
     
     // Animate entry
     if (_island) {
@@ -164,6 +172,9 @@ export const DynamicIsland = (() => {
     _island?.classList.remove('expanded');
     _island?.classList.remove('timer-mode');
     
+    const statusBar = document.getElementById('status-bar');
+    statusBar?.classList.remove('status-bar-focused');
+
     // Animate exit
     if (_island) {
        _anims.y?.stop();
@@ -232,11 +243,13 @@ export const DynamicIsland = (() => {
 
     _updateNetworkStatus();
 
-    // Push state to PiP Canvas
+    // Push state to PiP Canvas (Elite Standard: include next exercise)
     PiP.drawFrame({
       time: _timeEl?.textContent || '00:00',
       name: currentEx ? currentEx.name : 'Workout',
-      sets: total ? `${done}/${total}` : ''
+      sets: total ? `${done}/${total}` : '',
+      nextName: nextEx ? nextEx.name : '',
+      bpm: 72 + Math.floor(Math.random() * 10) // Mock BPM for Elite visualization
     });
   }
 

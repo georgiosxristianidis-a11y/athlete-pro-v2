@@ -98,8 +98,16 @@
         backdrop-filter: blur(20px) saturate(1.8);
         -webkit-backdrop-filter: blur(20px) saturate(1.8);
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        z-index: 1000;
-      }
+        z-index: 200;
+        transition: all 0.4s ease;
+        }
+
+        #status-bar.status-bar-focused {
+        background: rgba(5, 5, 7, 0.9);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        opacity: 0.3; /* Mute the header to focus on Island */
+        }
       .status-logo {
         display: flex;
         align-items: center;

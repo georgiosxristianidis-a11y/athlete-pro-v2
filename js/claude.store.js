@@ -9,6 +9,8 @@ import { safeFetch } from './privacy.store.js';
 import { loadProfile, computeAge } from './profile.store.js';
 import { dotsScore } from './strength-engine.js';
 
+export const COMPUTE_REST_HOURS = 72; // Standard window for fatigue decay
+
 /* ══════════════════════════════════════════════
    MUSCLE MAP — which exercises hit which muscles
    ══════════════════════════════════════════════ */

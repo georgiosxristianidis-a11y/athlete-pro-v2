@@ -30,7 +30,7 @@
   z-index: 500;
   -webkit-tap-highlight-color: transparent;
   border-radius: 50%;
-  overflow: hidden;
+  /* Removed overflow: hidden to allow close btn to sit outside */
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.04) inset,
     0 8px 22px rgba(0, 0, 0, 0.55),
@@ -64,10 +64,10 @@
 
 .fab-close-btn {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 22px;
-  height: 22px;
+  top: -8px; /* Positioned outside the circle */
+  right: -8px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--c-bg-3);
   border: 1px solid var(--c-border);
@@ -77,11 +77,13 @@
   justify-content: center;
   opacity: 0;
   transform: scale(0.5);
-  transition: all 0.2s ease;
-  z-index: 501;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 510;
   pointer-events: auto;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
-.claude-fab:hover .fab-close-btn {
+.claude-fab:hover .fab-close-btn, 
+.claude-fab:active .fab-close-btn {
   opacity: 1;
   transform: scale(1);
 }
@@ -89,6 +91,7 @@
   background: var(--c-red-bg);
   color: var(--c-red);
   border-color: var(--c-red);
+  transform: scale(1.1);
 }
 
 .claude-fab:hover {
@@ -120,6 +123,7 @@
   pointer-events: none;
   display: block;
   background: transparent;
+  border-radius: 50%; /* Ensure content is rounded even without overflow:hidden */
 }
 .claude-fab svg {
   width: 50%;

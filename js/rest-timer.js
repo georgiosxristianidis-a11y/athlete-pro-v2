@@ -30,6 +30,15 @@ export const RestTimer = (() => {
     // @ts-ignore
     if (window.DynamicIsland) window.DynamicIsland.setRestProgress(rem, _total);
 
+    // Elite PiP Sync: Update countdown and HR wave during rest
+    const m = Math.floor(rem / 60).toString().padStart(2, '0');
+    const s = (rem % 60).toString().padStart(2, '0');
+    PiP.drawFrame({ 
+      time: `${m}:${s}`, 
+      name: 'RESTING...', 
+      bpm: 85 + Math.floor(Math.random() * 15) // Slightly elevated HR during rest
+    });
+
     if (rem <= 0) {
       _onDone();
       return;

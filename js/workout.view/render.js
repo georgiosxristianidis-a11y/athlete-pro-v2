@@ -67,8 +67,7 @@ export function typeIcon(type, color) {
   };
   
   if (!icons[type]) return '';
-  // Refined, single-layer glow to prevent "doubling" effect
-  return `<span class="type-icon kinetic-svg" style="color:${color}; filter: drop-shadow(0 0 10px ${color}80);" aria-hidden="true">${icons[type]}</span>`;
+  return `<span class="type-icon kinetic-svg" style="color:${color}; filter: drop-shadow(0 0 5px ${color}) drop-shadow(0 0 15px ${color});" aria-hidden="true">${icons[type]}</span>`;
 }
 
 export function fmtVol(kg) {
@@ -320,14 +319,8 @@ export async function renderSelect() {
 export async function renderActive() {
   const lang = await DB.Settings.get('lang', 'en');
   const ru = lang === 'ru';
-  const color = TYPE_COLOR[State.type];
   const exCount = State.plan.length;
   const totalSets = State.plan.reduce((s, e) => s + e.sets.length, 0);
-  const weekMode = getWeekMode();
-
-  const exerciseCards = await Promise.all(
-    State.plan.map((ex, ei) => renderExerciseCard(ex, ei))
-  );
 
   const trainEl = document.getElementById('s-train');
   if (!trainEl) return;
@@ -338,10 +331,8 @@ export async function renderActive() {
         <div class="screen-title">${ru ? (State.type === 'push' ? 'Жим' : State.type === 'pull' ? 'Тяга' : 'Ноги') : State.type.charAt(0).toUpperCase() + State.type.slice(1)} ${ru ? 'День' : 'Day'}</div>
       </div>
       <div class="header-chips">
-        <button class="week-pill week-${weekMode}" onclick="Workout._toggleWeek()">
-          <span class="week-pill-lbl">W</span>
-          <span class="week-pill-val">${weekMode}</span>
-        </button>
+        <!-- Focused header: Week toggle removed -->
+        <div class="live-timer" id="workout-timer" style="font-variant-numeric: tabular-nums; font-weight: 800; color: var(--c-accent)">00:00</div>
       </div>
     </div>
 
@@ -376,7 +367,6 @@ export async function renderActive() {
         for (let ei = 0; ei < State.plan.length; ei++) {
           const ex = State.plan[ei];
           
-          // Map internal block IDs to display labels
           const blockMap = {
             'power': ru ? 'БЛОК I: СИЛА' : 'BLOCK I: POWER',
             'shape': ru ? 'БЛОК II: ОБЪЕМ' : 'BLOCK II: VOLUME',
@@ -447,18 +437,11 @@ async function getMuscleBadge(exerciseName) {
   return `<span class="muscle-badge ${normalized}">${muscle.toUpperCase()}</span>`;
 }
 
-const BLOCK_LABELS = {
-  power: 'Block I · Power', shape: 'Block II · Shape', width: 'Block I · Width', thickness: 'Block II · Thickness',
-  heavy: 'Block I · Heavy', iso: 'Block II · Isolation', shoulders: 'Block III · Shoulders', arms: 'Block III · Arms',
-  core: 'Block IV · Core', align: 'Block IV · Alignment',
-};
-
 export async function renderExerciseCard(ex, ei) {
   const doneSets = ex.sets.filter(s => s.done).length;
   const setRows = await Promise.all(ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)));
   const coach = await _computeCoachTarget(ex.name);
   const muscleBadge = await getMuscleBadge(ex.name);
-  const blockLabel = BLOCK_LABELS[ex.block] || '';
 
   const firstUndoneIdx = ex.sets.findIndex(s => !s.done);
   const targetSi = firstUndoneIdx === -1 ? 0 : firstUndoneIdx;
@@ -466,12 +449,10 @@ export async function renderExerciseCard(ex, ei) {
   const lang = await DB.Settings.get('lang', 'en');
   const ru = lang === 'ru';
 
-  const iconCopy = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
   const iconCoach = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
 
   return `
     <div class="exercise-card ${ex.noDb ? 'ex-no-db' : ''}" id="ex-card-${ei}" data-ei="${ei}">
-      ${blockLabel ? `<div class="ex-block-tag">${blockLabel}</div>` : ''}
       <div class="exercise-header" onclick="Workout.toggleCard(${ei})">
         <div class="drag-handle" onclick="event.stopPropagation()"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/></svg></div>
         <div class="exercise-icon"><span class="ex-num">${ei + 1}</span></div>
@@ -484,11 +465,11 @@ export async function renderExerciseCard(ex, ei) {
         </div>
         
         <div class="ex-header-actions" onclick="event.stopPropagation()">
-          <button class="ex-action-btn ${ex.isUnilateral ? 'active' : ''}" title="Dumbbells (2x volume)" onclick="Workout._toggleUnilateral(${ei})">DB</button>
           <button class="ex-action-btn coach" title="Smart Coach" onclick="Workout.smartCoach(${ei},${targetSi})">${iconCoach}</button>
-          <button class="ex-action-btn" title="Smart Copy" onclick="Workout.smartCopy(${ei},${targetSi})">${iconCopy}</button>
-          <button class="ex-action-btn replace" title="Replace exercise" onclick="Workout.openReplaceExModal(${ei})">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          <button class="ex-action-btn" title="More options" onclick="Workout.showExerciseMenu(${ei})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+              <circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="6" r="1.2"/><circle cx="12" cy="18" r="1.2"/>
+            </svg>
           </button>
         </div>
 
@@ -510,6 +491,13 @@ export async function renderExerciseCard(ex, ei) {
 export async function renderSetRow(ex, ei, set, si) {
   const firstUndoneIdx = ex.sets.findIndex(s => !s.done);
   const isActive = !set.done && si === firstUndoneIdx;
+  const isBW = ex.isBW || false;
+  const step = ex.isUnilateral ? 2 : 2.5;
+
+  // Formatting weight: if BW, show as +Weight or BW
+  const displayWeight = isBW 
+    ? (set.weight > 0 ? `+${set.weight}` : 'BW')
+    : set.weight;
 
   return `
     <div class="set-row ${set.done ? 'set-done' : ''} ${isActive ? 'set-active' : ''}" id="set-row-${ei}-${si}">
@@ -517,7 +505,7 @@ export async function renderSetRow(ex, ei, set, si) {
       <div class="drum-wrap" id="sw-${ei}-${si}" 
            data-type="w" data-ei="${ei}" data-si="${si}" 
            data-value="${set.weight}" 
-           data-step="${ex.isUnilateral ? 2 : 2.5}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sw-val stepper-val hidden">${set.weight}</span></div>
+           data-step="${step}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sw-val stepper-val hidden">${displayWeight}</span></div>
       <div class="drum-wrap" id="sr-${ei}-${si}" 
            data-type="r" data-ei="${ei}" data-si="${si}" 
            data-value="${set.reps}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sr-val stepper-val hidden">${set.reps}</span></div>

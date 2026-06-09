@@ -58,20 +58,20 @@ export const PPL_GIO_PLAN = {
   weekA: {
     push: [
       { name: 'Flat Barbell Bench Press',     sets: 3, reps: 8,  weight: 0, block: 'power' },
-      { name: 'Incline Dumbbell Press',        sets: 3, reps: 10, weight: 0, block: 'power' },
+      { name: 'Incline Dumbbell Press',        sets: 3, reps: 10, weight: 0, block: 'power', isUnilateral: true },
       { name: 'Butterfly Machine',             sets: 3, reps: 12, weight: 0, block: 'shape' },
-      { name: 'Dips (Chest Focus)',            sets: 3, reps: 10, weight: 0, block: 'shape' },
-      { name: 'Dumbbell Pullover',             sets: 3, reps: 12, weight: 0, block: 'shape' },
+      { name: 'Dips (Chest Focus)',            sets: 3, reps: 10, weight: 0, block: 'shape', isBW: true },
+      { name: 'Dumbbell Pullover',             sets: 3, reps: 12, weight: 0, block: 'shape', isUnilateral: true },
       // Block III — Biceps focus (Week A swap)
       { name: 'Alternating Dumbbell Curls',    sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true },
       { name: 'Hammer Curls',                  sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true },
       { name: 'Preacher Curls',                sets: 3, reps: 12, weight: 0, block: 'arms' },
       // Block IV — Core
-      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
-      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
     ],
     pull: [
-      { name: 'Pull-ups (Weighted)',           sets: 3, reps: 8,  weight: 0, block: 'width' },
+      { name: 'Pull-ups (Weighted)',           sets: 3, reps: 8,  weight: 0, block: 'width', isBW: true },
       { name: 'Lat Pulldown',                  sets: 3, reps: 10, weight: 0, block: 'width' },
       { name: 'Chest-Supported T-Bar Row',     sets: 3, reps: 8,  weight: 0, block: 'thickness' },
       { name: 'Low Block Cable Row',           sets: 3, reps: 10, weight: 0, block: 'thickness' },
@@ -81,8 +81,8 @@ export const PPL_GIO_PLAN = {
       { name: 'Overhead Cable Extension',      sets: 3, reps: 12, weight: 0, block: 'arms' },
       { name: 'Dumbbell Shrugs',               sets: 3, reps: 12, weight: 0, block: 'arms', isUnilateral: true },
       // Block IV — Core
-      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
-      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
     ],
     legs: [
       { name: 'Leg Press',                     sets: 3, reps: 10, weight: 0, block: 'heavy' },
@@ -94,27 +94,27 @@ export const PPL_GIO_PLAN = {
       { name: 'Wide-Grip Upright Row',         sets: 3, reps: 10, weight: 0, block: 'shoulders' },
       { name: 'Reverse Pec Deck',              sets: 3, reps: 12, weight: 0, block: 'shoulders' },
       // Block IV — Alignment
-      { name: 'Dead Bug',                      sets: 3, reps: 10, weight: 0, block: 'align', noDb: true, isUnilateral: true },
-      { name: 'Plank',                         sets: 1, reps: 60, weight: 0, block: 'align', noDb: true },
+      { name: 'Dead Bug',                      sets: 3, reps: 10, weight: 0, block: 'align', noDb: true, isUnilateral: true, isBW: true },
+      { name: 'Plank',                         sets: 1, reps: 60, weight: 0, block: 'align', noDb: true, isBW: true },
     ],
   },
   weekB: {
     push: [
       { name: 'Flat Barbell Bench Press',     sets: 3, reps: 8,  weight: 0, block: 'power' },
-      { name: 'Incline Dumbbell Press',        sets: 3, reps: 10, weight: 0, block: 'power' },
+      { name: 'Incline Dumbbell Press',        sets: 3, reps: 10, weight: 0, block: 'power', isUnilateral: true },
       { name: 'Butterfly Machine',             sets: 3, reps: 12, weight: 0, block: 'shape' },
-      { name: 'Dips (Chest Focus)',            sets: 3, reps: 10, weight: 0, block: 'shape' },
-      { name: 'Dumbbell Pullover',             sets: 3, reps: 12, weight: 0, block: 'shape' },
+      { name: 'Dips (Chest Focus)',            sets: 3, reps: 10, weight: 0, block: 'shape', isBW: true },
+      { name: 'Dumbbell Pullover',             sets: 3, reps: 12, weight: 0, block: 'shape', isUnilateral: true },
       // Block III — Triceps focus (Week B swap)
       { name: 'Triceps Rope Pushdown',         sets: 3, reps: 12, weight: 0, block: 'arms' },
       { name: 'Overhead Cable Extension',      sets: 3, reps: 12, weight: 0, block: 'arms' },
       { name: 'Close-Grip Bench Press',        sets: 3, reps: 10, weight: 0, block: 'arms' },
       // Block IV — Core
-      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
-      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
     ],
     pull: [
-      { name: 'Pull-ups (Weighted)',           sets: 3, reps: 8,  weight: 0, block: 'width' },
+      { name: 'Pull-ups (Weighted)',           sets: 3, reps: 8,  weight: 0, block: 'width', isBW: true },
       { name: 'Lat Pulldown',                  sets: 3, reps: 10, weight: 0, block: 'width' },
       { name: 'Chest-Supported T-Bar Row',     sets: 3, reps: 8,  weight: 0, block: 'thickness' },
       { name: 'Low Block Cable Row',           sets: 3, reps: 10, weight: 0, block: 'thickness' },
@@ -125,8 +125,8 @@ export const PPL_GIO_PLAN = {
       { name: 'Preacher Curls',                sets: 3, reps: 12, weight: 0, block: 'arms' },
       { name: 'Dumbbell Shrugs',               sets: 3, reps: 12, weight: 0, block: 'arms', isUnilateral: true },
       // Block IV — Core
-      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
-      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true },
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
     ],
     legs: [
       { name: 'Leg Press',                     sets: 3, reps: 10, weight: 0, block: 'heavy' },
@@ -139,8 +139,8 @@ export const PPL_GIO_PLAN = {
       { name: 'Wide-Grip Upright Row',         sets: 3, reps: 10, weight: 0, block: 'shoulders' },
       { name: 'Reverse Pec Deck',              sets: 3, reps: 12, weight: 0, block: 'shoulders' },
       // Block IV — Alignment
-      { name: 'Dead Bug',                      sets: 3, reps: 10, weight: 0, block: 'align', noDb: true, isUnilateral: true },
-      { name: 'Plank',                         sets: 1, reps: 60, weight: 0, block: 'align', noDb: true },
+      { name: 'Dead Bug',                      sets: 3, reps: 10, weight: 0, block: 'align', noDb: true, isUnilateral: true, isBW: true },
+      { name: 'Plank',                         sets: 1, reps: 60, weight: 0, block: 'align', noDb: true, isBW: true },
     ],
   },
 };

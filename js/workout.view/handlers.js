@@ -9,7 +9,7 @@ import {
 } from '../workout.store.js';
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
-import { showReceipt } from '../ui/receipt.js';
+import { esc } from '../shared/utils.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
 import { syncDrumUI } from '../ui/drum-picker.js';
 
@@ -240,8 +240,54 @@ export async function _startProgram(id) {
 }
 
 /* ════════════════════════════════════════════════════════
-   CUSTOM WORKOUTS
+   EXERCISES
    ════════════════════════════════════════════════════════ */
+
+/**
+ * Show a context menu for exercise actions (Replace, DB, Copy).
+ */
+export async function showExerciseMenu(ei) {
+  _haptic(10);
+  const ex = State.plan[ei];
+  const ru = navigator.language.startsWith('ru');
+
+  const actions = [
+    { label: ru ? 'Сменить упражнение' : 'Replace Exercise', icon: '🔄', action: () => openReplaceExModal(ei) },
+    { label: ex.isUnilateral ? (ru ? 'Убрать гантели' : 'Remove Dumbbells') : (ru ? 'Гантели (2x)' : 'Add Dumbbells'), icon: '⚖️', action: () => _toggleUnilateral(ei) },
+    { label: ru ? 'Копировать прошлый вес' : 'Smart Copy', icon: '📋', action: () => smartCopy(ei, 0) }
+  ];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay animate-in';
+  overlay.style.zIndex = '7000';
+  overlay.innerHTML = `
+    <div class="modal-sheet" style="padding: 16px; border-top-left-radius:24px; border-top-right-radius:24px">
+      <div class="modal-handle"></div>
+      <div style="font-size: 13px; font-weight: 900; color: var(--c-text-2); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.1em; text-align:center">${esc(ex.name)}</div>
+      <div style="display:flex; flex-direction:column; gap:8px">
+        ${actions.map((a, i) => `
+          <button class="menu-item" onclick="this.closest('.modal-overlay').remove(); window.Workout._handleMenuAction(${ei}, ${i})" style="display:flex; align-items:center; gap:16px; width:100%; padding:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px; color:#fff; cursor:pointer">
+            <span style="font-size:18px">${a.icon}</span>
+            <span style="font-size:15px; font-weight:700">${a.label}</span>
+          </button>
+        `).join('')}
+      </div>
+      <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()" style="width:100%; margin-top:16px; border:none; color:var(--c-text-3); font-weight:800">${ru ? 'ОТМЕНА' : 'CANCEL'}</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // @ts-ignore
+  window.Workout._handleMenuAction = (ei, actionIdx) => {
+    actions[actionIdx].action();
+  };
+}
+
+export async function openReplaceExModal(ei) {
+  const { openReplaceExModal: open } = await import('./modals.js').catch(() => ({ openReplaceExModal: () => alert('Modal failed') }));
+  // @ts-ignore
+  open(ei);
+}
 
 export async function openCustomWorkoutModal() {
   const { openCustomWorkoutModal: open } = await import('./modals.js').catch(() => ({ openCustomWorkoutModal: () => alert('Custom workouts coming soon') }));
@@ -270,7 +316,7 @@ export async function completeSession() {
   }
 
   // Calculate metrics
-  const durationMs = Date.now() - State.startedAt;
+  const durationMs = Date.now() - (State.startedAt || Date.now());
   const mins = Math.floor(durationMs / 60000);
   const hrs = Math.floor(mins / 60);
   const timeStr = hrs > 0 ? `${hrs}h ${mins % 60}m` : `${mins}m`;
@@ -297,6 +343,8 @@ export async function completeSession() {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay animate-in';
   overlay.style.zIndex = '6000';
+  overlay.style.backdropFilter = 'blur(12px)';
+  overlay.style.webkitBackdropFilter = 'blur(12px)';
   overlay.innerHTML = `
     <div class="modal-sheet summary-sheet" style="max-width:440px; margin:auto">
       <div class="modal-handle"></div>
