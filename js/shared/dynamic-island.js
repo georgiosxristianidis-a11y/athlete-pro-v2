@@ -4,6 +4,7 @@ import { Timer } from '../timer.js';
 import { RestTimer } from '../rest-timer.js';
 import { Spring } from './spring.js';
 import { PiP } from '../features/pip.js';
+import { haptic } from './utils.js';
 
 /**
  * dynamic-island.js — Interactive session overlay (PIP)
@@ -13,6 +14,7 @@ import { PiP } from '../features/pip.js';
 
 export const DynamicIsland = (() => {
   let _expanded = false;
+  let _displayMode = 'mini'; // 'ultra-min' | 'mini' | 'detailed'
   let _timerActive = false;
   let _timerSecs = 0;
   let _timerMax = 0;
@@ -79,6 +81,10 @@ export const DynamicIsland = (() => {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>30s</span>
             </button>
+            <button class="island-action-btn" title="Picture in Picture" onclick="window.DynamicIsland?.triggerPiP()" style="margin-left:auto">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1"/></svg>
+              <span>PiP</span>
+            </button>
           </div>
         </div>
 
@@ -105,6 +111,10 @@ export const DynamicIsland = (() => {
     _progressFill = document.getElementById('di-progress-fill');
     _timerProg = document.getElementById('di-timer-progress');
 
+    // Load preference
+    _displayMode = localStorage.getItem('ap-di-mode') || 'mini';
+    _island?.classList.add(`mode-${_displayMode}`);
+
     // Set initial transform
     _applyTransform();
 
@@ -114,10 +124,14 @@ export const DynamicIsland = (() => {
     window.addEventListener('pointerup', _onPointerUp);
     window.addEventListener('pointercancel', _onPointerUp);
 
-    // Expand toggle (only if not long-pressed or dragged)
+    // Expand toggle or cycle mode (only if not long-pressed or dragged)
     _island?.addEventListener('click', (e) => {
       if (_isLongPress || _movedPastThreshold) return;
-      toggleExpand();
+      if (_expanded) {
+        toggleExpand();
+      } else {
+        _cycleMode();
+      }
     });
 
     _updateNetworkStatus();
@@ -130,8 +144,6 @@ export const DynamicIsland = (() => {
 
   function _applyTransform() {
     if (!_island) return;
-    // We use translateX(-50%) because the element is left:50% in CSS
-    // animY is the entry/exit offset, currentX/Y are dragging offsets
     _island.style.transform = `translate(calc(-50% + ${_currentX}px), ${_animY + _currentY}px) scale(${_animScale})`;
   }
 
@@ -144,7 +156,6 @@ export const DynamicIsland = (() => {
     const statusBar = document.getElementById('status-bar');
     if (statusBar) {
       statusBar.classList.add('status-bar-focused');
-      // Clicking the blurred header clears the focus effect
       statusBar.onclick = () => statusBar.classList.remove('status-bar-focused');
     }
     
@@ -204,7 +215,7 @@ export const DynamicIsland = (() => {
 
     const ru = (localStorage.getItem('ap-settings-lang') === 'ru');
 
-    // Time (Total Session Time ONLY)
+    // Time
     if (_timeEl) _timeEl.textContent = Timer.fmt(Timer.seconds());
 
     // Current Exercise
@@ -233,7 +244,7 @@ export const DynamicIsland = (() => {
       _sublabelEl.textContent = `W${getWeekMode()} · ${String(State.type).toUpperCase()} · ${status}`;
     }
 
-    // Progress bar (Total workout progress)
+    // Progress bar
     if (_progressFill) {
       const pct = total ? (done / total) * 100 : 0;
       _progressFill.style.width = `${pct}%`;
@@ -243,17 +254,16 @@ export const DynamicIsland = (() => {
 
     _updateNetworkStatus();
 
-    // Push state to PiP Canvas (Elite Standard: include next exercise)
+    // Push state to PiP Canvas
     PiP.drawFrame({
       time: _timeEl?.textContent || '00:00',
       name: currentEx ? currentEx.name : 'Workout',
       sets: total ? `${done}/${total}` : '',
       nextName: nextEx ? nextEx.name : '',
-      bpm: 72 + Math.floor(Math.random() * 10) // Mock BPM for Elite visualization
+      bpm: 72 + Math.floor(Math.random() * 10)
     });
   }
 
-  // Rest Timer progress line
   function setRestProgress(secs, max) {
     if (!_wrap) init();
     _timerActive = true;
@@ -278,25 +288,41 @@ export const DynamicIsland = (() => {
     }, 2000);
   }
 
+  function _cycleMode() {
+    haptic(5);
+    if (_displayMode === 'ultra-min') _displayMode = 'mini';
+    else if (_displayMode === 'mini') _displayMode = 'detailed';
+    else _displayMode = 'ultra-min';
+
+    _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');
+    _island?.classList.add(`mode-${_displayMode}`);
+    localStorage.setItem('ap-di-mode', _displayMode);
+    
+    _anims.scale?.stop();
+    _anims.scale = Spring.animate({
+      from: 0.9, to: 1, stiffness: 400, damping: 12,
+      onUpdate: (v) => { _animScale = v; _applyTransform(); }
+    });
+    update();
+  }
+
   function toggleExpand() {
     _expanded = !_expanded;
     _island?.classList.toggle('expanded', _expanded);
-    
-    // Subtle spring scale pop on expand
+    if (_expanded) {
+        _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');
+        _island?.classList.add('mode-detailed');
+    } else {
+        _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');
+        _island?.classList.add(`mode-${_displayMode}`);
+    }
+
     _anims.scale?.stop();
     _anims.scale = Spring.animate({
-      from: _expanded ? 0.95 : 1.05,
-      to: 1,
-      stiffness: 300,
-      damping: 15,
-      onUpdate: (v) => { 
-        _animScale = v;
-        _applyTransform();
-      }
+      from: _expanded ? 0.95 : 1.05, to: 1, stiffness: 300, damping: 15,
+      onUpdate: (v) => { _animScale = v; _applyTransform(); }
     });
   }
-
-  /* ── Internal Helpers ── */
 
   function _onPointerDown(e) {
     _isDragging = true;
@@ -306,7 +332,6 @@ export const DynamicIsland = (() => {
     _island?.style.setProperty('transition', 'none');
     _island?.setPointerCapture(e.pointerId);
 
-    // Start long-press timer
     clearTimeout(_longPressTimer);
     _longPressTimer = setTimeout(() => {
       if (!_movedPastThreshold) {
@@ -318,35 +343,16 @@ export const DynamicIsland = (() => {
 
   function _onPointerMove(e) {
     if (!_isDragging) return;
-    
     if (!_movedPastThreshold) {
       const dx = e.clientX - (_startX + _currentX);
       const dy = e.clientY - (_startY + _currentY);
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 6) {
+      if (Math.sqrt(dx*dx + dy*dy) > 6) {
         _movedPastThreshold = true;
         clearTimeout(_longPressTimer);
-      } else {
-        return;
-      }
+      } else return;
     }
-
     _currentX = e.clientX - _startX;
     _currentY = e.clientY - _startY;
-    
-    // Boundary checks to keep island within viewport
-    const appEl = document.getElementById('app') || document.body;
-    const appRect = appEl.getBoundingClientRect();
-    const halfW = (_island?.offsetWidth || 220) / 2;
-    
-    const minX = -appRect.width / 2 + halfW + 10;
-    const maxX = appRect.width / 2 - halfW - 10;
-    const minY = -10; // Allow slight pull above
-    const maxY = appRect.height - 100;
-
-    _currentX = Math.max(minX, Math.min(maxX, _currentX));
-    _currentY = Math.max(minY, Math.min(maxY, _currentY));
-    
     _applyTransform();
   }
 
@@ -354,56 +360,25 @@ export const DynamicIsland = (() => {
     if (!_isDragging) return;
     _isDragging = false;
     clearTimeout(_longPressTimer);
-    
-    // Snappy return to bounds if we let go
-    _anims.drag?.stop();
-    _anims.drag = Spring.animate({
-      from: 0,
-      to: 0, 
-      stiffness: 200,
-      damping: 20,
-      onUpdate: (v) => { /* snap logic could go here */ }
-    });
-
     _island?.style.setProperty('transition', 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)');
     setTimeout(() => { _movedPastThreshold = false; }, 50);
   }
 
   function _onLongPress() {
     if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
-    // Navigate to timer settings
     window.location.hash = 'timer-settings';
-    window.Toast?.show('Timer Settings', 'info');
   }
 
   function _renderRestProgress() {
     if (!_timerProg) return;
-    if (!_timerActive) {
-      _timerProg.style.width = '0%';
-      return;
-    }
-    const pct = _timerMax ? (_timerSecs / _timerMax) * 100 : 0;
+    const pct = (_timerActive && _timerMax) ? (_timerSecs / _timerMax) * 100 : 0;
     _timerProg.style.width = `${pct}%`;
   }
 
   function _updateNetworkStatus() {
     if (!_dot) return;
     const online = navigator.onLine;
-    const wasOffline = _dot.classList.contains('offline');
-    
     _dot.className = `island-dot ${online ? 'online' : 'offline'}`;
-    
-    // Pulse animation on reconnect
-    if (online && wasOffline) {
-       _anims.dot?.stop();
-       _anims.dot = Spring.animate({
-        from: 0.5,
-        to: 1,
-        stiffness: 400,
-        damping: 10,
-        onUpdate: (v) => { _dot.style.scale = String(v); }
-      });
-    }
   }
 
   function _getSetsColor(done, total) {
@@ -421,5 +396,4 @@ export const DynamicIsland = (() => {
   return { init, show, hide, update, setRestProgress, stopTimer, pulseSetComplete, toggleExpand, triggerPiP };
 })();
 
-// @ts-ignore
 window.DynamicIsland = DynamicIsland;

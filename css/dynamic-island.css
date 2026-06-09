@@ -67,6 +67,24 @@
   border-radius: 24px;
 }
 
+/* ── Display Modes ── */
+.island.mode-ultra-min {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+.island.mode-ultra-min .island-time { opacity: 0; }
+.island.mode-ultra-min .island-dot { left: 50%; transform: translate(-50%, -50%); }
+
+.island.mode-mini {
+  width: 110px;
+}
+.island.mode-mini .island-time { font-size: 13px; }
+
+.island.mode-detailed {
+  width: 220px;
+}
+
 /* PIP timer mode */
 .island.timer-mode {
   width: 130px;
