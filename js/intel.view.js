@@ -37,8 +37,8 @@ export const IntelView = (() => {
         <div>
           <h1 class="intel-title">P.A.N.D.A. Core</h1>
           <div class="intel-sub">
-            <span class="intel-indicator" style="background: ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-red)'}; box-shadow: 0 0 10px ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-red)'}; animation: ${_hasValidKey ? 'intel-pulse' : 'none'} 2s infinite;"></span>
-            <span id="intel-status-text" style="color: ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-red)'}; font-weight:800;">${_hasValidKey ? 'API SECURE' : 'KEY MISSING'}</span>
+            <span class="ai-indicator ${_hasValidKey ? 'active' : 'missing'}" style="margin-right:4px;"></span>
+            <span id="intel-status-text" style="color: ${_hasValidKey ? 'var(--c-text-1)' : 'var(--c-text-3)'}; font-weight:800;">${_hasValidKey ? 'SYSTEM SECURE' : 'KEY MISSING'}</span>
           </div>
         </div>
         <button onclick="Nav.go('s-home')" style="background:none; border:none; color:var(--c-text-3); font-size:28px; font-weight:200; cursor:pointer; padding:0 8px;">&times;</button>
