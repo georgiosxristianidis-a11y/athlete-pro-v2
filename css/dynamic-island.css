@@ -157,7 +157,36 @@
   pointer-events: none;
   transition: all 0.5s cubic-bezier(0.2, 0, 0.2, 1);
 }
-.island.expanded .island-time {
+
+.island-name-collapsed {
+  position: absolute;
+  left: calc(50% + 35px); /* Position to the right of time */
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2;
+}
+
+.island.mode-detailed .island-name-collapsed {
+  max-width: 100px;
+  opacity: 1;
+}
+/* Shift time left slightly when name is shown to keep overall centering balanced */
+.island.mode-detailed .island-time {
+  transform: translate(-90%, -50%);
+}
+
+.island.expanded .island-time,
+.island.expanded .island-name-collapsed {
   opacity: 0;
   pointer-events: none;
 }

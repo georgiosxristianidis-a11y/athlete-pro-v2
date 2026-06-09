@@ -113,6 +113,24 @@ function req2p(r) {
   });
 }
 
+/**
+ * Trigger background sync if allowed by privacy settings.
+ * @param {string} store 
+ * @param {any} data 
+ */
+async function _triggerSync(store, data) {
+  try {
+    // Avoid circular import by using dynamic import
+    const { getPrivacyMode } = await import('./privacy.store.js');
+    if (getPrivacyMode() === 'airgap') return;
+    
+    const { SyncManager } = await import('./sync.js');
+    SyncManager.push(store, data);
+  } catch (e) {
+    console.warn('[DB] Sync trigger failed', e);
+  }
+}
+
 function getAll(store) {
   return tx(store).then((s) => req2p(s.getAll()));
 }
@@ -486,8 +504,14 @@ const Settings = {
    * @param {*} value
    * @returns {Promise<void>}
    */
-  set(key, value) {
-    return tx(S.SETTINGS, 'readwrite').then((s) => req2p(s.put({ key, value })));
+  async set(key, value) {
+    const record = { key, value };
+    await tx(S.SETTINGS, 'readwrite').then((s) => req2p(s.put(record)));
+    
+    // Don't sync internal/temporary settings
+    if (!key.startsWith('privacy.audit') && !key.startsWith('ap-')) {
+      _triggerSync(S.SETTINGS, record);
+    }
   },
 
   /**

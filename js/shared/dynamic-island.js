@@ -223,6 +223,12 @@ export const DynamicIsland = (() => {
     if (activeIdx === -1) activeIdx = State.plan.length - 1;
     const currentEx = State.plan[activeIdx];
     if (_nameEl) _nameEl.textContent = currentEx ? currentEx.name : '';
+    
+    // Collapsed name for 'detailed' mode
+    const collapsedName = document.getElementById('di-name-collapsed');
+    if (collapsedName) {
+      collapsedName.textContent = currentEx ? currentEx.name : '';
+    }
 
     // Sets Progress
     let done = 0, total = 0;
