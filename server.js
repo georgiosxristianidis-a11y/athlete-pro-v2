@@ -18,21 +18,22 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"], 
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'"],
       scriptSrcAttr: ["'unsafe-inline'"], // Required for onclick handlers in templates
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      imgSrc: ["'self'", "data:", "https://*.supabase.co"],
+      imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
       connectSrc: [
         "'self'",
         "https://api.anthropic.com",
         "https://*.supabase.co",
         "https://*.firebaseio.com",
         "https://*.googleapis.com",
+        "https://generativelanguage.googleapis.com",
         "https://fonts.gstatic.com"
       ],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      workerSrc: ["'self'"],
       objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
     },
   },
   crossOriginEmbedderPolicy: false,

@@ -279,7 +279,7 @@ export const AthleteRoom = (() => {
                 <div class="ar-ach-card ${unlocked ? 'unlocked' : 'locked'}">
                   <div class="ar-ach-icon">${a.icon}</div>
                   <div class="ar-ach-title">${ru ? a.ru : a.en}</div>
-                  <div class="ar-ach-status">${unlocked ? '✅' : '🔒'}</div>
+                  <div class="ar-ach-status">${unlocked ? '<svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>'}</div>
                 </div>`;
             }).join('')}
           </div>

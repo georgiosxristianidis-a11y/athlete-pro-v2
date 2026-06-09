@@ -227,13 +227,14 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
       <!-- JSON Management -->
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">💾</div>
+          <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
           <div style="font-size: 14px; font-weight: 600;">${t('data.backup')}</div>
         </div>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn btn-ghost" onclick="Profile.exportData()" style="flex: 1; height: 36px; font-size: 11px;">${t('data.export')}</button>
-          <button class="btn btn-ghost" onclick="Profile.exportCsv()" style="flex: 1; height: 36px; font-size: 11px;">${t('data.export_csv')}</button>
-          <button class="btn btn-ghost" onclick="Profile.importData()" style="flex: 1; height: 36px; font-size: 11px;">${t('data.import')}</button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-ghost" onclick="Profile.exportData()" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.export')}</button>
+          <button class="btn btn-ghost" onclick="Profile.exportCsv()" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.export_csv')}</button>
+          <button class="btn btn-ghost" onclick="Profile.importData()" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.import')}</button>
+          <button class="btn btn-ghost" onclick="Profile.deduplicateDB()" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px; color: var(--c-text-3);">${t('data.dedup')}</button>
         </div>
       </div>
     </div>

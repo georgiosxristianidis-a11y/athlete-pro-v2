@@ -251,10 +251,13 @@ export async function showExerciseMenu(ei) {
   const ex = State.plan[ei];
   const ru = navigator.language.startsWith('ru');
 
+  const _svgSwap = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>`;
+  const _svgDumb = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="6.5" y1="12" x2="17.5" y2="12"/><rect x="3" y="9" width="3" height="6" rx="1"/><rect x="18" y="9" width="3" height="6" rx="1"/></svg>`;
+  const _svgCopy = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`;
   const actions = [
-    { label: ru ? 'Сменить упражнение' : 'Replace Exercise', icon: '🔄', action: () => openReplaceExModal(ei) },
-    { label: ex.isUnilateral ? (ru ? 'Убрать гантели' : 'Remove Dumbbells') : (ru ? 'Гантели (2x)' : 'Add Dumbbells'), icon: '⚖️', action: () => _toggleUnilateral(ei) },
-    { label: ru ? 'Копировать прошлый вес' : 'Smart Copy', icon: '📋', action: () => smartCopy(ei, 0) }
+    { label: ru ? 'Сменить упражнение' : 'Replace Exercise', icon: _svgSwap, action: () => openReplaceExModal(ei) },
+    { label: ex.isUnilateral ? (ru ? 'Убрать гантели' : 'Remove Dumbbells') : (ru ? 'Гантели (2x)' : 'Add Dumbbells'), icon: _svgDumb, action: () => _toggleUnilateral(ei) },
+    { label: ru ? 'Копировать прошлый вес' : 'Smart Copy', icon: _svgCopy, action: () => smartCopy(ei, 0) }
   ];
 
   const overlay = document.createElement('div');

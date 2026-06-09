@@ -146,7 +146,13 @@ const Workouts = {
    */
   save(session) {
     session.timestamp = session.timestamp || Date.now();
-    return tx(S.WORKOUTS, 'readwrite').then((s) => req2p(s.add(session)));
+    return tx(S.WORKOUTS, 'readwrite').then((s) =>
+      req2p(s.add(session)).then((id) => {
+        session.id = id;
+        _triggerSync(S.WORKOUTS, session);
+        return id;
+      })
+    );
   },
 
   /**
@@ -318,6 +324,8 @@ const Workouts = {
 
   /** Delete one session by id. */
   delete(id) {
+    // Queue a tombstone so cloud also removes the record
+    _triggerSync(S.WORKOUTS, { id, _deleted: true, timestamp: Date.now() });
     return tx(S.WORKOUTS, 'readwrite').then((s) => req2p(s.delete(id)));
   },
 
@@ -436,7 +444,10 @@ const OneRM = {
     return tx(S.ORM, 'readwrite').then((s) => {
       return req2p(s.get(exerciseName)).then((existing) => {
         if (!existing || value > existing.value) {
-          return req2p(s.put({ id: exerciseName, value, timestamp: Date.now() }));
+          const record = { id: exerciseName, value, timestamp: Date.now() };
+          return req2p(s.put(record)).then(() => {
+            _triggerSync(S.ORM, record);
+          });
         }
       });
     });

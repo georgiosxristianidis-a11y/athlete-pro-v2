@@ -241,6 +241,14 @@ async function setEngine(engine) {
     const date = new Date().toISOString().split('T')[0];
     downloadCsv(csv, `athlete-pro-workouts-${date}.csv`);
   }
+
+  async function deduplicateDB() {
+    const { t } = await import('./locale.store.js');
+    const removed = await DB.Workouts.deduplicate();
+    Toast.show(t('data.dedup_done', { n: removed }), removed > 0 ? 'success' : 'info');
+    load();
+  }
+
   async function syncConnect() {
     const { SyncManager } = await import('./sync.js');
     const user = await SyncManager.signIn();
@@ -273,7 +281,7 @@ async function setEngine(engine) {
     togglePanda, setLang, setEngine, setTrainingMode, setGeminiKey,
     setSessionTime, exportData, exportCsv, importData, toggleReminder,
     _onImportFile, clearAllData, saveInjuries,
-    syncConnect, syncDisconnect
+    syncConnect, syncDisconnect, deduplicateDB
   };
 })();
 

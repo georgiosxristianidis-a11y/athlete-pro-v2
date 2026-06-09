@@ -32,9 +32,9 @@ export function renderPrivacyCard() {
 
   return `
     <div class="section-header" style="margin-top:var(--sp-3)">
-      <span class="section-label">Privacy</span>
+      <span class="section-label">${t('privacy.title')}</span>
       <span class="privacy-mode-tag privacy-mode-${mode}">
-        ${_modeIcon(mode)}<span>${cur.label}</span>
+        ${_modeIcon(mode)}<span>${t(`privacy.${mode}`)}</span>
       </span>
     </div>
 
@@ -45,7 +45,7 @@ export function renderPrivacyCard() {
                   data-mode="${m.id}" role="tab" aria-selected="${m.id === mode}"
                   onclick="Privacy._setMode('${m.id}')">
             ${_modeIcon(m.id)}
-            <span>${m.label}</span>
+            <span>${t(`privacy.${m.id}`)}</span>
           </button>`).join('')}
       </div>
 
@@ -55,11 +55,11 @@ export function renderPrivacyCard() {
 
       <div class="pref-row">
         <div class="pref-info">
-          <div class="pref-title">AI Coach</div>
+          <div class="pref-title">${t('privacy.ai_coach')}</div>
           <div class="pref-sub">
             ${mode === 'airgap'
-              ? 'Disabled in Air-Gapped mode'
-              : 'Sends workout context to Anthropic when on'}
+              ? t('privacy.ai_desc_airgap')
+              : t('privacy.ai_desc_active')}
           </div>
         </div>
         <div class="switch-wrap ${mode === 'airgap' ? 'switch-disabled' : ''}"
@@ -77,8 +77,8 @@ export function renderPrivacyCard() {
           ${_iconPassport()}
         </div>
         <div class="data-btn-info">
-          <div class="data-btn-title">Data Passport</div>
-          <div class="data-btn-sub">See exactly what's stored, where</div>
+          <div class="data-btn-title">${t('privacy.passport')}</div>
+          <div class="data-btn-sub">${t('privacy.passport_sub')}</div>
         </div>
         ${_iconChevron()}
       </button>
@@ -90,8 +90,8 @@ export function renderPrivacyCard() {
           ${_iconAudit()}
         </div>
         <div class="data-btn-info">
-          <div class="data-btn-title">Privacy Budget</div>
-          <div class="data-btn-sub">Audit recent network activity</div>
+          <div class="data-btn-title">${t('privacy.audit')}</div>
+          <div class="data-btn-sub">${t('privacy.audit_sub')}</div>
         </div>
         ${_iconChevron()}
       </button>
@@ -229,7 +229,7 @@ export function openAuditLog() {
   overlay.style.zIndex = '5000';
 
   const rows = audit.length === 0
-    ? '<div class="audit-empty">No network activity recorded.</div>'
+    ? `<div class="audit-empty">${t('privacy.audit_empty')}</div>`
     : audit.map(a => `
         <div class="audit-row ${a.allowed ? 'allowed' : 'blocked'}">
           <div class="audit-row-left">
@@ -246,18 +246,18 @@ export function openAuditLog() {
     <div class="modal-sheet" style="max-height:88vh;overflow-y:auto">
       <div class="modal-handle"></div>
       <div class="modal-header">
-        <div class="modal-title">Privacy Budget</div>
+        <div class="modal-title">${t('privacy.audit')}</div>
         <button class="btn-icon-sm" onclick="Privacy._closeOverlay('audit-overlay')" aria-label="Close">
           ${_iconClose()}
         </button>
       </div>
       <div class="audit-summary">
-        Last ${audit.length} network attempts · ${audit.filter(a => a.allowed).length} sent · ${audit.filter(a => !a.allowed).length} blocked
+        ${t('privacy.audit_summary', { total: audit.length, sent: audit.filter(a => a.allowed).length, blocked: audit.filter(a => !a.allowed).length })}
       </div>
       <div class="audit-list">${rows}</div>
       <button class="btn btn-ghost" style="margin-top:var(--sp-2)"
               onclick="Privacy._clearAudit()">
-        Clear log
+        ${t('privacy.clear_log')}
       </button>
     </div>`;
   document.body.appendChild(overlay);
@@ -281,7 +281,7 @@ function _closeOverlay(id) {
 }
 
 function _confirmDelete() {
-  if (!confirm('Delete ALL local data? This cannot be undone.')) return;
+  if (!confirm(t('privacy.delete_confirm'))) return;
   DB.clearAll().then(() => {
     location.reload();
   });
@@ -345,12 +345,12 @@ function _iconClose() {
   </svg>`;
 }
 
-function _relTime(t) {
-  const d = Date.now() - t;
-  if (d < 60_000) return 'just now';
-  if (d < 3600_000) return Math.floor(d / 60_000) + 'm ago';
-  if (d < 86_400_000) return Math.floor(d / 3600_000) + 'h ago';
-  return Math.floor(d / 86_400_000) + 'd ago';
+function _relTime(ts) {
+  const d = Date.now() - ts;
+  if (d < 60_000)    return t('privacy.time_now');
+  if (d < 3600_000)  return t('privacy.time_m', { n: Math.floor(d / 60_000) });
+  if (d < 86_400_000) return t('privacy.time_h', { n: Math.floor(d / 3600_000) });
+  return t('privacy.time_d', { n: Math.floor(d / 86_400_000) });
 }
 
 /* ════════════════════════════════════════════════════════

@@ -276,7 +276,7 @@ function _renderChat() {
   if (_chatHistory.length === 0) {
     container.innerHTML = `
       <div class="chat-message ai">
-        👋 Hey! I'm your Coach. Ask me anything about this workout!
+        Hi! I'm your Coach. Ask me anything about this workout.
       </div>
     `;
   } else {
@@ -405,7 +405,7 @@ async function _streamMessage(message) {
       }
     }, context);
   } catch (err) {
-    addMessage(`⚠️ Error: ${err.message}`, 'ai');
+    addMessage(`Error: ${err.message}`, 'ai');
     _streaming = false;
   }
 }

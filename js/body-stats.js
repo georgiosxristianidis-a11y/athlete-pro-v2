@@ -12,17 +12,34 @@ import { Toast } from './shell.js';
 const BS_KEY = 'ap-body-stats';
 let _bsActiveTab = 'stats';
 
+// SVG icon helper for body stats fields
+function bsGetFieldIcon(id) {
+  const icons = {
+    weight:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>',
+    chest:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M3 3h18v4H3z"/><path d="M3 11h18v4H3z"/><path d="M3 19h18v2H3z"/></svg>',
+    waist:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/></svg>',
+    hips:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><ellipse cx="12" cy="15" rx="8" ry="5"/><line x1="4" y1="9" x2="20" y2="9"/></svg>',
+    bicep:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M6 18c0-4 2-7 6-7s6 3 6 7"/><path d="M9 7c0-2 1-3 3-3s3 1 3 3v4H9V7z"/></svg>',
+    thigh:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><rect x="8" y="2" width="8" height="20" rx="4"/></svg>',
+    calf:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M9 2h6l1 12-2 8H10L8 14z"/></svg>',
+    neck:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><rect x="9" y="4" width="6" height="14" rx="3"/></svg>',
+    shoulders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M3 10c3-5 15-5 18 0"/><line x1="3" y1="10" x2="3" y2="18"/><line x1="21" y1="10" x2="21" y2="18"/></svg>',
+    body_fat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M12 2c0 6-6 8-6 14a6 6 0 0012 0c0-6-6-8-6-14z"/></svg>',
+  };
+  return icons[id] || '';
+}
+
 const BS_FIELDS = [
-  { id: 'weight', label: 'Weight', unit: 'kg', icon: '⚖️', color: '#00e676' },
-  { id: 'chest', label: 'Chest', unit: 'cm', icon: '📐', color: '#40c4ff' },
-  { id: 'waist', label: 'Waist', unit: 'cm', icon: '📐', color: '#ffab40' },
-  { id: 'hips', label: 'Hips', unit: 'cm', icon: '📐', color: '#e040fb' },
-  { id: 'bicep', label: 'Bicep', unit: 'cm', icon: '💪', color: '#ffab40' },
-  { id: 'thigh', label: 'Thigh', unit: 'cm', icon: '📐', color: '#69f0ae' },
-  { id: 'calf', label: 'Calf', unit: 'cm', icon: '📐', color: '#b2ff59' },
-  { id: 'neck', label: 'Neck', unit: 'cm', icon: '📐', color: '#ea80fc' },
-  { id: 'shoulders', label: 'Shoulders', unit: 'cm', icon: '📐', color: '#80d8ff' },
-  { id: 'body_fat', label: 'Body Fat', unit: '%', icon: '🔥', color: '#ff6d00' },
+  { id: 'weight',    label: 'Weight',    unit: 'kg', color: '#00e676' },
+  { id: 'chest',     label: 'Chest',     unit: 'cm', color: '#40c4ff' },
+  { id: 'waist',     label: 'Waist',     unit: 'cm', color: '#ffab40' },
+  { id: 'hips',      label: 'Hips',      unit: 'cm', color: '#e040fb' },
+  { id: 'bicep',     label: 'Bicep',     unit: 'cm', color: '#ffab40' },
+  { id: 'thigh',     label: 'Thigh',     unit: 'cm', color: '#69f0ae' },
+  { id: 'calf',      label: 'Calf',      unit: 'cm', color: '#b2ff59' },
+  { id: 'neck',      label: 'Neck',      unit: 'cm', color: '#ea80fc' },
+  { id: 'shoulders', label: 'Shoulders', unit: 'cm', color: '#80d8ff' },
+  { id: 'body_fat',  label: 'Body Fat',  unit: '%',  color: '#ff6d00' },
 ];
 
 function bsLoad() {
@@ -207,7 +224,7 @@ export function renderBodyStats() {
     ${
       entries.length === 0
         ? `<div class="bs-empty">
-           <div class="bs-empty-icon">📐</div>
+           <div class="bs-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M3 20L20 3M3 20h8M3 20v-8"/></svg></div>
            <p class="bs-empty-title">${t('metrics.empty_title')}</p>
            <p class="bs-empty-sub">${t('metrics.empty_sub')}</p>
          </div>`
@@ -480,7 +497,7 @@ function bsHistToggle(el) {
 
 function bsDeleteEntry(dateIso) {
   _bsConfirm(
-    '🗑 Delete entry?',
+    'Delete entry?',
     `Remove measurement for <b>${bsEsc(bsFmtDate(dateIso))}</b>? This cannot be undone.`,
     'Delete',
     () => {
@@ -572,7 +589,7 @@ function bsOpenForm(editDate = null) {
   const fields = BS_FIELDS.map(
     (f) => `
     <div class="bs-field">
-      <label class="bs-field-label">${f.icon} ${f.label}</label>
+      <label class="bs-field-label">${bsGetFieldIcon(f.id)} ${f.label}</label>
       <div class="bs-field-inp-wrap">
         <input type="number" step="0.1" min="0" max="999" inputmode="decimal"
                class="bs-field-inp" id="bsf-${f.id}"
@@ -592,7 +609,7 @@ function bsOpenForm(editDate = null) {
         </button>
       </div>
       <div class="bs-date-row">
-        <label class="bs-field-label">📅 Date</label>
+        <label class="bs-field-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Date</label>
         <input type="date" id="bsf-date" class="bs-date-inp"
                value="${existing?.date ?? today}" max="${today}">
       </div>
@@ -646,7 +663,7 @@ function bsSaveEntry(editDate) {
 
   if (dateCollision) {
     _bsConfirm(
-      '⚠ Date already exists',
+      'Date already exists',
       `An entry for <b>${bsEsc(bsFmtDate(date))}</b> already exists. Saving will <b>replace</b> it.`,
       'Replace & Save',
       doSave

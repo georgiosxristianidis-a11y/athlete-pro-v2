@@ -3,27 +3,55 @@ import { supabase } from './supabase.js';
 import { logInfo, logError } from '../lib/logger.js';
 
 /**
- * #GIO: Elite Sync Engine V2
- * Resilient, batched, and offline-capable synchronization.
+ * #GIO: Elite Sync Engine V2.1 — LWW Conflict Resolution
+ * Resilient, batched, offline-capable sync with Last-Write-Wins semantics.
+ *
+ * LWW Strategy:
+ *   Before upserting, fetch server `updated_at`. If server record is newer,
+ *   skip — the remote wins. Local record wins only if its timestamp is strictly newer.
+ *
+ * Queue Deduplication:
+ *   Multiple pushes for the same store+id collapse into a single task (latest wins).
+ *
+ * Keep-alive:
+ *   Heartbeat every 10 min prevents anonymous Supabase session expiry.
  */
 export const SyncManager = (() => {
   const QUEUE_KEY = 'ap-sync-queue';
   let _processing = false;
   let _status = 'idle'; // 'idle' | 'syncing' | 'error' | 'offline'
+  let _keepAliveTimer = null;
 
   /** @typedef {{ store: string, data: any, timestamp: number, retry: number }} SyncTask */
 
+  // ── Key extractor per store (for LWW deduplication) ─────────────────────
+  function _recordKey(store, data) {
+    if (store === 'workouts')    return `workouts::${data.id ?? data.timestamp}`;
+    if (store === 'oneRM')       return `oneRM::${data.id}`;
+    if (store === 'bodyMetrics') return `bodyMetrics::${data.id ?? data.timestamp}`;
+    if (store === 'settings')    return `settings::${data.key}`;
+    return `${store}::${JSON.stringify(data).slice(0, 60)}`;
+  }
+
   /**
-   * Add a record to the sync queue.
+   * Add a record to the sync queue (deduplicates by LWW).
    * @param {string} store 
    * @param {any} data 
    */
   async function push(store, data) {
     if (!data) return;
-    
+
     const tasks = _loadQueue();
-    const newTask = { store, data, timestamp: Date.now(), retry: 0 };
-    tasks.push(newTask);
+    const key = _recordKey(store, data);
+    const newTask = { store, data, timestamp: Date.now(), retry: 0, _key: key };
+
+    // LWW deduplication: replace existing task for same key with newer data
+    const existingIdx = tasks.findIndex(t => t._key === key);
+    if (existingIdx >= 0) {
+      tasks.splice(existingIdx, 1, newTask); // replace with latest
+    } else {
+      tasks.push(newTask);
+    }
     _saveQueue(tasks);
 
     if (navigator.onLine) {
@@ -35,11 +63,11 @@ export const SyncManager = (() => {
   }
 
   /**
-   * Process all pending tasks in the queue.
+   * Process all pending tasks in the queue with LWW conflict resolution.
    */
   async function process() {
     if (_processing || !navigator.onLine) return;
-    
+
     const tasks = _loadQueue();
     if (!tasks.length) {
       _status = 'idle';
@@ -51,7 +79,23 @@ export const SyncManager = (() => {
     _status = 'syncing';
     _updateUI();
 
-    console.log(`[Sync] Processing ${tasks.length} tasks...`);
+    logInfo('Sync', `Processing ${tasks.length} tasks...`);
+
+    // Get current user once
+    let user = null;
+    try {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      user = u;
+    } catch (_) { /* offline */ }
+
+    if (!user) {
+      logInfo('Sync', 'No authenticated user, deferring.');
+      _processing = false;
+      _status = 'offline';
+      _updateUI();
+      setTimeout(process, 15000);
+      return;
+    }
 
     // Group by store for batching
     const groups = {};
@@ -67,26 +111,55 @@ export const SyncManager = (() => {
         const table = _mapStoreToTable(store);
         if (!table) continue;
 
-        // Get current user for row-level security
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.warn('[Sync] No authenticated user. Skipping.');
-          failed.push(...storeTasks);
-          continue;
+        // ── LWW: fetch server timestamps for each record ─────────────────
+        const ids = storeTasks
+          .map(t => t.data?.id)
+          .filter(Boolean);
+
+        let serverTsMap = {};
+        if (ids.length > 0) {
+          const { data: serverRows } = await supabase
+            .from(table)
+            .select('id, updated_at')
+            .eq('user_id', user.id)
+            .in('id', ids);
+
+          if (serverRows) {
+            serverRows.forEach(r => {
+              serverTsMap[r.id] = new Date(r.updated_at).getTime();
+            });
+          }
         }
 
-        const payload = storeTasks.map(t => ({ 
-          ...t.data, 
+        // Filter: only send records where local is newer than server
+        const toSync = storeTasks.filter(t => {
+          const servTs = serverTsMap[t.data?.id];
+          if (!servTs) return true; // new record — always push
+          return t.timestamp > servTs; // local wins if strictly newer
+        });
+
+        const skipped = storeTasks.length - toSync.length;
+        if (skipped > 0) {
+          logInfo('Sync', `LWW: skipped ${skipped} stale records in ${table}`);
+        }
+
+        if (toSync.length === 0) continue;
+
+        const payload = toSync.map(t => ({
+          ...t.data,
           user_id: user.id,
-          updated_at: new Date().toISOString() 
+          updated_at: new Date(t.timestamp).toISOString(),
         }));
-        
-        const { error } = await supabase.from(table).upsert(payload);
+
+        const { error } = await supabase.from(table).upsert(payload, {
+          onConflict: 'id,user_id',
+          ignoreDuplicates: false,
+        });
 
         if (error) throw error;
-        console.log(`[Sync] Successfully synced ${storeTasks.length} records to ${table}`);
+        logInfo('Sync', `Synced ${toSync.length} records → ${table}`);
       } catch (err) {
-        console.error(`[Sync] Failed to sync ${store}:`, err.message);
+        logError('Sync', `Failed to sync ${store}: ${err.message}`);
         failed.push(...storeTasks);
       }
     }
@@ -96,10 +169,25 @@ export const SyncManager = (() => {
     _status = failed.length ? 'error' : 'idle';
     _updateUI();
 
-    // If still have tasks, retry in a bit
     if (failed.length) {
       setTimeout(process, 10000);
     }
+  }
+
+  /* ── Keep-alive: refresh anonymous session every 10 min ── */
+  function _startKeepAlive() {
+    if (_keepAliveTimer) return;
+    _keepAliveTimer = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await supabase.auth.refreshSession();
+          logInfo('Sync', 'Session refreshed (keep-alive)');
+        }
+      } catch (e) {
+        logError('Sync', `Keep-alive failed: ${e.message}`);
+      }
+    }, 10 * 60 * 1000); // 10 minutes
   }
 
   /* ── Internal Helpers ── */
@@ -116,23 +204,22 @@ export const SyncManager = (() => {
 
   function _mapStoreToTable(store) {
     const maps = {
-      'workouts': 'workouts',
-      'oneRM': 'one_rm',
+      'workouts':    'workouts',
+      'oneRM':       'one_rm',
       'bodyMetrics': 'body_metrics',
-      'settings': 'settings'
+      'settings':    'settings',
     };
     return maps[store];
   }
 
   function _updateUI() {
-    // Dispatch event for components to listen to (e.g., Sync status in Settings)
     window.dispatchEvent(new CustomEvent('ap-sync-status', { detail: { status: _status } }));
   }
 
   // Listen for online recovery
   if (typeof window !== 'undefined') {
     window.addEventListener('online', () => {
-      console.log('[Sync] Network back online, starting process...');
+      logInfo('Sync', 'Network back online, resuming...');
       process();
     });
   }
@@ -143,11 +230,12 @@ export const SyncManager = (() => {
       _updateUI();
       const { data, error } = await supabase.auth.signInAnonymously();
       if (error) throw error;
-      console.log('[Sync] Signed in anonymously:', data.user.id);
+      logInfo('Sync', `Signed in anonymously: ${data.user.id}`);
+      _startKeepAlive();
       process();
       return data.user;
     } catch (err) {
-      console.error('[Sync] Sign in failed:', err.message);
+      logError('Sync', `Sign in failed: ${err.message}`);
       _status = 'error';
       _updateUI();
       return null;
@@ -155,11 +243,23 @@ export const SyncManager = (() => {
   }
 
   async function signOut() {
+    if (_keepAliveTimer) {
+      clearInterval(_keepAliveTimer);
+      _keepAliveTimer = null;
+    }
     await supabase.auth.signOut();
-    console.log('[Sync] Signed out');
+    logInfo('Sync', 'Signed out');
     _status = 'idle';
     _updateUI();
   }
 
-  return { push, process, getStatus: () => _status, signIn, signOut };
+  /**
+   * Get current queue length (for diagnostics).
+   * @returns {number}
+   */
+  function queueLength() {
+    return _loadQueue().length;
+  }
+
+  return { push, process, getStatus: () => _status, queueLength, signIn, signOut };
 })();
