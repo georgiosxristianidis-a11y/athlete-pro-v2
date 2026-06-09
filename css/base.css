@@ -220,7 +220,7 @@
   border-radius: 24px 24px 0 0;
   border-top: 1px solid var(--c-border);
   padding: var(--sp-3) var(--sp-2) calc(var(--sp-3) + var(--safe-bottom));
-  animation: sheet-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: sheet-in 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
   max-height: 88vh;
   overflow-y: auto;
 }

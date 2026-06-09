@@ -24,14 +24,15 @@ export const Profile = (() => {
     if (!screen) return;
 
     try {
-      const [settings, langRaw, pandaHidden, serverStatus] = await Promise.all([
+      const { SyncManager } = await import('./sync.js');
+      const [settings, langRaw, serverStatus] = await Promise.all([
         DB.Settings.getAll(),
         DB.Settings.get('lang', 'en'),
-        DB.Settings.get('ai-panda-hidden', false),
         fetch('/api/ai-status').then(r => r.json()).catch(() => ({ gemini: false, anthropic: false }))
       ]);
       const lang = langRaw || 'en';
       const ru = lang === 'ru';
+      const syncStatus = SyncManager.getStatus();
 
       screen.innerHTML = `
       <div class="screen-header">
@@ -45,7 +46,7 @@ export const Profile = (() => {
       <div id="profile-passport"></div>
 
       <!-- ── APP SETTINGS (MODULAR) ── -->
-      ${renderSettings(settings, lang, serverStatus)}
+      ${renderSettings(settings, lang, serverStatus, syncStatus)}
 
       <!-- ── PRIVACY ── -->
       <div class="section-label-alt">${ru ? 'ПРИВАТНОСТЬ' : 'PRIVACY'}</div>
@@ -127,13 +128,7 @@ export const Profile = (() => {
     load();
   }
 
-  async function setLang(lang) {
-    await DB.Settings.set('lang', lang);
-    localStorage.setItem('ap-settings-lang', lang);
-    load();
-  }
-
-  async function setEngine(engine) {
+async function setEngine(engine) {
     const { getPrivacyMode } = await import('./privacy.store.js');
     const mode = getPrivacyMode();
     if (mode === 'airgap') {
@@ -226,16 +221,59 @@ export const Profile = (() => {
     load();
   }
 
+  async function setLang(lang) {
+    const { setLang: setLocaleLang } = await import('./locale.store.js');
+    await setLocaleLang(lang);
+    load();
+  }
+
+
   async function saveInjuries(val) {
     await DB.Settings.set('limitations', val.trim());
-    Toast.show('Limitations saved', 'success');
+    const { t } = await import('./locale.store.js');
+    Toast.show(t('settings.limits_saved'), 'success');
+  }
+
+  async function exportCsv() {
+    const { workoutsToCsv, downloadCsv } = await import('./shared/csv-export.js');
+    const workouts = await DB.Workouts.getAll();
+    const csv = workoutsToCsv(workouts);
+    const date = new Date().toISOString().split('T')[0];
+    downloadCsv(csv, `athlete-pro-workouts-${date}.csv`);
+  }
+  async function syncConnect() {
+    const { SyncManager } = await import('./sync.js');
+    const user = await SyncManager.signIn();
+    const { t } = await import('./locale.store.js');
+    if (user) {
+      Toast.show(t('sync.status.idle'), 'success');
+    } else {
+      Toast.show(t('sync.status.error'), 'error');
+    }
+  }
+
+  async function syncDisconnect() {
+    const { SyncManager } = await import('./sync.js');
+    await SyncManager.signOut();
+    load();
+  }
+
+  /* ── Events ── */
+  if (typeof window !== 'undefined') {
+    window.addEventListener('ap-sync-status', () => {
+      // @ts-ignore
+      if (window._profileRenderTimeout) clearTimeout(window._profileRenderTimeout);
+      // @ts-ignore
+      window._profileRenderTimeout = setTimeout(() => load(), 100);
+    });
   }
 
   return {
     load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
     togglePanda, setLang, setEngine, setTrainingMode, setGeminiKey,
-    setSessionTime, exportData, importData, toggleReminder,
-    _onImportFile, clearAllData, saveInjuries
+    setSessionTime, exportData, exportCsv, importData, toggleReminder,
+    _onImportFile, clearAllData, saveInjuries,
+    syncConnect, syncDisconnect
   };
 })();
 

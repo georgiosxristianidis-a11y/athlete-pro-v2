@@ -187,7 +187,7 @@ export function renderBodyStats() {
       <div class="bs-hist-body">${cells}
         <button class="bs-del-btn"
           onclick="event.stopPropagation(); bsDeleteEntry('${e.date}')">
-          ${iconTrash} ${ru ? 'Удалить запись' : 'Delete entry'}
+          ${iconTrash} ${t('metrics.delete_confirm_title').replace('?', '')}
         </button>
       </div>
     </div>`;
@@ -197,38 +197,49 @@ export function renderBodyStats() {
   root.innerHTML = `<div class="bs-wrap">
     ${tabBar}
     <div class="bs-header">
-      <h2 class="bs-title">${ru ? 'Замеры' : 'Measurements'}</h2>
+      <h2 class="bs-title">${t('metrics.title')}</h2>
       <button class="btn-primary bs-add-btn" onclick="bsOpenForm()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
              stroke-linecap="round" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>
-        ${ru ? 'Добавить' : 'Add Entry'}
+        ${t('metrics.add_entry')}
       </button>
     </div>
     ${
       entries.length === 0
         ? `<div class="bs-empty">
            <div class="bs-empty-icon">📐</div>
-           <p class="bs-empty-title">No measurements yet</p>
-           <p class="bs-empty-sub">Tap "Add Entry" to log your first body stats</p>
+           <p class="bs-empty-title">${t('metrics.empty_title')}</p>
+           <p class="bs-empty-sub">${t('metrics.empty_sub')}</p>
          </div>`
-        : `<div class="bs-last-date">${ru ? 'Последнее:' : 'Last updated:'} ${bsFmtDate(latest.date)}</div>
+        : `<div class="bs-last-date">${t('metrics.last_updated')}: ${bsFmtDate(latest.date)}</div>
          <div class="bs-grid">${summaryCards}</div>`
     }
     ${
       entries.length > 0
-        ? `<div class="bs-section-title">${ru ? 'История' : 'History'}</div>
+        ? `<div class="bs-section-title">${t('metrics.history')}</div>
          <div class="bs-history">${historyRows}</div>`
         : ''
     }
   </div>`;
 
   requestAnimationFrame(() => {
-    root.querySelectorAll('canvas.bs-spark').forEach((canvas) => {
+    const sparks = Array.from(root.querySelectorAll('canvas.bs-spark'));
+    // Phase 1: Measure (Read) - prevents Layout Thrashing
+    const measurements = sparks.map((canvas) => ({
+      canvas,
+      field: canvas.dataset.field,
+      color: canvas.dataset.color,
+      w: canvas.offsetWidth * devicePixelRatio || 120,
+      h: canvas.offsetHeight * devicePixelRatio || 40
+    }));
+
+    // Phase 2: Mutate (Write)
+    measurements.forEach(({ canvas, field, color, w, h }) => {
       const vals = entries
-        .map((e) => e[canvas.dataset.field])
+        .map((e) => e[field])
         .filter((v) => v != null)
         .reverse();
-      bsDrawSparkline(canvas, vals, canvas.dataset.color);
+      bsDrawSparkline(canvas, vals, color, w, h);
     });
   });
 }

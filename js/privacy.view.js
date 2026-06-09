@@ -12,6 +12,8 @@ import {
   getPrivacyMode, getAiEnabled, setPrivacyMode, setAiEnabled,
   getAuditLog, clearAuditLog,
 } from './privacy.store.js';
+import { t } from './locale.store.js';
+import { esc } from './shared/utils.js';
 
 const MODES = [
   { id: 'cloud',  label: 'Cloud',     desc: 'AI Coach + cloud sync available.' },
@@ -155,13 +157,13 @@ export async function openDataPassport() {
     <div class="modal-sheet" style="max-height:88vh;overflow-y:auto">
       <div class="modal-handle"></div>
       <div class="modal-header">
-        <div class="modal-title">Data Passport</div>
+        <div class="modal-title">${t('privacy.passport')}</div>
         <button class="btn-icon-sm" onclick="Privacy._closeOverlay('data-passport-overlay')" aria-label="Close">
           ${_iconClose()}
         </button>
       </div>
 
-      <div class="passport-section-label">On this device</div>
+      <div class="passport-section-label">${t('privacy.device')}</div>
       <div class="passport-grid">
         ${_passportTile(workouts.length, 'Workouts')}
         ${_passportTile(orms.length, 'PR records')}
@@ -170,33 +172,33 @@ export async function openDataPassport() {
         ${_passportTile(Object.keys(settings || {}).length, 'Settings')}
       </div>
 
-      <div class="passport-section-label">Sent externally · last 30 days</div>
+      <div class="passport-section-label">${t('privacy.sent')}</div>
       <div class="passport-grid">
         ${_passportTile(aiCalls, 'AI requests', aiCalls === 0)}
         ${_passportTile(syncCalls, 'Sync events', syncCalls === 0)}
       </div>
 
-      <div class="passport-section-label">Storage</div>
+      <div class="passport-section-label">${t('privacy.storage')}</div>
       <div class="passport-row">
         <span class="passport-row-key">IndexedDB</span>
-        <span class="passport-row-val">athlete-pro · this device only</span>
+        <span class="passport-row-val">${t('privacy.indexeddb')}</span>
       </div>
       <div class="passport-row">
         <span class="passport-row-key">localStorage</span>
-        <span class="passport-row-val">session state · this device only</span>
+        <span class="passport-row-val">${t('privacy.localstorage')}</span>
       </div>
       <div class="passport-row">
         <span class="passport-row-key">Cloud / server</span>
-        <span class="passport-row-val">${getPrivacyMode() === 'airgap' ? 'none — air-gapped' : 'AI proxy only when enabled'}</span>
+        <span class="passport-row-val">${getPrivacyMode() === 'airgap' ? t('privacy.desc.airgap') : t('privacy.cloud_server')}</span>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:var(--sp-3)">
         <button class="btn btn-primary" onclick="Profile.exportData();Privacy._closeOverlay('data-passport-overlay')">
-          Export all data
+          ${t('privacy.export_all')}
         </button>
         <button class="btn btn-ghost" style="color:var(--c-red);border-color:rgba(232,132,140,0.3)"
                 onclick="Privacy._confirmDelete()">
-          Delete all data
+          ${t('privacy.delete_all')}
         </button>
       </div>
     </div>`;
@@ -233,11 +235,11 @@ export function openAuditLog() {
           <div class="audit-row-left">
             <span class="audit-dot ${a.allowed ? '' : 'blocked'}"></span>
             <div>
-              <div class="audit-url">${a.url}</div>
-              <div class="audit-meta">${a.kind} · ${_relTime(a.t)}</div>
+              <div class="audit-url">${esc(a.url)}</div>
+              <div class="audit-meta">${esc(a.kind)} · ${_relTime(a.t)}</div>
             </div>
           </div>
-          <span class="audit-status">${a.allowed ? 'sent' : (a.reason || 'blocked')}</span>
+          <span class="audit-status">${a.allowed ? esc(t('privacy.status_sent')) : esc(a.reason || t('privacy.status_blocked'))}</span>
         </div>`).join('');
 
   overlay.innerHTML = `

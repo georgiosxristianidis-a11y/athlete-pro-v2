@@ -15,28 +15,29 @@
 .bs-tab-bar {
   display: flex;
   gap: 6px;
-  background: var(--c-surface);
+  background: var(--c-surface-deep);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-m);
-  padding: 4px;
+  border-radius: 16px;
+  padding: 6px;
   margin-bottom: var(--sp-2);
 }
 .bs-tab {
   flex: 1;
-  height: 34px;
+  height: 40px;
   border: none;
-  border-radius: calc(var(--r-m) - 2px);
+  border-radius: 10px;
   background: transparent;
   color: var(--c-text-3);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all var(--t-fast);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
 }
 .bs-tab.active {
-  background: var(--c-surface-h);
-  color: var(--c-accent);
+  background: var(--c-surface);
+  color: var(--c-text-1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 .bs-header {
   display: flex;

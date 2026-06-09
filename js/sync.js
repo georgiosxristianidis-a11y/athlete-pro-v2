@@ -137,5 +137,29 @@ export const SyncManager = (() => {
     });
   }
 
-  return { push, process, getStatus: () => _status };
+  async function signIn() {
+    try {
+      _status = 'syncing';
+      _updateUI();
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) throw error;
+      console.log('[Sync] Signed in anonymously:', data.user.id);
+      process();
+      return data.user;
+    } catch (err) {
+      console.error('[Sync] Sign in failed:', err.message);
+      _status = 'error';
+      _updateUI();
+      return null;
+    }
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    console.log('[Sync] Signed out');
+    _status = 'idle';
+    _updateUI();
+  }
+
+  return { push, process, getStatus: () => _status, signIn, signOut };
 })();

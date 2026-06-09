@@ -120,11 +120,13 @@
   margin-bottom: var(--sp-3);
 }
 .stat-chip {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 12px;
   text-align: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .stat-chip-val {
   font-family: var(--font-heading);

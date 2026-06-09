@@ -14,6 +14,7 @@ import { DynamicIsland } from './shared/dynamic-island.js';
 import { AthleteRoom } from './shared/athlete-room.js';
 import { Integrity } from './shared/integrity.js';
 import { haptic } from './shared/utils.js';
+import { initLocale } from './locale.store.js';
 
 /* ── Lazy-loaded modules ── */
 async function _loadWorkout() {
@@ -133,6 +134,7 @@ function _renderPrivacyIndicator() {
 
 openDB()
   .then(initPrivacy)
+  .then(initLocale)
   .then(() => {
     // Initial UI Setup (Synchronous)
     _renderPrivacyIndicator();

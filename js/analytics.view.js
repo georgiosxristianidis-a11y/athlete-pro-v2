@@ -16,6 +16,7 @@ import {
   fmtVol,
   weekLabel,
 } from './analytics.store.js';
+import { t } from './locale.store.js';
 
 const TYPE_COLOR = {
   push: '#00e676',
@@ -45,14 +46,11 @@ export async function load() {
   const screen = document.getElementById('s-stats');
   if (!screen) return;
 
-  const lang = await DB.Settings.get('lang', 'en');
-  const ru = lang === 'ru';
-
   screen.innerHTML = `
     <div class="screen-header">
       <div>
-        <div class="screen-title">${ru ? 'Аналитика' : 'Analytics'}</div>
-        <div class="screen-sub">${ru ? 'Обзор прогресса' : 'Performance overview'}</div>
+        <div class="screen-title">${t('analytics.title')}</div>
+        <div class="screen-sub">${t('analytics.sub')}</div>
       </div>
     </div>
 
@@ -68,45 +66,45 @@ export async function load() {
     <div class="stat-row stagger-item" style="margin-top:var(--sp-2); animation-delay: 0.05s">
         <div class="stat-chip">
           <div class="stat-chip-val" id="an-total-sessions">—</div>
-          <div class="stat-chip-label">${ru ? 'Тренировки' : 'Sessions'}</div>
+          <div class="stat-chip-label">${t('analytics.sessions')}</div>
         </div>
         <div class="stat-chip">
           <div class="stat-chip-val" id="an-total-vol">—<span class="stat-chip-unit">kg</span></div>
-          <div class="stat-chip-label">${ru ? 'Общий объем' : 'Total Vol'}</div>
+          <div class="stat-chip-label">${t('analytics.total_vol')}</div>
         </div>
         <div class="stat-chip">
           <div class="stat-chip-val" id="an-avg-time">—<span class="stat-chip-unit">m</span></div>
-          <div class="stat-chip-label">${ru ? 'Ср. время' : 'Avg Time'}</div>
+          <div class="stat-chip-label">${t('analytics.avg_time')}</div>
         </div>
       </div>
 
       <!-- ── PPL Balance ── -->
       <div class="section-header stagger-item" style="margin-top:var(--sp-3); animation-delay: 0.1s">
-        <span class="section-label">${ru ? 'Баланс PPL' : 'PPL Balance'}</span>
+        <span class="section-label">${t('analytics.ppl_balance')}</span>
       </div>
       <div class="chart-card bento-grid stagger-item" style="padding:16px;gap:12px;display:grid;grid-template-columns:1fr 1fr 1fr; animation-delay: 0.1s">
         <div class="ppl-bal-item">
           <div class="ppl-bal-val" id="ppl-bal-push" style="color:#00e676">0%</div>
-          <div class="ppl-bal-lbl">${ru ? 'Жим' : 'Push'}</div>
+          <div class="ppl-bal-lbl">Push</div>
         </div>
         <div class="ppl-bal-item">
           <div class="ppl-bal-val" id="ppl-bal-pull" style="color:#8b5cf6">0%</div>
-          <div class="ppl-bal-lbl">${ru ? 'Тяга' : 'Pull'}</div>
+          <div class="ppl-bal-lbl">Pull</div>
         </div>
         <div class="ppl-bal-item">
           <div class="ppl-bal-val" id="ppl-bal-legs" style="color:#ff4d88">0%</div>
-          <div class="ppl-bal-lbl">${ru ? 'Ноги' : 'Legs'}</div>
+          <div class="ppl-bal-lbl">Legs</div>
         </div>
       </div>
 
       <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.15s">
-        <span class="section-label">${ru ? 'Прогресс объема' : 'Weekly Progress'}</span>
+        <span class="section-label">${t('analytics.weekly_progress')}</span>
         <span class="badge badge-accent" id="an-week-best">—</span>
       </div>
       <div class="chart-card stagger-item" style="animation-delay: 0.15s"><canvas id="cv-volume" height="140"></canvas></div>
 
       <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.2s">
-        <span class="section-label">${ru ? 'Рекорды (1RM)' : 'Estimated 1RM'}</span>
+        <span class="section-label">${t('analytics.est_1rm')}</span>
       </div>
       <div id="orm-list"></div>
       
@@ -124,13 +122,13 @@ export async function load() {
             </svg>
           </div>
           <div class="empty-title" style="font-size: 1.25rem; font-weight: 700; color: var(--c-text-1); margin-bottom: var(--sp-1);">
-            ${ru ? 'Данных пока нет' : 'No Data Yet'}
+            ${t('analytics.empty_title')}
           </div>
           <div class="empty-desc" style="color: var(--c-text-3); max-width: 240px; line-height: 1.4; margin-bottom: var(--sp-4);">
-            ${ru ? 'Завершите свою первую тренировку, чтобы увидеть статистику.' : 'Complete your first workout to see your progress insights here.'}
+            ${t('analytics.empty_desc')}
           </div>
           <button class="btn-primary" onclick="window.Nav.go('s-train', { force: true })">
-            ${ru ? 'Начать тренировку' : 'Start First Session'}
+            ${t('analytics.start_first')}
           </button>
         </div>
       `;
@@ -269,8 +267,8 @@ function _renderORMList(orms) {
       Spring.animate({
         from: 0,
         to: targetWidth,
-        stiffness: 80,
-        damping: 15,
+        stiffness: 120,
+        damping: 14,
         onUpdate: (v) => { bar.style.width = v + '%'; }
       });
     });

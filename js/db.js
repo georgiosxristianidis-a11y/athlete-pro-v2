@@ -325,6 +325,32 @@ const Workouts = {
   clear() {
     return tx(S.WORKOUTS, 'readwrite').then((s) => req2p(s.clear()));
   },
+
+  /**
+   * Find and remove duplicate workouts based on timestamp and type.
+   * @returns {Promise<number>} Number of duplicates removed.
+   */
+  async deduplicate() {
+    const all = await this.getAll();
+    const seen = new Set();
+    const toDelete = [];
+
+    for (const w of all) {
+      const key = `${w.timestamp}-${w.type}`;
+      if (seen.has(key)) {
+        toDelete.push(w.id);
+      } else {
+        seen.add(key);
+      }
+    }
+
+    if (toDelete.length > 0) {
+      const s = await tx(S.WORKOUTS, 'readwrite');
+      await Promise.all(toDelete.map(id => req2p(s.delete(id))));
+    }
+
+    return toDelete.length;
+  },
 };
 
 /* ════════════════════════════════════════════════════════
@@ -467,7 +493,12 @@ const Metrics = {
       bmi: this.bmi(weight, heightCm),
       timestamp: Date.now(),
     };
-    return tx(S.METRICS, 'readwrite').then((s) => req2p(s.add(entry)));
+    return tx(S.METRICS, 'readwrite').then((s) => {
+      return req2p(s.add(entry)).then((id) => {
+        entry.id = id;
+        _triggerSync(S.METRICS, entry);
+      });
+    });
   },
 
   /**
