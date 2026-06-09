@@ -83,6 +83,15 @@ export const Claude = (() => {
     _initDraggable(container);
     _snapFAB(container);
     window.addEventListener('resize', () => _snapFAB(container));
+
+    window.addEventListener('ap-nav-change', (e) => {
+      // @ts-ignore
+      if (e.detail && e.detail.id === 's-intel') {
+        container.style.display = 'none';
+      } else {
+        container.style.display = '';
+      }
+    });
   }
 
   function _snapFAB(el) {

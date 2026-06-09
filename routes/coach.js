@@ -64,7 +64,7 @@ router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
 
 /* ── POST /coach ── */
 router.post('/coach', coachLimiter, asyncHandler(async (req, res) => {
-  const { workouts = [], fatigue = {}, topLifts = [], messages, images = [], profile = {}, longTermStats = {}, engine = 'anthropic' } = req.body;
+  const { workouts = [], fatigue = {}, topLifts = [], messages, images = [], profile = {}, longTermStats = {}, engine = 'anthropic', customKey } = req.body;
 
   if (!Array.isArray(messages) || !messages.length) {
     return res.status(400).json({ error: 'messages array is required' });
@@ -81,6 +81,7 @@ router.post('/coach', coachLimiter, asyncHandler(async (req, res) => {
     messages,
     images,
     engine,
+    customKey,
     onChunk: (text) => res.write(`data: ${JSON.stringify({ text })}\n\n`)
   }, req);
 
@@ -90,11 +91,11 @@ router.post('/coach', coachLimiter, asyncHandler(async (req, res) => {
 
 /* ── POST /tts (Gemini 2.5 Flash Preview TTS) ── */
 router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
-  const { text } = req.body;
+  const { text, customKey } = req.body;
   if (!text) return res.status(400).json({ error: 'text is required' });
 
   const { gemini } = await import('../lib/geminiClient.js');
-  const apiKey = gemini.apiKey;
+  const apiKey = customKey || gemini.apiKey;
   
   if (!apiKey || apiKey === 'dummy-key') {
     return res.status(500).json({ error: 'GOOGLE_GENERATIVE_AI_API_KEY is not configured.' });
@@ -131,7 +132,7 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
 
 /* ── POST /weekly-report ── */
 router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
-  const { workouts = [], profile = {}, engine = 'anthropic' } = req.body;
+  const { workouts = [], profile = {}, engine = 'anthropic', customKey } = req.body;
 
   logInfo(req, 'weekly_report_started', `Generating weekly report`);
 
@@ -152,7 +153,8 @@ Profile: ${JSON.stringify(profile)}`;
   const content = await AIOrchestrator.generateJSON({
     system,
     prompt,
-    engine
+    engine,
+    customKey
   }, req);
 
   try {

@@ -5,7 +5,7 @@
 .intel-screen {
   background: radial-gradient(circle at top right, rgba(0, 209, 255, 0.05), transparent 400px),
               linear-gradient(to bottom, #050507, #0a0a0f);
-  padding-bottom: 140px;
+  padding: 72px var(--sp-2) 140px;
 }
 
 .intel-header {

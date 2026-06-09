@@ -43,6 +43,7 @@ async function go(id, opts = {}) {
     }
     document.querySelector(`.nav-btn[data-s="${id}"]`)?.classList.add('active');
     _current = id;
+    window.dispatchEvent(new CustomEvent('ap-nav-change', { detail: { id } }));
     const fn = _handlers[id];
     if (fn) await fn();
   };
