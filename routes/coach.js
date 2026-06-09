@@ -64,7 +64,23 @@ router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
 
 /* ── POST /coach ── */
 router.post('/coach', coachLimiter, asyncHandler(async (req, res) => {
-  const { workouts = [], fatigue = {}, topLifts = [], messages, images = [], profile = {}, longTermStats = {}, engine = 'anthropic', customKey } = req.body;
+  let { 
+    workouts = [], 
+    fatigue = {}, 
+    topLifts = [], 
+    messages = [], 
+    images = [], 
+    profile = {}, 
+    longTermStats = {}, 
+    engine = 'anthropic', 
+    customKey 
+  } = req.body;
+
+  // Final sanitization to prevent Gemini 400 errors
+  if (!Array.isArray(workouts)) workouts = [];
+  if (typeof fatigue !== 'object' || fatigue === null) fatigue = {};
+  if (!Array.isArray(topLifts)) topLifts = [];
+  if (!Array.isArray(images)) images = [];
 
   if (!Array.isArray(messages) || !messages.length) {
     return res.status(400).json({ error: 'messages array is required' });
