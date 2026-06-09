@@ -8,6 +8,7 @@
 import { DB } from './db.js';
 import { Spring } from './shared/spring.js';
 import { Toast } from './shell.js';
+import { t } from './locale.store.js';
 
 const BS_KEY = 'ap-body-stats';
 let _bsActiveTab = 'stats';
@@ -136,8 +137,8 @@ window.bsSetSex = bsSetSex;
 /* ══════════════════════════════════════════════
    MAIN RENDER
    ══════════════════════════════════════════════ */
-export function renderBodyStats() {
-  const root = document.getElementById('body-stats-root');
+export function renderBodyStats(targetEl) {
+  const root = targetEl || document.getElementById('body-stats-root');
   if (!root) return;
 
   const ru = (localStorage.getItem('ap-settings-lang') === 'ru');

@@ -18,12 +18,13 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'", "https://cdn.jsdelivr.net"],
       scriptSrcAttr: ["'unsafe-inline'"], // Required for onclick handlers in templates
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
       connectSrc: [
         "'self'",
+        "https://cdn.jsdelivr.net",
         "https://api.anthropic.com",
         "https://*.supabase.co",
         "https://*.firebaseio.com",

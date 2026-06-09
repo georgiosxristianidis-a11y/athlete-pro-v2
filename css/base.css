@@ -386,8 +386,8 @@ button:focus-visible {
 .toast-error { border-color: rgba(255, 77, 136, 0.2); }
 .toast-error .toast-icon { color: var(--c-red); }
 
-.toast-info { border-color: rgba(68, 138, 255, 0.2); }
-.toast-info .toast-icon { color: #448aff; }
+.toast-info { border-color: rgba(255, 179, 0, 0.2); }
+.toast-info .toast-icon { color: var(--c-amber); }
 
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(20px) scale(0.9); }
@@ -715,8 +715,8 @@ button:focus-visible {
 .toast-error { border-color: rgba(255, 77, 136, 0.2); }
 .toast-error .toast-icon { color: var(--c-red); }
 
-.toast-info { border-color: rgba(68, 138, 255, 0.2); }
-.toast-info .toast-icon { color: #448aff; }
+.toast-info { border-color: rgba(255, 179, 0, 0.2); }
+.toast-info .toast-icon { color: var(--c-amber); }
 
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(20px) scale(0.9); }

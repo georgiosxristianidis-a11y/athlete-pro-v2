@@ -76,13 +76,8 @@ updateClock();
 setInterval(updateClock, 30000);
 
 /* ── Network status ── */
-const pill = document.getElementById('status-pill');
-const pillText = document.getElementById('status-text');
-function setOnline() { pill.className = 'status-pill online'; pillText.textContent = 'Online'; }
-function setOffline() { pill.className = 'status-pill offline'; pillText.textContent = 'Offline'; }
-window.addEventListener('online', setOnline);
-window.addEventListener('offline', setOffline);
-if (navigator.onLine) setOnline(); else setOffline();
+window.addEventListener('online', () => document.getElementById('di-dot')?.classList.replace('offline', 'online'));
+window.addEventListener('offline', () => document.getElementById('di-dot')?.classList.replace('online', 'offline'));
 
 
 /* ── Boot — always hides loading screen within 5s ── */
@@ -275,10 +270,7 @@ const PrivacyRapid = (() => {
 
   async function toggle() {
     haptic([30, 50, 30]);
-    const current = getPrivacyMode();
-    const next = current === 'airgap' ? 'cloud' : 'airgap';
-    await setPrivacyMode(next);
-    Toast.show(`Privacy: ${next.toUpperCase()}`, next === 'airgap' ? 'success' : 'info');
+    window.Nav?.go('s-privacy');
   }
 
   function startLongPress(e) {

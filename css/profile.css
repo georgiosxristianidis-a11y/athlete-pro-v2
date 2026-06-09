@@ -456,8 +456,8 @@
 
 /* ── Danger Zone ── */
 .danger-btn {
-  width: calc(100% - 64px); /* Increased side margins */
-  height: 38px;             /* Reduced height from 46px (~20%) */
+  width: 250px;             
+  height: 46px;             
   display: flex;
   align-items: center;
   justify-content: center;
@@ -466,20 +466,25 @@
   border: 1.2px solid rgba(255, 77, 136, 0.3);
   border-radius: 12px;
   color: var(--c-red);
-  font-size: 13px;          /* Slightly smaller font */
+  font-size: 13px;          
   font-weight: 700;
   cursor: pointer;
   transition: all var(--t-fast);
-  margin: 8px auto 0;       /* Centered with air */
+  margin: 8px auto 0;       
 }
 .danger-btn svg {
-  width: 15px;              /* Slightly smaller icon */
+  width: 15px;              
   height: 15px;
 }
 .danger-btn:active {
   transform: scale(0.98);
   background: rgba(255, 77, 136, 0.1);
   border-color: var(--c-red);
+}
+.danger-btn.slide-out {
+  transform: translateX(-150vw);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
 }
 .danger-btn.armed {
   background: var(--c-red);

@@ -18,9 +18,13 @@
 .type-card:active { transform: scale(0.96); background: rgba(255,255,255,0.06); }
 
 /* Glow variants — Refined Intensity */
-.type-card[data-type="push"]:hover, .type-card[data-type="push"]:active { border-color: rgba(0,230,118,0.25); box-shadow: 0 10px 30px rgba(0,230,118,0.12); }
-.type-card[data-type="pull"]:hover, .type-card[data-type="pull"]:active { border-color: rgba(0,229,255,0.25); box-shadow: 0 10px 30px rgba(0,229,255,0.12); }
-.type-card[data-type="legs"]:hover, .type-card[data-type="legs"]:active { border-color: rgba(188,19,254,0.25); box-shadow: 0 10px 30px rgba(188,19,254,0.12); }
+.type-card[data-type="push"] { background: rgba(0,230,118,0.04); border-color: rgba(0,230,118,0.1); }
+.type-card[data-type="pull"] { background: rgba(0,229,255,0.04); border-color: rgba(0,229,255,0.1); }
+.type-card[data-type="legs"] { background: rgba(188,19,254,0.04); border-color: rgba(188,19,254,0.1); }
+
+.type-card[data-type="push"]:hover, .type-card[data-type="push"]:active { background: rgba(0,230,118,0.08); border-color: rgba(0,230,118,0.3); box-shadow: 0 10px 30px rgba(0,230,118,0.15); }
+.type-card[data-type="pull"]:hover, .type-card[data-type="pull"]:active { background: rgba(0,229,255,0.08); border-color: rgba(0,229,255,0.3); box-shadow: 0 10px 30px rgba(0,229,255,0.15); }
+.type-card[data-type="legs"]:hover, .type-card[data-type="legs"]:active { background: rgba(188,19,254,0.08); border-color: rgba(188,19,254,0.3); box-shadow: 0 10px 30px rgba(188,19,254,0.15); }
 
 .type-card-icon { 
   flex: 1; display: flex; align-items: center; justify-content: center; width: 100%;

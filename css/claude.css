@@ -6,10 +6,7 @@
 /* ── FAB button (red panda character) ──
    Premium round button: solid surface plate, accent ring, panda contained inside. */
 .claude-fab {
-  position: fixed;
-  /* bottom/right set dynamically by JS — fallback below */
-  bottom: 84px;
-  right: 14px;
+  position: relative;
   width: 64px;
   height: 64px;
   background: radial-gradient(

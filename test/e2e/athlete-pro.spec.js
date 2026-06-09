@@ -5,9 +5,8 @@
  * workout flow, Claude FAB, profile, analytics, service worker.
  */
 
-const { test, expect } = require('@playwright/test');
-
 const BASE = 'http://localhost:3000';
+import { test, expect } from '@playwright/test';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -31,7 +30,9 @@ async function bypassOnboarding(page) {
         const db = req.result;
         if (db.objectStoreNames.contains('settings')) {
           const transaction = db.transaction('settings', 'readwrite');
-          transaction.objectStore('settings').put({ key: 'onboarding-complete', value: true });
+            transaction.objectStore('settings').put({ key: 'onboarding-complete', value: true });
+            transaction.objectStore('settings').put({ key: 'privacy.mode', value: 'cloud' });
+            transaction.objectStore('settings').put({ key: 'privacy.aiEnabled', value: true });
           transaction.oncomplete = () => {
             if (appOnSuccess) appOnSuccess.call(req, e);
           };
@@ -73,16 +74,19 @@ async function waitForBoot(page) {
 async function skipOnboarding(page) {
   const overlay = page.locator('#onboarding-overlay');
   if (await overlay.count() > 0 && await overlay.isVisible()) {
+    const nextBtn = page.locator('#ob-next-btn');
+
     // Select Strength goal
     await page.locator('.ob-card[data-key="strength"]').click({ timeout: 3000 });
-    await page.locator('#ob-next-1').click({ timeout: 3000 });
+    await nextBtn.click({ timeout: 3000 });
 
     // Select Beginner experience
     await page.locator('.ob-card[data-key="beginner"]').click({ timeout: 3000 });
-    await page.locator('#ob-next-2').click({ timeout: 3000 });
+    await nextBtn.click({ timeout: 3000 });
 
     // Finish onboarding
-    await page.locator('button:has-text("Go to dashboard instead")').click({ timeout: 3000 });
+    await page.locator('button', { hasText: 'Quick Start (Anonymous)' }).click({ timeout: 3000 });
+    await page.locator('#ob-finish-btn').click({ timeout: 3000 });
 
     // Wait for overlay to disappear
     await expect(overlay).not.toBeAttached({ timeout: 4000 });
@@ -102,27 +106,30 @@ test.describe('Onboarding Flow (Real)', () => {
 
     // Step 1: Goal selection
     // Next button should be disabled initially
-    const next1 = page.locator('#ob-next-1');
-    await expect(next1).toBeDisabled();
+    const nextBtn = page.locator('#ob-next-btn');
+    await expect(nextBtn).toBeDisabled();
 
     // Select Strength goal
     await page.locator('.ob-card[data-key="strength"]').click();
-    await expect(next1).toBeEnabled();
-    await next1.click();
+    await expect(nextBtn).toBeEnabled();
+    await nextBtn.click();
 
     // Step 2: Experience selection
-    const next2 = page.locator('#ob-next-2');
-    await expect(next2).toBeDisabled();
+    await expect(nextBtn).toBeDisabled();
 
     // Select Beginner experience
     await page.locator('.ob-card[data-key="beginner"]').click();
-    await expect(next2).toBeEnabled();
-    await next2.click();
+    await expect(nextBtn).toBeEnabled();
+    await nextBtn.click();
 
     // Step 3: Confirmation / Ready Screen
-    const finishBtn = page.locator('button:has-text("Go to dashboard instead")');
+    const finishBtn = page.locator('button', { hasText: 'Quick Start (Anonymous)' });
     await expect(finishBtn).toBeVisible();
     await finishBtn.click();
+    
+    const letsGoBtn = page.locator('#ob-finish-btn');
+    await expect(letsGoBtn).toBeVisible();
+    await letsGoBtn.click();
 
     // Onboarding should close and redirect to dashboard
     await expect(overlay).not.toBeAttached({ timeout: 3000 });
@@ -334,6 +341,10 @@ test.describe('App with Onboarding Bypassed', () => {
     });
 
     test('clicking FAB opens claude-overlay', async ({ page }) => {
+      const mode = await page.evaluate(() => typeof window.__privacyMode !== 'undefined' ? window.__privacyMode() : 'missing');
+      const ai = await page.evaluate(() => typeof window.__privacyAi !== 'undefined' ? window.__privacyAi() : 'missing');
+      console.log(`Privacy mode: ${mode}, AI: ${ai}`);
+      
       await page.locator('#claude-fab').click({ force: true });
       await expect(page.locator('#claude-overlay')).toBeAttached({ timeout: 10000 });
     });
@@ -404,11 +415,11 @@ test.describe('App with Onboarding Bypassed', () => {
       expect(Array.isArray(body.icons)).toBe(true);
     });
 
-    test('sw.js is served and contains v22 cache name', async ({ page }) => {
-      const res = await page.request.get(`${BASE}/sw.js`);
+    test('sw.js is served and contains v38 cache name', async ({ page, request }) => {
+      const res = await request.get('/sw.js');
       expect(res.status()).toBe(200);
       const text = await res.text();
-      expect(text).toContain('athlete-pro-v22');
+      expect(text).toContain('athlete-pro-v38');
     });
 
     test('FIX-3: service worker registers (not nuked on boot)', async ({ page }) => {

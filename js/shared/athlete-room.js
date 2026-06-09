@@ -219,7 +219,7 @@ export const AthleteRoom = (() => {
       const streak = _calcStreak(workouts);
       const unlockedAch = new Set(ACHIEVEMENTS.filter(a => a.check(workouts)).map(a => a.id));
 
-      ctx = { workouts, name, initials, c1, c2, tierLabel, tierColor, streak, total, dots, unlockedAch, metrics, photo, ru };
+      ctx = { workouts, name, initials, c1, c2, colorIdx, tierLabel, tierColor, streak, total, dots, unlockedAch, metrics, photo, profile, ru };
     }
 
     if (window._arActiveTab === 'profile') {
@@ -234,8 +234,13 @@ export const AthleteRoom = (() => {
     
     // Use the existing avatar init logic but wrap the HTML
     const avatarHtml = photo
-      ? `<img src="${photo}" class="ar-avatar" style="object-fit:cover" onclick="window.AthleteRoom.triggerPhotoUpload()">`
-      : `<div class="ar-avatar" id="ar-avatar-circle" style="background: linear-gradient(135deg, ${c1}, ${c2})" onclick="window.AthleteRoom.cycleColor()">${initials}</div>`;
+      ? `<div class="ar-avatar has-photo" style="background-image: url('${photo}')" onclick="window.AthleteRoom.triggerPhotoUpload()">
+           <div class="ar-avatar-ring" style="--c1:${c1}; --c2:${c2}"></div>
+         </div>`
+      : `<div class="ar-avatar" id="ar-avatar-circle" style="background: linear-gradient(135deg, ${c1}, ${c2})" onclick="window.AthleteRoom.cycleColor()">
+           <div class="ar-avatar-ring" style="--c1:${c1}; --c2:${c2}"></div>
+           <div class="ar-avatar-initials">${initials}</div>
+         </div>`;
 
     container.innerHTML = `
           <div class="ar-passport">
@@ -289,6 +294,15 @@ export const AthleteRoom = (() => {
               <div class="ar-editor-label">${ru ? 'Имя' : 'Name'}</div>
               <input type="text" id="ar-name-input" class="ar-name-input" value="${name}" maxlength="25">
               
+              <div class="ar-editor-label" style="margin-top:16px">${ru ? 'Дата рождения' : 'Date of Birth'}</div>
+              <input type="date" id="ar-dob-input" class="ar-name-input" value="${ctx.profile?.dob || ''}">
+              
+              <div class="ar-editor-label" style="margin-top:16px">${ru ? 'Пол' : 'Sex'}</div>
+              <select id="ar-sex-input" class="ar-name-input" style="background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); border-radius:12px; height:48px; padding:0 16px; width:100%; font-size:16px; margin-top:8px;">
+                <option value="m" ${ctx.profile?.sex !== 'f' ? 'selected' : ''}>Male</option>
+                <option value="f" ${ctx.profile?.sex === 'f' ? 'selected' : ''}>Female</option>
+              </select>
+              
               <div class="ar-editor-colors-label" style="margin-top:16px">${ru ? 'Цвет аватара' : 'Avatar Color'}</div>
               <div class="ar-color-row">
                 ${AVATAR_COLORS.map(([e, t], i) => `
@@ -310,14 +324,10 @@ export const AthleteRoom = (() => {
   function _renderMetricsTab(container, ctx) {
     const { ru } = ctx;
     container.innerHTML = `<div id="ar-body-stats-root" style="margin-top: -16px;"></div>`;
-    // We dynamically load the existing body-stats logic to render inside this tab
     import('../body-stats.js').then(mod => {
-      // Modify root ID momentarily or let body-stats handle it if we update body-stats.js
-      // To keep it simple, body-stats.js looks for 'body-stats-root'. We'll temporarily change our ID or update body-stats.js
       const root = document.getElementById('ar-body-stats-root');
       if(root) {
-        root.id = 'body-stats-root'; // Hijack the ID so body-stats renders here
-        mod.renderBodyStats();
+        mod.renderBodyStats(root);
       }
     });
   }
@@ -376,14 +386,29 @@ export const AthleteRoom = (() => {
   }
 
   async function saveName() {
-    haptic(15);
-    const val = document.getElementById('ar-name-input')?.value?.trim();
-    if (!val) { cancelEdit(); return; }
-    await DB.Settings.set('athlete-name', val);
-    await updateProfile({ name: val });
+    const input = document.getElementById('ar-name-input');
+    const dobInput = document.getElementById('ar-dob-input');
+    const sexInput = document.getElementById('ar-sex-input');
+    if (!input || !dobInput || !sexInput) return;
+    
+    const newName = input.value.trim();
+    const dob = dobInput.value;
+    const sex = sexInput.value;
+    
+    if (newName) {
+      await DB.Settings.set('athlete-name', newName);
+    }
+    
+    // We need to import updateProfile from profile.store.js to save dob/sex
+    const { updateProfile } = await import('./profile.store.js');
+    await updateProfile({ dob, sex, name: newName || undefined });
+    
+    ctx = null;
     cancelEdit();
     render();
-    initAvatar();
+    
+    // Dispatch event so Passport updates
+    window.dispatchEvent(new Event('ap-sync-status'));
 
     // UI Refresh
     const sProfile = document.getElementById('s-profile');

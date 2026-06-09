@@ -83,7 +83,7 @@
         height: 100%;
       }
 
-      /* STATUS BAR — Elite Glassmorphism */
+      /* STATUS BAR — Elite Solid */
       #status-bar {
         position: absolute;
         top: 0;
@@ -94,18 +94,13 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: rgba(5, 5, 7, 0.75);
-        backdrop-filter: blur(20px) saturate(1.8);
-        -webkit-backdrop-filter: blur(20px) saturate(1.8);
+        background: var(--c-bg); /* Solid background */
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         z-index: 200;
         transition: all 0.4s ease;
         }
 
         #status-bar.status-bar-focused {
-        background: rgba(5, 5, 7, 0.9);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
         opacity: 0.3; /* Mute the header to focus on Island */
         }
       .status-logo {
@@ -130,7 +125,15 @@
       .logo-w1 { color: var(--c-text-1); font-weight: 800; }
       .logo-w2 { color: var(--c-accent); font-weight: 900; letter-spacing: 0.12em; text-shadow: 0 0 12px rgba(0, 230, 118, 0.35); }
 
-      /* Status Pill */
+      /* Dynamic Island Anchor & Status Pill */
+      #di-anchor {
+        position: relative;
+        width: 68px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
       .status-pill {
         display: flex;
         align-items: center;
@@ -261,20 +264,15 @@
           <img src="icons/icon-192.png" class="status-logo-img" alt="AP" />
           <span class="status-logo-text"><span class="logo-w1">Athlete</span><span class="logo-w2">Pro</span></span>
         </div>
-        <div id="status-pill" class="status-pill offline" 
-             ondblclick="window.PrivacyRapid?.toggle()"
-             onpointerdown="window.PrivacyRapid?.startLongPress(event)"
-             onpointerup="window.PrivacyRapid?.cancelLongPress()"
-             onpointerleave="window.PrivacyRapid?.cancelLongPress()"
-             style="cursor:pointer">
-          <span class="status-dot"></span>
-          <span id="status-text">Offline</span>
-        </div>
+        <div style="display:flex; align-items:center; gap:var(--sp-2)">
         <div id="privacy-indicator" class="privacy-indicator" hidden></div>
+        <!-- Global Clock -->
+        <div id="global-clock" style="font-size:12px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--c-text-2)">--:--</div>
         <span id="status-time"></span>
         <button id="athlete-avatar-btn" class="athlete-avatar-btn" onclick="window.AthleteRoom.open()">
           <span id="athlete-avatar-initials">A</span>
         </button>
+      </div>
       </div>
 
       <div id="screens">

@@ -1,9 +1,10 @@
 // @ts-check
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
 
-// 1. ПРОВЕРЬ .env ФАЙЛ: Ключи должны называться VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Safely access env vars (Vite injects them, otherwise fallback)
+const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
+const supabaseUrl = env.VITE_SUPABASE_URL || 'https://mock.supabase.co'
+const supabaseKey = env.VITE_SUPABASE_ANON_KEY || 'mock-key'
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 

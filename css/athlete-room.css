@@ -8,7 +8,15 @@
   align-items: center !important;
   gap: 8px !important;
   padding-right: 12px !important;
+  transition: filter 0.4s ease, opacity 0.4s ease !important;
 }
+
+#status-bar.workout-active {
+  filter: blur(8px) saturate(0.5);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 #status-bar .status-logo { flex: 1; min-width: 0; }
 #status-time { margin-left: auto; }
 

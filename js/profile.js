@@ -24,7 +24,14 @@ export const Profile = (() => {
     if (!screen) return;
 
     try {
-      const { SyncManager } = await import('./sync.js');
+      let SyncManager = { getStatus: () => 'offline' };
+      try {
+        const syncModule = await import('./sync.js');
+        SyncManager = syncModule.SyncManager;
+      } catch (e) {
+        console.warn('Offline mode: sync.js failed to load', e.message);
+      }
+      
       const [settings, langRaw, serverStatus] = await Promise.all([
         DB.Settings.getAll(),
         DB.Settings.get('lang', 'en'),
@@ -54,7 +61,7 @@ export const Profile = (() => {
 
       <!-- ── DANGER ZONE ── -->
       <div class="section-label-alt" style="color:var(--c-red); opacity:0.8">DANGER ZONE</div>
-      <button class="danger-btn" id="clear-data-btn" onclick="Profile.clearAllData()" style="width:calc(100% - 32px); margin: 0 auto; height:46px; font-size:14px">
+      <button class="danger-btn" id="clear-data-btn" onclick="Profile.clearAllData()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
           <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
         </svg>
@@ -193,8 +200,11 @@ async function setEngine(engine) {
     if (_deleteTapTimer) {
       clearTimeout(_deleteTapTimer);
       _deleteTapTimer = null;
-      await DB.clearAll();
-      window.location.reload();
+      btn.classList.add('slide-out');
+      setTimeout(async () => {
+        await DB.clearAll();
+        window.location.reload();
+      }, 400);
     } else {
       _haptic(40);
       btn.classList.add('armed');
@@ -250,20 +260,28 @@ async function setEngine(engine) {
   }
 
   async function syncConnect() {
-    const { SyncManager } = await import('./sync.js');
-    const user = await SyncManager.signIn();
-    const { t } = await import('./locale.store.js');
-    if (user) {
-      Toast.show(t('sync.status.idle'), 'success');
-    } else {
-      Toast.show(t('sync.status.error'), 'error');
+    try {
+      const { SyncManager } = await import('./sync.js');
+      const user = await SyncManager.signIn();
+      const { t } = await import('./locale.store.js');
+      if (user) {
+        Toast.show(t('sync.status.idle'), 'success');
+      } else {
+        Toast.show(t('sync.status.error'), 'error');
+      }
+    } catch (e) {
+      Toast.show('You are offline', 'error');
     }
   }
 
   async function syncDisconnect() {
-    const { SyncManager } = await import('./sync.js');
-    await SyncManager.signOut();
-    load();
+    try {
+      const { SyncManager } = await import('./sync.js');
+      await SyncManager.signOut();
+      load();
+    } catch (e) {
+      Toast.show('You are offline', 'error');
+    }
   }
 
   /* ── Events ── */

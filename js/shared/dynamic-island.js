@@ -36,7 +36,9 @@ export const DynamicIsland = (() => {
   let _dot = null;
   let _timeEl = null;
   let _setsEl = null;
+  let _setsCollapsedEl = null;
   let _nameEl = null;
+  let _nameCollapsedEl = null;
   let _sublabelEl = null;
   let _progressFill = null;
   let _timerProg = null;
@@ -65,6 +67,8 @@ export const DynamicIsland = (() => {
       <div class="island" id="dynamic-island" role="status" aria-live="polite" style="pointer-events: auto;">
         <div class="island-dot online" id="di-dot"></div>
         <div class="island-time" id="di-time">00:00</div>
+        <div class="island-name-collapsed" id="di-name-collapsed"></div>
+        <div class="island-sets-collapsed" id="di-sets-collapsed"></div>
         
         <div class="island-expanded-content">
           <div class="island-status-line">
@@ -106,7 +110,9 @@ export const DynamicIsland = (() => {
     _dot = document.getElementById('di-dot');
     _timeEl = document.getElementById('di-time');
     _setsEl = document.getElementById('di-sets');
+    _setsCollapsedEl = document.getElementById('di-sets-collapsed');
     _nameEl = document.getElementById('di-name');
+    _nameCollapsedEl = document.getElementById('di-name-collapsed');
     _sublabelEl = document.getElementById('di-sublabel');
     _progressFill = document.getElementById('di-progress-fill');
     _timerProg = document.getElementById('di-timer-progress');
@@ -123,9 +129,17 @@ export const DynamicIsland = (() => {
     window.addEventListener('pointermove', _onPointerMove);
     window.addEventListener('pointerup', _onPointerUp);
     window.addEventListener('pointercancel', _onPointerUp);
+    _island?.addEventListener('pointerleave', (e) => {
+      if (_island?.classList.contains('mode-idle')) window.PrivacyRapid?.cancelLongPress();
+    });
+
+    _island?.addEventListener('dblclick', (e) => {
+      if (_island?.classList.contains('mode-idle')) window.PrivacyRapid?.toggle();
+    });
 
     // Expand toggle or cycle mode (only if not long-pressed or dragged)
     _island?.addEventListener('click', (e) => {
+      if (_island?.classList.contains('mode-idle')) return;
       if (_isLongPress || _movedPastThreshold) return;
       if (_expanded) {
         toggleExpand();
@@ -140,6 +154,9 @@ export const DynamicIsland = (() => {
 
     // Initialize PiP canvas
     PiP.init();
+    
+    // Initial render (will show idle state if no workout)
+    update();
   }
 
   function _applyTransform() {
@@ -151,6 +168,9 @@ export const DynamicIsland = (() => {
     if (!_wrap) init();
     _wrap.style.display = 'block';
     _wrap.classList.add('visible');
+
+    const pill = document.getElementById('status-pill');
+    if (pill) pill.style.opacity = '0';
 
     // Logic Fix: Focus on Island by blurring the Status Bar
     const statusBar = document.getElementById('status-bar');
@@ -203,6 +223,8 @@ export const DynamicIsland = (() => {
           _currentX = 0;
           _currentY = 0;
           _animY = -100;
+          const pill = document.getElementById('status-pill');
+          if (pill) pill.style.opacity = '1';
         }
       });
     } else {
@@ -211,7 +233,32 @@ export const DynamicIsland = (() => {
   }
 
   function update() {
-    if (!State.plan || !State.plan.length || !_wrap || !_wrap.classList.contains('visible')) return;
+    if (!_wrap) return;
+
+    // IDLE MODE: If no workout, act as the ONLINE button
+    if (!State.plan || !State.plan.length) {
+      if (!_wrap.classList.contains('visible')) {
+        _wrap.style.display = 'block';
+        _wrap.classList.add('visible');
+      }
+      _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed', 'timer-mode', 'expanded');
+      _island?.classList.add('mode-idle');
+      
+      document.getElementById('status-bar')?.classList.remove('workout-active');
+      
+      const dot = document.getElementById('di-dot');
+      if (dot) dot.className = navigator.onLine ? 'island-dot online' : 'island-dot offline';
+      return;
+    }
+
+    if (!_wrap.classList.contains('visible')) return;
+
+    // ACTIVE WORKOUT: Remove idle mode and apply selected mode
+    _island?.classList.remove('mode-idle');
+    document.getElementById('status-bar')?.classList.add('workout-active');
+    if (!_island?.classList.contains('timer-mode') && !_island?.classList.contains('expanded')) {
+      _island?.classList.add(`mode-${_displayMode}`);
+    }
 
     const ru = (localStorage.getItem('ap-settings-lang') === 'ru');
 
@@ -224,12 +271,6 @@ export const DynamicIsland = (() => {
     const currentEx = State.plan[activeIdx];
     if (_nameEl) _nameEl.textContent = currentEx ? currentEx.name : '';
     
-    // Collapsed name for 'detailed' mode
-    const collapsedName = document.getElementById('di-name-collapsed');
-    if (collapsedName) {
-      collapsedName.textContent = currentEx ? currentEx.name : '';
-    }
-
     // Sets Progress
     let done = 0, total = 0;
     State.plan.forEach(ex => {
@@ -238,9 +279,25 @@ export const DynamicIsland = (() => {
         if (s.done) done++;
       });
     });
+
+    // Collapsed name for 'detailed' mode
+    if (_nameCollapsedEl) {
+      _nameCollapsedEl.textContent = '';
+      if (currentEx) {
+        _nameCollapsedEl.appendChild(document.createTextNode(currentEx.name));
+        const setsSpan = document.createElement('span');
+        setsSpan.style.color = 'var(--c-text-3)';
+        setsSpan.textContent = ` - ${total ? `${done}/${total}` : ''}`;
+        _nameCollapsedEl.appendChild(setsSpan);
+      }
+    }
     if (_setsEl) {
       _setsEl.textContent = total ? `${done}/${total}` : '';
       _setsEl.style.color = _getSetsColor(done, total);
+    }
+    if (_setsCollapsedEl) {
+      _setsCollapsedEl.textContent = total ? `${done}/${total}` : '';
+      _setsCollapsedEl.style.color = _getSetsColor(done, total);
     }
 
     // Sublabel
@@ -331,6 +388,10 @@ export const DynamicIsland = (() => {
   }
 
   function _onPointerDown(e) {
+    if (_island?.classList.contains('mode-idle')) {
+      window.PrivacyRapid?.startLongPress(e);
+      return;
+    }
     _isDragging = true;
     _isLongPress = false;
     _startX = e.clientX - _currentX;
@@ -363,6 +424,10 @@ export const DynamicIsland = (() => {
   }
 
   function _onPointerUp(e) {
+    if (_island?.classList.contains('mode-idle')) {
+      window.PrivacyRapid?.cancelLongPress();
+      return;
+    }
     if (!_isDragging) return;
     _isDragging = false;
     clearTimeout(_longPressTimer);

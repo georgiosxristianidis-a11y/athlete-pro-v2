@@ -181,7 +181,7 @@ export const Claude = (() => {
               <div class="claude-sub">${isGemini ? 'Powered by Gemini 1.5 Pro' : 'Powered by Claude Opus'}</div>
             </div>
           </div>
-          <button class="btn-icon-sm" onclick="Claude.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <button class="btn-icon-sm" aria-label="Close AI Coach" onclick="Claude.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
 
         <div class="heatmap-card">${buildBodySVG(scores)}</div>
@@ -284,7 +284,15 @@ export const Claude = (() => {
     </svg>`;
   }
 
-  return { renderFAB, open, close, _sendChat, _claudeIcon, _geminiIcon, dismissFAB, _snapFAB };
+  async function _toggleEngine() {
+    const isGem = (await DB.Settings.get('ai-engine')) === 'gemini';
+    await DB.Settings.set('ai-engine', isGem ? 'anthropic' : 'gemini');
+    haptic(10);
+    close();
+    setTimeout(renderFAB, 100);
+  }
+
+  return { renderFAB, open, close, _sendChat, _claudeIcon, _geminiIcon, dismissFAB, _snapFAB, _toggleEngine };
 })();
 
 window.Claude = Claude;

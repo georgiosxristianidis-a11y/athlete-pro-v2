@@ -1,6 +1,5 @@
 // @ts-check
 import { supabase } from './supabase.js';
-import { logInfo, logError } from '../lib/logger.js';
 
 /**
  * #GIO: Elite Sync Engine V2.1 — LWW Conflict Resolution
@@ -79,7 +78,7 @@ export const SyncManager = (() => {
     _status = 'syncing';
     _updateUI();
 
-    logInfo('Sync', `Processing ${tasks.length} tasks...`);
+    console.log('[Sync]');
 
     // Get current user once
     let user = null;
@@ -89,7 +88,7 @@ export const SyncManager = (() => {
     } catch (_) { /* offline */ }
 
     if (!user) {
-      logInfo('Sync', 'No authenticated user, deferring.');
+      console.log('[Sync]');
       _processing = false;
       _status = 'offline';
       _updateUI();
@@ -140,7 +139,7 @@ export const SyncManager = (() => {
 
         const skipped = storeTasks.length - toSync.length;
         if (skipped > 0) {
-          logInfo('Sync', `LWW: skipped ${skipped} stale records in ${table}`);
+          console.log('[Sync]');
         }
 
         if (toSync.length === 0) continue;
@@ -157,14 +156,23 @@ export const SyncManager = (() => {
         });
 
         if (error) throw error;
-        logInfo('Sync', `Synced ${toSync.length} records → ${table}`);
+        console.log('[Sync]');
       } catch (err) {
-        logError('Sync', `Failed to sync ${store}: ${err.message}`);
+        console.error('[Sync]');
         failed.push(...storeTasks);
       }
     }
 
-    _saveQueue(failed);
+    const currentQueue = _loadQueue();
+    const newQueue = currentQueue.filter(t => {
+      if (failed.some(f => f.store === t.store && f.data?.id === t.data?.id)) return true;
+      const original = tasks.find(orig => orig.store === t.store && orig.data?.id === t.data?.id);
+      if (!original) return true;
+      if (t.timestamp > original.timestamp) return true;
+      return false;
+    });
+
+    _saveQueue(newQueue);
     _processing = false;
     _status = failed.length ? 'error' : 'idle';
     _updateUI();
@@ -182,10 +190,10 @@ export const SyncManager = (() => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           await supabase.auth.refreshSession();
-          logInfo('Sync', 'Session refreshed (keep-alive)');
+          console.log('[Sync]', 'Session refreshed (keep-alive)');
         }
       } catch (e) {
-        logError('Sync', `Keep-alive failed: ${e.message}`);
+        console.error('[Sync]');
       }
     }, 10 * 60 * 1000); // 10 minutes
   }
@@ -219,7 +227,7 @@ export const SyncManager = (() => {
   // Listen for online recovery
   if (typeof window !== 'undefined') {
     window.addEventListener('online', () => {
-      logInfo('Sync', 'Network back online, resuming...');
+      console.log('[Sync]');
       process();
     });
   }
@@ -230,12 +238,12 @@ export const SyncManager = (() => {
       _updateUI();
       const { data, error } = await supabase.auth.signInAnonymously();
       if (error) throw error;
-      logInfo('Sync', `Signed in anonymously: ${data.user.id}`);
+      console.log('[Sync]');
       _startKeepAlive();
       process();
       return data.user;
     } catch (err) {
-      logError('Sync', `Sign in failed: ${err.message}`);
+      console.error('[Sync]');
       _status = 'error';
       _updateUI();
       return null;
@@ -248,7 +256,7 @@ export const SyncManager = (() => {
       _keepAliveTimer = null;
     }
     await supabase.auth.signOut();
-    logInfo('Sync', 'Signed out');
+    console.log('[Sync]');
     _status = 'idle';
     _updateUI();
   }

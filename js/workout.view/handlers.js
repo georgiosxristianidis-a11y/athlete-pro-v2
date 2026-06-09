@@ -449,7 +449,7 @@ async function _executeFinalSave(tonnage, duration) {
   localStorage.removeItem(SESSION_KEY);
   if (window.DynamicIsland) window.DynamicIsland.hide();
   releaseWakeLock();
-  Timer.stop();
+  Timer.reset();
 
   if (activePlan) {
     const { advancePlan } = await import('../workout.store.js');
@@ -467,7 +467,7 @@ export async function cancelSession() {
   State.startedAt = 0;
   State.plan = [];
   persistSession();
-  Timer.stop();
+  Timer.reset();
   // @ts-ignore
   if (window.DynamicIsland) window.DynamicIsland.hide();
   releaseWakeLock();

@@ -29,18 +29,19 @@
 /* ── Island pill ── */
 .island {
   position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 14px;
+  left: 50%; /* Truly centered */
+  transform: translateX(-50%); /* Base transform, JS will override with translate(calc(-50% + x)...) */
+  transform-origin: center top; /* Expand symmetrically */
   background: rgba(10, 10, 15, 0.85);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  height: 36px;
-  width: 220px;
+  height: 32px; /* Prominent idle height */
+  width: 120px; /* Prominent idle width */
   overflow: hidden;
-  cursor: grab;
+  cursor: pointer;
   user-select: none;
   pointer-events: auto;
   touch-action: none;
@@ -62,27 +63,94 @@
 }
 
 .island.expanded {
-  height: 60px;
-  width: 320px;
+  height: 124px;
+  width: calc(100vw - 32px);
+  max-width: 400px;
   border-radius: 24px;
 }
 
-/* ── Display Modes ── */
-.island.mode-ultra-min {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+.island.expanded .island-expanded-content {
+  display: flex;
 }
-.island.mode-ultra-min .island-time { opacity: 0; }
-.island.mode-ultra-min .island-dot { left: 50%; transform: translate(-50%, -50%); }
+
+/* ── Display Modes ── */
+.island.mode-idle {
+  width: 160px; /* 1) 160*40 */
+  height: 40px; 
+}
+.island.mode-idle .island-time,
+.island.mode-idle .island-sets-collapsed,
+.island.mode-idle .island-expanded-content {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.island.mode-idle .island-dot {
+  left: 24px;
+  transform: translateY(-50%);
+}
+.island.mode-idle::after {
+  content: 'ONLINE';
+  position: absolute;
+  left: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--c-text-1);
+  opacity: 0.9;
+}
+
+.island.mode-ultra-min {
+  width: 140px;
+  height: 40px;
+  border-radius: 20px;
+}
+.island.mode-ultra-min .island-time { 
+  opacity: 1; 
+  font-size: 13px;
+  transform: translate(-50%, -50%); 
+}
+.island.mode-ultra-min .island-dot { 
+  left: 20px; 
+  transform: translateY(-50%); 
+}
 
 .island.mode-mini {
-  width: 110px;
+  width: 220px; /* 2) 220*40 (самый нормальный) */
+  height: 40px;
 }
-.island.mode-mini .island-time { font-size: 13px; }
+.island.mode-mini .island-time { font-size: 13px; transform: translate(-70%, -50%); }
+
+.island-sets-collapsed {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-2);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2;
+}
+
+.island.mode-mini .island-sets-collapsed,
+.island.mode-ultra-min .island-sets-collapsed {
+  opacity: 1;
+}
+
+.island.expanded .island-sets-collapsed {
+  opacity: 0;
+  pointer-events: none;
+}
 
 .island.mode-detailed {
-  width: 220px;
+  width: 240px; /* 3) max 240*50 */
+  height: 50px;
 }
 
 /* PIP timer mode */
@@ -177,12 +245,14 @@
 }
 
 .island.mode-detailed .island-name-collapsed {
+  left: calc(50% + 8px);
   max-width: 100px;
   opacity: 1;
 }
 /* Shift time left slightly when name is shown to keep overall centering balanced */
 .island.mode-detailed .island-time {
-  transform: translate(-90%, -50%);
+  left: calc(50% - 8px);
+  transform: translate(-100%, -50%);
 }
 
 .island.expanded .island-time,

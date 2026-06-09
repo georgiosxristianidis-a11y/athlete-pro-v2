@@ -137,7 +137,7 @@ function _stepQuickConfirm(ru) {
               style="width:52px; height:52px; background:none; border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-2); display:flex; align-items:center; justify-content:center; cursor:pointer">
         ${SVG.back}
       </button>
-      <button onclick="window._obFinish()" 
+      <button id="ob-finish-btn" onclick="window._obFinish()" 
               style="flex:1; height:52px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 8px 16px rgba(0,230,118,0.2)">
         ${ru ? 'Погнали!' : 'Let\'s Go!'}
       </button>
@@ -288,7 +288,7 @@ function _stepReady(ru) {
 function _choiceCard(key, icon, label, sub, color) {
   const active = _step === 1 ? _data.goal === key : _step === 2 ? _data.exp === key : _data.privacy === key;
   return `
-    <button class="ob-card ${active ? 'active' : ''}" onclick="window._obSelect('${key}')" 
+    <button class="ob-card ${active ? 'active' : ''}" data-key="${key}" onclick="window._obSelect('${key}')" 
             style="--active-c:${color}; display:flex; align-items:center; justify-content:center; text-align:left; gap:32px; padding:24px 32px; background:var(--c-surface); border:1.5px solid ${active ? color : 'var(--c-border)'}; border-radius:24px; cursor:pointer; width:100%; transition:all 0.2s ease;">
       <div style="width:52px; height:52px; border-radius:16px; background:${color}15; color:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0">
         ${icon}
@@ -309,7 +309,7 @@ function _navButtons(ru, canNext) {
           ${SVG.back}
         </button>
       ` : ''}
-      <button onclick="window._obNext()" ${canNext ? '' : 'disabled'} 
+      <button id="ob-next-btn" onclick="window._obNext()" ${canNext ? '' : 'disabled'} 
               style="flex:1; height:52px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:15px; font-weight:800; cursor:pointer; opacity:${canNext ? 1 : 0.4}">
         ${ru ? 'Продолжить' : 'Continue'}
       </button>
