@@ -52,6 +52,13 @@ async function _loadBodyStats() {
   return fn;
 }
 
+async function _loadIntel() {
+  if (window.IntelView) return window.IntelView;
+  const { IntelView } = await import('./intel.view.js');
+  window.IntelView = IntelView;
+  return IntelView;
+}
+
 /* ── Bridge: expose to window for onclick="" handlers ── */
 window.DB = DB;
 window.Nav = Nav;
@@ -64,6 +71,7 @@ window.AthleteRoom = AthleteRoom;
 window._loadWorkout = _loadWorkout;
 window._loadProfile = _loadProfile;
 window._loadBodyStats = _loadBodyStats;
+window._loadIntel = _loadIntel;
 
 /* ── Clock ── */
 const clockEl = document.getElementById('status-time');
@@ -191,6 +199,10 @@ Nav.on('s-body', async () => {
 Nav.on('s-profile', async () => {
   const Profile = await _loadProfile();
   await Profile.load();
+});
+Nav.on('s-intel', async () => {
+  const IntelView = await _loadIntel();
+  await IntelView.load();
 });
 
 /* ── Error boundary — F3 ─────────────────────────────────────────────────── */

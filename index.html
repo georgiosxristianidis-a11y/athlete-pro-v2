@@ -20,7 +20,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;800&family=Manrope:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;800&family=Manrope:wght@400;600&family=Orbitron:wght@700;900&display=swap"
       rel="stylesheet"
     />
 
@@ -56,6 +56,7 @@
       :root {
         --font-main: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
         --font-heading: 'Instrument Sans', sans-serif;
+        --font-intel: 'Orbitron', sans-serif;
         --side-padding: 20px;
         --c-bg: #050507;
         --c-text-1: #ffffff;
@@ -63,6 +64,8 @@
         --c-text-3: #71717a;
         --c-accent: #00e676;
         --c-accent-bg: rgba(0, 230, 118, 0.12);
+        --c-intel: #00d1ff;
+        --c-intel-bg: rgba(0, 209, 255, 0.1);
         --c-purple: #a78bfa;
         --c-purple-bg: rgba(167, 139, 250, 0.12);
         --c-blue: #60a5fa;
@@ -249,6 +252,7 @@
     <link rel="stylesheet" href="css/privacy.css" media="print" onload="this.media='all'" />
     <link rel="stylesheet" href="css/claude.css" media="print" onload="this.media='all'" />
     <link rel="stylesheet" href="css/athlete-room.css" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="css/intel.css" media="print" onload="this.media='all'" />
   </head>
 
   <body>
@@ -278,6 +282,7 @@
       <div id="screens">
         <div id="s-home" class="screen active"></div>
         <div id="s-train" class="screen"></div>
+        <div id="s-intel" class="screen"></div>
         <div id="s-stats" class="screen"></div>
         <div id="s-body" class="screen"><div id="body-stats-root"></div></div>
         <div id="s-profile" class="screen"></div>
@@ -289,6 +294,11 @@
         </button>
         <button class="nav-btn" data-s="s-train" onclick="Nav.go('s-train',{force:true})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><line x1="6.5" y1="12" x2="17.5" y2="12" /><rect x="3" y="9" width="3" height="6" rx="1" /><rect x="18" y="9" width="3" height="6" rx="1" /><line x1="2" y1="11" x2="2" y2="13" /><line x1="22" y1="11" x2="22" y2="13" /></svg>
+        </button>
+        <button class="nav-btn" data-s="s-intel" onclick="Nav.go('s-intel')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="3"/>
+          </svg>
         </button>
         <button class="nav-btn" data-s="s-stats" onclick="Nav.go('s-stats')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>

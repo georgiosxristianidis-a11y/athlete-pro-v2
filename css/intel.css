@@ -1,0 +1,244 @@
+/* ════════════════════════════════════════════════════════
+   intel.css — Athlete Pro  |  Neural Command Center Styles
+   ════════════════════════════════════════════════════════ */
+
+.intel-screen {
+  background: radial-gradient(circle at top right, rgba(0, 209, 255, 0.05), transparent 400px),
+              linear-gradient(to bottom, #050507, #0a0a0f);
+  padding-bottom: 140px;
+}
+
+.intel-header {
+  margin-bottom: var(--sp-4);
+}
+
+.intel-title {
+  font-family: var(--font-intel);
+  font-size: 32px;
+  font-weight: 900;
+  font-style: italic;
+  color: var(--c-intel);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 20px rgba(0, 209, 255, 0.4);
+  line-height: 1;
+}
+
+.intel-sub {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  margin-top: var(--sp-1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.intel-indicator {
+  width: 6px;
+  height: 6px;
+  background: var(--c-intel);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--c-intel);
+  animation: intel-pulse 2s infinite;
+}
+
+@keyframes intel-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── Feedback Feed ── */
+.intel-feedback {
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-2);
+  border-radius: 20px;
+  background: linear-gradient(90deg, rgba(0, 209, 255, 0.08), transparent);
+  border-left: 3px solid var(--c-intel);
+  animation: intel-slide-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes intel-slide-in {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.intel-feedback-label {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--c-intel);
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.intel-feedback-text {
+  font-size: 16px;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--c-text-1);
+  line-height: 1.4;
+}
+
+/* ── Command Bar ── */
+.intel-cmd-wrap {
+  position: relative;
+  margin-bottom: var(--sp-3);
+}
+
+.intel-cmd-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  transition: all 0.3s ease;
+}
+
+.intel-cmd-bar:focus-within {
+  border-color: rgba(0, 209, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 30px rgba(0, 209, 255, 0.1);
+}
+
+.intel-cmd-input {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 8px 4px;
+  color: var(--c-text-1);
+  font-size: 16px;
+  font-family: var(--font-main);
+}
+
+.intel-cmd-input::placeholder {
+  color: var(--c-text-3);
+}
+
+.intel-btn-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--c-text-3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.intel-btn-icon:hover {
+  color: var(--c-text-1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.intel-btn-icon.active {
+  color: var(--c-intel);
+  background: var(--c-intel-bg);
+}
+
+.intel-btn-send {
+  background: var(--c-text-1);
+  color: var(--c-bg);
+}
+
+.intel-btn-send:hover {
+  background: var(--c-intel);
+  color: var(--c-text-1);
+}
+
+/* ── Logs ── */
+.intel-logs {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: var(--sp-3);
+}
+
+.intel-logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: var(--sp-1);
+}
+
+.intel-logs-title {
+  font-family: var(--font-intel);
+  font-size: 10px;
+  color: var(--c-text-3);
+  letter-spacing: 0.2em;
+}
+
+.intel-logs-status {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--c-intel-bg);
+  color: var(--c-intel);
+}
+
+.intel-log-entry {
+  display: flex;
+  gap: 12px;
+  font-family: monospace;
+  font-size: 10px;
+  margin-bottom: 6px;
+  animation: intel-log-in 0.3s ease;
+}
+
+@keyframes intel-log-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.intel-log-time { color: var(--c-text-3); }
+.intel-log-type { font-weight: 900; text-transform: uppercase; }
+.intel-log-type.sys { color: var(--c-intel); }
+.intel-log-type.db { color: var(--c-accent); }
+.intel-log-type.ai { color: var(--c-purple); }
+.intel-log-msg { color: var(--c-text-2); }
+
+/* ── Vision Preview ── */
+.intel-vision-preview {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 0 auto var(--sp-3);
+  border-radius: 24px;
+  overflow: hidden;
+  border: 2px solid var(--c-intel);
+  box-shadow: 0 0 30px var(--c-intel-bg);
+}
+
+.intel-vision-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.intel-scanner-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--c-intel);
+  box-shadow: 0 0 10px var(--c-intel);
+  animation: intel-scan 2s linear infinite;
+}
+
+@keyframes intel-scan {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
