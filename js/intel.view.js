@@ -35,7 +35,7 @@ export const IntelView = (() => {
     screen.innerHTML = `
       <header class="intel-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
         <div>
-          <h1 class="intel-title">Athlete Intel</h1>
+          <h1 class="intel-title">P.A.N.D.A. Core</h1>
           <div class="intel-sub">
             <span class="intel-indicator" style="background: ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-red)'}; box-shadow: 0 0 10px ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-red)'}; animation: ${_hasValidKey ? 'intel-pulse' : 'none'} 2s infinite;"></span>
             <span id="intel-status-text" style="color: ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-red)'}; font-weight:800;">${_hasValidKey ? 'API SECURE' : 'KEY MISSING'}</span>
