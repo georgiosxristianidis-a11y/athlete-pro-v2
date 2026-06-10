@@ -20,6 +20,8 @@ export const SyncManager = (() => {
   let _processing = false;
   let _status = 'idle'; // 'idle' | 'syncing' | 'error' | 'offline'
   let _keepAliveTimer = null;
+  let _retryTimer = null;
+  let _uiTimer = null;
 
   /** @typedef {{ store: string, data: any, timestamp: number, retry: number }} SyncTask */
 
@@ -80,8 +82,6 @@ export const SyncManager = (() => {
     _status = 'syncing';
     _updateUI();
 
-    console.log('[Sync]');
-
     // Get current user once
     let user = null;
     try {
@@ -90,11 +90,11 @@ export const SyncManager = (() => {
     } catch (_) { /* offline */ }
 
     if (!user) {
-      console.log('[Sync]');
       _processing = false;
       _status = 'offline';
       _updateUI();
-      setTimeout(process, 15000);
+      if (_retryTimer) clearTimeout(_retryTimer);
+      _retryTimer = setTimeout(process, 15000);
       return;
     }
 
@@ -117,31 +117,64 @@ export const SyncManager = (() => {
           .map(t => t.data?.id)
           .filter(Boolean);
 
-        let serverTsMap = {};
+        let serverRowsMap = {};
         if (ids.length > 0) {
           const { data: serverRows } = await supabase
             .from(table)
-            .select('id, updated_at')
+            .select('*')
             .eq('user_id', user.id)
             .in('id', ids);
 
           if (serverRows) {
             serverRows.forEach(r => {
-              serverTsMap[r.id] = new Date(r.updated_at).getTime();
+              serverRowsMap[r.id] = r;
             });
           }
         }
 
-        // Filter: only send records where local is newer than server
-        const toSync = storeTasks.filter(t => {
-          const servTs = serverTsMap[t.data?.id];
-          if (!servTs) return true; // new record — always push
-          return t.timestamp > servTs; // local wins if strictly newer
-        });
+        const toSync = [];
+        for (const t of storeTasks) {
+          const servRow = serverRowsMap[t.data?.id];
+          if (!servRow) {
+            toSync.push(t);
+            continue;
+          }
 
-        const skipped = storeTasks.length - toSync.length;
-        if (skipped > 0) {
-          console.log('[Sync]');
+          const servTs = new Date(servRow.updated_at).getTime();
+
+          // CRDT-lite: Deep merge for workouts to prevent lost sets
+          if (store === 'workouts' && servRow.exercises) {
+            const localEx = t.data.exercises || [];
+            const servEx = servRow.exercises || [];
+            
+            const mergedExMap = new Map();
+            for (const ex of servEx) mergedExMap.set(ex.name, { ...ex });
+            for (const ex of localEx) {
+              if (mergedExMap.has(ex.name)) {
+                const sEx = mergedExMap.get(ex.name);
+                const mergedSets = [...sEx.sets];
+                for (let i = 0; i < ex.sets.length; i++) {
+                  if (!mergedSets[i]) mergedSets[i] = ex.sets[i];
+                  else if (t.timestamp >= servTs) mergedSets[i] = ex.sets[i];
+                }
+                mergedExMap.set(ex.name, { ...ex, sets: mergedSets });
+              } else {
+                mergedExMap.set(ex.name, ex);
+              }
+            }
+            t.data.exercises = Array.from(mergedExMap.values());
+            t.timestamp = Math.max(t.timestamp, servTs) + 1; // Bump timestamp so local wins the merge
+            toSync.push(t);
+          } else {
+            // Standard LWW for non-nested stores
+            if (t.timestamp > servTs) {
+              toSync.push(t);
+            } else {
+               // Update local DB with newer server row (sync down)
+               // This requires pushing to IndexedDB, but for now we skip upstream push
+               console.log('[Sync] Skipped (remote newer)');
+            }
+          }
         }
 
         if (toSync.length === 0) continue;
@@ -180,7 +213,8 @@ export const SyncManager = (() => {
     _updateUI();
 
     if (failed.length) {
-      setTimeout(process, 10000);
+      if (_retryTimer) clearTimeout(_retryTimer);
+      _retryTimer = setTimeout(process, 10000);
     }
   }
 
@@ -225,7 +259,10 @@ export const SyncManager = (() => {
   }
 
   function _updateUI() {
-    window.dispatchEvent(new CustomEvent('ap-sync-status', { detail: { status: _status } }));
+    if (_uiTimer) clearTimeout(_uiTimer);
+    _uiTimer = setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('ap-sync-status', { detail: { status: _status } }));
+    }, 100);
   }
 
   // Listen for online recovery

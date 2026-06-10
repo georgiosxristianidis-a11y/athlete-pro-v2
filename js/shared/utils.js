@@ -23,15 +23,30 @@ if (typeof window !== 'undefined') {
 
 /**
  * Triggers a short haptic feedback (vibration) if supported.
+ * Falls back to a visual pulse (iOS).
  * @param {number|number[]} pattern 
+ * @param {HTMLElement} [elementToPulse=null]
  */
-export const haptic = (pattern = 10) => {
+export const haptic = (pattern = 10, elementToPulse = null) => {
+  let vibrated = false;
   try {
     if (_hasInteracted && typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(pattern);
+      vibrated = navigator.vibrate(pattern);
     }
   } catch (e) {
     // Ignore haptic failures
+  }
+
+  // iOS Fallback or if vibrate returned false
+  if (!vibrated && _hasInteracted) {
+    const el = elementToPulse || document.activeElement || document.body;
+    if (el && el !== document) {
+      el.classList.remove('ios-haptic-pulse');
+      // Trigger reflow
+      void el.offsetWidth;
+      el.classList.add('ios-haptic-pulse');
+      setTimeout(() => el.classList.remove('ios-haptic-pulse'), 150);
+    }
   }
 };
 

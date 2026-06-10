@@ -370,7 +370,6 @@ window._obFinish = async () => {
   setTimeout(() => {
     _overlay._resolve();
     _overlay.remove();
-    window.Nav.go('s-train', { force: true });
   }, 300);
 };
 

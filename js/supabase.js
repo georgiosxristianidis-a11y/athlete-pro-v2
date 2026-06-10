@@ -9,7 +9,18 @@ const supabaseKey = env.VITE_SUPABASE_ANON_KEY || ''
 // Only create client if config exists, otherwise use a dummy to prevent crashes
 export const supabase = (supabaseUrl && supabaseKey) 
   ? createClient(supabaseUrl, supabaseKey) 
-  : { auth: { getSession: async () => ({data:{session:null}}), signInAnonymously: async () => ({error: new Error('Supabase not configured')}) } };
+  : { 
+      auth: { 
+        getSession: async () => ({ data: { session: null }, error: null }), 
+        getUser: async () => ({ data: { user: null }, error: null }),
+        refreshSession: async () => ({ data: { session: null }, error: null }),
+        signInAnonymously: async () => ({ error: new Error('Supabase not configured') }) 
+      },
+      from: () => ({
+        select: () => ({ eq: () => ({ in: async () => ({ data: null, error: new Error('Supabase not configured') }) }) }),
+        upsert: async () => ({ data: null, error: new Error('Supabase not configured') })
+      })
+    };
 
 /**
  * Эта функция создает анонимного пользователя.
