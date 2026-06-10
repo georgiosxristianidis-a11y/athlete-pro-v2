@@ -135,6 +135,10 @@ self.addEventListener('fetch', (e) => {
           if (!response || response.status !== 200 || response.type === 'opaque') {
             return response;
           }
+          const cacheControl = response.headers.get('cache-control') || '';
+          if (cacheControl.includes('no-store') || response.headers.has('set-cookie')) {
+            return response; // Protect against Web Cache Poisoning
+          }
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
           return response;

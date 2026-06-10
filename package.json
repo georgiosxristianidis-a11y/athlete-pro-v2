@@ -13,7 +13,10 @@
     "test": "node --test",
     "test:e2e": "playwright test --config=playwright.config.js",
     "test:all": "node --test && playwright test --config=playwright.config.js",
-    "lhci": "node scripts/lighthouse.js"
+    "lhci": "node scripts/lighthouse.js",
+    "security:audit": "npm audit --audit-level=high",
+    "security:sast": "npm run lint",
+    "security:check": "npm run security:audit && npm run security:sast"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.51.0",
