@@ -1,5 +1,6 @@
 // @ts-check
 import { supabase } from './supabase.js';
+import { DB } from './db.js';
 
 /**
  * #GIO: Elite Sync Engine V2.1 — LWW Conflict Resolution
@@ -22,6 +23,7 @@ export const SyncManager = (() => {
   let _keepAliveTimer = null;
   let _retryTimer = null;
   let _uiTimer = null;
+  let _lastServerTime = 0;
 
   /** @typedef {{ store: string, data: any, timestamp: number, retry: number }} SyncTask */
 
@@ -46,7 +48,10 @@ export const SyncManager = (() => {
 
     const tasks = _loadQueue();
     const key = _recordKey(store, data);
-    const newTask = { store, data, timestamp: Date.now(), retry: 0, _key: key };
+    // Surgical Fix 2 & 3: Store only ID, and prevent LWW Clock Skew
+    const id = (store === 'settings') ? data.key : (data.id ?? data.timestamp);
+    const timestamp = Math.max(Date.now(), _lastServerTime + 1);
+    const newTask = { store, id, timestamp, retry: 0, _key: key };
 
     // LWW deduplication: replace existing task for same key with newer data
     const existingIdx = tasks.findIndex(t => t._key === key);
@@ -114,7 +119,7 @@ export const SyncManager = (() => {
 
         // ── LWW: fetch server timestamps for each record ─────────────────
         const ids = storeTasks
-          .map(t => t.data?.id)
+          .map(t => t.id)
           .filter(Boolean);
 
         let serverRowsMap = {};
@@ -134,13 +139,18 @@ export const SyncManager = (() => {
 
         const toSync = [];
         for (const t of storeTasks) {
-          const servRow = serverRowsMap[t.data?.id];
+          const freshData = await DB._getRaw(t.store, t.id);
+          if (!freshData) continue; // Deleted locally
+          t.data = freshData;
+
+          const servRow = serverRowsMap[t.id];
           if (!servRow) {
             toSync.push(t);
             continue;
           }
 
           const servTs = new Date(servRow.updated_at).getTime();
+          if (servTs > _lastServerTime) _lastServerTime = servTs; // Update safe time
 
           // CRDT-lite: Deep merge for workouts to prevent lost sets
           if (store === 'workouts' && servRow.exercises) {
@@ -200,8 +210,8 @@ export const SyncManager = (() => {
 
     const currentQueue = _loadQueue();
     const newQueue = currentQueue.filter(t => {
-      if (failed.some(f => f.store === t.store && f.data?.id === t.data?.id)) return true;
-      const original = tasks.find(orig => orig.store === t.store && orig.data?.id === t.data?.id);
+      if (failed.some(f => f.store === t.store && f.id === t.id)) return true;
+      const original = tasks.find(orig => orig.store === t.store && orig.id === t.id);
       if (!original) return true;
       if (t.timestamp > original.timestamp) return true;
       return false;

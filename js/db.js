@@ -126,6 +126,17 @@ function tx(store, mode = 'readonly') {
   });
 }
 
+function req2pSafe(r, tx) {
+  return new Promise((res, rej) => {
+    let result = null;
+    r.onsuccess = (e) => { result = e.target.result; };
+    r.onerror = (e) => rej(e.target.error);
+    tx.oncomplete = () => res(result);
+    tx.onerror = () => rej(tx.error);
+    tx.onabort = () => rej(new Error('Tx aborted'));
+  });
+}
+
 function req2p(r) {
   return new Promise((res, rej) => {
     r.onsuccess = (e) => res(e.target.result);
@@ -167,7 +178,7 @@ const Workouts = {
   save(session) {
     session.timestamp = session.timestamp || Date.now();
     return tx(S.WORKOUTS, 'readwrite').then((s) =>
-      req2p(s.add(session)).then((id) => {
+      req2pSafe(s.add(session), s.transaction).then((id) => {
         session.id = id;
         _triggerSync(S.WORKOUTS, session);
         return id;
@@ -465,7 +476,7 @@ const OneRM = {
       return req2p(s.get(exerciseName)).then((existing) => {
         if (!existing || value > existing.value) {
           const record = { id: exerciseName, value, timestamp: Date.now() };
-          return req2p(s.put(record)).then(() => {
+          return req2pSafe(s.put(record), s.transaction).then(() => {
             _triggerSync(S.ORM, record);
           });
         }
@@ -533,7 +544,7 @@ const Metrics = {
       timestamp: Date.now(),
     };
     return tx(S.METRICS, 'readwrite').then((s) => {
-      return req2p(s.add(entry)).then((id) => {
+      return req2pSafe(s.add(entry), s.transaction).then((id) => {
         entry.id = id;
         _triggerSync(S.METRICS, entry);
       });
@@ -589,7 +600,7 @@ const Settings = {
    */
   async set(key, value) {
     const record = { key, value };
-    await tx(S.SETTINGS, 'readwrite').then((s) => req2p(s.put(record)));
+    await tx(S.SETTINGS, 'readwrite').then((s) => req2pSafe(s.put(record), s.transaction));
     
     // Don't sync internal/temporary settings
     if (!key.startsWith('privacy.audit') && !key.startsWith('ap-')) {
@@ -630,7 +641,7 @@ const Settings = {
 const Events = {
   log(type, payload = {}) {
     return tx(S.EVENTS, 'readwrite').then((s) =>
-      req2p(s.add({ type, payload, timestamp: Date.now() }))
+      req2pSafe(s.add({ type, payload, timestamp: Date.now() }), s.transaction)
     );
   },
 
@@ -650,7 +661,7 @@ const NutritionLogs = {
   save(payload) {
     const entry = { payload, timestamp: Date.now() };
     return tx(S.NUTRITION, 'readwrite').then((s) =>
-      req2p(s.add(entry)).then((id) => {
+      req2pSafe(s.add(entry), s.transaction).then((id) => {
         entry.id = id;
         _triggerSync(S.NUTRITION, entry);
         return id;
@@ -675,7 +686,7 @@ const PlannedWorkouts = {
   save(name, payload) {
     const entry = { name, payload, timestamp: Date.now() };
     return tx(S.PLANS, 'readwrite').then((s) =>
-      req2p(s.add(entry)).then((id) => {
+      req2pSafe(s.add(entry), s.transaction).then((id) => {
         entry.id = id;
         _triggerSync(S.PLANS, entry);
         return id;
@@ -775,5 +786,5 @@ async function clearAll() {
 }
 
 /* ── Public API ── */
-export const DB = { Workouts, OneRM, Metrics, Settings, Events, NutritionLogs, PlannedWorkouts, Backup, clearAll, openDB };
+export const DB = { Workouts, OneRM, Metrics, Settings, Events, NutritionLogs, PlannedWorkouts, Backup, clearAll, openDB, _getRaw: (store, id) => tx(store).then(s => req2p(s.get(id))) };
 export { openDB };
