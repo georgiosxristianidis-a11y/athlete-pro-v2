@@ -110,7 +110,7 @@ export const RestTimer = (() => {
     const time = document.getElementById('rest-bar-time');
     if (!bar || !fill || !time) return;
     const pct = (rem / _total) * 100;
-    fill.style.width = `${pct}%`;
+    fill.style.transform = `scaleX(${pct / 100})`;
     time.textContent = `Rest: ${rem}s`;
   }
 

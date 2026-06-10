@@ -306,7 +306,7 @@ export async function renderSelect() {
         Spring.animate({
           from: 0,
           to: stats.progress,
-          onUpdate: (v) => { bar.style.width = `${v}%`; }
+          onUpdate: (v) => { bar.style.transform = `scaleX(${v / 100})`; }
         });
       }
     });

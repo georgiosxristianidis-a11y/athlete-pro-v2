@@ -672,7 +672,7 @@ export function _updateLiveStats() {
   
   if (pEl && totalSets > 0) {
     const pct = (setsDone / totalSets) * 100;
-    pEl.style.width = `${pct}%`;
+    pEl.style.transform = `scaleX(${pct / 100})`;
   }
 }
 

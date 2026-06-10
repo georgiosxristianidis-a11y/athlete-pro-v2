@@ -353,7 +353,7 @@
 .island-progress-fill {
   height: 100%;
   border-radius: 0 0 20px 20px;
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Timer display (PIP mode) ── */
@@ -394,7 +394,7 @@
   height: 2px;
   background: var(--c-accent);
   z-index: 4;
-  transition: width 0.3s linear, background 0.3s;
+  transition: transform 0.3s linear;
 }
 .island-timer-progress.warning { background: var(--c-amber); }
 .island-timer-progress.done    { background: var(--c-cyan); }
@@ -461,7 +461,7 @@
 .rest-pill-fill {
   height: 100%;
   background: var(--c-accent);
-  transition: width 0.3s linear;
+  transition: transform 0.3s linear;
   border-radius: 0 2px 2px 0;
 }
 .rest-pill-fill.warning { background: var(--c-amber); }
@@ -610,3 +610,6 @@
   transform: scale(0.96);
   box-shadow: none;
 }
+
+.island-progress-fill, .island-timer-progress, .rest-pill-fill { transform-origin: left; transform: scaleX(0); width: 100%; }
+

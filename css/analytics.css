@@ -40,7 +40,7 @@
   justify-content: center;
   gap: 2px;
   background: var(--c-bg-3);
-  transition: all var(--t-fast);
+  transition: transform var(--t-fast);
   position: relative;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -98,7 +98,7 @@
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -303,7 +303,7 @@
 .orm-bar-fill {
   height: 100%;
   border-radius: 2px;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 @media (hover: hover) {
   .orm-row:hover {
@@ -343,7 +343,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all var(--t-fast);
+  transition: transform var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
 .cal-pick-btn.active,
@@ -372,3 +372,6 @@
   gap: 8px;
   -webkit-tap-highlight-color: transparent;
 }
+
+.orm-bar-fill { transform-origin: left; width: 100%; transform: scaleX(0); }
+

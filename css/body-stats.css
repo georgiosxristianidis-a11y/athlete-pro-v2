@@ -31,7 +31,7 @@
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform, opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
 }
 .bs-tab.active {
@@ -201,7 +201,7 @@
   border: 1px solid var(--c-border);
   border-radius: var(--r-m);
   overflow: hidden;
-  transition: border-color var(--t-fast);
+  transition: transform var(--t-fast);
 }
 .bs-hist-entry.open {
   border-color: rgba(0, 230, 118, 0.25);
@@ -280,7 +280,7 @@
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition: all var(--t-fast);
+  transition: transform, opacity var(--t-fast);
   -webkit-tap-highlight-color: transparent;
   letter-spacing: 0.02em;
 }
@@ -376,7 +376,7 @@
   font-family: inherit;
   padding: 0 36px 0 12px;
   -webkit-appearance: none;
-  transition: border-color var(--t-fast);
+  transition: transform var(--t-fast);
 }
 .bs-field-inp:focus {
   border-color: rgba(0, 230, 118, 0.4);

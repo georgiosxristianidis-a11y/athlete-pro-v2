@@ -255,7 +255,7 @@ function _renderORMList(orms) {
     <div class="orm-row stagger-item" style="animation-delay: ${0.2 + i * 0.05}s">
       <div class="orm-name">${esc(o.id)}</div>
       <div class="orm-val">${o.value}<span class="orm-unit">kg</span></div>
-      <div class="orm-bar-wrap"><div class="orm-bar-fill" id="an-orm-bar-${i}" style="width:0%;background:linear-gradient(90deg, var(--c-purple), #8b5cf6)"></div></div>
+      <div class="orm-bar-wrap"><div class="orm-bar-fill" id="an-orm-bar-${i}" style="background:linear-gradient(90deg, var(--c-purple), #8b5cf6)"></div></div>
     </div>`).join('');
 
   // Spring animation for bars
@@ -269,7 +269,7 @@ function _renderORMList(orms) {
         to: targetWidth,
         stiffness: 120,
         damping: 14,
-        onUpdate: (v) => { bar.style.width = v + '%'; }
+        onUpdate: (v) => { bar.style.transform = `scaleX(${v / 100})`; }
       });
     });
   }, 150);

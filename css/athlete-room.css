@@ -36,7 +36,7 @@
   flex-shrink: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 0.18s ease;
   box-shadow: 0 0 0 2px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.35);
   position: relative;
   overflow: hidden;
@@ -174,7 +174,7 @@
   position: relative;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 0.18s ease;
 }
 .ar-avatar:active { transform: scale(0.94); }
 @media (hover: hover) {
@@ -483,7 +483,7 @@
 .ar-ppl-bar-fill {
   height: 100%;
   border-radius: 3px;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ar-ppl-meta {
   display: flex;
@@ -510,7 +510,7 @@
   align-items: center;
   gap: 6px;
   position: relative;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 .ar-ach-card.unlocked {
   border-color: rgba(0,230,118,0.3);
@@ -735,7 +735,7 @@
 .ar-stats-grid .ar-stat-cell {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: box-shadow 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
+  transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
 }
 .ar-stats-grid .ar-stat-cell:active {
   transform: scale(0.97);

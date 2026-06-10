@@ -136,7 +136,7 @@
   width: 0%;
   background: linear-gradient(90deg, #8b5cf6, #a78bfa, #c084fc);
   border-radius: 10px;
-  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
 }
 
@@ -245,3 +245,6 @@
 /* ── Contextual Colors ── */
 [data-day="pull"] .exercise-icon { border-top-color: var(--c-purple); }
 [data-day="legs"] .exercise-icon { border-top-color: var(--c-blue); }
+
+.progress-fill { transform-origin: left; transform: scaleX(0); width: 100%; }
+

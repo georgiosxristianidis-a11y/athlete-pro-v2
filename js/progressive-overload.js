@@ -314,9 +314,9 @@ export function getTypeClass(type) {
  */
 export function getTypeIcon(type) {
   switch (type) {
-    case 'pr': return '🟢';
-    case 'recommended': return '🔵';
-    default: return '⚪';
+    case 'pr': return '⚡';
+    case 'recommended': return '•';
+    default: return '·';
   }
 }
 

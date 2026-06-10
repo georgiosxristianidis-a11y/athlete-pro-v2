@@ -688,7 +688,7 @@
   gap: 3px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: box-shadow var(--t-normal), background var(--t-normal);
+  transition: background var(--t-normal);
   min-height: 88px;
   justify-content: center;
 }

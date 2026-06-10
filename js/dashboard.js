@@ -374,7 +374,7 @@ export const Dashboard = (() => {
           stiffness: 120,
           damping: 20,
           onUpdate: (v) => {
-            bar.style.width = v + '%';
+            bar.style.transform = `scaleX(${v / 100})`;
           }
         });
         _activeSprings.set(t, spring);
@@ -421,8 +421,7 @@ export const Dashboard = (() => {
         </div>
         <div class="orm-val">${o.value}<span class="orm-unit">kg</span>${deltaHtml}</div>
         <div class="orm-bar-wrap">
-          <div class="orm-bar-fill" id="dash-orm-bar-${i}" style="width:0%;
-            background:var(--c-purple)"></div>
+          <div class="orm-bar-fill" id="dash-orm-bar-${i}" style="background:var(--c-purple)"></div>
         </div>
       </div>`;
         }
@@ -439,7 +438,7 @@ export const Dashboard = (() => {
             to: Math.round((o.value / max) * 100),
             stiffness: 100 + i * 10,
             damping: 15,
-            onUpdate: (v) => { bar.style.width = v + '%'; }
+            onUpdate: (v) => { bar.style.transform = `scaleX(${v / 100})`; }
           });
         }
       });
@@ -633,8 +632,8 @@ export const Dashboard = (() => {
           <div class="rec-item">
             <div class="rec-dot" style="background: var(--c-accent)"></div>
             <div class="rec-info">
-              <span class="rec-name">${ex.name}</span>
-              <span class="rec-reason">${ex.reason}</span>
+              <span class="rec-name">${esc(ex.name)}</span>
+              <span class="rec-reason">${esc(ex.reason)}</span>
             </div>
             <div class="rec-weights">
               <span class="rec-old">${ex.currentWeight}kg</span>
@@ -722,7 +721,7 @@ async function showWeeklySummary() {
             ${data.prs.length > 0 ? `
               <div style="display:flex; align-items:flex-start; gap:12px; color:var(--c-text-1); font-size:14px;">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                <span><strong>${data.prs.length} PRs</strong>: ${data.prs.map(p => `${p.exercise} ${p.weight}kg`).join(', ')}</span>
+                <span><strong>${data.prs.length} PRs</strong>: ${data.prs.map(p => `${esc(p.exercise)} ${p.weight}kg`).join(', ')}</span>
               </div>
             ` : ''}
 
@@ -741,7 +740,7 @@ async function showWeeklySummary() {
             <div style="display:flex; flex-direction:column; gap:8px;">
               ${data.prs.map(pr => `
                 <div style="display:flex; justify-content:space-between; padding:var(--sp-2); background:var(--c-surface-h); border-radius:var(--r-s); border-left:2px solid var(--c-accent);">
-                  <span style="color:var(--c-text-1); font-weight:700;">${pr.exercise}</span>
+                  <span style="color:var(--c-text-1); font-weight:700;">${esc(pr.exercise)}</span>
                   <span style="color:var(--c-accent); font-weight:800; font-variant-numeric:tabular-nums;">${pr.weight}kg</span>
                 </div>
               `).join('')}
@@ -755,8 +754,8 @@ async function showWeeklySummary() {
             <div style="display:flex; flex-direction:column; gap:8px;">
               ${data.plateauAlerts.map(alert => `
                 <div class="plateau-alert" style="padding:var(--sp-2); background:var(--c-surface-h); border-radius:var(--r-s); border-left:2px solid var(--c-amber);">
-                  <strong style="color:var(--c-text-1);display:block;margin-bottom:4px;font-size:14px;">${alert.exercise}</strong>
-                  <p style="color:var(--c-text-2);font-size:13px;margin-bottom:4px">${alert.suggestion}</p>
+                  <strong style="color:var(--c-text-1);display:block;margin-bottom:4px;font-size:14px;">${esc(alert.exercise)}</strong>
+                  <p style="color:var(--c-text-2);font-size:13px;margin-bottom:4px">${esc(alert.suggestion)}</p>
                   <small style="color:var(--c-text-3);font-size:11px">${alert.weeks} weeks since last progress</small>
                 </div>
               `).join('')}

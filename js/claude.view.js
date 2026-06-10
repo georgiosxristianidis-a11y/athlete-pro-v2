@@ -196,7 +196,7 @@ export const Claude = (() => {
           hist?.scrollTo(0, hist.scrollHeight);
         },
         onDone: () => { ClaudeState.chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: aiText }); },
-        onError: (err) => { aiBubble.innerHTML = `<div class="ai-error">${err}</div>`; }
+        onError: (err) => { aiBubble.innerHTML = `<div class="ai-error">${esc(err)}</div>`; }
       }, { history: ClaudeState.chatHistory });
     } catch (e) {
       aiBubble.innerHTML = '<div class="ai-error">Failed to connect to coach.</div>';
@@ -213,7 +213,7 @@ export const Claude = (() => {
   }
 
   function _markdownToHtml(text) {
-    return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    return esc(text).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
   }
 
   function _claudeIcon(size = 32) {

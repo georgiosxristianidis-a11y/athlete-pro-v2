@@ -310,7 +310,7 @@ export const DynamicIsland = (() => {
     // Progress bar
     if (_progressFill) {
       const pct = total ? (done / total) * 100 : 0;
-      _progressFill.style.width = `${pct}%`;
+      _progressFill.style.transform = `scaleX(${pct / 100})`;
       const colors = { push: 'var(--c-accent)', pull: 'var(--c-purple)', legs: 'var(--c-blue)' };
       _progressFill.style.background = colors[State.type] || 'var(--c-accent)';
     }
@@ -443,7 +443,7 @@ export const DynamicIsland = (() => {
   function _renderRestProgress() {
     if (!_timerProg) return;
     const pct = (_timerActive && _timerMax) ? (_timerSecs / _timerMax) * 100 : 0;
-    _timerProg.style.width = `${pct}%`;
+    _timerProg.style.transform = `scaleX(${pct / 100})`;
   }
 
   function _updateNetworkStatus() {
