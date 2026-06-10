@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import compression from 'compression';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { correlationMiddleware, logWarn } from './lib/logger.js';
 
 import coachRouter from './routes/coach.js';
@@ -19,7 +21,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'", "https://cdn.jsdelivr.net"],
+      scriptSrc: ["'self'", "'unsafe-hashes'", "https://cdn.jsdelivr.net"],
       scriptSrcAttr: ["'unsafe-inline'"], // Required for onclick handlers in templates
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
@@ -48,8 +50,31 @@ app.use(compression());
 // Handle favicon.ico explicitly
 app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'icons', 'icon-192.png')));
 
+// ── Global API Rate Limiter
+const globalApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => res.status(429).json({ error: 'Too many requests, please try again later.' })
+});
+
+// ── Strict CORS
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 app.use(correlationMiddleware);
 app.use(express.json({ limit: '100kb' }));
+app.use('/api/', globalApiLimiter);
 
 // ── API Routes (Prioritized)
 app.use('/api/coach', (req, res, next) => {

@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { AIOrchestrator } from '../lib/aiOrchestrator.js';
 import { logInfo, logWarn } from '../lib/logger.js';
 import { asyncHandler } from '../lib/errors.js';
+import { z } from 'zod';
 
 const router = express.Router();
 
@@ -18,15 +19,26 @@ const _limitOpts = {
 const coachLimiter = rateLimit({ ..._limitOpts, max: 10 });
 const apiLimiter   = rateLimit({ ..._limitOpts, max: 20 });
 
+const generatePlanSchema = z.object({
+  workoutHistory: z.array(z.any()).optional().default([]),
+  oneRMs: z.array(z.any()).optional().default([]),
+  goals: z.string().optional().default('strength'),
+  experience: z.string().optional().default('intermediate'),
+  engine: z.string().optional().default('anthropic')
+});
+
 /* ── POST /generate-plan ── */
 router.post('/generate-plan', apiLimiter, asyncHandler(async (req, res) => {
+  const parseResult = generatePlanSchema.safeParse(req.body);
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.errors });
+  
   const {
-    workoutHistory = [],
-    oneRMs = [],
-    goals = 'strength',
-    experience = 'intermediate',
-    engine = 'anthropic'
-  } = req.body;
+    workoutHistory,
+    oneRMs,
+    goals,
+    experience,
+    engine
+  } = parseResult.data;
 
   logInfo(req, 'plan_generation_started', `Generating plan for ${goals}`);
 
@@ -47,9 +59,20 @@ router.post('/generate-plan', apiLimiter, asyncHandler(async (req, res) => {
   res.json({ success: true, plan, generated: true, aiNotes: content });
 }));
 
+const recommendationsSchema = z.object({
+  workout: z.any(), // Keeping it loose as it's a complex object
+  fatigue: z.any().optional().default({}),
+  topLifts: z.array(z.any()).optional().default([]),
+  nextSessionPlan: z.array(z.any()).optional().default([]),
+  engine: z.string().optional().default('anthropic')
+});
+
 /* ── POST /recommendations ── */
 router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
-  const { workout, fatigue = {}, topLifts = [], nextSessionPlan = [], engine = 'anthropic' } = req.body;
+  const parseResult = recommendationsSchema.safeParse(req.body);
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.errors });
+  
+  const { workout, fatigue, topLifts, nextSessionPlan, engine } = parseResult.data;
   
   const system = _buildRecommendationsPrompt(workout, fatigue, topLifts, nextSessionPlan);
   const content = await AIOrchestrator.generateJSON({
@@ -62,19 +85,34 @@ router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
   res.json({ success: true, recommendations, aiNotes: content });
 }));
 
+const coachSchema = z.object({
+  workouts: z.array(z.any()).optional().default([]),
+  fatigue: z.any().optional().default({}),
+  topLifts: z.array(z.any()).optional().default([]),
+  messages: z.array(z.any()).optional().default([]),
+  images: z.array(z.any()).optional().default([]),
+  profile: z.any().optional().default({}),
+  longTermStats: z.any().optional().default({}),
+  engine: z.string().optional().default('anthropic'),
+  customKey: z.string().optional()
+});
+
 /* ── POST / (Main Coach SSE) ── */
 router.post('/', coachLimiter, asyncHandler(async (req, res) => {
+  const parseResult = coachSchema.safeParse(req.body);
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.errors });
+
   let { 
-    workouts = [], 
-    fatigue = {}, 
-    topLifts = [], 
-    messages = [], 
-    images = [], 
-    profile = {}, 
-    longTermStats = {}, 
-    engine = 'anthropic', 
+    workouts, 
+    fatigue, 
+    topLifts, 
+    messages, 
+    images, 
+    profile, 
+    longTermStats, 
+    engine, 
     customKey 
-  } = req.body;
+  } = parseResult.data;
 
   // Final sanitization to prevent Gemini 400 errors
   if (!Array.isArray(workouts)) workouts = [];
@@ -105,10 +143,17 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
   res.end();
 }));
 
+const ttsSchema = z.object({
+  text: z.string().min(1, 'text is required'),
+  customKey: z.string().optional()
+});
+
 /* ── POST /tts (Gemini 2.5 Flash Preview TTS) ── */
 router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
-  const { text, customKey } = req.body;
-  if (!text) return res.status(400).json({ error: 'text is required' });
+  const parseResult = ttsSchema.safeParse(req.body);
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.errors });
+
+  const { text, customKey } = parseResult.data;
 
   const { gemini } = await import('../lib/geminiClient.js');
   const apiKey = customKey || gemini.apiKey;
@@ -146,9 +191,19 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
   res.json({ success: true, audioBase64: pcmData });
 }));
 
+const weeklyReportSchema = z.object({
+  workouts: z.array(z.any()).optional().default([]),
+  profile: z.any().optional().default({}),
+  engine: z.string().optional().default('anthropic'),
+  customKey: z.string().optional()
+});
+
 /* ── POST /weekly-report ── */
 router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
-  const { workouts = [], profile = {}, engine = 'anthropic', customKey } = req.body;
+  const parseResult = weeklyReportSchema.safeParse(req.body);
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.errors });
+
+  const { workouts, profile, engine, customKey } = parseResult.data;
 
   logInfo(req, 'weekly_report_started', `Generating weekly report`);
 
