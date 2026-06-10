@@ -4,6 +4,8 @@
    Block 2 — all stores, all CRUD, Promise-based API
    ════════════════════════════════════════════════════════ */
 
+import { encryptAsync, decryptAsync } from './shared/cryptoClient.js';
+
 const DB_NAME = 'athlete-pro';
 const DB_VERSION = 2;
 
@@ -515,11 +517,19 @@ const Metrics = {
    * @param {number} heightCm
    * @returns {Promise<void>}
    */
-  save(weight, heightCm) {
-    const entry = {
+  async save(weight, heightCm) {
+    const rawData = {
       weight,
       height: heightCm,
-      bmi: this.bmi(weight, heightCm),
+      bmi: this.bmi(weight, heightCm)
+    };
+    
+    // Encrypt sensitive PII
+    const cryptoData = await encryptAsync(rawData);
+
+    const entry = {
+      _encrypted: cryptoData.encrypted,
+      _iv: cryptoData.iv,
       timestamp: Date.now(),
     };
     return tx(S.METRICS, 'readwrite').then((s) => {
@@ -534,19 +544,32 @@ const Metrics = {
    * Get latest entry.
    * @returns {Promise<MetricsRecord|undefined>}
    */
-  latest() {
-    return getAll(S.METRICS).then((list) => {
-      if (!list.length) return null;
-      return list.sort((a, b) => b.timestamp - a.timestamp)[0];
-    });
+  async latest() {
+    const list = await getAll(S.METRICS);
+    if (!list.length) return null;
+    const latestRaw = list.sort((a, b) => b.timestamp - a.timestamp)[0];
+    
+    if (latestRaw._encrypted) {
+      const decrypted = await decryptAsync(latestRaw._encrypted, latestRaw._iv);
+      return { ...decrypted, id: latestRaw.id, timestamp: latestRaw.timestamp };
+    }
+    return latestRaw;
   },
 
   /**
    * Get all entries sorted newest first (for chart).
    * @returns {Promise<MetricsRecord[]>}
    */
-  getAll() {
-    return getAll(S.METRICS).then((list) => list.sort((a, b) => b.timestamp - a.timestamp));
+  async getAll() {
+    const list = await getAll(S.METRICS);
+    const decryptedList = await Promise.all(list.map(async (r) => {
+      if (r._encrypted) {
+        const dec = await decryptAsync(r._encrypted, r._iv);
+        return { ...dec, id: r.id, timestamp: r.timestamp };
+      }
+      return r;
+    }));
+    return decryptedList.sort((a, b) => b.timestamp - a.timestamp);
   },
 
   /** Clear all. */
