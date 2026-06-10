@@ -30,6 +30,7 @@
 ## 🛡️ ФИКСАЦИЯ ОПЫТА (GIO Updates)
 - [x] **Global Skeleton Utility:** Стандартизированный компонент `.sk` для всех загрузочных состояний.
 - [x] **Spring Animation Pattern:** Приоритет физики пружин для всех числовых изменений.
+- [x] **Karpathy AI Guidelines:** Интегрированы строгие правила поведения (Simplicity First, Surgical Changes) в GEMINI.md.
 
 ---
 

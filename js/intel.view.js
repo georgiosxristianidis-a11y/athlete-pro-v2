@@ -46,7 +46,9 @@ export const IntelView = (() => {
           <h1 class="intel-title">P.A.N.D.A. Core</h1>
           <div class="intel-sub">
             <span class="ai-indicator ${_hasValidKey ? 'active' : 'missing'}" style="margin-right:4px;"></span>
-            <span id="intel-status-text" style="color: ${_hasValidKey ? 'var(--c-text-1)' : 'var(--c-text-3)'}; font-weight:800; text-transform:lowercase;">${_hasValidKey ? 'system secure' : 'key missing'}</span>
+            <span style="color: ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-text-3)'}; font-weight:700; text-transform:lowercase; opacity:0.8;">${_hasValidKey ? 'system secure' : 'key missing'}</span>
+            <span style="opacity:0.2; margin: 0 6px;">|</span>
+            <span id="intel-status-text" style="color: var(--c-text-2); font-weight:800; text-transform:lowercase;">${IntelStore.getStatus()}</span>
           </div>
         </div>
         <button onclick="Nav.go('s-home')" style="background:none; border:none; color:var(--c-text-3); font-size:28px; font-weight:200; cursor:pointer; padding:0 8px;">&times;</button>
@@ -82,9 +84,9 @@ export const IntelView = (() => {
           <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
           <div style="font-size:9px; font-weight:900; text-transform:uppercase; color:var(--c-text-3)">Create</div>
         </button>
-        <button class="card-action" style="opacity:0.25; cursor:not-allowed; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
-          <div style="font-size:9px; font-weight:900; text-transform:uppercase; color:var(--c-text-3)">Metrics</div>
+        <button class="card-action" onclick="IntelView.analyzeStats()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div style="color:var(--c-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
+          <div style="font-size:9px; font-weight:900; text-transform:uppercase; color:var(--c-text-3)">Анализ</div>
         </button>
       </div>
 
@@ -183,7 +185,14 @@ export const IntelView = (() => {
     const feedbackEl = document.createElement('div');
     feedbackEl.className = 'intel-feedback';
     feedbackEl.innerHTML = `
-      <div class="intel-feedback-label">AI Feedback</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div class="intel-feedback-label" style="margin-bottom:0;">AI Feedback</div>
+        <button class="intel-btn-icon" style="opacity:0.5; width:24px; height:24px; padding:0;" title="Озвучить" onclick="IntelView.playAudio(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+        </button>
+      </div>
       <div class="intel-feedback-text">...</div>
     `;
     feedbackFeed?.prepend(feedbackEl);
@@ -204,11 +213,15 @@ export const IntelView = (() => {
           workouts,
           profile,
           topLifts,
-          engine: 'gemini'
+          engine: 'gemini',
+          customKey: await DB.Settings.get('gemini-key')
         })
       });
 
-      if (!response.ok) throw new Error('API Error');
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${response.status}`);
+      }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -230,7 +243,25 @@ export const IntelView = (() => {
                 const parsed = JSON.parse(data);
                 if (parsed.text) {
                   fullText += parsed.text;
-                  if (feedbackText) feedbackText.innerHTML = fullText.replace(/\\n/g, '<br>');
+                  if (feedbackText) {
+                    let renderText = fullText;
+                    
+                    // Look for JSON widget block
+                    const jsonMatch = renderText.match(/\{[\s\S]*"_widget"\s*:\s*"readiness"[\s\S]*\}/);
+                    if (jsonMatch) {
+                      try {
+                        const widgetData = JSON.parse(jsonMatch[0]);
+                        const htmlWidget = _buildReadinessWidget(widgetData);
+                        renderText = renderText.replace(jsonMatch[0], htmlWidget);
+                      } catch (e) { }
+                    }
+                    
+                    // Hide <thinking> tags and anything inside them (even during streaming)
+                    renderText = renderText.replace(/<thinking>[\s\S]*?(<\/thinking>|$)/g, '');
+                    
+                    // Only replace newlines outside of HTML tags to avoid breaking the widget
+                    feedbackText.innerHTML = renderText.replace(/\n/g, '<br>').replace(/<br><div/g, '<div').replace(/div><br>/g, 'div>');
+                  }
                 }
               } catch (e) {}
             }
@@ -245,7 +276,7 @@ export const IntelView = (() => {
       console.error(err);
       IntelStore.addLog('SYS', 'Connection failed');
       IntelStore.setStatus('ERROR');
-      if (feedbackText) feedbackText.textContent = 'Failed to connect to Neural Command Center.';
+      if (feedbackText) feedbackText.textContent = `Failed: ${err.message}`;
     }
   }
 
@@ -262,7 +293,10 @@ export const IntelView = (() => {
       const response = await fetch('/api/coach/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: textToSpeak })
+        body: JSON.stringify({ 
+          text: textToSpeak,
+          customKey: await (await import('./db.js')).DB.Settings.get('gemini-key')
+        })
       });
 
       if (!response.ok) throw new Error('Voice sync failed');
@@ -319,7 +353,12 @@ export const IntelView = (() => {
        const response = await fetch('/api/coach/weekly-report', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ workouts: recentWorkouts, profile, engine: 'gemini' })
+         body: JSON.stringify({ 
+           workouts: recentWorkouts, 
+           profile, 
+           engine: 'gemini',
+           customKey: await DB.Settings.get('gemini-key')
+         })
        });
 
        if (!response.ok) throw new Error('Report generation failed');
@@ -389,7 +428,97 @@ export const IntelView = (() => {
      }
   }
 
-  return { load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, _clearImage };
+  function analyzeStats() {
+     IntelStore.addLog('SYS', 'Ready to analyze stats');
+     const input = document.getElementById('intel-input');
+     if (input) {
+         input.value = "Проанализируй мою последнюю тренировку и дай #gym дашборд";
+         submit();
+     }
+  }
+
+  function _buildReadinessWidget(data) {
+    const getColor = (val) => {
+      if (val >= 90) return 'var(--c-accent)'; // Green (Отлично)
+      if (val >= 70) return 'var(--c-warning)'; // Yellow (Хорошо)
+      if (val >= 50) return '#f97316'; // Orange (Удовлетворительно)
+      return 'var(--c-red)'; // Red (Внимание)
+    };
+
+    const hbar = (val, label) => {
+      const c = getColor(val);
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="font-size:12px; font-weight:600; color:var(--c-text-2);">${label}</div>
+          <div style="display:flex; align-items:center; gap:8px; width:55%;">
+            <div style="flex:1; height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
+              <div style="width:${val}%; height:100%; background:${c}; border-radius:3px; transition: width 1s ease-out;"></div>
+            </div>
+            <span style="font-size:12px; font-weight:800; color:${c}; width:28px; text-align:right;">${val}</span>
+          </div>
+        </div>
+      `;
+    };
+
+    const mainColor = getColor(data.index);
+    const indexLabel = data.index >= 90 ? 'отлично' : data.index >= 70 ? 'хорошо' : data.index >= 50 ? 'удовл' : 'внимание';
+
+    return `
+      <div class="intel-readiness-widget animate-in" style="background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.1); border-radius:24px; padding:20px; margin:16px 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+          <div style="font-size:16px; font-weight:600; color:var(--c-text-1);">Индекс готовности</div>
+          <div style="width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--c-text-3);">?</div>
+        </div>
+        
+        <div style="display:flex; align-items:flex-end; gap:16px; margin-bottom:32px;">
+          <div style="font-size:42px; font-weight:800; color:${mainColor}; line-height:1; font-family:'Instrument Sans', sans-serif;">${data.index}</div>
+          <div style="flex:1; padding-bottom:8px;">
+            <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+              <div style="height:100%; width:${data.index}%; background:${mainColor}; border-radius:3px; transition: width 1s ease-out;"></div>
+            </div>
+            <div style="font-size:12px; color:var(--c-text-3); margin-top:8px; text-transform:uppercase; font-weight:700;">${indexLabel}</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:32px;">
+          ${hbar(data.recovery, 'Восстановление')}
+          ${hbar(data.acwr, 'Нагрузка ACWR')}
+          ${hbar(data.sleep, 'Качество сна')}
+          ${hbar(data.monotony, 'Монотонность')}
+          ${hbar(data.density, 'Тренд нагрузки')}
+          ${hbar(data.density, 'Плотность и ритм')}
+        </div>
+
+        <div style="border-top:1px solid rgba(255,255,255,0.05); padding-top:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div style="font-size:11px; font-weight:800; letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">Цель на сегодня</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="color:var(--c-red); font-size:12px;">⚡ ЦНС</span>
+              <div style="width:40px; height:4px; background:rgba(255,255,255,0.1); border-radius:2px;"><div style="width:${data.cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
+              <span style="font-size:12px; font-weight:700; color:var(--c-red);">${data.cns}%</span>
+            </div>
+          </div>
+          <div style="border-left:2px solid ${mainColor}; padding-left:12px;">
+            <div style="font-size:16px; font-weight:600; color:var(--c-text-1); margin-bottom:4px;">${data.goal}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  function playAudio(btn) {
+    const container = btn.closest('.intel-feedback');
+    if (!container) return;
+    const textEl = container.querySelector('.intel-feedback-text');
+    if (!textEl) return;
+    
+    // We only want the text, ignoring HTML structure like the readiness widget
+    const textToSpeak = textEl.innerText.trim();
+    if (textToSpeak) {
+      speakText(textToSpeak);
+    }
+  }
+
+  return { load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats, playAudio, _clearImage };
 })();
 
 // Expose to window for onclick

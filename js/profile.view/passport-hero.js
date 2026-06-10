@@ -92,7 +92,7 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   </div>
 </div>
 
-<div class="pp-metrics-strip">
+<div class="pp-metrics-strip" style="cursor: pointer;" onclick="window._arActiveTab = 'metrics'; window.AthleteRoom?.open()">
   <div class="pp-m-item">
     <div class="pp-m-val">${metrics?.weight || '—'}<span class="pp-m-u">kg</span></div>
     <div class="pp-m-lbl">${ru ? 'Вес' : 'Weight'}</div>

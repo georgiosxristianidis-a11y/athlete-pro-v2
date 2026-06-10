@@ -260,6 +260,8 @@ async function _fetchAIRecommendations(workout, fatigue, orms, nextPlan) {
       'X-Request-ID': _newRequestId(),
     },
     body: JSON.stringify({
+      engine: await DB.Settings.get('ai-engine', 'anthropic'),
+      customKey: await DB.Settings.get('gemini-key'),
       workout: {
         type: workout.type,
         tonnage: workout.tonnage,
@@ -463,6 +465,7 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
       },
       body: JSON.stringify({
         engine,
+        customKey: await DB.Settings.get('gemini-key'),
         workouts: workouts.slice(0, 5).map((w) => ({
           type: w.type,
           hoursAgo: Math.round((Date.now() - w.timestamp) / 3600000),

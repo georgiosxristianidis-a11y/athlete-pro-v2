@@ -184,6 +184,18 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
             ${t('settings.engine_gemini')}
           </button>
         </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; padding: 4px 0;">
+          <div class="pref-info">
+            <div class="pref-title">P.A.N.D.A Assistant</div>
+            <div class="pref-sub">Floating AI Bubble</div>
+          </div>
+          <div class="switch-wrap" onclick="Profile.togglePanda()">
+            <div class="switch ${settings['ai-panda-hidden'] ? '' : 'on'}" id="sw-panda">
+              <div class="switch-thumb"></div>
+            </div>
+          </div>
+        </div>
         
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -193,11 +205,23 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
                ${t('settings.gemini_get_key')} ↗
             </a>
           </div>
-          <input type="password" id="gemini-key-input" class="pref-textarea" style="height: 38px; padding: 0 12px; margin: 0; font-family: monospace; border-radius: 12px;"
-                 placeholder="${serverStatus.gemini ? t('settings.gemini_placeholder_server') : t('settings.gemini_placeholder_opt')}" 
-                 value="${settings['gemini-key'] || ''}"
-                 onblur="Profile.setGeminiKey(this.value)">
-        </div>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="password" id="gemini-key-input" class="pref-textarea" style="height: 38px; padding: 0 70px 0 12px; margin: 0; font-family: monospace; border-radius: 12px; width: 100%; box-sizing: border-box;"
+                   placeholder="${serverStatus.gemini ? t('settings.gemini_placeholder_server') : t('settings.gemini_placeholder_opt')}" 
+                   value="${settings['gemini-key'] || ''}"
+                   oninput="Profile.validateGeminiKey(this.value)"
+                   onblur="Profile.setGeminiKey(this.value)">
+            <div style="position: absolute; right: 8px; display: flex; align-items: center; gap: 8px;">
+              <button class="btn-text" onclick="Profile.toggleKeyVisibility()" style="padding: 4px; color: var(--c-text-3);">
+                <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <svg id="key-valid-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" style="color: ${(settings['gemini-key'] || '').trim().startsWith('AIza') ? 'var(--c-accent)' : 'var(--c-text-3)'}; transition: color 0.3s;">
+                 <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
+          </div>
     </div>
 
     <!-- ── DATA & CLOUD SYNC ── -->

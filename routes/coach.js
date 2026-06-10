@@ -62,8 +62,8 @@ router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
   res.json({ success: true, recommendations, aiNotes: content });
 }));
 
-/* ── POST /coach ── */
-router.post('/coach', coachLimiter, asyncHandler(async (req, res) => {
+/* ── POST / (Main Coach SSE) ── */
+router.post('/', coachLimiter, asyncHandler(async (req, res) => {
   let { 
     workouts = [], 
     fatigue = {}, 
@@ -185,18 +185,27 @@ Profile: ${JSON.stringify(profile)}`;
 // ── Private Prompt Helpers ───────────────────────────────────────────────────
 
 function _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats) {
-  return `You are "Athlete Pro Coach", a premium AI strength & conditioning expert.
-Context:
-- History: ${JSON.stringify(workouts.slice(0, 5))}
-- Fatigue: ${JSON.stringify(fatigue)}
+  return `You are "Athlete Pro Coach", an elite AI strength & conditioning expert.
+
+[CONTEXT]
+- History (last 5): ${JSON.stringify(workouts.slice(0, 5))}
+- Current Fatigue: ${JSON.stringify(fatigue)}
 - 1RMs: ${JSON.stringify(topLifts)}
 - User Profile: ${JSON.stringify(profile)}
+- Current Goal: ${profile.goal || 'General Health'}
 
-Rules:
-1. Tone: Professional, analytical, but motivating.
-2. Language: Match user language (Russian if Cyrillic detected).
-3. Focus: Progressive overload and safety.
-4. Strategy: Consider long-term trends if provided. Current goal: ${profile.goal || 'General Health'}.`;
+[CRITICAL RULES]
+1. ZERO FLUFF: Be concise. Give exact numbers.
+2. SLEEP: Assume the user sleeps 7 hours on average. You may ask if needed.
+3. GREETINGS: If the user simply says "hi" or "привет", respond exactly with: "Привет, нужен план?".
+4. LANGUAGE: YOU MUST SPEAK RUSSIAN ALWAYS. All JSON string values (like 'goal') and all textual advice MUST be in Russian.
+5. MACRO #gym: If the user types EXACTLY or contains "#gym", you MUST output a raw JSON widget block ANYWHERE in your response, followed by a short textual advice.
+JSON FORMAT MUST BE EXACTLY:
+{"_widget": "readiness", "index": 82, "recovery": 77, "acwr": 88, "sleep": 64, "monotony": 95, "density": 93, "cns": 48, "goal": "Лёгкая / техническая"}
+(Calculate these values from 0-100 based on fatigue, history, and rest days. Goal must be a short string in Russian).
+
+[WORKFLOW]
+Before answering, use <thinking> tags to calculate the metrics. If #gym is requested, output the JSON block, then output your surgical advice.`;
 }
 
 function _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience) {

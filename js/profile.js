@@ -127,8 +127,8 @@ export const Profile = (() => {
     
     const { Claude } = await import('./claude.view.js');
     if (next) {
-      const fab = document.getElementById('claude-fab');
-      if (fab) fab.remove();
+      const fabContainer = document.getElementById('claude-fab-container');
+      if (fabContainer) fabContainer.remove();
     } else {
       Claude.renderFAB();
     }
@@ -225,10 +225,33 @@ async function setEngine(engine) {
   async function setGeminiKey(key) {
     await DB.Settings.set('gemini-key', key.trim());
     const { Claude } = await import('./claude.view.js');
-    const fab = document.getElementById('claude-fab');
-    if (fab) fab.remove();
+    const fabContainer = document.getElementById('claude-fab-container');
+    if (fabContainer) fabContainer.remove();
     Claude.renderFAB();
     load();
+  }
+
+  function toggleKeyVisibility() {
+    const inp = document.getElementById('gemini-key-input');
+    const icon = document.getElementById('eye-icon');
+    if (!inp || !icon) return;
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><path d="M2 2l20 20"/>';
+    } else {
+      inp.type = 'password';
+      icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
+  }
+
+  function validateGeminiKey(val) {
+    const validIcon = document.getElementById('key-valid-icon');
+    if (!validIcon) return;
+    if (val.trim().startsWith('AIza') && val.trim().length > 30) {
+      validIcon.style.color = 'var(--c-accent)';
+    } else {
+      validIcon.style.color = 'var(--c-text-3)';
+    }
   }
 
   async function setLang(lang) {
@@ -297,6 +320,7 @@ async function setEngine(engine) {
   return {
     load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
     togglePanda, setLang, setEngine, setTrainingMode, setGeminiKey,
+    validateGeminiKey, toggleKeyVisibility,
     setSessionTime, exportData, exportCsv, importData, toggleReminder,
     _onImportFile, clearAllData, saveInjuries,
     syncConnect, syncDisconnect, deduplicateDB

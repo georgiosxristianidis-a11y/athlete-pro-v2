@@ -3,10 +3,13 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // Safely access env vars (Vite injects them, otherwise fallback)
 const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
-const supabaseUrl = env.VITE_SUPABASE_URL || 'https://mock.supabase.co'
-const supabaseKey = env.VITE_SUPABASE_ANON_KEY || 'mock-key'
+const supabaseUrl = env.VITE_SUPABASE_URL || ''
+const supabaseKey = env.VITE_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+// Only create client if config exists, otherwise use a dummy to prevent crashes
+export const supabase = (supabaseUrl && supabaseKey) 
+  ? createClient(supabaseUrl, supabaseKey) 
+  : { auth: { getSession: async () => ({data:{session:null}}), signInAnonymously: async () => ({error: new Error('Supabase not configured')}) } };
 
 /**
  * Эта функция создает анонимного пользователя.

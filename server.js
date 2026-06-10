@@ -9,6 +9,7 @@ import { correlationMiddleware, logWarn } from './lib/logger.js';
 
 import coachRouter from './routes/coach.js';
 import integrationsRouter from './routes/integrations.js';
+import { errorMiddleware } from './lib/errors.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -34,6 +35,7 @@ app.use(helmet({
       ],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       workerSrc: ["'self'"],
+      mediaSrc: ["'self'", "blob:"],
       objectSrc: ["'none'"],
     },
   },
@@ -48,6 +50,14 @@ app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'icons',
 
 app.use(correlationMiddleware);
 app.use(express.json({ limit: '100kb' }));
+
+// ── API Routes (Prioritized)
+app.use('/api/coach', (req, res, next) => {
+  console.log(`[route-debug] ${req.method} ${req.path}`);
+  next();
+}, coachRouter);
+app.use('/api', integrationsRouter);
+
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     logWarn(req, 'json_parse_error', 'Invalid JSON body', { type: err.type });
@@ -62,21 +72,14 @@ app.use((err, req, res, next) => {
 app.use(express.static(__dirname, {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
-      // HTML entry: always revalidate — never serve a stale app shell
       res.setHeader('Cache-Control', 'no-store');
     } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
-      // JS/CSS: allow conditional GET (304 Not Modified) on repeat visits
-      // SW precache handles offline; this cuts re-download cost when SW revalidates
       res.setHeader('Cache-Control', 'no-cache');
     }
   },
 }));
 
-app.use('/api', coachRouter);
-app.use('/api', integrationsRouter);
-
 // ── Global Error Handling
-import { errorMiddleware } from './lib/errors.js';
 app.use(errorMiddleware);
 
 export function startServer(port = process.env.PORT || 3000) {

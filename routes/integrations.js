@@ -60,8 +60,14 @@ router.get('/firebase-config', (req, res) => {
 
 /* ── GET /ai-status — check for server-side API keys ── */
 router.get('/ai-status', (req, res) => {
-  const hasGemini = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY && !process.env.GOOGLE_GENERATIVE_AI_API_KEY.includes('your-');
-  const hasAnthropic = !!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('your-');
+  const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+
+  const hasGemini = !!geminiKey && !geminiKey.includes('your-') && geminiKey.length > 10;
+  const hasAnthropic = !!anthropicKey && !anthropicKey.includes('your-') && anthropicKey.length > 10;
+
+  console.log(`[ai-status] Gemini: ${hasGemini}, Anthropic: ${hasAnthropic} (Key lengths: G=${geminiKey?.length}, A=${anthropicKey?.length})`);
+
   res.json({
     gemini: hasGemini,
     anthropic: hasAnthropic
