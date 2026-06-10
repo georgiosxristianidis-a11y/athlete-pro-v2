@@ -134,7 +134,7 @@
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 2;
 }
 
@@ -223,7 +223,7 @@
   white-space: nowrap;
   z-index: 2;
   pointer-events: none;
-  transition: all 0.5s cubic-bezier(0.2, 0, 0.2, 1);
+  transition: opacity 0.5s cubic-bezier(0.2, 0, 0.2, 1), transform 0.5s cubic-bezier(0.2, 0, 0.2, 1), background-color 0.5s cubic-bezier(0.2, 0, 0.2, 1), border-color 0.5s cubic-bezier(0.2, 0, 0.2, 1), color 0.5s cubic-bezier(0.2, 0, 0.2, 1);
 }
 
 .island-name-collapsed {
@@ -240,7 +240,7 @@
   max-width: 0;
   opacity: 0;
   pointer-events: none;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 2;
 }
 
@@ -288,7 +288,7 @@
   font-size: 11px;
   font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 .island-action-btn:active {
   background: rgba(255, 255, 255, 0.1);
@@ -581,7 +581,7 @@
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition: all var(--t-fast);
+  transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
 .rest-btn-sec:active {
@@ -603,7 +603,7 @@
   cursor: pointer;
   letter-spacing: 0.04em;
   box-shadow: 0 4px 16px rgba(0, 230, 118, 0.3);
-  transition: all var(--t-fast);
+  transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
 .rest-btn-primary:active {

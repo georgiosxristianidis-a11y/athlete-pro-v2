@@ -206,7 +206,7 @@
   background: transparent;
   color: var(--c-text-3);
   cursor: pointer;
-  transition: all var(--t-fast);
+  transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
   position: relative;
 }
 .engine-toggle-btn:active {
@@ -270,7 +270,7 @@
   cursor: pointer;
   font-family: inherit;
   letter-spacing: 0.04em;
-  transition: all var(--t-fast);
+  transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
 .toggle-btn:active {
@@ -352,7 +352,7 @@
   border-radius: 50%;
   background: white;
   box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.1);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .switch.on .switch-thumb {
   transform: translateX(26px);
@@ -469,7 +469,7 @@
   font-size: 13px;          
   font-weight: 700;
   cursor: pointer;
-  transition: all var(--t-fast);
+  transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
   margin: 8px auto 0;       
 }
 .danger-btn svg {
@@ -528,7 +528,7 @@
   color: var(--c-text-1);
   letter-spacing: -0.04em;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 8px 16px rgba(0,0,0,0.15);
 }
 

@@ -80,7 +80,7 @@
   backdrop-filter: blur(20px);
   border: 1px solid var(--c-border);
   border-radius: 20px;
-  transition: all var(--t-normal);
+  transition: opacity var(--t-normal), transform var(--t-normal), background-color var(--t-normal), border-color var(--t-normal), color var(--t-normal);
 }
 
 .intel-cmd-bar:focus-within {
@@ -113,7 +113,7 @@
   border: none;
   color: var(--c-text-3);
   cursor: pointer;
-  transition: all var(--t-fast);
+  transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
 }
 
 .intel-btn-icon:hover {

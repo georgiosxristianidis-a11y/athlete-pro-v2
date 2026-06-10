@@ -9,7 +9,7 @@
   background: rgba(255,255,255,0.02); 
   border: 1px solid rgba(255,255,255,0.05); 
   border-radius: 24px; cursor: pointer; 
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
   -webkit-tap-highlight-color: transparent; 
   position: relative;
   overflow: hidden;
@@ -75,7 +75,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
@@ -152,7 +152,7 @@
 
 /* ── Header Actions — Premium Distribution ── */
 .ex-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; padding-left: 20px; padding-right: 4px; flex-shrink: 0; }
-.ex-action-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--c-text-3); cursor: pointer; transition: all 0.2s ease; border-radius: 10px; opacity: 0.4; font-size: 9px; font-weight: 900; }
+.ex-action-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--c-text-3); cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; border-radius: 10px; opacity: 0.4; font-size: 9px; font-weight: 900; }
 .ex-action-btn:active { transform: scale(0.85); background: var(--c-bg-3); opacity: 1; color: var(--c-text-1); }
 .ex-action-btn.active { color: var(--c-accent); opacity: 0.9; }
 .ex-action-btn.coach { color: var(--c-accent); opacity: 0.7; }
@@ -215,7 +215,7 @@
   font-weight: 700;
   color: var(--c-text-3);
   scroll-snap-align: center;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   opacity: 0; 
 }
 .drum-item--active {
@@ -229,7 +229,7 @@
 .set-check.done { background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent); }
 .set-check svg { width: 16px; height: 16px; stroke-width: 2.5; }
 
-.add-set-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; border: 1.5px dashed rgba(255,255,255,0.06); border-radius: 14px; font-size: 11px; font-weight: 700; color: var(--c-text-3); opacity: 0.5; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+.add-set-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; border: 1.5px dashed rgba(255,255,255,0.06); border-radius: 14px; font-size: 11px; font-weight: 700; color: var(--c-text-3); opacity: 0.5; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s; }
 .add-set-btn:active { background: rgba(255,255,255,0.03); opacity: 1; }
 .add-set-btn svg { width: 14px; height: 14px; }
 

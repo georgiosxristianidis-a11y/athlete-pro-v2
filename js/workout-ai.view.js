@@ -7,6 +7,7 @@
 import { fetchCoach, Heatmap } from './claude.store.js';
 import { State as WorkoutState } from './workout.store.js';
 import { DB } from './db.js';
+import { esc } from './shared/utils.js';
 
 /* ══════════════════════════════════════════════
    STATE
@@ -430,7 +431,7 @@ export function handleKey(event) {
  * @returns {string}
  */
 function _markdownToHtml(text) {
-  return text
+  return esc(text)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br>');
