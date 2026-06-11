@@ -1,4 +1,4 @@
-/* ════════════════════════════════════════════════════════
+﻿/* ════════════════════════════════════════════════════════
    base.css — Athlete Pro Design System
    Design tokens, shared components, focus-visible styles
    Loaded synchronously before all screen CSS files.
@@ -6,6 +6,11 @@
 
 /* ── Section 1: Design Tokens ─────────────────────────── */
 :root {
+  /* Premium Neon Glow Shadows */
+  --glow-accent-md: 0 0 20px rgba(0, 230, 118, 0.5);
+  --glow-amber-md: 0 0 18px rgba(255, 179, 0, 0.45);
+  --glow-blue-md: 0 0 20px rgba(90, 150, 255, 0.5);
+  --glow-purple-md: 0 0 20px rgba(139, 92, 246, 0.6);
   /* OBSIDIAN palette — off-black with cool undertone (avoids OLED halation, gives depth).
      Reference: Material Dark Theme #121212; we go slightly deeper for premium feel. */
   --c-bg: #050507;
@@ -411,6 +416,11 @@ button:focus-visible {
 /* Small phone floor (<360px) — reduce spacing to prevent overflow */
 @media (max-width: 359px) {
   :root {
+  /* Premium Neon Glow Shadows */
+  --glow-accent-md: 0 0 20px rgba(0, 230, 118, 0.5);
+  --glow-amber-md: 0 0 18px rgba(255, 179, 0, 0.45);
+  --glow-blue-md: 0 0 20px rgba(90, 150, 255, 0.5);
+  --glow-purple-md: 0 0 20px rgba(139, 92, 246, 0.6);
     --sp-2: 12px;
     --sp-3: 16px;
   }
@@ -752,6 +762,11 @@ body.is-scrolling * {
 
 /* ── Elite Gold Palette (Phase 6) ── */
 :root {
+  /* Premium Neon Glow Shadows */
+  --glow-accent-md: 0 0 20px rgba(0, 230, 118, 0.5);
+  --glow-amber-md: 0 0 18px rgba(255, 179, 0, 0.45);
+  --glow-blue-md: 0 0 20px rgba(90, 150, 255, 0.5);
+  --glow-purple-md: 0 0 20px rgba(139, 92, 246, 0.6);
   --c-gold: #D4AF37;
   --c-gold-glow: rgba(212, 175, 55, 0.6);
   --c-spark-bg: #0A0A0A; /* deep dark bg */

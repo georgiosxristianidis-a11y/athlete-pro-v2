@@ -671,31 +671,17 @@
 }
 
 /* ── Breathable Bento adjustment ── */
-.pp-bento {
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-3);
-}
-.pp-bento::before {
-  content: '';
-  position: absolute;
-  inset: -10px;
-  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
-  filter: blur(20px);
-  z-index: -1;
-  pointer-events: none;
-}
 
-.pp-bento-cell {
-  padding: var(--sp-3);
-  border-radius: var(--r-xl);
-}
+
+
 
 /* ── Bento 2x2 ── */
 .pp-bento {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--sp-1);
-  margin-bottom: var(--sp-1);
+  gap: 24px; /* Philosophy of Air (x2 spacing) */
+  margin-bottom: 24px;
+  position: relative;
 }
 .pp-bento::before {
   content: '';
@@ -709,16 +695,17 @@
 .pp-bento-cell {
   background: var(--c-surface);
   border-radius: var(--r-l);
-  padding: var(--sp-2);
+  padding: 12px; /* Slightly decreased padding for smaller blocks */
   display: flex;
   flex-direction: column;
   gap: 3px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background var(--t-normal);
-  min-height: 88px;
+  transition: box-shadow var(--t-normal), background var(--t-normal);
+  min-height: 76px; /* Slightly decreased height */
   justify-content: center;
 }
+
 .pp-bento-cell:active {
   background: var(--c-surface-h);
 }
@@ -841,6 +828,23 @@
 }
 
 /* ── Micro-interactions: profile card stagger ── */
+/* ── Bento 2x2 ── */
+.pp-bento {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px; /* Philosophy of Air (x2 spacing) */
+  margin-bottom: 24px;
+  position: relative;
+}
+.pp-bento::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
+  filter: blur(20px);
+  z-index: -1;
+  pointer-events: none;
+}
 .pp-bento-cell {
   animation: card-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
