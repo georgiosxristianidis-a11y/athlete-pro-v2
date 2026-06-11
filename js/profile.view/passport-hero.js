@@ -1,6 +1,6 @@
-// @ts-check
+﻿// @ts-check
 import { computeAge } from '../profile.store.js';
-import { dotsScore, exrxTier } from '../strength-engine.js';
+import { athleteProScore, exrxTier } from '../strength-engine.js';
 import { DB } from '../db.js';
 import { esc } from '../shared/utils.js';
 
@@ -34,7 +34,7 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   
   // Overall DOTS tier
   const total = (oneRMs.squat || 0) + (oneRMs.bench || 0) + (oneRMs.deadlift || 0);
-  const dots = total ? dotsScore({ total, bodyweight: bw, sex: profile.sex }) : 0;
+  const dots = total ? athleteProScore({ total, bodyweight: bw, sex: profile.sex, age, experience: profile.experienceYears, height: metrics?.height }) : 0;
   const tier = _tierFromDots(dots);
   const tierColor = TIER_COLOR[tier];
   const tierLabel = ru ? TIER_RU[tier] : tier;

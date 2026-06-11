@@ -1,4 +1,4 @@
-// @ts-check
+﻿// @ts-check
 /* ════════════════════════════════════════════════════════
    claude.store.js — Claude AI data layer
    Heatmap computation, muscle map, chat state, SSE fetch
@@ -7,7 +7,7 @@
 import { DB } from './db.js';
 import { safeFetch } from './privacy.store.js';
 import { loadProfile, computeAge } from './profile.store.js';
-import { dotsScore } from './strength-engine.js';
+import { athleteProScore } from './strength-engine.js';
 
 export const COMPUTE_REST_HOURS = 72; // Standard window for fatigue decay
 

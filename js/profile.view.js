@@ -1,11 +1,11 @@
-// @ts-check
+﻿// @ts-check
 /* ════════════════════════════════════════════════════════
    profile.view.js — Barrel + render entry for Profile Passport UI
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
 import { loadProfile, computeAge } from './profile.store.js';
-import { dotsScore } from './strength-engine.js';
+import { athleteProScore } from './strength-engine.js';
 import { renderPassportHero } from './profile.view/passport-hero.js';
 import { renderBento }        from './profile.view/bento.js';
 import { renderHexagonRadar } from './profile.view/hexagon-radar.js';
@@ -57,7 +57,7 @@ export async function renderProfile(container, lang) {
   const oneRMs = _mapOneRMs(oneRMsRaw);
 
   const total = (oneRMs.squat || 0) + (oneRMs.bench || 0) + (oneRMs.deadlift || 0);
-  const dots = total ? dotsScore({ total, bodyweight: bw, sex: profile.sex }) : 0;
+  const dots = total ? athleteProScore({ total, bodyweight: bw, sex: profile.sex, age, experience: profile.experienceYears, height: metrics?.height }) : 0;
 
   container.innerHTML =
     renderPassportHero(profile, metrics, oneRMs, resolvedLang) +

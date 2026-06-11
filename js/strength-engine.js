@@ -303,3 +303,49 @@ export function symmetryIndex(m) {
   const maxDiff = Math.max(...diffs);
   return Math.round(Math.max(0, 1 - maxDiff * 5) * 100); // 20% diff → 0%
 }
+
+/* ════════════════════════════════════════════════════════
+   ATHLETE PRO SCORE
+   ────────────────────────────────────────────────────────
+   Custom scoring engine combining DOTS, age (McCulloch-style),
+   height/leverage disadvantages, and experience.
+   ════════════════════════════════════════════════════════ */
+export function athleteProScore({ total, bodyweight, sex, age, experience, height }) {
+  if (!total) return 0;
+  
+  // 1. Base score: Standard DOTS
+  const baseDots = dotsScore({ total, bodyweight, sex });
+  if (!baseDots) return 0;
+
+  // 2. Age Modifier (McCulloch inspired)
+  // Lifts typically peak between 25-35. We add a multiplier for Masters (40+) and Sub-Juniors (<23).
+  let ageMod = 1.0;
+  if (age) {
+    if (age >= 40) {
+      ageMod = 1.0 + (age - 39) * 0.015; // +1.5% per year over 39
+    } else if (age <= 23) {
+      ageMod = 1.0 + (23 - age) * 0.01; // +1.0% per year under 23
+    }
+  }
+
+  // 3. Leverage (Height/BMI) Modifier
+  // Taller lifters have a longer range of motion. If BMI is low, they are at a biomechanical disadvantage.
+  let leverageMod = 1.0;
+  if (height && bodyweight && height > 100) {
+    const bmi = bodyweight / Math.pow(height / 100, 2);
+    // Average powerlifting BMI is often 28+. If someone is 20-24, lifting is relatively harder.
+    if (bmi < 25) {
+      leverageMod = 1.0 + (25 - bmi) * 0.012;
+    }
+  }
+
+  // 4. Experience Modifier (Untapped Potential Bonus)
+  // Gives beginners a slight motivational boost, representing their relative performance to time-in-game.
+  let expMod = 1.0;
+  if (typeof experience === 'number') {
+    if (experience < 1) expMod = 1.05;       // +5% for true beginners
+    else if (experience < 3) expMod = 1.02;  // +2% for novices
+  }
+
+  return Math.round(baseDots * ageMod * leverageMod * expMod);
+}
