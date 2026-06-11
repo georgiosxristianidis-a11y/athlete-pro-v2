@@ -76,10 +76,10 @@ function bsDelta(curr, prev, unit) {
   return `<span class="bs-delta ${cls}">${diff > 0 ? '+' : ''}${diff} ${unit}</span>`;
 }
 
-function bsDrawSparkline(canvas, values, color) {
+function bsDrawSparkline(canvas, values, color, w, h) {
   if (!canvas || values.length < 2) return;
-  const W = (canvas.width = canvas.offsetWidth * devicePixelRatio || 120);
-  const H = (canvas.height = canvas.offsetHeight * devicePixelRatio || 40);
+  const W = (canvas.width = w * devicePixelRatio || canvas.offsetWidth * devicePixelRatio || 120);
+  const H = (canvas.height = h * devicePixelRatio || canvas.offsetHeight * devicePixelRatio || 40);
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, W, H);
   const min = Math.min(...values),

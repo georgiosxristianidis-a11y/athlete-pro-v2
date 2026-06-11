@@ -122,11 +122,11 @@ export const DynamicIsland = (() => {
     _island?.classList.add(`mode-${_displayMode}`);
 
     // Set initial transform
-    _applyTransform();
+    requestAnimationFrame(() => _applyTransform());
 
     // Drag & Long-press events
     _island?.addEventListener('pointerdown', _onPointerDown);
-    window.addEventListener('pointermove', _onPointerMove);
+    window.addEventListener('pointermove', _onPointerMove, { passive: true });
     window.addEventListener('pointerup', _onPointerUp);
     window.addEventListener('pointercancel', _onPointerUp);
     _island?.addEventListener('pointerleave', (e) => {
@@ -189,7 +189,7 @@ export const DynamicIsland = (() => {
         damping: 15,
         onUpdate: (v) => { 
           _animY = v;
-          _applyTransform();
+          requestAnimationFrame(() => _applyTransform());
         }
       });
     }
@@ -216,7 +216,7 @@ export const DynamicIsland = (() => {
         damping: 20,
         onUpdate: (v) => { 
           _animY = v;
-          _applyTransform();
+          requestAnimationFrame(() => _applyTransform());
         },
         onComplete: () => { 
           _wrap.style.display = 'none'; 
@@ -364,7 +364,7 @@ export const DynamicIsland = (() => {
     _anims.scale?.stop();
     _anims.scale = Spring.animate({
       from: 0.9, to: 1, stiffness: 400, damping: 12,
-      onUpdate: (v) => { _animScale = v; _applyTransform(); }
+      onUpdate: (v) => { _animScale = v; requestAnimationFrame(() => _applyTransform()); }
     });
     update();
   }
@@ -383,7 +383,7 @@ export const DynamicIsland = (() => {
     _anims.scale?.stop();
     _anims.scale = Spring.animate({
       from: _expanded ? 0.95 : 1.05, to: 1, stiffness: 300, damping: 15,
-      onUpdate: (v) => { _animScale = v; _applyTransform(); }
+      onUpdate: (v) => { _animScale = v; requestAnimationFrame(() => _applyTransform()); }
     });
   }
 
@@ -420,7 +420,7 @@ export const DynamicIsland = (() => {
     }
     _currentX = e.clientX - _startX;
     _currentY = e.clientY - _startY;
-    _applyTransform();
+    requestAnimationFrame(() => _applyTransform());
   }
 
   function _onPointerUp(e) {
@@ -443,7 +443,7 @@ export const DynamicIsland = (() => {
     // Snap back
     _currentX = 0;
     _currentY = 0;
-    _applyTransform();
+    requestAnimationFrame(() => _applyTransform());
     
     setTimeout(() => { _movedPastThreshold = false; }, 50);
   }

@@ -98,11 +98,14 @@ export const Claude = (() => {
     const nav = document.getElementById('nav');
     const app = document.getElementById('app');
     if (!nav || !el) return;
+    // DOM Reads
     const navH = nav.offsetHeight;
+    const isAppWide = app && window.innerWidth > app.offsetWidth + 8;
+    const rectRight = isAppWide ? app.getBoundingClientRect().right : 0;
+    // DOM Writes
     el.style.bottom = navH + 14 + 'px';
-    if (app && window.innerWidth > app.offsetWidth + 8) {
-      const rect = app.getBoundingClientRect();
-      el.style.right = (window.innerWidth - rect.right + 14) + 'px';
+    if (isAppWide) {
+      el.style.right = (window.innerWidth - rectRight + 14) + 'px';
     } else {
       el.style.right = '14px';
     }

@@ -87,7 +87,8 @@ function show(msg, type = 'info', duration = 3000) {
 
   const t = document.createElement('div');
   t.className = `toast toast-${type}`;
-  t.innerHTML = `${ICONS[type] || ICONS.info}<span>${msg}</span>`;
+  const safeMsg = String(msg).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+  t.innerHTML = `${ICONS[type] || ICONS.info}<span>${safeMsg}</span>`;
   
   wrap.appendChild(t);
 
