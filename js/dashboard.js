@@ -1,4 +1,4 @@
-// @ts-check
+﻿// @ts-check
 /* ════════════════════════════════════════════════
    dashboard.js — Athlete Pro  |  Dashboard home screen
    ════════════════════════════════════════════════ */
@@ -124,7 +124,7 @@ export const Dashboard = (() => {
       </div>
 
         <!-- Sparkline Chart (Phase 6) -->
-        <div class="dash-card stagger-item" style="padding-bottom: 0; overflow: hidden; background: var(--c-spark-bg); border: 1px solid var(--c-border); margin-top: var(--sp-2);">
+        <div class="dash-card stagger-item" style="padding-bottom: 0; overflow: hidden; background: var(--c-spark-bg); border: 1px solid var(--c-border); margin-top: var(--sp-2); border-radius: var(--r-xl);">
           <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 var(--sp-2); padding-top: var(--sp-2);">
             <div>
               <div style="color:var(--c-text-2); font-size:11px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Volume Trend</div>
@@ -151,7 +151,7 @@ export const Dashboard = (() => {
       </div>
 
       <!-- Streak card -->
-      <div class="streak-card stagger-item">
+      <div class="streak-card stagger-item" onclick="window.appSwitchTab?.('history')" style="cursor:pointer">
         <div class="streak-header">
           <span class="section-label">This Week</span>
           <span class="streak-count" id="streak-count"></span>
