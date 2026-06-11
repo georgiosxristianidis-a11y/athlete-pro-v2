@@ -15,6 +15,10 @@ const ASSETS = [
   '/js/app.js',
   '/js/shell.js',
   '/js/db.js',
+  '/js/workout-plans.js',
+  '/js/version.js',
+  '/js/sync.js',
+  '/js/locale.store.js',
   '/js/supabase-check.js',
   '/js/timer.js',
   '/js/rest-timer.js',
@@ -126,8 +130,13 @@ self.addEventListener('fetch', (e) => {
   }
 
   // Static assets: cache-first
+  // Solid 9 Fix: Normalize URL to prevent Cache DOS and O(N) lookup
+  const parsedUrl = new URL(e.request.url);
+  const cleanPath = parsedUrl.pathname === '/' ? '/index.html' : parsedUrl.pathname;
+  const cleanReq = new Request(parsedUrl.origin + cleanPath);
+
   e.respondWith(
-    caches.match(e.request).then((cached) => {
+    caches.match(cleanReq).then((cached) => {
       if (cached) return cached;
 
       return fetch(e.request)
@@ -140,7 +149,7 @@ self.addEventListener('fetch', (e) => {
             return response; // Protect against Web Cache Poisoning
           }
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(cleanReq, clone));
           return response;
         })
         .catch(async () => {

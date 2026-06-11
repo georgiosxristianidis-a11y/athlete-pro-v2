@@ -1,5 +1,5 @@
-const { describe, test, before } = require('node:test');
-const assert = require('node:assert/strict');
+import { describe, test, before } from 'node:test';
+import assert from 'node:assert/strict';
 
 let mod;
 before(async () => {

@@ -10,19 +10,42 @@ let cryptoKey = null;
 
 const generateOrLoadKey = async () => {
   if (cryptoKey) return cryptoKey;
-  // Simplified key handling for local-first apps.
-  // In a truly secure scenario, this key is protected or wrapped.
-  // Here we use a hardcoded fallback or randomly generated if none exists
-  // but for a pure offline app, we can just generate a key on first load
-  // and store it in an unexportable format, or rely on device auth.
-  // For this worker, we will wait for the main thread to supply a key material
-  // or generate a volatile one per session.
-  cryptoKey = await crypto.subtle.generateKey(
-    { name: "AES-GCM", length: 256 },
-    true, // Extractable true only for demo purposes; normally false and wrapped
-    ["encrypt", "decrypt"]
-  );
-  return cryptoKey;
+  
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('ap-keys', 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore('keys');
+    };
+    req.onsuccess = e => {
+      const db = e.target.result;
+      const tx = db.transaction('keys', 'readwrite');
+      const store = tx.objectStore('keys');
+      const getReq = store.get('master');
+      
+      getReq.onsuccess = async () => {
+        if (getReq.result) {
+          cryptoKey = getReq.result;
+          resolve(cryptoKey);
+        } else {
+          try {
+            cryptoKey = await crypto.subtle.generateKey(
+              { name: "AES-GCM", length: 256 },
+              false, // Not extractable, stored directly as CryptoKey object
+              ["encrypt", "decrypt"]
+            );
+            const putTx = db.transaction('keys', 'readwrite');
+            const putReq = putTx.objectStore('keys').put(cryptoKey, 'master');
+            putReq.onsuccess = () => resolve(cryptoKey);
+            putReq.onerror = () => reject(putReq.error);
+          } catch (err) {
+            reject(err);
+          }
+        }
+      };
+      getReq.onerror = () => reject(getReq.error);
+    };
+    req.onerror = () => reject(req.error);
+  });
 };
 
 // Generate an IV (Initialization Vector)
@@ -62,7 +85,7 @@ const decryptData = async (encryptedBase64, ivBase64) => {
     return JSON.parse(decodedStr);
   } catch (err) {
     console.error("[crypto.worker] Decryption failed:", err);
-    throw new Error('Decryption failed');
+    throw new Error('Decryption failed', { cause: err });
   }
 };
 

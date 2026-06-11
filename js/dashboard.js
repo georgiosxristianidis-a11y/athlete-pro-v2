@@ -4,6 +4,7 @@
    ════════════════════════════════════════════════ */
 
 import { DB, weeklyVolumeFrom, monthlyVolumeFrom, weeklyCountFrom, pplTonnageFrom } from './db.js';
+import { generateSparkline } from './shared/sparkline.js';
 import { getRecommendations } from './claude.store.js';
 import { Spring } from './shared/spring.js';
 import { esc } from './shared/utils.js';
@@ -122,7 +123,19 @@ export const Dashboard = (() => {
         </div>
       </div>
 
-      <!-- Weekly Summary Chip -->
+        <!-- Sparkline Chart (Phase 6) -->
+        <div class="dash-card stagger-item" style="padding-bottom: 0; overflow: hidden; background: var(--c-spark-bg); border: 1px solid var(--c-border); margin-top: var(--sp-2);">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 var(--sp-2); padding-top: var(--sp-2);">
+            <div>
+              <div style="color:var(--c-text-2); font-size:11px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Volume Trend</div>
+              <div id="spark-total" style="color:var(--c-text-1); font-size:24px; font-family:var(--font-heading); font-weight:800;">--</div>
+            </div>
+            <div class="badge" style="background:var(--c-gold-glow); color:var(--c-gold); font-size:10px; font-weight:700;">30 Days</div>
+          </div>
+          <div id="spark-container" style="height: 80px; width: 100%; margin-top: 10px;"></div>
+        </div>
+
+        <!-- Weekly Summary Chip -->
       <div class="stat-chip weekly-summary-chip stagger-item" onclick="window.Dashboard.showWeeklySummary()" style="cursor:pointer;margin-top:var(--sp-2)">
         <div class="stat-chip-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
@@ -275,6 +288,53 @@ export const Dashboard = (() => {
     }
     await DB.Settings.set('show-mascot', 'off');
     window.Toast?.show('Mascot hidden', 'info');
+  }
+
+  /**
+   * Render the 30-day sparkline volume chart
+   */
+  function renderSparkline(workouts) {
+    const container = document.getElementById('spark-container');
+    const totalEl = document.getElementById('spark-total');
+    if (!container || !totalEl) return;
+    
+    if (!workouts || workouts.length === 0) {
+      container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--c-text-3); font-size: 12px;">No data</div>';
+      return;
+    }
+
+    // Group tonnage by day for the last 30 days
+    const days = 30;
+    const dataMap = new Map();
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      dataMap.set(d.getTime(), 0);
+    }
+    
+    let total30d = 0;
+    workouts.forEach(w => {
+      const wDate = new Date(w.timestamp);
+      wDate.setHours(0,0,0,0);
+      const ts = wDate.getTime();
+      if (dataMap.has(ts)) {
+        dataMap.set(ts, dataMap.get(ts) + w.tonnage);
+        total30d += w.tonnage;
+      }
+    });
+    
+    const dataArr = Array.from(dataMap.values());
+    const maxVal = Math.max(...dataArr);
+    if (maxVal === 0) {
+       container.innerHTML = generateSparkline([0,0,0,0], 300, 80);
+       return;
+    }
+    
+    totalEl.textContent = fmtVol(total30d) + ' kg';
+    container.innerHTML = generateSparkline(dataArr, 300, 80);
   }
 
   /**
@@ -575,6 +635,7 @@ export const Dashboard = (() => {
 
     // Phase 2: Deferred rendering to keep UI responsive
     requestAnimationFrame(() => {
+      renderSparkline(allWorkouts);
       renderStreak(allWorkouts);
       renderPPL(ppl);
       

@@ -2,7 +2,7 @@
  * Client for communicating with crypto.worker.js
  */
 
-const workerUrl = new URL('./workers/crypto.worker.js', import.meta.url);
+const workerUrl = new URL('../workers/crypto.worker.js', import.meta.url);
 const worker = new Worker(workerUrl);
 
 let _msgId = 0;

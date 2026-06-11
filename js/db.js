@@ -561,12 +561,16 @@ const Metrics = {
     const latestRaw = list.sort((a, b) => b.timestamp - a.timestamp)[0];
     
     if (latestRaw._encrypted) {
-      const decrypted = await decryptAsync(latestRaw._encrypted, latestRaw._iv);
-      return { ...decrypted, id: latestRaw.id, timestamp: latestRaw.timestamp };
+      try {
+        const decrypted = await decryptAsync(latestRaw._encrypted, latestRaw._iv);
+        return { ...decrypted, id: latestRaw.id, timestamp: latestRaw.timestamp };
+      } catch(e) {
+        console.warn('[DB] Ignoring corrupted metric', latestRaw.id);
+        return null;
+      }
     }
     return latestRaw;
   },
-
   /**
    * Get all entries sorted newest first (for chart).
    * @returns {Promise<MetricsRecord[]>}
@@ -575,12 +579,16 @@ const Metrics = {
     const list = await getAll(S.METRICS);
     const decryptedList = await Promise.all(list.map(async (r) => {
       if (r._encrypted) {
-        const dec = await decryptAsync(r._encrypted, r._iv);
-        return { ...dec, id: r.id, timestamp: r.timestamp };
+        try {
+          const dec = await decryptAsync(r._encrypted, r._iv);
+          return { ...dec, id: r.id, timestamp: r.timestamp };
+        } catch(e) {
+          return null;
+        }
       }
       return r;
     }));
-    return decryptedList.sort((a, b) => b.timestamp - a.timestamp);
+    return decryptedList.filter(x => x !== null).sort((a, b) => b.timestamp - a.timestamp);
   },
 
   /** Clear all. */

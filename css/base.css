@@ -743,3 +743,29 @@ button:focus-visible {
 .ios-haptic-pulse {
   animation: ios-haptic-pulse 0.1s ease-out;
 }
+
+/* ── Scroll FPS Optimization (Phase 5) ── */
+body.is-scrolling * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Elite Gold Palette (Phase 6) ── */
+:root {
+  --c-gold: #D4AF37;
+  --c-gold-glow: rgba(212, 175, 55, 0.6);
+  --c-spark-bg: #0A0A0A; /* deep dark bg */
+}
+
+.sparkline-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.spark-stroke {
+  stroke: var(--c-gold);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 6px var(--c-gold-glow));
+}

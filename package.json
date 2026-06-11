@@ -16,7 +16,8 @@
     "lhci": "node scripts/lighthouse.js",
     "security:audit": "npm audit --audit-level=high",
     "security:sast": "npm run lint",
-    "security:check": "npm run security:audit && npm run security:sast"
+    "security:check": "npm run security:audit && npm run security:sast",
+    "postinstall": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.51.0",

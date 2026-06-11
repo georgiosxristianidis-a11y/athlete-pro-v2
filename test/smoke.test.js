@@ -1,7 +1,7 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
-const { startServer } = require('../server');
+import { startServer } from '../server.js';
 
 test('smoke: GET / returns 200', async () => {
   const server = await startServer(0);

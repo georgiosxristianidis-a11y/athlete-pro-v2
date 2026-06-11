@@ -308,3 +308,22 @@ window.PrivacyRapid = PrivacyRapid;
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
+
+/* ── Storage Persistence (Phase 5) ── */
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().then(granted => {
+    if (granted) console.log('[Storage] Persistence granted (Anti-Eviction active)');
+  });
+}
+
+/* ── Scroll FPS Optimization (Phase 5) ── */
+let _scrollTimer;
+window.addEventListener('scroll', () => {
+  if (!document.body.classList.contains('is-scrolling')) {
+    document.body.classList.add('is-scrolling');
+  }
+  clearTimeout(_scrollTimer);
+  _scrollTimer = setTimeout(() => {
+    document.body.classList.remove('is-scrolling');
+  }, 150);
+}, { passive: true, capture: true });

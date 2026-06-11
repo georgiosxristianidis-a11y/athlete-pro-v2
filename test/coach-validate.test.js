@@ -1,7 +1,7 @@
-const { describe, test } = require('node:test');
-const assert = require('node:assert/strict');
+import { describe, test } from 'node:test';
+import assert from 'node:assert/strict';
 
-const { _validateCoachPayload: validate } = require('../routes/coach');
+import { _validateCoachPayload as validate } from '../routes/coach.js';
 
 const validMsg = { role: 'user', content: 'Hello coach' };
 

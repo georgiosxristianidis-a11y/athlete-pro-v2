@@ -415,7 +415,7 @@ test.describe('App with Onboarding Bypassed', () => {
       expect(Array.isArray(body.icons)).toBe(true);
     });
 
-    test('sw.js is served and contains v38 cache name', async ({ page, request }) => {
+    test('sw.js is served and contains v38 cache name', async ({ request }) => {
       const res = await request.get('/sw.js');
       expect(res.status()).toBe(200);
       const text = await res.text();

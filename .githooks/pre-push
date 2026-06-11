@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# Elite SCA Protocol (Solid 9)
+# pre-push hook: Runs npm audit only when pushing, blocking vulnerable code.
+
+echo "🔒 [GIO Security] Running pre-push SCA check..."
+
+# 1. Check Airgap mode (Ping registry.npmjs.org)
+# -c 1 means 1 packet, -W 2 means 2 seconds timeout. On Windows it's -n 1 -w 2000
+ping -n 1 -w 2000 registry.npmjs.org > /dev/null 2>&1
+
+if [ $? -ne 0 ]; then
+  echo "⚠️  [Airgap Mode] Network unreachable. Skipping npm audit to prevent block."
+  exit 0
+fi
+
+# 2. Run SCA on production dependencies only, tracking High/Critical
+echo "📡 Network active. Scanning for High/Critical vulnerabilities..."
+
+# npm audit --omit=dev --audit-level=high
+npm audit --omit=dev --audit-level=high
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ [SCA Block] Push rejected! High or Critical vulnerabilities found in production dependencies."
+  echo "Please run 'npm audit fix' or update the affected packages before pushing."
+  exit 1
+fi
+
+echo "✅ [SCA Pass] No high/critical vulnerabilities found."
+
+echo "🔍 Running Static Analysis (SAST)..."
+npm run lint -- --cache
+if [ $? -ne 0 ]; then
+  echo "❌ [SAST Block] Linting/Security errors found."
+  exit 1
+fi
+
+echo "✅ [Security Pass] Pushing..."
+exit 0

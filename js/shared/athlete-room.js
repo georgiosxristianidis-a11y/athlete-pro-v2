@@ -403,7 +403,6 @@ export const AthleteRoom = (() => {
     const { updateProfile } = await import('./profile.store.js');
     await updateProfile({ dob, sex, name: newName || undefined });
     
-    ctx = null;
     cancelEdit();
     render();
     
