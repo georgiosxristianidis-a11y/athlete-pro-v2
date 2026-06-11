@@ -1,4 +1,4 @@
-// @ts-check
+﻿// @ts-check
 /* ════════════════════════════════════════════════════════
    analytics.view.js — Analytics view layer
    Charts, calendar heatmap, DOM rendering
@@ -127,9 +127,7 @@ export async function load() {
           <div class="empty-desc" style="color: var(--c-text-3); max-width: 240px; line-height: 1.4; margin-bottom: var(--sp-4);">
             ${t('analytics.empty_desc')}
           </div>
-          <button class="btn-primary" onclick="window.Nav.go('s-train', { force: true })">
-            ${t('analytics.start_first')}
-          </button>
+          <div class="pp-bento-cell pp-bento-glow" style="--bento-color: var(--c-accent); --bento-glow: var(--glow-accent-md); align-items: center; padding: 16px; margin-top: 24px;" onclick="window.Nav.go('s-train', { force: true })"><div class="pp-bento-val" style="color: var(--c-accent); font-size: 24px;">${t('analytics.start_first')}</div></div>
         </div>
       `;
       return;

@@ -1,4 +1,4 @@
-// @ts-check
+﻿// @ts-check
 import { DB } from './db.js';
 
 /**
@@ -107,7 +107,7 @@ const DICT = {
     'analytics.est_1rm': 'Records (1RM)',
     'analytics.empty_title': 'No data yet',
     'analytics.empty_desc': 'Complete your first session to see stats.',
-    'analytics.start_first': 'Start Workout',
+    'analytics.start_first': 'Start',
     'metrics.title': 'Measurements',
     'metrics.history': 'History',
     'metrics.data': 'Body Metrics',
@@ -222,7 +222,7 @@ const DICT = {
     'analytics.est_1rm': 'Рекорды (1RM)',
     'analytics.empty_title': 'Данных пока нет',
     'analytics.empty_desc': 'Завершите свою первую тренировку, чтобы увидеть статистику.',
-    'analytics.start_first': 'Начать тренировку',
+    'analytics.start_first': 'Старт',
     'metrics.title': 'Замеры',
     'metrics.history': 'История',
     'metrics.data': 'Данные тела',
