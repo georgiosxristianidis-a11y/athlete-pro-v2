@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -308,5 +308,10 @@
 
     <div id="toast-wrap" role="status" aria-live="polite"></div>
     <script type="module" src="js/app.js"></script>
-  </body>
+  <script>window.addEventListener('error', (e) => {
+  window.Toast && window.Toast.show('ERR: ' + e.message, 'error', 5000);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  window.Toast && window.Toast.show('REJ: ' + e.reason, 'error', 5000);
+});</script></body>
 </html>

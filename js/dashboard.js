@@ -1,4 +1,4 @@
-﻿// @ts-check
+// @ts-check
 /* ════════════════════════════════════════════════
    dashboard.js — Athlete Pro  |  Dashboard home screen
    ════════════════════════════════════════════════ */
@@ -225,8 +225,10 @@ export const Dashboard = (() => {
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
-          <div class="empty-dash-mascot">
-            <video src="assets/panda-idle.mp4" autoplay loop muted playsinline></video>
+          <div class="empty-dash-mascot" style="display:flex;align-items:center;justify-content:center;height:100%;width:100%;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent, #00e676)" stroke-width="1.5" stroke-linejoin="round" width="64" height="64" style="filter: drop-shadow(0 0 12px rgba(0, 230, 118, 0.4))">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
           </div>
         </div>` : ''}
         <div class="empty-dash-title">Ready to crush it?</div>

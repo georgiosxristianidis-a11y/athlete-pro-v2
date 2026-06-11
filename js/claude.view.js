@@ -53,29 +53,18 @@ export const Claude = (() => {
             <span class="ai-indicator ${hasKey ? 'active' : 'missing'}"></span>
           </div>
           <div class="fab-content">
-            ${isGemini ? _geminiIcon() : _claudeIcon()}
           </div>
         </button>
       </div>
     `;
 
-    const fab = container.querySelector('#claude-fab');
-    const vid = document.createElement('video');
-    vid.preload = 'none';
-    vid.src = 'assets/panda-idle.mp4';
-    vid.loop = true; vid.muted = true; vid.playsInline = true;
-    vid.setAttribute('playsinline', '');
-    
-    vid.oncanplay = () => {
+      const fab = container.querySelector('#claude-fab');
       const content = container.querySelector('.fab-content');
-      if (content) { content.innerHTML = ''; content.appendChild(vid); vid.play(); }
-    };
-    vid.onerror = () => {
-        const content = container.querySelector('.fab-content');
-        if (content) content.innerHTML = isGemini ? _geminiIcon() : _claudeIcon();
-    };
-
-    requestIdleCallback(() => vid.load(), { timeout: 3000 });
+      if (content) {
+        content.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+          <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+        </svg>`;
+      }
 
     fab.addEventListener('click', open);
     document.body.appendChild(container);
