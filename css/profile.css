@@ -1,4 +1,4 @@
-/* ════════════════════════════════════════════════
+﻿/* ════════════════════════════════════════════════
    BLOCK 6 CSS — PROFILE
    ════════════════════════════════════════════════ */
 
@@ -508,6 +508,15 @@
   padding: var(--sp-3) var(--sp-1);
   margin-bottom: var(--sp-2);
 }
+.pp-hero-v2::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  filter: blur(20px);
+  z-index: -1;
+  pointer-events: none;
+}
 
 .pp-avatar-wrap {
   position: relative;
@@ -666,6 +675,15 @@
   gap: var(--sp-2);
   margin-bottom: var(--sp-3);
 }
+.pp-bento::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
+  filter: blur(20px);
+  z-index: -1;
+  pointer-events: none;
+}
 
 .pp-bento-cell {
   padding: var(--sp-3);
@@ -678,6 +696,15 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--sp-1);
   margin-bottom: var(--sp-1);
+}
+.pp-bento::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
+  filter: blur(20px);
+  z-index: -1;
+  pointer-events: none;
 }
 .pp-bento-cell {
   background: var(--c-surface);
