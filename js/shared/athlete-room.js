@@ -262,16 +262,16 @@ export const AthleteRoom = (() => {
           </div>
 
           <div class="ar-stats" style="margin-bottom:12px">
-            <div class="ar-stat" onclick="window.AthleteRoom.editStat('weight', \$\{metrics?.weight||80})\" style="cursor:pointer">
+            <div class="ar-stat" onclick="window.AthleteRoom.editStat('weight', ${metrics?.weight||80})" style="cursor:pointer">
               <div class="ar-stat-val">${metrics?.weight||'—'} <span style="font-size:12px;opacity:0.6">kg</span></div>
               <div class="ar-stat-lbl">${ru?'Вес':'Weight'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:4px; opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
-            <div class="ar-stat" onclick="window.AthleteRoom.editStat('height', \$\{metrics?.height||180})\" style="cursor:pointer">
+            <div class="ar-stat" onclick="window.AthleteRoom.editStat('height', ${metrics?.height||180})" style="cursor:pointer">
               <div class="ar-stat-val">${metrics?.height||'—'} <span style="font-size:12px;opacity:0.6">cm</span></div>
               <div class="ar-stat-lbl">${ru?'Рост':'Height'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:4px; opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
-            <div class="ar-stat" style="box-shadow: 0 4px 16px \$\{tierColor}20; border-color: \$\{tierColor}40">
-              <div class="ar-stat-val" style="color: \$\{tierColor}; text-shadow: 0 0 12px \$\{tierColor}80">${Math.round(dots)}</div>
+            <div class="ar-stat" style="box-shadow: 0 4px 16px ${tierColor}20; border-color: ${tierColor}40">
+              <div class="ar-stat-val" style="color: ${tierColor}; text-shadow: 0 0 12px ${tierColor}80">${Math.round(dots)}</div>
               <div class="ar-stat-lbl">Score</div>
             </div>
           </div>
