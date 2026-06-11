@@ -1,4 +1,4 @@
-/* ══════════════════════════════════════════════
+﻿/* ══════════════════════════════════════════════
    Block 11.1 — Body Stats  v1.2
    • labels larger (13px)
    • delete btn: dark bg + white, no red anywhere
@@ -294,6 +294,7 @@
    FORM sheet
    ══════════════════════════════════════ */
 .modal-overlay.bs-overlay {
+  z-index: 5000;
   animation: none;
   background: rgba(0, 0, 0, 0);
   transition: background 0.25s;

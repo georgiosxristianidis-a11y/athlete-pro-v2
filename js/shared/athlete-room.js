@@ -1,4 +1,4 @@
-﻿// @ts-check
+// @ts-check
 import { DB } from '../db.js';
 import { athleteProScore } from '../strength-engine.js';
 import { loadProfile, updateProfile, updateWeightAndHeight } from '../profile.store.js';
@@ -230,16 +230,16 @@ export const AthleteRoom = (() => {
   }
 
   function _renderProfileTab(container, ctx) {
-    const { name, initials, c1, c2, tierLabel, tierColor, streak, total, dots, unlockedAch, photo, ru } = ctx;
+    const { name, initials, c1, c2, tierLabel, tierColor, streak, total, dots, unlockedAch, photo, ru, metrics } = ctx;
     
     // Use the existing avatar init logic but wrap the HTML
     const avatarHtml = photo
       ? `<div class="ar-avatar has-photo" style="background-image: url('${photo}')" onclick="window.AthleteRoom.triggerPhotoUpload()">
-           <div class="ar-avatar-ring" style="--c1:${c1}; --c2:${c2}"></div>
+           <div class="ar-avatar-ring" style="--c1:; --c2:"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
          </div>`
-      : `<div class="ar-avatar" id="ar-avatar-circle" style="background: linear-gradient(135deg, ${c1}, ${c2})" onclick="window.AthleteRoom.cycleColor()">
-           <div class="ar-avatar-ring" style="--c1:${c1}; --c2:${c2}"></div>
-           <div class="ar-avatar-initials">${initials}</div>
+      : `<div class="ar-avatar" id="ar-avatar-circle" style="background: linear-gradient(135deg, ${c1}, ${c2})" onclick="window.AthleteRoom.triggerPhotoUpload()">
+           <div class="ar-avatar-ring" style="--c1:; --c2:"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+           <div class="ar-avatar-initials">${initials}</div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
          </div>`;
 
     container.innerHTML = `
@@ -261,6 +261,20 @@ export const AthleteRoom = (() => {
             </div>
           </div>
 
+          <div class="ar-stats" style="margin-bottom:12px">
+            <div class="ar-stat" onclick="window.AthleteRoom.editStat('weight', \$\{metrics?.weight||80})\" style="cursor:pointer">
+              <div class="ar-stat-val">${metrics?.weight||'—'} <span style="font-size:12px;opacity:0.6">kg</span></div>
+              <div class="ar-stat-lbl">${ru?'Вес':'Weight'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:4px; opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+            </div>
+            <div class="ar-stat" onclick="window.AthleteRoom.editStat('height', \$\{metrics?.height||180})\" style="cursor:pointer">
+              <div class="ar-stat-val">${metrics?.height||'—'} <span style="font-size:12px;opacity:0.6">cm</span></div>
+              <div class="ar-stat-lbl">${ru?'Рост':'Height'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:4px; opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+            </div>
+            <div class="ar-stat" style="box-shadow: 0 4px 16px \$\{tierColor}20; border-color: \$\{tierColor}40">
+              <div class="ar-stat-val" style="color: \$\{tierColor}; text-shadow: 0 0 12px \$\{tierColor}80">${Math.round(dots)}</div>
+              <div class="ar-stat-lbl">Score</div>
+            </div>
+          </div>
           <div class="ar-stats">
             <div class="ar-stat">
               <div class="ar-stat-val">${streak} <span style="font-size:12px;opacity:0.6">d</span></div>
@@ -289,6 +303,16 @@ export const AthleteRoom = (() => {
             }).join('')}
           </div>
 
+          <div class="ar-name-editor" id="ar-stat-editor" style="display:none; position:absolute; inset:0; background:var(--c-bg-1); z-index:10; padding:16px;">
+            <div class="ar-editor-card">
+              <div class="ar-editor-label" id="ar-stat-label">Value</div>
+              <input type="number" id="ar-stat-input" class="ar-name-input" value="0" step="0.1">
+              <div class="ar-editor-actions" style="margin-top:24px">
+                <button class="ar-btn-save" onclick="window.AthleteRoom.saveStat()">${ru ? 'Сохранить' : 'Save'}</button>
+                <button class="ar-btn-cancel" onclick="window.AthleteRoom.cancelStatEdit()">${ru ? 'Отмена' : 'Cancel'}</button>
+              </div>
+            </div>
+          </div>
           <div class="ar-name-editor" id="ar-name-editor" style="display:none; position:absolute; inset:0; background:var(--c-bg-1); z-index:10; padding:16px;">
             <div class="ar-editor-card">
               <div class="ar-editor-label">${ru ? 'Имя' : 'Name'}</div>

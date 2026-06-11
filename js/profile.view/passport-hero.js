@@ -1,4 +1,4 @@
-﻿// @ts-check
+// @ts-check
 import { computeAge } from '../profile.store.js';
 import { athleteProScore, exrxTier } from '../strength-engine.js';
 import { DB } from '../db.js';
@@ -76,7 +76,7 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
     
     <div class="pp-badge-row">
       <div class="pp-tier-pill-v2" style="color:${tierColor}; border-color:${tierColor}20; background:${tierColor}0d">
-        ${esc(tierLabel)} ${dots ? `· ${dots}` : ''}
+        ${esc(tierLabel)} ${dots ? `· <span style="color:var(--c-amber); text-shadow: 0 0 12px rgba(255,179,0,0.4)">${dots}</span>` : ''}
       </div>
       ${bestPercentile > 0 ? `
         <div class="pp-percentile-pill">
@@ -92,7 +92,7 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   </div>
 </div>
 
-<div class="pp-metrics-strip" style="cursor: pointer;" onclick="window._arActiveTab = 'metrics'; window.AthleteRoom?.open()">
+<div class="pp-metrics-strip" style="cursor: pointer;" onclick="window._arActiveTab = 'metrics'; window.AthleteRoom?.open()" title="Edit Metrics">
   <div class="pp-m-item">
     <div class="pp-m-val">${metrics?.weight || '—'}<span class="pp-m-u">kg</span></div>
     <div class="pp-m-lbl">${ru ? 'Вес' : 'Weight'}</div>
