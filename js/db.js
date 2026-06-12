@@ -7,7 +7,50 @@
 import { encryptAsync, decryptAsync } from './shared/cryptoClient.js';
 
 const DB_NAME = 'athlete-pro';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
+
+/* ════════════════════════════════════════════════════════
+   CRDT FOUNDATION — decentralized IDs + LWW metadata
+   New records get a UUID id, updatedAt and deviceId so they
+   can merge across devices without autoIncrement collisions.
+   Legacy integer ids remain valid (IDB allows mixed key types).
+   ════════════════════════════════════════════════════════ */
+const DEVICE_KEY = 'ap-device-id';
+let _deviceId = null;
+
+/** Collision-free record id. Falls back when crypto.randomUUID is
+    unavailable (e.g. non-secure context during LAN field testing). */
+export function newId() {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}-${Math.random().toString(36).slice(2, 6)}`;
+  }
+}
+
+/** Stable per-installation device id (persisted in localStorage). */
+export function getDeviceId() {
+  if (_deviceId) return _deviceId;
+  try {
+    _deviceId = localStorage.getItem(DEVICE_KEY);
+    if (!_deviceId) {
+      _deviceId = newId();
+      localStorage.setItem(DEVICE_KEY, _deviceId);
+    }
+  } catch {
+    _deviceId = 'local';
+  }
+  return _deviceId;
+}
+
+/** Stamp a record with CRDT metadata before writing.
+    Keeps an existing id (legacy integer or UUID); always refreshes updatedAt. */
+export function withMeta(record) {
+  if (record.id === undefined || record.id === null) record.id = newId();
+  record.updatedAt = Date.now();
+  record.deviceId = getDeviceId();
+  return record;
+}
 
 /* ── Store names ── */
 const S = {
@@ -99,6 +142,28 @@ function openDB() {
         const ps = db.createObjectStore(S.PLANS, { keyPath: 'id', autoIncrement: true });
         ps.createIndex('timestamp', 'timestamp');
       }
+
+      /* v3 — CRDT backfill: stamp legacy records with updatedAt + deviceId
+         (ids stay as-is: changing keys would orphan cloud rows and references) */
+      if (e.oldVersion > 0 && e.oldVersion < 3) {
+        const upgradeTx = e.target.transaction;
+        const deviceId = getDeviceId();
+        [S.WORKOUTS, S.ORM, S.METRICS, S.SETTINGS, S.NUTRITION, S.PLANS].forEach((name) => {
+          if (!db.objectStoreNames.contains(name)) return;
+          const cursorReq = upgradeTx.objectStore(name).openCursor();
+          cursorReq.onsuccess = (ev) => {
+            const cursor = ev.target.result;
+            if (!cursor) return;
+            const rec = cursor.value;
+            if (rec && typeof rec === 'object' && rec.updatedAt === undefined) {
+              rec.updatedAt = rec.timestamp || Date.now();
+              rec.deviceId = rec.deviceId || deviceId;
+              cursor.update(rec);
+            }
+            cursor.continue();
+          };
+        });
+      }
     };
 
     req.onsuccess = (e) => {
@@ -177,11 +242,11 @@ const Workouts = {
    */
   save(session) {
     session.timestamp = session.timestamp || Date.now();
+    withMeta(session);
     return tx(S.WORKOUTS, 'readwrite').then((s) =>
-      req2pSafe(s.add(session), s.transaction).then((id) => {
-        session.id = id;
+      req2pSafe(s.add(session), s.transaction).then(() => {
         _triggerSync(S.WORKOUTS, session);
-        return id;
+        return session.id;
       })
     );
   },
@@ -356,7 +421,7 @@ const Workouts = {
   /** Delete one session by id. */
   delete(id) {
     // Queue a tombstone so cloud also removes the record
-    _triggerSync(S.WORKOUTS, { id, _deleted: true, timestamp: Date.now() });
+    _triggerSync(S.WORKOUTS, withMeta({ id, _deleted: true, timestamp: Date.now() }));
     return tx(S.WORKOUTS, 'readwrite').then((s) => req2p(s.delete(id)));
   },
 
@@ -475,7 +540,7 @@ const OneRM = {
     return tx(S.ORM, 'readwrite').then((s) => {
       return req2p(s.get(exerciseName)).then((existing) => {
         if (!existing || value > existing.value) {
-          const record = { id: exerciseName, value, timestamp: Date.now() };
+          const record = withMeta({ id: exerciseName, value, timestamp: Date.now() });
           return req2pSafe(s.put(record), s.transaction).then(() => {
             _triggerSync(S.ORM, record);
           });
@@ -538,14 +603,13 @@ const Metrics = {
     // Encrypt sensitive PII
     const cryptoData = await encryptAsync(rawData);
 
-    const entry = {
+    const entry = withMeta({
       _encrypted: cryptoData.encrypted,
       _iv: cryptoData.iv,
       timestamp: Date.now(),
-    };
+    });
     return tx(S.METRICS, 'readwrite').then((s) => {
-      return req2pSafe(s.add(entry), s.transaction).then((id) => {
-        entry.id = id;
+      return req2pSafe(s.add(entry), s.transaction).then(() => {
         _triggerSync(S.METRICS, entry);
       });
     });
@@ -607,7 +671,7 @@ const Settings = {
    * @returns {Promise<void>}
    */
   async set(key, value) {
-    const record = { key, value };
+    const record = { key, value, updatedAt: Date.now(), deviceId: getDeviceId() };
     await tx(S.SETTINGS, 'readwrite').then((s) => req2pSafe(s.put(record), s.transaction));
     
     // Don't sync internal/temporary settings
@@ -667,12 +731,11 @@ const Events = {
    ════════════════════════════════════════════════════════ */
 const NutritionLogs = {
   save(payload) {
-    const entry = { payload, timestamp: Date.now() };
+    const entry = withMeta({ payload, timestamp: Date.now() });
     return tx(S.NUTRITION, 'readwrite').then((s) =>
-      req2pSafe(s.add(entry), s.transaction).then((id) => {
-        entry.id = id;
+      req2pSafe(s.add(entry), s.transaction).then(() => {
         _triggerSync(S.NUTRITION, entry);
-        return id;
+        return entry.id;
       })
     );
   },
@@ -692,12 +755,11 @@ const NutritionLogs = {
    ════════════════════════════════════════════════════════ */
 const PlannedWorkouts = {
   save(name, payload) {
-    const entry = { name, payload, timestamp: Date.now() };
+    const entry = withMeta({ name, payload, timestamp: Date.now() });
     return tx(S.PLANS, 'readwrite').then((s) =>
-      req2pSafe(s.add(entry), s.transaction).then((id) => {
-        entry.id = id;
+      req2pSafe(s.add(entry), s.transaction).then(() => {
         _triggerSync(S.PLANS, entry);
-        return id;
+        return entry.id;
       })
     );
   },
@@ -794,5 +856,5 @@ async function clearAll() {
 }
 
 /* ── Public API ── */
-export const DB = { Workouts, OneRM, Metrics, Settings, Events, NutritionLogs, PlannedWorkouts, Backup, clearAll, openDB, _getRaw: (store, id) => tx(store).then(s => req2p(s.get(id))) };
+export const DB = { Workouts, OneRM, Metrics, Settings, Events, NutritionLogs, PlannedWorkouts, Backup, clearAll, openDB, newId, getDeviceId, withMeta, _getRaw: (store, id) => tx(store).then(s => req2p(s.get(id))) };
 export { openDB };

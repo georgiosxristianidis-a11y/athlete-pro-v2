@@ -1,6 +1,7 @@
 // @ts-check
 import { supabase } from './supabase.js';
 import { DB } from './db.js';
+import { lwwWins } from './shared/lww.js';
 
 /**
  * #GIO: Elite Sync Engine V2.1 — LWW Conflict Resolution
@@ -176,8 +177,10 @@ export const SyncManager = (() => {
             t.timestamp = Math.max(t.timestamp, servTs) + 1; // Bump timestamp so local wins the merge
             toSync.push(t);
           } else {
-            // Standard LWW for non-nested stores
-            if (t.timestamp > servTs) {
+            // Standard LWW for non-nested stores (deviceId breaks timestamp ties)
+            const localMeta = { updatedAt: t.timestamp, deviceId: t.data.deviceId ?? DB.getDeviceId() };
+            const remoteMeta = { updatedAt: servTs, deviceId: servRow.device_id ?? servRow.deviceId };
+            if (lwwWins(localMeta, remoteMeta)) {
               toSync.push(t);
             } else {
                // Update local DB with newer server row (sync down)
@@ -189,11 +192,15 @@ export const SyncManager = (() => {
 
         if (toSync.length === 0) continue;
 
-        const payload = toSync.map(t => ({
-          ...t.data,
-          user_id: user.id,
-          updated_at: new Date(t.timestamp).toISOString(),
-        }));
+        const payload = toSync.map(t => {
+          // CRDT meta lives locally; server schema has its own updated_at column
+          const { updatedAt: _u, deviceId: _d, ...clean } = t.data;
+          return {
+            ...clean,
+            user_id: user.id,
+            updated_at: new Date(t.timestamp).toISOString(),
+          };
+        });
 
         const { error } = await supabase.from(table).upsert(payload, {
           onConflict: 'id,user_id',

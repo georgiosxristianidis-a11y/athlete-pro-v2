@@ -209,13 +209,16 @@ function _drawCalendar() {
   for (let d = 1; d <= daysInMonth; d++) {
     const entry = workedDays[d], type = entry?.type || '', isToday = (new Date().getDate() === d && new Date().getMonth() === CalState.month);
     const color = TYPE_COLOR[type] || '', style = type ? `background:${color}20;border-color:${color}40` : '';
-    html += `<div class="cal-cell ${type ? 'has-workout' : ''} ${isToday ? 'cal-today' : ''}" style="${style}" data-day="${d}" data-type="${type}" data-wid="${entry?.id || 0}"><span class="cal-num">${d}</span>${type ? `<div class="cal-dot" style="background:${color}"></div>` : ''}</div>`;
+    html += `<div class="cal-cell ${type ? 'has-workout' : ''} ${isToday ? 'cal-today' : ''}" style="${style}" data-day="${d}" data-type="${type}" data-wid="${entry?.id ?? ''}"><span class="cal-num">${d}</span>${type ? `<div class="cal-dot" style="background:${color}"></div>` : ''}</div>`;
   }
   card.innerHTML = html + `</div>`;
   card.querySelector('.cal-grid')?.addEventListener('click', (e) => {
     const cell = /** @type {HTMLElement} */ (e.target).closest('.cal-cell');
     if (!cell || cell.classList.contains('empty')) return;
-    calDayClick(CalState.year, CalState.month, parseInt(cell.dataset.day), cell.dataset.type, parseInt(cell.dataset.wid));
+    // IDB keys are typed: legacy ids are numbers, CRDT ids are UUID strings
+    const wid = cell.dataset.wid || '';
+    const existingId = wid === '' ? null : (/^\d+$/.test(wid) ? parseInt(wid) : wid);
+    calDayClick(CalState.year, CalState.month, parseInt(cell.dataset.day), cell.dataset.type, existingId);
   });
 }
 
