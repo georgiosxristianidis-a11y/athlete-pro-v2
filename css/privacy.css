@@ -43,7 +43,7 @@
   align-items: center;
   gap: 6px;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 4px 10px;
@@ -141,7 +141,7 @@
 /* ── Data Passport modal ──────────────────────────────── */
 .passport-section-label {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -257,7 +257,7 @@
 }
 .audit-status {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--c-text-3);

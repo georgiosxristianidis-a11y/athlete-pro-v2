@@ -19,7 +19,7 @@
 }
 .cal-day-hdr {
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -66,7 +66,7 @@
 }
 .cal-num {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-3);
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -96,7 +96,7 @@
   border-radius: 12px;
   color: var(--c-text-3);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
@@ -137,7 +137,7 @@
 }
 .stat-chip-label {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -169,7 +169,7 @@
 }
 .ppl-bal-lbl {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-3);
   text-transform: uppercase;
   margin-top: 6px;
@@ -229,14 +229,14 @@
 }
 .ppl-leg-label {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-2);
   flex: 1;
   letter-spacing: 0.04em;
 }
 .ppl-leg-val {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-1);
   font-variant-numeric: tabular-nums;
 }
@@ -261,13 +261,13 @@
 .orm-name {
   flex: 1;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-1);
   min-width: 0;
 }
 .orm-val {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-1);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
@@ -283,7 +283,7 @@
   display: inline-flex;
   align-items: center;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 2px 5px;
   border-radius: 4px;
   margin-left: 5px;
@@ -336,7 +336,7 @@
   background: var(--c-surface);
   color: var(--c-text-1);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   flex-direction: column;

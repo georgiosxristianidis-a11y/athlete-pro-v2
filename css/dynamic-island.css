@@ -126,7 +126,7 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--c-text-2);
   white-space: nowrap;
@@ -215,7 +215,7 @@
   top: 50%;
   transform: translate(-50%, -50%);
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--c-text-1);
   white-space: nowrap;
@@ -230,7 +230,7 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-2);
   white-space: nowrap;
   overflow: hidden;
@@ -321,7 +321,7 @@
 
 .island-ex-name {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-1);
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -332,7 +332,7 @@
 
 .island-sublabel {
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -362,7 +362,7 @@
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--c-text-1);
   opacity: 0;
@@ -405,7 +405,7 @@
   bottom: calc(var(--nav-h) + 14px);
   right: 16px;
   z-index: 400;
-  background: #000;
+  background: var(--c-black);
   border-radius: 22px;
   min-width: 80px;
   height: 44px;
@@ -437,7 +437,7 @@
 }
 .rest-pill-time {
   font-size: 16px;
-  font-weight: 900;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--c-accent);
   letter-spacing: -0.03em;
@@ -446,7 +446,7 @@
 .rest-pill-time.done    { color: var(--c-cyan); }
 .rest-pill-label {
   font-size: 8px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -542,7 +542,7 @@
 }
 .rest-modal-time {
   font-size: 2.25rem;
-  font-weight: 900;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
   color: var(--c-accent);
@@ -558,7 +558,7 @@
 }
 .rest-modal-lbl {
   font-size: 8px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -576,7 +576,7 @@
   background: var(--c-bg-3);
   color: var(--c-text-2);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
@@ -594,9 +594,9 @@
   border-radius: var(--r-m);
   border: none;
   background: var(--c-accent);
-  color: #000;
+  color: var(--c-text-inverse);
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 800;
   font-family: inherit;
   cursor: pointer;
   letter-spacing: 0.04em;

@@ -19,7 +19,7 @@
 }
 .body-stat-val {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-1);
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
@@ -33,7 +33,7 @@
 }
 .body-stat-label {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -70,7 +70,7 @@
 }
 .metric-label {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -93,7 +93,7 @@
   background: none;
   border: none;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-1);
   font-family: inherit;
   padding: 0 var(--sp-1);
@@ -118,7 +118,7 @@
 }
 .metric-unit {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-3);
   padding-right: var(--sp-1);
   text-transform: uppercase;
@@ -145,13 +145,13 @@
 }
 .history-val {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-1);
   font-variant-numeric: tabular-nums;
 }
 .history-bmi {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   min-width: 56px;
   text-align: right;
 }
@@ -171,7 +171,7 @@
 }
 .pref-title {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-1);
 }
 .pref-sub {
@@ -224,8 +224,8 @@
 /* Gemini Active State (Neon Blue Glow) */
 .engine-toggle-btn.active.gemini-active {
   background: rgba(68, 138, 255, 0.12);
-  border-color: #448aff;
-  color: #448aff;
+  border-color: var(--c-blue);
+  color: var(--c-blue);
   box-shadow: 0 0 20px rgba(68, 138, 255, 0.2);
 }
 
@@ -240,8 +240,8 @@
   box-shadow: 0 0 12px var(--c-amber);
 }
 .gemini-active .engine-dot {
-  background: #448aff;
-  box-shadow: 0 0 12px #448aff;
+  background: var(--c-blue);
+  box-shadow: 0 0 12px var(--c-blue);
 }
 
 @keyframes engine-pulse {
@@ -265,7 +265,7 @@
   background: none;
   border: none;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-3);
   cursor: pointer;
   font-family: inherit;
@@ -341,7 +341,7 @@
   transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .switch.on {
-  background: #34C759; /* Vivid iOS Green */
+  background: var(--c-accent); /* Vivid iOS Green */
 }
 .switch-thumb {
   position: absolute;
@@ -395,7 +395,7 @@
 }
 .pref-row-icon .pref-title {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-1);
 }
 .pref-row-icon .pref-sub {
@@ -444,7 +444,7 @@
 }
 .data-btn-title {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-1);
 }
 .data-btn-sub {
@@ -467,7 +467,7 @@
   border-radius: 12px;
   color: var(--c-red);
   font-size: 13px;          
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
   margin: 8px auto 0;       
@@ -533,7 +533,7 @@
   align-items: center;
   justify-content: center;
   font-size: 26px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--c-text-1);
   letter-spacing: -0.04em;
   cursor: pointer;
@@ -562,7 +562,7 @@
 
 .pp-name-v2 {
   font-size: 24px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--c-text-1);
   letter-spacing: -0.05em;
   line-height: 1;
@@ -611,7 +611,7 @@
 
 .pp-goal-lbl-v2 {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -641,7 +641,7 @@
 
 .pp-m-val {
   font-size: 24px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--c-text-1);
   letter-spacing: -0.04em;
   line-height: 1;
@@ -649,14 +649,14 @@
 
 .pp-m-u {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-3);
   margin-left: 2px;
 }
 
 .pp-m-lbl {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -715,7 +715,7 @@
 }
 .pp-bento-val {
   font-size: 32px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -806,7 +806,7 @@
 
 .lift-rm-v2 {
   font-size: 16px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--c-text-1);
   letter-spacing: -0.04em;
   line-height: 1;
@@ -814,7 +814,7 @@
 
 .lift-rm-u {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-3);
   margin-left: 1px;
 }

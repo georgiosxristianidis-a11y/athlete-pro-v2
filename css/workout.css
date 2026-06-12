@@ -33,7 +33,7 @@
 /* Removed redundant pseudo-element glow to clean up the look */
 
 .type-card-text { display: flex; flex-direction: column; align-items: center; gap: 4px; z-index: 1; }
-.type-card-name { font-family: var(--font-heading); font-size: 26px; font-weight: 900; color: var(--c-text-1); letter-spacing: 0.12em; text-transform: uppercase; }
+.type-card-name { font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: var(--c-text-1); letter-spacing: 0.12em; text-transform: uppercase; }
 .type-card-meta { font-size: 9px; font-weight: 800; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.45em; opacity: 0.7; text-align: center; line-height: 1.4; }
 
 .kinetic-svg svg {
@@ -92,7 +92,7 @@
 }
 .week-pill-val {
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--c-text-1);
 }
 
@@ -147,13 +147,13 @@
 .ex-num { font-size: 14px; font-weight: 800; color: var(--c-text-inverse); opacity: 0.35; }
 
 .exercise-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.exercise-name { font-size: 16px; font-weight: 700; color: var(--c-text-1); display: flex; align-items: center; gap: 8px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.exercise-meta { font-size: 10px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.3; margin-top: 1px; transition: opacity 0.3s; line-height: 1; }
+.exercise-name { font-size: 16px; font-weight: 600; color: var(--c-text-1); display: flex; align-items: center; gap: 8px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exercise-meta { font-size: 10px; font-weight: 600; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.3; margin-top: 1px; transition: opacity 0.3s; line-height: 1; }
 .exercise-meta.done { opacity: 0.25 !important; }
 
 /* ── Header Actions — Premium Distribution ── */
 .ex-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; padding-left: 20px; padding-right: 4px; flex-shrink: 0; }
-.ex-action-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--c-text-3); cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; border-radius: 10px; opacity: 0.4; font-size: 9px; font-weight: 900; }
+.ex-action-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--c-text-3); cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; border-radius: 10px; opacity: 0.4; font-size: 9px; font-weight: 800; }
 .ex-action-btn:active { transform: scale(0.85); background: var(--c-bg-3); opacity: 1; color: var(--c-text-1); }
 .ex-action-btn.active { color: var(--c-accent); opacity: 0.9; }
 .ex-action-btn.coach { color: var(--c-accent); opacity: 0.7; }
@@ -170,8 +170,8 @@
 .set-num { font-size: 10px; font-weight: 800; color: var(--c-text-3); text-align: center; opacity: 0.35; }
 .set-row.set-active { background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%); border-radius: 10px; margin: 0 -8px; padding: 14px 8px; }
 
-.stepper-val { font-size: 22px !important; font-weight: 900 !important; letter-spacing: -0.04em !important; color: rgba(255,255,255,0.6) !important; }
-.set-row.set-active .stepper-val { color: #fff !important; }
+.stepper-val { font-size: 22px !important; font-weight: 800 !important; letter-spacing: -0.04em !important; color: rgba(255,255,255,0.6) !important; }
+.set-row.set-active .stepper-val { color: var(--c-text-1) !important; }
 .set-row.set-done { opacity: 0.3; }
 .set-row.set-done .drum-wrap { pointer-events: none; opacity: 0.4; }
 
@@ -213,15 +213,15 @@
   align-items: center;
   justify-content: center;
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--c-text-3);
   scroll-snap-align: center;
   transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   opacity: 0; 
 }
 .drum-item--active {
-  color: #fff;
-  font-weight: 900;
+  color: var(--c-text-1);
+  font-weight: 800;
   opacity: 1 !important;
   transform: scale(1.1);
 }
@@ -230,11 +230,11 @@
 .set-check.done { background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent); }
 .set-check svg { width: 16px; height: 16px; stroke-width: 2.5; }
 
-.add-set-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; border: 1.5px dashed rgba(255,255,255,0.06); border-radius: 14px; font-size: 11px; font-weight: 700; color: var(--c-text-3); opacity: 0.5; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s; }
+.add-set-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; border: 1.5px dashed rgba(255,255,255,0.06); border-radius: 14px; font-size: 11px; font-weight: 600; color: var(--c-text-3); opacity: 0.5; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s; }
 .add-set-btn:active { background: rgba(255,255,255,0.03); opacity: 1; }
 .add-set-btn svg { width: 14px; height: 14px; }
 
-.btn-add-live-ex { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 16px; background: rgba(255,255,255,0.04); border: 1px solid var(--c-border); border-radius: 18px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: var(--sp-2); }
+.btn-add-live-ex { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 16px; background: rgba(255,255,255,0.04); border: 1px solid var(--c-border); border-radius: 18px; color: var(--c-text-1); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: var(--sp-2); }
 .btn-add-live-ex svg { width: 16px; height: 16px; }
 
 /* ── Elite Block Tags ── */
