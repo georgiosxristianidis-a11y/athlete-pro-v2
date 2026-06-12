@@ -28,13 +28,15 @@
 
 > Инвентаризация начата 2026-06-12 (прервана): подтверждены `plate-calc.js:94` (символ warn в `pc-warn`) и `intel.view.js:496`. ВАЖНО: стрелки `→` (U+2192) в строках/комментариях — это типографика, НЕ эмодзи, не вычищать.
 
-- [ ] Эмодзи из UI-разметки → SVG/текст: `intel.view.js:496` («ЦНС»), `plate-calc.js:95` (warn) + ревизия db.js, handlers.js, supabase*.js, progressive-overload.js, integrity.js
-- [ ] `dynamic-island.js:356` — vibrate через Haptic Gate (`shared/utils.js`), не напрямую
-- [ ] `timer.js` — `clearInterval(_interval)` перед каждым `setInterval` в `start()` (двойной вызов = утечка)
-- [ ] Решение по 90 × `border: 1px solid` — узаконить в CLAUDE.md или зачистить
-- [ ] Убрать предписание эмодзи из AI system prompt (если ещё осталось в `_buildSystemPrompt`)
+- [x] Эмодзи из UI-разметки и кода — вычищены полностью (intel.view, plate-calc, getTypeIcon `↑`, db, handlers, supabase*, integrity); типографика (`→`, `✓` в комментах) сохранена
+- [x] `dynamic-island.js` — long-press vibrate через `haptic()` gate
+- [x] `timer.js` — все 4 интервала через `_startTicking()` с clearInterval-guard (проверено triple-start)
+- [x] Borders: решение пользователя — **узаконить glass-hairlines**. 31 захардкоженный rgba сведён к токенам: 76× `--c-border` + 5× `--c-border-h`, 0 hardcoded. Правило переписано в CLAUDE.md + DESIGN.md
+- [x] AI system prompt — проверен, эмодзи-предписаний нет (0 вхождений)
 
-## Далее (Phase 4–5)
+**PHASE 3 — COMPLETE (2026-06-12, commits 7aadd1b + 34c6f3c, тесты 103/103)**
+
+## Текущая цель следующей сессии: Phase 4 — CRDT Foundation
 
 - [ ] **CRDT Foundation**: UUID вместо `autoIncrement` в db.js (7 сторов, миграция DB_VERSION+1), `updatedAt`+`deviceId`, LWW-ключи на UUID. Оба аудита (Claude + Antigravity) сошлись: это блокер Local-first Sync.
 - [ ] **Полевой прогон** по `~/.gemini/antigravity/brain/14a057e9.../mobile_field_testing.md` через `node scripts/telemetry-server.mjs --lan`
