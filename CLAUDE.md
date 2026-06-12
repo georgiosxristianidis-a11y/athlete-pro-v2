@@ -1,14 +1,22 @@
-# CLAUDE.md — Athlete Pro (Frozen Project)
+# CLAUDE.md — Athlete Pro
 
-> ⚠️ Этот проект заморожен. Код рабочий, но активная разработка ведётся в **FIT ELITE**.
-> Открывай только для: тестирования, заимствования кода/фич, или возобновления работы.
+> Основной активный проект. Разработка ведётся мультиагентно: Claude Code + Gemini Pro + Antigravity.
+> Дочерний проект: FIT ELITE (`C:\projects\fit-elite`).
+
+## Multi-Agent Protocol
+
+- **Рабочая ветка:** `2026-04-14-byoi` (main синхронизируется из неё). Перед стартом сверь `git branch --show-current`.
+- **Handoff между сессиями/агентами:** `NEXT_SESSION.md` в корне (правило GIO Context Integrity) — читать первым.
+- Незакоммиченные диффы могут быть живым WIP другого агента — сверяйся с NEXT_SESSION.md, не откатывай вслепую.
+- Antigravity-артефакты (task/plan/walkthrough): `~/.gemini/antigravity/brain/<uuid>/`.
+- Стандарты GIO: `~/.gemini/GEMINI.md` (глобальный) + `GEMINI.md` в корне (Karpathy guidelines). Триггер `#Аудит` — элитная диагностика.
 
 ## Stack
 
 - Frontend: Vanilla JS (ES Modules), no frameworks
-- Backend: Express/Node.js (CommonJS)
+- Backend: Express/Node.js (**ESM**, `"type": "module"`)
 - DB: IndexedDB (offline-first) + optional Supabase/Firebase
-- AI: Claude Opus via SSE (`POST /api/coach`)
+- AI: `lib/aiOrchestrator.js` — Anthropic + Gemini, BYOK, SSE via `POST /api/coach`
 - PWA: Service Worker + manifest
 
 ## Run
@@ -16,16 +24,19 @@
 ```bash
 npm install
 cp .env.example .env   # заполни ANTHROPIC_API_KEY
-npm run dev             # http://localhost:3000 (auto-reload)
+npm run dev             # http://localhost:3000
+
+# Полевое тестирование на телефоне (НЕ заменяй server.js!):
+node scripts/telemetry-server.mjs --lan
 ```
 
 ## Architecture
 
 **Store/View pattern** — каждый модуль разделён:
-- `*.store.js` — state, data, business logic
+- `*.store.js` — state, data, business logic (ноль обращений к DOM)
 - `*.view.js` — DOM, events, UI
 
-**Backend**: `server.js` → `routes/coach.js` + `routes/integrations.js`
+**Backend**: `server.js` (helmet+CSP, compression, rate-limit, zod) → `routes/coach.js` + `routes/integrations.js` → `lib/aiOrchestrator.js`
 
 **Navigation**: `shell.js` → `Nav.go('s-home')` переключает экраны
 
@@ -33,36 +44,50 @@ npm run dev             # http://localhost:3000 (auto-reload)
 
 | File | What |
 |------|------|
-| `server.js` | Express entry, static + API |
-| `js/app.js` | Frontend entry, lazy loading |
-| `js/db.js` | IndexedDB layer (5 stores) |
-| `js/workout.store.js` | Workout state + logic |
-| `js/claude.store.js` | AI coach state |
+| `server.js` | Express entry (ESM), helmet/CSP, static + API |
+| `js/app.js` | Frontend entry, lazy loading, Integrity.check |
+| `js/db.js` | IndexedDB layer (7 stores) |
+| `js/shared/utils.js` | `esc()` — XSS escape, Haptic Gate |
+| `js/shared/spring.js` | Spring Physics для анимаций |
+| `js/shared/integrity.js` | Contract-First Integrity guard |
+| `js/privacy.store.js` | Режимы cloud / anon / airgap (default: airgap) |
+| `js/sync.js` | LWW Sync Engine V2.1 |
+| `lib/aiOrchestrator.js` | Мульти-движок AI (anthropic/gemini, BYOK) |
 | `exercises-library.json` | 170 exercises (85KB) |
 | `DESIGN.md` | Full design system spec |
-| `ROADMAP_elite_athlete-pro.md` | 8-phase plan |
+| `NEXT_SESSION.md` | Кросс-агентный handoff |
 
 ## Design
 
 - Primary: #00c86e (Forest Emerald) — НЕ #F2CA50 из DESIGN.md (DESIGN.md = Vantablack theme)
-- Push: #6366f1 / Pull: #06b6d4 / Legs: #f59e0b
-- No 1px borders — surface color shifts only
+- Push: #6366f1 / Pull: #06b6d4 / Legs: #f59e0b / Gold accents: var(--c-gold)
+- Glassmorphism: backdrop-filter, глубина через тени
+- «No 1px borders» — правило под ревизией (в коде ~90 отступлений; решение ожидается)
 - Mobile-first, 600px breakpoint
 
 ## Rules
 
 - Vanilla JS only — no React/Vue/jQuery
 - API keys через backend proxy, никогда на фронте
-- `bsEsc()` для XSS prevention
+- `esc()` из `js/shared/utils.js` для ВСЕХ innerHTML с данными
+- Эмодзи в UI/коде запрещены — только SVG (правило DESIGN_DNA)
+- Вибрация — только через Haptic Gate (`js/shared/utils.js`), не напрямую
 - Canvas: multiply by `devicePixelRatio`
+- Animations: GPU-only (`transform`/`opacity`), Spring Physics из `shared/spring.js`
 - Route files: suffix only (`/coach` not `/api/coach`)
+- `sw.js`: новые js-файлы добавлять в ASSETS + поднимать версию кеша
+- `server.js` никогда не заменять отладочными стабами — для телеметрии есть `scripts/telemetry-server.mjs`
+
+## Tests
+
+```bash
+npm test                # node --test (unit + integration)
+npx playwright test     # e2e (отдельно, не через node --test)
+```
 
 ## Status
 
-**Milestone 1.0 — COMPLETE** (March 2026)
-- Phase 1: Architecture ✅
-- Phase 2: Performance (Lighthouse 97) ✅
-- Phase 3: Design System (WCAG AA) ✅
-- Phase 4: AI Autopilot (21/21 tests) ✅
-
-See `ROADMAP_elite_athlete-pro.md` for future plans.
+- Milestone 1.0 — COMPLETE (March 2026): архитектура, Lighthouse 97, WCAG AA, AI Autopilot
+- v1.18.x — Bento Grid UI, Dynamic Island в статус-баре, privacy tri-state, LWW sync
+- Текущий вектор: ремонт тестовой базы → SSE hardening → CRDT foundation (UUID вместо autoIncrement)
+- См. `ROADMAP_elite_athlete-pro.md` и `NEXT_SESSION.md`
