@@ -63,11 +63,12 @@ const globalApiLimiter = rateLimit({
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://127.0.0.1:3000'];
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    // Same-origin module scripts DO send an Origin header — throwing here
+    // turns every asset into a 500 on any non-whitelisted host/port
+    // (LAN phone testing, alt ports). callback(null, false) simply omits
+    // CORS headers: same-origin keeps working, foreign origins are blocked
+    // by the browser itself.
+    callback(null, !origin || allowedOrigins.includes(origin));
   },
   credentials: true
 }));
