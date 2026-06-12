@@ -40,6 +40,14 @@
 - [ ] **Полевой прогон** по `~/.gemini/antigravity/brain/14a057e9.../mobile_field_testing.md` через `node scripts/telemetry-server.mjs --lan`
 - [ ] Playwright e2e зелёные + GitHub Actions CI
 
+## Phase 6 — Performance & JS Payload Optimization (Lighthouse Validation)
+
+> По прогону Lighthouse: UI-метрики идеальны (CLS 0, TBT 0ms), но Main-Thread перегружен парсингом и выполнением JS.
+
+- [ ] **Audit Extensions Impact**: категория Other заняла 1.9s, Lighthouse прямо указал на влияние расширений Chrome. Контрольный замер в Incognito Mode (или `chrome --user-data-dir=tmp`) — отделить вклад расширений от реального бюджета приложения.
+- [ ] **JS Execution / Bootup Time**: Script Evaluation 1.0s, парсинг 0.6s. Ревизия размеров бандлов: убедиться, что тяжёлые модули (графика/canvas, intel, body-stats; серверный aiOrchestrator фронта не касается — проверить клиентские аналоги claude.store/insights.engine) грузятся строго через ленивые `import()` и не блокируют старт. Снять профиль `app.js` boot-чейна.
+- [ ] **SW Precache Strategy**: LCP 2.2s / FCP 1.7s — хорошие, улучшаются полнотой precache. Сверить ASSETS в `sw.js` с фактическим списком js/css (известный класс бага: в прошлом аудите sw.js упускал 6 файлов, включая сплит `workout.view/`). Поднять версию кеша после правки. Идея на будущее: автогенерация ASSETS скриптом, чтобы класс бага исчез.
+
 ## Заметки для ИИ (Context Integrity)
 
 - PiP-гибрид подтверждён пользователем: остров фиксирован в статус-баре, таймер выносится в системное PiP-окно.
