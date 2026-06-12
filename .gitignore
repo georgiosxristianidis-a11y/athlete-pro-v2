@@ -54,3 +54,15 @@ test/e2e/report/
 
 # ===== Field testing =====
 telemetry.log
+
+# Phase 0.5 Cleanup
+telemetry.log
+test-results/
+dist/
+ATH-PRO vanilla google/
+0)
+i
+allTimeBest
+w.exercises
+{}
+

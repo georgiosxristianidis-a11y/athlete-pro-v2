@@ -85,11 +85,19 @@ router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
   res.json({ success: true, recommendations, aiNotes: content });
 }));
 
-const coachSchema = z.object({
+const COACH_MAX_MESSAGES = 40;
+const COACH_MAX_CONTENT_LEN = 12000;
+
+const coachMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string().min(1).max(COACH_MAX_CONTENT_LEN),
+});
+
+export const coachSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
   fatigue: z.any().optional().default({}),
   topLifts: z.array(z.any()).optional().default([]),
-  messages: z.array(z.any()).optional().default([]),
+  messages: z.array(coachMessageSchema).min(1).max(COACH_MAX_MESSAGES),
   images: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
   longTermStats: z.any().optional().default({}),
