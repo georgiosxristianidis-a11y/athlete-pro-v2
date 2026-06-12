@@ -48,7 +48,18 @@
 
 **ВАЖНО для полевого теста:** первый запуск после обновления выполнит миграцию IDB v3 — проверить на телефоне, что данные на месте (workouts/metrics/1RM). Tombstone-удаления теперь тоже несут LWW-мету.
 
-## Текущая цель следующей сессии: Phase 5 — полевые тесты + e2e/CI (или Phase 6 Lighthouse)
+## Phase 5 (CI/e2e часть) — COMPLETE (2026-06-12, commit 0ef20b5)
+
+- [x] **E2E 29/29 зелёные** (было 24/6): контракты обновлены под актуальный продукт — FAB → Intel screen (оверлей умер), онбординг через quick-start путь премиум-визарда, sw-версия без хардкода
+- [x] CI: e2e-job (playwright chromium + report-артефакт при падении), security:audit step; format:check убран (кодовая база до-prettier'ная, тотальный reformat — отдельное решение)
+- [x] Реальные баги от тулинга: незакрытый блок css/dashboard.css:732 (браузер молча ронял правила); `*/` в примере внутри шапки types.d.ts ломал ВСЕ типы @ts-check; удалён мёртвый js/shared/dynamic-island.css (JS-строка-дамп)
+- [x] prettier: endOfLine auto (CRLF на Windows), ignores для вендоренного
+
+**Осталось из Phase 5 (за пользователем):**
+- [ ] Полевой прогон на телефоне (`node scripts/telemetry-server.mjs --lan` + протокол из brain) — **проверить миграцию IDB v3 на живых данных**
+- [ ] Замечено в e2e-логах: CSP блокирует один inline-script (хэш sha256-LjIy5Uzf... в консоли) — добавить 'unsafe-hashes' хэш в CSP server.js или вынести скрипт в файл (кандидат в Phase 6)
+
+## Текущая цель следующей сессии: Phase 6 — Lighthouse / JS payload / SW precache sweep
 
 - [ ] **CRDT Foundation**: UUID вместо `autoIncrement` в db.js (7 сторов, миграция DB_VERSION+1), `updatedAt`+`deviceId`, LWW-ключи на UUID. Оба аудита (Claude + Antigravity) сошлись: это блокер Local-first Sync.
 - [ ] **Полевой прогон** по `~/.gemini/antigravity/brain/14a057e9.../mobile_field_testing.md` через `node scripts/telemetry-server.mjs --lan`
