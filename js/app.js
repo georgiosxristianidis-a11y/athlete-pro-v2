@@ -111,7 +111,9 @@ function _renderPrivacyIndicator() {
   el.style.cursor = 'pointer';
   el.removeAttribute('hidden');
   el.onclick = () => window.Nav.go('s-privacy');
-  el.ondblclick = () => window.Nav.go('s-privacy');
+  el.onpointerdown = (e) => window.PrivacyRapid?.startLongPress(e);
+  el.onpointerup = () => window.PrivacyRapid?.cancelLongPress();
+  el.onpointerleave = () => window.PrivacyRapid?.cancelLongPress();
 
   el.classList.remove('mode-cloud', 'mode-anon', 'mode-airgap');
   el.classList.add('mode-' + mode);

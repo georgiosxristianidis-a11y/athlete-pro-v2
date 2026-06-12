@@ -309,11 +309,18 @@ async function setEngine(engine) {
 
   /* ── Events ── */
   if (typeof window !== 'undefined') {
-    window.addEventListener('ap-sync-status', () => {
-      // @ts-ignore
-      if (window._profileRenderTimeout) clearTimeout(window._profileRenderTimeout);
-      // @ts-ignore
-      window._profileRenderTimeout = setTimeout(() => load(), 100);
+    window.addEventListener('ap-sync-status', (e) => {
+      const status = e.detail?.status || 'idle';
+      const el = document.getElementById('profile-sync-status');
+      if (el) {
+        const color = status === 'syncing' ? 'var(--c-blue)' :
+                      status === 'error' ? 'var(--c-red)' :
+                      status === 'offline' ? 'var(--c-text-3)' : 'var(--c-accent)';
+        el.innerHTML = `
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${color}; box-shadow:0 0 8px ${status === 'offline' ? 'transparent' : color};"></span>
+          <span style="font-size:11px; font-weight:800; color:var(--c-text-3); text-transform:uppercase;">${status}</span>
+        `;
+      }
     });
   }
 

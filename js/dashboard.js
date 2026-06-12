@@ -127,12 +127,12 @@ export const Dashboard = (() => {
         <div class="dash-card stagger-item" style="padding-bottom: 0; overflow: hidden; background: var(--c-spark-bg); border: 1px solid var(--c-border); margin-top: var(--sp-2); border-radius: var(--r-xl);">
           <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 var(--sp-2); padding-top: var(--sp-2);">
             <div>
-              <div style="color:var(--c-text-2); font-size:11px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Volume Trend</div>
+              <div style="color:var(--c-text-2); font-size:11px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;">Volume Trend</div>
               <div id="spark-total" style="color:var(--c-text-1); font-size:24px; font-family:var(--font-heading); font-weight:800;">--</div>
             </div>
-            <div class="badge" style="background:var(--c-gold-glow); color:var(--c-gold); font-size:10px; font-weight:700;">30 Days</div>
+            <div class="badge" style="background:var(--c-bg-3); color:var(--c-text-2); font-size:10px; font-weight:700; border:1px solid var(--c-border);">30 Days</div>
           </div>
-          <div id="spark-container" style="height: 80px; width: 100%; margin-top: 10px;"></div>
+          <div id="spark-container" style="height: 60px; width: calc(100% - 32px); margin: 16px auto 16px auto;"></div>
         </div>
 
         <!-- Weekly Summary Chip -->
@@ -151,7 +151,7 @@ export const Dashboard = (() => {
       </div>
 
       <!-- Streak card -->
-      <div class="streak-card stagger-item" onclick="window.appSwitchTab?.('history')" style="cursor:pointer">
+      <div class="streak-card stagger-item" onclick="window.Nav.go('s-stats')" style="cursor:pointer">
         <div class="streak-header">
           <span class="section-label">This Week</span>
           <span class="streak-count" id="streak-count"></span>
@@ -318,16 +318,36 @@ export const Dashboard = (() => {
     }
     
     let total30d = 0;
+    let last7d = 0;
+    let prev7d = 0;
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+
     workouts.forEach(w => {
       const wDate = new Date(w.timestamp);
       wDate.setHours(0,0,0,0);
       const ts = wDate.getTime();
+      
+      const diffDays = Math.floor((today.getTime() - ts) / dayMs);
+      if (diffDays < 7) last7d += w.tonnage;
+      else if (diffDays >= 7 && diffDays < 14) prev7d += w.tonnage;
+
       if (dataMap.has(ts)) {
         dataMap.set(ts, dataMap.get(ts) + w.tonnage);
         total30d += w.tonnage;
       }
     });
     
+    let trendHtml = '';
+    if (prev7d > 0 || last7d > 0) {
+      const percent = prev7d === 0 ? 100 : Math.round(((last7d - prev7d) / prev7d) * 100);
+      const isUp = percent >= 0;
+      const color = isUp ? 'var(--c-green)' : 'var(--c-red)';
+      const bg = isUp ? 'rgba(35, 209, 139, 0.15)' : 'rgba(244, 135, 113, 0.15)';
+      const arrow = isUp ? '↗' : '↘';
+      trendHtml = `<span style="background:${bg}; color:${color}; font-size:10px; font-weight:800; padding:2px 6px; border-radius:12px; margin-left:8px;">${arrow} ${Math.abs(percent)}%</span>`;
+    }
+
     const dataArr = Array.from(dataMap.values());
     const maxVal = Math.max(...dataArr);
     if (maxVal === 0) {
@@ -335,7 +355,7 @@ export const Dashboard = (() => {
        return;
     }
     
-    totalEl.textContent = fmtVol(total30d) + ' kg';
+    totalEl.innerHTML = `${fmtVol(total30d)} kg ${trendHtml}`;
     container.innerHTML = generateSparkline(dataArr, 300, 80);
   }
 
@@ -730,7 +750,7 @@ async function loadWeeklySummary() {
   if (chipValue) {
     if (prs.length > 0) {
       chipValue.textContent = `${prs.length} PR${prs.length > 1 ? 's' : ''}`;
-      chipValue.style.color = '#00e676';
+      chipValue.style.color = 'var(--c-gold)';
     } else if (plateauAlerts.length > 0) {
       chipValue.textContent = `${plateauAlerts.length} plateau${plateauAlerts.length > 1 ? 's' : ''}`;
       chipValue.style.color = '#ff4757';

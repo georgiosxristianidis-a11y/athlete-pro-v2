@@ -101,7 +101,7 @@ export const Claude = (() => {
   }
 
   function _initDraggable(el) {
-    let x = 0, y = 0, startX = 0, startY = 0;
+    let startX = 0, startY = 0;
     let moved = false;
     
     el.onpointerdown = (e) => {
@@ -117,10 +117,17 @@ export const Claude = (() => {
 
       moved = false;
       document.onpointermove = (ev) => {
-        moved = true;
         const dx = ev.clientX - startX;
         const dy = ev.clientY - startY;
-        el.style.transform = `translate(${baseOffsetX + dx}px, ${baseOffsetY + dy}px)`;
+        
+        // 5px threshold to prevent swallowing taps on mobile due to finger jitter
+        if (!moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+          moved = true;
+        }
+        
+        if (moved) {
+          el.style.transform = `translate(${baseOffsetX + dx}px, ${baseOffsetY + dy}px)`;
+        }
       };
       document.onpointerup = () => {
         document.onpointermove = null;

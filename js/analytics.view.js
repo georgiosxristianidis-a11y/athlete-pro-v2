@@ -1,4 +1,4 @@
-﻿// @ts-check
+// @ts-check
 /* ════════════════════════════════════════════════════════
    analytics.view.js — Analytics view layer
    Charts, calendar heatmap, DOM rendering
@@ -95,6 +95,25 @@ export async function load() {
           <div class="ppl-bal-val" id="ppl-bal-legs" style="color:#ff4d88">0%</div>
           <div class="ppl-bal-lbl">Legs</div>
         </div>
+      </div>
+
+      <!-- ── Monthly Calendar ── -->
+      <div class="chart-card stagger-item" style="padding:16px; margin-top:var(--sp-4); animation-delay: 0.12s;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+          <div>
+            <div id="cal-month-label" style="font-size:14px; font-weight:700; color:var(--c-text-1);">Month Year</div>
+            <div style="font-size:10px; color:var(--c-text-3); margin-top: 2px;">Workout Heatmap</div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-icon-nav" id="cal-prev" onclick="window.Analytics.calPrev()" style="background:var(--c-surface-h); border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; color:var(--c-text-2); border:none; cursor:pointer;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="btn-icon-nav" id="cal-next" onclick="window.Analytics.calNext()" style="background:var(--c-surface-h); border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; color:var(--c-text-2); border:none; cursor:pointer;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+        <div id="cal-card"></div>
       </div>
 
       <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.15s">
@@ -200,7 +219,81 @@ function _drawCalendar() {
   });
 }
 
-export function calDayClick(year, month, day, type, wid) { /* modal logic unchanged */ }
+export function calDayClick(year, month, day, existingType, existingId) {
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dateLabel = `${day} ${monthNames[month]} ${year}`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.zIndex = '4000';
+
+  const removeBtn = existingType ? `
+    <button class="cal-pick-remove" id="cal-pick-rm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="14" height="14">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+      </svg>
+      Remove workout
+    </button>` : '';
+
+  overlay.innerHTML = `
+    <div class="modal-sheet" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">Log Workout</div>
+        <button class="btn-icon-sm" id="cal-pick-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="18" height="18">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="cal-pick-date">${dateLabel}</div>
+      <div class="cal-pick-grid">
+        ${['push', 'pull', 'legs'].map((t) => `
+          <button class="cal-pick-btn ${existingType === t ? 'active' : ''}" data-type="${t}" style="--pick-color:${TYPE_COLOR[t]}">
+            <span class="cal-pick-dot" style="background:${TYPE_COLOR[t]}"></span>
+            ${t.charAt(0).toUpperCase() + t.slice(1)}
+          </button>`
+        ).join('')}
+      </div>
+      ${removeBtn}
+    </div>`;
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('visible'));
+
+  const close = () => {
+    overlay.classList.remove('visible');
+    setTimeout(() => overlay.remove(), 300);
+  };
+
+  overlay.querySelectorAll('[data-type]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const type = btn.dataset.type;
+      if (existingId) await DB.Workouts.deleteById(existingId);
+      await DB.Workouts.save({
+        type,
+        timestamp: new Date(year, month, day, 12, 0, 0).getTime(),
+        duration: 0,
+        tonnage: 0,
+        exercises: [],
+        logged: true,
+      });
+      close();
+      load();
+      document.dispatchEvent(new CustomEvent('ap-sync-status', { detail: { force: true } }));
+    });
+  });
+
+  overlay.querySelector('#cal-pick-rm')?.addEventListener('click', async () => {
+    if (existingId) await DB.Workouts.deleteById(existingId);
+    close();
+    load();
+    document.dispatchEvent(new CustomEvent('ap-sync-status', { detail: { force: true } }));
+  });
+
+  overlay.querySelector('#cal-pick-close').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
 
 function _renderVolumeChart(workouts, buckets) {
   const canvas = document.getElementById('cv-volume');

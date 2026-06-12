@@ -9,7 +9,7 @@ import { haptic } from './utils.js';
 /**
  * dynamic-island.js — Interactive session overlay (PIP)
  * Shows: Timer (Total Session Time ONLY), Sets done/total, Current exercise
- * Interactions: Draggable, Tap to expand, Long-press for Settings, Set complete pulse
+ * Interactions: Tap to expand, Long-press for Settings, Set complete pulse
  */
 
 export const DynamicIsland = (() => {
@@ -20,18 +20,12 @@ export const DynamicIsland = (() => {
   let _timerMax = 0;
   let _setCompleteTimeout = null;
 
-  // Dragging & Long-press state
-  let _isDragging = false;
-  let _movedPastThreshold = false;
-  let _startX = 0;
-  let _startY = 0;
-  let _currentX = 0;
-  let _currentY = 0;
+  // Long-press state
   let _longPressTimer = null;
   let _isLongPress = false;
 
   // DOM elements cache
-  let _wrap = null;
+  let _container = null;
   let _island = null;
   let _dot = null;
   let _timeEl = null;
@@ -45,25 +39,17 @@ export const DynamicIsland = (() => {
 
   // Animation tracking
   const _anims = {
-    y: null,
-    scale: null,
-    dot: null,
-    drag: null
+    scale: null
   };
-  let _animY = -100;
   let _animScale = 1;
 
   function init() {
-    if (document.getElementById('dynamic-island-wrap')) return;
+    if (document.getElementById('dynamic-island')) return;
 
-    _wrap = document.createElement('div');
-    _wrap.id = 'dynamic-island-wrap';
-    _wrap.style.cssText = `
-      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      pointer-events: none; z-index: 9999; overflow: hidden;
-    `;
+    _container = document.getElementById('status-island-container');
+    if (!_container) return;
     
-    _wrap.innerHTML = `
+    _container.innerHTML = `
       <div class="island" id="dynamic-island" role="status" aria-live="polite" style="pointer-events: auto;">
         <div class="island-dot online" id="di-dot"></div>
         <div class="island-time" id="di-time">00:00</div>
@@ -102,9 +88,6 @@ export const DynamicIsland = (() => {
       </div>
     `;
 
-    const appEl = document.getElementById('app') || document.body;
-    appEl.appendChild(_wrap);
-
     // Cache elements
     _island = document.getElementById('dynamic-island');
     _dot = document.getElementById('di-dot');
@@ -124,9 +107,8 @@ export const DynamicIsland = (() => {
     // Set initial transform
     requestAnimationFrame(() => _applyTransform());
 
-    // Drag & Long-press events
+    // Long-press events (no drag)
     _island?.addEventListener('pointerdown', _onPointerDown);
-    window.addEventListener('pointermove', _onPointerMove, { passive: true });
     window.addEventListener('pointerup', _onPointerUp);
     window.addEventListener('pointercancel', _onPointerUp);
     _island?.addEventListener('pointerleave', (e) => {
@@ -137,10 +119,10 @@ export const DynamicIsland = (() => {
       window.PrivacyRapid?.toggle();
     });
 
-    // Expand toggle or cycle mode (only if not long-pressed or dragged)
+    // Expand toggle or cycle mode (only if not long-pressed)
     _island?.addEventListener('click', (e) => {
       if (_island?.classList.contains('mode-idle')) return;
-      if (_isLongPress || _movedPastThreshold) return;
+      if (_isLongPress) return;
       if (_expanded) {
         toggleExpand();
       } else {
@@ -161,44 +143,26 @@ export const DynamicIsland = (() => {
 
   function _applyTransform() {
     if (!_island) return;
-    _island.style.transform = `translate(calc(-50% + ${_currentX}px), ${_animY + _currentY}px) scale(${_animScale})`;
+    _island.style.transform = `scale(${_animScale})`;
   }
 
   function show() {
-    if (!_wrap) init();
-    _wrap.style.display = 'block';
-    _wrap.classList.add('visible');
+    if (!_island) init();
 
     const pill = document.getElementById('status-pill');
     if (pill) pill.style.opacity = '0';
 
-    // Logic Fix: Focus on Island by blurring the Status Bar
     const statusBar = document.getElementById('status-bar');
     if (statusBar) {
       statusBar.classList.add('status-bar-focused');
       statusBar.onclick = () => statusBar.classList.remove('status-bar-focused');
     }
     
-    // Animate entry
-    if (_island) {
-      _anims.y?.stop();
-      _anims.y = Spring.animate({
-        from: _animY,
-        to: 0,
-        stiffness: 150,
-        damping: 15,
-        onUpdate: (v) => { 
-          _animY = v;
-          requestAnimationFrame(() => _applyTransform());
-        }
-      });
-    }
     update();
   }
 
   function hide() {
-    if (!_wrap) return;
-    _wrap.classList.remove('visible');
+    if (!_island) return;
     _expanded = false;
     _island?.classList.remove('expanded');
     _island?.classList.remove('timer-mode');
@@ -206,41 +170,19 @@ export const DynamicIsland = (() => {
     const statusBar = document.getElementById('status-bar');
     statusBar?.classList.remove('status-bar-focused');
 
-    // Animate exit
-    if (_island) {
-       _anims.y?.stop();
-       _anims.y = Spring.animate({
-        from: _animY,
-        to: -100,
-        stiffness: 200,
-        damping: 20,
-        onUpdate: (v) => { 
-          _animY = v;
-          requestAnimationFrame(() => _applyTransform());
-        },
-        onComplete: () => { 
-          _wrap.style.display = 'none'; 
-          _currentX = 0;
-          _currentY = 0;
-          _animY = -100;
-          const pill = document.getElementById('status-pill');
-          if (pill) pill.style.opacity = '1';
-        }
-      });
-    } else {
-      _wrap.style.display = 'none';
-    }
+    const pill = document.getElementById('status-pill');
+    if (pill) pill.style.opacity = '1';
+
+    // Switch to mode-idle instead of translating Y
+    _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');
+    _island?.classList.add('mode-idle');
   }
 
   function update() {
-    if (!_wrap) return;
+    if (!_island) return;
 
     // IDLE MODE: If no workout, act as the ONLINE button
     if (!State.plan || !State.plan.length) {
-      if (!_wrap.classList.contains('visible')) {
-        _wrap.style.display = 'block';
-        _wrap.classList.add('visible');
-      }
       _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed', 'timer-mode', 'expanded');
       _island?.classList.add('mode-idle');
       
@@ -250,8 +192,6 @@ export const DynamicIsland = (() => {
       if (dot) dot.className = navigator.onLine ? 'island-dot online' : 'island-dot offline';
       return;
     }
-
-    if (!_wrap.classList.contains('visible')) return;
 
     // ACTIVE WORKOUT: Remove idle mode and apply selected mode
     _island?.classList.remove('mode-idle');
@@ -328,7 +268,7 @@ export const DynamicIsland = (() => {
   }
 
   function setRestProgress(secs, max) {
-    if (!_wrap) init();
+    if (!_island) init();
     _timerActive = true;
     _timerSecs = secs;
     _timerMax = max;
@@ -392,60 +332,24 @@ export const DynamicIsland = (() => {
       window.PrivacyRapid?.startLongPress(e);
       return;
     }
-    _isDragging = true;
     _isLongPress = false;
-    _startX = e.clientX - _currentX;
-    _startY = e.clientY - _currentY;
     _island?.style.setProperty('transition', 'none');
     _island?.setPointerCapture(e.pointerId);
 
     clearTimeout(_longPressTimer);
     _longPressTimer = setTimeout(() => {
-      if (!_movedPastThreshold) {
-        _isLongPress = true;
-        _onLongPress();
-      }
+      _isLongPress = true;
+      _onLongPress();
     }, 450);
-  }
-
-  function _onPointerMove(e) {
-    if (!_isDragging) return;
-    if (!_movedPastThreshold) {
-      const dx = e.clientX - (_startX + _currentX);
-      const dy = e.clientY - (_startY + _currentY);
-      if (Math.sqrt(dx*dx + dy*dy) > 6) {
-        _movedPastThreshold = true;
-        clearTimeout(_longPressTimer);
-      } else return;
-    }
-    _currentX = e.clientX - _startX;
-    _currentY = e.clientY - _startY;
-    requestAnimationFrame(() => _applyTransform());
   }
 
   function _onPointerUp(e) {
     if (_island?.classList.contains('mode-idle')) {
       window.PrivacyRapid?.cancelLongPress();
-      // Allow swipe right/left in idle mode too
     }
 
-    if (_currentX > 60) {
-      window.PrivacyRapid?.enable();
-    } else if (_currentX < -60) {
-      window.PrivacyRapid?.disable();
-    }
-
-    if (!_isDragging) return;
-    _isDragging = false;
     clearTimeout(_longPressTimer);
-    _island?.style.setProperty('transition', 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)');
-    
-    // Snap back
-    _currentX = 0;
-    _currentY = 0;
-    requestAnimationFrame(() => _applyTransform());
-    
-    setTimeout(() => { _movedPastThreshold = false; }, 50);
+    _island?.style.removeProperty('transition');
   }
 
   function _onLongPress() {

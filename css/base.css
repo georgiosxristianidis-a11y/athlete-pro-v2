@@ -1,4 +1,4 @@
-﻿/* ════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════
    base.css — Athlete Pro Design System
    Design tokens, shared components, focus-visible styles
    Loaded synchronously before all screen CSS files.
@@ -778,9 +778,9 @@ body.is-scrolling * {
   overflow: visible;
 }
 .spark-stroke {
-  stroke: var(--c-gold);
+  stroke: var(--c-accent);
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 2px 6px var(--c-gold-glow));
+  filter: drop-shadow(0 2px 6px var(--c-accent));
 }

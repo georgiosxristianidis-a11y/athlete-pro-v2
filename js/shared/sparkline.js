@@ -17,7 +17,7 @@ export function generateSparkline(data, width = 100, height = 30) {
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
-  const padding = 2; // pixel padding top/bottom
+  const padding = 4; // increased pixel padding top/bottom
   
   // Normalize points to SVG coordinates
   const pts = data.map((val, i) => {
@@ -47,13 +47,6 @@ export function generateSparkline(data, width = 100, height = 30) {
 
   return `
     <svg viewBox="0 0 ${width} ${height}" class="sparkline-svg" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--c-gold)" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="var(--c-gold)" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      <path class="spark-fill" d="${fillD}" fill="url(#spark-grad)" />
       <path class="spark-stroke" d="${d}" fill="none" vector-effect="non-scaling-stroke" />
     </svg>
   `;

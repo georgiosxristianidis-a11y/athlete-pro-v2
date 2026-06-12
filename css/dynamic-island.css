@@ -9,29 +9,27 @@
      .island.timer-mode   → PIP timer: countdown + progress line
    ════════════════════════════════════════════════════════ */
 
-/* ── Island wrapper (absolute overlay) ── */
-#dynamic-island-wrap {
+/* ── Island container in status bar ── */
+#status-island-container {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 50%;
+  top: 50%; /* Center in the status bar vertically */
+  transform: translate(-50%, -50%);
   z-index: 300;
-  pointer-events: none;
-  overflow: hidden;
-  transition: backdrop-filter 0.5s ease;
-}
-
-#dynamic-island-wrap.visible {
-  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Top safe area should be accommodated by the status bar's padding, but since we absolute position from 50%, 
+     we should adjust top if the status bar height is taller. 
+     Wait, status bar is 55px + safe-top. 
+     Let's position relative to the bottom of the status bar. */
+  margin-top: calc(var(--safe-top) / 2); /* offset for safe area */
 }
 
 /* ── Island pill ── */
 .island {
-  position: absolute;
-  top: 14px;
-  left: 50%; /* Truly centered */
-  transform: translateX(-50%); /* Base transform, JS will override with translate(calc(-50% + x)...) */
+  position: relative;
+  /* transform: translateX(-50%); is removed because it is now centered by container */
   transform-origin: center top; /* Expand symmetrically */
   background: rgba(10, 10, 15, 0.85);
   backdrop-filter: blur(20px) saturate(1.8);
