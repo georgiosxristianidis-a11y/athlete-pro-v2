@@ -6,7 +6,7 @@ import pluginSecurity from 'eslint-plugin-security';
 export default [
   pluginSecurity.configs.recommended,
   {
-    ignores: ['node_modules/**', 'assets/**', 'icons/**', 'dist/**', '.claude/**', 'recovered_code/**', 'test/e2e/report/**', 'ATH-PRO vanilla google/**', 'js/_archive/**', 'search_logs.js', 'search_content.js', 'rebuild_shared.js', 'extract_athlete_room.js', 'recover.js'],
+    ignores: ['node_modules/**', 'assets/**', 'icons/**', 'dist/**', '.claude/**', 'recovered_code/**', 'test/e2e/report/**', 'ATH-PRO vanilla google/**', 'js/_archive/**', 'search_logs.js', 'search_content.js', 'rebuild_shared.js', 'extract_athlete_room.js', 'recover.js', 'add_crop.js', 'add_crop.cjs', 'fix_escape.js', 'debug_line.js'],
   },
   js.configs.recommended,
   {
@@ -20,7 +20,7 @@ export default [
     },
   },
   {
-    files: ['server.js', 'routes/**/*.js', 'lib/**/*.js', 'scripts/**/*.js', '*.js'],
+    files: ['server.js', 'routes/**/*.js', 'lib/**/*.js', 'scripts/**/*.js', 'scripts/**/*.mjs', '*.js'],
     ignores: ['js/**', 'sw.js', 'eslint.config.js', 'playwright.config.js'],
     languageOptions: {
       ecmaVersion: 'latest',
