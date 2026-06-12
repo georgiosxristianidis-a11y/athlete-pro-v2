@@ -353,7 +353,7 @@ export const DynamicIsland = (() => {
   }
 
   function _onLongPress() {
-    if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+    haptic([30, 50, 30]);
     window.location.hash = 'timer-settings';
   }
 

@@ -493,7 +493,7 @@ export const IntelView = (() => {
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <div style="font-size:11px; font-weight:800; letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">Цель на сегодня</div>
             <div style="display:flex; align-items:center; gap:8px;">
-              <span style="color:var(--c-red); font-size:12px;">⚡ ЦНС</span>
+              <span style="color:var(--c-red); font-size:12px;">ЦНС</span>
               <div style="width:40px; height:4px; background:rgba(255,255,255,0.1); border-radius:2px;"><div style="width:${data.cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
               <span style="font-size:12px; font-weight:700; color:var(--c-red);">${data.cns}%</span>
             </div>

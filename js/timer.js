@@ -13,6 +13,12 @@ export const Timer = (() => {
 
   const STORAGE_KEY = 'ap-timer-state';
 
+  /** Single entry point for the ticking interval — clears any previous one first. */
+  function _startTicking() {
+    clearInterval(_interval);
+    _interval = setInterval(_tick, 1000);
+  }
+
   /**
    * Start the main workout timer.
    * @param {((s: number) => void)} [onTick] — optional callback invoked each second with elapsed seconds
@@ -22,7 +28,7 @@ export const Timer = (() => {
     _onTick = onTick || _onTick;
     _start = Date.now();
     _running = true;
-    _interval = setInterval(_tick, 1000);
+    _startTicking();
     _persist();
   }
 
@@ -46,7 +52,7 @@ export const Timer = (() => {
     if (_running) return;
     _start = Date.now();
     _running = true;
-    _interval = setInterval(_tick, 1000);
+    _startTicking();
     _persist();
   }
 
@@ -117,7 +123,7 @@ export const Timer = (() => {
       if (_running && s.start) {
         _elapsed += Date.now() - s.start;
         _start = Date.now();
-        _interval = setInterval(_tick, 1000);
+        _startTicking();
       }
       return true;
     } catch {
@@ -140,7 +146,7 @@ export const Timer = (() => {
       if (hiddenAt && _elapsed > 0) {
         _start = Date.now();
         _running = true;
-        _interval = setInterval(_tick, 1000);
+        _startTicking();
         _persist();
         localStorage.removeItem('ap-hidden-at');
         if (_onTick) _onTick(seconds());

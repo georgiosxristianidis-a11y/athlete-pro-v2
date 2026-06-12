@@ -45,7 +45,7 @@ export const Integrity = (() => {
     }
 
     if (errors.length > 0) {
-      console.error('❌ #GIO: INTEGRITY BREACHED:', errors);
+      console.error('#GIO: INTEGRITY BREACHED:', errors);
       Toast.show('Integrity error detected in console.', 'error');
       return false;
     }

@@ -92,7 +92,7 @@ export const PlateCalc = (() => {
       <div class="pc-row"><span class="pc-lbl">Per side</span><span class="pc-val">${plates.map((p) => `${p.n}×${p.w}`).join(' + ')} kg</span></div>
       <div class="pc-row"><span class="pc-lbl">Per side total</span><span class="pc-val">${perSide} kg</span></div>
       <div class="pc-row"><span class="pc-lbl">Total on bar</span><span class="pc-val">${_weight} kg</span></div>
-      ${remainder > 0.05 ? `<p class="pc-warn">⚠ ${remainder} kg unaccounted — add 1.25 kg plates</p>` : ''}`;
+      ${remainder > 0.05 ? `<p class="pc-warn">${remainder} kg unaccounted — add 1.25 kg plates</p>` : ''}`;
   }
 
   function stepWeight(delta) {

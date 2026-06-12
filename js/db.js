@@ -749,7 +749,7 @@ const Backup = {
   async import(jsonStr) {
     const data = JSON.parse(jsonStr);
     
-    // 🛡️ Structural Validation Guard
+    // Structural Validation Guard
     if (!data || typeof data !== 'object') throw new Error('Invalid backup format');
     if (!Array.isArray(data.workouts)) throw new Error('Missing workouts array');
     

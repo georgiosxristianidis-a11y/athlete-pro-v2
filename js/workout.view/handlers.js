@@ -131,7 +131,7 @@ export async function toggleSet(ei, si) {
     if (window.DynamicIsland) window.DynamicIsland.pulseSetComplete();
     RestTimer.start(ex.name, `Set ${si + 1}`, _restDuration);
     
-    // 🛡️ Elite Auto-collapse logic: ONLY if ALL sets are done (e.g. 4/4)
+    // Elite Auto-collapse logic: ONLY if ALL sets are done (e.g. 4/4)
     const allDone = ex.sets.every(s => s.done);
     if (allDone) {
       setTimeout(() => {

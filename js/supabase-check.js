@@ -97,11 +97,11 @@ export const SupabaseCheck = (() => {
     const elapsed = Date.now() - t0;
 
     if (result.reason === 'not_configured') {
-      console.warn('⚠  Supabase not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env');
+      console.warn('Supabase not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env');
     } else if (result.available) {
-      console.info(`✅ Supabase reachable · ${result.latencyMs}ms · HTTP ${result.status}`);
+      console.info(`Supabase reachable · ${result.latencyMs}ms · HTTP ${result.status}`);
     } else {
-      console.error(`❌ Supabase unreachable · reason: ${result.reason} · after ${elapsed}ms`);
+      console.error(`Supabase unreachable · reason: ${result.reason} · after ${elapsed}ms`);
     }
 
     console.log('Full result:', result);

@@ -31,16 +31,16 @@ export async function setupUser() {
     const { data: { session } } = await supabase.auth.getSession()
 
     if (!session) {
-      console.log('🔄 Создаем анонимный профиль для нового друга...')
+      console.log('Создаем анонимный профиль для нового друга...')
       const { data, error } = await supabase.auth.signInAnonymously()
       if (error) throw error
       return data.user
     }
 
-    console.log('✅ Пользователь уже в системе:', session.user.id)
+    console.log('Пользователь уже в системе:', session.user.id)
     return session.user
   } catch (error) {
-    console.error('❌ Ошибка входа:', error.message)
+    console.error('Ошибка входа:', error.message)
     return null
   }
 }
