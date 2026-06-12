@@ -731,6 +731,7 @@
 }
 .weekly-summary-chip .stat-chip-val {
   font-size: 14px;
+}
 /* ── Weekly Summary Chip — icon layout ── */
 
 .ppl-bar-fill { transform-origin: left; width: 100%; transform: scaleX(0); }

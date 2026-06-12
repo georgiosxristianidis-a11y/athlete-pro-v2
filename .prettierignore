@@ -4,3 +4,27 @@ package-lock.json
 assets/
 icons/
 
+.obsidian/
+.claude/
+.gemini/
+dist/
+recovered_code/
+test/e2e/report/
+test-results/
+"ATH-PRO vanilla google/"
+ATH-PRO vanilla google/
+add_crop.js
+add_crop.cjs
+fix_escape.js
+debug_line.js
+recover.js
+search_logs.js
+search_content.js
+rebuild_shared.js
+extract_athlete_room.js
+*.canvas
+Anthropic-Cybersecurity-Skills-main/
+.eslintrc.json
+android/
+certs/
+w.exercises

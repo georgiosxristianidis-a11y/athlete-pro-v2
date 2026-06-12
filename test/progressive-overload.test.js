@@ -67,11 +67,7 @@ describe('calculateProgression', () => {
   });
 
   test('plateau history → deload recommended', () => {
-    const history = [
-      { weight: 80 },
-      { weight: 80 },
-      { weight: 80 },
-    ];
+    const history = [{ weight: 80 }, { weight: 80 }, { weight: 80 }];
     const result = mod.calculateProgression('Bench Press', 80, 4, 4, { history });
     assert.equal(result.type, 'recommended');
     assert.ok(result.recommended < 80, 'deload should reduce weight');
@@ -87,10 +83,11 @@ describe('calculateProgression', () => {
 });
 
 describe('detectPlateau', () => {
-  const makeHistory = (weights) => weights.map((w, i) => ({
-    timestamp: Date.now() - (weights.length - i) * 24 * 3600000,
-    exercises: [{ name: 'Bench Press', sets: [{ weight: w, reps: 8, done: true }] }],
-  }));
+  const makeHistory = (weights) =>
+    weights.map((w, i) => ({
+      timestamp: Date.now() - (weights.length - i) * 24 * 3600000,
+      exercises: [{ name: 'Bench Press', sets: [{ weight: w, reps: 8, done: true }] }],
+    }));
 
   test('3 sessions at same weight → plateau detected', () => {
     const history = makeHistory([80, 80, 80]);
@@ -140,10 +137,7 @@ describe('generateWeeklySummary', () => {
   });
 
   test('2 workouts this week reflected in summary count', async () => {
-    const history = [
-      makeWorkout('push', 1),
-      makeWorkout('pull', 2),
-    ];
+    const history = [makeWorkout('push', 1), makeWorkout('pull', 2)];
     const result = await mod.generateWeeklySummary(history);
     assert.ok(result.summary.includes('2 workouts'));
   });
@@ -159,9 +153,15 @@ describe('generateWeeklySummary', () => {
 
   test('plateau detected and reported in plateauAlerts', async () => {
     const history = [
-      makeWorkout('push', 1, [{ name: 'Bench Press', sets: [{ weight: 80, reps: 8, done: true }] }]),
-      makeWorkout('push', 8, [{ name: 'Bench Press', sets: [{ weight: 80, reps: 8, done: true }] }]),
-      makeWorkout('push', 15, [{ name: 'Bench Press', sets: [{ weight: 80, reps: 8, done: true }] }]),
+      makeWorkout('push', 1, [
+        { name: 'Bench Press', sets: [{ weight: 80, reps: 8, done: true }] },
+      ]),
+      makeWorkout('push', 8, [
+        { name: 'Bench Press', sets: [{ weight: 80, reps: 8, done: true }] },
+      ]),
+      makeWorkout('push', 15, [
+        { name: 'Bench Press', sets: [{ weight: 80, reps: 8, done: true }] },
+      ]),
     ];
     const result = await mod.generateWeeklySummary(history);
     assert.equal(result.plateauAlerts.length, 1);

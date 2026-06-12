@@ -11,7 +11,7 @@
 
    ▸ When adding a new domain concept:
        1. Define the type here
-       2. Reference it from .js files via /** @type {Plan} */
+       2. Reference it from .js files via `@type {Plan}` JSDoc
        3. Update MODULES.md if it crosses module boundaries
    ════════════════════════════════════════════════════════ */
 

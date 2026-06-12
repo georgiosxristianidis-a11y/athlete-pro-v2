@@ -70,25 +70,12 @@ async function waitForBoot(page) {
   );
 }
 
-/** Legacy helper, click through steps if visible */
+/** Fallback helper: if the wizard still appears, exit via the quick-start path */
 async function skipOnboarding(page) {
   const overlay = page.locator('#onboarding-overlay');
   if (await overlay.count() > 0 && await overlay.isVisible()) {
-    const nextBtn = page.locator('#ob-next-btn');
-
-    // Select Strength goal
-    await page.locator('.ob-card[data-key="strength"]').click({ timeout: 3000 });
-    await nextBtn.click({ timeout: 3000 });
-
-    // Select Beginner experience
-    await page.locator('.ob-card[data-key="beginner"]').click({ timeout: 3000 });
-    await nextBtn.click({ timeout: 3000 });
-
-    // Finish onboarding
-    await page.locator('button', { hasText: 'Quick Start (Anonymous)' }).click({ timeout: 3000 });
+    await page.locator('.ob-fast-skip-btn').click({ timeout: 3000 });
     await page.locator('#ob-finish-btn').click({ timeout: 3000 });
-
-    // Wait for overlay to disappear
     await expect(overlay).not.toBeAttached({ timeout: 4000 });
   }
 }
@@ -96,7 +83,7 @@ async function skipOnboarding(page) {
 // ─── ONBOARDING FLOW ────────────────────────────────────────────────────────
 
 test.describe('Onboarding Flow (Real)', () => {
-  test('user can complete onboarding step-by-step', async ({ page }) => {
+  test('user can complete onboarding (quick start path)', async ({ page }) => {
     await page.goto(BASE);
     await waitForBoot(page);
 
@@ -104,35 +91,19 @@ test.describe('Onboarding Flow (Real)', () => {
     const overlay = page.locator('#onboarding-overlay');
     await expect(overlay).toBeVisible({ timeout: 5000 });
 
-    // Step 1: Goal selection
-    // Next button should be disabled initially
-    const nextBtn = page.locator('#ob-next-btn');
-    await expect(nextBtn).toBeDisabled();
-
-    // Select Strength goal
+    // Step 1: goal cards are interactive
     await page.locator('.ob-card[data-key="strength"]').click();
-    await expect(nextBtn).toBeEnabled();
-    await nextBtn.click();
 
-    // Step 2: Experience selection
-    await expect(nextBtn).toBeDisabled();
+    // Premium wizard (6 steps) offers a fast path: Skip & Quick Start
+    await page.locator('.ob-fast-skip-btn').click();
 
-    // Select Beginner experience
-    await page.locator('.ob-card[data-key="beginner"]').click();
-    await expect(nextBtn).toBeEnabled();
-    await nextBtn.click();
-
-    // Step 3: Confirmation / Ready Screen
-    const finishBtn = page.locator('button', { hasText: 'Quick Start (Anonymous)' });
-    await expect(finishBtn).toBeVisible();
+    // Quick-confirm step → finish
+    const finishBtn = page.locator('#ob-finish-btn');
+    await expect(finishBtn).toBeVisible({ timeout: 5000 });
     await finishBtn.click();
-    
-    const letsGoBtn = page.locator('#ob-finish-btn');
-    await expect(letsGoBtn).toBeVisible();
-    await letsGoBtn.click();
 
-    // Onboarding should close and redirect to dashboard
-    await expect(overlay).not.toBeAttached({ timeout: 3000 });
+    // Onboarding should close and land on dashboard
+    await expect(overlay).not.toBeAttached({ timeout: 5000 });
     await expect(page.locator('#s-home')).toHaveClass(/active/, { timeout: 3000 });
   });
 });
@@ -340,39 +311,25 @@ test.describe('App with Onboarding Bypassed', () => {
       await expect(page.locator('#claude-fab')).toBeVisible();
     });
 
-    test('clicking FAB opens claude-overlay', async ({ page }) => {
-      const mode = await page.evaluate(() => typeof window.__privacyMode !== 'undefined' ? window.__privacyMode() : 'missing');
-      const ai = await page.evaluate(() => typeof window.__privacyAi !== 'undefined' ? window.__privacyAi() : 'missing');
-      console.log(`Privacy mode: ${mode}, AI: ${ai}`);
-      
+    /* The legacy #claude-overlay was replaced: FAB now routes to the Intel
+       screen (Neural Command Center). XSS escaping of AI errors is covered
+       at unit level via esc() in shared/utils.js. */
+    test('clicking FAB navigates to Intel screen', async ({ page }) => {
       await page.locator('#claude-fab').click({ force: true });
-      await expect(page.locator('#claude-overlay')).toBeAttached({ timeout: 10000 });
+      await expect(page.locator('#s-intel')).toHaveClass(/active/, { timeout: 10000 });
     });
 
-    test('claude-overlay has close button', async ({ page }) => {
+    test('Intel screen renders content after FAB navigation', async ({ page }) => {
       await page.locator('#claude-fab').click({ force: true });
-      await page.locator('#claude-overlay').waitFor({ timeout: 10000 });
-      await expect(page.locator('[aria-label="Close AI Coach"]')).toBeVisible();
+      await expect(page.locator('#s-intel')).toHaveClass(/active/, { timeout: 10000 });
+      const html = await page.locator('#s-intel').innerHTML();
+      expect(html.length).toBeGreaterThan(100);
     });
 
-    test('close button dismisses overlay', async ({ page }) => {
+    test('FAB is hidden while on Intel screen', async ({ page }) => {
       await page.locator('#claude-fab').click({ force: true });
-      await page.locator('#claude-overlay').waitFor({ timeout: 10000 });
-      await page.locator('[aria-label="Close AI Coach"]').click();
-      await expect(page.locator('#claude-overlay')).not.toBeAttached({ timeout: 2000 });
-    });
-
-    test('FIX-4: AI error is a DOM node (not innerHTML injection)', async ({ page }) => {
-      await page.locator('#claude-fab').click({ force: true });
-      await page.locator('#claude-overlay').waitFor({ timeout: 10000 });
-      await page.waitForTimeout(5000);
-      const vulnerable = await page.evaluate(() => {
-        for (const el of document.querySelectorAll('.ai-error')) {
-          if (el.querySelector('script')) return true;
-        }
-        return false;
-      });
-      expect(vulnerable).toBe(false);
+      await expect(page.locator('#s-intel')).toHaveClass(/active/, { timeout: 10000 });
+      await expect(page.locator('#claude-fab-container')).toBeHidden();
     });
   });
 
@@ -415,11 +372,11 @@ test.describe('App with Onboarding Bypassed', () => {
       expect(Array.isArray(body.icons)).toBe(true);
     });
 
-    test('sw.js is served and contains v38 cache name', async ({ request }) => {
+    test('sw.js is served and contains a versioned cache name', async ({ request }) => {
       const res = await request.get('/sw.js');
       expect(res.status()).toBe(200);
       const text = await res.text();
-      expect(text).toContain('athlete-pro-v38');
+      expect(text).toMatch(/athlete-pro-v\d+/);
     });
 
     test('FIX-3: service worker registers (not nuked on boot)', async ({ page }) => {
