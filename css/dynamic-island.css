@@ -34,7 +34,7 @@
   background: rgba(10, 10, 15, 0.85);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--c-border-h);
   border-radius: 20px;
   height: 32px; /* Prominent idle height */
   width: 120px; /* Prominent idle width */
@@ -279,7 +279,7 @@
   align-items: center;
   gap: 6px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--c-border-h);
   border-radius: 12px;
   padding: 6px 12px;
   color: var(--c-text-2);

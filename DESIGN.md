@@ -5,7 +5,7 @@
 
 This design system is not a utility; it is a private gallery for high-performance living. It rejects the cluttered "dashboard" aesthetic of common fitness apps in favor of an elite, editorial experience. We achieve this through **Vantablack Depth**: a UI that feels like it’s carved out of infinite space rather than built on a screen.
 
-To move beyond the "template" look, we utilize **Asymmetric Quietude**. We don’t fill every corner. We use massive whitespace (the `24` and `20` spacing tokens) to frame content like high-end jewelry. By removing all 1px borders and traditional shadows, we force the user’s eye to follow tonal shifts and luminous glows, creating a sense of calm authority.
+To move beyond the "template" look, we utilize **Asymmetric Quietude**. We don’t fill every corner. We use massive whitespace (the `24` and `20` spacing tokens) to frame content like high-end jewelry. By limiting borders to translucent glass hairlines (`--c-border` 6% / `--c-border-h` 12% — never opaque, never hardcoded) and avoiding traditional shadows, we force the user’s eye to follow tonal shifts and luminous glows, creating a sense of calm authority.
 
 ---
 

@@ -274,7 +274,7 @@
   height: 36px;
   border-radius: 8px;
   background: #0d0f14;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--c-border-h);
   color: rgba(255, 255, 255, 0.55);
   font-size: 12px;
   font-weight: 700;

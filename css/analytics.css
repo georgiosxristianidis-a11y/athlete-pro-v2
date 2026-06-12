@@ -121,7 +121,7 @@
 }
 .stat-chip {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--c-border);
   border-radius: 16px;
   padding: 12px;
   text-align: center;
@@ -156,7 +156,7 @@
   align-items: center;
   padding: 12px 8px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--c-border);
   border-radius: 16px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);

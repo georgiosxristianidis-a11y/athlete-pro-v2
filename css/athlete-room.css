@@ -98,7 +98,7 @@
   max-height: 95dvh;
   background: var(--c-bg-2);
   border-radius: 24px 24px 0 0;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid var(--c-border);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 0 env(safe-area-inset-bottom, 0px);
@@ -138,7 +138,7 @@
   top: 0;
   z-index: 10;
   background: var(--c-bg-2);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--c-border);
   padding-bottom: 10px;
 }
 .ar-header-title {
@@ -151,7 +151,7 @@
   width: 38px; height: 38px;
   border-radius: 50%;
   background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--c-border);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   color: var(--c-text-2);
@@ -223,7 +223,7 @@
 }
 .ar-edit-btn {
   background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--c-border-h);
   border-radius: 8px;
   width: 28px; height: 28px;
   display: flex; align-items: center; justify-content: center;
@@ -242,7 +242,7 @@
   font-weight: 700;
   color: var(--lc, var(--c-text-3));
   background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--c-border);
   border-radius: 20px;
   padding: 3px 10px;
   margin-bottom: 6px;
@@ -269,7 +269,7 @@
 }
 .ar-stat {
   background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--c-border);
   border-radius: 16px;
   padding: 12px 8px;
   text-align: center;
@@ -315,7 +315,7 @@
 }
 .ar-editor-card {
   background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--c-border);
   border-radius: 16px;
   padding: 16px;
   display: flex;
@@ -395,7 +395,7 @@
   flex: 1;
   background: rgba(255,255,255,0.07);
   color: var(--c-text-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--c-border-h);
   border-radius: 12px;
   padding: 11px;
   font-size: 14px;
@@ -435,7 +435,7 @@
 .ar-stat-cell {
   border-radius: 16px;
   padding: 16px 14px;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--c-border);
   position: relative;
   overflow: hidden;
 }
@@ -503,7 +503,7 @@
 .ar-ach-card {
   border-radius: 14px;
   padding: 12px 6px 10px;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--c-border);
   background: rgba(255,255,255,0.03);
   display: flex;
   flex-direction: column;
@@ -561,7 +561,7 @@
   align-items: center;
   gap: 12px;
   background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--c-border);
   border-radius: 12px;
   padding: 12px 14px;
 }
@@ -785,7 +785,7 @@
 
 .ar-crop-card {
   background: #1e1e24;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--c-border);
   border-radius: 20px;
   width: 100%;
   max-width: 300px;

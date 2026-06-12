@@ -62,7 +62,7 @@ node scripts/telemetry-server.mjs --lan
 - Primary: #00c86e (Forest Emerald) — НЕ #F2CA50 из DESIGN.md (DESIGN.md = Vantablack theme)
 - Push: #6366f1 / Pull: #06b6d4 / Legs: #f59e0b / Gold accents: var(--c-gold)
 - Glassmorphism: backdrop-filter, глубина через тени
-- «No 1px borders» — правило под ревизией (в коде ~90 отступлений; решение ожидается)
+- Borders: glass-hairlines узаконены (решение 2026-06-12) — только полупрозрачные через токены `var(--c-border)` (6%) / `var(--c-border-h)` (12%); НЕ хардкодить rgba, непрозрачные сплошные рамки запрещены. Акцентные подсветки (цветные rgba ≤20%) допустимы точечно
 - Mobile-first, 600px breakpoint
 
 ## Rules

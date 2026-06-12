@@ -185,7 +185,7 @@
   font-size: 12px;
 }
 .passport-row + .passport-row {
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--c-border);
 }
 .passport-row-key {
   color: var(--c-text-2);
@@ -220,7 +220,7 @@
   padding: 12px 8px;
 }
 .audit-row + .audit-row {
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--c-border);
 }
 .audit-row-left {
   display: flex;
