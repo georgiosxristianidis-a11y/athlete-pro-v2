@@ -26,6 +26,8 @@
 
 ## Чек-лист следующей сессии (Phase 3 — Design DNA)
 
+> Инвентаризация начата 2026-06-12 (прервана): подтверждены `plate-calc.js:94` (символ warn в `pc-warn`) и `intel.view.js:496`. ВАЖНО: стрелки `→` (U+2192) в строках/комментариях — это типографика, НЕ эмодзи, не вычищать.
+
 - [ ] Эмодзи из UI-разметки → SVG/текст: `intel.view.js:496` («ЦНС»), `plate-calc.js:95` (warn) + ревизия db.js, handlers.js, supabase*.js, progressive-overload.js, integrity.js
 - [ ] `dynamic-island.js:356` — vibrate через Haptic Gate (`shared/utils.js`), не напрямую
 - [ ] `timer.js` — `clearInterval(_interval)` перед каждым `setInterval` в `start()` (двойной вызов = утечка)
