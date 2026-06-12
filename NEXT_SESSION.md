@@ -36,7 +36,19 @@
 
 **PHASE 3 — COMPLETE (2026-06-12, commits 7aadd1b + 34c6f3c, тесты 103/103)**
 
-## Текущая цель следующей сессии: Phase 4 — CRDT Foundation
+## Phase 4 — CRDT Foundation: COMPLETE (2026-06-12, commit 7068c64)
+
+- [x] `newId()` — UUID v4 (+fallback для non-secure context при LAN-тестах), `getDeviceId()` — стабильный id установки
+- [x] `withMeta()` — id/updatedAt/deviceId на каждой записи 6 синхронизируемых сторов; legacy integer-id сохранены
+- [x] Миграция DB_VERSION 2→3: backfill updatedAt+deviceId курсорами в upgrade-транзакции (id не трогаем)
+- [x] `js/shared/lww.js` — чистый `lwwWins()` с deviceId-tiebreak (нет split-brain при равных ts), вшит в sync.js
+- [x] CRDT-мета стрипается из Supabase-payload (в серверной схеме нет таких колонок)
+- [x] Календарь: `parseInt(wid)` больше не ломает UUID; legacy-числа остаются числами (IDB-ключи типизированы)
+- [x] sw.js: precache lww.js, кеш v41 · Тесты: 118/118 (+15 CRDT)
+
+**ВАЖНО для полевого теста:** первый запуск после обновления выполнит миграцию IDB v3 — проверить на телефоне, что данные на месте (workouts/metrics/1RM). Tombstone-удаления теперь тоже несут LWW-мету.
+
+## Текущая цель следующей сессии: Phase 5 — полевые тесты + e2e/CI (или Phase 6 Lighthouse)
 
 - [ ] **CRDT Foundation**: UUID вместо `autoIncrement` в db.js (7 сторов, миграция DB_VERSION+1), `updatedAt`+`deviceId`, LWW-ключи на UUID. Оба аудита (Claude + Antigravity) сошлись: это блокер Local-first Sync.
 - [ ] **Полевой прогон** по `~/.gemini/antigravity/brain/14a057e9.../mobile_field_testing.md` через `node scripts/telemetry-server.mjs --lan`
