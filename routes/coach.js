@@ -30,7 +30,7 @@ const generatePlanSchema = z.object({
 /* ── POST /generate-plan ── */
 router.post('/generate-plan', apiLimiter, asyncHandler(async (req, res) => {
   const parseResult = generatePlanSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.errors });
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
   
   const {
     workoutHistory,
@@ -49,11 +49,23 @@ router.post('/generate-plan', apiLimiter, asyncHandler(async (req, res) => {
   };
 
   const system = _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience);
-  const content = await AIOrchestrator.generateJSON({
-    system,
-    prompt: 'Generate a highly personalized 3-day PPL rotation. Return JSON only.',
-    engine
-  }, req);
+  let content;
+  try {
+    content = await AIOrchestrator.generateJSON({
+      system,
+      prompt: 'Generate a highly personalized 3-day PPL rotation. Return JSON only.',
+      engine
+    }, req);
+  } catch (err) {
+    // Offline-first contract: degrade to default plan instead of erroring
+    logWarn(req, 'plan_generation_fallback', err.message, { code: err.code });
+    return res.json({
+      success: true,
+      plan: DEFAULT_PLAN,
+      generated: true,
+      note: 'Default plan — AI unavailable'
+    });
+  }
 
   const plan = _parseGeneratedPlan(content, DEFAULT_PLAN);
   res.json({ success: true, plan, generated: true, aiNotes: content });
@@ -63,23 +75,42 @@ const recommendationsSchema = z.object({
   workout: z.any(), // Keeping it loose as it's a complex object
   fatigue: z.any().optional().default({}),
   topLifts: z.array(z.any()).optional().default([]),
-  nextSessionPlan: z.array(z.any()).optional().default([]),
+  nextSessionPlan: z.array(z.any()).min(1, 'nextSessionPlan is required'),
   engine: z.string().optional().default('anthropic')
 });
 
 /* ── POST /recommendations ── */
 router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
   const parseResult = recommendationsSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.errors });
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
   
   const { workout, fatigue, topLifts, nextSessionPlan, engine } = parseResult.data;
   
   const system = _buildRecommendationsPrompt(workout, fatigue, topLifts, nextSessionPlan);
-  const content = await AIOrchestrator.generateJSON({
-    system,
-    prompt: 'Generate weight recommendations for the next session. Return JSON only.',
-    engine
-  }, req);
+  let content;
+  try {
+    content = await AIOrchestrator.generateJSON({
+      system,
+      prompt: 'Generate weight recommendations for the next session. Return JSON only.',
+      engine
+    }, req);
+  } catch (err) {
+    // Offline-first contract: maintain current weights instead of erroring
+    logWarn(req, 'recommendations_fallback', err.message, { code: err.code });
+    const fallback = nextSessionPlan.map((ex) => ({
+      name: ex.name,
+      sets: ex.sets,
+      reps: ex.reps,
+      recommendedWeight: ex.weight,
+      reason: 'Maintain current weight (AI unavailable)',
+    }));
+    return res.json({
+      success: true,
+      recommendations: fallback,
+      aiNotes: null,
+      warning: 'AI recommendations unavailable'
+    });
+  }
 
   const recommendations = _parseRecommendations(content, nextSessionPlan);
   res.json({ success: true, recommendations, aiNotes: content });
@@ -108,7 +139,7 @@ export const coachSchema = z.object({
 /* ── POST / (Main Coach SSE) ── */
 router.post('/', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = coachSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.errors });
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
   let { 
     workouts, 
@@ -159,7 +190,7 @@ const ttsSchema = z.object({
 /* ── POST /tts (Gemini 2.5 Flash Preview TTS) ── */
 router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
   const parseResult = ttsSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.errors });
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
   const { text, customKey } = parseResult.data;
 
@@ -209,7 +240,7 @@ const weeklyReportSchema = z.object({
 /* ── POST /weekly-report ── */
 router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = weeklyReportSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.errors });
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
   const { workouts, profile, engine, customKey } = parseResult.data;
 

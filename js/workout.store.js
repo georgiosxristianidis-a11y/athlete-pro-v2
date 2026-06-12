@@ -663,7 +663,7 @@ export function needsProgramGeneration() {
  */
 export async function fetchGeneratedPlan(options = {}) {
   const { safeFetch } = await import('./privacy.store.js');
-  const response = await safeFetch('/api/generate-plan', {
+  const response = await safeFetch('/api/coach/generate-plan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

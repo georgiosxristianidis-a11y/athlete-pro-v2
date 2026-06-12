@@ -77,10 +77,7 @@ app.use(express.json({ limit: '100kb' }));
 app.use('/api/', globalApiLimiter);
 
 // ── API Routes (Prioritized)
-app.use('/api/coach', (req, res, next) => {
-  console.log(`[route-debug] ${req.method} ${req.path}`);
-  next();
-}, coachRouter);
+app.use('/api/coach', coachRouter);
 app.use('/api', integrationsRouter);
 
 app.use((err, req, res, next) => {

@@ -253,7 +253,7 @@ async function _fetchAIRecommendations(workout, fatigue, orms, nextPlan) {
   const history = await DB.Workouts.getAll();
   const recentHistory = history.filter((w) => w.timestamp > Date.now() - 14 * 24 * 3600000);
 
-  const response = await safeFetch('/api/recommendations', {
+  const response = await safeFetch('/api/coach/recommendations', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

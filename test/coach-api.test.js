@@ -51,7 +51,8 @@ describe('POST /api/coach — validation (400)', () => {
     });
     assert.equal(res.status, 400);
     const body = await res.json();
-    assert.ok(body.error.includes('role'));
+    assert.ok(body.error);
+    assert.ok(JSON.stringify(body.details).includes('role'));
   });
 
   test('content too long → 400', async () => {
@@ -84,12 +85,12 @@ describe('POST /api/coach — no API key (500)', () => {
   });
 });
 
-describe('POST /api/generate-plan — fallback (no API key)', () => {
+describe('POST /api/coach/generate-plan — fallback (no API key)', () => {
   test('no history + no API key → 200 with default plan', async () => {
     const saved = process.env.ANTHROPIC_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
     try {
-      const res = await post('/api/generate-plan', {
+      const res = await post('/api/coach/generate-plan', {
         workoutHistory: [],
         oneRMs: [],
         goals: 'strength',
@@ -109,7 +110,7 @@ describe('POST /api/generate-plan — fallback (no API key)', () => {
     const saved = process.env.ANTHROPIC_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
     try {
-      const res = await post('/api/generate-plan', { workoutHistory: [] });
+      const res = await post('/api/coach/generate-plan', { workoutHistory: [] });
       const body = await res.json();
       for (const split of ['push', 'pull', 'legs']) {
         assert.ok(Array.isArray(body.plan[split]) && body.plan[split].length > 0, `${split} missing exercises`);
@@ -120,12 +121,12 @@ describe('POST /api/generate-plan — fallback (no API key)', () => {
   });
 });
 
-describe('POST /api/recommendations', () => {
+describe('POST /api/coach/recommendations', () => {
   test('valid request → 200 with recommendations array', async () => {
     const saved = process.env.ANTHROPIC_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
     try {
-      const res = await post('/api/recommendations', {
+      const res = await post('/api/coach/recommendations', {
         workout: { type: 'push', exercises: [] },
         fatigue: {},
         topLifts: [],
@@ -140,7 +141,7 @@ describe('POST /api/recommendations', () => {
   });
 
   test('missing nextSessionPlan → 400', async () => {
-    const res = await post('/api/recommendations', {
+    const res = await post('/api/coach/recommendations', {
       workout: { type: 'push', exercises: [] },
     });
     assert.equal(res.status, 400);
