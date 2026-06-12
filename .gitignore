@@ -48,3 +48,9 @@ Desktop.ini
 # ===== Tests =====
 coverage/
 *.lcov
+# ===== Playwright artifacts =====
+test-results/
+test/e2e/report/
+
+# ===== Field testing =====
+telemetry.log
