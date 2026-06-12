@@ -105,9 +105,24 @@ app.use(express.static(__dirname, {
 app.use(errorMiddleware);
 
 export function startServer(port = process.env.PORT || 3000) {
+  // Localhost by default; expose to LAN only on explicit request
+  // (phone field testing: npm run dev:lan or HOST=0.0.0.0)
+  const host = process.env.HOST || (process.argv.includes('--lan') ? '0.0.0.0' : '127.0.0.1');
   return new Promise((resolve) => {
-    const server = app.listen(port, '127.0.0.1', () => {
-      if (port !== 0) console.log(`\n  Athlete Pro  →  http://localhost:${server.address().port}\n`);
+    const server = app.listen(port, host, () => {
+      const p = server.address().port;
+      if (port !== 0) console.log(`\n  Athlete Pro  →  http://localhost:${p}\n`);
+      if (host === '0.0.0.0') {
+        import('node:os').then((os) => {
+          for (const ifaces of Object.values(os.networkInterfaces())) {
+            for (const iface of ifaces || []) {
+              if (iface.family === 'IPv4' && !iface.internal) {
+                console.log(`  LAN (phone)  →  http://${iface.address}:${p}\n`);
+              }
+            }
+          }
+        });
+      }
       resolve(server);
     });
   });
