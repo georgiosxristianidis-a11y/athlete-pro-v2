@@ -610,7 +610,9 @@ const Metrics = {
     });
     return tx(S.METRICS, 'readwrite').then((s) => {
       return req2pSafe(s.add(entry), s.transaction).then(() => {
-        _triggerSync(S.METRICS, entry);
+        // Don't sync PII that's only base64-encoded (insecure-context fallback) —
+        // it would land in the cloud unencrypted. Keep it device-local.
+        if (!cryptoData.plain) _triggerSync(S.METRICS, entry);
       });
     });
   },

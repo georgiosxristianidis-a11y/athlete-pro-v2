@@ -3,7 +3,16 @@
  * Prevents main thread blocking during massive IndexedDB read/writes.
  */
 
-// We don't hardcode a master key here. In a real app, this should be derived 
+/* Secure-context guard: crypto.subtle is undefined on HTTP + LAN-IP
+   (e.g. http://192.168.x.x:3000). Without this, generateKey/encrypt throw
+   and Body Metrics saving crashes with the error leaking to the UI.
+   Degrade gracefully to local base64 storage (no encryption) instead. */
+const SUBTLE = (typeof crypto !== 'undefined' && crypto.subtle) ? crypto.subtle : null;
+
+const _bytesToB64 = (bytes) => btoa(String.fromCharCode.apply(null, Array.from(bytes)));
+const _b64ToBytes = (b64) => new Uint8Array(atob(b64).split('').map((c) => c.charCodeAt(0)));
+
+// We don't hardcode a master key here. In a real app, this should be derived
 // via PBKDF2 from a user password or a securely stored random key in IndexedDB
 // For the sake of this prototype and local-first nature, we'll generate and cache one.
 let cryptoKey = null;
@@ -52,10 +61,17 @@ const generateOrLoadKey = async () => {
 const generateIV = () => crypto.getRandomValues(new Uint8Array(12));
 
 const encryptData = async (data) => {
+  // Insecure context (HTTP LAN): store locally as base64, no encryption.
+  // iv:null signals plain mode to decryptData; plain:true lets callers skip cloud sync.
+  if (!SUBTLE) {
+    const encoded = new TextEncoder().encode(JSON.stringify(data));
+    return { encrypted: _bytesToB64(encoded), iv: null, plain: true };
+  }
+
   const key = await generateOrLoadKey();
   const iv = generateIV();
   const encoded = new TextEncoder().encode(JSON.stringify(data));
-  
+
   const encryptedBuf = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
     key,
@@ -71,6 +87,11 @@ const encryptData = async (data) => {
 };
 
 const decryptData = async (encryptedBase64, ivBase64) => {
+  // Plain mode (iv null): record was stored unencrypted in insecure context.
+  if (!ivBase64) {
+    return JSON.parse(new TextDecoder().decode(_b64ToBytes(encryptedBase64)));
+  }
+
   const key = await generateOrLoadKey();
   const encryptedArr = new Uint8Array(atob(encryptedBase64).split('').map(c => c.charCodeAt(0)));
   const iv = new Uint8Array(atob(ivBase64).split('').map(c => c.charCodeAt(0)));

@@ -39,6 +39,10 @@ app.use(helmet({
       workerSrc: ["'self'"],
       mediaSrc: ["'self'", "blob:"],
       objectSrc: ["'none'"],
+      // Required for http:// LAN access from the phone: helmet's default
+      // upgrade-insecure-requests forces https on subresources and breaks
+      // every asset load on http://192.168.x.x:3000.
+      upgradeInsecureRequests: null,
     },
   },
   crossOriginEmbedderPolicy: false,
@@ -106,9 +110,9 @@ app.use(express.static(__dirname, {
 app.use(errorMiddleware);
 
 export function startServer(port = process.env.PORT || 3000) {
-  // Localhost by default; expose to LAN only on explicit request
-  // (phone field testing: npm run dev:lan or HOST=0.0.0.0)
-  const host = process.env.HOST || (process.argv.includes('--lan') ? '0.0.0.0' : '127.0.0.1');
+  // LAN by default — phone field testing is the daily workflow
+  // (http://192.168.x.x:3000). Set HOST=127.0.0.1 to restrict to localhost.
+  const host = process.env.HOST || '0.0.0.0';
   return new Promise((resolve) => {
     const server = app.listen(port, host, () => {
       const p = server.address().port;
