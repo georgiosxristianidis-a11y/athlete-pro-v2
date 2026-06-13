@@ -20,6 +20,7 @@
     <!-- Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;800&family=Manrope:wght@400;600&family=Orbitron:wght@700;900&display=swap" />
     <link
       href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;800&family=Manrope:wght@400;600&family=Orbitron:wght@700;900&display=swap"
       rel="stylesheet"
@@ -89,6 +90,7 @@
 
       /* STATUS BAR — Elite Solid */
       #status-bar {
+  padding-top: env(safe-area-inset-top, 0px);
         position: absolute;
         top: 0;
         left: 0;
@@ -184,7 +186,8 @@
         opacity: 0;
         pointer-events: none;
         transform: translateY(12px);
-        transition: opacity 0.3s ease, transform 0.3s ease;
+        transition: opacity 0.4s ease, transform 0.5s var(--spring-bounce);
+        will-change: transform, opacity;
         -webkit-overflow-scrolling: touch;
       }
       .screen.active {
@@ -202,8 +205,10 @@
         height: calc(var(--nav-h) + var(--safe-bottom));
         padding-bottom: var(--safe-bottom);
         background: rgba(10, 10, 15, 0.85);
-        backdrop-filter: blur(32px) saturate(1.8);
-        -webkit-backdrop-filter: blur(32px) saturate(1.8);
+        backdrop-filter: blur(24px) saturate(150%) brightness(1.1);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        -webkit-backdrop-filter: blur(24px) saturate(150%) brightness(1.1);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
         border-top: 1px solid rgba(255, 255, 255, 0.06);
         display: flex;
         align-items: flex-start;
@@ -308,11 +313,7 @@
     </div>
 
     <div id="toast-wrap" role="status" aria-live="polite"></div>
+    <script type="module" src="js/boot.js"></script>
     <script type="module" src="js/app.js"></script>
-  <script>window.addEventListener('error', (e) => {
-  window.Toast && window.Toast.show('ERR: ' + e.message, 'error', 5000);
-});
-window.addEventListener('unhandledrejection', (e) => {
-  window.Toast && window.Toast.show('REJ: ' + e.reason, 'error', 5000);
-});</script></body>
+  </body>
 </html>

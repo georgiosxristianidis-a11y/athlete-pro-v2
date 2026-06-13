@@ -46,7 +46,7 @@ export const Claude = (() => {
     container.innerHTML = `
       <div style="position:relative; pointer-events:auto">
         <div class="fab-close-btn" onclick="event.stopPropagation(); Claude.dismissFAB()" title="Hide Assistant" style="opacity:1; transform:scale(1); top:-10px; right:-10px; pointer-events:auto">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </div>
         <button id="claude-fab" class="claude-fab ${isGemini ? 'gemini-mode' : ''} ${glowClass}" aria-label="AI Assistant" style="margin:0">
           <div class="ai-status-wrap">
@@ -61,7 +61,7 @@ export const Claude = (() => {
       const fab = container.querySelector('#claude-fab');
       const content = container.querySelector('.fab-content');
       if (content) {
-        content.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+        content.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
           <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/>
         </svg>`;
       }
@@ -225,7 +225,7 @@ export const Claude = (() => {
   function buildBodySVG(scores) {
     const f = (m) => scores[m] > 50 ? 'rgba(232,132,140,0.8)' : (scores[m] > 20 ? 'rgba(255,179,0,0.6)' : 'rgba(0,230,118,0.3)');
     return `<svg class="body-svg" viewBox="0 0 260 240">
-      <path d="M50,112 Q65,116 80,112 L82,124 Q65,129 48,124 Z" fill="${f('quad')}" stroke="currentColor" stroke-width="0.5"/>
+      <path d="M50,112 Q65,116 80,112 L82,124 Q65,129 48,124 Z" fill="${f('quad')}" stroke="currentColor" stroke-width="1.5"/>
       <text x="130" y="230" text-anchor="middle" font-size="10" fill="var(--c-text-3)">Recovery Heatmap</text>
     </svg>`;
   }

@@ -64,14 +64,14 @@ export const DynamicIsland = (() => {
           <div class="island-sublabel" id="di-sublabel">Week 1 · PUSH · next: Bench</div>
           
           <div class="island-actions">
-            <button class="island-action-btn skip" title="Skip Exercise" onclick="window.Workout?._focusNext()">
+            <button class="island-action-btn skip" title="Skip Exercise" onclick="event.stopPropagation(); window.Workout?._focusNext()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
             </button>
-            <button class="island-action-btn plus" title="+30s Rest" onclick="window.RestTimer?.addTime(30)">
+            <button class="island-action-btn plus" title="+30s Rest" onclick="event.stopPropagation(); window.RestTimer?.addTime(30)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>30s</span>
             </button>
-            <button class="island-action-btn" title="Picture in Picture" onclick="window.DynamicIsland?.triggerPiP()" style="margin-left:auto">
+            <button class="island-action-btn" title="Picture in Picture" onclick="event.stopPropagation(); window.DynamicIsland?.triggerPiP()" style="margin-left:auto">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1"/></svg>
               <span>PiP</span>
             </button>
@@ -202,15 +202,6 @@ export const DynamicIsland = (() => {
 
     const ru = (localStorage.getItem('ap-settings-lang') === 'ru');
 
-    // Time
-    if (_timeEl) _timeEl.textContent = Timer.fmt(Timer.seconds());
-
-    // Current Exercise
-    let activeIdx = State.plan.findIndex(ex => ex.sets.some(s => !s.done));
-    if (activeIdx === -1) activeIdx = State.plan.length - 1;
-    const currentEx = State.plan[activeIdx];
-    if (_nameEl) _nameEl.textContent = currentEx ? currentEx.name : '';
-    
     // Sets Progress
     let done = 0, total = 0;
     State.plan.forEach(ex => {
@@ -219,6 +210,17 @@ export const DynamicIsland = (() => {
         if (s.done) done++;
       });
     });
+
+    // Time
+    if (_timeEl) _timeEl.textContent = total ? `${done}/${total}` : Timer.fmt(Timer.seconds());
+
+    // Current Exercise
+    let activeIdx = State.plan.findIndex(ex => ex.sets.some(s => !s.done));
+    if (activeIdx === -1) activeIdx = State.plan.length - 1;
+    const currentEx = State.plan[activeIdx];
+    if (_nameEl) _nameEl.textContent = currentEx ? currentEx.name : '';
+    
+    
 
     // Collapsed name for 'detailed' mode
     if (_nameCollapsedEl) {
@@ -236,8 +238,8 @@ export const DynamicIsland = (() => {
       _setsEl.style.color = _getSetsColor(done, total);
     }
     if (_setsCollapsedEl) {
-      _setsCollapsedEl.textContent = total ? `${done}/${total}` : '';
-      _setsCollapsedEl.style.color = _getSetsColor(done, total);
+      _setsCollapsedEl.textContent = Timer.fmt(Timer.seconds());
+      _setsCollapsedEl.style.color = 'var(--c-text-2)';
     }
 
     // Sublabel

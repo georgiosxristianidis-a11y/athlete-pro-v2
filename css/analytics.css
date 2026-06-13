@@ -84,7 +84,7 @@
   gap: 8px;
   background: var(--c-surface-deep);
   border: 1px solid var(--c-border);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 6px;
   margin: var(--sp-2) 0 var(--sp-1);
 }
@@ -122,7 +122,7 @@
 .stat-chip {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--c-border);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 12px;
   text-align: center;
   backdrop-filter: blur(10px);
@@ -157,7 +157,7 @@
   padding: 12px 8px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--c-border);
-  border-radius: 16px;
+  border-radius: 20px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }

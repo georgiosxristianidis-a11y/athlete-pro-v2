@@ -87,3 +87,14 @@ In this system, elevation is not "up"; it is "light."
 - **No Pure White:** Never use `#FFFFFF`. Use `on_surface` (#E5E2E1) to prevent "retina burn" against the Vantablack background.
 - **No Sharp Corners:** Avoid the `none` roundedness. Use `xl` (0.75rem) for cards and `full` for buttons to maintain a soft, high-end feel.
 - **No High-Opacity Borders:** Never use a 100% opaque border. It breaks the illusion of depth and makes the app look like a standard template.
+
+---
+
+## 7. GIO / Audit: Antigravity UI Secrets (Ultrathink)
+*Triggered by `#Gio #audit` directives.*
+
+- **Spring Physics (Antigravity Motion):** Never use standard `ease` or `linear` transitions for interactions. Use custom curves like `cubic-bezier(0.175, 0.885, 0.32, 1.275)` for overshoot and bounce. UI elements must feel like they have physical mass.
+- **120Hz Hardware Acceleration:** Animate ONLY `transform` and `opacity`. Animating width, height, or margins causes Layout Thrashing and drops frames. Use `will-change: transform` intelligently.
+- **Apple/Vision Pro Glass (Vibrancy):** True glass bends light. Combine `backdrop-filter: blur(20px) saturate(150%) brightness(1.1)` with a 1px inner rim (`box-shadow: inset 0 1px 0 rgba(255,255,255,0.08)`) to create depth.
+- **Haptic Synchronization:** Tie visual micro-animations directly to physical feedback via `navigator.vibrate` (using the `haptic()` module). A 10ms click vibration makes the UI feel infinitely more premium.
+- **Subpixel "Squircle" Geometry:** Avoid harsh corner transitions by mathematically nesting border radii (Outer Radius = Inner Radius + Padding).

@@ -51,8 +51,7 @@ export function renderPrivacyCard() {
 
       <div class="privacy-desc" id="privacy-desc">${cur.desc}</div>
 
-      <div class="pref-divider"></div>
-
+      
       <div class="pref-row">
         <div class="pref-info">
           <div class="pref-title">${t('privacy.ai_coach')}</div>
@@ -70,8 +69,7 @@ export function renderPrivacyCard() {
         </div>
       </div>
 
-      <div class="pref-divider"></div>
-
+      
       <button class="data-btn" onclick="Privacy.openDataPassport()">
         <div class="data-btn-icon" style="background:var(--c-purple-bg)">
           ${_iconPassport()}
@@ -83,8 +81,7 @@ export function renderPrivacyCard() {
         ${_iconChevron()}
       </button>
 
-      <div class="pref-divider"></div>
-
+      
       <button class="data-btn" onclick="Privacy.openAuditLog()">
         <div class="data-btn-icon" style="background:var(--c-blue-bg)">
           ${_iconAudit()}

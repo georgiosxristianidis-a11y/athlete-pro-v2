@@ -367,10 +367,8 @@
   align-items: center;
   gap: 8px;
   padding: 6px 0;
-  border-bottom: 1px solid var(--c-border);
 }
 .next-ex-row:last-child {
-  border-bottom: none;
 }
 .next-ex-dot {
   width: 6px;
@@ -411,10 +409,8 @@
   align-items: center;
   gap: var(--sp-1);
   padding: 10px 0;
-  border-bottom: 1px solid var(--c-border);
 }
 .top-lift-row:last-child {
-  border-bottom: none;
 }
 .top-lift-rank {
   font-size: 10px;

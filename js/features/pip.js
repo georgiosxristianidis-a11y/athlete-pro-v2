@@ -75,14 +75,14 @@ export const PiP = (() => {
     _ctx.textBaseline = 'middle';
     _ctx.shadowBlur = 15;
     _ctx.shadowColor = 'rgba(0, 230, 118, 0.4)';
-    _ctx.fillText(state.time, _canvas.width / 2, _canvas.height / 2 - 25);
+    _ctx.fillText(state.sets || state.time, _canvas.width / 2, _canvas.height / 2 - 25);
     _ctx.shadowBlur = 0;
 
     // Current Exercise
     _ctx.fillStyle = '#ffffff';
     _ctx.font = '800 24px "Syne", sans-serif';
     _ctx.letterSpacing = '1px';
-    _ctx.fillText(state.name.toUpperCase(), _canvas.width / 2, _canvas.height / 2 + 50);
+    _ctx.fillText(state.name.toUpperCase() + " • " + state.time, _canvas.width / 2, _canvas.height / 2 + 50);
 
     // Next Exercise Preview (Elite Feature)
     if (state.nextName) {
@@ -137,8 +137,8 @@ export const PiP = (() => {
       const nameEl = _pipWindow.document.getElementById('pip-name');
       const nextEl = _pipWindow.document.getElementById('pip-next-ex');
       const bpmEl = _pipWindow.document.getElementById('pip-bpm');
-      if (timeEl) timeEl.textContent = _lastState.time;
-      if (nameEl) nameEl.textContent = _lastState.name;
+      if (timeEl) timeEl.textContent = _lastState.sets || _lastState.time;
+      if (nameEl) nameEl.textContent = _lastState.name + " • " + _lastState.time;
       if (nextEl) nextEl.textContent = _lastState.nextName ? `NEXT: ${_lastState.nextName}` : '';
       if (bpmEl) bpmEl.textContent = _lastState.bpm ? `${_lastState.bpm} BPM` : '-- BPM';
     }
@@ -204,8 +204,8 @@ export const PiP = (() => {
         <span id="pip-bpm">${_lastState.bpm || '--'} BPM</span>
         <span style="font-size:10px; opacity:0.3; font-weight:900">ATH-PRO</span>
       </div>
-      <div id="pip-time">${_lastState.time}</div>
-      <div id="pip-name">${_lastState.name}</div>
+      <div id="pip-time">${_lastState.sets || _lastState.time}</div>
+      <div id="pip-name">${_lastState.name} • ${_lastState.time}</div>
       <div id="pip-next-ex">${_lastState.nextName ? `NEXT: ${_lastState.nextName}` : ''}</div>
       <div class="pip-actions">
         <button class="pip-btn" id="pip-plus">+15s</button>
@@ -213,8 +213,8 @@ export const PiP = (() => {
       </div>
     `;
 
-    d.getElementById('pip-plus').onclick = () => window.opener.RestTimer.addTime(15);
-    d.getElementById('pip-next').onclick = () => window.opener.RestTimer.tapSkip();
+    d.getElementById('pip-plus').onclick = () => window.RestTimer.addTime(15);
+    d.getElementById('pip-next').onclick = () => window.RestTimer.tapSkip();
     pipWin.onpagehide = () => { _pipWindow = null; };
   }
 

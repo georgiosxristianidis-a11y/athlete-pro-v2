@@ -6,6 +6,9 @@
 
 /* ── Section 1: Design Tokens ─────────────────────────── */
 :root {
+  --spring-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --spring-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
   /* Premium Neon Glow Shadows */
   --glow-accent-md: 0 0 20px rgba(0, 230, 118, 0.5);
   --glow-amber-md: 0 0 18px rgba(255, 179, 0, 0.45);
@@ -133,6 +136,7 @@
   cursor: pointer;
   transition: transform var(--t-fast), background var(--t-fast);
   -webkit-tap-highlight-color: transparent;
+  will-change: transform;
 }
 .btn-primary:active {
   background: var(--c-accent-d);
@@ -222,7 +226,10 @@
 }
 .modal-sheet {
   width: 100%;
-  background: var(--c-bg-2);
+  background: rgba(15, 15, 18, 0.75);
+  backdrop-filter: blur(40px) saturate(150%) brightness(1.1);
+  -webkit-backdrop-filter: blur(40px) saturate(150%) brightness(1.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   border-radius: 24px 24px 0 0;
   border-top: 1px solid var(--c-border);
   padding: var(--sp-3) var(--sp-2) calc(var(--sp-3) + var(--safe-bottom));
@@ -469,6 +476,7 @@ button:focus-visible {
   }
 
   #status-bar {
+  padding-top: env(safe-area-inset-top, 0px);
     width: 100%;
     max-width: none;
     left: auto;
@@ -579,19 +587,10 @@ button:focus-visible {
 
 .modal-sheet,
 .claude-sheet {
-  background: linear-gradient(
-    180deg,
-    rgba(20, 20, 28, 0.92) 0%,
-    rgba(12, 12, 18, 0.96) 100%
-  );
-  backdrop-filter: blur(40px) saturate(1.6);
-  -webkit-backdrop-filter: blur(40px) saturate(1.6);
-  border-top: 1px solid var(--c-border);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 -20px 60px rgba(0, 0, 0, 0.5);
-}
-
+  background: rgba(15, 15, 18, 0.75);
+  backdrop-filter: blur(40px) saturate(150%) brightness(1.1);
+  -webkit-backdrop-filter: blur(40px) saturate(150%) brightness(1.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 /* PR / achievement gradient */
 .badge-accent {
   background: linear-gradient(135deg, rgba(255, 179, 0, 0.20) 0%, rgba(255, 179, 0, 0.10) 40%, rgba(0, 230, 118, 0.12) 100%);

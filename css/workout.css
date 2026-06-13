@@ -58,7 +58,10 @@
 .type-icon { display: block; width: 64px; height: 64px; }
 
 .programs-carousel { display: flex; flex-direction: column; gap: var(--sp-2); padding-bottom: var(--sp-2); }
-.program-card { width: 100%; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 18px; padding: 16px; cursor: pointer; }
+.program-card {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  will-change: transform; width: 100%; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 24px; padding: 24px; cursor: pointer; }
+.program-card:active { transform: scale(0.96); }
 .program-type { font-size: 9px; font-weight: 800; color: var(--c-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
 .program-name { font-size: 16px; font-weight: 800; color: var(--c-text-1); letter-spacing: -0.02em; margin-bottom: 2px; }
 .program-dur { font-size: 11px; font-weight: 600; color: var(--c-text-3); }
@@ -115,7 +118,7 @@
   text-shadow: 0 0 8px rgba(167, 139, 250, 0.4);
 }
 
-.live-bar { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); background: var(--c-surface); border-radius: 16px; padding: 16px var(--sp-2); margin-bottom: var(--sp-2); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+.live-bar { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); background: var(--c-surface); border-radius: 20px; padding: 24px var(--sp-2); margin-bottom: var(--sp-2); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
 
 
 /* ── Global Workout Progress — Neon Purple Sync ── */
@@ -234,7 +237,7 @@
 .add-set-btn:active { background: rgba(255,255,255,0.03); opacity: 1; }
 .add-set-btn svg { width: 14px; height: 14px; }
 
-.btn-add-live-ex { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 16px; background: rgba(255,255,255,0.04); border: 1px solid var(--c-border); border-radius: 18px; color: var(--c-text-1); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: var(--sp-2); }
+.btn-add-live-ex { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 24px; background: rgba(255,255,255,0.04); border: 1px solid var(--c-border); border-radius: 24px; color: var(--c-text-1); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: var(--sp-2); }
 .btn-add-live-ex svg { width: 16px; height: 16px; }
 
 /* ── Elite Block Tags ── */

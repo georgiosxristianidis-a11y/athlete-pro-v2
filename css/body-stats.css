@@ -249,10 +249,8 @@
   align-items: center;
   gap: 8px;
   padding: 6px 0;
-  border-bottom: 1px solid var(--c-border);
 }
 .bs-hist-cell:last-of-type {
-  border-bottom: none;
 }
 .bs-hist-lbl {
   font-size: 12px;
@@ -318,7 +316,6 @@
   align-items: center;
   gap: var(--sp-2);
   padding: 0 0 var(--sp-2);
-  border-bottom: 1px solid var(--c-border);
   margin-bottom: var(--sp-2);
   flex-shrink: 0;
 }

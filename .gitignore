@@ -67,3 +67,8 @@ w.exercises
 {}
 
 .eslintcache
+
+# ===== One-off codegen scripts (Antigravity scratch) =====
+/phase*.js
+/purge_*.js
+.claude/launch.json
