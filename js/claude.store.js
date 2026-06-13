@@ -470,7 +470,7 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
           type: w.type,
           hoursAgo: Math.round((Date.now() - w.timestamp) / 3600000),
           tonnageKg: Math.round(w.tonnage || 0),
-          durationMin: Math.round((w.duration || 0) / 60),
+          durationMin: Math.round((w.duration || 0) / 60000),
           exercises: (w.exercises || [])
             .map((e) => ({ name: e.name, sets: (e.sets || []).filter((s) => s.done).length }))
             .filter((e) => e.sets > 0),

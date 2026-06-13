@@ -34,7 +34,7 @@ export function renderBento(workouts, dots, lang) {
   const ru = lang === 'ru';
   const streak = _streak(workouts);
   const totalVol = Math.round(workouts.reduce((s, w) => s + (w.tonnage || 0), 0) / 1000);
-  const totalHrs = Math.round(workouts.reduce((s, w) => s + (w.duration || 0), 0) / 3600);
+  const totalHrs = Math.round(workouts.reduce((s, w) => s + (w.duration || 0), 0) / 3600000);
 
   const cells = [
     {

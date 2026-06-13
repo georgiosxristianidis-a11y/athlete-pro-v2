@@ -459,37 +459,68 @@ const Workouts = {
 
 /* ════════════════════════════════════════════════════════
    PURE AGGREGATE HELPERS  (no IDB — accept pre-fetched list)
+
+   Period boundaries are CALENDAR-based and share one source of
+   truth (startOfWeek / startOfMonth) so "Week" and "Month" stats
+   stay consistent across volume AND count. Previously volume used
+   rolling 7d/30d windows while count used the calendar month — that
+   mismatch made Week == Month whenever all data was recent.
    ════════════════════════════════════════════════════════ */
 
 /**
- * Compute weekly volume from pre-fetched workouts array.
- * @param {WorkoutRecord[]} list
+ * Start of the current ISO week (Monday 00:00) as an epoch ms.
+ * @param {Date} [ref=new Date()]
  * @returns {number}
  */
-export function weeklyVolumeFrom(list) {
-  const since = Date.now() - 7 * 86400000;
+export function startOfWeek(ref = new Date()) {
+  const d = new Date(ref);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0=Sun … 6=Sat
+  const sinceMonday = day === 0 ? 6 : day - 1;
+  d.setDate(d.getDate() - sinceMonday);
+  return d.getTime();
+}
+
+/**
+ * Start of the current calendar month (1st, 00:00) as an epoch ms.
+ * @param {Date} [ref=new Date()]
+ * @returns {number}
+ */
+export function startOfMonth(ref = new Date()) {
+  return new Date(ref.getFullYear(), ref.getMonth(), 1).getTime();
+}
+
+/**
+ * Compute volume (tonnage) for the current calendar week.
+ * @param {WorkoutRecord[]} list
+ * @param {Date} [ref=new Date()]
+ * @returns {number}
+ */
+export function weeklyVolumeFrom(list, ref = new Date()) {
+  const since = startOfWeek(ref);
   return list.filter(w => w.timestamp >= since).reduce((s, w) => s + (w.tonnage || 0), 0);
 }
 
 /**
- * Compute monthly volume from pre-fetched workouts array.
+ * Compute volume (tonnage) for the current calendar month.
  * @param {WorkoutRecord[]} list
+ * @param {Date} [ref=new Date()]
  * @returns {number}
  */
-export function monthlyVolumeFrom(list) {
-  const since = Date.now() - 30 * 86400000;
+export function monthlyVolumeFrom(list, ref = new Date()) {
+  const since = startOfMonth(ref);
   return list.filter(w => w.timestamp >= since).reduce((s, w) => s + (w.tonnage || 0), 0);
 }
 
 /**
- * Compute sessions this calendar month from pre-fetched workouts array.
+ * Compute session count for the current calendar month.
  * @param {WorkoutRecord[]} list
+ * @param {Date} [ref=new Date()]
  * @returns {number}
  */
-export function monthlyCountFrom(list) {
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  return list.filter(w => w.timestamp >= from).length;
+export function monthlyCountFrom(list, ref = new Date()) {
+  const since = startOfMonth(ref);
+  return list.filter(w => w.timestamp >= since).length;
 }
 
 /**
@@ -504,12 +535,13 @@ export function pplTonnageFrom(list) {
 }
 
 /**
- * Compute session count for the last 7 days from pre-fetched workouts array.
+ * Compute session count for the current calendar week.
  * @param {WorkoutRecord[]} list
+ * @param {Date} [ref=new Date()]
  * @returns {number}
  */
-export function weeklyCountFrom(list) {
-  const since = Date.now() - 7 * 86400000;
+export function weeklyCountFrom(list, ref = new Date()) {
+  const since = startOfWeek(ref);
   return list.filter(w => w.timestamp >= since).length;
 }
 

@@ -565,7 +565,7 @@ export const Dashboard = (() => {
           month: 'short',
           day: 'numeric',
         });
-        const dur = w.duration ? ` · ${Math.round(w.duration / 60)}m` : '';
+        const dur = w.duration ? ` · ${Math.round(w.duration / 60000)}m` : '';
         const type = w.type.charAt(0).toUpperCase() + w.type.slice(1);
         return `
         <div class="session-item">

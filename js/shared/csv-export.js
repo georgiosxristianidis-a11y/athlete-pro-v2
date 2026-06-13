@@ -16,7 +16,7 @@ export function workoutsToCsv(workouts) {
         rows.push([
           date,
           w.type,
-          Math.round(w.duration / 60),
+          Math.round((w.duration || 0) / 60000),
           w.tonnage,
           `"${ex.name.replace(/"/g, '""')}"`,
           idx + 1,
