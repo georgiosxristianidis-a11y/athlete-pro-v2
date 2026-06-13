@@ -6,6 +6,7 @@
 
 import { Toast } from '../shell.js';
 import { esc } from '../shared/utils.js';
+import { confirmDialog } from '../shared/confirm.js';
 import {
   State,
   loadPlan, savePlan,
@@ -214,11 +215,16 @@ export function _setPlanSearch(query) {
   }
 }
 
-export function _loadPreset(presetName) {
+export async function _loadPreset(presetName) {
   const presets = { 'ppl-gio': PPL_GIO_PLAN };
   const preset = presets[presetName];
   if (!preset) return;
-  if (!confirm('Load PPL | GIO preset? Both Week A and Week B plans will be replaced.')) return;
+  const ok = await confirmDialog({
+    title: 'Load PPL | GIO preset?',
+    message: 'Both Week A and Week B plans will be replaced.',
+    confirmLabel: 'Load',
+  });
+  if (!ok) return;
   savePlan(JSON.parse(JSON.stringify(preset.weekA)), 'A');
   savePlan(JSON.parse(JSON.stringify(preset.weekB)), 'B');
   _closePlanEditor();

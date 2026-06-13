@@ -2,6 +2,7 @@
 import { DB } from './db.js';
 import { Spring } from './shared/spring.js';
 import { Toast } from './shell.js';
+import { confirmDialog } from './shared/confirm.js';
 
 const BS_KEY = 'ap-bodystats';
 const bsEsc = (s) => String(s).replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c]);
@@ -226,9 +227,14 @@ window.bsPromptField = function(id, label, unit, currVal) {
 };
 
 window.bsHistToggle = function(el) { el.classList.toggle('open'); };
-window.bsDeleteEntry = function(dateIso) {
-  if (confirm('Delete entry for ' + dateIso + '?')) {
-    bsSave(bsLoad().filter((e) => e.date !== dateIso));
-    renderBodyStats();
-  }
+window.bsDeleteEntry = async function(dateIso) {
+  const ok = await confirmDialog({
+    title: 'Delete entry?',
+    message: 'Measurements for ' + bsFmtDate(dateIso) + ' will be removed.',
+    confirmLabel: 'Delete',
+    danger: true
+  });
+  if (!ok) return;
+  bsSave(bsLoad().filter((e) => e.date !== dateIso));
+  renderBodyStats();
 };

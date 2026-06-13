@@ -14,6 +14,7 @@ import {
 } from './privacy.store.js';
 import { t } from './locale.store.js';
 import { esc } from './shared/utils.js';
+import { confirmDialog } from './shared/confirm.js';
 
 const MODES = [
   { id: 'cloud',  label: 'Cloud',     desc: 'AI Coach + cloud sync available.' },
@@ -277,11 +278,18 @@ function _closeOverlay(id) {
   setTimeout(() => o.remove(), 200);
 }
 
-function _confirmDelete() {
-  if (!confirm(t('privacy.delete_confirm'))) return;
-  DB.clearAll().then(() => {
-    location.reload();
+async function _confirmDelete() {
+  const ru = localStorage.getItem('ap-settings-lang') === 'ru';
+  const ok = await confirmDialog({
+    title: ru ? 'Удалить данные?' : 'Delete data?',
+    message: t('privacy.delete_confirm'),
+    confirmLabel: ru ? 'Удалить' : 'Delete',
+    cancelLabel: ru ? 'Отмена' : 'Cancel',
+    danger: true,
   });
+  if (!ok) return;
+  await DB.clearAll();
+  location.reload();
 }
 
 /* ════════════════════════════════════════════════════════

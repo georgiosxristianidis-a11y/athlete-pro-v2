@@ -262,6 +262,49 @@
   color: var(--c-text-1);
 }
 
+/* Shared confirm dialog (js/shared/confirm.js) */
+.confirm-overlay .confirm-sheet {
+  max-width: 480px;
+  margin: 0 auto;
+}
+.confirm-msg {
+  color: var(--c-text-2);
+  font-size: 15px;
+  line-height: 1.45;
+  margin: 0 0 var(--sp-3);
+}
+.confirm-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+.confirm-btn {
+  flex: 1;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  border: 1px solid var(--c-border);
+  cursor: pointer;
+  transition: filter 0.15s ease, background 0.15s ease;
+}
+.confirm-cancel {
+  background: var(--c-surface-deep);
+  color: var(--c-text-1);
+}
+.confirm-ok {
+  background: var(--c-accent);
+  color: #000;
+  font-weight: 800;
+  border-color: transparent;
+}
+.confirm-ok.is-danger {
+  background: var(--c-red);
+  color: #fff;
+}
+.confirm-btn:active {
+  filter: brightness(0.92);
+}
+
 /* ── Section 4: Focus-Visible Styles ──────────────────── */
 input:focus-visible,
 textarea:focus-visible,

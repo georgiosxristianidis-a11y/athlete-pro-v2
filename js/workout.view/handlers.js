@@ -10,6 +10,7 @@ import {
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
 import { esc } from '../shared/utils.js';
+import { confirmDialog } from '../shared/confirm.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
 import { syncDrumUI } from '../ui/drum-picker.js';
 
@@ -231,7 +232,12 @@ export async function selectType(type) {
 export async function _startProgram(id) {
   const active = getActivePlan();
   if (active && active.id !== id) {
-    if (!confirm('Switching programs will reset your current cycle. Proceed?')) return;
+    const ok = await confirmDialog({
+      title: 'Switch program?',
+      message: 'Switching programs will reset your current cycle.',
+      confirmLabel: 'Switch',
+    });
+    if (!ok) return;
   }
   _haptic(20);
   startPlan(id);
@@ -315,7 +321,13 @@ export async function completeSession() {
   const doneSets = State.plan.reduce((sum, ex) => sum + ex.sets.filter(s => s.done).length, 0);
   
   if (doneSets === 0) {
-    if (!confirm(ru ? 'Ни один подход не выполнен. Завершить?' : 'No sets completed. Finish anyway?')) return;
+    const ok = await confirmDialog({
+      title: ru ? 'Завершить тренировку?' : 'Finish workout?',
+      message: ru ? 'Ни один подход не выполнен.' : 'No sets have been completed.',
+      confirmLabel: ru ? 'Завершить' : 'Finish',
+      cancelLabel: ru ? 'Отмена' : 'Cancel',
+    });
+    if (!ok) return;
   }
 
   // Calculate metrics
@@ -462,7 +474,15 @@ async function _executeFinalSave(tonnage, duration) {
 }
 
 export async function cancelSession() {
-  if (!confirm('Cancel this session? Progress will be lost.')) return;
+  const ru = navigator.language.startsWith('ru');
+  const ok = await confirmDialog({
+    title: ru ? 'Отменить тренировку?' : 'Cancel session?',
+    message: ru ? 'Прогресс будет потерян.' : 'Progress will be lost.',
+    confirmLabel: ru ? 'Отменить' : 'Discard',
+    cancelLabel: ru ? 'Назад' : 'Keep',
+    danger: true,
+  });
+  if (!ok) return;
   State.phase = 'select';
   State.startedAt = 0;
   State.plan = [];
