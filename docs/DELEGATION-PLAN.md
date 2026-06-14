@@ -125,7 +125,7 @@
 | 5-4 | Volume Trend: реальный график или честный empty | P3 | M | 🟦 SONNET | `js/dashboard.js`, `js/analytics.view.js` | ⬜ |
 | 5-5 | Микроанимации на motion-токенах + `prefers-reduced-motion`/`color-scheme` | P3 | M | 🟦 SONNET | `css/base.css`, `js/shared/spring.js` | ⬜ |
 | 5-6 | Прогресс-бар онбординга: подсветка текущего шага (не все 6 зелёные) | P2 | S | 🟩 GEMINI | `js/onboarding.js` | ⬜ |
-| 5-7 | Workout Dock переживает навигацию (in-app, без OS-PiP как основы) | P2 | L | 🔒 LEAD | `js/shared/dynamic-island.js`, глоб. состояние | ⬜ (веду я — было сломано рефактором) |
+| 5-7 | Workout Dock переживает навигацию (in-app, без OS-PiP как основы) | P2 | L | 🔒 LEAD | `js/shared/dynamic-island.js`, `js/rest-timer.js`, `css/dynamic-island.css` | ✅ `abd660c` — rest-таймер встроен в остров (in-frame HUD: счётчик+ +15s/Skip, warning/done), убраны fixed `#rest-bar`/`#rest-modal` (вылезали за рамку на десктопе); PiP остаётся только для свёрнутого браузера |
 
 ---
 
@@ -153,4 +153,4 @@
 ---
 
 ## Прогресс по фазам
-✅ NOW(C-1) · 🟨 Фаза 0 (4/7) · 🟨 Фаза 1 (1/7) · 🟨 Фаза 2 (3/7) · 🟨 Фаза 3 (1/4) · ⬜ Фаза 4 · ⬜ Фаза 5 · 🌐 i18n L-1/L-2 ✅
+✅ NOW(C-1) · 🟨 Фаза 0 (4/7) · 🟨 Фаза 1 (1/7) · 🟨 Фаза 2 (3/7) · 🟨 Фаза 3 (1/4) · ⬜ Фаза 4 · 🟨 Фаза 5 (1/7 — 5-7✅) · 🌐 i18n L-1/L-2 ✅
