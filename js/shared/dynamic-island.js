@@ -37,6 +37,8 @@ export const DynamicIsland = (() => {
   let _sublabelEl = null;
   let _progressFill = null;
   let _timerProg = null;
+  let _restTimeEl = null;
+  let _restLabelEl = null;
 
   // Animation tracking
   const _anims = {
@@ -79,9 +81,19 @@ export const DynamicIsland = (() => {
           </div>
         </div>
 
+        <!-- Rest HUD (in-frame replacement for the old standalone rest modal) -->
+        <div class="island-rest" id="di-rest">
+          <span class="island-rest-time" id="di-rest-time">0:00</span>
+          <span class="island-rest-label" id="di-rest-label">REST</span>
+          <div class="island-rest-actions">
+            <button class="island-rest-btn" id="di-rest-plus" title="+15s" onclick="event.stopPropagation(); window.RestTimer?.addTime(15)">+15s</button>
+            <button class="island-rest-btn primary" id="di-rest-skip" title="Skip rest" onclick="event.stopPropagation(); window.RestTimer?.tapSkip()">Skip</button>
+          </div>
+        </div>
+
         <!-- Timer progress line (for Rest intervals) -->
         <div class="island-timer-progress" id="di-timer-progress"></div>
-        
+
         <!-- Global Workout Progress (Bottom strip) -->
         <div class="island-progress-track">
           <div class="island-progress-fill" id="di-progress-fill"></div>
@@ -100,6 +112,8 @@ export const DynamicIsland = (() => {
     _sublabelEl = document.getElementById('di-sublabel');
     _progressFill = document.getElementById('di-progress-fill');
     _timerProg = document.getElementById('di-timer-progress');
+    _restTimeEl = document.getElementById('di-rest-time');
+    _restLabelEl = document.getElementById('di-rest-label');
 
     // Load preference
     _displayMode = localStorage.getItem('ap-di-mode') || 'mini';
@@ -276,12 +290,24 @@ export const DynamicIsland = (() => {
     _timerSecs = secs;
     _timerMax = max;
     _island?.classList.add('timer-mode');
+
+    // Countdown readout (mm:ss when >= 1 min, else Ns)
+    if (_restTimeEl) {
+      _restTimeEl.textContent = secs >= 60
+        ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
+        : `${secs}s`;
+      _restTimeEl.classList.toggle('warning', secs <= 10 && secs > 0);
+      _restTimeEl.classList.toggle('done', secs <= 0);
+    }
+    if (_restLabelEl) _restLabelEl.textContent = isRu() ? 'ОТДЫХ' : 'REST';
+
     _renderRestProgress();
   }
 
   function stopTimer() {
     _timerActive = false;
     _island?.classList.remove('timer-mode');
+    _restTimeEl?.classList.remove('warning', 'done');
     _renderRestProgress();
   }
 
@@ -364,6 +390,8 @@ export const DynamicIsland = (() => {
     if (!_timerProg) return;
     const pct = (_timerActive && _timerMax) ? (_timerSecs / _timerMax) * 100 : 0;
     _timerProg.style.transform = `scaleX(${pct / 100})`;
+    _timerProg.classList.toggle('warning', _timerActive && _timerSecs <= 10 && _timerSecs > 0);
+    _timerProg.classList.toggle('done', _timerActive && _timerSecs <= 0);
   }
 
   function _updateNetworkStatus() {

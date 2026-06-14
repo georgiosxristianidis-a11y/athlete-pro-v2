@@ -141,17 +141,74 @@
   height: 50px;
 }
 
-/* PIP timer mode */
+/* Rest timer mode — in-frame HUD (replaces standalone rest modal) */
 .island.timer-mode {
-  width: 130px;
-  height: 40px;
-  border-radius: 20px;
+  width: 232px;
+  height: 44px;
+  border-radius: 22px;
 }
 .island.timer-mode.expanded {
   width: 290px;
   height: 62px;
   border-radius: 24px;
 }
+
+/* ── Rest HUD content ── */
+.island-rest {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px 0 16px;
+  z-index: 5;
+}
+.island.timer-mode .island-rest { display: flex; }
+/* During rest, mute the regular collapsed readouts behind the rest HUD */
+.island.timer-mode .island-time,
+.island.timer-mode .island-name-collapsed,
+.island.timer-mode .island-sets-collapsed { opacity: 0; }
+.island-rest-time {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--c-accent);
+  min-width: 34px;
+}
+.island-rest-time.warning { color: var(--c-amber); }
+.island-rest-time.done    { color: var(--c-blue); }
+.island-rest-label {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+.island-rest-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.island-rest-btn {
+  border: none;
+  border-radius: 11px;
+  height: 28px;
+  padding: 0 11px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  background: var(--c-surface-h);
+  color: var(--c-text-1);
+  transition: filter 0.15s ease;
+}
+.island-rest-btn.primary {
+  background: var(--c-accent);
+  color: #000;
+  font-weight: 800;
+}
+.island-rest-btn:active { filter: brightness(0.88); }
 
 /* ── Set-complete pulse animation ── */
 .island.set-complete {
@@ -385,7 +442,7 @@
   transition: transform 0.3s linear;
 }
 .island-timer-progress.warning { background: var(--c-amber); }
-.island-timer-progress.done    { background: var(--c-cyan); }
+.island-timer-progress.done    { background: var(--c-blue); }
 
 /* ════════════════════════════════════════════════════════
    REST PILL — floating bottom-right bubble (existing JS)
