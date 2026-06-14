@@ -59,8 +59,10 @@ node scripts/telemetry-server.mjs --lan
 
 ## Design
 
-- Primary: #00c86e (Forest Emerald) — НЕ #F2CA50 из DESIGN.md (DESIGN.md = Vantablack theme)
-- Push: #6366f1 / Pull: #06b6d4 / Legs: #f59e0b / Gold accents: var(--c-gold)
+- Палитра — двухуровневая (решение 1-2, 2026-06-14). Цвета только через токены `css/base.css :root`.
+  - **BRAND (единственные декоративные акценты):** primary `--c-accent` (#00e676 green), secondary `--c-secondary` (#8b5cf6 violet, цвет лого). CTA/active/focus/бренд — только эти два.
+  - **SEMANTIC (только по смыслу, не для декора):** PPL — `--c-push`(green)/`--c-pull`(cyan)/`--c-legs`(purple); статус — `--c-amber`(warning/PR)/`--c-red`(#ff4d88 error/danger/HR); achievement — `--c-gold` (PR/streak).
+  - PPL-закон: Push=green · Pull=cyan · Legs=purple. В коде типа тренировки — `--c-push/--c-pull/--c-legs`, не сырые hue.
 - Glassmorphism: backdrop-filter, глубина через тени
 - Borders: glass-hairlines узаконены (решение 2026-06-12) — только полупрозрачные через токены `var(--c-border)` (6%) / `var(--c-border-h)` (12%); НЕ хардкодить rgba, непрозрачные сплошные рамки запрещены. Акцентные подсветки (цветные rgba ≤20%) допустимы точечно
 - Mobile-first, 600px breakpoint
