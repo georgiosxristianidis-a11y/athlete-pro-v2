@@ -4,6 +4,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { PiP } from './features/pip.js';
+import { isRu } from './locale.store.js';
 
 export const RestTimer = (() => {
   let _end = 0;
@@ -73,7 +74,7 @@ export const RestTimer = (() => {
   async function _triggerNotification() {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
-    const ru = (localStorage.getItem('ap-settings-lang') === 'ru');
+    const ru = isRu();
     const title = ru ? 'Отдых завершен!' : 'Rest Complete';
     const body = ru ? 'Пора начинать следующий подход.' : 'Time to start your next set.';
 

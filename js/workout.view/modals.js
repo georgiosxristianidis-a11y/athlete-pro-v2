@@ -7,6 +7,7 @@
 import { Toast } from '../shell.js';
 import { esc } from '../shared/utils.js';
 import { confirmDialog } from '../shared/confirm.js';
+import { isRu } from '../locale.store.js';
 import {
   State,
   loadPlan, savePlan,
@@ -219,17 +220,19 @@ export async function _loadPreset(presetName) {
   const presets = { 'ppl-gio': PPL_GIO_PLAN };
   const preset = presets[presetName];
   if (!preset) return;
+  const ru = isRu();
   const ok = await confirmDialog({
-    title: 'Load PPL | GIO preset?',
-    message: 'Both Week A and Week B plans will be replaced.',
-    confirmLabel: 'Load',
+    title: ru ? 'Загрузить пресет PPL | GIO?' : 'Load PPL | GIO preset?',
+    message: ru ? 'Планы недели A и недели B будут заменены.' : 'Both Week A and Week B plans will be replaced.',
+    confirmLabel: ru ? 'Загрузить' : 'Load',
+    cancelLabel: ru ? 'Отмена' : 'Cancel',
   });
   if (!ok) return;
   savePlan(JSON.parse(JSON.stringify(preset.weekA)), 'A');
   savePlan(JSON.parse(JSON.stringify(preset.weekB)), 'B');
   _closePlanEditor();
   openPlanEditor();
-  Toast.show('PPL | GIO loaded for Week A & B — set your working weights', 'success');
+  Toast.show(ru ? 'PPL | GIO загружен для недель A и B — задай рабочие веса' : 'PPL | GIO loaded for Week A & B — set your working weights', 'success');
 }
 
 export function _closePlanEditor() {

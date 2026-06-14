@@ -5,6 +5,7 @@ import { RestTimer } from '../rest-timer.js';
 import { Spring } from './spring.js';
 import { PiP } from '../features/pip.js';
 import { haptic } from './utils.js';
+import { isRu } from '../locale.store.js';
 
 /**
  * dynamic-island.js — Interactive session overlay (PIP)
@@ -200,7 +201,7 @@ export const DynamicIsland = (() => {
       _island?.classList.add(`mode-${_displayMode}`);
     }
 
-    const ru = (localStorage.getItem('ap-settings-lang') === 'ru');
+    const ru = isRu();
 
     // Sets Progress
     let done = 0, total = 0;

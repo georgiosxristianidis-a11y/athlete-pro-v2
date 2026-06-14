@@ -262,6 +262,15 @@ export function getLang() {
 }
 
 /**
+ * Whether the app language (NOT the browser/OS language) is Russian.
+ * Single source of truth for `ru ? … : …` ternaries across the UI.
+ * @returns {boolean}
+ */
+export function isRu() {
+  return _lang === 'ru';
+}
+
+/**
  * Set language.
  * @param {'en'|'ru'} lang 
  */

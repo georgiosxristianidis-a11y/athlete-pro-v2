@@ -5,6 +5,8 @@
    Document Picture-in-Picture for full interactivity.
    ════════════════════════════════════════════════════════ */
 
+import { isRu } from '../locale.store.js';
+
 export const PiP = (() => {
   /** @type {HTMLCanvasElement|null} */
   let _canvas = null;
@@ -88,7 +90,7 @@ export const PiP = (() => {
     if (state.nextName) {
       _ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
       _ctx.font = '700 14px "Syne", sans-serif';
-      const ru = navigator.language.startsWith('ru');
+      const ru = isRu();
       _ctx.fillText(`${ru ? 'ДАЛЕЕ' : 'NEXT'}: ${state.nextName.toUpperCase()}`, _canvas.width / 2, _canvas.height / 2 + 80);
     }
 

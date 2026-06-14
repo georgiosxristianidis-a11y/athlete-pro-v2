@@ -3,6 +3,7 @@ import { DB } from './db.js';
 import { Spring } from './shared/spring.js';
 import { Toast } from './shell.js';
 import { confirmDialog } from './shared/confirm.js';
+import { isRu } from './locale.store.js';
 
 const BS_KEY = 'ap-bodystats';
 const bsEsc = (s) => String(s).replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c]);
@@ -56,7 +57,7 @@ function _bsBodyFatCategory(bf, sex) {
 export async function renderBodyStats(targetEl) {
   const root = targetEl || document.getElementById('body-stats-root');
   if (!root) return;
-  const ru = (localStorage.getItem('ap-settings-lang') === 'ru');
+  const ru = isRu();
   const entries = bsLoad().sort((a, b) => new Date(b.date) - new Date(a.date));
   const latest = entries[0] || {};
   

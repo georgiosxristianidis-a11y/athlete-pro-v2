@@ -12,7 +12,7 @@ import {
   getPrivacyMode, getAiEnabled, setPrivacyMode, setAiEnabled,
   getAuditLog, clearAuditLog,
 } from './privacy.store.js';
-import { t } from './locale.store.js';
+import { t, isRu } from './locale.store.js';
 import { esc } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
 
@@ -279,7 +279,7 @@ function _closeOverlay(id) {
 }
 
 async function _confirmDelete() {
-  const ru = localStorage.getItem('ap-settings-lang') === 'ru';
+  const ru = isRu();
   const ok = await confirmDialog({
     title: ru ? 'Удалить данные?' : 'Delete data?',
     message: t('privacy.delete_confirm'),

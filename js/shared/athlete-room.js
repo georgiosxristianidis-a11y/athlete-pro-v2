@@ -1,8 +1,9 @@
 // @ts-check
 import { DB } from '../db.js';
-import { athleteProScore } from '../strength-engine.js';
+import { athleteProScore, dotsScore } from '../strength-engine.js';
 import { loadProfile, updateProfile, updateWeightAndHeight } from '../profile.store.js';
 import { esc, haptic } from './utils.js';
+import { isRu } from '../locale.store.js';
 
 /* ════════════════════════════════════════════════════════
    athlete-room.js — Athlete Room: личный кабинет атлета
@@ -76,11 +77,11 @@ function _calcConsistency(workouts) {
   return activeWeeks >= 3;
 }
 
-function _tierFromDots(dots) {
-  if (!dots || dots < 200) return 'Untrained';
-  if (dots < 300) return 'Novice';
-  if (dots < 380) return 'Intermediate';
-  if (dots < 470) return 'Advanced';
+function _tierFromScore(score) {
+  if (!score || score < 200) return 'Untrained';
+  if (score < 300) return 'Novice';
+  if (score < 380) return 'Intermediate';
+  if (score < 470) return 'Advanced';
   return 'Elite';
 }
 
@@ -134,8 +135,10 @@ export const AthleteRoom = (() => {
 
     const total = (bestORM.bench || 0) + (bestORM.squat || 0) + (bestORM.deadlift || 0);
     const weight = metrics?.weight || 80;
-    const dots = total ? athleteProScore({ total, bodyweight: weight, sex: profile?.sex || 'm', age: profile?.dob ? (new Date().getFullYear() - new Date(profile.dob).getFullYear()) : 30, experience: profile?.experienceYears, height: window.DB ? window.DB.Metrics.latest()?.height : 180 }) : 0;
-    const tier = _tierFromDots(dots);
+    const sex = profile?.sex || 'm';
+    const score = total ? athleteProScore({ total, bodyweight: weight, sex, age: profile?.dob ? (new Date().getFullYear() - new Date(profile.dob).getFullYear()) : 30, experience: profile?.experienceYears, height: window.DB ? window.DB.Metrics.latest()?.height : 180 }) : 0;
+    const dots = total ? dotsScore({ total, bodyweight: weight, sex }) : 0;
+    const tier = _tierFromScore(score);
     const tierColor = TIER_COLOR[tier];
     const tierLabel = ru ? TIER_RU[tier] : tier;
     const streak = _calcStreak(workouts);
@@ -168,7 +171,7 @@ export const AthleteRoom = (() => {
     `;
 
     _initSheetDrag();
-    await switchTab(activeTab, { workouts, name, initials, c1, c2, tierLabel, tierColor, streak, total, dots, unlockedAch, metrics, photo, ru });
+    await switchTab(activeTab, { workouts, name, initials, c1, c2, tierLabel, tierColor, streak, total, score, dots, unlockedAch, metrics, photo, ru });
   }
 
   async function switchTab(tabId, dataContext = null) {
@@ -212,14 +215,16 @@ export const AthleteRoom = (() => {
 
       const total = (bestORM.bench || 0) + (bestORM.squat || 0) + (bestORM.deadlift || 0);
       const weight = metrics?.weight || 80;
-      const dots = total ? athleteProScore({ total, bodyweight: weight, sex: profile?.sex || 'm', age: profile?.dob ? (new Date().getFullYear() - new Date(profile.dob).getFullYear()) : 30, experience: profile?.experienceYears, height: window.DB ? window.DB.Metrics.latest()?.height : 180 }) : 0;
-      const tier = _tierFromDots(dots);
+      const sex = profile?.sex || 'm';
+      const score = total ? athleteProScore({ total, bodyweight: weight, sex, age: profile?.dob ? (new Date().getFullYear() - new Date(profile.dob).getFullYear()) : 30, experience: profile?.experienceYears, height: window.DB ? window.DB.Metrics.latest()?.height : 180 }) : 0;
+      const dots = total ? dotsScore({ total, bodyweight: weight, sex }) : 0;
+      const tier = _tierFromScore(score);
       const tierColor = TIER_COLOR[tier];
       const tierLabel = ru ? TIER_RU[tier] : tier;
       const streak = _calcStreak(workouts);
       const unlockedAch = new Set(ACHIEVEMENTS.filter(a => a.check(workouts)).map(a => a.id));
 
-      ctx = { workouts, name, initials, c1, c2, colorIdx, tierLabel, tierColor, streak, total, dots, unlockedAch, metrics, photo, profile, ru };
+      ctx = { workouts, name, initials, c1, c2, colorIdx, tierLabel, tierColor, streak, total, score, dots, unlockedAch, metrics, photo, profile, ru };
     }
 
     if (window._arActiveTab === 'profile') {
@@ -230,15 +235,15 @@ export const AthleteRoom = (() => {
   }
 
   function _renderProfileTab(container, ctx) {
-    const { name, initials, c1, c2, tierLabel, tierColor, streak, total, dots, unlockedAch, photo, ru, metrics } = ctx;
+    const { name, initials, c1, c2, tierLabel, tierColor, streak, total, score, dots, unlockedAch, photo, ru, metrics } = ctx;
     
     // Use the existing avatar init logic but wrap the HTML
     const avatarHtml = photo
       ? `<div class="ar-avatar has-photo" style="background-image: url('${photo}')" onclick="window.AthleteRoom.triggerPhotoUpload()">
-           <div class="ar-avatar-ring" style="--c1:; --c2:"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+           <div class="ar-avatar-ring" style="--c1:${c1}; --c2:${c2}"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
          </div>`
       : `<div class="ar-avatar" id="ar-avatar-circle" style="background: linear-gradient(135deg, ${c1}, ${c2})" onclick="window.AthleteRoom.triggerPhotoUpload()">
-           <div class="ar-avatar-ring" style="--c1:; --c2:"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+           <div class="ar-avatar-ring" style="--c1:${c1}; --c2:${c2}"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
            <div class="ar-avatar-initials">${initials}</div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
          </div>`;
 
@@ -271,8 +276,8 @@ export const AthleteRoom = (() => {
               <div class="ar-stat-lbl">${ru?'Рост':'Height'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:4px; opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
             <div class="ar-stat" style="box-shadow: 0 4px 16px ${tierColor}20; border-color: ${tierColor}40">
-              <div class="ar-stat-val" style="color: ${tierColor}; text-shadow: 0 0 12px ${tierColor}80">${Math.round(dots)}</div>
-              <div class="ar-stat-lbl">Score</div>
+              <div class="ar-stat-val" style="color: ${tierColor}; text-shadow: 0 0 12px ${tierColor}80">${Math.round(score)}</div>
+              <div class="ar-stat-lbl">${ru ? 'Очки' : 'Score'}</div>
             </div>
           </div>
           <div class="ar-stats">
@@ -374,7 +379,9 @@ export const AthleteRoom = (() => {
     const lbl = document.getElementById('ar-stat-label');
     const inp = /** @type {HTMLInputElement} */ (document.getElementById('ar-stat-input'));
     if (!ed || !lbl || !inp) return;
-    lbl.textContent = type === 'weight' ? 'Weight (kg)' : 'Height (cm)';
+    lbl.textContent = type === 'weight'
+      ? (isRu() ? 'Вес (кг)' : 'Weight (kg)')
+      : (isRu() ? 'Рост (см)' : 'Height (cm)');
     inp.value = val;
     ed.style.display = 'block';
     inp.focus();
@@ -406,7 +413,8 @@ export const AthleteRoom = (() => {
       const { renderProfile } = await import('../profile.view.js');
       renderProfile(sProfile);
     }
-    window.Toast?.show(`${_currentStat === 'weight' ? 'Weight' : 'Height'} updated`, 'success');
+    const statLbl = _currentStat === 'weight' ? (isRu() ? 'Вес' : 'Weight') : (isRu() ? 'Рост' : 'Height');
+    window.Toast?.show(isRu() ? `${statLbl} обновлён` : `${statLbl} updated`, 'success');
   }
 
   async function saveName() {
@@ -439,7 +447,7 @@ export const AthleteRoom = (() => {
       const { renderProfile } = await import('../profile.view.js');
       renderProfile(sProfile);
     }
-    window.Toast?.show('Name updated', 'success');
+    window.Toast?.show(isRu() ? 'Имя обновлено' : 'Name updated', 'success');
   }
 
   async function cycleColor() {
@@ -507,7 +515,7 @@ export const AthleteRoom = (() => {
   }
 
   function _openCropModal(base64) {
-    const ru = (window.DB && window.DB.Settings && window.DB.Settings.getSync && window.DB.Settings.getSync('lang') === 'ru') || navigator.language.startsWith('ru');
+    const ru = isRu();
     
     const modal = document.createElement('div');
     modal.className = 'ar-crop-modal';

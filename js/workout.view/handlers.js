@@ -11,6 +11,7 @@ import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './ren
 import { RestTimer } from '../rest-timer.js';
 import { esc } from '../shared/utils.js';
 import { confirmDialog } from '../shared/confirm.js';
+import { isRu } from '../locale.store.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
 import { syncDrumUI } from '../ui/drum-picker.js';
 
@@ -230,19 +231,21 @@ export async function selectType(type) {
 }
 
 export async function _startProgram(id) {
+  const ru = isRu();
   const active = getActivePlan();
   if (active && active.id !== id) {
     const ok = await confirmDialog({
-      title: 'Switch program?',
-      message: 'Switching programs will reset your current cycle.',
-      confirmLabel: 'Switch',
+      title: ru ? 'Сменить программу?' : 'Switch program?',
+      message: ru ? 'Смена программы сбросит текущий цикл.' : 'Switching programs will reset your current cycle.',
+      confirmLabel: ru ? 'Сменить' : 'Switch',
+      cancelLabel: ru ? 'Отмена' : 'Cancel',
     });
     if (!ok) return;
   }
   _haptic(20);
   startPlan(id);
   await selectType('active');
-  Toast.show('Program Cycle Started', 'success');
+  Toast.show(ru ? 'Цикл программы запущен' : 'Program Cycle Started', 'success');
 }
 
 /* ════════════════════════════════════════════════════════
@@ -255,7 +258,7 @@ export async function _startProgram(id) {
 export async function showExerciseMenu(ei) {
   _haptic(10);
   const ex = State.plan[ei];
-  const ru = navigator.language.startsWith('ru');
+  const ru = isRu();
 
   const _svgSwap = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>`;
   const _svgDumb = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="6.5" y1="12" x2="17.5" y2="12"/><rect x="3" y="9" width="3" height="6" rx="1"/><rect x="18" y="9" width="3" height="6" rx="1"/></svg>`;
@@ -317,7 +320,7 @@ export function _closeCustomWorkoutModal() {
    COMPLETE / CANCEL
    ════════════════════════════════════════════════════════ */
 export async function completeSession() {
-  const ru = navigator.language.startsWith('ru');
+  const ru = isRu();
   const doneSets = State.plan.reduce((sum, ex) => sum + ex.sets.filter(s => s.done).length, 0);
   
   if (doneSets === 0) {
@@ -474,7 +477,7 @@ async function _executeFinalSave(tonnage, duration) {
 }
 
 export async function cancelSession() {
-  const ru = navigator.language.startsWith('ru');
+  const ru = isRu();
   const ok = await confirmDialog({
     title: ru ? 'Отменить тренировку?' : 'Cancel session?',
     message: ru ? 'Прогресс будет потерян.' : 'Progress will be lost.',
