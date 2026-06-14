@@ -419,6 +419,10 @@ export async function renderActive() {
     initGravitySubmit();
     initDrumPickers();
     if (window.Workout?._initFocusLongPress) window.Workout._initFocusLongPress();
+    // Reflect current progress on (re)render — e.g. resuming a session with
+    // sets already done — not only after a set toggle. Dynamic import avoids a
+    // static render<->handlers import cycle.
+    import('./handlers.js').then(m => m._updateLiveStats?.()).catch(() => {});
   });
 }
 

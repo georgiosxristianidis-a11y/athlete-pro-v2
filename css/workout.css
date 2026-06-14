@@ -137,7 +137,9 @@
 
 .workout-progress-fill {
   height: 100%;
-  width: 0%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left;
   background: var(--c-purple);
   border-radius: 10px;
   box-shadow: 0 0 12px var(--c-purple), 0 0 6px var(--c-purple);
