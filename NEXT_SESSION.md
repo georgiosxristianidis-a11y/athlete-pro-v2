@@ -1,88 +1,174 @@
-# План на следующую сессию (Next Session Handoff)
+# NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-06-13, сессия Claude (Opus, lead). Ветка `2026-04-14-byoi`, main синхронизирован (HEAD `f9a7277`).
+> Обновлено: 2026-06-14, сессия Claude (Opus 4.8, LEAD). Ветка `2026-04-14-byoi` (= рабочая линия; main отстаёт — см. §5).
+> Это **единый источник правды**: план, делегирование, философия Air, дизайн-система, done-list, остаток.
+> Табличный дубль — `docs/DELEGATION-PLAN.md`.
 
-## ⭐ КАНОНИЧЕСКИЙ ПЛАН РАБОТ → `docs/DELEGATION-PLAN.md`
-Все фазы, задачи, владельцы и протокол захвата для мульти-агентной работы (Opus·lead / Sonnet 4.6 / Gemini 3.1) — там.
-**Перед любой UI-задачей: открыть DELEGATION-PLAN.md, проверить владельца строки, поставить `🚧`.**
+---
 
-## Текущая цель
-**NOW: C-1** (зафиксировать WIP второго агента) → доделать **Фазу 0** (стабильность). См. DELEGATION-PLAN.md.
+## 0. Как читать этот файл (мульти-агентный протокол)
 
-## Свежий P0-фикс (2026-06-13, `f9a7277`)
-Crypto secure-context guard (краш Body Metrics на HTTP-LAN) + LAN bind 0.0.0.0 + CSP upgrade-insecure fix. Приложение снова открывается с телефона.
+Проект ведут параллельно: **Claude Opus (LEAD)**, **Antigravity·Sonnet 4.6**, **Antigravity·Gemini 3.1**.
 
-## Что уже сделано (сессия 2026-06-12)
+**Перед любой задачей:**
+1. Найди задачу ниже → проверь колонку «Кто».
+2. Если `🔒 LEAD` — **не брать** (ведёт Opus, цена ошибки высока). Блокирует — оставь комментарий, файлы не трогай.
+3. Поставь маркер `🚧 <agent>@<branch>` в строке, начни работу.
+4. По завершении — `✅ <commit-hash>`.
+5. **Незакоммиченный чужой WIP не откатывать** (GIO Context Integrity).
+6. Один агент = один worktree/ветка. Файл с `🚧` другого агента не редактировать.
 
-1. **Dynamic Island в статус-баре — закоммичен** (`866d31f`): drag вырезан, mode-idle, PiP-гибрид, set-pulse не тронут. Плюс календарь Bento в Analytics, золотые стрики/PR, клик по streak.
-2. **server.js восстановлен из HEAD.** Telemetry-стаб (полевое тестирование) вынесен в `scripts/telemetry-server.mjs` — path traversal закрыт, localhost по умолчанию, `--lan` для телефона. **Никогда больше не заменять server.js стабом.**
-3. **Репозиторий вычищен** (`750c01c`): untracked `ATH-PRO vanilla google/`, `test-results/`, e2e-report; удалены пустые мусорные файлы (`{})`, `0)`, `i` и пр.).
-4. **CLAUDE.md переписан**: проект разморожен, описан мультиагентный протокол, актуальная архитектура.
-5. **Зависимости**: `npm audit fix` — 0 уязвимостей (был high в path-to-regexp). GIO pre-push гейты (SCA+SAST) проходят.
-6. **Тесты: 103/103 зелёные** (было 43/74 + 27 cancelled):
-   - `cryptoClient.js` — ленивый Worker (модуль снова импортируется в Node);
-   - `npm test` = `node --test "test/*.test.js"` (playwright e2e — отдельно);
-   - `coach-validate.test.js` переписан под экспортированную zod `coachSchema`.
-7. **API-контракты восстановлены** (`beeb78c`), найдены и закрыты регрессии рефакторинга на оркестратор:
-   - `coachSchema.messages` снова строгая (role enum, 1–12000 символов, 1–40 сообщений);
-   - zod v4: `error.issues` (details были undefined);
-   - graceful fallback вернулся в `/generate-plan` (дефолтный план) и `/recommendations` (maintain weights);
-   - **фронт бил в 404**: `/api/generate-plan` и `/api/recommendations` → исправлено на `/api/coach/*` (workout.store.js:666, claude.store.js:256);
-   - оркестратор: проверка ключа ДО вызова SDK (тесты больше не ходят в живой API), BYOK customKey теперь работает и для Anthropic;
-   - **SSE hardening**: AbortController на `req close` (нет token-burn после ухода клиента) + watchdog 120s (504 AI_TIMEOUT).
+### Легенда: модель ↔ тип задачи (рациональный расход токенов)
 
-## Чек-лист следующей сессии (Phase 3 — Design DNA)
+| Метка | Кто | Тип задач | Почему |
+|:--:|---|---|---|
+| 🔒 **LEAD** | Claude Opus | Безопасность, корректность данных, архитектура, необратимое, кросс-секущее, дизайн-ДНК | Дорого — только туда, где цена ошибки высока |
+| 🟦 **SONNET** | Antigravity·Sonnet 4.6 | Скоупленные рефакторы, компоненты, тесты, нормализация ошибок, применение готовых решений | Баланс цена/качество |
+| 🟩 **GEMINI** | Antigravity·Gemini 3.1 | Массовое/механическое: CSS-свипы токенов, SVG, find/replace | Дёшево на объёме |
 
-> Инвентаризация начата 2026-06-12 (прервана): подтверждены `plate-calc.js:94` (символ warn в `pc-warn`) и `intel.view.js:496`. ВАЖНО: стрелки `→` (U+2192) в строках/комментариях — это типографика, НЕ эмодзи, не вычищать.
+**Сложность:** S (≤30 мин механика) · M (скоуп+логика) · L (мультифайл) · XL (архитектура/риск).
 
-- [x] Эмодзи из UI-разметки и кода — вычищены полностью (intel.view, plate-calc, getTypeIcon `↑`, db, handlers, supabase*, integrity); типографика (`→`, `✓` в комментах) сохранена
-- [x] `dynamic-island.js` — long-press vibrate через `haptic()` gate
-- [x] `timer.js` — все 4 интервала через `_startTicking()` с clearInterval-guard (проверено triple-start)
-- [x] Borders: решение пользователя — **узаконить glass-hairlines**. 31 захардкоженный rgba сведён к токенам: 76× `--c-border` + 5× `--c-border-h`, 0 hardcoded. Правило переписано в CLAUDE.md + DESIGN.md
-- [x] AI system prompt — проверен, эмодзи-предписаний нет (0 вхождений)
+---
 
-**PHASE 3 — COMPLETE (2026-06-12, commits 7aadd1b + 34c6f3c, тесты 103/103)**
+## 1. ФИЛОСОФИЯ «AIR» — жёсткие правила (соблюдают ВСЕ агенты)
 
-## Phase 4 — CRDT Foundation: COMPLETE (2026-06-12, commit 7068c64)
+Инварианты, не пожелания. Нарушение = регрессия.
 
-- [x] `newId()` — UUID v4 (+fallback для non-secure context при LAN-тестах), `getDeviceId()` — стабильный id установки
-- [x] `withMeta()` — id/updatedAt/deviceId на каждой записи 6 синхронизируемых сторов; legacy integer-id сохранены
-- [x] Миграция DB_VERSION 2→3: backfill updatedAt+deviceId курсорами в upgrade-транзакции (id не трогаем)
-- [x] `js/shared/lww.js` — чистый `lwwWins()` с deviceId-tiebreak (нет split-brain при равных ts), вшит в sync.js
-- [x] CRDT-мета стрипается из Supabase-payload (в серверной схеме нет таких колонок)
-- [x] Календарь: `parseInt(wid)` больше не ломает UUID; legacy-числа остаются числами (IDB-ключи типизированы)
-- [x] sw.js: precache lww.js, кеш v41 · Тесты: 118/118 (+15 CRDT)
+1. **Воздух вместо линий.** Никаких `<hr>` и нижних бордеров-разделителей. Разделение — только `padding`/`margin` и сдвиг цвета поверхности.
+2. **Стеклянные hairlines — только через токены:** `var(--c-border)` (6%) / `var(--c-border-h)` (12%). НЕ хардкодить `rgba`. Непрозрачные сплошные 1px-рамки запрещены. Цветные подсветки (rgba ≤20%) — точечно.
+3. **Щедрые отступы карточек/модалок:** 24/32px (`--sp-3`/`--sp-4`). Тесные 8-12px — только во вложенных рядах.
+4. **Safe-area всегда:** `--safe-top`/`--safe-bottom` для хедера и нижней навигации.
+5. **Mobile-first**, брейк 600px. Десктоп — колонка 412px (`@media (min-width:481px) and (hover:hover)`). Элементы НЕ должны вылезать за неё — НИКАКИХ `position:fixed` к окну (урок 5-7).
+6. **Без эмодзи в UI и коде** — только SVG. (В чате/отчётах можно.) Типографика `→ ✓ ·` — НЕ эмодзи, не вычищать.
 
-**ВАЖНО для полевого теста:** первый запуск после обновления выполнит миграцию IDB v3 — проверить на телефоне, что данные на месте (workouts/metrics/1RM). Tombstone-удаления теперь тоже несут LWW-мету.
+---
 
-## Phase 5 (CI/e2e часть) — COMPLETE (2026-06-12, commit 0ef20b5)
+## 2. ДИЗАЙН-СИСТЕМА (актуальная)
 
-- [x] **E2E 29/29 зелёные** (было 24/6): контракты обновлены под актуальный продукт — FAB → Intel screen (оверлей умер), онбординг через quick-start путь премиум-визарда, sw-версия без хардкода
-- [x] CI: e2e-job (playwright chromium + report-артефакт при падении), security:audit step; format:check убран (кодовая база до-prettier'ная, тотальный reformat — отдельное решение)
-- [x] Реальные баги от тулинга: незакрытый блок css/dashboard.css:732 (браузер молча ронял правила); `*/` в примере внутри шапки types.d.ts ломал ВСЕ типы @ts-check; удалён мёртвый js/shared/dynamic-island.css (JS-строка-дамп)
-- [x] prettier: endOfLine auto (CRLF на Windows), ignores для вендоренного
+### 2.1 Палитра — двухуровневая (решение 1-2, ACK: Green+Purple)
+Цвета только через токены `css/base.css :root`.
 
-**Осталось из Phase 5 (за пользователем):**
-- [ ] Полевой прогон на телефоне (`node scripts/telemetry-server.mjs --lan` + протокол из brain) — **проверить миграцию IDB v3 на живых данных**
-- [ ] Замечено в e2e-логах: CSP блокирует один inline-script (хэш sha256-LjIy5Uzf... в консоли) — добавить 'unsafe-hashes' хэш в CSP server.js или вынести скрипт в файл (кандидат в Phase 6)
+**BRAND — единственные ДЕКОРАТИВНЫЕ акценты** (CTA/active/focus/бренд):
+- `--c-accent` `#00e676` Neon Emerald — **primary**
+- `--c-secondary` `#8b5cf6` Electric Violet (цвет лого) — **secondary**
 
-## Текущая цель следующей сессии: Phase 6 — Lighthouse / JS payload / SW precache sweep
+**SEMANTIC — только по смыслу, НИКОГДА для декора:**
+- PPL: `--c-push`(green) / `--c-pull`(cyan #00b8d4) / `--c-legs`(purple #8b5cf6). В коде типа тренировки — алиасы, не сырые hue.
+- Статус: `--c-amber` #ffb300 (warning/PR) · `--c-red` #ff4d88 (error/danger/HR).
+- Achievement: `--c-gold` #D4AF37 (PR/стрики).
 
-- [ ] **CRDT Foundation**: UUID вместо `autoIncrement` в db.js (7 сторов, миграция DB_VERSION+1), `updatedAt`+`deviceId`, LWW-ключи на UUID. Оба аудита (Claude + Antigravity) сошлись: это блокер Local-first Sync.
-- [ ] **Полевой прогон** по `~/.gemini/antigravity/brain/14a057e9.../mobile_field_testing.md` через `node scripts/telemetry-server.mjs --lan`
-- [ ] Playwright e2e зелёные + GitHub Actions CI
+**Закон PPL:** Push = green · Pull = cyan · Legs(+Shoulders) = purple.
 
-## Phase 6 — Performance & JS Payload Optimization (Lighthouse Validation)
+### 2.2 Фон (OBSIDIAN)
+`--c-bg #050507` · `-1 #08080c` · `-2 #0c0c12` · `-3 #12121a`. Чистый `#000` (`--c-black`) — только Dynamic Island.
 
-> По прогону Lighthouse: UI-метрики идеальны (CLS 0, TBT 0ms), но Main-Thread перегружен парсингом и выполнением JS.
+### 2.3 Типографика
+Веса **500** (текст) / **600** (акценты) / **800** (заголовки). НЕ 700/900. `letter-spacing:-0.02em` на заголовках. `--font-main` Manrope, `--font-heading` Instrument Sans.
 
-- [ ] **Audit Extensions Impact**: категория Other заняла 1.9s, Lighthouse прямо указал на влияние расширений Chrome. Контрольный замер в Incognito Mode (или `chrome --user-data-dir=tmp`) — отделить вклад расширений от реального бюджета приложения.
-- [ ] **JS Execution / Bootup Time**: Script Evaluation 1.0s, парсинг 0.6s. Ревизия размеров бандлов: убедиться, что тяжёлые модули (графика/canvas, intel, body-stats; серверный aiOrchestrator фронта не касается — проверить клиентские аналоги claude.store/insights.engine) грузятся строго через ленивые `import()` и не блокируют старт. Снять профиль `app.js` boot-чейна.
-- [ ] **SW Precache Strategy**: LCP 2.2s / FCP 1.7s — хорошие, улучшаются полнотой precache. Сверить ASSETS в `sw.js` с фактическим списком js/css (известный класс бага: в прошлом аудите sw.js упускал 6 файлов, включая сплит `workout.view/`). Поднять версию кеша после правки. Идея на будущее: автогенерация ASSETS скриптом, чтобы класс бага исчез.
+### 2.4 Иконки
+Stroke 1.5–2px, сетка 24×24, скруглённые углы, `fill=none` у неактивных, `currentColor`.
 
-## Заметки для ИИ (Context Integrity)
+### 2.5 Моушн
+- Кнопки: `transform:scale(0.96)` на `:active`. Экраны: fade-in. Токены `--t-fast/normal/slow`. Spring — `js/shared/spring.js`.
+- Хаптик — ТОЛЬКО через gate `haptic()` (`js/shared/utils.js`), не сырой `navigator.vibrate`.
+- `island-set-pulse` (зелёная вспышка завершения сета) — **НЕ ТРОГАТЬ** (жёсткий запрет пользователя).
 
-- PiP-гибрид подтверждён пользователем: остров фиксирован в статус-баре, таймер выносится в системное PiP-окно.
-- Зелёная вспышка завершения сета (`island-set-pulse`) — НЕ ТРОГАТЬ.
-- Модель в оркестраторе — `claude-3-5-sonnet-20241022` (устаревшая; обновление = продуктовое решение пользователя, не делать молча).
-- Незакоммиченные диффы могут быть WIP другого агента (Claude/Gemini/Antigravity) — сверяться с этим файлом перед откатом.
+### 2.6 i18n
+Язык UI — ТОЛЬКО `getLang()`/`isRu()` из `js/locale.store.js` (ключ DB `lang`). ЗАПРЕЩЕНО `navigator.language`, `localStorage['ap-settings-lang']`. EN=только English, RU=только русский.
+
+### 2.7 Безопасность
+innerHTML — через `esc()` (`js/shared/utils.js`). API-ключи только через backend-прокси. PII plaintext в облако не синкать. `server.js` не заменять стабом (телеметрия → `scripts/telemetry-server.mjs`).
+
+---
+
+## 3. DONE-LIST (по фазам, с коммитами)
+
+**Координация:** ✅ **C-1** WIP Antigravity зафиксирован (`92e29ac`), тег `checkpoint-pre-C1-2026-06-13`.
+
+**Фаза 0 — Стабильность (4/7):**
+- ✅ 0-1 Secure-context guard для Web Crypto (`f9a7277`) · LEAD
+- ✅ 0-2 LAN bind 0.0.0.0 + CSP upgrade-insecure (`f9a7277`) · LEAD
+- ✅ 0-5 Общий `confirmDialog()` Promise<bool> — `js/shared/confirm.js` (`40b4458`) · LEAD
+- ✅ 0-6 Все 6 нативных `confirm()` → `confirmDialog()` (`40b4458`) · LEAD (поднято из GEMINI: sync→async = корректность)
+
+**Фаза 1 — Токены/цвет (2/7):**
+- ✅ 1-1 hex→токены + веса 500/600/800 (`b610b46`) · LEAD
+- ✅ 1-2 Двухуровневая палитра BRAND vs SEMANTIC + алиасы push/pull/legs (`94c706a`) · LEAD
+
+**Фаза 2 — Данные (3/7):**
+- ✅ 2-1 Root-fix агрегатов WEEK==MONTH: `startOfWeek/startOfMonth` в `db.js` (`0fa5b64`) · LEAD
+- ✅ 2-2 Root-fix длительности (228391m): `duration`=мс, 4 читателя починены (`0fa5b64`) · LEAD
+- ✅ 2-5 SCORE vs DOTS разведены (`e414d7c`) · LEAD
+- 🟡 2-7 `test/aggregates.test.js` (10) — остаётся форматтер
+
+**Фаза 3 — Иконки (1/4):** ✅ 3-1 Эмодзи вычищены (`7aadd1b`) · LEAD
+
+**Фаза 5 — UX (1/7):** ✅ 5-7 Rest-таймер в Dynamic Island, fixed-модалки убраны (`abd660c`) · LEAD
+
+**Ad-hoc:**
+- ✅ L-1 Единый источник языка, убраны 2 класса багов, 9 точек (`69126a0`) · LEAD
+- ✅ L-2 Аватар: палитра рамок + пикер + неон-рамка-бордюр + кроп i18n (`e414d7c`) · LEAD
+- ✅ Bugfix фиолетовой шкалы дня `#workout-progress-fill` (`b381b68`) · LEAD
+
+---
+
+## 4. ОСТАТОК — делегирование + пояснения
+
+### Фаза 0 — добить (3, все 🟦 SONNET)
+- ⬜ **0-3** `toUserMessage()` — ноль стектрейсов в UI. new `js/shared/errors-ui.js`; точки: `js/boot.js:10` (сейчас сырой `'ERR:'+e.message`), `js/intel.view.js:279`, `js/workout-ai.view.js:409`, `js/claude.view.js` onError.
+- ⬜ **0-4** Дедуп + лимит тостов. `js/shell.js` (Toast).
+- ⬜ **0-7** Реализовать/спрятать `alert('Not implemented')`. `js/workout.view/handlers.js:301-304`.
+
+### Фаза 1 — разблокировано (1-2 ✅)
+- ⬜ **1-3** 🟦 SONNET — Закон PPL везде (`--c-push/pull/legs`). `js/intel.view.js`, `js/body-stats.js`, `js/analytics.view.js`.
+- ⬜ **1-4** 🟦 SONNET — Body Metrics: радуга → PPL-категории + нейтраль. `js/body-stats.js` (BS_FIELDS).
+- ⬜ **1-5** 🟩 GEMINI — Синие FAB + оранжевая рамка Claude → в систему. `css/claude.css`, `css/profile.css`.
+- ⬜ **1-6** 🟩 GEMINI — Тонированный фон вместо `#000` (кроме острова). `css/*`.
+- ⬜ **1-7** 🔒 LEAD — Бренд-цвет лого ↔ `--c-secondary` (почти готово: secondary=#8b5cf6=цвет лого). `index.html`, `css/base.css`.
+
+### Фаза 2 — разблокировано (2-1/2-2 ✅)
+- ⬜ **2-3** 🟦 SONNET — Единый форматтер число/единицы/дата. `js/shared/format.js` (переиспользовать `startOfWeek/Month`).
+- ⬜ **2-4** 🟦 SONNET — Запрет будущих дат в Recent + валидация. `js/analytics.view.js`, `js/dashboard.js`.
+- ⬜ **2-6** 🟩 GEMINI — Единый формат чисел (488 vs 6.9k) через форматтер 2-3.
+- 🟡 **2-7** 🟦 SONNET — Дотесты форматтера.
+
+### Фаза 3 — Иконки
+- ⬜ **3-2** 🟩 GEMINI — stroke 1.5/2px, 24×24, `fill=none` неактивным. `index.html` nav, `js/*` SVG.
+- ⬜ **3-3** 🟦 SONNET — Метафоры: Hypertrophy→тело, Home→house, AI-бабл→chat/sparkle. `js/onboarding.js`, navbar, `js/claude.view.js`.
+- ⬜ **3-4** 🟩 GEMINI — `currentColor` + SVGO + «тест 16px». Весь SVG-набор.
+
+### Фаза 4 — Компоненты
+- ⬜ **4-1** 🔒 LEAD — Vanilla-фабрики `Button/TextField/NumberStepper/Card` из токенов. new `js/ui/*`. **Фундамент 4-2/4-3.** Без React/JSX.
+- ⬜ **4-2** 🟦 SONNET — Edit Plan: нативные инпуты → `TextField`/`NumberStepper`. `js/workout.view/modals.js`. **Ждёт 4-1.**
+- ⬜ **4-3** 🟦 SONNET — CORE унифицировать с карточками упражнений. `js/workout.view/render.js`, `css/workout.css`.
+- ⬜ **4-4** 🟩 GEMINI — Один empty-state + одна кнопка (Home==Analytics). `js/dashboard.js`, `js/analytics.view.js`.
+- ⬜ **4-5** 🟩 GEMINI — Единый radius/высота кнопок через токены. `css/*`.
+
+### Фаза 5 — UX
+- ⬜ **5-1** 🟦 SONNET — Компактный ввод сета (гигантские инпуты при 22 подходах). `js/workout.view/render.js`, `css/workout.css`.
+- ⬜ **5-2** 🟩 GEMINI — text-overflow имён упражнений. `css/workout.css`.
+- ⬜ **5-3** 🟩 GEMINI — Убрать «X» с hero-молнии и у имени Gio. `js/dashboard.js`, `js/profile.*`.
+- ⬜ **5-4** 🟦 SONNET — Volume Trend: реальный график или честный empty. `js/dashboard.js`, `js/analytics.view.js`.
+- ⬜ **5-5** 🟦 SONNET — Микроанимации на motion-токенах + `prefers-reduced-motion`. `css/base.css`, `js/shared/spring.js`.
+- ⬜ **5-6** 🟩 GEMINI — Прогресс-бар онбординга: подсветка текущего шага. `js/onboarding.js`.
+
+---
+
+## 5. ЗАДАЧИ ПОЛЬЗОВАТЕЛЯ (не агентов)
+- [ ] Полевой прогон на телефоне: `node scripts/telemetry-server.mjs --lan` → проверить **миграцию IndexedDB v3 на живых данных** (workouts/metrics/1RM целы).
+- [ ] **Синхронизировать main:** `2026-04-14-byoi` опережает `main` на ~8 коммитов (вся работа сессии). Решить когда мёржить byoi→main. Воркт­ри `claude/frosty-payne-43547b` — старый код, не использовался.
+
+---
+
+## 6. ТЕХНИЧЕСКИЕ ЗАМЕТКИ
+- **Запуск:** `npm run dev` → http://localhost:3000 (LAN 0.0.0.0).
+- **Тесты:** `npm test` = `node --test "test/*.test.js"` → **128/128** (e2e — playwright отдельно).
+- **SW:** `sw.js` cache `athlete-pro-v47`. **Бамп при любой правке JS/CSS.** `npm run build:sw` автогенерит ASSETS. Cache-first + нормализует URL (отбрасывает query) → при разработке свежий код = hard-reload ×2 или Unregister SW.
+- **AI-оркестратор:** модель `claude-3-5-sonnet-20241022` (устаревшая; обновление = решение пользователя).
+
+---
+
+## 7. ПРОГРЕСС
+✅ C-1 · 🟨 Ф0 (4/7) · 🟨 Ф1 (2/7) · 🟨 Ф2 (3/7) · 🟨 Ф3 (1/4) · ⬜ Ф4 (0/5) · 🟨 Ф5 (1/7) · 🌐 i18n L-1/L-2 ✅
+
+**Следующий 🔒 LEAD:** 1-7 (бренд лого, почти готов) → 4-1 (UI-фабрики, фундамент Ф4). Делегируемое (1-3..1-6, 2-3/2-4, 3-2..3-4, 5-x) — Sonnet/Gemini параллельно (палитра и данные разблокированы).

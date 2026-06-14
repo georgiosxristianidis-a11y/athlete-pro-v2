@@ -67,7 +67,7 @@
 | # | Задача | P | Слож. | Кто | Файлы | Статус |
 |---|---|:--:|:--:|:--:|---|---|
 | 1-1 | hex→токены + шкала весов (500/600/800) | P1 | L | 🔒 LEAD | `css/*` | ✅ `b610b46` |
-| 1-2 | **Решение: свести 6 акцентов → 1 primary + 1 secondary** | P1 | XL | 🔒 LEAD | `css/base.css` :root | ⬜ (веду я — дизайн-решение) |
+| 1-2 | **Решение: свести 6 акцентов → 1 primary + 1 secondary** | P1 | XL | 🔒 LEAD | `css/base.css` :root | ✅ `94c706a` — двухуровневая система: BRAND (green+purple) vs SEMANTIC; алиасы `--c-push/pull/legs` |
 | 1-3 | Закон PPL-цвета везде: Push=green / Pull=blue / Legs+Shoulders=purple | P1 | L | 🟦 SONNET | `js/intel.view.js`, `js/body-stats.js` (метрики), `js/analytics.view.js` (линии) | ⬜ |
 | 1-4 | Body Metrics: рандомная радуга → PPL-категории + нейтраль для композиции | P1 | M | 🟦 SONNET | `js/body-stats.js` (конфиг метрик) | ⬜ |
 | 1-5 | Синие FAB + оранжевая рамка Claude → в систему | P1 | S | 🟩 GEMINI | `css/claude.css`, `css/profile.css`, settings | ⬜ |
