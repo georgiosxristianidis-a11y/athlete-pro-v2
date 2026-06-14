@@ -17,6 +17,17 @@ const AVATAR_COLORS = [
   ['#8b5cf6', '#6d28d9']  // Violet -> Purple
 ];
 
+// Neon frame (ring) colors. Index 0 = original green→blue neon (default look).
+// Applied to the thin ring only (--c1/--c2), never as a fill over the photo.
+const FRAME_COLORS = [
+  ['var(--c-accent)', 'var(--c-blue)'], // 0 Green→Blue (default neon)
+  ['#00e676', '#00c853'],               // 1 Green
+  ['#00b8d4', '#0091ea'],               // 2 Cyan
+  ['#8b5cf6', '#6d28d9'],               // 3 Purple
+  ['#ffb300', '#ff8f00'],               // 4 Amber
+  ['#ff4d88', '#c2185b'],               // 5 Pink
+];
+
 const TIER_COLOR = {
   Untrained:    '#78909c',
   Novice:       '#26a69a',
@@ -109,11 +120,12 @@ export const AthleteRoom = (() => {
   }
 
   async function render() {
-    const [workouts, orms, customName, colorIdx, lang, profile, metrics, photo] = await Promise.all([
+    const [workouts, orms, customName, colorIdx, frameIdx, lang, profile, metrics, photo] = await Promise.all([
       DB.Workouts.getAll().catch(() => []),
       DB.OneRM.getAll().catch(() => []),
       DB.Settings.get('athlete-name', ''),
       DB.Settings.get('avatar-color', '0'),
+      DB.Settings.get('avatar-frame', '0'),
       DB.Settings.get('lang', 'en'),
       loadProfile().catch(() => null),
       DB.Metrics.latest().catch(() => null),
@@ -123,6 +135,7 @@ export const AthleteRoom = (() => {
     const ru = lang === 'ru';
     const name = customName || profile?.name || (ru ? 'Атлет' : 'Athlete');
     const [c1, c2] = AVATAR_COLORS[(parseInt(colorIdx) || 0) % AVATAR_COLORS.length];
+    const [f1, f2] = FRAME_COLORS[(parseInt(frameIdx) || 0) % FRAME_COLORS.length];
     const initials = name.split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'A';
     
     // Compute level/tier
@@ -171,7 +184,7 @@ export const AthleteRoom = (() => {
     `;
 
     _initSheetDrag();
-    await switchTab(activeTab, { workouts, name, initials, c1, c2, tierLabel, tierColor, streak, total, score, dots, unlockedAch, metrics, photo, ru });
+    await switchTab(activeTab, { workouts, name, initials, c1, c2, f1, f2, colorIdx, frameIdx, tierLabel, tierColor, streak, total, score, dots, unlockedAch, metrics, photo, profile, ru });
   }
 
   async function switchTab(tabId, dataContext = null) {
@@ -191,11 +204,12 @@ export const AthleteRoom = (() => {
     // Use passed context or fetch fresh if undefined
     let ctx = dataContext;
     if (!ctx) {
-      const [workouts, orms, customName, colorIdx, lang, profile, metrics, photo] = await Promise.all([
+      const [workouts, orms, customName, colorIdx, frameIdx, lang, profile, metrics, photo] = await Promise.all([
         DB.Workouts.getAll().catch(() => []),
         DB.OneRM.getAll().catch(() => []),
         DB.Settings.get('athlete-name', ''),
         DB.Settings.get('avatar-color', '0'),
+        DB.Settings.get('avatar-frame', '0'),
         DB.Settings.get('lang', 'en'),
         loadProfile().catch(() => null),
         DB.Metrics.latest().catch(() => null),
@@ -204,6 +218,7 @@ export const AthleteRoom = (() => {
       const ru = lang === 'ru';
       const name = customName || profile?.name || (ru ? 'Атлет' : 'Athlete');
       const [c1, c2] = AVATAR_COLORS[(parseInt(colorIdx) || 0) % AVATAR_COLORS.length];
+      const [f1, f2] = FRAME_COLORS[(parseInt(frameIdx) || 0) % FRAME_COLORS.length];
       const initials = name.split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'A';
       
       const bestORM = orms.reduce((acc, curr) => {
@@ -224,7 +239,7 @@ export const AthleteRoom = (() => {
       const streak = _calcStreak(workouts);
       const unlockedAch = new Set(ACHIEVEMENTS.filter(a => a.check(workouts)).map(a => a.id));
 
-      ctx = { workouts, name, initials, c1, c2, colorIdx, tierLabel, tierColor, streak, total, score, dots, unlockedAch, metrics, photo, profile, ru };
+      ctx = { workouts, name, initials, c1, c2, f1, f2, colorIdx, frameIdx, tierLabel, tierColor, streak, total, score, dots, unlockedAch, metrics, photo, profile, ru };
     }
 
     if (window._arActiveTab === 'profile') {
@@ -235,15 +250,15 @@ export const AthleteRoom = (() => {
   }
 
   function _renderProfileTab(container, ctx) {
-    const { name, initials, c1, c2, tierLabel, tierColor, streak, total, score, dots, unlockedAch, photo, ru, metrics } = ctx;
+    const { name, initials, c1, c2, f1, f2, tierLabel, tierColor, streak, total, score, dots, unlockedAch, photo, ru, metrics } = ctx;
     
     // Use the existing avatar init logic but wrap the HTML
     const avatarHtml = photo
       ? `<div class="ar-avatar has-photo" style="background-image: url('${photo}')" onclick="window.AthleteRoom.triggerPhotoUpload()">
-           <div class="ar-avatar-ring" style="--c1:${c1}; --c2:${c2}"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+           <div class="ar-avatar-ring" style="--c1:${f1}; --c2:${f2}"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
          </div>`
       : `<div class="ar-avatar" id="ar-avatar-circle" style="background: linear-gradient(135deg, ${c1}, ${c2})" onclick="window.AthleteRoom.triggerPhotoUpload()">
-           <div class="ar-avatar-ring" style="--c1:${c1}; --c2:${c2}"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+           <div class="ar-avatar-ring" style="--c1:${f1}; --c2:${f2}"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
            <div class="ar-avatar-initials">${initials}</div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
          </div>`;
 
@@ -335,9 +350,17 @@ export const AthleteRoom = (() => {
               <div class="ar-editor-colors-label" style="margin-top:16px">${ru ? 'Цвет аватара' : 'Avatar Color'}</div>
               <div class="ar-color-row">
                 ${AVATAR_COLORS.map(([e, t], i) => `
-                  <div class="ar-color-swatch ${i === (parseInt(ctx.colorIdx) || 0) ? 'active' : ''}" 
-                       style="background:linear-gradient(135deg, ${e}, ${t})" 
+                  <div class="ar-color-swatch ${i === (parseInt(ctx.colorIdx) || 0) ? 'active' : ''}"
+                       style="background:linear-gradient(135deg, ${e}, ${t})"
                        onclick="window.AthleteRoom.selectColor(${i})"></div>`).join('')}
+              </div>
+
+              <div class="ar-editor-colors-label" style="margin-top:16px">${ru ? 'Цвет рамки' : 'Frame Color'}</div>
+              <div class="ar-color-row">
+                ${FRAME_COLORS.map(([e, t], i) => `
+                  <div class="ar-color-swatch ar-frame-swatch ${i === (parseInt(ctx.frameIdx) || 0) ? 'active' : ''}"
+                       style="background:conic-gradient(from 0deg, ${e}, ${t}, ${e})"
+                       onclick="window.AthleteRoom.selectFrame(${i})"></div>`).join('')}
               </div>
 
               <div class="ar-editor-actions" style="margin-top:24px">
@@ -459,6 +482,13 @@ export const AthleteRoom = (() => {
   async function selectColor(idx) {
     haptic(10);
     await DB.Settings.set('avatar-color', String(idx));
+    render();
+    initAvatar();
+  }
+
+  async function selectFrame(idx) {
+    haptic(10);
+    await DB.Settings.set('avatar-frame', String(idx));
     render();
     initAvatar();
   }
@@ -686,5 +716,5 @@ export const AthleteRoom = (() => {
     });
   }
 
-  return { open, close, switchTab, editName, cancelEdit, saveName, cycleColor, selectColor, initAvatar, triggerPhotoUpload, handlePhotoSelected, removePhoto, editStat, cancelStatEdit, saveStat };
+  return { open, close, switchTab, editName, cancelEdit, saveName, cycleColor, selectColor, selectFrame, initAvatar, triggerPhotoUpload, handlePhotoSelected, removePhoto, editStat, cancelStatEdit, saveStat };
 })();

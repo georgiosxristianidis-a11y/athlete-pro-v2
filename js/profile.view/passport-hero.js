@@ -32,10 +32,10 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   const age = computeAge(profile.dob);
   const bw = metrics?.weight || 80;
   
-  // Overall DOTS tier
+  // Overall athlete score tier (composite athleteProScore, not raw DOTS)
   const total = (oneRMs.squat || 0) + (oneRMs.bench || 0) + (oneRMs.deadlift || 0);
-  const dots = total ? athleteProScore({ total, bodyweight: bw, sex: profile.sex, age, experience: profile.experienceYears, height: metrics?.height }) : 0;
-  const tier = _tierFromDots(dots);
+  const score = total ? athleteProScore({ total, bodyweight: bw, sex: profile.sex, age, experience: profile.experienceYears, height: metrics?.height }) : 0;
+  const tier = _tierFromScore(score);
   const tierColor = TIER_COLOR[tier];
   const tierLabel = ru ? TIER_RU[tier] : tier;
   const goalMap = ru ? GOAL_RU : GOAL_EN;
@@ -76,7 +76,7 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
     
     <div class="pp-badge-row">
       <div class="pp-tier-pill-v2" style="color:${tierColor}; border-color:${tierColor}20; background:${tierColor}0d">
-        ${esc(tierLabel)} ${dots ? `· <span style="color:var(--c-amber); text-shadow: 0 0 12px rgba(255,179,0,0.4)">${dots}</span>` : ''}
+        ${esc(tierLabel)} ${score ? `· <span style="color:var(--c-amber); text-shadow: 0 0 12px rgba(255,179,0,0.4)">${score}</span>` : ''}
       </div>
       ${bestPercentile > 0 ? `
         <div class="pp-percentile-pill">
@@ -113,11 +113,11 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
 `;
 }
 
-/** @param {number} dots */
-function _tierFromDots(dots) {
-  if (!dots || dots < 200) return 'Untrained';
-  if (dots < 300) return 'Novice';
-  if (dots < 380) return 'Intermediate';
-  if (dots < 470) return 'Advanced';
+/** @param {number} score */
+function _tierFromScore(score) {
+  if (!score || score < 200) return 'Untrained';
+  if (score < 300) return 'Novice';
+  if (score < 380) return 'Intermediate';
+  if (score < 470) return 'Advanced';
   return 'Elite';
 }

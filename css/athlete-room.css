@@ -650,22 +650,23 @@
   transform: scale(0.9);
 }
 
-/* Glowing pulsating ring for custom photo */
+/* Thin neon frame for custom photo — a border ring, never a fill over the photo. */
 .ar-avatar.has-photo .ar-avatar-ring {
-  inset: -5px;
-  opacity: 0.95;
-  filter: blur(1.5px) drop-shadow(0 0 6px var(--c1, var(--c-accent))) drop-shadow(0 0 10px var(--c2, var(--c-blue)));
-  animation: ring-spin 4s linear infinite, ring-pulse-filter 2s ease-in-out infinite alternate;
+  inset: -3px;
+  background: none;
+  border: 2.5px solid var(--c1, var(--c-accent));
+  border-radius: 50%;
+  opacity: 1;
+  filter: none;
+  animation: ring-pulse-glow 2.2s ease-in-out infinite alternate;
 }
 
-@keyframes ring-pulse-filter {
+@keyframes ring-pulse-glow {
   0% {
-    filter: blur(1px) drop-shadow(0 0 4px var(--c1, var(--c-accent))) drop-shadow(0 0 6px var(--c2, var(--c-blue)));
-    opacity: 0.75;
+    box-shadow: 0 0 4px var(--c1, var(--c-accent)), 0 0 7px var(--c2, var(--c-blue));
   }
   100% {
-    filter: blur(2px) drop-shadow(0 0 12px var(--c1, var(--c-accent))) drop-shadow(0 0 18px var(--c2, var(--c-blue)));
-    opacity: 1.0;
+    box-shadow: 0 0 7px var(--c1, var(--c-accent)), 0 0 14px var(--c2, var(--c-blue));
   }
 }
 
