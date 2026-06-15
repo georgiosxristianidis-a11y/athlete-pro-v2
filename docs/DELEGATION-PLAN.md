@@ -148,11 +148,11 @@
 | # | Находка | P | Слож. | Кто | Статус |
 |---|---|:--:|:--:|:--:|---|
 | DI-P0 | Rest-таймер на rAF → замерзал в фоне, rest-done алярм не вовремя. → `setInterval`(1Гц)+timestamp+visibility-catchup+fallback-alarm; PiP-кадр развязан (`update()` не шлёт PiP во время отдыха) | P0 | M | 🔒 LEAD | ✅ `453b7ac` |
-| DI-1 | PPL-цвета прогресс-бара перепутаны: pull→purple, legs→blue (`dynamic-island.js:271`). Закон: pull=cyan, legs=purple (push=green НЕ трогать) | P1 | S | 🟦/LEAD | ⬜ |
-| DI-2 | Двойная анимация размера при смене режима: CSS width/height-morph + JS Spring scale-bounce одновременно (+вложенный лишний rAF). Оставить один. Зелёные анимации НЕ трогать | P1 | S | 🔒 LEAD | ⬜ (feel-решение пользователя) |
-| DI-3 | Фейковый BPM (random каждый кадр) в PiP/острове — реальный источник или убрать | P1 | S | реш. пользователя | ⬜ |
-| DI-4 | Битые токены: `--c-rose` (offline-dot невидим), `--c-cyan` (done) не определены → `--c-red`/`--c-blue` | P2 | S | 🟩 GEMINI | ⬜ |
-| DI-5 | ~210 строк мёртвого CSS в `dynamic-island.css`: `.island-timer-display`, `.rest-pill`, `.rest-modal-*`/`.rest-ring-*` (только `_archive`). Сиротские `#status-pill`/`#di-anchor`; вестигиальный drag-плумбинг в `pointerdown` | P2 | M | 🟩 GEMINI | ⬜ |
+| DI-1 | PPL-цвета прогресс-бара перепутаны: pull→purple, legs→blue. → канонические алиасы `--c-push/pull/legs` (push=green не тронут) | P1 | S | 🔒 LEAD | ✅ `1114dee` |
+| DI-2 | Двойная анимация размера: CSS-morph + JS Spring scale одновременно. → оставлен только CSS-morph (Spring scale + вложенный rAF удалены). Зелёные анимации не тронуты | P1 | S | 🔒 LEAD | ✅ `1114dee` |
+| DI-3 | Фейковый BPM (random каждый кадр) в PiP/острове | P1 | S | реш. пользователя | 🟢 решено: оставить как декор (2026-06-15) |
+| DI-4 | Битые токены: `--c-rose` (offline-dot невидим) → `--c-red`; `--c-cyan` (done) убран вместе с мёртвыми блоками | P2 | S | 🔒 LEAD | ✅ `1114dee` |
+| DI-5 | Мёртвый CSS: `dynamic-island.css` 660→418 (−242); сиротские `#status-pill`/`#di-anchor` (index.html + JS no-op), вестигиальный drag-плумбинг | P2 | M | 🔒 LEAD | ✅ `1114dee` |
 
 > **КАНОН (не трогать, подтверждено 2026-06-15):** зелёный обратный отсчёт отдыха + `island-set-pulse` (зелёная вспышка завершения подхода).
 
