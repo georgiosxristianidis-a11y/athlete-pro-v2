@@ -219,6 +219,104 @@
   transform: scale(0.92);
 }
 
+/* ── Section 2b: UI Factory Primitives (js/ui/factory.js) ─
+   Token-driven styling for Button()/TextField()/NumberStepper()/Card().
+   One look for every screen — see task 4-1. */
+
+/* Button: danger variant (red surface over primary geometry) + icon slot */
+.btn-danger { background: var(--c-red); color: #fff; }
+.btn-danger:active { background: var(--c-red); filter: brightness(0.92); transform: scale(0.96); }
+.btn-ico { display: inline-flex; align-items: center; }
+.btn-ico svg { width: 18px; height: 18px; }
+
+/* TextField: dark, tokenized — replaces white native inputs */
+.ui-field { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.ui-field-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--c-text-2);
+}
+.ui-input {
+  height: 48px;
+  padding: 0 14px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  color: var(--c-text-1);
+  font-family: var(--font-main);
+  font-size: 15px;
+  font-weight: 500;
+  transition: border-color var(--t-fast), background var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.ui-input::placeholder { color: var(--c-text-3); }
+.ui-input:hover { border-color: var(--c-border-h); }
+.ui-input:disabled { opacity: 0.5; cursor: not-allowed; }
+.ui-field-hint { font-size: 12px; color: var(--c-text-3); }
+
+/* NumberStepper: −/value/+ on a token surface */
+.ui-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+}
+.ui-stepper-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--r-s);
+  background: var(--c-surface-h);
+  color: var(--c-text-1);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--t-fast), background var(--t-fast), opacity var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.ui-stepper-btn:active { transform: scale(0.9); background: var(--c-accent-bg); }
+.ui-stepper-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.ui-stepper-val {
+  min-width: 64px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Card: surface container in the app's card language */
+.ui-card {
+  padding: 16px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-l);
+}
+.ui-card.is-flush { padding: 0; }
+.ui-card-title {
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-3);
+}
+.ui-card.is-interactive {
+  cursor: pointer;
+  transition: transform var(--t-fast), background var(--t-fast), border-color var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.ui-card.is-interactive:hover { background: var(--c-surface-h); border-color: var(--c-border-h); }
+.ui-card.is-interactive:active { transform: scale(0.99); }
+
 /* ── Section 3.5: View Transitions ───────────────────────
    Native cross-fade for seamless screen navigation.
    Required for Nav.go() with document.startViewTransition. */

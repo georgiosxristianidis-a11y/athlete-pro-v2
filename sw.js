@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v47';
+const CACHE_NAME = 'athlete-pro-v48';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -60,6 +60,7 @@ const ASSETS = [
   '/js/types.d.ts',
   '/js/ui/drag-number.js',
   '/js/ui/drum-picker.js',
+  '/js/ui/factory.js',
   '/js/ui/gravity-submit.js',
   '/js/ui/receipt.js',
   '/js/version.js',
