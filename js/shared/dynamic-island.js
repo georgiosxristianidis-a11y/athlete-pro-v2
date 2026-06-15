@@ -274,14 +274,18 @@ export const DynamicIsland = (() => {
 
     _updateNetworkStatus();
 
-    // Push state to PiP Canvas
-    PiP.drawFrame({
-      time: _timeEl?.textContent || '00:00',
-      name: currentEx ? currentEx.name : 'Workout',
-      sets: total ? `${done}/${total}` : '',
-      nextName: nextEx ? nextEx.name : '',
-      bpm: 72 + Math.floor(Math.random() * 10)
-    });
+    // Push state to PiP Canvas — but NOT while a rest is running:
+    // RestTimer owns the PiP frame during rest, so the 1 Hz session tick
+    // must not overwrite the "RESTING…" frame (was flickering).
+    if (!_timerActive) {
+      PiP.drawFrame({
+        time: _timeEl?.textContent || '00:00',
+        name: currentEx ? currentEx.name : 'Workout',
+        sets: total ? `${done}/${total}` : '',
+        nextName: nextEx ? nextEx.name : '',
+        bpm: 72 + Math.floor(Math.random() * 10)
+      });
+    }
   }
 
   function setRestProgress(secs, max) {
