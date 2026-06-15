@@ -1,6 +1,6 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-06-14, сессия Claude (Opus 4.8, LEAD). Ветка `2026-04-14-byoi` (= рабочая линия; main отстаёт — см. §5).
+> Обновлено: 2026-06-15, сессия Claude (Opus 4.8, LEAD). Ветка `2026-04-14-byoi` (= рабочая линия). main синхронизирован FF на `229886d`; коммиты сессии 1-7/4-1 — на `claude/epic-meninsky-baae59` (+2), ждут интеграции в byoi (см. §5).
 > Это **единый источник правды**: план, делегирование, философия Air, дизайн-система, done-list, остаток.
 > Табличный дубль — `docs/DELEGATION-PLAN.md`.
 
@@ -91,9 +91,10 @@ innerHTML — через `esc()` (`js/shared/utils.js`). API-ключи толь
 - ✅ 0-5 Общий `confirmDialog()` Promise<bool> — `js/shared/confirm.js` (`40b4458`) · LEAD
 - ✅ 0-6 Все 6 нативных `confirm()` → `confirmDialog()` (`40b4458`) · LEAD (поднято из GEMINI: sync→async = корректность)
 
-**Фаза 1 — Токены/цвет (2/7):**
+**Фаза 1 — Токены/цвет (3/7):**
 - ✅ 1-1 hex→токены + веса 500/600/800 (`b610b46`) · LEAD
 - ✅ 1-2 Двухуровневая палитра BRAND vs SEMANTIC + алиасы push/pull/legs (`94c706a`) · LEAD
+- ✅ 1-7 Лого `Pro`: green → `--c-secondary` (violet, = иконке `icon-192.png`) (`dca99f3`) · LEAD
 
 **Фаза 2 — Данные (3/7):**
 - ✅ 2-1 Root-fix агрегатов WEEK==MONTH: `startOfWeek/startOfMonth` в `db.js` (`0fa5b64`) · LEAD
@@ -102,6 +103,8 @@ innerHTML — через `esc()` (`js/shared/utils.js`). API-ключи толь
 - 🟡 2-7 `test/aggregates.test.js` (10) — остаётся форматтер
 
 **Фаза 3 — Иконки (1/4):** ✅ 3-1 Эмодзи вычищены (`7aadd1b`) · LEAD
+
+**Фаза 4 — Компоненты (1/5):** ✅ 4-1 Vanilla-фабрики `js/ui/factory.js` (Button/TextField/NumberStepper/Card → DOM-узлы, текст через textContent), токен-классы `.ui-*` + `.btn-danger` в base.css, SW→v48 (`1cc2a98`) · LEAD
 
 **Фаза 5 — UX (1/7):** ✅ 5-7 Rest-таймер в Dynamic Island, fixed-модалки убраны (`abd660c`) · LEAD
 
@@ -124,7 +127,6 @@ innerHTML — через `esc()` (`js/shared/utils.js`). API-ключи толь
 - ⬜ **1-4** 🟦 SONNET — Body Metrics: радуга → PPL-категории + нейтраль. `js/body-stats.js` (BS_FIELDS).
 - ⬜ **1-5** 🟩 GEMINI — Синие FAB + оранжевая рамка Claude → в систему. `css/claude.css`, `css/profile.css`.
 - ⬜ **1-6** 🟩 GEMINI — Тонированный фон вместо `#000` (кроме острова). `css/*`.
-- ⬜ **1-7** 🔒 LEAD — Бренд-цвет лого ↔ `--c-secondary` (почти готово: secondary=#8b5cf6=цвет лого). `index.html`, `css/base.css`.
 
 ### Фаза 2 — разблокировано (2-1/2-2 ✅)
 - ⬜ **2-3** 🟦 SONNET — Единый форматтер число/единицы/дата. `js/shared/format.js` (переиспользовать `startOfWeek/Month`).
@@ -137,9 +139,8 @@ innerHTML — через `esc()` (`js/shared/utils.js`). API-ключи толь
 - ⬜ **3-3** 🟦 SONNET — Метафоры: Hypertrophy→тело, Home→house, AI-бабл→chat/sparkle. `js/onboarding.js`, navbar, `js/claude.view.js`.
 - ⬜ **3-4** 🟩 GEMINI — `currentColor` + SVGO + «тест 16px». Весь SVG-набор.
 
-### Фаза 4 — Компоненты
-- ⬜ **4-1** 🔒 LEAD — Vanilla-фабрики `Button/TextField/NumberStepper/Card` из токенов. new `js/ui/*`. **Фундамент 4-2/4-3.** Без React/JSX.
-- ⬜ **4-2** 🟦 SONNET — Edit Plan: нативные инпуты → `TextField`/`NumberStepper`. `js/workout.view/modals.js`. **Ждёт 4-1.**
+### Фаза 4 — Компоненты (4-1 ✅ — разблокировано)
+- ⬜ **4-2** 🟦 SONNET — Edit Plan: нативные инпуты → `TextField`/`NumberStepper`. `js/workout.view/modals.js`. **Контракт:** `import { Button, TextField, NumberStepper, Card } from '../ui/factory.js'` (возвращают DOM-узлы → `.append()`, не innerHTML).
 - ⬜ **4-3** 🟦 SONNET — CORE унифицировать с карточками упражнений. `js/workout.view/render.js`, `css/workout.css`.
 - ⬜ **4-4** 🟩 GEMINI — Один empty-state + одна кнопка (Home==Analytics). `js/dashboard.js`, `js/analytics.view.js`.
 - ⬜ **4-5** 🟩 GEMINI — Единый radius/высота кнопок через токены. `css/*`.
@@ -156,19 +157,19 @@ innerHTML — через `esc()` (`js/shared/utils.js`). API-ключи толь
 
 ## 5. ЗАДАЧИ ПОЛЬЗОВАТЕЛЯ (не агентов)
 - [ ] Полевой прогон на телефоне: `node scripts/telemetry-server.mjs --lan` → проверить **миграцию IndexedDB v3 на живых данных** (workouts/metrics/1RM целы).
-- [ ] **Синхронизировать main:** `2026-04-14-byoi` опережает `main` на ~8 коммитов (вся работа сессии). Решить когда мёржить byoi→main. Воркт­ри `claude/frosty-payne-43547b` — старый код, не использовался.
+- [x] **main синхронизирован** (2026-06-15): clean FF `main` → `229886d` (byoi), без конфликтов. **Остаток интеграции:** коммиты сессии `dca99f3` (1-7) + `1cc2a98` (4-1) на `claude/epic-meninsky-baae59` (+2 к byoi) — влить в byoi из главного worktree (где byoi выписан), чтобы Sonnet брал 4-2 с актуальной базы. Старые worktree (`frosty-payne` и пр.) — не использовать.
 
 ---
 
 ## 6. ТЕХНИЧЕСКИЕ ЗАМЕТКИ
 - **Запуск:** `npm run dev` → http://localhost:3000 (LAN 0.0.0.0).
 - **Тесты:** `npm test` = `node --test "test/*.test.js"` → **128/128** (e2e — playwright отдельно).
-- **SW:** `sw.js` cache `athlete-pro-v47`. **Бамп при любой правке JS/CSS.** `npm run build:sw` автогенерит ASSETS. Cache-first + нормализует URL (отбрасывает query) → при разработке свежий код = hard-reload ×2 или Unregister SW.
+- **SW:** `sw.js` cache `athlete-pro-v48`. **Бамп при любой правке JS/CSS.** `npm run build:sw` автогенерит ASSETS. Cache-first + нормализует URL (отбрасывает query) → при разработке свежий код = hard-reload ×2 или Unregister SW.
 - **AI-оркестратор:** модель `claude-3-5-sonnet-20241022` (устаревшая; обновление = решение пользователя).
 
 ---
 
 ## 7. ПРОГРЕСС
-✅ C-1 · 🟨 Ф0 (4/7) · 🟨 Ф1 (2/7) · 🟨 Ф2 (3/7) · 🟨 Ф3 (1/4) · ⬜ Ф4 (0/5) · 🟨 Ф5 (1/7) · 🌐 i18n L-1/L-2 ✅
+✅ C-1 · 🟨 Ф0 (4/7) · 🟨 Ф1 (3/7) · 🟨 Ф2 (3/7) · 🟨 Ф3 (1/4) · 🟨 Ф4 (1/5) · 🟨 Ф5 (1/7) · 🌐 i18n L-1/L-2 ✅
 
-**Следующий 🔒 LEAD:** 1-7 (бренд лого, почти готов) → 4-1 (UI-фабрики, фундамент Ф4). Делегируемое (1-3..1-6, 2-3/2-4, 3-2..3-4, 5-x) — Sonnet/Gemini параллельно (палитра и данные разблокированы).
+**Все плановые 🔒 LEAD-задачи закрыты** (последние — 1-7, 4-1 в этой сессии). Следующий LEAD-фокус: интеграция ветки сессии → byoi, затем ревью/мёрж делегируемых выходов и Фаза 6 (CRDT-UUID / Lighthouse). Делегируемое — Sonnet/Gemini параллельно: Ф0 (0-3/0-4/0-7), 1-3..1-6, 2-3/2-4/2-7, 3-2..3-4, **4-2..4-5 (разблокировано 4-1)**, 5-x.
