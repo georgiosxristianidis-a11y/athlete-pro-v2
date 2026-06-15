@@ -139,6 +139,25 @@
 
 > L-1/L-2 — ведущий (root-fix языка = кросс-секущая корректность). L-3 (механический проход по оставшимся литералам) делегируем SONNET.
 
+## 🔵 Аудит Dynamic Island (2026-06-15, Opus LEAD)
+
+Проф-диагностика острова (функция / идея / реализация / конфликты). Корень: нет единого
+контроллера — три цикла (timer.js, rest-timer.js, pip.js) конкурируют за один DOM+canvas.
+Первоисточник — FIT Elite `src/components/workout-bar.js` (остров = чистая view на шине событий).
+
+| # | Находка | P | Слож. | Кто | Статус |
+|---|---|:--:|:--:|:--:|---|
+| DI-P0 | Rest-таймер на rAF → замерзал в фоне, rest-done алярм не вовремя. → `setInterval`(1Гц)+timestamp+visibility-catchup+fallback-alarm; PiP-кадр развязан (`update()` не шлёт PiP во время отдыха) | P0 | M | 🔒 LEAD | ✅ `453b7ac` |
+| DI-1 | PPL-цвета прогресс-бара перепутаны: pull→purple, legs→blue (`dynamic-island.js:271`). Закон: pull=cyan, legs=purple (push=green НЕ трогать) | P1 | S | 🟦/LEAD | ⬜ |
+| DI-2 | Двойная анимация размера при смене режима: CSS width/height-morph + JS Spring scale-bounce одновременно (+вложенный лишний rAF). Оставить один. Зелёные анимации НЕ трогать | P1 | S | 🔒 LEAD | ⬜ (feel-решение пользователя) |
+| DI-3 | Фейковый BPM (random каждый кадр) в PiP/острове — реальный источник или убрать | P1 | S | реш. пользователя | ⬜ |
+| DI-4 | Битые токены: `--c-rose` (offline-dot невидим), `--c-cyan` (done) не определены → `--c-red`/`--c-blue` | P2 | S | 🟩 GEMINI | ⬜ |
+| DI-5 | ~210 строк мёртвого CSS в `dynamic-island.css`: `.island-timer-display`, `.rest-pill`, `.rest-modal-*`/`.rest-ring-*` (только `_archive`). Сиротские `#status-pill`/`#di-anchor`; вестигиальный drag-плумбинг в `pointerdown` | P2 | M | 🟩 GEMINI | ⬜ |
+
+> **КАНОН (не трогать, подтверждено 2026-06-15):** зелёный обратный отсчёт отдыха + `island-set-pulse` (зелёная вспышка завершения подхода).
+
+---
+
 ## Сводка делегирования
 
 | Модель | Задачи | Доля | Расход |
