@@ -187,6 +187,11 @@ export const DynamicIsland = (() => {
       return;
     }
 
+    // During an active rest, RestTimer owns the island HUD + PiP. The session
+    // readouts sit hidden behind the rest HUD and sets don't change mid-rest,
+    // so skip the whole re-render — keeps the rest path conflict-free and cheap.
+    if (_timerActive) { _updateNetworkStatus(); return; }
+
     // ACTIVE WORKOUT: Remove idle mode and apply selected mode
     _island?.classList.remove('mode-idle');
     document.getElementById('status-bar')?.classList.add('workout-active');
@@ -269,12 +274,14 @@ export const DynamicIsland = (() => {
 
   function setRestProgress(secs, max) {
     if (!_island) init();
+    const starting = !_timerActive;
+    // Re-arm the bar whenever the timeline isn't a clean 1s tick:
+    // +time was pressed, or a background catch-up jump after the tab was hidden.
+    const jump = _timerActive && (_timerSecs - secs) !== 1;
     _timerActive = true;
-    _timerSecs = secs;
-    _timerMax = max;
     _island?.classList.add('timer-mode');
 
-    // Countdown readout (mm:ss when >= 1 min, else Ns)
+    // Countdown readout (mm:ss when >= 1 min, else Ns) — updated each second
     if (_restTimeEl) {
       _restTimeEl.textContent = secs >= 60
         ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
@@ -284,14 +291,41 @@ export const DynamicIsland = (() => {
     }
     if (_restLabelEl) _restLabelEl.textContent = isRu() ? 'ОТДЫХ' : 'REST';
 
-    _renderRestProgress();
+    // Progress-bar colour escalation each second (class only — no layout)
+    if (_timerProg) {
+      _timerProg.classList.toggle('warning', secs <= 10 && secs > 0);
+      _timerProg.classList.toggle('done', secs <= 0);
+    }
+
+    // Depletion is ONE GPU transition over the remaining seconds — buttery 60fps
+    // on the compositor with zero JS per frame, re-armed only on start / jump.
+    if (starting || jump) _armRestProgress(secs, max);
+
+    _timerSecs = secs;
+    _timerMax = max;
+  }
+
+  /** Drive the rest bar from its current fraction down to empty over `remaining`s (compositor). */
+  function _armRestProgress(remaining, max) {
+    if (!_timerProg) return;
+    const startFrac = max > 0 ? Math.min(1, remaining / max) : 0;
+    _timerProg.style.transition = 'none';
+    _timerProg.style.transform = `scaleX(${startFrac})`;
+    void _timerProg.offsetWidth;                          // commit the snap before animating
+    _timerProg.style.transition = `transform ${Math.max(0.1, remaining)}s linear`;
+    _timerProg.style.transform = 'scaleX(0)';
   }
 
   function stopTimer() {
     _timerActive = false;
     _island?.classList.remove('timer-mode');
     _restTimeEl?.classList.remove('warning', 'done');
-    _renderRestProgress();
+    if (_timerProg) {
+      _timerProg.style.transition = 'none';
+      _timerProg.style.transform = 'scaleX(0)';
+      _timerProg.classList.remove('warning', 'done');
+    }
+    update();   // refresh the session readouts now that the rest HUD is gone
   }
 
   function pulseSetComplete() {
@@ -354,14 +388,6 @@ export const DynamicIsland = (() => {
   function _onLongPress() {
     haptic([30, 50, 30]);
     window.location.hash = 'timer-settings';
-  }
-
-  function _renderRestProgress() {
-    if (!_timerProg) return;
-    const pct = (_timerActive && _timerMax) ? (_timerSecs / _timerMax) * 100 : 0;
-    _timerProg.style.transform = `scaleX(${pct / 100})`;
-    _timerProg.classList.toggle('warning', _timerActive && _timerSecs <= 10 && _timerSecs > 0);
-    _timerProg.classList.toggle('done', _timerActive && _timerSecs <= 0);
   }
 
   function _updateNetworkStatus() {

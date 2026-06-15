@@ -409,6 +409,9 @@
   height: 2px;
   background: var(--c-accent);
   z-index: 4;
+  /* JS arms an inline `transition: transform <remaining>s linear` per rest so the
+     bar depletes as one smooth compositor animation; promote it to its own layer. */
+  will-change: transform;
   transition: transform 0.3s linear;
 }
 .island-timer-progress.warning { background: var(--c-amber); }
