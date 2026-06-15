@@ -2,7 +2,6 @@
 import { State, getWeekMode } from '../workout.store.js';
 import { Timer } from '../timer.js';
 import { RestTimer } from '../rest-timer.js';
-import { Spring } from './spring.js';
 import { PiP } from '../features/pip.js';
 import { haptic } from './utils.js';
 import { isRu } from '../locale.store.js';
@@ -39,12 +38,6 @@ export const DynamicIsland = (() => {
   let _timerProg = null;
   let _restTimeEl = null;
   let _restLabelEl = null;
-
-  // Animation tracking
-  const _anims = {
-    scale: null
-  };
-  let _animScale = 1;
 
   function init() {
     if (document.getElementById('dynamic-island')) return;
@@ -119,9 +112,6 @@ export const DynamicIsland = (() => {
     _displayMode = localStorage.getItem('ap-di-mode') || 'mini';
     _island?.classList.add(`mode-${_displayMode}`);
 
-    // Set initial transform
-    requestAnimationFrame(() => _applyTransform());
-
     // Long-press events (no drag)
     _island?.addEventListener('pointerdown', _onPointerDown);
     window.addEventListener('pointerup', _onPointerUp);
@@ -156,16 +146,8 @@ export const DynamicIsland = (() => {
     update();
   }
 
-  function _applyTransform() {
-    if (!_island) return;
-    _island.style.transform = `scale(${_animScale})`;
-  }
-
   function show() {
     if (!_island) init();
-
-    const pill = document.getElementById('status-pill');
-    if (pill) pill.style.opacity = '0';
 
     const statusBar = document.getElementById('status-bar');
     if (statusBar) {
@@ -184,9 +166,6 @@ export const DynamicIsland = (() => {
     
     const statusBar = document.getElementById('status-bar');
     statusBar?.classList.remove('status-bar-focused');
-
-    const pill = document.getElementById('status-pill');
-    if (pill) pill.style.opacity = '1';
 
     // Switch to mode-idle instead of translating Y
     _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');
@@ -264,11 +243,11 @@ export const DynamicIsland = (() => {
       _sublabelEl.textContent = `W${getWeekMode()} · ${String(State.type).toUpperCase()} · ${status}`;
     }
 
-    // Progress bar
+    // Progress bar — PPL law via canonical aliases: push=green · pull=cyan · legs=purple
     if (_progressFill) {
       const pct = total ? (done / total) * 100 : 0;
       _progressFill.style.transform = `scaleX(${pct / 100})`;
-      const colors = { push: 'var(--c-accent)', pull: 'var(--c-purple)', legs: 'var(--c-blue)' };
+      const colors = { push: 'var(--c-push)', pull: 'var(--c-pull)', legs: 'var(--c-legs)' };
       _progressFill.style.background = colors[State.type] || 'var(--c-accent)';
     }
 
@@ -333,12 +312,7 @@ export const DynamicIsland = (() => {
     _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');
     _island?.classList.add(`mode-${_displayMode}`);
     localStorage.setItem('ap-di-mode', _displayMode);
-    
-    _anims.scale?.stop();
-    _anims.scale = Spring.animate({
-      from: 0.9, to: 1, stiffness: 400, damping: 12,
-      onUpdate: (v) => { _animScale = v; requestAnimationFrame(() => _applyTransform()); }
-    });
+    // Size morph is handled entirely by the CSS width/height transition.
     update();
   }
 
@@ -352,12 +326,7 @@ export const DynamicIsland = (() => {
         _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');
         _island?.classList.add(`mode-${_displayMode}`);
     }
-
-    _anims.scale?.stop();
-    _anims.scale = Spring.animate({
-      from: _expanded ? 0.95 : 1.05, to: 1, stiffness: 300, damping: 15,
-      onUpdate: (v) => { _animScale = v; requestAnimationFrame(() => _applyTransform()); }
-    });
+    // Expand/collapse morph is handled by the CSS width/height/border-radius transition.
   }
 
   function _onPointerDown(e) {
@@ -366,8 +335,6 @@ export const DynamicIsland = (() => {
       return;
     }
     _isLongPress = false;
-    _island?.style.setProperty('transition', 'none');
-    _island?.setPointerCapture(e.pointerId);
 
     clearTimeout(_longPressTimer);
     _longPressTimer = setTimeout(() => {
@@ -382,7 +349,6 @@ export const DynamicIsland = (() => {
     }
 
     clearTimeout(_longPressTimer);
-    _island?.style.removeProperty('transition');
   }
 
   function _onLongPress() {
