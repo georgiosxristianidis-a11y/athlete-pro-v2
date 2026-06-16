@@ -46,11 +46,11 @@
 |---|---|:--:|:--:|:--:|---|---|
 | 0-1 | Secure-context guard для Web Crypto | P0 | L | 🔒 LEAD | `js/workers/crypto.worker.js`, `js/db.js` | ✅ `f9a7277` |
 | 0-2 | LAN bind + CSP upgrade-insecure fix | P0 | M | 🔒 LEAD | `server.js` | ✅ `f9a7277` |
-| 0-3 | `toUserMessage()` — нормализация ошибок, ноль стектрейсов в UI | P0 | M | 🟦 SONNET | new `js/shared/errors-ui.js`; точки: `js/boot.js:10`, `js/intel.view.js:279`, `js/workout-ai.view.js:409`, `js/claude.view.js` onError | ⬜ |
-| 0-4 | Дедуп + лимит тостов (макс N, без стака поверх контента) | P0 | M | 🟦 SONNET | `js/shell.js` (Toast) | ⬜ |
+| 0-3 | `toUserMessage()` — нормализация ошибок, ноль стектрейсов в UI | P0 | M | 🔒 LEAD | `js/shared/errors-ui.js`; точки boot/intel/workout-ai/claude.view | ✅ `9a61f3c` — классифицирует network/timeout/429/auth/500, иначе generic; сырьё в UI не течёт |
+| 0-4 | Дедуп + лимит тостов (макс N, без стака поверх контента) | P0 | M | 🔒 LEAD | `js/shell.js` (Toast) | ✅ `9a61f3c` — дедуп по type+msg (рестарт таймера), кап 3 |
 | 0-5 | Общий `confirmDialog()` (тёмная модалка, Promise<bool>) | P0 | M | 🔒 LEAD | new `js/shared/confirm.js` + `css/base.css`; API-контракт | ✅ |
 | 0-6 | Заменить нативные `confirm()` на `confirmDialog()` | P0 | S→M | 🔒 LEAD | `body-stats.js`, `privacy.view.js`, `handlers.js`×3, `modals.js` | ✅ |
-| 0-7 | Реализовать/спрятать `alert('Not implemented')`-заглушки | P1 | M | 🟦 SONNET | `js/workout.view/handlers.js:301-304` (custom workouts) | ⬜ |
+| 0-7 | Реализовать/спрятать `alert/prompt`-заглушки | P1 | M | 🔒 LEAD | `js/workout.view/handlers.js`; new `promptDialog()` | ✅ `9a61f3c` — alert→Toast; native `prompt()`→`promptDialog()` (на TextField 4-1); ноль нативных диалогов |
 
 **Цель фазы:** ноль крашей, ноль сырых ошибок в UI, ноль нативных диалогов.
 
@@ -58,7 +58,9 @@
 > (`5e8ac4f`), промоутить нечего — `confirmDialog()` написан с нуля на `.modal-sheet`+Spring.
 > 0-6 поднял из 🟩 GEMINI в 🔒 LEAD: замена sync→async меняет поток управления в завершении
 > и отмене тренировки (цена ошибки высока). Все 6 нативных `confirm()` устранены, тесты 118/118.
-> Осталось 🟦 SONNET: 0-3 (нормализация ошибок), 0-4 (тосты), 0-7 (alert-заглушки).
+>
+> **ФАЗА 0 — COMPLETE (7/7, `9a61f3c`):** 0-3/0-4/0-7 закрыты (взяты LEAD-ом как логика).
+> Цель достигнута: ноль крашей, ноль сырых ошибок в UI, ноль нативных диалогов.
 
 ---
 
@@ -185,4 +187,4 @@ PiP — это зеркало; считает главная страница. D
 ---
 
 ## Прогресс по фазам
-✅ NOW(C-1) · 🟨 Фаза 0 (4/7) · 🟨 Фаза 1 (2/7 — 1-2✅, 1-7✅) · 🟨 Фаза 2 (3/7) · 🟨 Фаза 3 (1/4) · 🟨 Фаза 4 (1/5 — 4-1✅) · 🟨 Фаза 5 (1/7 — 5-7✅) · 🌐 i18n L-1/L-2 ✅
+✅ NOW(C-1) · ✅ Фаза 0 (7/7) · 🟨 Фаза 1 (2/7 — 1-2✅, 1-7✅) · 🟨 Фаза 2 (3/7) · 🟨 Фаза 3 (1/4) · 🟨 Фаза 4 (1/5 — 4-1✅) · 🟨 Фаза 5 (1/7 — 5-7✅) · 🌐 i18n L-1/L-2 ✅
