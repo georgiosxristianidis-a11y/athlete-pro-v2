@@ -109,9 +109,26 @@ app.use(express.static(__dirname, {
 // ── Global Error Handling
 app.use(errorMiddleware);
 
-export function startServer(port = process.env.PORT || 3001) {
+/**
+ * Port resolution (keeps your phone testing and Claude's preview on separate
+ * ports so they never collide):
+ *   PORT env  →  `--port=N` / `--port N` CLI arg  →  3000 (default).
+ * Your `npm run dev` / `npm run dev:lan` → 3000 (phone). Claude's preview
+ * launches with `--port=3001`.
+ */
+function resolvePort() {
+  if (process.env.PORT) return Number(process.env.PORT);
+  const i = process.argv.findIndex(a => a === '--port' || a.startsWith('--port='));
+  if (i !== -1) {
+    const v = process.argv[i].includes('=') ? process.argv[i].split('=')[1] : process.argv[i + 1];
+    if (v && !Number.isNaN(Number(v))) return Number(v);
+  }
+  return 3000;
+}
+
+export function startServer(port = resolvePort()) {
   // LAN by default — phone field testing is the daily workflow
-  // (http://192.168.x.x:3001). Set HOST=127.0.0.1 to restrict to localhost.
+  // (http://192.168.x.x:3000). Set HOST=127.0.0.1 to restrict to localhost.
   const host = process.env.HOST || '0.0.0.0';
   return new Promise((resolve) => {
     const server = app.listen(port, host, () => {
