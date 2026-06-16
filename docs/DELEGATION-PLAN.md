@@ -86,8 +86,8 @@
 |---|---|:--:|:--:|:--:|---|---|
 | 2-1 | **Root-fix агрегатов: WEEK == MONTH == 14.3k** | P1 | XL | 🔒 LEAD | `js/db.js` (`startOfWeek`/`startOfMonth` + 4 агрегата) | ✅ |
 | 2-2 | **Root-fix единиц длительности (228391m / 2521m — мс↔мин↔сек)** | P1 | L | 🔒 LEAD | `dashboard.js`, `claude.store.js`, `bento.js`, `csv-export.js` | ✅ |
-| 2-3 | Единый слой форматирования: число/единицы/дата | P1 | M | 🟦 SONNET | new/existing `js/shared/format.js` | ⬜ |
-| 2-4 | Запрет будущих дат в Recent + валидация диапазонов | P1 | M | 🟦 SONNET | `js/analytics.view.js`, `js/dashboard.js` | ⬜ |
+| 2-3 | Единый слой форматирования: число/единицы/дата | P1 | M | 🔒 LEAD | `js/shared/format.js` | ✅ `a8c0a21` — `fmtVol/fmtWeight/fmtDuration/fmtDate`; дубль `fmtVol` (analytics.store+dashboard) устранён (re-export); 2-6 свипнет остальное |
+| 2-4 | Запрет будущих дат в Recent + валидация диапазонов | P1 | M | 🔒 LEAD | `js/analytics.view.js`, `js/dashboard.js` | ✅ `a8c0a21` — recent-фильтры клампят `[since, now]`; `renderRecent` дропает будущее, sort newest-first, cap 5 |
 | 2-5 | Различить SCORE vs DOTS (226==226) либо убрать дубль | P1 | M | 🔒 LEAD | `athlete-room.js`, `profile.view.js`, `passport-hero.js` | ✅ — Score=`athleteProScore` (composite, ведёт tier), DOTS=`dotsScore` (чистый IPF). Профиль-бенто тоже = чистый DOTS (336≠320) |
 | 2-6 | Единый формат чисел (488 vs 6.9k) | P2 | S | 🟩 GEMINI | через 2-3 форматтер | ⬜ |
 | 2-7 | Тесты на агрегаты и форматтер | P1 | M | 🟦 SONNET | `test/*.test.js` | 🟡 частично — `test/aggregates.test.js` (10) покрывает агрегаты; остаётся форматтер (2-3) |
@@ -187,4 +187,4 @@ PiP — это зеркало; считает главная страница. D
 ---
 
 ## Прогресс по фазам
-✅ NOW(C-1) · ✅ Фаза 0 (7/7) · 🟨 Фаза 1 (5/7 — 1-1/1-2/1-3/1-4/1-7✅; остаток 1-5,1-6 🟩) · 🟨 Фаза 2 (3/7) · 🟨 Фаза 3 (1/4) · 🟨 Фаза 4 (1/5 — 4-1✅) · 🟨 Фаза 5 (1/7 — 5-7✅) · 🌐 i18n L-1/L-2 ✅
+✅ NOW(C-1) · ✅ Фаза 0 (7/7) · 🟨 Фаза 1 (5/7 — 1-1/1-2/1-3/1-4/1-7✅; остаток 1-5,1-6 🟩) · 🟨 Фаза 2 (5/7 — 2-1/2-2/2-3/2-4/2-5✅; остаток 2-6 🟩, 2-7 🟦) · 🟨 Фаза 3 (1/4) · 🟨 Фаза 4 (1/5 — 4-1✅) · 🟨 Фаза 5 (1/7 — 5-7✅) · 🌐 i18n L-1/L-2 ✅
