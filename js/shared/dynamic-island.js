@@ -148,13 +148,6 @@ export const DynamicIsland = (() => {
 
   function show() {
     if (!_island) init();
-
-    const statusBar = document.getElementById('status-bar');
-    if (statusBar) {
-      statusBar.classList.add('status-bar-focused');
-      statusBar.onclick = () => statusBar.classList.remove('status-bar-focused');
-    }
-    
     update();
   }
 
@@ -163,9 +156,6 @@ export const DynamicIsland = (() => {
     _expanded = false;
     _island?.classList.remove('expanded');
     _island?.classList.remove('timer-mode');
-    
-    const statusBar = document.getElementById('status-bar');
-    statusBar?.classList.remove('status-bar-focused');
 
     // Switch to mode-idle instead of translating Y
     _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');

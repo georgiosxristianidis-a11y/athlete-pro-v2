@@ -106,9 +106,6 @@
         transition: all 0.4s ease;
         }
 
-        #status-bar.status-bar-focused {
-        opacity: 0.3; /* Mute the header to focus on Island */
-        }
       .status-logo {
         display: flex;
         align-items: center;
@@ -243,7 +240,7 @@
           <span class="status-logo-text"><span class="logo-w1">Athlete</span><span class="logo-w2">Pro</span></span>
         </div>
         <div id="status-island-container"></div>
-        <div style="display:flex; align-items:center; gap:var(--sp-2)">
+        <div class="status-right" style="display:flex; align-items:center; gap:var(--sp-2)">
         <div id="privacy-indicator" class="privacy-indicator" hidden></div>
         <span id="status-time"></span>
         <button id="athlete-avatar-btn" class="athlete-avatar-btn" onclick="window.AthleteRoom.open()">

@@ -11,10 +11,15 @@
   transition: filter 0.4s ease, opacity 0.4s ease !important;
 }
 
-#status-bar.workout-active {
-  filter: blur(8px) saturate(0.5);
-  opacity: 0.4;
-  pointer-events: none;
+/* Workout active → let the Dynamic Island lead. The island is the live HUD,
+   so it stays SHARP and tappable — only the side chrome recedes. Never apply
+   filter/opacity/pointer-events to #status-bar itself: it cascades to the
+   island (filter:blur blurs the whole subtree; parent opacity can't be undone
+   by a child). */
+#status-bar.workout-active .status-logo,
+#status-bar.workout-active .status-right {
+  opacity: 0.5;
+  transition: opacity 0.4s ease;
 }
 
 #status-bar .status-logo { flex: 1; min-width: 0; }
