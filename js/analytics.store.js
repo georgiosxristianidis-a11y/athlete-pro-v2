@@ -89,14 +89,9 @@ export async function fetchPPLTonnage() {
    PURE FORMATTERS
    ══════════════════════════════════════════════ */
 
-/**
- * Format volume number with unit suffix.
- * @param {number} kg
- * @returns {string}
- */
-export function fmtVol(kg) {
-  return kg >= 1000 ? (kg / 1000).toFixed(1) + 'k' : Math.round(kg).toString();
-}
+// Volume formatting now lives in the shared format layer (2-3); re-exported
+// here so existing `import { fmtVol } from './analytics.store.js'` keeps working.
+export { fmtVol } from './shared/format.js';
 
 /**
  * Format week label from a trend bucket's midpoint date.

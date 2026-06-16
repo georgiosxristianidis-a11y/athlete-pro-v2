@@ -9,12 +9,13 @@ import { getRecommendations } from './claude.store.js';
 import { Spring } from './shared/spring.js';
 import { esc } from './shared/utils.js';
 import { Toast } from './shell.js';
+import { fmtVol, fmtDuration, fmtDate } from './shared/format.js';
 
 export const Dashboard = (() => {
   const TYPE_COLOR = {
-    push: 'var(--c-accent)',
-    pull: 'var(--c-purple)',
-    legs: 'var(--c-blue)',
+    push: 'var(--c-push)',
+    pull: 'var(--c-pull)',
+    legs: 'var(--c-legs)',
   };
 
   const _activeSprings = new Map();
@@ -28,16 +29,6 @@ export const Dashboard = (() => {
     if (h < 12) return 'Good morning';
     if (h < 17) return 'Good afternoon';
     return 'Good evening';
-  }
-
-  /**
-   * Format a volume value for compact display (e.g. 1500 → '1.5k').
-   * @param {number} kg — volume in kilograms
-   * @returns {string}
-   */
-  function fmtVol(kg) {
-    if (kg >= 1000) return (kg / 1000).toFixed(1) + 'k';
-    return Math.round(kg).toString();
   }
 
   /**
@@ -68,7 +59,7 @@ export const Dashboard = (() => {
       return map;
     }
 
-    const recent     = allWorkouts.filter(w => w.timestamp >= d30);
+    const recent     = allWorkouts.filter(w => w.timestamp >= d30 && w.timestamp <= now); // 2-4: no future dates
     const prior      = allWorkouts.filter(w => w.timestamp >= d60 && w.timestamp < d30);
     const recentBest = bestInPeriod(recent);
     const priorBest  = bestInPeriod(prior);
@@ -536,7 +527,14 @@ export const Dashboard = (() => {
     const el = document.getElementById('recent-list');
     if (!el) return;
 
-    if (!workouts.length) {
+    const now = Date.now();
+    // 2-4: drop future-dated sessions, newest first, cap 5.
+    const list = (workouts || [])
+      .filter((w) => w.timestamp <= now)
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5);
+
+    if (!list.length) {
       el.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">
@@ -556,16 +554,11 @@ export const Dashboard = (() => {
       return;
     }
 
-    el.innerHTML = workouts
-      .slice(0, 5)
+    el.innerHTML = list
       .map((w) => {
         const dot = TYPE_COLOR[w.type] || 'var(--c-text-3)';
-        const date = new Date(w.timestamp).toLocaleDateString('en', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-        });
-        const dur = w.duration ? ` · ${Math.round(w.duration / 60000)}m` : '';
+        const date = fmtDate(w.timestamp);
+        const dur = w.duration ? ` · ${fmtDuration(w.duration)}` : '';
         const type = w.type.charAt(0).toUpperCase() + w.type.slice(1);
         return `
         <div class="session-item">

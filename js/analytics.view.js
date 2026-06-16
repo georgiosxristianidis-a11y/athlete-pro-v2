@@ -163,8 +163,10 @@ export async function load() {
 }
 
 function _renderQuickStats(workouts) {
-  const since = Date.now() - 30 * 86400000;
-  const recent = workouts.filter((w) => w.timestamp >= since);
+  const now = Date.now();
+  const since = now - 30 * 86400000;
+  // 2-4: clamp to [since, now] — never count workouts dated in the future.
+  const recent = workouts.filter((w) => w.timestamp >= since && w.timestamp <= now);
   const totalVol = recent.reduce((s, w) => s + (w.tonnage || 0), 0);
   const avgMs = recent.length ? recent.reduce((s, w) => s + (w.duration || 0), 0) / recent.length : 0;
   _set('an-total-sessions', recent.length);
