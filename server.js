@@ -41,7 +41,7 @@ app.use(helmet({
       objectSrc: ["'none'"],
       // Required for http:// LAN access from the phone: helmet's default
       // upgrade-insecure-requests forces https on subresources and breaks
-      // every asset load on http://192.168.x.x:3000.
+      // every asset load on http://192.168.x.x:3001.
       upgradeInsecureRequests: null,
     },
   },
@@ -64,7 +64,7 @@ const globalApiLimiter = rateLimit({
 });
 
 // ── Strict CORS
-const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3001', 'http://127.0.0.1:3001', 'http://localhost:3000', 'http://127.0.0.1:3000'];
 app.use(cors({
   origin: function(origin, callback) {
     // Same-origin module scripts DO send an Origin header — throwing here
@@ -109,9 +109,9 @@ app.use(express.static(__dirname, {
 // ── Global Error Handling
 app.use(errorMiddleware);
 
-export function startServer(port = process.env.PORT || 3000) {
+export function startServer(port = process.env.PORT || 3001) {
   // LAN by default — phone field testing is the daily workflow
-  // (http://192.168.x.x:3000). Set HOST=127.0.0.1 to restrict to localhost.
+  // (http://192.168.x.x:3001). Set HOST=127.0.0.1 to restrict to localhost.
   const host = process.env.HOST || '0.0.0.0';
   return new Promise((resolve) => {
     const server = app.listen(port, host, () => {

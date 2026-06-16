@@ -17,6 +17,7 @@ export default defineConfig({
   },
   webServer: {
     command: 'node server.js',
+    env: { PORT: '3000' }, // e2e stays isolated on 3000; dev/phone default is 3001
     url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 10000,
