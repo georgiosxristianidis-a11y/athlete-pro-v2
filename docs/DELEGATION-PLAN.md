@@ -70,8 +70,8 @@
 |---|---|:--:|:--:|:--:|---|---|
 | 1-1 | hex→токены + шкала весов (500/600/800) | P1 | L | 🔒 LEAD | `css/*` | ✅ `b610b46` |
 | 1-2 | **Решение: свести 6 акцентов → 1 primary + 1 secondary** | P1 | XL | 🔒 LEAD | `css/base.css` :root | ✅ `94c706a` — двухуровневая система: BRAND (green+purple) vs SEMANTIC; алиасы `--c-push/pull/legs` |
-| 1-3 | Закон PPL-цвета везде: Push=green / Pull=blue / Legs+Shoulders=purple | P1 | L | 🟦 SONNET | `js/intel.view.js`, `js/body-stats.js` (метрики), `js/analytics.view.js` (линии) | ⬜ |
-| 1-4 | Body Metrics: рандомная радуга → PPL-категории + нейтраль для композиции | P1 | M | 🟦 SONNET | `js/body-stats.js` (конфиг метрик) | ⬜ |
+| 1-3 | Закон PPL-цвета везде: Push=green / Pull=cyan / Legs=purple | P1 | L | 🔒 LEAD | `js/analytics.view.js` (TYPE_COLOR+PPL-баланс) | ✅ `e527083` — pull→cyan, legs→purple (была инверсия как в острове); intel.view PPL-цветов не имеет |
+| 1-4 | Body Metrics: рандомная радуга → PPL-категории + нейтраль для композиции | P1 | M | 🔒 LEAD | `js/body-stats.js` (BS_FIELDS) | ✅ `e527083` — chest/shoulders=push, arms=pull, hips/thighs/calves=legs, composition=нейтраль (без glow); подложные токены чтобы glow резолвился. Заметка: shoulders=push (анатомия), не legs |
 | 1-5 | Синие FAB + оранжевая рамка Claude → в систему | P1 | S | 🟩 GEMINI | `css/claude.css`, `css/profile.css`, settings | ⬜ |
 | 1-6 | Тонированный тёмный фон вместо чистого `#000` (где остался) | P1 | S | 🟩 GEMINI | `css/*`, `--c-black` только для острова | ⬜ |
 | 1-7 | Бренд-цвет лого (фиолет) ↔ системный акцент — согласовать | P1 | M | 🔒 LEAD | `index.html` лого | ✅ — wordmark `Pro` приведён к бренд-иконке: `--c-accent`(green)→`--c-secondary`(violet `#8b5cf6`)+violet glow. Green остаётся системным action-акцентом (CTA/active/focus); `--c-secondary` получил якорь = логотип. Иконка `icon-192.png` уже фиолетовая — рассинхрон убран |
@@ -187,4 +187,4 @@ PiP — это зеркало; считает главная страница. D
 ---
 
 ## Прогресс по фазам
-✅ NOW(C-1) · ✅ Фаза 0 (7/7) · 🟨 Фаза 1 (2/7 — 1-2✅, 1-7✅) · 🟨 Фаза 2 (3/7) · 🟨 Фаза 3 (1/4) · 🟨 Фаза 4 (1/5 — 4-1✅) · 🟨 Фаза 5 (1/7 — 5-7✅) · 🌐 i18n L-1/L-2 ✅
+✅ NOW(C-1) · ✅ Фаза 0 (7/7) · 🟨 Фаза 1 (5/7 — 1-1/1-2/1-3/1-4/1-7✅; остаток 1-5,1-6 🟩) · 🟨 Фаза 2 (3/7) · 🟨 Фаза 3 (1/4) · 🟨 Фаза 4 (1/5 — 4-1✅) · 🟨 Фаза 5 (1/7 — 5-7✅) · 🌐 i18n L-1/L-2 ✅
