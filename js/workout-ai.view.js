@@ -8,6 +8,7 @@ import { fetchCoach, Heatmap } from './claude.store.js';
 import { State as WorkoutState } from './workout.store.js';
 import { DB } from './db.js';
 import { esc } from './shared/utils.js';
+import { toUserMessage } from './shared/errors-ui.js';
 
 /* ══════════════════════════════════════════════
    STATE
@@ -406,7 +407,7 @@ async function _streamMessage(message) {
       }
     }, context);
   } catch (err) {
-    addMessage(`Error: ${err.message}`, 'ai');
+    addMessage(toUserMessage(err), 'ai');
     _streaming = false;
   }
 }

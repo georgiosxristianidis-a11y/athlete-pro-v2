@@ -391,6 +391,10 @@
   line-height: 1.45;
   margin: 0 0 var(--sp-3);
 }
+/* promptDialog input slot */
+.confirm-field {
+  margin: 0 0 var(--sp-3);
+}
 .confirm-actions {
   display: flex;
   gap: var(--sp-2);

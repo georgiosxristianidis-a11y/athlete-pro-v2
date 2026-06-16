@@ -1,6 +1,7 @@
 // @ts-check
 import { IntelStore } from './intel.store.js';
 import { esc } from './shared/utils.js';
+import { toUserMessage } from './shared/errors-ui.js';
 import { DB } from './db.js';
 
 /**
@@ -276,7 +277,7 @@ export const IntelView = (() => {
       console.error(err);
       IntelStore.addLog('SYS', 'Connection failed');
       IntelStore.setStatus('ERROR');
-      if (feedbackText) feedbackText.textContent = `Failed: ${err.message}`;
+      if (feedbackText) feedbackText.textContent = toUserMessage(err);
     }
   }
 

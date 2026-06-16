@@ -10,7 +10,7 @@ import {
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
 import { esc } from '../shared/utils.js';
-import { confirmDialog } from '../shared/confirm.js';
+import { confirmDialog, promptDialog } from '../shared/confirm.js';
 import { isRu } from '../locale.store.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
 import { syncDrumUI } from '../ui/drum-picker.js';
@@ -296,21 +296,24 @@ export async function showExerciseMenu(ei) {
 }
 
 export async function openReplaceExModal(ei) {
-  const { openReplaceExModal: open } = await import('./modals.js').catch(() => ({ openReplaceExModal: () => alert('Modal failed') }));
+  const { openReplaceExModal: open } = await import('./modals.js').catch(() => ({ openReplaceExModal: () => Toast.show(isRu() ? 'Не удалось открыть окно' : "Couldn't open the dialog", 'error') }));
   // @ts-ignore
   open(ei);
 }
 
 export async function openCustomWorkoutModal() {
-  const { openCustomWorkoutModal: open } = await import('./modals.js').catch(() => ({ openCustomWorkoutModal: () => alert('Custom workouts coming soon') }));
+  const { openCustomWorkoutModal: open } = await import('./modals.js').catch(() => ({ openCustomWorkoutModal: () => Toast.show(_soonMsg(), 'info') }));
   // @ts-ignore
   open();
 }
 
-export async function _createNewCustomWorkout() { alert('Not implemented'); }
-export async function _editCustomWorkout(id) { alert('Not implemented'); }
-export async function _deleteCustomWorkout(id) { alert('Not implemented'); }
-export async function _startCustomWorkout(id) { alert('Not implemented'); }
+// Custom-workout authoring isn't built yet — surface a graceful toast, never a
+// native alert() (0-7: zero native dialogs). Implementing it is a separate feature.
+const _soonMsg = () => (isRu() ? 'Пользовательские тренировки — скоро' : 'Custom workouts — coming soon');
+export async function _createNewCustomWorkout() { Toast.show(_soonMsg(), 'info'); }
+export async function _editCustomWorkout(id) { Toast.show(_soonMsg(), 'info'); }
+export async function _deleteCustomWorkout(id) { Toast.show(_soonMsg(), 'info'); }
+export async function _startCustomWorkout(id) { Toast.show(_soonMsg(), 'info'); }
 export function _closeCustomWorkoutModal() {
   const el = document.getElementById('custom-workout-overlay');
   el?.remove();
@@ -516,7 +519,13 @@ export function _toggleCoreItem(day, idx) {
 }
 
 export async function _addCoreItem(day) {
-  const name = prompt('Core exercise name:');
+  const ru = isRu();
+  const name = await promptDialog({
+    title: ru ? 'Упражнение на корпус' : 'Core exercise',
+    placeholder: ru ? 'Название' : 'Name',
+    confirmLabel: ru ? 'Добавить' : 'Add',
+    cancelLabel: ru ? 'Отмена' : 'Cancel',
+  });
   if (!name) return;
   const items = loadCoreChecklist(day);
   items.push(name.trim());
@@ -707,6 +716,6 @@ export function _toggleWeek() {
 }
 
 export function _addLiveExercise() {
-  alert('Feature coming soon: Live exercise adding.');
+  Toast.show(isRu() ? 'Скоро: добавление упражнений на лету' : 'Coming soon: live exercise adding', 'info');
 }
 async function _checkAIProactive() { /* placeholder */ }

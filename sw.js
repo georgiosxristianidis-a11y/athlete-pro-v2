@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v52';
+const CACHE_NAME = 'athlete-pro-v53';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -46,6 +46,7 @@ const ASSETS = [
   '/js/shared/cryptoClient.js',
   '/js/shared/csv-export.js',
   '/js/shared/dynamic-island.js',
+  '/js/shared/errors-ui.js',
   '/js/shared/integrity.js',
   '/js/shared/lww.js',
   '/js/shared/sparkline.js',

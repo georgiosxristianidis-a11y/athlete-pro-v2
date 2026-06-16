@@ -2,6 +2,7 @@
 import { COMPUTE_REST_HOURS, Heatmap, MUSCLE_MAP } from './claude.store.js';
 import { DB } from './db.js';
 import { esc, haptic } from './shared/utils.js';
+import { toUserMessage } from './shared/errors-ui.js';
 import { State as WorkoutState } from './workout.store.js';
 import { Toast } from './shell.js';
 
@@ -195,10 +196,10 @@ export const Claude = (() => {
           hist?.scrollTo(0, hist.scrollHeight);
         },
         onDone: () => { ClaudeState.chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: aiText }); },
-        onError: (err) => { aiBubble.innerHTML = `<div class="ai-error">${esc(err)}</div>`; }
+        onError: (err) => { aiBubble.innerHTML = `<div class="ai-error">${esc(toUserMessage(err))}</div>`; }
       }, { history: ClaudeState.chatHistory });
     } catch (e) {
-      aiBubble.innerHTML = '<div class="ai-error">Failed to connect to coach.</div>';
+      aiBubble.innerHTML = `<div class="ai-error">${esc(toUserMessage(e))}</div>`;
     }
   }
 
