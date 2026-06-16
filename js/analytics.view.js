@@ -18,10 +18,12 @@ import {
 } from './analytics.store.js';
 import { t } from './locale.store.js';
 
+// PPL law: push=green (--c-accent) · pull=cyan (--c-blue) · legs=purple (--c-purple).
+// Kept as hex because callers append alpha (`${color}20`), which CSS vars can't do.
 const TYPE_COLOR = {
   push: '#00e676',
-  pull: '#8b5cf6',
-  legs: '#ff4d88',
+  pull: '#00b8d4',
+  legs: '#8b5cf6',
 };
 
 function svgArrow(dir) {
@@ -84,15 +86,15 @@ export async function load() {
       </div>
       <div class="chart-card bento-grid stagger-item" style="padding:16px;gap:12px;display:grid;grid-template-columns:1fr 1fr 1fr; animation-delay: 0.1s">
         <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-push" style="color:#00e676">0%</div>
+          <div class="ppl-bal-val" id="ppl-bal-push" style="color:var(--c-push)">0%</div>
           <div class="ppl-bal-lbl">Push</div>
         </div>
         <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-pull" style="color:#8b5cf6">0%</div>
+          <div class="ppl-bal-val" id="ppl-bal-pull" style="color:var(--c-pull)">0%</div>
           <div class="ppl-bal-lbl">Pull</div>
         </div>
         <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-legs" style="color:#ff4d88">0%</div>
+          <div class="ppl-bal-val" id="ppl-bal-legs" style="color:var(--c-legs)">0%</div>
           <div class="ppl-bal-lbl">Legs</div>
         </div>
       </div>

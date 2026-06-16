@@ -9,20 +9,24 @@ const BS_KEY = 'ap-bodystats';
 const bsEsc = (s) => String(s).replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c]);
 const bsFmtDate = (iso) => new Date(iso).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
 
+// 1-4: colour each metric by the muscle group it tracks (PPL law — push=green,
+// pull=cyan, legs=purple) and keep body composition neutral, instead of the old
+// random rainbow. Underlying tokens (not --c-push/pull/legs aliases) so the bento
+// glow derivation (--c-* → --glow-*-md) resolves; neutral metrics get no glow.
 const BS_FIELDS = [
-  { id: 'weight',    label: 'Weight',    unit: 'kg', color: 'var(--c-accent)' },
-  { id: 'body_fat',  label: 'Body Fat',  unit: '%',  color: 'var(--c-amber)' },
-  { id: 'chest',     label: 'Chest',     unit: 'cm', color: 'var(--c-blue)' },
-  { id: 'shoulders', label: 'Shoulders', unit: 'cm', color: 'var(--c-blue)' },
-  { id: 'waist',     label: 'Waist',     unit: 'cm', color: 'var(--c-text-1)' },
-  { id: 'hips',      label: 'Hips',      unit: 'cm', color: 'var(--c-purple)' },
-  { id: 'arm_l',     label: 'Left Arm',  unit: 'cm', color: 'var(--c-amber)' },
-  { id: 'arm_r',     label: 'Right Arm', unit: 'cm', color: 'var(--c-amber)' },
-  { id: 'thigh_l',   label: 'Left Thigh',unit: 'cm', color: 'var(--c-blue)' },
-  { id: 'thigh_r',   label: 'Right Thigh',unit:'cm', color: 'var(--c-blue)' },
-  { id: 'calf_l',    label: 'Left Calf', unit: 'cm', color: 'var(--c-text-1)' },
-  { id: 'calf_r',    label: 'Right Calf',unit: 'cm', color: 'var(--c-text-1)' },
-  { id: 'neck',      label: 'Neck',      unit: 'cm', color: 'var(--c-text-1)' }
+  { id: 'weight',    label: 'Weight',    unit: 'kg', color: 'var(--c-text-1)' },  // composition
+  { id: 'body_fat',  label: 'Body Fat',  unit: '%',  color: 'var(--c-text-1)' },  // composition
+  { id: 'chest',     label: 'Chest',     unit: 'cm', color: 'var(--c-accent)' },  // push
+  { id: 'shoulders', label: 'Shoulders', unit: 'cm', color: 'var(--c-accent)' },  // push
+  { id: 'waist',     label: 'Waist',     unit: 'cm', color: 'var(--c-text-1)' },  // composition
+  { id: 'hips',      label: 'Hips',      unit: 'cm', color: 'var(--c-purple)' },  // legs
+  { id: 'arm_l',     label: 'Left Arm',  unit: 'cm', color: 'var(--c-blue)' },    // pull (biceps)
+  { id: 'arm_r',     label: 'Right Arm', unit: 'cm', color: 'var(--c-blue)' },    // pull (biceps)
+  { id: 'thigh_l',   label: 'Left Thigh',unit: 'cm', color: 'var(--c-purple)' },  // legs
+  { id: 'thigh_r',   label: 'Right Thigh',unit:'cm', color: 'var(--c-purple)' },  // legs
+  { id: 'calf_l',    label: 'Left Calf', unit: 'cm', color: 'var(--c-purple)' },  // legs
+  { id: 'calf_r',    label: 'Right Calf',unit: 'cm', color: 'var(--c-purple)' },  // legs
+  { id: 'neck',      label: 'Neck',      unit: 'cm', color: 'var(--c-text-1)' }   // structural
 ];
 
 function bsLoad() {
