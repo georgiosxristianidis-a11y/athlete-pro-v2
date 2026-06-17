@@ -2,6 +2,8 @@
 import { supabase } from './supabase.js';
 import { DB } from './db.js';
 import { lwwWins } from './shared/lww.js';
+import { mergeWorkoutExercises, pickWinner } from './shared/sync-merge.js';
+import { getPrivacyMode } from './privacy.store.js';
 
 /**
  * #GIO: Elite Sync Engine V2.1 — LWW Conflict Resolution
@@ -19,7 +21,9 @@ import { lwwWins } from './shared/lww.js';
  */
 export const SyncManager = (() => {
   const QUEUE_KEY = 'ap-sync-queue';
+  const PULL_CURSOR_KEY = 'ap-sync-pulled-at'; // high-water mark of server updated_at we've merged
   let _processing = false;
+  let _pulling = false;
   let _status = 'idle'; // 'idle' | 'syncing' | 'error' | 'offline'
   let _keepAliveTimer = null;
   let _retryTimer = null;
@@ -155,25 +159,7 @@ export const SyncManager = (() => {
 
           // CRDT-lite: Deep merge for workouts to prevent lost sets
           if (store === 'workouts' && servRow.exercises) {
-            const localEx = t.data.exercises || [];
-            const servEx = servRow.exercises || [];
-            
-            const mergedExMap = new Map();
-            for (const ex of servEx) mergedExMap.set(ex.name, { ...ex });
-            for (const ex of localEx) {
-              if (mergedExMap.has(ex.name)) {
-                const sEx = mergedExMap.get(ex.name);
-                const mergedSets = [...sEx.sets];
-                for (let i = 0; i < ex.sets.length; i++) {
-                  if (!mergedSets[i]) mergedSets[i] = ex.sets[i];
-                  else if (t.timestamp >= servTs) mergedSets[i] = ex.sets[i];
-                }
-                mergedExMap.set(ex.name, { ...ex, sets: mergedSets });
-              } else {
-                mergedExMap.set(ex.name, ex);
-              }
-            }
-            t.data.exercises = Array.from(mergedExMap.values());
+            t.data.exercises = mergeWorkoutExercises(t.data.exercises, servRow.exercises, t.timestamp >= servTs);
             t.timestamp = Math.max(t.timestamp, servTs) + 1; // Bump timestamp so local wins the merge
             toSync.push(t);
           } else {
@@ -235,6 +221,100 @@ export const SyncManager = (() => {
     }
   }
 
+  /* ════════════════════════════════════════════════════════
+     PULL — download server changes and merge them into local IDB.
+     This is the half that makes the engine converge: process() only
+     pushes up; pull() brings other devices' edits down. Writes go
+     through DB._putRaw/_delRaw (no _triggerSync) so a merged row is
+     never re-queued as an upstream push (no echo loop).
+     ════════════════════════════════════════════════════════ */
+
+  /** All synced stores (same set process() maps to tables). */
+  const SYNCED_STORES = ['workouts', 'oneRM', 'bodyMetrics', 'settings', 'nutritionLogs', 'plannedWorkouts'];
+
+  /** Local primary key for a record (settings are keyed by `key`, the rest by `id`). */
+  function _localKey(store, row) {
+    return store === 'settings' ? row.key : row.id;
+  }
+
+  /** Map a server row (snake_case + server-only columns) back to the local record shape. */
+  function _fromServerRow(servRow) {
+    const { user_id: _uid, updated_at, device_id, ...rest } = servRow;
+    const row = { ...rest };
+    if (updated_at != null) row.updatedAt = new Date(updated_at).getTime();
+    if (device_id != null) row.deviceId = device_id;
+    return row;
+  }
+
+  /**
+   * Pull server rows newer than our high-water mark and merge them locally.
+   * Gated identically to push (skipped in air-gapped mode) and requires auth.
+   */
+  async function pull() {
+    if (getPrivacyMode() === 'airgap') return;     // mirror the push privacy gate
+    if (_pulling || !navigator.onLine) return;
+
+    let user = null;
+    try {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      user = u;
+    } catch (_) { return; } // offline / not configured
+    if (!user) return;
+
+    _pulling = true;
+    const since = Number(localStorage.getItem(PULL_CURSOR_KEY) || 0);
+    let maxSeen = since;
+    let touched = false;
+
+    try {
+      for (const store of SYNCED_STORES) {
+        const table = _mapStoreToTable(store);
+        if (!table) continue;
+
+        let q = supabase.from(table).select('*').eq('user_id', user.id);
+        if (since > 0) q = q.gt('updated_at', new Date(since).toISOString());
+        const { data: rows, error } = await q;
+        if (error) throw error;
+        if (!rows || !rows.length) continue;
+
+        for (const servRow of rows) {
+          const servTs = new Date(servRow.updated_at).getTime();
+          if (servTs > maxSeen) maxSeen = servTs;
+
+          const remote = _fromServerRow(servRow);
+          const key = _localKey(store, remote);
+          if (key == null) continue;
+
+          const local = await DB._getRaw(store, key);
+          // Remote must beat local to be applied (deviceId breaks ties deterministically).
+          if (local && pickWinner(local, remote) === 'local') continue;
+
+          if (remote._deleted) {
+            await DB._delRaw(store, key);
+            touched = true;
+            continue;
+          }
+
+          // Workouts: set-level merge so a set logged only locally survives the pull.
+          if (store === 'workouts' && local && local.exercises && remote.exercises) {
+            remote.exercises = mergeWorkoutExercises(local.exercises, remote.exercises, false);
+          }
+
+          await DB._putRaw(store, remote);
+          touched = true;
+        }
+      }
+
+      // Advance the cursor only after a clean full sweep.
+      if (maxSeen > since) localStorage.setItem(PULL_CURSOR_KEY, String(maxSeen));
+      if (touched) window.dispatchEvent(new CustomEvent('ap-sync-pulled'));
+    } catch (err) {
+      console.error('[Sync] pull'); // leave cursor unadvanced; next pull retries the window
+    } finally {
+      _pulling = false;
+    }
+  }
+
   /* ── Keep-alive: refresh anonymous session every 10 min ── */
   function _startKeepAlive() {
     if (_keepAliveTimer) return;
@@ -244,6 +324,8 @@ export const SyncManager = (() => {
         if (session) {
           await supabase.auth.refreshSession();
           console.log('[Sync]', 'Session refreshed (keep-alive)');
+          pull();      // periodic convergence: catch other devices' edits
+          process();
         }
       } catch (e) {
         console.error('[Sync]');
@@ -286,6 +368,7 @@ export const SyncManager = (() => {
   if (typeof window !== 'undefined') {
     window.addEventListener('online', () => {
       console.log('[Sync]');
+      pull();
       process();
     });
   }
@@ -298,6 +381,7 @@ export const SyncManager = (() => {
       if (error) throw error;
       console.log('[Sync]');
       _startKeepAlive();
+      pull();      // bring this device up to date before pushing local queue
       process();
       return data.user;
     } catch (err) {
@@ -327,5 +411,5 @@ export const SyncManager = (() => {
     return _loadQueue().length;
   }
 
-  return { push, process, getStatus: () => _status, queueLength, signIn, signOut };
+  return { push, pull, process, getStatus: () => _status, queueLength, signIn, signOut };
 })();

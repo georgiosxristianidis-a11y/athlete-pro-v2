@@ -7,7 +7,7 @@
 import { encryptAsync, decryptAsync } from './shared/cryptoClient.js';
 
 const DB_NAME = 'athlete-pro';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 /* ════════════════════════════════════════════════════════
    CRDT FOUNDATION — decentralized IDs + LWW metadata
@@ -101,7 +101,7 @@ function openDB() {
          { id, type, date, timestamp, duration,
            tonnage, exercises: [{name,sets:[{weight,reps,completed}]}] } */
       if (!db.objectStoreNames.contains(S.WORKOUTS)) {
-        const ws = db.createObjectStore(S.WORKOUTS, { keyPath: 'id', autoIncrement: true });
+        const ws = db.createObjectStore(S.WORKOUTS, { keyPath: 'id' });
         ws.createIndex('timestamp', 'timestamp');
         ws.createIndex('type', 'type');
       }
@@ -113,16 +113,16 @@ function openDB() {
       }
 
       /* bodyMetrics
-         { id (autoIncrement), weight, height, bmi, timestamp } */
+         { id (UUID), weight, height, bmi, timestamp } */
       if (!db.objectStoreNames.contains(S.METRICS)) {
-        const ms = db.createObjectStore(S.METRICS, { keyPath: 'id', autoIncrement: true });
+        const ms = db.createObjectStore(S.METRICS, { keyPath: 'id' });
         ms.createIndex('timestamp', 'timestamp');
       }
 
       /* events  (audit log)
-         { id, type, payload, timestamp } */
+         { id (UUID), type, payload, timestamp } */
       if (!db.objectStoreNames.contains(S.EVENTS)) {
-        const ev = db.createObjectStore(S.EVENTS, { keyPath: 'id', autoIncrement: true });
+        const ev = db.createObjectStore(S.EVENTS, { keyPath: 'id' });
         ev.createIndex('timestamp', 'timestamp');
       }
 
@@ -133,22 +133,24 @@ function openDB() {
 
       /* nutritionLogs */
       if (!db.objectStoreNames.contains(S.NUTRITION)) {
-        const ns = db.createObjectStore(S.NUTRITION, { keyPath: 'id', autoIncrement: true });
+        const ns = db.createObjectStore(S.NUTRITION, { keyPath: 'id' });
         ns.createIndex('timestamp', 'timestamp');
       }
 
       /* plannedWorkouts */
       if (!db.objectStoreNames.contains(S.PLANS)) {
-        const ps = db.createObjectStore(S.PLANS, { keyPath: 'id', autoIncrement: true });
+        const ps = db.createObjectStore(S.PLANS, { keyPath: 'id' });
         ps.createIndex('timestamp', 'timestamp');
       }
 
-      /* v3 — CRDT backfill: stamp legacy records with updatedAt + deviceId
-         (ids stay as-is: changing keys would orphan cloud rows and references) */
+      /* v3 — CRDT backfill: stamp legacy records with updatedAt + deviceId.
+         Only ORM + SETTINGS here — the autoIncrement stores get the same meta
+         backfilled inline by the v4 re-key below (avoids a same-tx cursor/getAll
+         race on those stores). Keyed-by-content stores keep their ids. */
       if (e.oldVersion > 0 && e.oldVersion < 3) {
         const upgradeTx = e.target.transaction;
         const deviceId = getDeviceId();
-        [S.WORKOUTS, S.ORM, S.METRICS, S.SETTINGS, S.NUTRITION, S.PLANS].forEach((name) => {
+        [S.ORM, S.SETTINGS].forEach((name) => {
           if (!db.objectStoreNames.contains(name)) return;
           const cursorReq = upgradeTx.objectStore(name).openCursor();
           cursorReq.onsuccess = (ev) => {
@@ -161,6 +163,41 @@ function openDB() {
               cursor.update(rec);
             }
             cursor.continue();
+          };
+        });
+      }
+
+      /* v4 — drop the dormant autoIncrement. IndexedDB can't toggle autoIncrement
+         on an existing store, so each is dropped + recreated keyed purely on a UUID
+         `id`. Legacy integer ids are re-keyed to UUIDs and CRDT meta backfilled in
+         the same pass. A throw here aborts the versionchange tx → DB stays at v3
+         (atomic rollback), so a failed migration never half-writes. */
+      if (e.oldVersion >= 1 && e.oldVersion < 4) {
+        const upgradeTx = e.target.transaction;
+        const deviceId = getDeviceId();
+        /** @type {Array<[string, Array<[string, string]>]>} store → [indexName, keyPath][] */
+        const specs = [
+          [S.WORKOUTS,  [['timestamp', 'timestamp'], ['type', 'type']]],
+          [S.METRICS,   [['timestamp', 'timestamp']]],
+          [S.EVENTS,    [['timestamp', 'timestamp']]],
+          [S.NUTRITION, [['timestamp', 'timestamp']]],
+          [S.PLANS,     [['timestamp', 'timestamp']]],
+        ];
+        specs.forEach(([name, indexes]) => {
+          if (!db.objectStoreNames.contains(name)) return;
+          const getAllReq = upgradeTx.objectStore(name).getAll();
+          getAllReq.onsuccess = () => {
+            const rows = getAllReq.result || [];
+            db.deleteObjectStore(name);
+            const ns = db.createObjectStore(name, { keyPath: 'id' });
+            indexes.forEach(([idxName, keyPath]) => ns.createIndex(idxName, keyPath));
+            rows.forEach((r) => {
+              if (r == null || typeof r !== 'object') return;
+              if (typeof r.id !== 'string') r.id = newId(); // re-key legacy int → UUID
+              if (r.updatedAt === undefined) r.updatedAt = r.timestamp || Date.now();
+              if (r.deviceId === undefined) r.deviceId = deviceId;
+              ns.add(r);
+            });
           };
         });
       }
@@ -293,7 +330,8 @@ const Workouts = {
    * @returns {Promise<void>}
    */
   deleteById(id) {
-    return tx(S.WORKOUTS, 'readwrite').then((s) => req2p(s.delete(id)));
+    // Delegate to delete() so the edit-workout flow also queues a cloud tombstone.
+    return this.delete(id);
   },
 
   /**
@@ -746,8 +784,10 @@ const Settings = {
    ════════════════════════════════════════════════════════ */
 const Events = {
   log(type, payload = {}) {
+    // EVENTS is no longer autoIncrement — assign an explicit UUID id. Local-only
+    // audit log, so no CRDT meta / sync needed.
     return tx(S.EVENTS, 'readwrite').then((s) =>
-      req2pSafe(s.add({ type, payload, timestamp: Date.now() }), s.transaction)
+      req2pSafe(s.add({ id: newId(), type, payload, timestamp: Date.now() }), s.transaction)
     );
   },
 
@@ -862,6 +902,11 @@ const Backup = {
       tx(S.SETTINGS, 'readwrite'),
     ]);
 
+    // workouts/metrics stores are keyed on `id` (no autoIncrement) — ensure every
+    // imported row carries one, re-keying ancient id-less backups.
+    validWorkouts.forEach((w) => { w.id ??= newId(); });
+    validMetrics.forEach((m) => { m.id ??= newId(); });
+
     const puts = [
       ...validWorkouts.map((w) => req2p(wsStore.put(w))),
       ...validORM.map((o) => req2p(ormStore.put(o))),
@@ -890,5 +935,13 @@ async function clearAll() {
 }
 
 /* ── Public API ── */
-export const DB = { Workouts, OneRM, Metrics, Settings, Events, NutritionLogs, PlannedWorkouts, Backup, clearAll, openDB, newId, getDeviceId, withMeta, _getRaw: (store, id) => tx(store).then(s => req2p(s.get(id))) };
+export const DB = {
+  Workouts, OneRM, Metrics, Settings, Events, NutritionLogs, PlannedWorkouts, Backup,
+  clearAll, openDB, newId, getDeviceId, withMeta,
+  _getRaw: (store, id) => tx(store).then(s => req2p(s.get(id))),
+  // Raw writes for the sync pull path — plain put/delete with NO _triggerSync, so
+  // applying a remote-won record locally never re-queues an upstream push (no echo).
+  _putRaw: (store, row) => tx(store, 'readwrite').then(s => req2pSafe(s.put(row), s.transaction)),
+  _delRaw: (store, id) => tx(store, 'readwrite').then(s => req2p(s.delete(id))),
+};
 export { openDB };
