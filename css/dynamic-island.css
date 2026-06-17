@@ -94,46 +94,48 @@
   height: 40px;
   border-radius: 20px;
 }
-.island.mode-ultra-min .island-time { 
-  opacity: 1; 
-  font-size: 13px;
-  transform: translate(-50%, -50%); 
-}
-.island.mode-ultra-min .island-dot { 
-  left: 20px; 
-  transform: translateY(-50%); 
+.island.mode-ultra-min .island-time { font-size: 13px; }
+.island.mode-ultra-min .island-dot {
+  left: 16px;
+  transform: translateY(-50%);
 }
 
 .island.mode-mini {
-  width: 200px; /* 2) 200*50 (самый нормальный) */
+  width: 184px;
   height: 50px;
 }
-.island.mode-mini .island-time { font-size: 13px; transform: translate(-70%, -50%); }
+.island.mode-mini .island-time { font-size: 13px; }
+
+/* Centered readout cluster — replaces the old per-mode absolute offsets so the
+   pill hugs its content instead of stretching into a "sausage". The dot stays a
+   left accent; this flex row centres time · name · sets. */
+.island-readout {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 26px;
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.island.expanded .island-readout,
+.island.timer-mode .island-readout { opacity: 0; }
 
 .island-sets-collapsed {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
   font-size: 11px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--c-text-2);
   white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 2;
+  display: none;
 }
-
 .island.mode-mini .island-sets-collapsed,
-.island.mode-ultra-min .island-sets-collapsed {
-  opacity: 1;
-}
-
-.island.expanded .island-sets-collapsed {
-  opacity: 0;
-  pointer-events: none;
+.island.mode-ultra-min .island-sets-collapsed,
+.island.mode-detailed .island-sets-collapsed {
+  display: block;
 }
 
 .island.mode-detailed {
@@ -255,56 +257,27 @@
 @keyframes dot-glow-on  { 0%,100%{opacity:.4} 50%{opacity:1} }
 @keyframes dot-glow-off { 0%,100%{opacity:.2} 50%{opacity:.65} }
 
-/* ── Session time ── */
+/* ── Readout items (flex children of .island-readout) ── */
 .island-time {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   font-size: 14px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--c-text-1);
   white-space: nowrap;
-  z-index: 2;
-  pointer-events: none;
-  transition: opacity 0.5s cubic-bezier(0.2, 0, 0.2, 1), transform 0.5s cubic-bezier(0.2, 0, 0.2, 1), background-color 0.5s cubic-bezier(0.2, 0, 0.2, 1), border-color 0.5s cubic-bezier(0.2, 0, 0.2, 1), color 0.5s cubic-bezier(0.2, 0, 0.2, 1);
+  transition: color 0.3s ease;
 }
 
 .island-name-collapsed {
-  position: absolute;
-  left: calc(50% + 35px); /* Position to the right of time */
-  top: 50%;
-  transform: translateY(-50%);
   font-size: 12px;
   font-weight: 600;
   color: var(--c-text-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 2;
+  max-width: 120px;
+  display: none;
 }
-
-.island.mode-detailed .island-name-collapsed {
-  left: calc(50% + 8px);
-  max-width: 100px;
-  opacity: 1;
-}
-/* Shift time left slightly when name is shown to keep overall centering balanced */
-.island.mode-detailed .island-time {
-  left: calc(50% - 8px);
-  transform: translate(-100%, -50%);
-}
-
-.island.expanded .island-time,
-.island.expanded .island-name-collapsed {
-  opacity: 0;
-  pointer-events: none;
-}
+.island.mode-detailed .island-name-collapsed { display: block; }
 
 .island-expanded-content {
   display: none;

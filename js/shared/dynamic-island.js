@@ -48,10 +48,12 @@ export const DynamicIsland = (() => {
     _container.innerHTML = `
       <div class="island" id="dynamic-island" role="status" aria-live="polite" style="pointer-events: auto;">
         <div class="island-dot online" id="di-dot"></div>
-        <div class="island-time" id="di-time">00:00</div>
-        <div class="island-name-collapsed" id="di-name-collapsed"></div>
-        <div class="island-sets-collapsed" id="di-sets-collapsed"></div>
-        
+        <div class="island-readout">
+          <div class="island-time" id="di-time">00:00</div>
+          <div class="island-name-collapsed" id="di-name-collapsed"></div>
+          <div class="island-sets-collapsed" id="di-sets-collapsed"></div>
+        </div>
+
         <div class="island-expanded-content">
           <div class="island-status-line">
             <span class="island-sets-badge" id="di-sets">0/0</span>
