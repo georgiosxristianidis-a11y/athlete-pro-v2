@@ -163,7 +163,7 @@ export const Dashboard = (() => {
           </div>
           <div class="ppl-bar">
             <div class="ppl-bar-fill" id="ppl-push-bar"
-                 style="width:0%;background:var(--c-accent)"></div>
+                 style="width:0%;background:var(--c-push)"></div>
           </div>
         </div>
         <div class="ppl-chip">
@@ -173,7 +173,7 @@ export const Dashboard = (() => {
           </div>
           <div class="ppl-bar">
             <div class="ppl-bar-fill" id="ppl-pull-bar"
-                 style="width:0%;background:var(--c-purple)"></div>
+                 style="width:0%;background:var(--c-pull)"></div>
           </div>
         </div>
         <div class="ppl-chip">
@@ -183,7 +183,7 @@ export const Dashboard = (() => {
           </div>
           <div class="ppl-bar">
             <div class="ppl-bar-fill" id="ppl-legs-bar"
-                 style="width:0%;background:var(--c-blue)"></div>
+                 style="width:0%;background:var(--c-legs)"></div>
           </div>
         </div>
       </div>
@@ -433,7 +433,7 @@ export const Dashboard = (() => {
     ['push', 'pull', 'legs'].forEach((t) => {
       const val = document.getElementById(`ppl-${t}-val`);
       const bar = /** @type {HTMLElement} */ (document.getElementById(`ppl-${t}-bar`));
-      if (val) val.textContent = fmtVol(ppl[t]);
+      if (val) { val.textContent = fmtVol(ppl[t]); val.style.color = TYPE_COLOR[t]; } // PPL colour on the number
       if (bar) {
         // Cancel existing spring for this bar if any
         if (_activeSprings.has(t)) _activeSprings.get(t).stop();

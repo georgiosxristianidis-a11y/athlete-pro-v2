@@ -201,13 +201,20 @@ export const DynamicIsland = (() => {
     });
 
     // Time
-    if (_timeEl) _timeEl.textContent = total ? `${done}/${total}` : Timer.fmt(Timer.seconds());
-
     // Current Exercise
     let activeIdx = State.plan.findIndex(ex => ex.sets.some(s => !s.done));
     if (activeIdx === -1) activeIdx = State.plan.length - 1;
     const currentEx = State.plan[activeIdx];
     if (_nameEl) _nameEl.textContent = currentEx ? currentEx.name : '';
+
+    // Per-exercise set progress — what the lifter tracks (e.g. 3/3), not the
+    // whole-session count. The overall session % stays on the bottom progress bar.
+    const exDone = currentEx ? currentEx.sets.filter(s => s.done).length : 0;
+    const exTotal = currentEx ? currentEx.sets.length : 0;
+    const setsLabel = exTotal ? `${exDone}/${exTotal}` : '';
+
+    // Prominent readout: current-exercise sets (falls back to session time)
+    if (_timeEl) _timeEl.textContent = setsLabel || Timer.fmt(Timer.seconds());
     
     
 
@@ -218,13 +225,13 @@ export const DynamicIsland = (() => {
         _nameCollapsedEl.appendChild(document.createTextNode(currentEx.name));
         const setsSpan = document.createElement('span');
         setsSpan.style.color = 'var(--c-text-3)';
-        setsSpan.textContent = ` - ${total ? `${done}/${total}` : ''}`;
+        setsSpan.textContent = ` - ${setsLabel}`;
         _nameCollapsedEl.appendChild(setsSpan);
       }
     }
     if (_setsEl) {
-      _setsEl.textContent = total ? `${done}/${total}` : '';
-      _setsEl.style.color = _getSetsColor(done, total);
+      _setsEl.textContent = setsLabel;
+      _setsEl.style.color = _getSetsColor(exDone, exTotal);
     }
     if (_setsCollapsedEl) {
       _setsCollapsedEl.textContent = Timer.fmt(Timer.seconds());
@@ -255,7 +262,7 @@ export const DynamicIsland = (() => {
       PiP.drawFrame({
         time: _timeEl?.textContent || '00:00',
         name: currentEx ? currentEx.name : 'Workout',
-        sets: total ? `${done}/${total}` : '',
+        sets: setsLabel,
         nextName: nextEx ? nextEx.name : '',
         bpm: 72 + Math.floor(Math.random() * 10)
       });
