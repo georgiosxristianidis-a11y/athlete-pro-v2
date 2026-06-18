@@ -216,7 +216,7 @@ async function setEngine(engine) {
   }
 
   async function toggleKeepAwake() {
-    const current = await DB.Settings.get('keep-awake', 'off');
+    const current = await DB.Settings.get('keep-awake', 'on'); // BG-1: default ON (opt-out)
     const next = current === 'off' ? 'on' : 'off';
     await DB.Settings.set('keep-awake', next);
     load();

@@ -68,7 +68,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           <div class="pref-sub">${t('settings.awake_sub')}</div>
         </div>
         <div class="switch-wrap" onclick="Profile.toggleKeepAwake()">
-          <div class="switch ${settings['keep-awake'] === 'on' ? 'on' : ''}" id="sw-keep-awake">
+          <div class="switch ${settings['keep-awake'] !== 'off' ? 'on' : ''}" id="sw-keep-awake">
             <div class="switch-thumb"></div>
           </div>
         </div>

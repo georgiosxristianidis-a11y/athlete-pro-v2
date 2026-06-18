@@ -209,7 +209,7 @@ export async function selectType(type) {
   const [workouts, restDurRaw, keepAwake] = await Promise.all([
     DB.Workouts.getAll().catch(() => []),
     DB.Settings.get('rest-duration').catch(() => null),
-    DB.Settings.get('keep-awake').catch(() => 'off'),
+    DB.Settings.get('keep-awake', 'on').catch(() => 'on'), // BG-1: default ON (opt-out)
   ]);
   _restDuration = parseInt(restDurRaw || 90);
 
