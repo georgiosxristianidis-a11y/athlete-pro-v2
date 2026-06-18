@@ -115,8 +115,8 @@ function _stepGoal(ru) {
       <!-- Elegant Fast Skip -->
       <div style="margin-top:32px; text-align:center;">
         <button onclick="window._obQuickStart()" class="ob-fast-skip-btn"
-                style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); color:var(--c-text-3); font-size:13px; font-weight:600; cursor:pointer; padding:12px 24px; border-radius:24px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:8px;">
-          <span style="opacity:0.8;">${ru ? 'Пропустить настройку' : 'Skip & Quick Start'}</span>
+                style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); color:var(--c-text-2); font-size:13px; font-weight:600; cursor:pointer; padding:12px 24px; border-radius:24px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:8px;">
+          <span>${ru ? 'Пропустить настройку' : 'Skip & Quick Start'}</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="opacity:0.6"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
         </button>
       </div>
@@ -316,7 +316,7 @@ function _choiceCard(key, icon, label, sub, color) {
       </div>
       <div style="min-width:0; flex:1;">
         <div style="font-size:16px; font-weight:800; color:var(--c-text-1); letter-spacing:-0.01em; margin-bottom:2px;">${label}</div>
-        <div style="font-size:12px; font-weight:500; color:var(--c-text-3); line-height:1.3">${sub}</div>
+        <div style="font-size:12px; font-weight:500; color:var(--c-text-2); line-height:1.3">${sub}</div>
       </div>
     </button>`;
 }

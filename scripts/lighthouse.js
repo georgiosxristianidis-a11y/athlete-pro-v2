@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-'use strict';
 /**
- * scripts/lighthouse.js — local Lighthouse CI runner
+ * scripts/lighthouse.js — local Lighthouse CI runner (ESM — package is type:module)
  *
  * Usage: node scripts/lighthouse.js
  *   or:  npm run lhci
@@ -20,10 +19,12 @@
  *   seo            >= 90
  */
 
-const { spawn } = require('child_process');
-const path      = require('path');
-const fs        = require('fs');
+import { spawn } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
+const __dirname   = path.dirname(fileURLToPath(import.meta.url));
 const ROOT        = path.join(__dirname, '..');
 const PORT        = 3333;
 const REPORT_PATH = path.join(ROOT, 'test-results', 'lighthouse.json');
