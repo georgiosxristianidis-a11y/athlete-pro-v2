@@ -902,17 +902,20 @@ const Backup = {
       tx(S.SETTINGS, 'readwrite'),
     ]);
 
-    // workouts/metrics stores are keyed on `id` (no autoIncrement) — ensure every
-    // imported row carries one, re-keying ancient id-less backups.
-    validWorkouts.forEach((w) => { w.id ??= newId(); });
-    validMetrics.forEach((m) => { m.id ??= newId(); });
+    // Stamp CRDT metadata on import so restored/migrated rows sync cleanly:
+    // withMeta assigns a UUID id when missing (keeps existing ids) and refreshes
+    // updatedAt (= import time) + deviceId. Without it, imported rows have no
+    // updatedAt and LWW would fall back to the historical workout timestamp.
+    validWorkouts.forEach((w) => withMeta(w));
+    validMetrics.forEach((m) => withMeta(m));
+    validORM.forEach((o) => withMeta(o));
 
     const puts = [
       ...validWorkouts.map((w) => req2p(wsStore.put(w))),
       ...validORM.map((o) => req2p(ormStore.put(o))),
       ...validMetrics.map((m) => req2p(metStore.put(m))),
       ...Object.entries(validSettings).map(([key, value]) =>
-        req2p(setStore.put({ key, value }))
+        req2p(setStore.put({ key, value, updatedAt: Date.now(), deviceId: getDeviceId() }))
       ),
     ];
     await Promise.all(puts);
