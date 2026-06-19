@@ -20,6 +20,15 @@
 - **Фаза B (`js/sync.js` + новый `js/shared/sync-merge.js`):** чистые `mergeWorkoutExercises`+`pickWinner` (push рефакторнут на них); `SyncManager.pull()` — недостающий мёрдж-вниз (gated non-airgap+auth, snake_case→local, set-level мёрдж workouts, тумбстоуны→`_delRaw`, курсор `ap-sync-pulled-at`), вызывается в signIn/online/keep-alive.
 - **SW** v57→**v58** (+`sync-merge.js`). **Тесты 139/139.** В браузере верифицировано: реальная миграция v3→v4 (int 1/2→UUID, данные целы), `autoIncrement:false` на всех 5, fresh save=UUID, `_putRaw` без echo, `pull()` graceful no-op офлайн.
 
+### 📥 SMART IMPORT истории из Excel — WIP (2026-06-18, только PoC, в фичу не коммичено)
+Цель: импорт ~3 лет тренировок из личных Excel-таблиц Gio.
+- **Открытие:** это не лог, а **программные матрицы** (мезоциклы): блоки PULL/LEGS/PUSH × (месяц→неделя→сессия) сетка весов; колонки `# | название | повторы` (порядок плавает между листами); язык **EN + итальянский** (русского/прозы в данных НЕ найдено — сканил все 1000+ строк обоих файлов). Грязь: Excel-серийники дат протекли в веса (фильтр >500 кг), инлайн-аннотации (`28(Te)`,`6*`), даты приблизительные (месяц+неделя); у листа England — реальные даты.
+- **Файлы:** `C:\Users\Zephyrus\Downloads\qBit\TRAINING 2024_It_Big Boy.xlsx` (листы: Italy GYM_2023, 2025, England_GYM_2023) и `My Trainings_2025.xlsx` (Training_2025).
+- **PoC:** `scripts/_poc_import.py` (матрица→транспонирование→сессии→JSON Athlete Pro — РАБОТАЕТ), `scripts/_poc_scan_all.py` (dry-run по всем листам). Объём: **≈95 сессий** с чистых листов (Italy_2023≈46, 2025≈49); +2 листа (England даты-серийники, Training_2025 иная раскладка) — нужен ручной маппинг (грубо +50–100, и реальные даты у England).
+- **Названия:** `exercises-library.json` (170, поля name+nameRu+category+tags) + таблица ALIAS в скрипте → ~90% (на листе 2025: точно 12 / алиас 12 / пробел 7 из 29). Цели алиасов сверены с реальными именами либы: Lying Leg Curl, Dumbbell Lateral Raise, Chest Dip, Skull Crusher (Lying Tricep Extension), Rope Pushdown, Hip Abduction Machine, Pec Deck Fly, Tricep Pushdown, Machine Chest Press. 2 настоящих пробела либы — «Glutes», общий «Triceps Extension» → в ревью как кастом.
+- **Стратегия:** разовый bespoke-ETL → единый бэкап-JSON → существующий `DB.Backup.import` (НЕ generic-фича в приложении — данные слишком идиосинкразичны).
+- **🔴 РЕШЕНИЕ ЗАВТРА (gate):** гранулярность — каждая (неделя×сессия) отдельной тренировкой (макс. точность, ~150–200 записей) ИЛИ сжать по неделям. Не выбрано. Затем: починить 2 «трудных» листа + финализировать алиасы → собрать бэкап-JSON → ревью → импорт.
+
 ### ✅ Сделано в сессии 2026-06-16/17 (всё в byoi/main)
 - **Фаза 0 — COMPLETE (7/7):** 0-3 `errors-ui.js`/`toUserMessage()` (ноль сырых ошибок в UI), 0-4 тосты дедуп+лимит(3), 0-7 ноль нативных диалогов (alert→Toast, `prompt()`→новый `promptDialog()` на TextField).
 - **Фаза 1 (5/7):** 1-3 PPL-закон в analytics+dashboard (была инверсия pull/legs везде), 1-4 Body Metrics по группам мышц+нейтраль. Остаток 1-5,1-6 → 🟩 Gemini.
