@@ -17,6 +17,8 @@ import {
   weekLabel,
 } from './analytics.store.js';
 import { t } from './locale.store.js';
+import { isRu } from './locale.store.js';
+import { renderStrengthCurves } from './analytics.strength-curves.js';
 
 // PPL law: push=green (--c-accent) · pull=cyan (--c-blue) · legs=purple (--c-purple).
 // Kept as hex because callers append alpha (`${color}20`), which CSS vars can't do.
@@ -99,6 +101,12 @@ export async function load() {
         </div>
       </div>
 
+      <!-- ── Strength Progression (premium per-lift curves) ── -->
+      <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.11s">
+        <span class="section-label">${isRu() ? 'Прогресс силы' : 'Strength Progression'}</span>
+      </div>
+      <div id="strength-curves" class="stagger-item" style="animation-delay: 0.11s"></div>
+
       <!-- ── Monthly Calendar ── -->
       <div class="chart-card stagger-item" style="padding:16px; margin-top:var(--sp-4); animation-delay: 0.12s;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
@@ -156,6 +164,7 @@ export async function load() {
 
     _renderQuickStats(workouts);
     _renderPPLBalance(workouts);
+    renderStrengthCurves(workouts, document.getElementById('strength-curves'));
     _renderCalendar(workouts);
     const trend = await fetchWeeklyTrend(10);
     _renderVolumeChart(workouts, trend);

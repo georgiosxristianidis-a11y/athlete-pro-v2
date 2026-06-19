@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v61';
+const CACHE_NAME = 'athlete-pro-v62';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -13,6 +13,7 @@ const ASSETS = [
   '/manifest.json',
   '/exercises-library.json',
   '/js/analytics.store.js',
+  '/js/analytics.strength-curves.js',
   '/js/analytics.view.js',
   '/js/app.js',
   '/js/body-stats.js',
