@@ -351,7 +351,7 @@
   border-radius: 24px 24px 0 0;
   border-top: 1px solid var(--c-border);
   padding: var(--sp-3) var(--sp-2) calc(var(--sp-3) + var(--safe-bottom));
-  animation: sheet-in 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  animation: sheet-in 0.4s var(--spring-bounce) forwards;
   max-height: 88vh;
   overflow-y: auto;
 }
@@ -552,7 +552,7 @@ button:focus-visible {
   gap: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   pointer-events: auto;
-  animation: toast-in 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  animation: toast-in 0.4s var(--spring-bounce) forwards;
 }
 
 .toast.out {
@@ -880,7 +880,7 @@ button:focus-visible {
   gap: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   pointer-events: auto;
-  animation: toast-in 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  animation: toast-in 0.4s var(--spring-bounce) forwards;
 }
 
 .toast.out {

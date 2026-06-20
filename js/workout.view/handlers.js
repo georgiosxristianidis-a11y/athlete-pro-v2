@@ -360,75 +360,12 @@ export async function completeSession() {
     });
   });
 
-  // Create Modal
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay animate-in';
-  overlay.style.zIndex = '6000';
-  overlay.style.backdropFilter = 'blur(12px)';
-  overlay.style.webkitBackdropFilter = 'blur(12px)';
-  overlay.innerHTML = `
-    <div class="modal-sheet summary-sheet" style="max-width:440px; margin:auto">
-      <div class="modal-handle"></div>
-      
-      <div class="summary-header">
-        <div class="summary-icon-wrap" style="color:var(--c-accent)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="48" height="48">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-          </svg>
-        </div>
-        <div class="summary-title" style="font-size:20px; font-weight:900; letter-spacing:0.05em; margin-top:12px">WORKOUT COMPLETE</div>
-        <div class="summary-subtitle" style="font-size:11px; font-weight:800; color:var(--c-text-3); letter-spacing:0.2em; margin-top:4px">
-          ${State.type.toUpperCase()} DAY · ELITE STATUS
-        </div>
-      </div>
-
-      <div class="summary-stats-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin:24px 0; padding:16px; background:rgba(255,255,255,0.03); border-radius:16px">
-        <div class="summary-stat">
-          <div style="font-size:18px; font-weight:900">${timeStr}</div>
-          <div style="font-size:9px; font-weight:800; color:var(--c-text-3); letter-spacing:0.1em">TIME</div>
-        </div>
-        <div class="summary-stat">
-          <div style="font-size:18px; font-weight:900">${(totalTonnage / 1000).toFixed(1)}t</div>
-          <div style="font-size:9px; font-weight:800; color:var(--c-text-3); letter-spacing:0.1em">VOLUME</div>
-        </div>
-        <div class="summary-stat">
-          <div style="font-size:18px; font-weight:900">${totalReps}</div>
-          <div style="font-size:9px; font-weight:800; color:var(--c-text-3); letter-spacing:0.1em">REPS</div>
-        </div>
-      </div>
-
-      <div class="summary-blocks" style="margin-bottom:24px">
-        <div style="font-size:10px; font-weight:800; color:var(--c-text-3); letter-spacing:0.1em; margin-bottom:12px; text-transform:uppercase">Block Efficiency</div>
-        ${Object.entries(blockTonnage)
-          .filter(([_, val]) => val > 0)
-          .map(([id, val]) => `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-              <span style="font-size:12px; font-weight:700; color:var(--c-text-2)">${id.toUpperCase()}</span>
-              <span style="font-size:12px; font-weight:900; color:var(--c-text-1)">${(val / 1000).toFixed(2)}t</span>
-            </div>
-            <div style="height:4px; background:rgba(255,255,255,0.05); border-radius:2px; margin-bottom:12px">
-              <div style="height:100%; width:${Math.min(100, (val / totalTonnage) * 100)}%; background:var(--c-accent); border-radius:2px"></div>
-            </div>
-          `).join('')}
-      </div>
-
-      <div class="summary-actions" style="display:flex; flex-direction:column; gap:12px">
-        <button class="btn btn-primary" id="btn-confirm-save" style="width:100%">${ru ? 'СОХРАНИТЬ' : 'SAVE SESSION'}</button>
-        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">${ru ? 'НАЗАД' : 'BACK'}</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  overlay.querySelector('#btn-confirm-save')?.addEventListener('click', async () => {
-    overlay.classList.add('animate-out');
-    setTimeout(async () => {
-      overlay.remove();
-      await _executeFinalSave(totalTonnage, durationMs);
-    }, 300);
-  });
+  // Delegate UI to summary.js (W-2-C) — HTML stays out of handlers.
+  const { renderSummaryModal, buildMinimalSummary } = await import('./summary.js');
+  const summaryData = buildMinimalSummary(State, timeStr, totalTonnage, totalReps, blockTonnage);
+  renderSummaryModal(summaryData, () => _executeFinalSave(totalTonnage, durationMs), ru);
 }
+
 
 async function _executeFinalSave(tonnage, duration) {
   const activePlan = getActivePlan();

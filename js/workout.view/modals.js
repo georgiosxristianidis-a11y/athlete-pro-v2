@@ -31,6 +31,75 @@ let _planEditorActiveWeek = () => getWeekMode();
 let _planEditorSetTab = () => {};
 let _planEditorSetWeek = (_w) => {};
 
+/**
+ * Factory: builds the inner HTML for one PPL tab in the Plan Editor.
+ * Pure function — no DOM reads/writes.
+ * @param {'push'|'pull'|'legs'} type
+ * @param {'A'|'B'} activeWeek
+ * @param {string} searchQuery
+ * @returns {string} HTML string
+ */
+export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
+  const plan = loadPlan(activeWeek);
+  let exercises = plan[type] || [];
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    exercises = exercises.filter(ex => ex.name.toLowerCase().includes(q));
+  }
+
+  const exercisesHTML = exercises.length > 0
+    ? exercises
+        .map((ex) => {
+          const originalIndex = plan[type].indexOf(ex);
+          return `
+    <div class="plan-row" id="plan-row-${type}-${originalIndex}" data-pi="${originalIndex}">
+      <div class="plan-drag-handle">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
+          <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
+          <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
+          <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
+        </svg>
+      </div>
+      <input class="plan-input" value="${esc(ex.name)}"
+        onchange="Workout._updatePlanName('${type}',${originalIndex},this.value)">
+      <div class="plan-row-meta">
+        <span class="plan-meta-label">Sets</span>
+        <div class="mini-stepper">
+          <button onclick="Workout._adjustPlan('${type}',${originalIndex},'sets',-1)" aria-label="Decrease sets">${svgArrow('minus')}</button>
+          <span id="ps-sets-${type}-${originalIndex}">${ex.sets}</span>
+          <button onclick="Workout._adjustPlan('${type}',${originalIndex},'sets',1)" aria-label="Increase sets">${svgArrow('plus')}</button>
+        </div>
+        <span class="plan-meta-label">Reps</span>
+        <div class="mini-stepper">
+          <button onclick="Workout._adjustPlan('${type}',${originalIndex},'reps',-1)" aria-label="Decrease reps">${svgArrow('minus')}</button>
+          <span id="ps-reps-${type}-${originalIndex}">${ex.reps}</span>
+          <button onclick="Workout._adjustPlan('${type}',${originalIndex},'reps',1)" aria-label="Increase reps">${svgArrow('plus')}</button>
+        </div>
+        <button class="plan-delete" onclick="Workout._deletePlanEx('${type}',${originalIndex})" aria-label="Remove exercise">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" width="14" height="14">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+          </svg>
+        </button>
+      </div>
+    </div>`;
+        }).join('')
+    : `<div class="plan-empty">No exercises found for "${esc(searchQuery)}"</div>`;
+
+  return exercisesHTML + `
+    <button class="btn-add-ex" onclick="Workout._addPlanEx('${type}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.5" stroke-linecap="round" width="16" height="16">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add Exercise
+    </button>`;
+}
+
+
 /* ════════════════════════════════════════════════════════
    PLAN EDITOR MODAL
    ════════════════════════════════════════════════════════ */
@@ -44,66 +113,10 @@ export function openPlanEditor() {
   overlay.id = 'plan-editor-overlay';
 
   function tabContent(type) {
-    const p = loadPlan(activeWeek);
-    plan = p;
-
-    let exercises = plan[type] || [];
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      exercises = exercises.filter(ex => ex.name.toLowerCase().includes(q));
-    }
-
-    const exercisesHTML = exercises.length > 0
-      ? exercises
-          .map((ex, filteredIndex) => {
-            const originalIndex = plan[type].indexOf(ex);
-            return `
-      <div class="plan-row" id="plan-row-${type}-${originalIndex}" data-pi="${originalIndex}">
-        <div class="plan-drag-handle">
-          <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
-            <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
-            <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
-            <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
-          </svg>
-        </div>
-        <input class="plan-input" value="${esc(ex.name)}"
-          onchange="Workout._updatePlanName('${type}',${originalIndex},this.value)">
-        <div class="plan-row-meta">
-          <span class="plan-meta-label">Sets</span>
-          <div class="mini-stepper">
-            <button onclick="Workout._adjustPlan('${type}',${originalIndex},'sets',-1)" aria-label="Decrease sets">${svgArrow('minus')}</button>
-            <span id="ps-sets-${type}-${originalIndex}">${ex.sets}</span>
-            <button onclick="Workout._adjustPlan('${type}',${originalIndex},'sets',1)" aria-label="Increase sets">${svgArrow('plus')}</button>
-          </div>
-          <span class="plan-meta-label">Reps</span>
-          <div class="mini-stepper">
-            <button onclick="Workout._adjustPlan('${type}',${originalIndex},'reps',-1)" aria-label="Decrease reps">${svgArrow('minus')}</button>
-            <span id="ps-reps-${type}-${originalIndex}">${ex.reps}</span>
-            <button onclick="Workout._adjustPlan('${type}',${originalIndex},'reps',1)" aria-label="Increase reps">${svgArrow('plus')}</button>
-          </div>
-          <button class="plan-delete" onclick="Workout._deletePlanEx('${type}',${originalIndex})" aria-label="Remove exercise">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="1.5" stroke-linecap="round" width="14" height="14">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14H6L5 6"/>
-              <path d="M10 11v6M14 11v6"/>
-            </svg>
-          </button>
-        </div>
-      </div>`
-          }).join('')
-      : `<div class="plan-empty">No exercises found for "${esc(searchQuery)}"</div>`;
-
-    return exercisesHTML + `
-      <button class="btn-add-ex" onclick="Workout._addPlanEx('${type}')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="1.5" stroke-linecap="round" width="16" height="16">
-          <line x1="12" y1="5" x2="12" y2="19"/>
-          <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        Add Exercise
-      </button>`;
+    plan = loadPlan(activeWeek); // keep local cache fresh
+    return _buildPlanTabHTML(type, activeWeek, searchQuery);
   }
+
 
   let searchQuery = '';
 

@@ -1,0 +1,326 @@
+/* ════════════════════════════════════════════════════════
+   summary.css — Post-Workout Summary Sheet (W-2-C)
+   Glass Cluster islands · Semantic block labels · PR gold
+   ════════════════════════════════════════════════════════ */
+
+/* ── Sheet container ─────────────────────────────────── */
+.summ-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  max-height: 88vh;
+}
+
+/* ── Header ──────────────────────────────────────────── */
+.summ-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--sp-1) 0 var(--sp-2);
+}
+
+.summ-header-icon {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  margin-bottom: 10px;
+}
+
+.summ-title {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--c-text-1);
+  line-height: 1.1;
+}
+
+.summ-subtitle {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin-top: 4px;
+  opacity: 0.75;
+}
+
+/* ── Stats grid (3 micro-chips) ──────────────────────── */
+.summ-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 0 0 var(--sp-3);
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+}
+
+.summ-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.summ-stat-val {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.summ-stat-lbl {
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--c-text-3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Blocks wrapper: macro-air between islands ──────── */
+.summ-blocks-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;           /* macro-gap = visual breath between blocks */
+  margin-bottom: var(--sp-3);
+}
+
+/* ── Glass Island (one block) ────────────────────────── */
+.summ-island {
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  border: 1px solid var(--c-border);
+  border-top: 1px solid color-mix(in srgb, var(--ppl-color, var(--c-accent)) 20%, transparent);
+  border-radius: var(--r-l);
+  padding: 16px 16px 12px;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--ppl-color, var(--c-accent)) 6%, transparent) inset,
+    0 8px 24px rgba(0, 0, 0, 0.18);
+
+  /* Stagger animation (W-2-C-6) */
+  opacity: 0;
+  transform: translateY(16px);
+  animation: summ-island-in 0.5s var(--spring-soft) both;
+  animation-delay: calc(var(--stagger-i, 0) * 80ms + 100ms);
+}
+
+@keyframes summ-island-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Island header (label + chips) ──────────────────── */
+.summ-island-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.summ-island-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Coloured accent dot — replaces "Block 1" labelling */
+.summ-island-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ppl-color, var(--c-accent));
+  flex-shrink: 0;
+  box-shadow: 0 0 6px var(--ppl-color, var(--c-accent));
+}
+
+.summ-island-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-text-2);
+}
+
+/* Core / Align block — dimmer label (UI-only, noDb) */
+.summ-island-label--core {
+  color: var(--c-text-3);
+  letter-spacing: 0.2em;
+}
+
+.summ-island-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Micro-sparkline chip (time / tonnage) */
+.summ-chip {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-2);
+  padding: 2px 7px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  letter-spacing: 0.02em;
+}
+
+/* ── Exercise rows ───────────────────────────────────── */
+.summ-ex-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.summ-ex-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.summ-ex-row:last-child {
+  border-bottom: none;
+}
+
+.summ-ex-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summ-ex-done .summ-ex-name {
+  color: var(--c-text-1);
+}
+
+.summ-ex-meta {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-3);
+  flex-shrink: 0;
+}
+
+.summ-ex-status {
+  flex-shrink: 0;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summ-ex-partial {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-amber);
+  font-variant-numeric: tabular-nums;
+}
+
+/* UI-only tag for noDb exercises (Block IV) */
+.summ-ex-ui-tag {
+  display: inline-block;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--c-text-3);
+  border: 1px dashed var(--c-border-h);
+  border-radius: 4px;
+  padding: 0 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+.summ-ex-empty {
+  font-size: 12px;
+  color: var(--c-text-3);
+  opacity: 0.4;
+  text-align: center;
+  padding: 8px 0;
+}
+
+/* ── PR section ──────────────────────────────────────── */
+.summ-pr-section {
+  padding: 14px 16px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--c-gold) 8%, transparent) 0%,
+    color-mix(in srgb, var(--c-gold) 3%, transparent) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--c-gold) 25%, transparent);
+  border-radius: var(--r-l);
+}
+
+.summ-pr-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.summ-pr-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--c-gold);
+}
+
+.summ-pr-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--c-gold) 10%, transparent);
+}
+
+.summ-pr-row:last-child {
+  border-bottom: none;
+}
+
+.summ-pr-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.summ-pr-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--c-gold);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* ── Actions ─────────────────────────────────────────── */
+.summ-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* PPL-tinted Save button */
+.summ-save-btn {
+  width: 100%;
+  background: var(--btn-accent, var(--c-accent)) !important;
+}
