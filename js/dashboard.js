@@ -10,6 +10,7 @@ import { Spring } from './shared/spring.js';
 import { esc } from './shared/utils.js';
 import { Toast } from './shell.js';
 import { fmtVol, fmtDuration, fmtDate } from './shared/format.js';
+import { renderPplGauge } from './shared/ppl-gauge.js';
 
 export const Dashboard = (() => {
   const TYPE_COLOR = {
@@ -17,8 +18,6 @@ export const Dashboard = (() => {
     pull: 'var(--c-pull)',
     legs: 'var(--c-legs)',
   };
-
-  const _activeSprings = new Map();
 
   /**
    * Return a time-of-day greeting string.
@@ -155,38 +154,7 @@ export const Dashboard = (() => {
         <span class="section-label">PPL Split</span>
         <span class="badge badge-accent" id="dash-total"></span>
       </div>
-      <div class="ppl-row stagger-item">
-        <div class="ppl-chip">
-          <div class="ppl-chip-top">
-            <span class="ppl-chip-label">Push</span>
-            <span class="ppl-chip-val" id="ppl-push-val">0</span>
-          </div>
-          <div class="ppl-bar">
-            <div class="ppl-bar-fill" id="ppl-push-bar"
-                 style="width:0%;background:var(--c-push)"></div>
-          </div>
-        </div>
-        <div class="ppl-chip">
-          <div class="ppl-chip-top">
-            <span class="ppl-chip-label">Pull</span>
-            <span class="ppl-chip-val" id="ppl-pull-val">0</span>
-          </div>
-          <div class="ppl-bar">
-            <div class="ppl-bar-fill" id="ppl-pull-bar"
-                 style="width:0%;background:var(--c-pull)"></div>
-          </div>
-        </div>
-        <div class="ppl-chip">
-          <div class="ppl-chip-top">
-            <span class="ppl-chip-label">Legs</span>
-            <span class="ppl-chip-val" id="ppl-legs-val">0</span>
-          </div>
-          <div class="ppl-bar">
-            <div class="ppl-bar-fill" id="ppl-legs-bar"
-                 style="width:0%;background:var(--c-legs)"></div>
-          </div>
-        </div>
-      </div>
+      <div class="chart-card ppl-gauge-card stagger-item" id="ppl-gauge"></div>
 
       <!-- Top Lifts -->
       <div class="section-header">
@@ -428,31 +396,7 @@ export const Dashboard = (() => {
    * @returns {void}
    */
   function renderPPL(ppl) {
-    const max = Math.max(ppl.push, ppl.pull, ppl.legs, 1);
-    
-    ['push', 'pull', 'legs'].forEach((t) => {
-      const val = document.getElementById(`ppl-${t}-val`);
-      const bar = /** @type {HTMLElement} */ (document.getElementById(`ppl-${t}-bar`));
-      if (val) { val.textContent = fmtVol(ppl[t]); val.style.color = TYPE_COLOR[t]; } // PPL colour on the number
-      if (bar) {
-        // Cancel existing spring for this bar if any
-        if (_activeSprings.has(t)) _activeSprings.get(t).stop();
-
-        const targetPct = Math.round((ppl[t] / max) * 100);
-        const currentWidth = parseFloat(bar.style.width) || 0;
-
-        const spring = Spring.animate({
-          from: currentWidth,
-          to: targetPct,
-          stiffness: 120,
-          damping: 20,
-          onUpdate: (v) => {
-            bar.style.transform = `scaleX(${v / 100})`;
-          }
-        });
-        _activeSprings.set(t, spring);
-      }
-    });
+    renderPplGauge(document.getElementById('ppl-gauge'), ppl);
 
     const total = document.getElementById('dash-total');
     if (total) {

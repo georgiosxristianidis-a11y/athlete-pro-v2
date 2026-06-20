@@ -19,6 +19,7 @@ import {
 import { t } from './locale.store.js';
 import { isRu } from './locale.store.js';
 import { renderStrengthHero, renderStrengthCurves } from './analytics.strength-curves.js';
+import { renderPplGauge } from './shared/ppl-gauge.js';
 
 // PPL law: push=green (--c-accent) · pull=cyan (--c-blue) · legs=purple (--c-purple).
 // Kept as hex because callers append alpha (`${color}20`), which CSS vars can't do.
@@ -88,20 +89,7 @@ export async function load() {
       <div class="section-header stagger-item" style="margin-top:var(--sp-3); animation-delay: 0.1s">
         <span class="section-label">${t('analytics.ppl_balance')}</span>
       </div>
-      <div class="chart-card bento-grid stagger-item" style="padding:16px;gap:12px;display:grid;grid-template-columns:1fr 1fr 1fr; animation-delay: 0.1s">
-        <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-push" style="color:var(--c-push)">0%</div>
-          <div class="ppl-bal-lbl">Push</div>
-        </div>
-        <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-pull" style="color:var(--c-pull)">0%</div>
-          <div class="ppl-bal-lbl">Pull</div>
-        </div>
-        <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-legs" style="color:var(--c-legs)">0%</div>
-          <div class="ppl-bal-lbl">Legs</div>
-        </div>
-      </div>
+      <div class="chart-card stagger-item" id="ppl-gauge" style="padding:18px 16px 16px; animation-delay: 0.1s"></div>
 
       <!-- ── Strength Progression (premium per-lift curves) ── -->
       <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.11s">
@@ -191,10 +179,7 @@ function _renderPPLBalance(workouts) {
   workouts.forEach(w => {
     if (ppl[w.type] !== undefined) ppl[w.type] += w.tonnage || 0;
   });
-  const total = ppl.push + ppl.pull + ppl.legs || 1;
-  _set('ppl-bal-push', Math.round((ppl.push / total) * 100) + '%');
-  _set('ppl-bal-pull', Math.round((ppl.pull / total) * 100) + '%');
-  _set('ppl-bal-legs', Math.round((ppl.legs / total) * 100) + '%');
+  renderPplGauge(document.getElementById('ppl-gauge'), ppl);
 }
 
 function _renderCalendar(workouts) {

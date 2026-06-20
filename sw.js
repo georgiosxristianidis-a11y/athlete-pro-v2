@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v64';
+const CACHE_NAME = 'athlete-pro-v65';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -51,6 +51,7 @@ const ASSETS = [
   '/js/shared/format.js',
   '/js/shared/integrity.js',
   '/js/shared/lww.js',
+  '/js/shared/ppl-gauge.js',
   '/js/shared/sparkline.js',
   '/js/shared/spring.js',
   '/js/shared/sync-merge.js',

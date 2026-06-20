@@ -954,3 +954,18 @@ body.is-scrolling * {
      (the single 6px shadow read as flat). */
   filter: drop-shadow(0 0 6px rgba(0, 230, 118, 0.7)) drop-shadow(0 0 2px rgba(0, 230, 118, 0.55));
 }
+
+/* ── PPL balance gauge (shared: dashboard + analytics) ── */
+.ppl-gauge { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ppl-g-svg { width: 100%; max-width: 280px; height: auto; display: block; }
+.ppl-g-track { fill: none; stroke: var(--c-border-h); stroke-width: 18; }
+.ppl-g-seg { fill: none; stroke-width: 18; stroke-linecap: butt; }
+.ppl-g-total { fill: var(--c-text-1); font-family: var(--font-heading); font-weight: 800; font-size: 30px; letter-spacing: -0.03em; }
+.ppl-g-cap { fill: var(--c-text-3); font-family: var(--font-main); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+.ppl-g-legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin-top: 2px; }
+.ppl-g-leg { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.ppl-g-leg-top { display: flex; align-items: center; gap: 5px; }
+.ppl-g-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lc); }
+.ppl-g-pct { font-family: var(--font-heading); font-weight: 800; font-size: 16px; color: var(--c-text-1); font-variant-numeric: tabular-nums; }
+.ppl-g-leg-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-text-3); }
+.ppl-g-leg-vol { font-size: 11px; font-weight: 600; color: var(--c-text-2); font-variant-numeric: tabular-nums; }
