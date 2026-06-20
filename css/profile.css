@@ -332,7 +332,7 @@
   background: rgba(255, 255, 255, 0.1);
   border: none;
   position: relative;
-  transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background 0.25s var(--ease-std);
 }
 .switch.on {
   background: var(--c-accent); /* Vivid iOS Green */
@@ -346,7 +346,7 @@
   border-radius: 50%;
   background: white;
   box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.1);
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.25s var(--ease-std), transform 0.25s var(--ease-std), background-color 0.25s var(--ease-std), border-color 0.25s var(--ease-std), color 0.25s var(--ease-std);
 }
 .switch.on .switch-thumb {
   transform: translateX(26px);
@@ -478,7 +478,7 @@
 .danger-btn.slide-out {
   transform: translateX(-150vw);
   opacity: 0;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+  transition: transform 0.4s var(--ease-std), opacity 0.4s ease;
 }
 .danger-btn.armed {
   background: var(--c-red);
@@ -531,7 +531,7 @@
   color: var(--c-text-1);
   letter-spacing: -0.04em;
   cursor: pointer;
-  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.2s var(--ease-std), transform 0.2s var(--ease-std), background-color 0.2s var(--ease-std), border-color 0.2s var(--ease-std), color 0.2s var(--ease-std);
   box-shadow: 0 8px 16px rgba(0,0,0,0.15);
 }
 
@@ -839,17 +839,17 @@
   pointer-events: none;
 }
 .pp-bento-cell {
-  animation: card-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: card-in 0.3s var(--ease-std) both;
 }
 .pp-bento-cell:nth-child(1) { animation-delay: 0.06s; }
 .pp-bento-cell:nth-child(2) { animation-delay: 0.10s; }
 .pp-bento-cell:nth-child(3) { animation-delay: 0.14s; }
 .pp-bento-cell:nth-child(4) { animation-delay: 0.18s; }
 .pp-card {
-  animation: card-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.08s both;
+  animation: card-in 0.3s var(--ease-std) 0.08s both;
 }
 .lift-row {
-  animation: card-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: card-in 0.28s var(--ease-std) both;
 }
 .lift-row:nth-child(1) { animation-delay: 0.06s; }
 .lift-row:nth-child(2) { animation-delay: 0.11s; }

@@ -41,7 +41,7 @@
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-left: 3px solid var(--c-intel);
-  animation: intel-slide-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: intel-slide-in 0.4s var(--ease-out);
 }
 
 @keyframes intel-slide-in {

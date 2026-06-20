@@ -4,7 +4,7 @@
    ════════════════════════════════════════════════ */
 
 import { DB, weeklyVolumeFrom, monthlyVolumeFrom, weeklyCountFrom, pplTonnageFrom } from './db.js';
-import { generateSparkline } from './shared/sparkline.js';
+import { generateSparkline, generateSparklineMulti } from './shared/sparkline.js';
 import { getRecommendations } from './claude.store.js';
 import { Spring } from './shared/spring.js';
 import { esc } from './shared/utils.js';
@@ -233,7 +233,7 @@ export const Dashboard = (() => {
     window.addEventListener('pointerup', () => {
       if (!isDragging) return;
       isDragging = false;
-      el.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+      el.style.transition = 'transform 0.4s var(--ease-std)';
     });
   }
 
@@ -264,58 +264,76 @@ export const Dashboard = (() => {
       return;
     }
 
-    // Group tonnage by day for the last 30 days
+    // Group tonnage by day + PPL type for the last 30 days
     const days = 30;
-    const dataMap = new Map();
     const today = new Date();
     today.setHours(0,0,0,0);
-    
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const dayKeys = [];
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      dataMap.set(d.getTime(), 0);
+      dayKeys.push(d.getTime());
     }
-    
+
+    const pplMaps = {
+      push: new Map(dayKeys.map(k => [k, 0])),
+      pull: new Map(dayKeys.map(k => [k, 0])),
+      legs: new Map(dayKeys.map(k => [k, 0])),
+    };
+
     let total30d = 0;
     let last7d = 0;
     let prev7d = 0;
-    const now = Date.now();
-    const dayMs = 24 * 60 * 60 * 1000;
 
     workouts.forEach(w => {
       const wDate = new Date(w.timestamp);
       wDate.setHours(0,0,0,0);
       const ts = wDate.getTime();
-      
       const diffDays = Math.floor((today.getTime() - ts) / dayMs);
-      if (diffDays < 7) last7d += w.tonnage;
-      else if (diffDays >= 7 && diffDays < 14) prev7d += w.tonnage;
 
-      if (dataMap.has(ts)) {
-        dataMap.set(ts, dataMap.get(ts) + w.tonnage);
+      if (diffDays < 7) last7d += w.tonnage;
+      else if (diffDays < 14) prev7d += w.tonnage;
+
+      const type = (w.type || '').toLowerCase();
+      const map = pplMaps[type];
+      if (map && map.has(ts)) {
+        map.set(ts, map.get(ts) + w.tonnage);
         total30d += w.tonnage;
+      } else if (!map) {
+        // non-PPL type — add to total only
+        const anyMap = pplMaps.push;
+        if (anyMap.has(ts)) total30d += w.tonnage;
       }
     });
-    
+
     let trendHtml = '';
     if (prev7d > 0 || last7d > 0) {
       const percent = prev7d === 0 ? 100 : Math.round(((last7d - prev7d) / prev7d) * 100);
       const isUp = percent >= 0;
-      const color = isUp ? 'var(--c-green)' : 'var(--c-red)';
-      const bg = isUp ? 'rgba(35, 209, 139, 0.15)' : 'rgba(244, 135, 113, 0.15)';
-      const arrow = isUp ? '↗' : '↘';
-      trendHtml = `<span style="background:${bg}; color:${color}; font-size:10px; font-weight:800; padding:2px 6px; border-radius:12px; margin-left:8px;">${arrow} ${Math.abs(percent)}%</span>`;
+      const color = isUp ? 'var(--c-accent)' : 'var(--c-red)';
+      const bg = isUp ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 77, 136, 0.15)';
+      const arrow = isUp ? '+' : '-';
+      trendHtml = `<span style="background:${bg}; color:${color}; font-size:10px; font-weight:800; padding:2px 6px; border-radius:12px; margin-left:8px;">${arrow}${Math.abs(percent)}%</span>`;
     }
 
-    const dataArr = Array.from(dataMap.values());
-    const maxVal = Math.max(...dataArr);
-    if (maxVal === 0) {
-       container.innerHTML = generateSparkline([0,0,0,0], 300, 80);
-       return;
+    const pushArr = Array.from(pplMaps.push.values());
+    const pullArr = Array.from(pplMaps.pull.values());
+    const legsArr = Array.from(pplMaps.legs.values());
+    const globalMax = Math.max(...pushArr, ...pullArr, ...legsArr);
+
+    if (globalMax === 0) {
+      container.innerHTML = generateSparkline([0,0,0,0], 300, 80);
+      return;
     }
-    
+
     totalEl.innerHTML = `${fmtVol(total30d)} kg ${trendHtml}`;
-    container.innerHTML = generateSparkline(dataArr, 300, 80);
+    container.innerHTML = generateSparklineMulti([
+      { data: pushArr, color: 'var(--c-push)' },
+      { data: pullArr, color: 'var(--c-pull)' },
+      { data: legsArr, color: 'var(--c-legs)' },
+    ], 300, 80);
   }
 
   /**
