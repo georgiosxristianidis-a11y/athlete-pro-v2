@@ -505,13 +505,14 @@ export async function renderSetRow(ex, ei, set, si) {
   return `
     <div class="set-row ${set.done ? 'set-done' : ''} ${isActive ? 'set-active' : ''}" id="set-row-${ei}-${si}">
       <span class="set-num">${si + 1}</span>
-      <div class="drum-wrap" id="sw-${ei}-${si}" 
-           data-type="w" data-ei="${ei}" data-si="${si}" 
-           data-value="${set.weight}" 
+      <div class="drum-wrap" id="sw-${ei}-${si}"
+           data-type="w" data-ei="${ei}" data-si="${si}"
+           data-value="${set.weight}"
            data-step="${step}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sw-val stepper-val hidden">${displayWeight}</span></div>
-      <div class="drum-wrap" id="sr-${ei}-${si}" 
-           data-type="r" data-ei="${ei}" data-si="${si}" 
+      <div class="drum-wrap" id="sr-${ei}-${si}"
+           data-type="r" data-ei="${ei}" data-si="${si}"
            data-value="${set.reps}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sr-val stepper-val hidden">${set.reps}</span></div>
+      <div class="set-done-summary">${displayWeight}&times;${set.reps}</div>
       <button class="set-check ${set.done ? 'done' : ''}" id="chk-${ei}-${si}" onclick="Workout.toggleSet(${ei},${si})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg></button>
     </div>`;
 }

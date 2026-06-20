@@ -98,7 +98,7 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s var(--ease-std);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -303,7 +303,7 @@
 .orm-bar-fill {
   height: 100%;
   border-radius: 2px;
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.8s var(--ease-std);
 }
 @media (hover: hover) {
   .orm-row:hover {
