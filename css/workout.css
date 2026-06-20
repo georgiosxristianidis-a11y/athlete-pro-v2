@@ -101,21 +101,21 @@
 
 /* Week-specific neon states */
 .week-pill.week-A {
-  border-color: rgba(0, 230, 118, 0.25);
-  box-shadow: 0 0 12px rgba(0, 230, 118, 0.08);
+  border-color: color-mix(in srgb, var(--c-accent) 25%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c-accent) 8%, transparent);
 }
 .week-pill.week-A .week-pill-val {
   color: var(--c-accent);
-  text-shadow: 0 0 8px rgba(0, 230, 118, 0.3);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--c-accent) 30%, transparent);
 }
 
 .week-pill.week-B {
-  border-color: rgba(167, 139, 250, 0.3);
-  box-shadow: 0 0 12px rgba(167, 139, 250, 0.08);
+  border-color: color-mix(in srgb, var(--c-purple) 30%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c-purple) 8%, transparent);
 }
 .week-pill.week-B .week-pill-val {
   color: var(--c-purple);
-  text-shadow: 0 0 8px rgba(167, 139, 250, 0.4);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--c-purple) 40%, transparent);
 }
 
 .live-bar { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); background: var(--c-surface); border-radius: 20px; padding: 24px var(--sp-2); margin-bottom: var(--sp-2); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
@@ -256,58 +256,109 @@
 
 .progress-fill { transform-origin: left; transform: scaleX(0); width: 100%; }
 
-/* ── Core / accessory checklist (BLOCK IV: CORE, warmup, finishers) ── */
-.core-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-.core-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 11px 14px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-m);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+/* ══════════════════════════════════════════════════════════
+   CORE SECTION — Block IV (UI-only, noDb)
+   Dashed border = diégetic signal: "this is body-weight / UI-only"
+   Circle glyph ○ communicates non-weighted movement without emoji.
+   ══════════════════════════════════════════════════════════ */
+.core-section {
+  margin-top: var(--sp-3);
 }
-.core-item:active { transform: scale(0.985); }
-.core-box {
-  flex-shrink: 0;
-  width: 22px; height: 22px;
-  border-radius: 7px;
-  border: 1.5px solid var(--c-border-h);
-  display: flex; align-items: center; justify-content: center;
-  color: #03110a;
-  background: transparent;
-  transition: background-color 0.18s ease, border-color 0.18s ease;
+
+.core-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
 }
-.core-box svg { opacity: 0; transition: opacity 0.15s ease; }
-.core-name {
-  flex: 1; min-width: 0;
-  font-size: 14px; font-weight: 600; color: var(--c-text-1);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  transition: color 0.18s ease;
-}
-.core-item.checked { background: var(--c-accent-bg); border-color: var(--c-accent); }
-.core-item.checked .core-box { background: var(--c-accent); border-color: var(--c-accent); }
-.core-item.checked .core-box svg { opacity: 1; }
-.core-item.checked .core-name { color: var(--c-text-2); }
-.core-remove {
-  flex-shrink: 0;
-  width: 30px; height: 30px;
-  display: flex; align-items: center; justify-content: center;
-  border: none; background: transparent;
-  color: var(--c-text-3);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: color 0.15s ease, background-color 0.15s ease;
-}
-.core-remove:active { color: var(--c-red); background: var(--c-surface-h); }
+
 .core-empty {
-  padding: 18px 16px;
+  font-size: 13px;
+  color: var(--c-text-3);
   text-align: center;
-  font-size: 13px; color: var(--c-text-3);
+  padding: var(--sp-2) 0;
+  opacity: 0.5;
+}
+
+.core-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1-5);
+  padding: 10px var(--sp-1-5);
   background: var(--c-surface);
   border: 1px dashed var(--c-border-h);
   border-radius: var(--r-m);
-  margin-top: 10px;
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
 }
 
+.core-item:active {
+  background: var(--c-surface-h);
+}
+
+.core-item.checked {
+  border-color: color-mix(in srgb, var(--c-accent) 30%, transparent);
+  background: color-mix(in srgb, var(--c-accent) 5%, transparent);
+}
+
+/* Checkbox glyph — circle → checkmark transition */
+.core-box {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--c-border-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast);
+}
+
+.core-item.checked .core-box {
+  border-color: var(--c-accent);
+  background: var(--c-accent-bg);
+  color: var(--c-accent);
+}
+
+.core-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-text-2);
+  transition: color var(--t-fast);
+}
+
+.core-item.checked .core-name {
+  color: var(--c-text-1);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--c-text-3) 60%, transparent);
+}
+
+.core-remove {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--c-text-3);
+  opacity: 0;
+  cursor: pointer;
+  border-radius: var(--r-s);
+  transition: opacity var(--t-fast), background var(--t-fast), color var(--t-fast);
+}
+
+.core-item:hover .core-remove,
+.core-item:focus-within .core-remove {
+  opacity: 0.5;
+}
+
+.core-remove:hover,
+.core-remove:active {
+  opacity: 1 !important;
+  color: var(--c-red);
+  background: color-mix(in srgb, var(--c-red) 8%, transparent);
+}

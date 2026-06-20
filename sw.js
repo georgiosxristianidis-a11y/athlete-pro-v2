@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v67';
+const CACHE_NAME = 'athlete-pro-v68';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -76,6 +76,7 @@ const ASSETS = [
   '/js/workout.view/handlers.js',
   '/js/workout.view/modals.js',
   '/js/workout.view/render.js',
+  '/js/workout.view/summary.js',
   '/js/workout.view.js',
   '/js/_archive/analytics.js',
   '/js/_archive/claude.js',
@@ -91,6 +92,7 @@ const ASSETS = [
   '/css/intel.css',
   '/css/privacy.css',
   '/css/profile.css',
+  '/css/summary.css',
   '/css/workout.css',
   '/icons/apple-touch-icon.png',
   '/icons/favicon.png',
