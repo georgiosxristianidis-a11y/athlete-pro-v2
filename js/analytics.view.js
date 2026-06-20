@@ -89,7 +89,7 @@ export async function load() {
       <div class="section-header stagger-item" style="margin-top:var(--sp-3); animation-delay: 0.1s">
         <span class="section-label">${t('analytics.ppl_balance')}</span>
       </div>
-      <div class="chart-card stagger-item" id="ppl-gauge" style="padding:18px 16px 16px; animation-delay: 0.1s"></div>
+      <div class="chart-card stagger-item" id="ppl-gauge-analytics" style="padding:18px 16px 16px; animation-delay: 0.1s"></div>
 
       <!-- ── Strength Progression (premium per-lift curves) ── -->
       <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.11s">
@@ -179,7 +179,7 @@ function _renderPPLBalance(workouts) {
   workouts.forEach(w => {
     if (ppl[w.type] !== undefined) ppl[w.type] += w.tonnage || 0;
   });
-  renderPplGauge(document.getElementById('ppl-gauge'), ppl);
+  renderPplGauge(document.getElementById('ppl-gauge-analytics'), ppl);
 }
 
 function _renderCalendar(workouts) {

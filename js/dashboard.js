@@ -154,7 +154,7 @@ export const Dashboard = (() => {
         <span class="section-label">PPL Split</span>
         <span class="badge badge-accent" id="dash-total"></span>
       </div>
-      <div class="chart-card ppl-gauge-card stagger-item" id="ppl-gauge"></div>
+      <div class="chart-card ppl-gauge-card stagger-item" id="ppl-gauge-home"></div>
 
       <!-- Top Lifts -->
       <div class="section-header">
@@ -414,7 +414,7 @@ export const Dashboard = (() => {
    * @returns {void}
    */
   function renderPPL(ppl) {
-    renderPplGauge(document.getElementById('ppl-gauge'), ppl);
+    renderPplGauge(document.getElementById('ppl-gauge-home'), ppl);
 
     const total = document.getElementById('dash-total');
     if (total) {
