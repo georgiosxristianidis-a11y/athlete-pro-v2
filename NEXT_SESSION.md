@@ -1,8 +1,84 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-06-20, сессия Claude (Opus 4.8, LEAD). **byoi == main == `a0c8673`** (всё интегрировано). Вся работа сессии (9 коммитов) — на ветке `claude/brave-brown-d5209a` (**НЕ влито в byoi**, ждёт полевого теста CRDT). Тег-чекпоинт **`checkpoint-2026-06-20`** (HEAD `2f5cc09`). Предыдущий: `checkpoint-2026-06-18`.
+> Обновлено: 2026-06-20 (сессия 2, Opus 4.7, LEAD). **byoi == main == `a0c8673`**. Тег-чекпоинт **`checkpoint-2026-06-20-s2`**. Worktree `claude/compassionate-black-30cbfd` fast-forward'нут с `claude/brave-brown-d5209a` до `594f72d` + 3 коммита этой сессии. Предыдущий: `checkpoint-2026-06-20`.
 > Это **единый источник правды**: план, делегирование, философия Air, дизайн-система, done-list, остаток.
 > Табличный дубль — `docs/DELEGATION-PLAN.md`.
+
+---
+
+## ⏭️ СЕССИЯ 2026-06-20 (вторая) — Design Lock + scrub + gauge
+
+### 🎯 ПЕРВОЕ ДЕЛО ДАЛЬШЕ: Phase 1 — Cool Steel B foundation
+
+Перед любой UI-работой — добавить `--c-chrome*` токены, написать `chamber-pill.js` (4-знаковая) + `island-tracker.js` (DHL), проверить B в browser на одном экране. После ✓ — Gemini массовый sweep `var(--c-accent)`. Стэк задач: см. таблицу phases ниже.
+
+### ✅ Locked в этой сессии (durable design-DNA)
+
+**См. memory:** `design-2026-06-20-chambers-and-cool-steel.md` (полные обоснования).
+
+1. **4 камеры, не 3 и не "Блок I/II/III/IV".** Имена контекстные по дню из PPL | GIO blueprint: Push = Chest Power / Chest Shape / Biceps / Core; Pull = Back Width / Back Thickness / Triceps & Traps / Core; Legs = Legs Heavy / Legs Isolation / Shoulders / Alignment. **Камера 4 — UI-only**, `_executeFinalSave` обязан фильтровать `!e.coreOnly` перед `IDB.put()`.
+2. **Геометрические сигнатуры (не цвет).** `▣` Heavy / `▥` Shape / `◆` Accent / `○` Core. PPL = цвет сессии (контейнер), форма = роль камеры. Forms = constant grammar, color = current voice.
+3. **DHL-трекер в Dynamic Island.** 4 маркера + 3 линии. Past=filled, current=filled+pulse-ring, future=30%, Камера 4=всегда open ring. Заменяет chamber-pill в шапке in-workout (Island и есть навигация). Опция `tracker.violetAccent` — уникальный нав-акцент через `--c-secondary`.
+4. **Cool Steel B палитра.** Бренд-хром перестаёт быть зелёным неоном. Новые токены: `--c-chrome` #cfd1d8 (rims/outlines), `--c-chrome-h` #e9eaed (hover/CTA fill), `--c-chrome-t` #1a1a22 (тёмный текст). `--c-accent` остаётся ТОЛЬКО для celebration (PR-badge, set-pulse, success-toast) и data-glow (sparklines, Strength Index). PPL-токены не трогать.
+
+### ✅ Build done & committed (этой сессии)
+
+- **Curve scrub** на Strength Progression — touch+hover вертикальный маркер + readout (вес/дата), passive listeners, `transform`-driven 60fps. (`analytics.strength-curves.js` + `analytics.css`)
+- **PPL semi-donut gauge** — заменил тонкие bars на dashboard PPL Split + analytics PPL Balance. Полукольцо push/pull/legs с гэпами, тоннаж в центре, легенда внизу. `js/shared/ppl-gauge.js` (новый shared компонент, реюзается в обоих местах). SW → v65.
+
+### 📋 ФАЗОВЫЙ ПЛАН (по криту, с делегированием)
+
+| Фаза | Заголовок | Owner | Effort | Crit | Блокирует |
+|---|---|:--:|:--:|:--:|---|
+| **0** | Commit pending (curve+gauge+docs) | 🔒 LEAD | S | 🔴 | Phase 1 |
+| **1** | Palette B foundation | 🔒 LEAD | M | 🔴 | весь новый UI, Phase 6 |
+| **2** | Critical bugs (parallel) | 🔒/🟦/🟩 | M | 🔴/🟠 | — |
+| **3** | W-1 Add Exercise Live | 🔒 LEAD | M | 🟠 | Phase 4 |
+| **4** | W-2-A Block timings | 🔒 LEAD | S | 🟠 | Phase 5 |
+| **5** | W-2-B `buildSessionSummary` в store | 🔒 LEAD | M | 🟠 | Phase 6, **закрывает BUG-1** |
+| **6** | W-2-C UI 4-chamber отчёт | 🟦 SONNET | L | 🟡 | — |
+| **7** | W-2-D Save & analytics | 🔒 LEAD | S | 🟡 | — |
+| **8** | Delegated residuals (массово) | 🟦/🟩 | parallel | 🟢 | — |
+
+**Phase 1 — детально (LEAD foundation):**
+- 1.1 `--c-chrome*` tokens в `base.css` (additive, безопасно)
+- 1.2 `js/shared/chamber-pill.js` (4-знаковая) — three modes: preview / mastery / completed
+- 1.3 `js/shared/island-tracker.js` (DHL) — + опциональный violet-mode
+- 1.4 verify B в browser на 1 экране — **gate**: B заходит → 1.5; не заходит → revert токенов
+- 1.5 🟩 GEMINI — token-sweep `var(--c-accent)` триаж (после ✓ на 1.4)
+
+**Phase 2 — критические баги (параллельно с Phase 1):**
+- 2.1 🔒 LEAD — **BUG-3 CRITICAL** — Layout Thrashing `_initDrag` (forced sync layout на 60fps при drag сета): batch reads → writes через rAF, кэш `getBoundingClientRect`
+- 2.2 🟦 SONNET — **BUG-2 HIGH** — `window._coreCheckedState` глобал → `State.coreChecked`
+- 2.3 🟩 GEMINI — **BUG-6 LOW** — хардкод rgba в `workout.css`/`athlete-room.css` (AIR rule №2)
+
+**Phase 8 — delegated параллельно:**
+- 🟩 **GEMINI** (mechanical, дешёвая): 1-5/1-6 (FAB/Claude rim → система, тонир. фон); 2-6 (формат чисел через `format.js`); 3-2/3-4 (SVG sweep, currentColor); 5-2/5-3/5-6 (text-overflow, "X" cleanups, onboarding bar); BUG-6 sweep
+- 🟦 **SONNET** (scoped logic): 2-7 (formatter tests); 3-3 (метафоры иконок); 4-2/4-3 (Edit Plan → factory, CORE-карты унификация); 5-1/5-4/5-5 (компакт set input, Volume Trend, motion tokens)
+- ⏸ **DEFERRED**: BUG-5 (`getAll()` → cursor) — преждевременная оптимизация
+
+### 🛠 Engineering constraints из PPL | GIO blueprint (mandatory при W-1/W-2)
+
+- `isUnilateral: true` → `tonnage += weight × reps × 2`. **Unit test обязателен** (Iso-Lateral Row иначе ползёт).
+- Камера 4 `db.put()` блок — `exercises.filter(e => !e.coreOnly)` перед записью.
+- Event Delegation на dynamic set-cards (`closest('[data-set-id]')`) — direct listeners ломаются на `+ add set`.
+- RPE-цвет через `:active` + JS-toggle (Haptic Gate), НЕ `:hover` (sticky bug на тач).
+- Block timings — timestamps `{ startedAt, endedAt }`, не аккумулированные мс (рефреш-safe, CRDT-friendly).
+
+### 🎯 Шпаргалка: модель ↔ задача
+
+| Метка | Модель | Брать | НЕ брать | Цена* |
+|:--:|---|---|---|:--:|
+| 🔒 LEAD | Opus 4.7/4.8 | data correctness · schema · security · кросс-секущее · design-DNA · новая архитектура | grep+replace · тесты по готовому спеку | **5×** |
+| 🟦 SONNET | Sonnet 4.6 | scoped рефактор · тесты · компонент по готовому спеку · нормализация | оригинальный креатив · новая архитектура | **1×** |
+| 🟧 HAIKU | Haiku 4.5 | мелкие правки в 1 файле · переименование var · удалить флаг из 3 мест | анализ · дизайн · логика > экрана | **0.2×** |
+| 🟩 GEMINI | Gemini 3.1 | массовый CSS sweep · SVG batch · find/replace на десятки файлов | логика с условиями · дизайн | **0.1×** |
+| 🟪 FABLE | Fable 5 | creative UX концепты · ideation · мокапы | code-correctness · точная инженерия | ~Sonnet |
+
+*относительно Sonnet baseline. **Антипаттерн:** LEAD на mechanical sweep = 50× переплата vs Gemini.
+
+### 🔴 За пользователем (унаследовано)
+Полевой тест CRDT 2-девайс (cloud) → влить `claude/brave-brown-d5209a` (+ эту ветку) в byoi/main. Залить импорт-JSON (128 тренировок) через Profile → Import.
 
 ---
 
