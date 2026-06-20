@@ -1,8 +1,27 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-06-18, сессия Claude (Opus 4.8, LEAD). **byoi == main == `a0c8673`** (всё интегрировано). CRDT-UUID этой сессии — на ветке `claude/brave-brown-d5209a` (**НЕ влито в byoi**, ждёт интеграции + полевого теста). Тег-чекпоинт `checkpoint-2026-06-17`. Последний полностью верифицированный (без cloud-полевого) коммит: остров `2f998c1`.
+> Обновлено: 2026-06-20, сессия Claude (Opus 4.8, LEAD). **byoi == main == `a0c8673`** (всё интегрировано). Вся работа сессии (9 коммитов) — на ветке `claude/brave-brown-d5209a` (**НЕ влито в byoi**, ждёт полевого теста CRDT). Тег-чекпоинт **`checkpoint-2026-06-20`** (HEAD `2f5cc09`). Предыдущий: `checkpoint-2026-06-18`.
 > Это **единый источник правды**: план, делегирование, философия Air, дизайн-система, done-list, остаток.
 > Табличный дубль — `docs/DELEGATION-PLAN.md`.
+
+---
+
+## ⏭️ СЕССИЯ 2026-06-20 — премиум-визуал прогресса + импорт-история
+
+### ✅ Сделано (всё на `claude/brave-brown-d5209a`, коммиты)
+- **Импорт истории из Excel** (`081b4a8`, `3f5800b`): ETL `scripts/import-etl.py` → бэкап-JSON `C:\Users\Zephyrus\Downloads\qBit\athlete-pro-import.json` — **128 тренировок** (pull 54/legs 30/push 44, 2023-05→2025-09, 0 unmatched). `Backup.import` теперь штампует `withMeta` (синк-чисто). Заливать через Profile→Import — **за Gio**.
+- **Strength Progression кривые** (`6fa03ff`): `js/analytics.strength-curves.js` — per-lift неон-кривые (PPL-цвета), пик/текущий маркеры, помесячная агрегация (max рабочий вес), кламп Catmull-Rom. Топ-6 упр.
+- **Strength Index хиро** (`09672ce`): сверху Stats — индекс = средн. относит. рост весов (НЕ DOTS: данные машинные без большой тройки) + журней-статы (596т/128/2.4г) + спарклайн. Статичный SVG, 60fps.
+- **Core/accessory UX** (`2f5cc09`): `.core-*` стили в workout.css — стеклянный чеклист (чекбокс+accent-заливка, remove, empty-state) для BLOCK IV CORE/разминки во всех PPL.
+- **GPT product-review** разобран: forecasting/recovery отклонены (фейк-точность / нет данных + airgap); Strength Score/Plateau/AI — движки уже в коде (`athleteProScore`/`dotsScore`, `detectPlateau`, aiOrchestrator).
+
+### 🔜 ПЛАН ДАЛЬШЕ (чеклист, согласовано с Gio — лёгкое, 60fps)
+1. **#2 Scrub значений на кривых** — touch (мобила) + hover (десктоп): вертикальный маркер + readout (вес/дата) к ближайшей точке; двигать через `transform` (без ре-рендера), passive. Zoom/timeframe — **отложено** (помесячная агрегация уже сжимает).
+2. **#3 PPL split → 3-сегментный semi-donut гейдж** — вместо тонких баров (dashboard + analytics PPL-balance): полукольцо push/pull/legs (green/cyan/purple), тоннаж в центре. Статичный SVG, 60fps. НЕ батарея (одна шкала не ложится на 3 категории).
+3. Верифицировать в preview на 128 импортных, sw-бамп, коммит каждой фичи.
+
+### 🔴 За пользователем (не меняется)
+Полевой тест CRDT 2-девайс (cloud) → затем влить ветку в byoi. + залить импорт-JSON.
 
 ---
 
