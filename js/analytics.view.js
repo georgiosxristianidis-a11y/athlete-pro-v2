@@ -18,7 +18,7 @@ import {
 } from './analytics.store.js';
 import { t } from './locale.store.js';
 import { isRu } from './locale.store.js';
-import { renderStrengthCurves } from './analytics.strength-curves.js';
+import { renderStrengthHero, renderStrengthCurves } from './analytics.strength-curves.js';
 
 // PPL law: push=green (--c-accent) · pull=cyan (--c-blue) · legs=purple (--c-purple).
 // Kept as hex because callers append alpha (`${color}20`), which CSS vars can't do.
@@ -67,7 +67,9 @@ export async function load() {
   if (!container) return;
 
   container.innerHTML = `
-    <div class="stat-row stagger-item" style="margin-top:var(--sp-2); animation-delay: 0.05s">
+      <div id="strength-hero" class="stagger-item" style="margin-top:var(--sp-2); animation-delay: 0.03s"></div>
+
+      <div class="stat-row stagger-item" style="margin-top:var(--sp-2); animation-delay: 0.05s">
         <div class="stat-chip">
           <div class="stat-chip-val" id="an-total-sessions">—</div>
           <div class="stat-chip-label">${t('analytics.sessions')}</div>
@@ -162,6 +164,7 @@ export async function load() {
       return;
     }
 
+    renderStrengthHero(workouts, document.getElementById('strength-hero'));
     _renderQuickStats(workouts);
     _renderPPLBalance(workouts);
     renderStrengthCurves(workouts, document.getElementById('strength-curves'));

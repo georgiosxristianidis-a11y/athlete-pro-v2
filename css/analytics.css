@@ -375,6 +375,23 @@
 
 .orm-bar-fill { transform-origin: left; width: 100%; transform: scaleX(0); }
 
+/* ── Strength Index hero (premium overview) ── */
+.sh-hero { padding: 16px 18px 14px; }
+.sh-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; position: relative; z-index: 1; }
+.sh-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-3); }
+.sh-score { font-size: 40px; font-weight: 800; color: var(--c-text-1); letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.sh-gain { font-size: 13px; font-weight: 800; margin-left: 8px; vertical-align: middle; }
+.sh-gain.up { color: var(--c-accent); }
+.sh-gain.down { color: var(--c-text-3); }
+.sh-cap { font-size: 11px; font-weight: 600; color: var(--c-text-3); margin-top: 2px; }
+.sh-spark { width: 96px; height: 36px; flex-shrink: 0; margin-top: 14px; }
+.sh-spark-stroke { filter: drop-shadow(0 0 3px var(--c-accent)); }
+.sh-stats { display: flex; justify-content: space-between; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--c-border); position: relative; z-index: 1; }
+.sh-stat { display: flex; flex-direction: column; gap: 2px; }
+.sh-stat b { font-size: 18px; font-weight: 800; color: var(--c-text-1); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.sh-stat small { font-size: 11px; font-weight: 700; color: var(--c-text-3); margin-left: 1px; }
+.sh-stat span { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-text-3); }
+
 /* ── Strength Progression curves (premium per-lift) ── */
 .sc-grid { display: flex; flex-direction: column; gap: var(--sp-2); }
 .sc-card { padding: 14px 16px 10px; }

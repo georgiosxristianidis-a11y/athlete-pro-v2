@@ -113,6 +113,72 @@ function curveCard(s, idx) {
 }
 
 /**
+ * Strength Index = mean relative gain (current / first working weight) across the
+ * tracked lifts, indexed to 100. Honest for machine/PPL data (no big-3 / bodyweight
+ * needed, unlike DOTS). Returns the monthly index track for the sparkline.
+ */
+function strengthIndex(series) {
+  const months = [...new Set(series.flatMap(s => s.pts.map(p => p.t)))].sort((a, b) => a - b);
+  const idx = months.map(m => {
+    const ratios = [];
+    for (const s of series) {
+      const seen = s.pts.filter(p => p.t <= m);
+      if (seen.length) ratios.push(seen[seen.length - 1].v / s.pts[0].v);
+    }
+    return ratios.length ? ratios.reduce((a, b) => a + b, 0) / ratios.length : 1;
+  });
+  return { months, idx };
+}
+
+/**
+ * Premium overview hero: Strength Index + total-gain badge + index sparkline +
+ * journey stats (tonnage · sessions · span). Pure static SVG/text — no canvas,
+ * no animation loop — so it stays buttery at 60fps.
+ * @param {Array<import('./db.js').WorkoutRecord>} workouts
+ * @param {HTMLElement|null} mount
+ */
+export function renderStrengthHero(workouts, mount) {
+  if (!mount) return;
+  const series = buildSeries(workouts);
+  if (!series.length || !workouts.length) { mount.innerHTML = ''; return; }
+
+  const { idx } = strengthIndex(series);
+  const score = Math.round(idx[idx.length - 1] * 100);
+  const gain = Math.round((idx[idx.length - 1] - 1) * 100);
+
+  const tonnage = workouts.reduce((s, w) => s + (w.tonnage || 0), 0);
+  const tons = tonnage >= 1000 ? Math.round(tonnage / 1000) : Math.round(tonnage);
+  const tonsUnit = tonnage >= 1000 ? 't' : 'kg';
+  const ts = workouts.map(w => w.timestamp).sort((a, b) => a - b);
+  const years = Math.max(1, Math.round((ts[ts.length - 1] - ts[0]) / 31557600000 * 10) / 10);
+
+  // index sparkline (normalised to its own min/max)
+  const W = 96, H = 36, pad = 4;
+  const mn = Math.min(...idx), mx = Math.max(...idx), rg = (mx - mn) || 1;
+  const P = idx.map((v, i) => ({ x: pad + (i / (idx.length - 1 || 1)) * (W - 2 * pad), y: H - pad - ((v - mn) / rg) * (H - 2 * pad) }));
+  const spark = idx.length > 1 ? smoothPath(P) : '';
+
+  mount.innerHTML = `
+    <div class="sh-hero chart-card">
+      <div class="sh-top">
+        <div class="sh-main">
+          <div class="sh-label">${isRu() ? 'Индекс силы' : 'Strength Index'}</div>
+          <div class="sh-score">${score}<span class="sh-gain ${gain >= 0 ? 'up' : 'down'}">${gain >= 0 ? '+' : ''}${gain}%</span></div>
+          <div class="sh-cap">${isRu() ? 'средний рост весов с начала' : 'avg weight gain since start'}</div>
+        </div>
+        ${spark ? `<svg class="sh-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${isRu() ? 'тренд индекса силы' : 'strength index trend'}">
+          <path d="${spark}" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sh-spark-stroke"/>
+        </svg>` : ''}
+      </div>
+      <div class="sh-stats">
+        <div class="sh-stat"><b>${tons}<small>${tonsUnit}</small></b><span>${isRu() ? 'поднято' : 'lifted'}</span></div>
+        <div class="sh-stat"><b>${workouts.length}</b><span>${isRu() ? 'тренировок' : 'sessions'}</span></div>
+        <div class="sh-stat"><b>${years}<small>${isRu() ? 'г' : 'y'}</small></b><span>${fmtMon(ts[0])}–${fmtMon(ts[ts.length - 1])}</span></div>
+      </div>
+    </div>`;
+}
+
+/**
  * Render the Strength Progression section into a container element.
  * @param {Array<import('./db.js').WorkoutRecord>} workouts
  * @param {HTMLElement|null} mount
