@@ -1,6 +1,6 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-06-17, сессия Claude (Opus 4.8, LEAD). **byoi == main == `2f998c1`** (всё интегрировано). Тег-чекпоинт `checkpoint-2026-06-17`. Последний полностью верифицированный коммит: `ac2739b`.
+> Обновлено: 2026-06-21, сессия Sonnet 4.6 (worktree `agitated-satoshi-6f04f0`). **byoi == main == `2f998c1`** (base). Последний коммит сессии: `fe4deb7` (5-1/5-4/5-5). Тег-чекпоинт `checkpoint-2026-06-17`.
 > Это **единый источник правды**: план, делегирование, философия Air, дизайн-система, done-list, остаток.
 > Табличный дубль — `docs/DELEGATION-PLAN.md`.
 
@@ -132,7 +132,7 @@ innerHTML — через `esc()` (`js/shared/utils.js`). API-ключи толь
 
 **Фаза 4 — Компоненты (1/5):** ✅ 4-1 Vanilla-фабрики `js/ui/factory.js` (Button/TextField/NumberStepper/Card → DOM-узлы, текст через textContent), токен-классы `.ui-*` + `.btn-danger` в base.css, SW→v48 (`1cc2a98`) · LEAD
 
-**Фаза 5 — UX (1/7):** ✅ 5-7 Rest-таймер в Dynamic Island, fixed-модалки убраны (`abd660c`) · LEAD
+**Фаза 5 — UX (4/7):** ✅ 5-7 Rest-таймер в Dynamic Island, fixed-модалки убраны (`abd660c`) · LEAD · ✅ 5-1/5-4/5-5 (`fe4deb7`) · SONNET
 
 **Ad-hoc:**
 - ✅ L-1 Единый источник языка, убраны 2 класса багов, 9 точек (`69126a0`) · LEAD
@@ -172,11 +172,11 @@ innerHTML — через `esc()` (`js/shared/utils.js`). API-ключи толь
 - ⬜ **4-5** 🟩 GEMINI — Единый radius/высота кнопок через токены. `css/*`.
 
 ### Фаза 5 — UX
-- ⬜ **5-1** 🟦 SONNET — Компактный ввод сета (гигантские инпуты при 22 подходах). `js/workout.view/render.js`, `css/workout.css`.
+- ✅ **5-1** 🟦 SONNET — Компактный ввод сета: done-строки сворачиваются в `W×R` (`.set-done-summary`), drum-пикеры скрыты. (`fe4deb7`)
 - ⬜ **5-2** 🟩 GEMINI — text-overflow имён упражнений. `css/workout.css`.
 - ⬜ **5-3** 🟩 GEMINI — Убрать «X» с hero-молнии и у имени Gio. `js/dashboard.js`, `js/profile.*`.
-- ⬜ **5-4** 🟦 SONNET — Volume Trend: реальный график или честный empty. `js/dashboard.js`, `js/analytics.view.js`.
-- ⬜ **5-5** 🟦 SONNET — Микроанимации на motion-токенах + `prefers-reduced-motion`. `css/base.css`, `js/shared/spring.js`.
+- ✅ **5-4** 🟦 SONNET — Volume Trend: PPL-цвета (3 линии push/pull/legs). `generateSparklineMulti()` в `sparkline.js`, fix `--c-green`→`--c-accent`. (`fe4deb7`)
+- ✅ **5-5** 🟦 SONNET — 28 raw `cubic-bezier` → 8 дизайн-токенов `--ease-*` в `base.css`. `prefers-reduced-motion` блок. island-set-pulse не тронут. (`fe4deb7`)
 - ⬜ **5-6** 🟩 GEMINI — Прогресс-бар онбординга: подсветка текущего шага. `js/onboarding.js`.
 
 ---
@@ -190,12 +190,12 @@ innerHTML — через `esc()` (`js/shared/utils.js`). API-ключи толь
 ## 6. ТЕХНИЧЕСКИЕ ЗАМЕТКИ
 - **Запуск:** `npm run dev` → http://localhost:3000 (LAN 0.0.0.0).
 - **Тесты:** `npm test` = `node --test "test/*.test.js"` → **128/128** (e2e — playwright отдельно).
-- **SW:** `sw.js` cache `athlete-pro-v48`. **Бамп при любой правке JS/CSS.** `npm run build:sw` автогенерит ASSETS. Cache-first + нормализует URL (отбрасывает query) → при разработке свежий код = hard-reload ×2 или Unregister SW.
+- **SW:** `sw.js` cache `athlete-pro-v58`. **Бамп при любой правке JS/CSS.** `npm run build:sw` автогенерит ASSETS. Cache-first + нормализует URL (отбрасывает query) → при разработке свежий код = hard-reload ×2 или Unregister SW.
 - **AI-оркестратор:** модель `claude-3-5-sonnet-20241022` (устаревшая; обновление = решение пользователя).
 
 ---
 
 ## 7. ПРОГРЕСС
-✅ C-1 · 🟨 Ф0 (4/7) · 🟨 Ф1 (3/7) · 🟨 Ф2 (3/7) · 🟨 Ф3 (1/4) · 🟨 Ф4 (1/5) · 🟨 Ф5 (1/7) · 🌐 i18n L-1/L-2 ✅
+✅ C-1 · 🟨 Ф0 (4/7) · 🟨 Ф1 (3/7) · 🟨 Ф2 (3/7) · 🟨 Ф3 (1/4) · 🟨 Ф4 (1/5) · 🟨 Ф5 (4/7) · 🌐 i18n L-1/L-2 ✅
 
 **Все плановые 🔒 LEAD-задачи закрыты** (последние — 1-7, 4-1 в этой сессии). Следующий LEAD-фокус: интеграция ветки сессии → byoi, затем ревью/мёрж делегируемых выходов и Фаза 6 (CRDT-UUID / Lighthouse). Делегируемое — Sonnet/Gemini параллельно: Ф0 (0-3/0-4/0-7), 1-3..1-6, 2-3/2-4/2-7, 3-2..3-4, **4-2..4-5 (разблокировано 4-1)**, 5-x.
