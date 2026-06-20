@@ -149,33 +149,6 @@
   margin-left: 2px;
 }
 
-/* ── PPL Balance (Bento) ── */
-.ppl-bal-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--c-border);
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-.ppl-bal-val {
-  font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: 20px;
-  line-height: 1;
-}
-.ppl-bal-lbl {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--c-text-3);
-  text-transform: uppercase;
-  margin-top: 6px;
-  letter-spacing: 0.05em;
-}
-
 /* ── Chart cards ── */
 .chart-card {
   background: var(--c-surface);
@@ -404,9 +377,19 @@
 .sc-delta.up { color: var(--c-accent); background: var(--c-accent-bg); }
 .sc-delta.down { color: var(--c-text-3); background: var(--c-surface-h); }
 .sc-peak { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-gold); }
-.sc-chart { width: 100%; height: 96px; display: block; margin-top: 6px; position: relative; z-index: 1; }
+.sc-plot { position: relative; margin-top: 6px; z-index: 1; touch-action: pan-y; }
+.sc-chart { width: 100%; height: 96px; display: block; position: relative; z-index: 1; }
 .sc-stroke { filter: drop-shadow(0 0 3px var(--sc)); }
 .sc-peak-dot { filter: drop-shadow(0 0 4px var(--c-gold)); }
 .sc-cur-dot { filter: drop-shadow(0 0 4px var(--sc)); }
 .sc-axis { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; color: var(--c-text-3); margin-top: 2px; position: relative; z-index: 1; }
+
+/* ── Scrub layer (touch + hover readout) ── */
+.sc-scrub { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity var(--t-fast); z-index: 2; }
+.sc-scrub.on { opacity: 1; }
+.sc-scrub-line { position: absolute; top: 0; left: 0; width: 1px; height: 100%; background: linear-gradient(var(--sc), transparent); opacity: 0.5; transition: transform 0.08s ease-out; will-change: transform; }
+.sc-scrub-dot { position: absolute; top: 0; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--sc); box-shadow: 0 0 6px var(--sc); transition: transform 0.08s ease-out; will-change: transform; }
+.sc-scrub-tip { position: absolute; top: -2px; left: 0; display: flex; align-items: baseline; gap: 5px; padding: 3px 8px; border-radius: 8px; background: var(--c-bg-3); border: 1px solid var(--c-border-h); white-space: nowrap; transition: transform 0.08s ease-out; will-change: transform; }
+.sc-scrub-tip b { font-size: 12px; font-weight: 800; color: var(--c-text-1); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.sc-scrub-tip span { font-size: 10px; font-weight: 600; color: var(--c-text-3); }
 

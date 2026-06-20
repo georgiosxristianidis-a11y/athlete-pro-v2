@@ -70,15 +70,19 @@ function fmtMon(ts) {
   return `${M[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
 }
 
+const SC_W = 320, SC_H = 96;
+
+/** Build one curve card. Returns the markup plus the viewBox-space point geometry
+ *  ({x,y,v,t}) so the scrub layer can snap a readout to the nearest month. */
 function curveCard(s, idx) {
-  const W = 320, H = 96, padX = 8, padTop = 12, padBot = 20;
+  const W = SC_W, H = SC_H, padX = 8, padTop = 12, padBot = 20;
   const t0 = s.pts[0].t, tN = s.pts[s.pts.length - 1].t, tr = (tN - t0) || 1;
   const vs = s.pts.map(p => p.v), vmin = Math.min(...vs), vmax = Math.max(...vs), vr = (vmax - vmin) || 1;
   const X = p => padX + ((p.t - t0) / tr) * (W - 2 * padX);
   const Y = p => padTop + (1 - (p.v - vmin) / vr) * (H - padTop - padBot);
-  const P = s.pts.map(p => ({ x: X(p), y: Y(p) }));
-  const line = smoothPath(P);
-  const area = `${line} L ${P[P.length - 1].x.toFixed(1)},${H} L ${P[0].x.toFixed(1)},${H} Z`;
+  const pts = s.pts.map(p => ({ x: X(p), y: Y(p), v: p.v, t: p.t }));
+  const line = smoothPath(pts);
+  const area = `${line} L ${pts[pts.length - 1].x.toFixed(1)},${H} L ${pts[0].x.toFixed(1)},${H} Z`;
   const peakI = vs.indexOf(vmax);
   const color = TYPE_COLOR[s.type] || '#00e676';
   const gid = `scg-${idx}`;
@@ -86,7 +90,7 @@ function curveCard(s, idx) {
   const peak = Math.round(vmax);
   const deltaTxt = (s.delta >= 0 ? '+' : '') + Math.round(s.delta);
 
-  return `
+  const html = `
     <div class="sc-card chart-card" style="--sc:${color}">
       <div class="sc-head">
         <div class="sc-name">${esc(s.name)}</div>
@@ -96,20 +100,89 @@ function curveCard(s, idx) {
         <span class="sc-delta ${s.delta >= 0 ? 'up' : 'down'}">${deltaTxt} kg</span>
         <span class="sc-peak">peak ${peak}</span>
       </div>
-      <svg class="sc-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)} est 1RM progression, ${cur} kg current, ${peak} kg peak">
-        <defs>
-          <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="${color}" stop-opacity="0.22"/>
-            <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
-          </linearGradient>
-        </defs>
-        <path d="${area}" fill="url(#${gid})"/>
-        <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>
-        <circle cx="${X(s.pts[peakI]).toFixed(1)}" cy="${Y(s.pts[peakI]).toFixed(1)}" r="3.5" fill="${GOLD}" class="sc-peak-dot"/>
-        <circle cx="${P[P.length - 1].x.toFixed(1)}" cy="${P[P.length - 1].y.toFixed(1)}" r="3.5" fill="${color}" class="sc-cur-dot"/>
-      </svg>
+      <div class="sc-plot">
+        <svg class="sc-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)} est 1RM progression, ${cur} kg current, ${peak} kg peak">
+          <defs>
+            <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${color}" stop-opacity="0.22"/>
+              <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="${area}" fill="url(#${gid})"/>
+          <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>
+          <circle cx="${pts[peakI].x.toFixed(1)}" cy="${pts[peakI].y.toFixed(1)}" r="3.5" fill="${GOLD}" class="sc-peak-dot"/>
+          <circle cx="${pts[pts.length - 1].x.toFixed(1)}" cy="${pts[pts.length - 1].y.toFixed(1)}" r="3.5" fill="${color}" class="sc-cur-dot"/>
+        </svg>
+        <div class="sc-scrub" aria-hidden="true">
+          <div class="sc-scrub-line"></div>
+          <div class="sc-scrub-dot"></div>
+          <div class="sc-scrub-tip"><b></b><span></span></div>
+        </div>
+      </div>
       <div class="sc-axis"><span>${fmtMon(t0)}</span><span>${s.n} ${isRu() ? 'сессий' : 'sessions'}</span><span>${fmtMon(tN)}</span></div>
     </div>`;
+
+  return { html, pts };
+}
+
+/**
+ * Wire touch + hover scrubbing on one curve. A vertical marker + dot snap to the
+ * nearest monthly point and a pill reads out weight/date. All movement is via
+ * `transform` (no re-render); pointer listeners are passive and coalesced to one
+ * update per frame, so it stays at 60fps and never blocks scroll.
+ * @param {HTMLElement} card
+ * @param {{x:number,y:number,v:number,t:number}[]} pts — viewBox-space geometry
+ */
+function wireScrub(card, pts) {
+  const plot = card.querySelector('.sc-plot');
+  const scrub = card.querySelector('.sc-scrub');
+  if (!plot || !scrub || !pts.length) return;
+  const line = scrub.querySelector('.sc-scrub-line');
+  const dot = scrub.querySelector('.sc-scrub-dot');
+  const tip = scrub.querySelector('.sc-scrub-tip');
+  const tipVal = tip.querySelector('b');
+  const tipSub = tip.querySelector('span');
+
+  let raf = 0, lastX = 0, tipHalf = 0;
+
+  function paint() {
+    raf = 0;
+    const rect = plot.getBoundingClientRect();
+    if (!rect.width) return;
+    const px = Math.max(0, Math.min(rect.width, lastX - rect.left));
+    const svgX = (px / rect.width) * SC_W;
+    let bi = 0, bd = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      const d = Math.abs(pts[i].x - svgX);
+      if (d < bd) { bd = d; bi = i; }
+    }
+    const p = pts[bi];
+    const sx = (p.x / SC_W) * rect.width;
+    const sy = (p.y / SC_H) * rect.height;
+    line.style.transform = `translateX(${sx.toFixed(1)}px)`;
+    dot.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px) translate(-50%, -50%)`;
+    if (!tipHalf) tipHalf = tip.offsetWidth / 2;
+    const tx = Math.max(tipHalf + 2, Math.min(rect.width - tipHalf - 2, sx));
+    tip.style.transform = `translateX(calc(${tx.toFixed(1)}px - 50%))`;
+    tipVal.textContent = `${Math.round(p.v)} kg`;
+    tipSub.textContent = fmtMon(p.t);
+    scrub.classList.add('on');
+  }
+
+  function onMove(e) {
+    lastX = e.clientX;
+    if (!raf) raf = requestAnimationFrame(paint);
+  }
+  function onLeave() {
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    scrub.classList.remove('on');
+  }
+
+  plot.addEventListener('pointerdown', onMove, { passive: true });
+  plot.addEventListener('pointermove', onMove, { passive: true });
+  plot.addEventListener('pointerup', onLeave, { passive: true });
+  plot.addEventListener('pointercancel', onLeave, { passive: true });
+  plot.addEventListener('pointerleave', onLeave, { passive: true });
 }
 
 /**
@@ -187,5 +260,7 @@ export function renderStrengthCurves(workouts, mount) {
   if (!mount) return;
   const series = buildSeries(workouts);
   if (!series.length) { mount.innerHTML = ''; return; }
-  mount.innerHTML = `<div class="sc-grid">${series.map(curveCard).join('')}</div>`;
+  const cards = series.map(curveCard);
+  mount.innerHTML = `<div class="sc-grid">${cards.map(c => c.html).join('')}</div>`;
+  mount.querySelectorAll('.sc-card').forEach((card, i) => wireScrub(card, cards[i].pts));
 }
