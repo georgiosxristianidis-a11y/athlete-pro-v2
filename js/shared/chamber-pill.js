@@ -74,11 +74,14 @@ export function renderChamberPill(mount, opts) {
 }
 
 function _segment({ ch, i, shape, mode, isActive, isPR, sessionType, progress }) {
+  // Cool Steel B: statiс glyphs use --c-chrome (palette-aligned silver) instead
+  // of pure white — less shouting, matches the "polished steel" identity.
+  // Active = PPL (data voice), PR = gold (celebration), mastery non-active =
+  // text-3 (deliberately dimmed to push focus to the active chamber).
   const glyphColor = isPR ? 'var(--c-gold, #d4af37)'
                    : isActive ? PPL_VAR[sessionType]
-                   : mode === 'preview' ? 'var(--c-text-1)'
-                   : mode === 'completed' ? 'var(--c-text-1)'
-                   : 'var(--c-text-3)';
+                   : mode === 'mastery' ? 'var(--c-text-3)'
+                   : 'var(--c-chrome)';
   const cls = [
     'cp-seg',
     isActive ? 'is-active' : '',
@@ -108,8 +111,10 @@ function _segment({ ch, i, shape, mode, isActive, isPR, sessionType, progress })
       <div class="cp-glyph"><svg viewBox="-12 -12 24 24" width="22" height="22" aria-hidden="true">${glyph(shape, glyphColor)}</svg></div>
       <div class="cp-name cp-name-stack">${esc(ch.name)}</div>`;
   } else if (mode === 'completed') {
-    // Done state: shape behind, small ✓ overlay (gold if PR).
-    const checkColor = isPR ? 'var(--c-gold, #d4af37)' : PPL_VAR[sessionType];
+    // Done state: shape behind, small ✓ overlay. Non-PR check picks up the PPL
+    // session colour (data voice on neutral chrome). PR check is WHITE: gold ✓
+    // on gold-tint chamber had bad contrast — white pops as a trophy highlight.
+    const checkColor = isPR ? 'var(--c-text-1)' : PPL_VAR[sessionType];
     body = `
       <div class="cp-glyph cp-done-glyph"><svg viewBox="-12 -12 24 24" width="22" height="22" aria-hidden="true">${glyph(shape, glyphColor)}</svg></div>
       <svg class="cp-check" viewBox="0 0 14 14" width="11" height="11" aria-hidden="true">
