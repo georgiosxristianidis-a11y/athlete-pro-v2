@@ -514,7 +514,9 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
     const customName = customEl.value.trim();
     if (customName) {
       overlay.remove();
-      onSelect({ name: customName });
+      // W-1: custom:true tells the caller this name is NOT in the library
+      // and should be flagged so it's not aliased to a known lift.
+      onSelect({ name: customName, custom: true });
       _haptic(15);
     }
   });
@@ -525,7 +527,7 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
     const name = btn.dataset.name.trim();
     if (name) {
       overlay.remove();
-      onSelect({ name });
+      onSelect({ name, custom: false });
       _haptic(15);
     }
   });
