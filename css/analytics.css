@@ -98,7 +98,7 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s var(--ease-std);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -147,33 +147,6 @@
   font-size: 11px;
   color: var(--c-text-3);
   margin-left: 2px;
-}
-
-/* ── PPL Balance (Bento) ── */
-.ppl-bal-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--c-border);
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-.ppl-bal-val {
-  font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: 20px;
-  line-height: 1;
-}
-.ppl-bal-lbl {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--c-text-3);
-  text-transform: uppercase;
-  margin-top: 6px;
-  letter-spacing: 0.05em;
 }
 
 /* ── Chart cards ── */
@@ -303,7 +276,7 @@
 .orm-bar-fill {
   height: 100%;
   border-radius: 2px;
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.8s var(--ease-std);
 }
 @media (hover: hover) {
   .orm-row:hover {
@@ -374,4 +347,49 @@
 }
 
 .orm-bar-fill { transform-origin: left; width: 100%; transform: scaleX(0); }
+
+/* ── Strength Index hero (premium overview) ── */
+.sh-hero { padding: 16px 18px 14px; }
+.sh-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; position: relative; z-index: 1; }
+.sh-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-3); }
+.sh-score { font-size: 40px; font-weight: 800; color: var(--c-text-1); letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.sh-gain { font-size: 13px; font-weight: 800; margin-left: 8px; vertical-align: middle; }
+.sh-gain.up { color: var(--c-accent); }
+.sh-gain.down { color: var(--c-text-3); }
+.sh-cap { font-size: 11px; font-weight: 600; color: var(--c-text-3); margin-top: 2px; }
+.sh-spark { width: 96px; height: 36px; flex-shrink: 0; margin-top: 14px; }
+.sh-spark-stroke { filter: drop-shadow(0 0 3px var(--c-accent)); }
+.sh-stats { display: flex; justify-content: space-between; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--c-border); position: relative; z-index: 1; }
+.sh-stat { display: flex; flex-direction: column; gap: 2px; }
+.sh-stat b { font-size: 18px; font-weight: 800; color: var(--c-text-1); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.sh-stat small { font-size: 11px; font-weight: 700; color: var(--c-text-3); margin-left: 1px; }
+.sh-stat span { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-text-3); }
+
+/* ── Strength Progression curves (premium per-lift) ── */
+.sc-grid { display: flex; flex-direction: column; gap: var(--sp-2); }
+.sc-card { padding: 14px 16px 10px; }
+.sc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; position: relative; z-index: 1; }
+.sc-name { font-size: 14px; font-weight: 700; color: var(--c-text-1); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-cur { font-size: 22px; font-weight: 800; color: var(--c-text-1); font-variant-numeric: tabular-nums; flex-shrink: 0; letter-spacing: -0.02em; }
+.sc-unit { font-size: 11px; font-weight: 700; color: var(--c-text-3); margin-left: 2px; }
+.sc-sub { display: flex; align-items: center; gap: 10px; margin-top: 2px; position: relative; z-index: 1; }
+.sc-delta { font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; padding: 2px 7px; border-radius: 6px; }
+.sc-delta.up { color: var(--c-accent); background: var(--c-accent-bg); }
+.sc-delta.down { color: var(--c-text-3); background: var(--c-surface-h); }
+.sc-peak { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-gold); }
+.sc-plot { position: relative; margin-top: 6px; z-index: 1; touch-action: pan-y; }
+.sc-chart { width: 100%; height: 96px; display: block; position: relative; z-index: 1; }
+.sc-stroke { filter: drop-shadow(0 0 3px var(--sc)); }
+.sc-peak-dot { filter: drop-shadow(0 0 4px var(--c-gold)); }
+.sc-cur-dot { filter: drop-shadow(0 0 4px var(--sc)); }
+.sc-axis { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; color: var(--c-text-3); margin-top: 2px; position: relative; z-index: 1; }
+
+/* ── Scrub layer (touch + hover readout) ── */
+.sc-scrub { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity var(--t-fast); z-index: 2; }
+.sc-scrub.on { opacity: 1; }
+.sc-scrub-line { position: absolute; top: 0; left: 0; width: 1px; height: 100%; background: linear-gradient(var(--sc), transparent); opacity: 0.5; transition: transform 0.08s ease-out; will-change: transform; }
+.sc-scrub-dot { position: absolute; top: 0; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--sc); box-shadow: 0 0 6px var(--sc); transition: transform 0.08s ease-out; will-change: transform; }
+.sc-scrub-tip { position: absolute; top: -2px; left: 0; display: flex; align-items: baseline; gap: 5px; padding: 3px 8px; border-radius: 8px; background: var(--c-bg-3); border: 1px solid var(--c-border-h); white-space: nowrap; transition: transform 0.08s ease-out; will-change: transform; }
+.sc-scrub-tip b { font-size: 12px; font-weight: 800; color: var(--c-text-1); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.sc-scrub-tip span { font-size: 10px; font-weight: 600; color: var(--c-text-3); }
 

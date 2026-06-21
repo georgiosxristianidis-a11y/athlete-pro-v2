@@ -17,6 +17,11 @@ import {
   weekLabel,
 } from './analytics.store.js';
 import { t } from './locale.store.js';
+import { isRu } from './locale.store.js';
+import { renderStrengthHero, renderStrengthCurves } from './analytics.strength-curves.js';
+import { renderPplGauge } from './shared/ppl-gauge.js';
+import { renderChamberPill } from './shared/chamber-pill.js';
+import { renderIslandTracker } from './shared/island-tracker.js';
 
 // PPL law: push=green (--c-accent) · pull=cyan (--c-blue) · legs=purple (--c-purple).
 // Kept as hex because callers append alpha (`${color}20`), which CSS vars can't do.
@@ -65,7 +70,20 @@ export async function load() {
   if (!container) return;
 
   container.innerHTML = `
-    <div class="stat-row stagger-item" style="margin-top:var(--sp-2); animation-delay: 0.05s">
+      <!-- DESIGN PREVIEW: chamber-pill (3 modes) + island-tracker — temporary mount for Phase 1.4 verify -->
+      <div class="chart-card stagger-item" style="margin-top:var(--sp-2); padding:14px; animation-delay: 0.01s">
+        <div style="font-size:9px;font-weight:800;letter-spacing:0.8px;color:var(--c-text-3);text-transform:uppercase;margin-bottom:10px">Design Preview · Phase 1-B (Cool Steel)</div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div><div style="font-size:8.5px;font-weight:700;color:var(--c-text-3);letter-spacing:0.4px;margin-bottom:5px">PREVIEW (pre-workout)</div><div id="cp-demo-preview"></div></div>
+          <div><div style="font-size:8.5px;font-weight:700;color:var(--c-text-3);letter-spacing:0.4px;margin-bottom:5px">MASTERY (in-workout, Chest Shape active)</div><div id="cp-demo-mastery"></div></div>
+          <div><div style="font-size:8.5px;font-weight:700;color:var(--c-text-3);letter-spacing:0.4px;margin-bottom:5px">COMPLETED (post-summary, gold PR on Chest Power)</div><div id="cp-demo-completed"></div></div>
+          <div><div style="font-size:8.5px;font-weight:700;color:var(--c-text-3);letter-spacing:0.4px;margin-bottom:5px">DHL ISLAND TRACKER (chamber 2 active)</div><div style="background:#000;border-radius:14px;padding:6px 10px;width:fit-content"><div id="it-demo"></div></div></div>
+        </div>
+      </div>
+
+      <div id="strength-hero" class="stagger-item" style="margin-top:var(--sp-2); animation-delay: 0.03s"></div>
+
+      <div class="stat-row stagger-item" style="margin-top:var(--sp-2); animation-delay: 0.05s">
         <div class="stat-chip">
           <div class="stat-chip-val" id="an-total-sessions">—</div>
           <div class="stat-chip-label">${t('analytics.sessions')}</div>
@@ -84,20 +102,13 @@ export async function load() {
       <div class="section-header stagger-item" style="margin-top:var(--sp-3); animation-delay: 0.1s">
         <span class="section-label">${t('analytics.ppl_balance')}</span>
       </div>
-      <div class="chart-card bento-grid stagger-item" style="padding:16px;gap:12px;display:grid;grid-template-columns:1fr 1fr 1fr; animation-delay: 0.1s">
-        <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-push" style="color:var(--c-push)">0%</div>
-          <div class="ppl-bal-lbl">Push</div>
-        </div>
-        <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-pull" style="color:var(--c-pull)">0%</div>
-          <div class="ppl-bal-lbl">Pull</div>
-        </div>
-        <div class="ppl-bal-item">
-          <div class="ppl-bal-val" id="ppl-bal-legs" style="color:var(--c-legs)">0%</div>
-          <div class="ppl-bal-lbl">Legs</div>
-        </div>
+      <div class="chart-card stagger-item" id="ppl-gauge-analytics" style="padding:18px 16px 16px; animation-delay: 0.1s"></div>
+
+      <!-- ── Strength Progression (premium per-lift curves) ── -->
+      <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.11s">
+        <span class="section-label">${isRu() ? 'Прогресс силы' : 'Strength Progression'}</span>
       </div>
+      <div id="strength-curves" class="stagger-item" style="animation-delay: 0.11s"></div>
 
       <!-- ── Monthly Calendar ── -->
       <div class="chart-card stagger-item" style="padding:16px; margin-top:var(--sp-4); animation-delay: 0.12s;">
@@ -154,12 +165,42 @@ export async function load() {
       return;
     }
 
+    _renderDesignPreview();
+    renderStrengthHero(workouts, document.getElementById('strength-hero'));
     _renderQuickStats(workouts);
     _renderPPLBalance(workouts);
+    renderStrengthCurves(workouts, document.getElementById('strength-curves'));
     _renderCalendar(workouts);
     const trend = await fetchWeeklyTrend(10);
     _renderVolumeChart(workouts, trend);
     _renderORMList(orms);
+}
+
+/* TEMPORARY: Phase 1.4 visual gate — mount the new chamber-pill and island-tracker
+   for visual review of the Cool Steel B palette. Remove once approved + integrated
+   into real workout views. */
+function _renderDesignPreview() {
+  const pushChambers = [
+    { name: 'Chest Power' },
+    { name: 'Chest Shape' },
+    { name: 'Biceps' },
+    { name: 'Core', uiOnly: true },
+  ];
+  renderChamberPill(document.getElementById('cp-demo-preview'), {
+    mode: 'preview', chambers: pushChambers, sessionType: 'push',
+  });
+  renderChamberPill(document.getElementById('cp-demo-mastery'), {
+    mode: 'mastery', chambers: pushChambers, sessionType: 'push',
+    active: 1, progress: { done: 2, total: 3 },
+  });
+  renderChamberPill(document.getElementById('cp-demo-completed'), {
+    mode: 'completed', chambers: pushChambers.map((c, i) => ({ ...c, pr: i === 0 })),
+    sessionType: 'push',
+  });
+  renderIslandTracker(document.getElementById('it-demo'), {
+    current: 1, sessionType: 'push', progress: { done: 8, total: 12 },
+    label: 'Chest Shape', expanded: true,
+  });
 }
 
 function _renderQuickStats(workouts) {
@@ -179,10 +220,7 @@ function _renderPPLBalance(workouts) {
   workouts.forEach(w => {
     if (ppl[w.type] !== undefined) ppl[w.type] += w.tonnage || 0;
   });
-  const total = ppl.push + ppl.pull + ppl.legs || 1;
-  _set('ppl-bal-push', Math.round((ppl.push / total) * 100) + '%');
-  _set('ppl-bal-pull', Math.round((ppl.pull / total) * 100) + '%');
-  _set('ppl-bal-legs', Math.round((ppl.legs / total) * 100) + '%');
+  renderPplGauge(document.getElementById('ppl-gauge-analytics'), ppl);
 }
 
 function _renderCalendar(workouts) {

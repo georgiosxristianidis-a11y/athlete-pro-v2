@@ -1,20 +1,9 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-// format.js has a dependency on locale.store.js → isRu()
-// We mock it via module registration before import.
-// Node.js test runner supports --import for loaders; here we stub
-// isRu via a thin mock written inline using register().
-import { register } from 'node:module';
-
-// ── Inline ESM mock for locale.store.js ──────────────────────────────────────
-// isRu() → false (English locale) by default for all formatter tests.
-// We test locale-sensitive fmtDate separately via Intl, not the module flag.
-const mockSource = `export function isRu() { return false; }`;
-const mockURL = 'data:text/javascript,' + encodeURIComponent(mockSource);
-
-// Intercept the locale.store.js specifier via a custom loader hook.
-// Using globalThis to share flag without file I/O.
+// format.js depends on locale.store.js → isRu(). For pure numeric formatters
+// the locale flag doesn't matter; for fmtDate we rely on Intl directly.
+// test/setup.js shims the browser globals before format.js parses.
 globalThis.__fmtTest_isRu = false;
 
 // ── Import format.js after mock is in place ───────────────────────────────────

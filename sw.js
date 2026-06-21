@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v57';
+const CACHE_NAME = 'athlete-pro-v68';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -13,6 +13,7 @@ const ASSETS = [
   '/manifest.json',
   '/exercises-library.json',
   '/js/analytics.store.js',
+  '/js/analytics.strength-curves.js',
   '/js/analytics.view.js',
   '/js/app.js',
   '/js/body-stats.js',
@@ -42,6 +43,7 @@ const ASSETS = [
   '/js/progressive-overload.js',
   '/js/rest-timer.js',
   '/js/shared/athlete-room.js',
+  '/js/shared/chamber-pill.js',
   '/js/shared/confirm.js',
   '/js/shared/cryptoClient.js',
   '/js/shared/csv-export.js',
@@ -49,9 +51,12 @@ const ASSETS = [
   '/js/shared/errors-ui.js',
   '/js/shared/format.js',
   '/js/shared/integrity.js',
+  '/js/shared/island-tracker.js',
   '/js/shared/lww.js',
+  '/js/shared/ppl-gauge.js',
   '/js/shared/sparkline.js',
   '/js/shared/spring.js',
+  '/js/shared/sync-merge.js',
   '/js/shared/utils.js',
   '/js/shell.js',
   '/js/strength-engine.js',
@@ -73,6 +78,7 @@ const ASSETS = [
   '/js/workout.view/handlers.js',
   '/js/workout.view/modals.js',
   '/js/workout.view/render.js',
+  '/js/workout.view/summary.js',
   '/js/workout.view.js',
   '/js/_archive/analytics.js',
   '/js/_archive/claude.js',
@@ -88,6 +94,7 @@ const ASSETS = [
   '/css/intel.css',
   '/css/privacy.css',
   '/css/profile.css',
+  '/css/summary.css',
   '/css/workout.css',
   '/icons/apple-touch-icon.png',
   '/icons/favicon.png',

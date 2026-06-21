@@ -2,10 +2,11 @@
 import { DB } from '../db.js';
 import { Timer } from '../timer.js';
 import { Nav, Toast } from '../shell.js';
-import { 
-  State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, 
-  getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout, 
-  loadCoreChecklist, saveCoreChecklist, getActivePlan, startPlan, advancePlan 
+import {
+  State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession,
+  getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout,
+  loadCoreChecklist, saveCoreChecklist, getActivePlan, startPlan, advancePlan,
+  recordBlockTiming
 } from '../workout.store.js';
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
@@ -125,6 +126,13 @@ export async function toggleSet(ei, si) {
   const set = ex.sets[si];
   if (!set) return;
   set.done = !set.done;
+  // Phase W-2-A: stamp block timing on every "set just became done" event.
+  // Reverting (done → undone) does NOT roll back the timestamps — minor
+  // inaccuracy, but the data stays useful and complexity stays low.
+  if (set.done) {
+    if (!State.blockTimings) State.blockTimings = {};
+    recordBlockTiming(State.blockTimings, ex.block, Date.now());
+  }
   persistSession();
   _updateLiveStats();
 
@@ -209,13 +217,14 @@ export async function selectType(type) {
   const [workouts, restDurRaw, keepAwake] = await Promise.all([
     DB.Workouts.getAll().catch(() => []),
     DB.Settings.get('rest-duration').catch(() => null),
-    DB.Settings.get('keep-awake').catch(() => 'off'),
+    DB.Settings.get('keep-awake', 'on').catch(() => 'on'), // BG-1: default ON (opt-out)
   ]);
   _restDuration = parseInt(restDurRaw || 90);
 
   State.plan = buildSession(type, { workouts });
   State.phase = 'active';
   State.startedAt = Date.now();
+  State.blockTimings = {};
 
   persistSession();
 
@@ -337,63 +346,70 @@ export async function completeSession() {
   }
 
   // Calculate metrics
+  // Phase W-2-B: store-layer builder owns the summary shape (incl. PR
+  // detection, isUnilateral×2 tonnage, Camera-4 noDb filter, block
+  // timings). The view just renders the shape — handlers do zero data.
   const durationMs = Date.now() - (State.startedAt || Date.now());
-  const mins = Math.floor(durationMs / 60000);
-  const hrs = Math.floor(mins / 60);
-  const timeStr = hrs > 0 ? `${hrs}h ${mins % 60}m` : `${mins}m`;
-
-  let totalTonnage = 0;
-  let totalReps = 0;
-  const blockTonnage = { power: 0, shape: 0, width: 0, thickness: 0, heavy: 0, iso: 0, arms: 0, shoulders: 0, core: 0, align: 0 };
-
-  State.plan.forEach((ex) => {
-    const mul = ex.isUnilateral ? 2 : 1;
-    ex.sets.forEach((s) => {
-      if (s.done) {
-        const ton = (s.weight || 0) * (s.reps || 0) * mul;
-        totalTonnage += ton;
-        totalReps += (s.reps || 0);
-        if (ex.block && blockTonnage[ex.block] !== undefined) {
-          blockTonnage[ex.block] += ton;
-        }
-      }
-    });
-  });
-
-  // Delegate UI to summary.js (W-2-C) — HTML stays out of handlers.
-  const { renderSummaryModal, buildMinimalSummary } = await import('./summary.js');
-  const summaryData = buildMinimalSummary(State, timeStr, totalTonnage, totalReps, blockTonnage);
-  renderSummaryModal(summaryData, () => _executeFinalSave(totalTonnage, durationMs), ru);
+  const { buildSessionSummary } = await import('../workout.store.js');
+  const summaryData = await buildSessionSummary(State, durationMs);
+  const { renderSummaryModal } = await import('./summary.js');
+  renderSummaryModal(summaryData, () => _executeFinalSave(summaryData, durationMs), ru);
 }
 
 
-async function _executeFinalSave(tonnage, duration) {
+/**
+ * Persist the finalised session. Takes the already-built summaryData so the
+ * saved row shares a single source of truth with the report shown to the
+ * user — same tonnage, same PR list, no chance of UI/DB drift.
+ *
+ * Schema additions (W-2-D-1):
+ *   • exercise.block        — chamber id ('power'|'shape'|… or 'custom' for
+ *                             W-1 ad-hoc additions); enables future per-block
+ *                             analytics on Dashboard / Stats.
+ *   • exercise.isAdded      — true for W-1 live additions (vs programmed).
+ *   • exercise.custom       — true when the name was not in the library.
+ *   • session.prs           — list from buildSessionSummary; lets Recent
+ *                             sessions show "★ 1 PR" without re-deriving.
+ *   • session.blockTimings  — per-chamber durations; opens trend analytics.
+ *
+ * Camera 4 (noDb:true) is still filtered out at the gate — it never enters
+ * IDB and thus never skews tonnage / aggregate analytics.
+ */
+async function _executeFinalSave(summaryData, duration) {
   const activePlan = getActivePlan();
   const session = {
     type: State.type,
     planId: activePlan?.id || null,
     timestamp: State.startedAt || Date.now(),
     duration,
-    tonnage,
+    tonnage: summaryData.totalTonnage,
     exercises: State.plan
       .filter(ex => !ex.noDb)
       .map((ex) => ({
         name: ex.name,
+        block: ex.block || null,
+        isAdded: !!ex.isAdded,
+        custom: !!ex.custom,
         sets: ex.sets.map((s) => ({
           weight: s.weight,
           reps: s.reps,
           done: s.done,
         })),
       })),
+    prs: summaryData.prs,
+    blockTimings: State.blockTimings || {},
   };
 
   await DB.Workouts.save(session);
-  
-  // Log event
-  await DB.Events.log('workout_complete', { type: State.type, tonnage });
 
-  // Update OneRMs
+  // Log event
+  await DB.Events.log('workout_complete', { type: State.type, tonnage: summaryData.totalTonnage });
+
+  // Update OneRMs (also covers W-1 live additions — new exercise names get a
+  // fresh OneRM record from this point on; isAdded:true is preserved in
+  // session.exercises so future analytics can separate the two streams).
   for (const ex of State.plan) {
+    if (ex.noDb) continue;
     const bestSet = ex.sets.filter(s => s.done && s.weight && s.reps).sort((a,b) => b.weight - a.weight)[0];
     if (bestSet) {
       await DB.OneRM.update(ex.name, bestSet.weight, bestSet.reps);
@@ -429,6 +445,7 @@ export async function cancelSession() {
   State.phase = 'select';
   State.startedAt = 0;
   State.plan = [];
+  State.blockTimings = {};
   persistSession();
   Timer.reset();
   // @ts-ignore
@@ -648,7 +665,42 @@ export function _toggleWeek() {
   renderSelect();
 }
 
-export function _addLiveExercise() {
-  Toast.show(isRu() ? 'Скоро: добавление упражнений на лету' : 'Coming soon: live exercise adding', 'info');
+/**
+ * W-1 Add Exercise Live: open the picker, on select build a fresh exercise
+ * entry, push it into State.plan, persist, and re-render. Added exercises
+ * land in a synthetic 'custom' block so they appear in the summary as a
+ * distinct chamber rather than silently bloating one of the four programmed
+ * blocks. The isAdded flag is preserved through to IDB so future analytics
+ * can separate programmed work from ad-hoc additions; the custom flag tells
+ * the engine the exercise name is not in the library (no 1RM, no plateau).
+ *
+ * Ghost values: 3 default sets at 0kg × 10 reps. Pre-fill from prior sessions
+ * is a deliberate W-1 v2 follow-up — would need a name → last-set lookup that
+ * also handles custom names. For v1, user enters numbers on first set.
+ */
+export async function _addLiveExercise() {
+  if (State.phase !== 'active') return;
+  const { openExercisePickerModal } = await import('./modals.js');
+  await openExercisePickerModal(null, async ({ name, custom }) => {
+    const ghostSets = [
+      { weight: 0, reps: 10, done: false },
+      { weight: 0, reps: 10, done: false },
+      { weight: 0, reps: 10, done: false },
+    ];
+    State.plan.push({
+      name,
+      block: 'custom',
+      isAdded: true,
+      custom: !!custom,
+      isUnilateral: false,
+      isBW: false,
+      noDb: false,
+      sets: ghostSets,
+    });
+    persistSession();
+    const { renderActive } = await import('./render.js');
+    await renderActive();
+    Toast.show(isRu() ? `${name} добавлено` : `${name} added`, 'success');
+  });
 }
 async function _checkAIProactive() { /* placeholder */ }

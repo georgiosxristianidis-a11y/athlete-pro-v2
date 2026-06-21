@@ -50,9 +50,9 @@
 
   /* Spring-based transitions inherited from FIT-ELITE */
   transition:
-    width  0.5s cubic-bezier(0.47, 1.64, 0.41, 0.8),
-    height 0.5s cubic-bezier(0.47, 1.64, 0.41, 0.8),
-    border-radius 0.5s cubic-bezier(0.47, 1.64, 0.41, 0.8),
+    width  0.5s var(--ease-island),
+    height 0.5s var(--ease-island),
+    border-radius 0.5s var(--ease-island),
     background 0.3s ease;
 }
 .island:active {
@@ -234,8 +234,8 @@
   z-index: 2;
   transition:
     background 180ms,
-    top 0.5s cubic-bezier(0.2, 0, 0.2, 1),
-    transform 0.5s cubic-bezier(0.2, 0, 0.2, 1);
+    top 0.5s var(--ease-position),
+    transform 0.5s var(--ease-position);
 }
 .island.expanded .island-dot {
   top: 14px;
@@ -371,7 +371,7 @@
 .island-progress-fill {
   height: 100%;
   border-radius: 0 0 20px 20px;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.5s var(--ease-std);
 }
 
 /* ── Timer progress line (bottom of timer-mode) ── */
