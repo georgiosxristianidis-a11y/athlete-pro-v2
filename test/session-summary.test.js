@@ -1,7 +1,7 @@
 // @ts-check
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSessionSummary, BLOCK_LABEL } from '../js/workout.store.js';
+import { buildSessionSummary, BLOCK_LABEL, recordBlockTiming } from '../js/workout.store.js';
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -220,6 +220,52 @@ test('missing or invalid blockTimings → durationStr stays null', async () => {
     const s = await buildSessionSummary(state, 600_000, { oneRMLookup: noOneRM });
     assert.equal(s.blocks[0].durationStr, null);
   }
+});
+
+// ── recordBlockTiming (W-2-A helper) ───────────────────────────────────────
+
+test('recordBlockTiming — first call sets both startedAt and endedAt', () => {
+  const t = {};
+  recordBlockTiming(t, 'power', 1000);
+  assert.deepEqual(t, { power: { startedAt: 1000, endedAt: 1000 } });
+});
+
+test('recordBlockTiming — subsequent calls advance endedAt only', () => {
+  const t = {};
+  recordBlockTiming(t, 'power', 1000);
+  recordBlockTiming(t, 'power', 5000);
+  recordBlockTiming(t, 'power', 9000);
+  assert.deepEqual(t.power, { startedAt: 1000, endedAt: 9000 });
+});
+
+test('recordBlockTiming — different blocks accumulate independently', () => {
+  const t = {};
+  recordBlockTiming(t, 'power', 1000);
+  recordBlockTiming(t, 'shape', 2000);
+  recordBlockTiming(t, 'power', 3000);  // POWER advances
+  recordBlockTiming(t, 'shape', 4000);  // SHAPE advances
+  assert.deepEqual(t.power, { startedAt: 1000, endedAt: 3000 });
+  assert.deepEqual(t.shape, { startedAt: 2000, endedAt: 4000 });
+});
+
+test('recordBlockTiming — falsy blockId is a no-op', () => {
+  const t = {};
+  recordBlockTiming(t, null, 1000);
+  recordBlockTiming(t, undefined, 1000);
+  recordBlockTiming(t, '', 1000);
+  assert.deepEqual(t, {});
+});
+
+test('recordBlockTiming feeds buildSessionSummary end-to-end', async () => {
+  // Simulate three sets in POWER ending 18m after the first.
+  const blockTimings = {};
+  recordBlockTiming(blockTimings, 'power', 1_000_000);
+  recordBlockTiming(blockTimings, 'power', 1_000_000 + 18 * 60_000);
+  const state = { ...baseState(), blockTimings, plan: [
+    ex({ sets: [set(100, 5)] }),
+  ]};
+  const s = await buildSessionSummary(state, 3600_000, { oneRMLookup: noOneRM });
+  assert.equal(s.blocks[0].durationStr, '18m');
 });
 
 test('doneSets and totalSets report correctly', async () => {

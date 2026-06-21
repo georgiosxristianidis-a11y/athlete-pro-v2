@@ -372,16 +372,44 @@ const HARDCODED_LIBRARY = [
  */
 
 /**
- * Active workout state.
- * @type {{ phase: WorkoutPhase, type: string|null, plan: Array|null, startedAt: number|null, stepDebounce: Object }}
+ * Active workout state. blockTimings tracks per-block startedAt/endedAt as
+ * timestamps (Phase W-2-A) — NOT accumulated ms, so it survives page reloads
+ * and lines up with the CRDT LWW semantics (memory:
+ * design-2026-06-20-chambers-and-cool-steel.md).
+ * @type {{ phase: WorkoutPhase, type: string|null, plan: Array|null, startedAt: number|null, blockTimings: Object<string, {startedAt:number, endedAt:number}>, stepDebounce: Object }}
  */
 export const State = {
   phase: 'select',
   type: null,
   plan: null,
   startedAt: null,
+  blockTimings: {},
   stepDebounce: {},
 };
+
+/**
+ * Pure helper — record a "set just became done" event against a block.
+ * First call sets startedAt; every subsequent call advances endedAt. When the
+ * user moves on to the next block, this block's endedAt naturally freezes at
+ * its last set's timestamp. The helper mutates the passed object in place AND
+ * returns it for chaining/testability. No-op when blockId is falsy (e.g.
+ * exercises without a block id, such as live-added customs).
+ *
+ * @param {Object<string, {startedAt:number, endedAt:number}>} blockTimings
+ * @param {string|null|undefined} blockId
+ * @param {number} now  epoch-ms
+ * @returns {typeof blockTimings}
+ */
+export function recordBlockTiming(blockTimings, blockId, now) {
+  if (!blockId) return blockTimings;
+  const entry = blockTimings[blockId];
+  if (!entry) {
+    blockTimings[blockId] = { startedAt: now, endedAt: now };
+  } else {
+    entry.endedAt = now;
+  }
+  return blockTimings;
+}
 
 /**
  * Get current week mode ('A' | 'B'). Defaults to 'A'.
@@ -642,6 +670,7 @@ export function persistSession() {
       type: State.type,
       plan: State.plan,
       startedAt: State.startedAt,
+      blockTimings: State.blockTimings || {},
       savedAt: Date.now(),
     })
   );
@@ -704,6 +733,7 @@ export function tryRestoreSession() {
     State.type = s.type;
     State.plan = s.plan;
     State.startedAt = s.startedAt;
+    State.blockTimings = s.blockTimings || {};
     State.phase = 'active';
     return { type: s.type, plan: s.plan, startedAt: s.startedAt };
   } catch {

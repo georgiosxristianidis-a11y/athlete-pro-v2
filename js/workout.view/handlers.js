@@ -2,10 +2,11 @@
 import { DB } from '../db.js';
 import { Timer } from '../timer.js';
 import { Nav, Toast } from '../shell.js';
-import { 
-  State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession, 
-  getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout, 
-  loadCoreChecklist, saveCoreChecklist, getActivePlan, startPlan, advancePlan 
+import {
+  State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession,
+  getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout,
+  loadCoreChecklist, saveCoreChecklist, getActivePlan, startPlan, advancePlan,
+  recordBlockTiming
 } from '../workout.store.js';
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
@@ -125,6 +126,13 @@ export async function toggleSet(ei, si) {
   const set = ex.sets[si];
   if (!set) return;
   set.done = !set.done;
+  // Phase W-2-A: stamp block timing on every "set just became done" event.
+  // Reverting (done → undone) does NOT roll back the timestamps — minor
+  // inaccuracy, but the data stays useful and complexity stays low.
+  if (set.done) {
+    if (!State.blockTimings) State.blockTimings = {};
+    recordBlockTiming(State.blockTimings, ex.block, Date.now());
+  }
   persistSession();
   _updateLiveStats();
 
@@ -216,6 +224,7 @@ export async function selectType(type) {
   State.plan = buildSession(type, { workouts });
   State.phase = 'active';
   State.startedAt = Date.now();
+  State.blockTimings = {};
 
   persistSession();
 
@@ -410,6 +419,7 @@ export async function cancelSession() {
   State.phase = 'select';
   State.startedAt = 0;
   State.plan = [];
+  State.blockTimings = {};
   persistSession();
   Timer.reset();
   // @ts-ignore
