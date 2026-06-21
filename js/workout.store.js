@@ -756,3 +756,149 @@ export function deleteCustomWorkout(id) {
   const filtered = workouts.filter(w => w.id !== id);
   localStorage.setItem(CUSTOM_WORKOUTS_KEY, JSON.stringify(filtered));
 }
+
+/* ════════════════════════════════════════════════════════
+   POST-SESSION SUMMARY (Phase W-2-B)
+   Pure computation: takes State → returns the summaryData shape that
+   workout.view/summary.js renders. Closes BUG-1 by lifting the data
+   shape out of the view layer so the view does string assembly only.
+   ════════════════════════════════════════════════════════ */
+
+/** Block id → uppercase semantic label. Single source of truth. */
+export const BLOCK_LABEL = {
+  power:     'POWER',
+  shape:     'SHAPE',
+  width:     'WIDTH',
+  thickness: 'THICKNESS',
+  heavy:     'HEAVY',
+  iso:       'ISO',
+  arms:      'ARMS',
+  shoulders: 'SHOULDERS',
+  core:      'CORE',
+  align:     'ALIGN',
+};
+
+/**
+ * Build the post-session summary data for the W-2-C report sheet.
+ *
+ * Engineering constraints honoured (from the PPL | GIO blueprint, locked in
+ * memory: design-2026-06-20-chambers-and-cool-steel.md):
+ *   • isUnilateral:true exercises double weight × reps in tonnage
+ *     (Iso-Lateral Row otherwise reports half the real volume).
+ *   • Camera 4 (noDb:true — Core / Body Alignment) is shown in the block
+ *     list with its exercises so the user sees what was checked, but its
+ *     tonnage stays at 0 and it never contributes to totals — prevents
+ *     zero-weight sets from skewing aggregate analytics.
+ *   • PR detection: new estimated 1RM (Epley) per exercise compared to the
+ *     stored 1RM; PR fires when strictly greater (or when no 1RM exists
+ *     yet — first-ever lift).
+ *   • Block timings (Phase W-2-A) read from `state.blockTimings`; absent
+ *     entries leave `durationStr` null and the view renders a dash.
+ *
+ * The oneRMLookup is injectable so unit tests can run without IDB; in
+ * production it defaults to DB.OneRM.get via a lazy dynamic import (so
+ * importing this module from tests doesn't pull the DB layer in).
+ *
+ * @param {object} state                            current workout State
+ * @param {number} durationMs                       wall-clock session length
+ * @param {object} [opts]
+ * @param {(name:string)=>Promise<{value:number}|undefined>} [opts.oneRMLookup]
+ * @returns {Promise<object>} summaryData per the contract in workout.view/summary.js
+ */
+export async function buildSessionSummary(state, durationMs, opts = {}) {
+  const oneRMLookup = opts.oneRMLookup || (async (name) => {
+    const { DB } = await import('./db.js');
+    return DB.OneRM.get(name);
+  });
+
+  // Duration string — matches the existing format used by completeSession.
+  const mins = Math.max(0, Math.floor((durationMs || 0) / 60000));
+  const hrs = Math.floor(mins / 60);
+  const timeStr = hrs > 0 ? `${hrs}h ${String(mins % 60).padStart(2, '0')}m` : `${mins}m`;
+
+  // Single pass over State.plan, preserving insertion order via blockOrder.
+  const blockOrder = [];
+  const blockMap = new Map();
+  let totalTonnage = 0;
+  let totalReps = 0;
+  /** @type {Array<{name:string,weight:number,reps:number,estimate:number}>} */
+  const prCandidates = [];
+
+  for (const ex of (state.plan || [])) {
+    const id = ex.block || 'custom';
+    if (!blockMap.has(id)) {
+      blockMap.set(id, { tonnage: 0, exercises: [] });
+      blockOrder.push(id);
+    }
+    const blk = blockMap.get(id);
+
+    const doneSets = ex.sets.filter((s) => s.done).length;
+    const totalSets = ex.sets.length;
+    const mul = ex.isUnilateral ? 2 : 1;
+
+    let exTonnage = 0;
+    for (const s of ex.sets) {
+      if (s.done) {
+        exTonnage += (s.weight || 0) * (s.reps || 0) * mul;
+        totalReps += (s.reps || 0);
+      }
+    }
+    if (!ex.noDb) {
+      blk.tonnage += exTonnage;
+      totalTonnage += exTonnage;
+    }
+
+    const completed = ex.sets.filter((s) => s.done && s.weight && s.reps);
+    const bestSet = completed.sort((a, b) => b.weight - a.weight)[0];
+    const weightStr = bestSet
+      ? (ex.isBW ? `BW${bestSet.weight ? '+' + bestSet.weight : ''}` : `${bestSet.weight} kg`)
+      : (ex.isBW ? 'BW' : '—');
+
+    blk.exercises.push({
+      name: ex.name,
+      doneSets,
+      totalSets,
+      weightStr,
+      noDb: !!ex.noDb,
+    });
+
+    // Camera 4 never updates 1RM and can't earn PRs.
+    if (!ex.noDb && bestSet) {
+      // Epley inline — kept in lockstep with DB.OneRM.epley to avoid any
+      // estimator drift between PR detection and the eventual store update.
+      const estimate = bestSet.reps === 1
+        ? bestSet.weight
+        : Math.round(bestSet.weight * (1 + bestSet.reps / 30));
+      prCandidates.push({ name: ex.name, weight: bestSet.weight, reps: bestSet.reps, estimate });
+    }
+  }
+
+  // PR detection — single lookup per exercise.
+  const prs = [];
+  for (const c of prCandidates) {
+    const existing = await oneRMLookup(c.name);
+    if (!existing || c.estimate > existing.value) {
+      prs.push({ name: c.name, weight: c.weight, reps: c.reps });
+    }
+  }
+
+  // Block list with optional timings from State.blockTimings (W-2-A).
+  const blocks = blockOrder.map((id) => {
+    const blk = blockMap.get(id);
+    let durationStr = null;
+    const t = state.blockTimings && state.blockTimings[id];
+    if (t && t.startedAt && t.endedAt && t.endedAt > t.startedAt) {
+      const blkMin = Math.round((t.endedAt - t.startedAt) / 60000);
+      if (blkMin > 0) durationStr = `${blkMin}m`;
+    }
+    return {
+      id,
+      label: (BLOCK_LABEL[id] || id).toUpperCase(),
+      durationStr,
+      tonnage: blk.tonnage,
+      exercises: blk.exercises,
+    };
+  });
+
+  return { type: state.type, timeStr, totalTonnage, totalReps, blocks, prs };
+}

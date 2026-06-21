@@ -26,9 +26,10 @@
    │ }                                                   │
    └─────────────────────────────────────────────────────┘
 
-   Until Lead (Opus) delivers buildSessionSummary() (Phase W-2-B),
-   completeSession() in handlers.js builds a minimal summaryData
-   from State inline and passes it here.
+   Phase W-2-B delivered: buildSessionSummary() now lives in
+   js/workout.store.js (single source of truth, isUnilateral×2,
+   Camera-4 noDb filter, PR detection via Epley). This file does
+   string assembly only — no data computation.
    ════════════════════════════════════════════════════════ */
 
 import { esc } from '../shared/utils.js';
@@ -38,20 +39,6 @@ const PPL_COLOR = {
   push: 'var(--c-push)',
   pull: 'var(--c-pull)',
   legs: 'var(--c-legs)',
-};
-
-/* ── Block → semantic label map ────────────────────────── */
-const BLOCK_LABEL = {
-  power:     'POWER',
-  shape:     'SHAPE',
-  width:     'WIDTH',
-  thickness: 'THICKNESS',
-  heavy:     'HEAVY',
-  iso:       'ISO',
-  arms:      'ARMS',
-  shoulders: 'SHOULDERS',
-  core:      'CORE',
-  align:     'ALIGN',
 };
 
 /* ══════════════════════════════════════════════════════════
@@ -96,7 +83,8 @@ function _exRow(ex, pplColor) {
  * @returns {string}
  */
 function _blockIsland(block, pplColor, staggerIdx) {
-  const label = BLOCK_LABEL[block.id] || block.id.toUpperCase();
+  // buildSessionSummary already provides the uppercased semantic label.
+  const label = block.label || block.id.toUpperCase();
   const isCore = block.id === 'core' || block.id === 'align';
 
   const metaChips = [
@@ -250,50 +238,7 @@ export function renderSummaryModal(data, onSave, ru = false) {
   return overlay;
 }
 
-/**
- * Builds a minimal summaryData from State until buildSessionSummary() (W-2-B) is ready.
- * LEAD will replace this with the full version from workout.store.js.
- *
- * @param {object} State   — workout state
- * @param {string} timeStr — formatted duration string
- * @param {number} totalTonnage
- * @param {number} totalReps
- * @param {object} blockTonnage — { power: kg, shape: kg, ... }
- * @returns {object} summaryData
- */
-export function buildMinimalSummary(State, timeStr, totalTonnage, totalReps, blockTonnage) {
-  // Group exercises by block, preserving order
-  const blockMap = new Map();
-  for (const ex of State.plan) {
-    const id = ex.block || 'custom';
-    if (!blockMap.has(id)) blockMap.set(id, []);
-
-    const doneSets = ex.sets.filter(s => s.done).length;
-    const totalSets = ex.sets.length;
-
-    // Best completed set for weight display
-    const bestSet = ex.sets.filter(s => s.done && s.weight).sort((a, b) => b.weight - a.weight)[0];
-    const weightStr = bestSet
-      ? (ex.isBW ? `BW${bestSet.weight ? '+' + bestSet.weight : ''}` : `${bestSet.weight} kg`)
-      : (ex.isBW ? 'BW' : '—');
-
-    blockMap.get(id).push({ name: ex.name, doneSets, totalSets, weightStr, noDb: !!ex.noDb });
-  }
-
-  const blocks = Array.from(blockMap.entries()).map(([id, exercises]) => ({
-    id,
-    label: (BLOCK_LABEL[id] || id).toUpperCase(),
-    durationStr: null,   // Lead will fill from blockTimings (W-2-A)
-    tonnage: blockTonnage[id] || 0,
-    exercises,
-  }));
-
-  return {
-    type: State.type,
-    timeStr,
-    totalTonnage,
-    totalReps,
-    blocks,
-    prs: [],   // Lead will fill from 1RM comparison (W-2-B)
-  };
-}
+// Phase W-2-B note: the previous buildMinimalSummary() stub here has been
+// superseded by buildSessionSummary() in js/workout.store.js (single source
+// of truth for the summaryData shape). View files should not own data
+// computation — that includes block grouping, tonnage, and PR detection.

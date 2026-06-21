@@ -337,33 +337,14 @@ export async function completeSession() {
   }
 
   // Calculate metrics
+  // Phase W-2-B: store-layer builder owns the summary shape (incl. PR
+  // detection, isUnilateral×2 tonnage, Camera-4 noDb filter, block
+  // timings). The view just renders the shape — handlers do zero data.
   const durationMs = Date.now() - (State.startedAt || Date.now());
-  const mins = Math.floor(durationMs / 60000);
-  const hrs = Math.floor(mins / 60);
-  const timeStr = hrs > 0 ? `${hrs}h ${mins % 60}m` : `${mins}m`;
-
-  let totalTonnage = 0;
-  let totalReps = 0;
-  const blockTonnage = { power: 0, shape: 0, width: 0, thickness: 0, heavy: 0, iso: 0, arms: 0, shoulders: 0, core: 0, align: 0 };
-
-  State.plan.forEach((ex) => {
-    const mul = ex.isUnilateral ? 2 : 1;
-    ex.sets.forEach((s) => {
-      if (s.done) {
-        const ton = (s.weight || 0) * (s.reps || 0) * mul;
-        totalTonnage += ton;
-        totalReps += (s.reps || 0);
-        if (ex.block && blockTonnage[ex.block] !== undefined) {
-          blockTonnage[ex.block] += ton;
-        }
-      }
-    });
-  });
-
-  // Delegate UI to summary.js (W-2-C) — HTML stays out of handlers.
-  const { renderSummaryModal, buildMinimalSummary } = await import('./summary.js');
-  const summaryData = buildMinimalSummary(State, timeStr, totalTonnage, totalReps, blockTonnage);
-  renderSummaryModal(summaryData, () => _executeFinalSave(totalTonnage, durationMs), ru);
+  const { buildSessionSummary } = await import('../workout.store.js');
+  const summaryData = await buildSessionSummary(State, durationMs);
+  const { renderSummaryModal } = await import('./summary.js');
+  renderSummaryModal(summaryData, () => _executeFinalSave(summaryData.totalTonnage, durationMs), ru);
 }
 
 
