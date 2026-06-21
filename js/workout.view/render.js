@@ -563,24 +563,59 @@ function _initDrag() {
     const handle = card.querySelector('.drag-handle');
     if (!handle) return;
     let dragging = false, startY = 0, srcIdx = parseInt(card.dataset.ei);
+    let raf = 0, lastClientY = 0;
+    /** @type {{el:HTMLElement, top:number, bottom:number}[]} */
+    let cachedRects = [];
+
+    // BUG-3 fix: pointermove fires at 60-120Hz. Reading getBoundingClientRect on
+    // every event for every card in the list forced a synchronous layout per read
+    // (write-read-write thrash). Now: rects are cached ONCE on pointerdown, and
+    // all DOM mutations during a move are coalesced into one rAF — zero layout
+    // reads on the hot path. Assumes the list doesn't scroll mid-drag, which is
+    // safe because pointer-capture takes over the gesture.
+    function paint() {
+      raf = 0;
+      card.style.transform = `translateY(${lastClientY - startY}px)`;
+      for (const r of cachedRects) {
+        r.el.classList.toggle('ex-drag-over', lastClientY >= r.top && lastClientY <= r.bottom);
+      }
+    }
+
     handle.addEventListener('pointerdown', (e) => {
-      e.preventDefault(); e.stopPropagation(); dragging = true; startY = e.clientY;
-      handle.setPointerCapture(e.pointerId); card.classList.add('ex-dragging');
-    });
-    handle.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      const dy = e.clientY - startY; card.style.transform = `translateY(${dy}px)`;
+      e.preventDefault(); e.stopPropagation();
+      dragging = true; startY = e.clientY; lastClientY = e.clientY;
+      handle.setPointerCapture(e.pointerId);
+      card.classList.add('ex-dragging');
+      // Cache rects after the dragging class is applied (its style changes are
+      // visual only — transform/shadow — so other cards' positions are stable).
+      cachedRects = [];
       list.querySelectorAll('.exercise-card').forEach((other) => {
         if (other === card) return;
         const rect = other.getBoundingClientRect();
-        other.classList.toggle('ex-drag-over', e.clientY >= rect.top && e.clientY <= rect.bottom);
+        cachedRects.push({ el: /** @type {HTMLElement} */ (other), top: rect.top, bottom: rect.bottom });
       });
     });
+
+    handle.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      lastClientY = e.clientY;
+      if (!raf) raf = requestAnimationFrame(paint);
+    });
+
     handle.addEventListener('pointerup', async () => {
       if (!dragging) return;
-      dragging = false; card.style.transform = ''; card.classList.remove('ex-dragging');
+      dragging = false;
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      card.style.transform = '';
+      card.classList.remove('ex-dragging');
       let dropIdx = srcIdx;
-      list.querySelectorAll('.exercise-card').forEach((other) => { if (other.classList.contains('ex-drag-over')) { dropIdx = parseInt(other.dataset.ei); other.classList.remove('ex-drag-over'); } });
+      for (const r of cachedRects) {
+        if (r.el.classList.contains('ex-drag-over')) {
+          dropIdx = parseInt(r.el.dataset.ei);
+          r.el.classList.remove('ex-drag-over');
+        }
+      }
+      cachedRects = [];
       if (dropIdx !== srcIdx) {
         const moved = State.plan.splice(srcIdx, 1)[0];
         State.plan.splice(dropIdx, 0, moved);
