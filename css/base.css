@@ -79,6 +79,16 @@
   --c-pull: var(--c-blue);
   --c-legs: var(--c-purple);
 
+  /* ── CHROME — Cool Steel B (neutral UI scaffolding) ──
+     Lock 2026-06-20: brand --c-accent was over-saturating Push days.
+     Chrome demotes pill rims, focus outlines, button borders, and active
+     scaffolding to a neutral steel; --c-accent stays for celebration
+     (PR badge, set-pulse, success-toast) and data-glow (sparklines).
+     Memory: design-2026-06-20-chambers-and-cool-steel.md */
+  --c-chrome:    #cfd1d8;
+  --c-chrome-h:  #e9eaed;
+  --c-chrome-t:  #1a1a22;
+
   --c-text-1: #ffffff;
   --c-text-2: #a1a1aa;
   --c-text-3: #71717a;
@@ -977,6 +987,96 @@ body.is-scrolling * {
 .ppl-g-pct { font-family: var(--font-heading); font-weight: 800; font-size: 16px; color: var(--c-text-1); font-variant-numeric: tabular-nums; }
 .ppl-g-leg-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-text-3); }
 .ppl-g-leg-vol { font-size: 11px; font-weight: 600; color: var(--c-text-2); font-variant-numeric: tabular-nums; }
+
+/* ── Chamber Pill (4-shape navigator — shared) ──
+   Cool Steel B: rim is PPL session colour; shape carries chamber role.
+   Component logic in js/shared/chamber-pill.js. */
+.cp-pill {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 22px;
+  background: var(--c-bg-2);
+  border: 0.8px solid color-mix(in srgb, var(--cp-rim) 45%, transparent);
+}
+.cp-seg {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 6px 6px;
+  border-radius: 18px;
+  color: var(--c-text-1);
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+.cp-seg:active { background: var(--c-surface-h); transform: scale(0.96); }
+.cp-glyph { display: flex; align-items: center; justify-content: center; line-height: 0; }
+
+/* Preview mode — glyph above, name below; equal segments */
+.cp-preview .cp-seg { flex-direction: column; gap: 4px; padding: 8px 4px; }
+.cp-name-stack {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--c-text-1); text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+
+/* Mastery mode — active expanded with progress, others compact */
+.cp-mastery .cp-seg.is-active {
+  flex: 2.6; gap: 8px;
+  background: color-mix(in srgb, var(--cp-rim) 8%, transparent);
+}
+.cp-mastery .cp-seg:not(.is-active) { flex: 0.6; flex-direction: column; gap: 4px; padding: 6px 4px; }
+.cp-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.cp-name {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+  color: var(--c-text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cp-progress { position: relative; height: 2px; margin-top: 2px; }
+.cp-progress-track { position: absolute; inset: 0; background: var(--c-border-h); border-radius: 1px; }
+.cp-progress-fill { position: relative; height: 100%; border-radius: 1px; transition: width var(--t-normal); }
+.cp-progress-text { font-size: 8px; font-weight: 700; color: var(--c-text-3); letter-spacing: 0.3px; }
+.cp-glyph-sm { opacity: 0.7; }
+.cp-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--c-text-3); opacity: 0.5; }
+
+/* Completed mode — all 4 with ✓ overlays; PR chamber gets gold tint */
+.cp-completed .cp-seg { position: relative; flex-direction: column; gap: 3px; padding: 7px 4px; }
+.cp-check { line-height: 0; }
+.cp-completed .is-pr {
+  background: color-mix(in srgb, var(--c-gold, #d4af37) 8%, transparent);
+}
+.cp-completed .is-pr .cp-name-stack { color: var(--c-gold, #d4af37); }
+
+/* ── Island Tracker (DHL 4-chamber journey) ──
+   Compact, lives inside Dynamic Island. Component: js/shared/island-tracker.js
+   Chamber 4 always renders as open ring (diegetic: does not enter DB). */
+.it-wrap { display: inline-flex; align-items: center; gap: 6px; }
+.it-svg { flex-shrink: 0; cursor: pointer; overflow: visible; }
+.it-marker { pointer-events: auto; transition: opacity var(--t-fast); }
+.it-pulse {
+  pointer-events: none;
+  animation: it-breathe 1.6s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.it-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.3px;
+  color: var(--c-text-1); text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px;
+}
+.it-progress {
+  font-size: 9px; font-weight: 700; color: var(--c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+@keyframes it-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.18; transform: scale(1.35); }
+}
 
 /* ── prefers-reduced-motion (a11y, Sonnet 5-5) ── */
 @media (prefers-reduced-motion: reduce) {
