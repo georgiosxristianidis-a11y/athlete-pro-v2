@@ -171,13 +171,13 @@
 .set-header-row { display: grid; grid-template-columns: 20px 1fr 1fr 44px; gap: 12px; align-items: center; padding: 0 0 8px; }
 .set-col-label { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-text-3); text-align: center; opacity: 0.3; }
 
-.set-row { display: grid; grid-template-columns: 20px 1fr 1fr 44px; gap: 12px; align-items: center; padding: 14px 0; border-bottom: 0; }
+.set-row { display: grid; grid-template-columns: 20px 1fr 1fr 44px; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 0; }
 .set-num { font-size: 10px; font-weight: 800; color: var(--c-text-3); text-align: center; opacity: 0.35; }
-.set-row.set-active { background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%); border-radius: 10px; margin: 0 -8px; padding: 14px 8px; }
+.set-row.set-active { background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%); border-radius: 10px; margin: 0 -8px; padding: 12px 8px; }
 
 .stepper-val { font-size: 22px !important; font-weight: 800 !important; letter-spacing: -0.04em !important; color: rgba(255,255,255,0.6) !important; }
 .set-row.set-active .stepper-val { color: var(--c-text-1) !important; }
-.set-row.set-done { opacity: 0.45; padding: 6px 0; }
+.set-row.set-done { opacity: 0.45; padding: 5px 0; }
 .set-row.set-done .drum-wrap { display: none; }
 .set-done-summary { display: none; grid-column: 2 / 4; font-size: 13px; font-weight: 700; letter-spacing: 0.02em; color: var(--c-text-2); text-align: center; }
 .set-row.set-done .set-done-summary { display: flex; align-items: center; justify-content: center; }
@@ -185,13 +185,13 @@
 /* ── Drum Picker — Elite Refinement ── */
 .drum-wrap {
   position: relative;
-  height: 100px;
+  height: 72px;          /* 5-1: compact — was 100px; drum-item 36px + 2×18px padding */
   background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
   overflow: hidden;
   touch-action: none;
   border: 1px solid var(--c-border);
-  transition: opacity 0.3s;
+  transition: opacity var(--t-fast);
 }
 .drum-sel {
   position: absolute;
@@ -223,8 +223,9 @@
   font-weight: 600;
   color: var(--c-text-3);
   scroll-snap-align: center;
-  transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-  opacity: 0; 
+  transition: opacity var(--t-fast), transform var(--t-fast), color var(--t-fast);
+  opacity: 0;
+
 }
 .drum-item--active {
   color: var(--c-text-1);

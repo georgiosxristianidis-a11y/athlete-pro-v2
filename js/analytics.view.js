@@ -343,42 +343,74 @@ export function calDayClick(year, month, day, existingType, existingId) {
 function _renderVolumeChart(workouts, buckets) {
   const canvas = document.getElementById('cv-volume');
   if (!canvas) return;
-  const max = Math.max(...buckets.map((b) => b.tonnage), 1), best = Math.max(...buckets.map((b) => b.tonnage));
+
+  const max  = Math.max(...buckets.map((b) => b.tonnage), 1);
+  const best = Math.max(...buckets.map((b) => b.tonnage));
   const el = document.getElementById('an-week-best');
   if (el) el.textContent = fmtVol(best) + ' kg best';
+
+  // ── PPL dominant type per bucket (5-4) ────────────────────────────────────
+  // For each bucket, sum tonnage by session type; winner drives the bar colour.
+  const PPL_HEX = { push: '#00e676', pull: '#00b8d4', legs: '#8b5cf6' };
+  const FALLBACK = '#00e676';
+
+  const bucketType = buckets.map((b) => {
+    const ppl = { push: 0, pull: 0, legs: 0 };
+    workouts.forEach((w) => {
+      if (w.timestamp >= b.start && w.timestamp < b.end && PPL_HEX[w.type]) {
+        ppl[w.type] += w.tonnage || 0;
+      }
+    });
+    const dominant = Object.entries(ppl).sort((a, z) => z[1] - a[1])[0];
+    return dominant && dominant[1] > 0 ? dominant[0] : null;
+  });
+
   const W = canvas.offsetWidth || 320;
-  canvas.width = W * devicePixelRatio; canvas.height = 140 * devicePixelRatio;
-  const ctx = canvas.getContext('2d'); ctx.scale(devicePixelRatio, devicePixelRatio);
-  const pad = { t: 24, b: 28, l: 8, r: 8 }, bW = (W - pad.l - pad.r) / buckets.length, gap = bW * 0.3, chartH = 140 - pad.t - pad.b;
-  
+  canvas.width  = W * devicePixelRatio;
+  canvas.height = 140 * devicePixelRatio;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  const pad = { t: 24, b: 28, l: 8, r: 8 };
+  const bW = (W - pad.l - pad.r) / buckets.length;
+  const gap = bW * 0.3;
+  const chartH = 140 - pad.t - pad.b;
+
   buckets.forEach((b, i) => {
-    const x = pad.l + i * bW + gap / 2, bw = bW - gap, bh = b.tonnage ? Math.max(4, (b.tonnage / max) * chartH) : 2, y = pad.t + chartH - bh;
-    
-    // Gradient bar
-    const isBest = b.tonnage === best && best > 0;
+    const x  = pad.l + i * bW + gap / 2;
+    const bw = bW - gap;
+    const bh = b.tonnage ? Math.max(4, (b.tonnage / max) * chartH) : 2;
+    const y  = pad.t + chartH - bh;
+
+    const isBest  = b.tonnage === best && best > 0;
+    const barHex  = PPL_HEX[bucketType[i]] || FALLBACK;
+    const alpha   = isBest ? 1 : 0.28;
+
+    // Gradient bar: PPL color at top, fade to transparent at bottom
     const grad = ctx.createLinearGradient(x, y, x, y + bh);
-    if (isBest) {
-      grad.addColorStop(0, '#00e676');
-      grad.addColorStop(1, '#00c853');
-    } else {
-      grad.addColorStop(0, 'rgba(0,230,118,0.2)');
-      grad.addColorStop(1, 'rgba(0,230,118,0.05)');
-    }
-    
+    grad.addColorStop(0, barHex + (isBest ? '' : '50'));   // hex+alpha (2-digit = ~31%)
+    grad.addColorStop(1, barHex + '0a');                    // near-transparent base
     ctx.fillStyle = grad;
-    _roundRect(ctx, x, y, bw, bh, 4); ctx.fill();
-    
-    // Label: Week
-    ctx.fillStyle = 'rgba(161,161,170,0.8)'; 
-    ctx.font = `700 9px 'Manrope', sans-serif`; 
+    _roundRect(ctx, x, y, bw, bh, 4);
+    ctx.fill();
+
+    // Best week: thin top accent line (PPL solid)
+    if (isBest) {
+      ctx.fillStyle = barHex;
+      ctx.fillRect(x, y, bw, 2);
+    }
+
+    // Week label
+    ctx.fillStyle = '#a1a1aa';
+    ctx.font = `700 9px 'Manrope', sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillText(weekLabel(b), x + bw / 2, 140 - 10);
-    
-    // Value on top
-    if (b.tonnage > 0) { 
-      ctx.fillStyle = isBest ? '#fff' : 'rgba(255,255,255,0.6)';
+
+    // Volume value on top
+    if (b.tonnage > 0) {
+      ctx.fillStyle = isBest ? '#ffffff' : barHex + 'cc';
       ctx.font = `800 10px 'Instrument Sans', sans-serif`;
-      ctx.fillText(fmtVol(b.tonnage), x + bw / 2, y - 6); 
+      ctx.fillText(fmtVol(b.tonnage), x + bw / 2, y - 6);
     }
   });
 }
