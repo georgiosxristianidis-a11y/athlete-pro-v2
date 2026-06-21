@@ -520,7 +520,9 @@ export const Dashboard = (() => {
 
   /**
    * Render the most recent workout sessions list (up to 5).
-   * @param {Array<{timestamp: number, type: string, duration?: number, tonnage: number}>} workouts
+   * Reads session.blocks for block-indicator strips (W-2-D-3).
+   * Falls back to flat card for legacy sessions without blocks.
+   * @param {Array} workouts
    * @returns {void}
    */
   function renderRecent(workouts) {
@@ -528,7 +530,6 @@ export const Dashboard = (() => {
     if (!el) return;
 
     const now = Date.now();
-    // 2-4: drop future-dated sessions, newest first, cap 5.
     const list = (workouts || [])
       .filter((w) => w.timestamp <= now)
       .sort((a, b) => b.timestamp - a.timestamp)
@@ -554,23 +555,49 @@ export const Dashboard = (() => {
       return;
     }
 
-    el.innerHTML = list
-      .map((w) => {
-        const dot = TYPE_COLOR[w.type] || 'var(--c-text-3)';
-        const date = fmtDate(w.timestamp);
-        const dur = w.duration ? ` · ${fmtDuration(w.duration)}` : '';
-        const type = w.type.charAt(0).toUpperCase() + w.type.slice(1);
-        return `
+    el.innerHTML = list.map((w) => {
+      const dot   = TYPE_COLOR[w.type] || 'var(--c-text-3)';
+      const date  = fmtDate(w.timestamp);
+      const dur   = w.duration ? fmtDuration(w.duration) : null;
+      const type  = w.type ? (w.type.charAt(0).toUpperCase() + w.type.slice(1)) : 'Training';
+
+      // ── Block indicator strip (W-2-D-3) ──────────────────────────
+      // session.blocks = [{ id, label, tonnage }] — written by Lead W-2-B
+      // Falls back to empty string for legacy sessions.
+      const blockStrip = (() => {
+        const blocks = Array.isArray(w.blocks) ? w.blocks.filter(b => b.id !== 'core' && b.id !== 'align') : [];
+        if (!blocks.length) return '';
+        const total = blocks.reduce((s, b) => s + (b.tonnage || 0), 0) || 1;
+        const pills = blocks.map(b => {
+          const pct = Math.max(6, Math.round((b.tonnage || 0) / total * 100));
+          const color = dot; // all same PPL color — subtle differentiation via opacity
+          return `<span class="rec-block-pill" style="flex:${pct};background:${color};opacity:${b.id === 'power' ? '1' : '0.45'}" title="${esc(b.label || b.id)}"></span>`;
+        }).join('');
+        return `<div class="rec-block-strip">${pills}</div>`;
+      })();
+
+      // ── PR badge ──────────────────────────────────────────────────
+      const prBadge = (w.prs && w.prs.length)
+        ? `<span class="rec-pr-badge">${w.prs.length} PR</span>`
+        : '';
+
+      // ── Duration chip ─────────────────────────────────────────────
+      const durChip = dur ? `<span class="rec-dur">${esc(dur)}</span>` : '';
+
+      return `
         <div class="session-item">
           <div class="session-dot" style="background:${dot}"></div>
           <div class="session-info">
-            <div class="session-title">${type} Day</div>
-            <div class="session-meta">${date}${dur}</div>
+            <div class="session-title-row">
+              <span class="session-title">${esc(type)} Day</span>
+              ${prBadge}
+            </div>
+            <div class="session-meta">${esc(date)}${durChip ? ' · ' + durChip : ''}</div>
+            ${blockStrip}
           </div>
           <div class="session-vol">${fmtVol(w.tonnage)} kg</div>
         </div>`;
-      })
-      .join('');
+    }).join('');
   }
 
   /**

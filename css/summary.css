@@ -324,3 +324,69 @@
   width: 100%;
   background: var(--btn-accent, var(--c-accent)) !important;
 }
+
+/* ── Chamber Pill (shared/chamber-pill.js, mode='completed') ─── */
+.cpill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.cpill-left,
+.cpill-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cpill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cpill-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-text-2);
+}
+
+.cpill-label--core,
+.cpill-label--completed.cpill-label--core {
+  color: var(--c-text-3);
+  letter-spacing: 0.2em;
+}
+
+.cpill-chips {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cpill-chip {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-2);
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--c-border);
+  border-radius: 7px;
+}
+
+/* Completion checkmark — shown in completed mode */
+.cpill-done {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--c-accent) 12%, transparent);
+  color: var(--c-accent);
+  flex-shrink: 0;
+}

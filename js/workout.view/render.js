@@ -78,7 +78,7 @@ function _haptic(ms = 10) {
   if (navigator.vibrate) navigator.vibrate(ms);
 }
 
-export const _coreCheckedState = {};
+// BUG-2 resolved: state lives in State.coreChecked (workout.store.js)
 
 /* ════════════════════════════════════════════════════════
    DB HELPERS
@@ -136,7 +136,8 @@ export function _renderCoreSection(day) {
   const items = loadCoreChecklist(day);
   const rows = items.map((name, i) => {
     const key = `${day}:${name}`;
-    const checked = _coreCheckedState[key] ? 'checked' : '';
+    const checked = State.coreChecked[key] ? 'checked' : '';
+
     return `
       <div class="core-item ${checked}" id="core-item-${i}"
            onclick="Workout._toggleCoreItem('${day}',${i})">

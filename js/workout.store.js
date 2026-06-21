@@ -381,6 +381,8 @@ export const State = {
   plan: null,
   startedAt: null,
   stepDebounce: {},
+  /** @type {Record<string, boolean>} Core-item checked state, keyed by "day:name" */
+  coreChecked: {},
 };
 
 /**

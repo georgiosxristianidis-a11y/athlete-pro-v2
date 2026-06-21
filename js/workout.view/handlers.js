@@ -445,14 +445,10 @@ export function _toggleCoreItem(day, idx) {
   const items = loadCoreChecklist(day);
   const name = items[idx];
   const key = `${day}:${name}`;
-  // @ts-ignore
-  window._coreCheckedState = window._coreCheckedState || {};
-  // @ts-ignore
-  window._coreCheckedState[key] = !window._coreCheckedState[key];
+  State.coreChecked[key] = !State.coreChecked[key];
   _haptic(10);
   const el = document.getElementById(`core-item-${idx}`);
-  // @ts-ignore
-  el?.classList.toggle('checked', window._coreCheckedState[key]);
+  el?.classList.toggle('checked', State.coreChecked[key]);
 }
 
 export async function _addCoreItem(day) {

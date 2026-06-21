@@ -32,6 +32,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { esc } from '../shared/utils.js';
+import { chamberPill, blockLabel } from '../shared/chamber-pill.js';
 
 /* ── PPL colour map (semantic, not decorative) ─────────── */
 const PPL_COLOR = {
@@ -96,27 +97,22 @@ function _exRow(ex, pplColor) {
  * @returns {string}
  */
 function _blockIsland(block, pplColor, staggerIdx) {
-  const label = BLOCK_LABEL[block.id] || block.id.toUpperCase();
+  const label = blockLabel(block.id);
   const isCore = block.id === 'core' || block.id === 'align';
 
-  const metaChips = [
-    block.durationStr ? `<span class="summ-chip">${esc(block.durationStr)}</span>` : '',
-    !isCore && block.tonnage
-      ? `<span class="summ-chip">${_fmtTon(block.tonnage)}</span>`
-      : '',
-  ].filter(Boolean).join('');
+  const pillHTML = chamberPill({
+    label,
+    color: pplColor,
+    mode: 'completed',
+    time: block.durationStr ?? undefined,
+    tonnage: (!isCore && block.tonnage) ? _fmtTon(block.tonnage) : undefined,
+  });
 
   const exRows = (block.exercises || []).map(ex => _exRow(ex, pplColor)).join('');
 
   return `
     <div class="summ-island stagger-item" style="--stagger-i:${staggerIdx}; --ppl-color:${pplColor}">
-      <div class="summ-island-header">
-        <div class="summ-island-label-wrap">
-          <span class="summ-island-dot" aria-hidden="true"></span>
-          <span class="summ-island-label${isCore ? ' summ-island-label--core' : ''}">${label}</span>
-        </div>
-        <div class="summ-island-chips">${metaChips}</div>
-      </div>
+      <div class="summ-island-header">${pillHTML}</div>
       <div class="summ-ex-list">${exRows || '<div class="summ-ex-empty">—</div>'}</div>
     </div>`;
 }
