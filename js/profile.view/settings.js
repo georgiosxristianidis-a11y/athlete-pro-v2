@@ -208,7 +208,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           <div style="position: relative; display: flex; align-items: center;">
             <input type="password" id="gemini-key-input" class="pref-textarea" style="height: 38px; padding: 0 70px 0 12px; margin: 0; font-family: monospace; border-radius: 12px; width: 100%; box-sizing: border-box;"
                    placeholder="${serverStatus.gemini ? t('settings.gemini_placeholder_server') : t('settings.gemini_placeholder_opt')}" 
-                   value="${settings['gemini-key'] || ''}"
+                   value="${esc(settings['gemini-key'] || '')}"
                    oninput="Profile.validateGeminiKey(this.value)"
                    onblur="Profile.setGeminiKey(this.value)">
             <div style="position: absolute; right: 8px; display: flex; align-items: center; gap: 8px;">
