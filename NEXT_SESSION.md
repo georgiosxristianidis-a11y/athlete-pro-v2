@@ -6,6 +6,39 @@
 
 ---
 
+## 📅 ПЛАН НА 2026-06-24 (по фазам, done-list) — приоритет: MERGE
+
+> Контекст: ветка `claude/hungry-johnson-0c2950` = 18 коммитов впереди базы; `main` = 4 уникальных (Gemini параллельно). НЕ fast-forward. Чекпойнт отката: `checkpoint-2026-06-23`. Делать инкрементально, гейт зелёный перед main.
+
+### 🔻 Фаза M — MERGE (🔒 LEAD, первым, блокирует всё)
+Карта резолва (разведано):
+- ⬜ **M0** прочитать дифф 4 коммитов main (`git log main ^HEAD`; show по sw.js/server.js/css). Бэкап-реф `git branch backup/pre-merge-0624`.
+- ⬜ **M1** `git merge main` В ЭТУ ветку (worktree, trunk не трогаем).
+- ⬜ **M2** резолв 7 конфликтных файлов:
+  - `sw.js` → **OURS** (network-first/precache/без 408) → затем `npm run build:sw` + бамп `CACHE_NAME`.
+  - `server.js` → **THEIRS** (там уже `trust proxy` + infra); убрать мой дубль trust-proxy.
+  - `supabase.js` → инспект + союз.
+  - `base.css`/`claude.css`/`dynamic-island.css`/`workout.css` → **СОЮЗ**: мои токены (`--c-gemini`, chrome, drum `opacity:.22`) + их резидуалы + классы PANDA-Reports. Дедуп двойной токенизации FAB в claude.css.
+- ⬜ **M3** семантический дедуп: мой `claude.store` per-engine P1 побеждает (на main баг жив); XSS — союз (их passport/render/summary/intel + мои athlete-room/pip/settings); PANDA: их UI/Reports/Haptics/TTS + мой engine/key/model — композиция, проверить промпты не конфликтуют.
+- ⬜ **M4** зелёный гейт: `npm run lint`(0 err) · `npm test`(189) · e2e на ТЁПЛОМ сервере(10/10) · preview-смоук (boot, тренировка, drum-центр, island-tracker, settings показывает Claude BYOK, analytics без preview-стенда, PANDA Reports видны).
+- ⬜ **M5** тег `checkpoint-2026-06-24-merged` → fast-forward `main`. Пуш — за пользователем.
+- ⬜ **M6** прополка: удалить смердженные/мёртвые `claude/*` (14 шт.); закрепить trunk-based (<24ч).
+
+### ⚡ Фаза Q — дешёвые победы (после зелёного merge; Фаза 4 роадмапа вытянута вперёд)
+- ⬜ **Q1 🔒** Zero-friction prefill: drum стартует с веса×повторов прошлой сессии (или таргета коуча). Высокий value/effort, независим от рефактора.
+- ⬜ **Q2 🟩** S2 PII console.log sweep (вкл. `integrations.js:69` длины ключей).
+- ⬜ **Q3 🟦** swipe-to-confirm подход (опц., крупнее — Sonnet).
+
+### 🧭 Фаза D — решения пользователя (не код)
+- ⬜ **D1** Capacitor go/no-go: локскрин-таймер = боль №1? Его ценность независима от Фазы-2 декаплинга.
+- ⬜ **D2** Декаплинг (роадмап Фаза 2) — подтвердить: **инкрементально за флагами** (`js/flags.js`), НЕ big-bang. Выбрать 1-й strangler-таргет (один экран: onclick→addEventListener за флагом).
+
+### 🩸 Фаза DS — DATA-SAFETY (роадмап пропустил; v4 УЖЕ в main → срочно)
+- ⬜ **DS1 🔴** Поле-тест IDB v3→v4 миграции на ЖИВЫХ данных (workouts/metrics/1RM целы) — v4 уже в trunk, любой апдейт его получает.
+- ⬜ **DS2 🔴** CRDT 2-девайс конвергенция (ветка `brave-brown`) ДО её merge.
+
+---
+
 ## 🛡️ АНТИ-ХРУПКИЙ WORKFLOW (обязателен для всех агентов — чтобы не было `git reset --hard`)
 
 1. **Feature Flags (рубильник).** Любой рискованный/недописанный путь — за флагом `js/flags.js`:
