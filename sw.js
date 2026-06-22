@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v68';
+const CACHE_NAME = 'athlete-pro-v69';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -174,7 +174,7 @@ self.addEventListener('fetch', (e) => {
   const cleanReq = new Request(parsedUrl.origin + cleanPath);
 
   e.respondWith(
-    caches.match(cleanReq).then((cached) => {
+    caches.match(cleanReq, { ignoreVary: true }).then((cached) => {
       if (cached) return cached;
 
       return fetch(e.request)

@@ -11,13 +11,13 @@
   height: 64px;
   background: radial-gradient(
     circle at 30% 25%,
-    rgba(0, 230, 118, 0.18),
+    color-mix(in srgb, var(--c-accent) 18%, transparent),
     var(--c-surface) 65%,
     var(--c-bg-2, var(--c-bg-2)) 100%
   );
   -webkit-appearance: none;
   appearance: none;
-  border: 1.5px solid rgba(0, 230, 118, 0.35);
+  border: 1.5px solid color-mix(in srgb, var(--c-accent) 35%, transparent);
   cursor: pointer;
   padding: 0;
   margin: 0;
@@ -29,9 +29,9 @@
   border-radius: 50%;
   /* Removed overflow: hidden to allow close btn to sit outside */
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-    0 8px 22px rgba(0, 0, 0, 0.55),
-    0 0 24px rgba(0, 230, 118, 0.18);
+    0 0 0 1px var(--c-surface) inset,
+    0 8px 22px color-mix(in srgb, var(--c-bg) 55%, transparent),
+    0 0 24px color-mix(in srgb, var(--c-accent) 18%, transparent);
   animation: panda-float 3s ease-in-out infinite;
   transition:
     transform 0.15s ease,
@@ -44,19 +44,19 @@
 .claude-fab.gemini-mode {
   background: radial-gradient(
     circle at 30% 25%,
-    rgba(68, 138, 255, 0.2),
+    color-mix(in srgb, #448aff 20%, transparent),
     var(--c-surface) 65%,
     var(--c-bg-2, var(--c-bg-2)) 100%
   );
-  border-color: rgba(68, 138, 255, 0.4);
+  border-color: color-mix(in srgb, #448aff 40%, transparent);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-    0 8px 22px rgba(0, 0, 0, 0.55),
-    0 0 24px rgba(68, 138, 255, 0.25);
+    0 0 0 1px var(--c-surface) inset,
+    0 8px 22px color-mix(in srgb, var(--c-bg) 55%, transparent),
+    0 0 24px color-mix(in srgb, #448aff 25%, transparent);
 }
 .claude-fab.gemini-mode svg {
   color: var(--c-blue);
-  filter: drop-shadow(0 0 8px rgba(68, 138, 255, 0.4));
+  filter: drop-shadow(0 0 8px color-mix(in srgb, #448aff 40%, transparent));
 }
 
 .fab-close-btn {
@@ -77,7 +77,7 @@
   transition: opacity 0.2s var(--ease-std), transform 0.2s var(--ease-std), background-color 0.2s var(--ease-std), border-color 0.2s var(--ease-std), color 0.2s var(--ease-std);
   z-index: 510;
   pointer-events: auto;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--c-bg) 30%, transparent);
 }
 .claude-fab:hover .fab-close-btn, 
 .claude-fab:active .fab-close-btn {
@@ -92,11 +92,11 @@
 }
 
 .claude-fab:hover {
-  border-color: rgba(0, 230, 118, 0.55);
+  border-color: color-mix(in srgb, var(--c-accent) 55%, transparent);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-    0 10px 28px rgba(0, 0, 0, 0.6),
-    0 0 30px rgba(0, 230, 118, 0.28);
+    0 0 0 1px var(--c-border) inset,
+    0 10px 28px color-mix(in srgb, var(--c-bg) 60%, transparent),
+    0 0 30px color-mix(in srgb, var(--c-accent) 28%, transparent);
 }
 @keyframes panda-float {
   0%,
@@ -110,7 +110,7 @@
 .claude-fab:active {
   transform: scale(0.88) !important;
   animation: none;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--c-bg) 30%, transparent));
 }
 .claude-fab video,
 .claude-fab img {
@@ -154,7 +154,7 @@
   border-radius: 24px 24px 0 0;
 }
 .claude-overlay.visible {
-  background: rgba(0, 0, 0, 0.72);
+  background: color-mix(in srgb, var(--c-bg) 72%, transparent);
 }
 .claude-sheet {
   width: 100%;
@@ -194,7 +194,7 @@
   transition: background 0.2s ease;
 }
 .claude-logo-wrap:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--c-surface);
 }
 .claude-logo-wrap:active {
   transform: scale(0.98);
@@ -205,7 +205,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--c-border);
   border-radius: 6px;
   color: var(--c-text-3);
   margin-left: 4px;
@@ -301,7 +301,7 @@
   border-radius: 3px;
   background: linear-gradient(
     to right,
-    rgba(0, 230, 118, 0.55),
+    color-mix(in srgb, var(--c-accent) 55%, transparent),
     rgba(255, 179, 0, 0.65),
     rgba(232, 132, 140, 0.75)
   );
@@ -507,7 +507,7 @@
 .chat-msg.user-msg {
   align-self: flex-end;
   background: var(--c-purple-bg);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  border: 1px solid color-mix(in srgb, var(--c-secondary) 20%, transparent);
   color: var(--c-text-1);
   border-bottom-right-radius: 4px;
 }
@@ -538,7 +538,7 @@
   transition: border-color var(--t-fast);
 }
 .chat-input-wrap:focus-within {
-  border-color: rgba(139, 92, 246, 0.4);
+  border-color: color-mix(in srgb, var(--c-secondary) 40%, transparent);
 }
 .chat-input {
   flex: 1;

@@ -15,6 +15,7 @@ import { errorMiddleware } from './lib/errors.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.set('trust proxy', 1); // Phase 1: Essential for Vercel/Nginx to read X-Forwarded-For instead of proxy IP
 
 // ── Security headers
 app.use(helmet({

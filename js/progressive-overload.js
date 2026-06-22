@@ -4,6 +4,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
+import { fmtWeight } from './shared/format.js';
 
 /* ══════════════════════════════════════════════
    CONFIGURATION
@@ -109,7 +110,7 @@ export function calculateProgression(exerciseName, currentWeight, completedSets,
   if (lastSessionWeight !== currentWeight) {
     if (currentWeight > lastSessionWeight) {
       type = 'pr';
-      reason = `New personal best: +${(currentWeight - lastSessionWeight).toFixed(1)}kg`;
+      reason = `New personal best: +${fmtWeight(currentWeight - lastSessionWeight)}kg`;
     }
   }
 
@@ -334,11 +335,11 @@ export async function renderInlineSuggestion(exerciseName, currentWeight, comple
   const icon = getTypeIcon(progression.type);
   const cssClass = getTypeClass(progression.type);
 
-  const deltaText = progression.delta > 0
-    ? `+${progression.delta.toFixed(1)}kg`
-    : progression.delta < 0
-      ? `${progression.delta.toFixed(1)}kg`
-      : '0kg';
+  const deltaText = progression.delta > 0 
+    ? `+${fmtWeight(progression.delta)}kg` 
+    : (progression.delta < 0 
+      ? `${fmtWeight(progression.delta)}kg` 
+      : '0kg');
 
   return {
     html: `<span class="progression-suggestion ${cssClass}">

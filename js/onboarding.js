@@ -69,7 +69,7 @@ function _render() {
       <!-- Progress Bar -->
       <div style="display:flex; gap:4px; padding: 0 var(--sp-2);">
         ${Array.from({length: STEPS}).map((_, i) => `
-          <div style="height:3px; border-radius:1.5px; flex:1; background:${i + 1 <= _step ? 'var(--c-accent)' : 'rgba(255,255,255,0.05)'}; transition: background 0.4s ease, box-shadow 0.4s ease; ${i + 1 === _step ? 'box-shadow: 0 0 8px var(--c-accent);' : ''}"></div>
+          <div class="ob-progress" style="height:3px; border-radius:1.5px; flex:1; background:${i + 1 <= _step ? 'var(--c-accent)' : 'var(--c-border)'}; transition: background 0.4s ease, box-shadow 0.4s ease; ${i + 1 === _step ? 'box-shadow: 0 0 8px color-mix(in srgb, var(--c-accent) 50%, transparent);' : ''}"></div>
         `).join('')}
       </div>
 
