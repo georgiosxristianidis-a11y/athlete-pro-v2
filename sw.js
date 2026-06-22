@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v68';
+const CACHE_NAME = 'athlete-pro-v69';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -116,15 +116,26 @@ self.addEventListener('message', (e) => {
   }
 });
 
+/* ── Concurrency-limited precache ──
+   Adding ~90 assets with one fetch each, all at once, used to swamp the dev
+   server right as the page made its own dynamic imports → aborted requests →
+   failed module loads. Cap concurrency so install never starves page traffic. */
+async function precache(cache, urls, concurrency = 6) {
+  const queue = urls.slice();
+  async function worker() {
+    while (queue.length) {
+      const url = queue.shift();
+      try { await cache.add(url); }
+      catch (err) { console.warn('SW cache add failed:', url, err); }
+    }
+  }
+  await Promise.all(Array.from({ length: concurrency }, worker));
+}
+
 /* ── Install: Precache all assets and skip waiting ── */
 self.addEventListener('install', (e) => {
   self.skipWaiting();
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      // Use allSettled so one missing file doesn't crash the whole cache
-      return Promise.allSettled(ASSETS.map(url => cache.add(url).catch(err => console.warn('SW cache add failed:', url, err))));
-    })
-  );
+  e.waitUntil(caches.open(CACHE_NAME).then((cache) => precache(cache, ASSETS)));
 });
 
 /* ── Activate: prune old caches ── */
@@ -167,39 +178,58 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Static assets: cache-first
-  // Solid 9 Fix: Normalize URL to prevent Cache DOS and O(N) lookup
-  const parsedUrl = new URL(e.request.url);
-  const cleanPath = parsedUrl.pathname === '/' ? '/index.html' : parsedUrl.pathname;
-  const cleanReq = new Request(parsedUrl.origin + cleanPath);
+  // Normalize URL to prevent Cache DOS and O(N) lookup
+  const cleanPath = url.pathname === '/' ? '/index.html' : url.pathname;
+  const cleanReq = new Request(url.origin + cleanPath);
 
-  e.respondWith(
-    caches.match(cleanReq).then((cached) => {
-      if (cached) return cached;
+  const dest = e.request.destination;
+  // Code (JS/CSS/HTML) → network-first so refactors appear immediately instead
+  // of being masked by a stale cache. Everything else (json/img/media/font) →
+  // cache-first for speed; it rarely changes.
+  const isCode = dest === 'script' || dest === 'style' || dest === 'document' ||
+    /\.(?:js|mjs|css|html)$/.test(cleanPath);
 
-      return fetch(e.request)
-        .then((response) => {
-          if (!response || response.status !== 200 || response.type === 'opaque') {
-            return response;
-          }
-          const cacheControl = response.headers.get('cache-control') || '';
-          if (cacheControl.includes('no-store') || response.headers.has('set-cookie')) {
-            return response; // Protect against Web Cache Poisoning
-          }
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(cleanReq, clone));
-          return response;
-        })
-        .catch(async () => {
-          if (e.request.destination === 'document') {
-            const fallback = await caches.match('/index.html');
-            return fallback || new Response('Offline', { status: 200, headers: {'Content-Type': 'text/html'} });
-          }
-          return new Response('Network error', { status: 408 });
-        });
-    })
-  );
+  e.respondWith(isCode ? networkFirst(e.request, cleanReq, dest) : cacheFirst(e.request, cleanReq));
 });
+
+/* Cache a successful, non-private response without blocking the return. */
+function maybeCache(response, cleanReq) {
+  if (!response || response.status !== 200 || response.type === 'opaque') return;
+  const cacheControl = response.headers.get('cache-control') || '';
+  if (cacheControl.includes('no-store') || response.headers.has('set-cookie')) return;
+  const clone = response.clone();
+  caches.open(CACHE_NAME).then((cache) => cache.put(cleanReq, clone));
+}
+
+async function networkFirst(request, cleanReq, dest) {
+  try {
+    const response = await fetch(request);
+    maybeCache(response, cleanReq);
+    return response;
+  } catch {
+    const cached = await caches.match(cleanReq);
+    if (cached) return cached;
+    if (dest === 'document') {
+      const fallback = await caches.match('/index.html');
+      if (fallback) return fallback;
+    }
+    // Honest network failure — NOT a synthetic 408. A fake 408 made import()
+    // fail hard with no retry; Response.error() surfaces the real condition.
+    return Response.error();
+  }
+}
+
+async function cacheFirst(request, cleanReq) {
+  const cached = await caches.match(cleanReq);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    maybeCache(response, cleanReq);
+    return response;
+  } catch {
+    return Response.error();
+  }
+}
 
 /* ── Notifications — Background rest alarm ── */
 self.addEventListener('notificationclick', (e) => {

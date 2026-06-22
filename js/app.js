@@ -309,6 +309,14 @@ window.PrivacyRapid = PrivacyRapid;
 /* ── Service Worker ── */
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
+  // When a new SW takes control, reload once so fresh code/CSS is applied
+  // without the user having to clear storage from the Application tab.
+  let _swReloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (_swReloaded) return;
+    _swReloaded = true;
+    window.location.reload();
+  });
 }
 
 /* ── Storage Persistence (Phase 5) ── */

@@ -20,8 +20,6 @@ import { t } from './locale.store.js';
 import { isRu } from './locale.store.js';
 import { renderStrengthHero, renderStrengthCurves } from './analytics.strength-curves.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
-import { renderChamberPill } from './shared/chamber-pill.js';
-import { renderIslandTracker } from './shared/island-tracker.js';
 
 // PPL law: push=green (--c-accent) · pull=cyan (--c-blue) · legs=purple (--c-purple).
 // Kept as hex because callers append alpha (`${color}20`), which CSS vars can't do.
@@ -70,17 +68,6 @@ export async function load() {
   if (!container) return;
 
   container.innerHTML = `
-      <!-- DESIGN PREVIEW: chamber-pill (3 modes) + island-tracker — temporary mount for Phase 1.4 verify -->
-      <div class="chart-card stagger-item" style="margin-top:var(--sp-2); padding:14px; animation-delay: 0.01s">
-        <div style="font-size:9px;font-weight:800;letter-spacing:0.8px;color:var(--c-text-3);text-transform:uppercase;margin-bottom:10px">Design Preview · Phase 1-B (Cool Steel)</div>
-        <div style="display:flex;flex-direction:column;gap:14px">
-          <div><div style="font-size:8.5px;font-weight:700;color:var(--c-text-3);letter-spacing:0.4px;margin-bottom:5px">PREVIEW (pre-workout)</div><div id="cp-demo-preview"></div></div>
-          <div><div style="font-size:8.5px;font-weight:700;color:var(--c-text-3);letter-spacing:0.4px;margin-bottom:5px">MASTERY (in-workout, Chest Shape active)</div><div id="cp-demo-mastery"></div></div>
-          <div><div style="font-size:8.5px;font-weight:700;color:var(--c-text-3);letter-spacing:0.4px;margin-bottom:5px">COMPLETED (post-summary, gold PR on Chest Power)</div><div id="cp-demo-completed"></div></div>
-          <div><div style="font-size:8.5px;font-weight:700;color:var(--c-text-3);letter-spacing:0.4px;margin-bottom:5px">DHL ISLAND TRACKER (chamber 2 active)</div><div style="background:#000;border-radius:14px;padding:6px 10px;width:fit-content"><div id="it-demo"></div></div></div>
-        </div>
-      </div>
-
       <div id="strength-hero" class="stagger-item" style="margin-top:var(--sp-2); animation-delay: 0.03s"></div>
 
       <div class="stat-row stagger-item" style="margin-top:var(--sp-2); animation-delay: 0.05s">
@@ -165,7 +152,6 @@ export async function load() {
       return;
     }
 
-    _renderDesignPreview();
     renderStrengthHero(workouts, document.getElementById('strength-hero'));
     _renderQuickStats(workouts);
     _renderPPLBalance(workouts);
@@ -174,33 +160,6 @@ export async function load() {
     const trend = await fetchWeeklyTrend(10);
     _renderVolumeChart(workouts, trend);
     _renderORMList(orms);
-}
-
-/* TEMPORARY: Phase 1.4 visual gate — mount the new chamber-pill and island-tracker
-   for visual review of the Cool Steel B palette. Remove once approved + integrated
-   into real workout views. */
-function _renderDesignPreview() {
-  const pushChambers = [
-    { name: 'Chest Power' },
-    { name: 'Chest Shape' },
-    { name: 'Biceps' },
-    { name: 'Core', uiOnly: true },
-  ];
-  renderChamberPill(document.getElementById('cp-demo-preview'), {
-    mode: 'preview', chambers: pushChambers, sessionType: 'push',
-  });
-  renderChamberPill(document.getElementById('cp-demo-mastery'), {
-    mode: 'mastery', chambers: pushChambers, sessionType: 'push',
-    active: 1, progress: { done: 2, total: 3 },
-  });
-  renderChamberPill(document.getElementById('cp-demo-completed'), {
-    mode: 'completed', chambers: pushChambers.map((c, i) => ({ ...c, pr: i === 0 })),
-    sessionType: 'push',
-  });
-  renderIslandTracker(document.getElementById('it-demo'), {
-    current: 1, sessionType: 'push', progress: { done: 8, total: 12 },
-    label: 'Chest Shape', expanded: true,
-  });
 }
 
 function _renderQuickStats(workouts) {
