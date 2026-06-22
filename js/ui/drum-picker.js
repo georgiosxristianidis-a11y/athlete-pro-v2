@@ -52,7 +52,12 @@ function _buildDrum(wrap) {
   }
   track.appendChild(frag);
 
-  const pad = Math.floor(VISIBLE / 2) * ITEM_H;   // 36px top + bottom
+  // Pad so the selected item centres in the wrap regardless of its height.
+  // 5-1 shrank the wrap to 72px (2 rows); a fixed (VISIBLE/2)*ITEM_H pad
+  // assumed the old 108px window and pushed the active value out of the
+  // selection band → it rendered clipped/near-invisible. ITEM_H/2 keeps one
+  // item dead-centre and is independent of layout/visibility state.
+  const pad = ITEM_H / 2;
   track.style.paddingTop    = pad + 'px';
   track.style.paddingBottom = pad + 'px';
 

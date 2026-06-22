@@ -224,8 +224,9 @@
   color: var(--c-text-3);
   scroll-snap-align: center;
   transition: opacity var(--t-fast), transform var(--t-fast), color var(--t-fast);
-  opacity: 0;
-
+  /* Neighbours stay faintly visible so the control reads as a scrollable wheel
+     (affordance), not a static number. Active item overrides to full below. */
+  opacity: 0.22;
 }
 .drum-item--active {
   color: var(--c-text-1);
