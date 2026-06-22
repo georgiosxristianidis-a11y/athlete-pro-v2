@@ -253,6 +253,12 @@ async function _fetchAIRecommendations(workout, fatigue, orms, nextPlan) {
   const history = await DB.Workouts.getAll();
   const recentHistory = history.filter((w) => w.timestamp > Date.now() - 14 * 24 * 3600000);
 
+  const engine = await DB.Settings.get('ai-engine', 'anthropic');
+  // A BYOK key belongs only to its own engine. Sending the Gemini key to the
+  // Anthropic engine makes the backend use "AIza…" as an Anthropic key → 401.
+  // Only Gemini has a frontend key today; Claude uses the server .env key.
+  const customKey = engine === 'gemini' ? await DB.Settings.get('gemini-key') : undefined;
+
   const response = await safeFetch('/api/coach/recommendations', {
     method: 'POST',
     headers: {
@@ -260,8 +266,8 @@ async function _fetchAIRecommendations(workout, fatigue, orms, nextPlan) {
       'X-Request-ID': _newRequestId(),
     },
     body: JSON.stringify({
-      engine: await DB.Settings.get('ai-engine', 'anthropic'),
-      customKey: await DB.Settings.get('gemini-key'),
+      engine,
+      customKey,
       workout: {
         type: workout.type,
         tonnage: workout.tonnage,
@@ -465,7 +471,8 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
       },
       body: JSON.stringify({
         engine,
-        customKey: await DB.Settings.get('gemini-key'),
+        // BYOK key only for its own engine (Gemini); Claude uses server key.
+        customKey: engine === 'gemini' ? await DB.Settings.get('gemini-key') : undefined,
         workouts: workouts.slice(0, 5).map((w) => ({
           type: w.type,
           hoursAgo: Math.round((Date.now() - w.timestamp) / 3600000),
