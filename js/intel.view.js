@@ -76,18 +76,22 @@ export const IntelView = (() => {
         <input type="file" id="intel-file-input" accept="image/*" style="display:none" onchange="IntelView.onFileSelected(event)">
       </div>
 
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:var(--sp-4)">
-        <button class="card-action" onclick="IntelView.generateWeekly()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
-          <div style="font-size:9px; font-weight:900; text-transform:uppercase; color:var(--c-text-3)">Weekly</div>
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:var(--sp-4)">
+        <button class="card-action" onclick="IntelView.generateWeekly()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
+          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">СВОДКА</div>
         </button>
-        <button class="card-action" onclick="IntelView.createWorkout()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-          <div style="font-size:9px; font-weight:900; text-transform:uppercase; color:var(--c-text-3)">Create</div>
+        <button class="card-action" onclick="IntelView.createWorkout()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div style="color:var(--c-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">ГЕНЕРАЦИЯ</div>
         </button>
-        <button class="card-action" onclick="IntelView.analyzeStats()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
-          <div style="font-size:9px; font-weight:900; text-transform:uppercase; color:var(--c-text-3)">Анализ</div>
+        <button class="card-action" onclick="IntelView.analyzeStats()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div style="color:var(--c-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
+          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">АНАЛИЗ</div>
+        </button>
+        <button class="card-action" onclick="IntelView.checkBiometrics()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div style="color:var(--c-red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">БИОМЕТРИЯ</div>
         </button>
       </div>
 
@@ -459,21 +463,34 @@ export const IntelView = (() => {
 
 
   function createWorkout() {
+     haptic(10);
      IntelStore.addLog('SYS', 'Ready to generate workout plan');
      IntelStore.setStatus('WAITING FOR PROMPT');
      const input = document.getElementById('intel-input');
      if (input) {
+         input.value = "";
          input.focus();
          // @ts-ignore
-         input.placeholder = "e.g. 'Push workout for hypertrophy'";
+         input.placeholder = "Какую группу мышц тренируем сегодня?";
      }
   }
 
   function analyzeStats() {
+     haptic(10);
      IntelStore.addLog('SYS', 'Ready to analyze stats');
      const input = document.getElementById('intel-input');
      if (input) {
-         input.value = "Проанализируй мою последнюю тренировку и дай #gym дашборд";
+         input.value = "Проведи глубокий разбор последней тренировки. Сгенерируй readiness-виджет (_widget: readiness) с оценкой 0-100. Напиши пару строк о главном успехе и слабом месте.";
+         submit();
+     }
+  }
+
+  function checkBiometrics() {
+     haptic(10);
+     IntelStore.addLog('SYS', 'Requesting Biometrics scan');
+     const input = document.getElementById('intel-input');
+     if (input) {
+         input.value = "Проанализируй мою тепловую карту мышц (Heatmap) и историю нагрузок. Выведи отчет о биометрии: какие мышцы устали, какие готовы к взрывной работе. Дай оценку ЦНС.";
          submit();
      }
   }
@@ -559,7 +576,7 @@ export const IntelView = (() => {
     }
   }
 
-  return { load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats, playAudio, _clearImage };
+  return { load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats, checkBiometrics, playAudio, _clearImage };
 })();
 
 // Expose to window for onclick
