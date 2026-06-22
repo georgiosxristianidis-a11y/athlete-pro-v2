@@ -16,6 +16,10 @@ import { errorMiddleware } from './lib/errors.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
+// Trust the first proxy hop (Vercel/Nginx) so express-rate-limit keys on the
+// real client IP from X-Forwarded-For, not the shared balancer IP.
+app.set('trust proxy', 1);
+
 // ── Security headers
 app.use(helmet({
   contentSecurityPolicy: {

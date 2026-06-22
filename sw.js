@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v71';
+const CACHE_NAME = 'athlete-pro-v72';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -207,10 +207,10 @@ async function networkFirst(request, cleanReq, dest) {
     maybeCache(response, cleanReq);
     return response;
   } catch {
-    const cached = await caches.match(cleanReq);
+    const cached = await caches.match(cleanReq, { ignoreVary: true });
     if (cached) return cached;
     if (dest === 'document') {
-      const fallback = await caches.match('/index.html');
+      const fallback = await caches.match('/index.html', { ignoreVary: true });
       if (fallback) return fallback;
     }
     // Honest network failure — NOT a synthetic 408. A fake 408 made import()
@@ -220,7 +220,7 @@ async function networkFirst(request, cleanReq, dest) {
 }
 
 async function cacheFirst(request, cleanReq) {
-  const cached = await caches.match(cleanReq);
+  const cached = await caches.match(cleanReq, { ignoreVary: true });
   if (cached) return cached;
   try {
     const response = await fetch(request);
