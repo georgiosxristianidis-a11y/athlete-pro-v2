@@ -22,6 +22,11 @@
 
 Все три верифицированы в preview (seeded push-сессия: трекер 4 маркера, current-pulse + `SHAPE 1/6`, chrome-токены резолвятся, 0 ошибок консоли). **Тесты 189/189.**
 
+### ✅ Доп. фиксы 2026-06-22 (продолжение)
+- **set-logger drum (`96fe049`)** — числа были обрезаны/невидимы: 5-1 ужал `.drum-wrap` 100→72px, а JS падил `(VISIBLE/2)*ITEM_H`=36 (под старое окно 108) → активное число уезжало вниз. Pad → `ITEM_H/2`=18 (центр при любой высоте) + соседи `opacity 0→0.22` (эффект колеса).
+- **error-boundary (`4d01a2c`)** — `[unhandledrejection]` тостил «Something went wrong» на ЛЮБОЙ reject (VT-abort `InvalidStateError "Transition was aborted"`, AbortError, airgap-импорты sync/supabase) → спам консоли+UI во время тренировки. Теперь benign → `preventDefault`+`console.debug`, без тоста; реальные ошибки проходят. rest-timer: `.catch()` на плавающем `_triggerNotification()`. NB: реального `startViewTransition` в коде нет (мёртвый VT-CSS + коммент); сам VT-abort прилетает из среды (расширение/флаг Chrome).
+- **e2e (`e90f2ec`)** — `test/e2e/regressions.spec.js`: module-load (408/CDN/airgap), Add Exercise picker, drum-центровка, island-трекер, boundary. **10/10 на тёплом сервере.** ВАЖНО: `npx playwright test` флакует на холодном/зомби-сервере (goto/`.set-row` таймауты, single-thread node + ESM на каждую навигацию). Прогонять на уже поднятом `node server.js` (PORT=3000) → стабильно. `startWorkout` ждёт `window.Workout` (ленивый), bypass онбординга через `DB.Settings`+reload.
+
 ### 🔜 Остаток
 - ✅ **5-6** — уже было (инлайн glow на текущем шаге `onboarding.js:72`); аудит дал ложный минус (искал класс `ob-progress`).
 - ✅ **1-5** (`b9e2c18`) — FAB rgba токенизирован через `color-mix`; новый токен `--c-gemini` в base.css.
