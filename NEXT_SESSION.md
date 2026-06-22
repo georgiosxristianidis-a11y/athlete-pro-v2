@@ -27,6 +27,22 @@
 - **error-boundary (`4d01a2c`)** — `[unhandledrejection]` тостил «Something went wrong» на ЛЮБОЙ reject (VT-abort `InvalidStateError "Transition was aborted"`, AbortError, airgap-импорты sync/supabase) → спам консоли+UI во время тренировки. Теперь benign → `preventDefault`+`console.debug`, без тоста; реальные ошибки проходят. rest-timer: `.catch()` на плавающем `_triggerNotification()`. NB: реального `startViewTransition` в коде нет (мёртвый VT-CSS + коммент); сам VT-abort прилетает из среды (расширение/флаг Chrome).
 - **e2e (`e90f2ec`)** — `test/e2e/regressions.spec.js`: module-load (408/CDN/airgap), Add Exercise picker, drum-центровка, island-трекер, boundary. **10/10 на тёплом сервере.** ВАЖНО: `npx playwright test` флакует на холодном/зомби-сервере (goto/`.set-row` таймауты, single-thread node + ESM на каждую навигацию). Прогонять на уже поднятом `node server.js` (PORT=3000) → стабильно. `startWorkout` ждёт `window.Workout` (ленивый), bypass онбординга через `DB.Settings`+reload.
 
+### ✅ PANDA core + ещё фиксы 2026-06-22
+- **Причина ошибок на скрине :3000** (plate-calc `/shared/format.js` 404, `/api/ai-status` 404) — **старый сервер**, не из этой ветки. На ветке plate-calc без bad-import, маршрут `/ai-status` есть. Перезапуск :3000 из ветки чинит. CSS/supabase/sync 408 — airgap-benign.
+- **P1 (`0d46ecb`)** — `customKey` слался для обоих движков → Gemini-ключ уходил в Anthropic (401). Теперь per-engine.
+- **P4 (`db4127e`)** — `esc()` на рендере BYOK-ключа.
+- **Ф2 (`50855ee`)** — модель в конфиг: `CLAUDE_MODEL=claude-sonnet-4-6` / `GEMINI_MODEL` (env-override). Была `claude-3-5-sonnet-20241022`.
+- **Ф1 (`50855ee`)** — симметричный BYOK: у Claude своё поле `anthropic-key` (`sk-ant-`, ссылка console.anthropic.com), зеркало Gemini. Поле per-engine (`#ai-key-input`), индикатор учитывает локальный ключ, claude.store шлёт ключ активного движка (пусто → серверный .env).
+- **Ф3 (гибрид) — РЕШЕНО: оставить «или/или», гибрид НЕ строить** (спекулятивная сложность; BYOK = платит юзер; fallback жжёт чужую квоту). Триггер пересмотра: появится **vision-фича** → scoped task-routing только для изображений → Gemini-flash. Опц. позже: «повторить с <other>» в тосте ошибки (явно).
+- Security: `.env` чист (gitignored, нет в истории) — утечки нет, filter-repo НЕ нужен. gitleaks не установлен.
+
+### Остаток PANDA / security (по плану)
+- ⬜ **Ф5** — ручной тест коуча (chat SSE + recommendations) в cloud с реальными ключами Claude/Gemini — **за пользователем** (нужны ключи).
+- ⬜ **S0** — gitleaks install + read-only `gitleaks detect` (по желанию).
+- ⬜ **S1 🔒** — точечный XSS-аудит user-data `innerHTML`→`esc()` (имена кастом-упр./профиль/импорт). 142 innerHTML / 64 esc — но большинство статичны; не блансет.
+- ⬜ **S2 🟩** PII console.log · **S3 🟩** `.github/dependabot.yml`.
+- ⏸ **CSP unsafe-inline** — DEFERRED (весь UI на inline onclick; снятие = XL-рефактор).
+
 ### 🔜 Остаток
 - ✅ **5-6** — уже было (инлайн glow на текущем шаге `onboarding.js:72`); аудит дал ложный минус (искал класс `ob-progress`).
 - ✅ **1-5** (`b9e2c18`) — FAB rgba токенизирован через `color-mix`; новый токен `--c-gemini` в base.css.
