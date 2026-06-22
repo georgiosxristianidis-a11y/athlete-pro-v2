@@ -6,6 +6,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { isRu } from '../locale.store.js';
+import { esc } from '../shared/utils.js';
 
 export const PiP = (() => {
   /** @type {HTMLCanvasElement|null} */
@@ -207,8 +208,8 @@ export const PiP = (() => {
         <span style="font-size:10px; opacity:0.3; font-weight:900">ATH-PRO</span>
       </div>
       <div id="pip-time">${_lastState.sets || _lastState.time}</div>
-      <div id="pip-name">${_lastState.name} • ${_lastState.time}</div>
-      <div id="pip-next-ex">${_lastState.nextName ? `NEXT: ${_lastState.nextName}` : ''}</div>
+      <div id="pip-name">${esc(_lastState.name)} • ${_lastState.time}</div>
+      <div id="pip-next-ex">${_lastState.nextName ? `NEXT: ${esc(_lastState.nextName)}` : ''}</div>
       <div class="pip-actions">
         <button class="pip-btn" id="pip-plus">+15s</button>
         <button class="pip-btn pip-btn-primary" id="pip-next">NEXT</button>

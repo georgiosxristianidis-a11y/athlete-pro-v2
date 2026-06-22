@@ -336,7 +336,7 @@ export const AthleteRoom = (() => {
           <div class="ar-name-editor" id="ar-name-editor" style="display:none; position:absolute; inset:0; background:var(--c-bg-1); z-index:10; padding:16px;">
             <div class="ar-editor-card">
               <div class="ar-editor-label">${ru ? 'Имя' : 'Name'}</div>
-              <input type="text" id="ar-name-input" class="ar-name-input" value="${name}" maxlength="25">
+              <input type="text" id="ar-name-input" class="ar-name-input" value="${esc(name)}" maxlength="25">
               
               <div class="ar-editor-label" style="margin-top:16px">${ru ? 'Дата рождения' : 'Date of Birth'}</div>
               <input type="date" id="ar-dob-input" class="ar-name-input" value="${ctx.profile?.dob || ''}">
