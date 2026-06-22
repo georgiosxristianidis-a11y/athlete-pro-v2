@@ -1,5 +1,6 @@
 // @ts-check
-import { State, getWeekMode } from '../workout.store.js';
+import { State, getWeekMode, BLOCK_LABEL } from '../workout.store.js';
+import { renderIslandTracker } from './island-tracker.js';
 import { Timer } from '../timer.js';
 import { RestTimer } from '../rest-timer.js';
 import { PiP } from '../features/pip.js';
@@ -34,6 +35,7 @@ export const DynamicIsland = (() => {
   let _nameEl = null;
   let _nameCollapsedEl = null;
   let _sublabelEl = null;
+  let _trackerEl = null;
   let _progressFill = null;
   let _timerProg = null;
   let _restTimeEl = null;
@@ -59,8 +61,11 @@ export const DynamicIsland = (() => {
             <span class="island-sets-badge" id="di-sets">0/0</span>
             <span class="island-ex-name" id="di-name">Exercise</span>
           </div>
+          <!-- DHL 4-chamber journey tracker (Cool Steel) -->
+          <div class="island-tracker" id="di-tracker"></div>
+
           <div class="island-sublabel" id="di-sublabel">Week 1 · PUSH · next: Bench</div>
-          
+
           <div class="island-actions">
             <button class="island-action-btn skip" title="Skip Exercise" onclick="event.stopPropagation(); window.Workout?._focusNext()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
@@ -105,6 +110,17 @@ export const DynamicIsland = (() => {
     _nameEl = document.getElementById('di-name');
     _nameCollapsedEl = document.getElementById('di-name-collapsed');
     _sublabelEl = document.getElementById('di-sublabel');
+    _trackerEl = document.getElementById('di-tracker');
+    // Tap a chamber marker → scroll its block into view in the workout list.
+    if (_trackerEl && !_trackerEl.__jumpWired) {
+      _trackerEl.__jumpWired = true;
+      _trackerEl.addEventListener('chamber-jump', (e) => {
+        const idx = e.detail?.idx;
+        if (idx == null) return;
+        document.querySelectorAll('.workout-block-header')[idx]
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
     _progressFill = document.getElementById('di-progress-fill');
     _timerProg = document.getElementById('di-timer-progress');
     _restTimeEl = document.getElementById('di-rest-time');
@@ -245,6 +261,32 @@ export const DynamicIsland = (() => {
     const status = nextEx ? `${ru ? 'далее' : 'next'}: ${nextEx.name}` : (ru ? 'готово!' : 'complete!');
     if (_sublabelEl) {
       _sublabelEl.textContent = `W${getWeekMode()} · ${String(State.type).toUpperCase()} · ${status}`;
+    }
+
+    // DHL 4-chamber journey tracker (Cool Steel). Chambers = ordered unique
+    // blocks in the plan; current = the block the active exercise belongs to.
+    if (_trackerEl) {
+      const blocks = [];
+      for (const ex of State.plan) {
+        const b = ex.block || 'custom';
+        if (!blocks.includes(b)) blocks.push(b);
+      }
+      const curBlock = currentEx?.block || 'custom';
+      let curChamber = blocks.indexOf(curBlock);
+      if (curChamber < 0) curChamber = 0;
+      let chDone = 0, chTotal = 0;
+      for (const ex of State.plan) {
+        if ((ex.block || 'custom') === curBlock) {
+          for (const s of ex.sets) { chTotal++; if (s.done) chDone++; }
+        }
+      }
+      renderIslandTracker(_trackerEl, {
+        current: Math.min(curChamber, 3),
+        sessionType: State.type,
+        progress: { done: chDone, total: chTotal },
+        label: BLOCK_LABEL[curBlock] || '',
+        expanded: _expanded || _displayMode === 'detailed',
+      });
     }
 
     // Progress bar — PPL law via canonical aliases: push=green · pull=cyan · legs=purple

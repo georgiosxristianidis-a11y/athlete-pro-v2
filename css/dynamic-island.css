@@ -206,8 +206,9 @@
   transition: filter 0.15s ease;
 }
 .island-rest-btn.primary {
-  background: var(--c-accent);
-  color: #000;
+  /* Cool Steel: primary CTA uses chrome fill + dark chrome text, not green. */
+  background: var(--c-chrome-h);
+  color: var(--c-chrome-t);
   font-weight: 800;
 }
 .island-rest-btn:active { filter: brightness(0.88); }
@@ -317,8 +318,9 @@
   color: var(--c-text-3);
 }
 .island-action-btn.plus {
-  color: var(--c-accent);
-  border-color: var(--c-accent-bg);
+  /* Cool Steel: control chrome, not brand green. */
+  color: var(--c-chrome);
+  border-color: var(--c-border-h);
 }
 .island-action-btn svg { width: 14px; height: 14px; }
 
@@ -328,9 +330,18 @@
   gap: 10px;
 }
 
+/* ── DHL 4-chamber journey tracker mount ── */
+.island-tracker {
+  display: flex;
+  align-items: center;
+  min-height: 16px;
+}
+
 .island-sets-badge {
-  background: var(--c-accent-bg);
-  color: var(--c-accent);
+  /* Cool Steel: chrome chassis; the set count colour is data-driven inline (JS). */
+  background: transparent;
+  border: 1px solid var(--c-border-h);
+  color: var(--c-chrome);
   font-size: 10px;
   font-weight: 800;
   padding: 2px 8px;
