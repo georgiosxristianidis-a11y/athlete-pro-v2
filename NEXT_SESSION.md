@@ -39,7 +39,8 @@
 ### Остаток PANDA / security (по плану)
 - ⬜ **Ф5** — ручной тест коуча (chat SSE + recommendations) в cloud с реальными ключами Claude/Gemini — **за пользователем** (нужны ключи).
 - ⬜ **S0** — gitleaks install + read-only `gitleaks detect` (по желанию).
-- ⬜ **S1 🔒** — точечный XSS-аудит user-data `innerHTML`→`esc()` (имена кастом-упр./профиль/импорт). 142 innerHTML / 64 esc — но большинство статичны; не блансет.
+- ✅ **S1 (`cc145bd`)** — точечный XSS-аудит сделан. Фикс: athlete-room name-input + PiP имена. Системные безопасны (`Toast.show`→escHtml, оба `_markdownToHtml`→esc), `PROGRAMS` статичны, профиль/упр.-имена уже esc. 142 innerHTML / 64 esc — большинство статичны, не баг.
+- ⚠️ Минор для S2: `routes/integrations.js:69` логирует длины ключей (G=/A=) в server-log — убрать при PII-sweep.
 - ⬜ **S2 🟩** PII console.log · **S3 🟩** `.github/dependabot.yml`.
 - ⏸ **CSP unsafe-inline** — DEFERRED (весь UI на inline onclick; снятие = XL-рефактор).
 
