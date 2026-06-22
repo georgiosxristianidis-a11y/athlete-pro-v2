@@ -1,6 +1,6 @@
 // @ts-check
 import { IntelStore } from './intel.store.js';
-import { esc } from './shared/utils.js';
+import { esc, haptic } from './shared/utils.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { DB } from './db.js';
 
@@ -127,8 +127,21 @@ export const IntelView = (() => {
 
     window.addEventListener('ap-intel-log', renderLogs);
     window.addEventListener('ap-intel-status', () => {
+      const statusText = IntelStore.getStatus();
       const el = document.getElementById('intel-status-text');
-      if (el) el.textContent = IntelStore.getStatus();
+      if (el) el.textContent = statusText;
+      
+      const pill = document.getElementById('intel-logs-status-pill');
+      if (pill) {
+        pill.textContent = statusText;
+        let color = 'var(--c-intel)';
+        if (statusText.includes('ERROR')) color = 'var(--c-red)';
+        else if (statusText.includes('SCANNING')) color = 'var(--c-accent)';
+        else if (statusText.includes('COMPUTING')) color = 'var(--c-amber)';
+        else if (statusText.includes('STANDBY')) color = 'var(--c-text-3)';
+        pill.style.color = color;
+        pill.style.borderColor = color;
+      }
     });
   }
 
@@ -194,7 +207,12 @@ export const IntelView = (() => {
           </svg>
         </button>
       </div>
-      <div class="intel-feedback-text">...</div>
+      <div class="intel-feedback-text">
+        <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+          <div style="width:12px; height:12px; border-radius:50%; background:var(--c-intel); box-shadow:0 0 10px var(--c-intel); animation: it-breathe 1.5s infinite ease-in-out;"></div>
+          <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:var(--c-intel); letter-spacing:0.15em; animation: it-breathe 1.5s infinite ease-in-out 0.2s;">Analysing Intel...</div>
+        </div>
+      </div>
     `;
     feedbackFeed?.prepend(feedbackEl);
     const feedbackText = feedbackEl.querySelector('.intel-feedback-text');
@@ -243,25 +261,40 @@ export const IntelView = (() => {
               try {
                 const parsed = JSON.parse(data);
                 if (parsed.text) {
+                  haptic(2);
                   fullText += parsed.text;
                   if (feedbackText) {
-                    let renderText = fullText;
+                    let rawText = fullText;
                     
-                    // Look for JSON widget block
-                    const jsonMatch = renderText.match(/\{[\s\S]*"_widget"\s*:\s*"readiness"[\s\S]*\}/);
+                    // 1. Hide <thinking> tags and anything inside them
+                    rawText = rawText.replace(/<thinking>[\s\S]*?(<\/thinking>|$)/g, '');
+                    
+                    // 2. Extract JSON widget before escaping
+                    let htmlWidget = '';
+                    const jsonMatch = rawText.match(/\{[\s\S]*"_widget"\s*:\s*"readiness"[\s\S]*\}/);
                     if (jsonMatch) {
                       try {
                         const widgetData = JSON.parse(jsonMatch[0]);
-                        const htmlWidget = _buildReadinessWidget(widgetData);
-                        renderText = renderText.replace(jsonMatch[0], htmlWidget);
+                        htmlWidget = _buildReadinessWidget(widgetData);
+                        rawText = rawText.replace(jsonMatch[0], '[[WIDGET_PLACEHOLDER]]');
                       } catch (e) { }
                     }
                     
-                    // Hide <thinking> tags and anything inside them (even during streaming)
-                    renderText = renderText.replace(/<thinking>[\s\S]*?(<\/thinking>|$)/g, '');
+                    // 3. Escape the raw text
+                    let safeText = esc(rawText);
                     
-                    // Only replace newlines outside of HTML tags to avoid breaking the widget
-                    feedbackText.innerHTML = renderText.replace(/\n/g, '<br>').replace(/<br><div/g, '<div').replace(/div><br>/g, 'div>');
+                    // 4. Basic markdown (bold)
+                    safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    
+                    // 5. Convert newlines to breaks
+                    safeText = safeText.replace(/\n/g, '<br>');
+                    
+                    // 6. Re-insert widget
+                    if (htmlWidget) {
+                      safeText = safeText.replace('[[WIDGET_PLACEHOLDER]]', htmlWidget);
+                    }
+                    
+                    feedbackText.innerHTML = safeText;
                   }
                 }
               } catch (e) {}
@@ -272,6 +305,13 @@ export const IntelView = (() => {
 
       IntelStore.addLog('AI', 'Insight received.');
       IntelStore.setStatus('SYSTEM STANDBY');
+
+      // Auto-Speech
+      const autoSpeech = await DB.Settings.get('ai-auto-speech', true);
+      if (autoSpeech && feedbackText) {
+        const textToSpeak = feedbackText.innerText.trim();
+        if (textToSpeak) speakText(textToSpeak);
+      }
 
     } catch (err) {
       console.error(err);
