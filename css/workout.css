@@ -239,6 +239,55 @@
 .set-check.done { background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent); }
 .set-check svg { width: 16px; height: 16px; stroke-width: 2.5; }
 
+/* ── Add Exercise picker (W-1) — styles were never shipped; the buttons fell
+   back to native chrome (light-grey bg) so white text was invisible. ── */
+.add-ex-search-wrap { padding-top: 4px; }
+.add-ex-search {
+  width: 100%;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-text-1);
+  font-family: inherit;
+  transition: border-color var(--t-fast);
+}
+.add-ex-search::placeholder { color: var(--c-text-3); }
+.add-ex-search:focus { outline: none; border-color: var(--c-accent); }
+
+.pill-filter {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-text-2);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.pill-filter.active {
+  background: var(--c-accent-bg);
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+
+.add-ex-list { display: flex; flex-direction: column; gap: 8px; }
+.add-ex-item {
+  display: block;
+  width: 100%;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+}
+.add-ex-item:hover { background: var(--c-surface-h); border-color: var(--c-border-h); }
+.add-ex-item:active { transform: scale(0.98); }
+.add-ex-empty { text-align: center; color: var(--c-text-3); font-size: 13px; padding: 32px 16px; }
+
 .add-set-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; border: 1.5px dashed rgba(255,255,255,0.06); border-radius: 14px; font-size: 11px; font-weight: 600; color: var(--c-text-3); opacity: 0.5; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s; }
 .add-set-btn:active { background: rgba(255,255,255,0.03); opacity: 1; }
 .add-set-btn svg { width: 14px; height: 14px; }

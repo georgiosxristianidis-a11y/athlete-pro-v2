@@ -1,15 +1,17 @@
 // @ts-check
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
-
 // Safely access env vars (Vite injects them, otherwise fallback)
 const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
 const supabaseUrl = env.VITE_SUPABASE_URL || ''
 const supabaseKey = env.VITE_SUPABASE_ANON_KEY || ''
 
-// Only create client if config exists, otherwise use a dummy to prevent crashes
-export const supabase = (supabaseUrl && supabaseKey) 
-  ? createClient(supabaseUrl, supabaseKey) 
-  : { 
+// Pull the Supabase SDK from the CDN ONLY when cloud is actually configured.
+// A top-level static import fetched the CDN on every boot — in the default
+// air-gapped/offline mode that request hung/408'd, taking down supabase.js and
+// its whole import chain (sync.js et al.) and starving sibling module loads.
+export const supabase = (supabaseUrl && supabaseKey)
+  ? (await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'))
+      .createClient(supabaseUrl, supabaseKey)
+  : {
       auth: { 
         getSession: async () => ({ data: { session: null }, error: null }), 
         getUser: async () => ({ data: { user: null }, error: null }),
