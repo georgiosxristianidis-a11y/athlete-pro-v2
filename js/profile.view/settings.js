@@ -13,8 +13,9 @@ import { t } from '../locale.store.js';
 export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle') {
   const currentEngine = settings['ai-engine'] || 'anthropic';
   const hasLocalGemini = !!settings['gemini-key'];
+  const hasLocalAnthropic = !!settings['anthropic-key'];
   const geminiActive = (serverStatus.gemini || hasLocalGemini);
-  const anthropicActive = serverStatus.anthropic;
+  const anthropicActive = (serverStatus.anthropic || hasLocalAnthropic);
 
   const trainingMode = settings['training-mode'] || 'strength';
   const sessionTime  = Number(settings['session-time']) || 0;
@@ -197,31 +198,52 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           </div>
         </div>
         
+        ${(() => {
+          // BYOK key field for the CURRENTLY selected engine — symmetric for both
+          // Claude (sk-ant-) and Gemini (AIza). Makes the two engine buttons an
+          // honest "activate with your own key" path.
+          const isGem = currentEngine === 'gemini';
+          const keyId = isGem ? 'gemini-key' : 'anthropic-key';
+          const val = settings[keyId] || '';
+          const prefix = isGem ? 'AIza' : 'sk-ant-';
+          const ru = lang === 'ru';
+          const label = isGem ? t('settings.gemini_key') : (ru ? 'Ключ Claude' : 'Claude Key');
+          const getLbl = isGem ? t('settings.gemini_get_key') : (ru ? 'Получить ключ' : 'Get key');
+          const getUrl = isGem ? 'https://aistudio.google.com/app/apikey' : 'https://console.anthropic.com/settings/keys';
+          const serverHas = isGem ? serverStatus.gemini : serverStatus.anthropic;
+          const placeholder = isGem
+            ? (serverHas ? t('settings.gemini_placeholder_server') : t('settings.gemini_placeholder_opt'))
+            : (serverHas ? (ru ? 'Серверный ключ активен' : 'Server key active') : (ru ? 'sk-ant-… (опционально)' : 'sk-ant-… (optional)'));
+          const setFn = isGem ? 'setGeminiKey' : 'setAnthropicKey';
+          const valFn = isGem ? 'validateGeminiKey' : 'validateAnthropicKey';
+          return `
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <div class="pref-sub" style="font-size: 10px; margin: 0; font-weight: 700;">${t('settings.gemini_key')}</div>
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="pref-sub" 
+            <div class="pref-sub" style="font-size: 10px; margin: 0; font-weight: 700;">${esc(label)}</div>
+            <a href="${getUrl}" target="_blank" class="pref-sub"
                style="font-size: 10px; color: var(--c-blue); text-decoration: none; font-weight: 800;">
-               ${t('settings.gemini_get_key')} ↗
+               ${esc(getLbl)} ↗
             </a>
           </div>
           <div style="position: relative; display: flex; align-items: center;">
-            <input type="password" id="gemini-key-input" class="pref-textarea" style="height: 38px; padding: 0 70px 0 12px; margin: 0; font-family: monospace; border-radius: 12px; width: 100%; box-sizing: border-box;"
-                   placeholder="${serverStatus.gemini ? t('settings.gemini_placeholder_server') : t('settings.gemini_placeholder_opt')}" 
-                   value="${esc(settings['gemini-key'] || '')}"
-                   oninput="Profile.validateGeminiKey(this.value)"
-                   onblur="Profile.setGeminiKey(this.value)">
+            <input type="password" id="ai-key-input" class="pref-textarea" style="height: 38px; padding: 0 70px 0 12px; margin: 0; font-family: monospace; border-radius: 12px; width: 100%; box-sizing: border-box;"
+                   placeholder="${esc(placeholder)}"
+                   value="${esc(val)}"
+                   oninput="Profile.${valFn}(this.value)"
+                   onblur="Profile.${setFn}(this.value)">
             <div style="position: absolute; right: 8px; display: flex; align-items: center; gap: 8px;">
               <button class="btn-text" onclick="Profile.toggleKeyVisibility()" style="padding: 4px; color: var(--c-text-3);">
                 <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                 </svg>
               </button>
-              <svg id="key-valid-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" style="color: ${(settings['gemini-key'] || '').trim().startsWith('AIza') ? 'var(--c-accent)' : 'var(--c-text-3)'}; transition: color 0.3s;">
+              <svg id="key-valid-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" style="color: ${val.trim().startsWith(prefix) ? 'var(--c-accent)' : 'var(--c-text-3)'}; transition: color 0.3s;">
                  <path d="M20 6L9 17l-5-5"/>
               </svg>
             </div>
           </div>
+        </div>`;
+        })()}
     </div>
 
     <!-- ── DATA & CLOUD SYNC ── -->

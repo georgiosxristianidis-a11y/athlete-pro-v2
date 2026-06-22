@@ -232,7 +232,7 @@ async function setEngine(engine) {
   }
 
   function toggleKeyVisibility() {
-    const inp = document.getElementById('gemini-key-input');
+    const inp = document.getElementById('ai-key-input');
     const icon = document.getElementById('eye-icon');
     if (!inp || !icon) return;
     if (inp.type === 'password') {
@@ -252,6 +252,18 @@ async function setEngine(engine) {
     } else {
       validIcon.style.color = 'var(--c-text-3)';
     }
+  }
+
+  async function setAnthropicKey(key) {
+    await DB.Settings.set('anthropic-key', key.trim());
+    load();
+  }
+
+  function validateAnthropicKey(val) {
+    const validIcon = document.getElementById('key-valid-icon');
+    if (!validIcon) return;
+    validIcon.style.color = (val.trim().startsWith('sk-ant-') && val.trim().length > 30)
+      ? 'var(--c-accent)' : 'var(--c-text-3)';
   }
 
   async function setLang(lang) {
@@ -327,7 +339,7 @@ async function setEngine(engine) {
   return {
     load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
     togglePanda, setLang, setEngine, setTrainingMode, setGeminiKey,
-    validateGeminiKey, toggleKeyVisibility,
+    validateGeminiKey, setAnthropicKey, validateAnthropicKey, toggleKeyVisibility,
     setSessionTime, exportData, exportCsv, importData, toggleReminder,
     _onImportFile, clearAllData, saveInjuries,
     syncConnect, syncDisconnect, deduplicateDB
