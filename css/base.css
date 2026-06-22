@@ -69,6 +69,7 @@
   --c-purple-bg: rgba(139, 92, 246, 0.12);
   --c-blue: #00b8d4;              /* Pull (PPL) / info — Deep Cyan */
   --c-blue-bg: rgba(0, 184, 212, 0.12);
+  --c-gemini: #448aff;            /* Gemini engine accent (Claude FAB alt mode) */
   --c-amber: #ffb300;             /* Warning / PR — Safety Amber */
   --c-amber-bg: rgba(255, 179, 0, 0.08);
   --c-red: #ff4d88;               /* Error / danger / HR — Elite Pink */

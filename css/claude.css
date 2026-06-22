@@ -11,13 +11,13 @@
   height: 64px;
   background: radial-gradient(
     circle at 30% 25%,
-    rgba(0, 230, 118, 0.18),
+    color-mix(in srgb, var(--c-accent) 18%, transparent),
     var(--c-surface) 65%,
-    var(--c-bg-2, var(--c-bg-2)) 100%
+    var(--c-bg-2) 100%
   );
   -webkit-appearance: none;
   appearance: none;
-  border: 1.5px solid rgba(0, 230, 118, 0.35);
+  border: 1.5px solid color-mix(in srgb, var(--c-accent) 35%, transparent);
   cursor: pointer;
   padding: 0;
   margin: 0;
@@ -31,7 +31,7 @@
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.04) inset,
     0 8px 22px rgba(0, 0, 0, 0.55),
-    0 0 24px rgba(0, 230, 118, 0.18);
+    0 0 24px color-mix(in srgb, var(--c-accent) 18%, transparent);
   animation: panda-float 3s ease-in-out infinite;
   transition:
     transform 0.15s ease,
@@ -44,19 +44,19 @@
 .claude-fab.gemini-mode {
   background: radial-gradient(
     circle at 30% 25%,
-    rgba(68, 138, 255, 0.2),
+    color-mix(in srgb, var(--c-gemini) 20%, transparent),
     var(--c-surface) 65%,
-    var(--c-bg-2, var(--c-bg-2)) 100%
+    var(--c-bg-2) 100%
   );
-  border-color: rgba(68, 138, 255, 0.4);
+  border-color: color-mix(in srgb, var(--c-gemini) 40%, transparent);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.04) inset,
     0 8px 22px rgba(0, 0, 0, 0.55),
-    0 0 24px rgba(68, 138, 255, 0.25);
+    0 0 24px color-mix(in srgb, var(--c-gemini) 25%, transparent);
 }
 .claude-fab.gemini-mode svg {
-  color: var(--c-blue);
-  filter: drop-shadow(0 0 8px rgba(68, 138, 255, 0.4));
+  color: var(--c-gemini);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--c-gemini) 40%, transparent));
 }
 
 .fab-close-btn {
@@ -92,11 +92,11 @@
 }
 
 .claude-fab:hover {
-  border-color: rgba(0, 230, 118, 0.55);
+  border-color: color-mix(in srgb, var(--c-accent) 55%, transparent);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.05) inset,
     0 10px 28px rgba(0, 0, 0, 0.6),
-    0 0 30px rgba(0, 230, 118, 0.28);
+    0 0 30px color-mix(in srgb, var(--c-accent) 28%, transparent);
 }
 @keyframes panda-float {
   0%,
