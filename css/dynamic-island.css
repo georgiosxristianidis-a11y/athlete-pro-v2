@@ -207,7 +207,7 @@
 }
 .island-rest-btn.primary {
   background: var(--c-accent);
-  color: #000;
+  color: var(--c-black);
   font-weight: 800;
 }
 .island-rest-btn:active { filter: brightness(0.88); }

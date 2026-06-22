@@ -1,3 +1,4 @@
+import { fmtVol } from '../shared/format.js';
 // @ts-check
 /* ════════════════════════════════════════════════════════
    workout.view/summary.js — Post-Workout Summary UI
@@ -49,7 +50,7 @@ const PPL_COLOR = {
 /** Formats kg volume: ≥1000 → '1.5t', else '420 kg' */
 function _fmtTon(kg) {
   if (!kg) return '—';
-  return kg >= 1000 ? (kg / 1000).toFixed(1) + 't' : kg + ' kg';
+  return fmtVol(kg);
 }
 
 /**

@@ -1,3 +1,4 @@
+import { fmtWeight } from '../shared/format.js';
 // @ts-check
 /* ════════════════════════════════════════════════════════
    Block 10.1 — Plate Calculator  v1.1  |  Athlete Pro
@@ -54,7 +55,7 @@ export const PlateCalc = (() => {
     const textEl = document.getElementById('pc-text');
     if (!weightEl || !barbellEl || !textEl) return;
 
-    weightEl.textContent = Number.isInteger(_weight) ? _weight : _weight.toFixed(1);
+    weightEl.textContent = fmtWeight(_weight);
     document
       .querySelectorAll('.pc-bar-opt')
       .forEach((b) => b.classList.toggle('active', parseFloat(b.dataset.w) === _barWeight));

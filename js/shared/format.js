@@ -39,3 +39,9 @@ export function fmtDate(input, opts = { weekday: 'short', month: 'short', day: '
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleDateString(isRu() ? 'ru' : 'en', opts);
 }
+
+/** Generic number formatter (avoids inline toFixed issues). */
+export function fmtNum(n, precision = 1) {
+  const num = Number(n) || 0;
+  return Number.isInteger(num) ? String(num) : num.toFixed(precision);
+}
