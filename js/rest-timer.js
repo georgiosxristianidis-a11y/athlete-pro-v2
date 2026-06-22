@@ -94,7 +94,7 @@ export const RestTimer = (() => {
     _done = true;
     stop();
     haptic([0, 80, 40, 80]);
-    _triggerNotification();
+    _triggerNotification().catch(() => {}); // floating promise: never let it reject globally
   }
 
   async function _triggerNotification() {
