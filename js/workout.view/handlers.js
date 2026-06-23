@@ -14,7 +14,7 @@ import { esc } from '../shared/utils.js';
 import { confirmDialog, promptDialog } from '../shared/confirm.js';
 import { isRu } from '../locale.store.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
-import { syncDrumUI } from '../ui/drum-picker.js';
+import { syncDrumUI, initDrumPickers } from '../ui/drum-picker.js';
 
 let _restDuration = 90;
 let _focusEi = -1;
@@ -194,6 +194,10 @@ export async function addSet(ei) {
     const addBtn = wrap.querySelector('.add-set-btn')?.outerHTML || '';
     const rows = (await Promise.all(ex.sets.map((s, si) => renderSetRow(ex, ei, s, si)))).join('');
     wrap.innerHTML = headerRow + rows + addBtn;
+    // innerHTML replacement drops the [data-drum-init] markers and leaves every
+    // drum-track empty → numbers vanish (BUG-7). Rebuild the pickers; rAF so the
+    // fresh tracks have layout before _buildDrum sets scrollTop for centring.
+    requestAnimationFrame(() => initDrumPickers());
   }
   _updateLiveStats();
 }
