@@ -247,14 +247,29 @@
   width: 5px;
   height: 5px;
 }
-.island-dot.online {
+/* Sync-state dot (see js/shared/sync-dot.js deriveDotState). */
+.island-dot.synced {
   background: var(--c-accent);
   animation: dot-glow-on 2.4s ease-in-out infinite;
+}
+.island-dot.syncing {
+  background: var(--c-blue);
+  animation: dot-glow-on 1.2s ease-in-out infinite;
+}
+.island-dot.error {
+  background: var(--c-amber);
+  animation: dot-glow-off 1.6s ease-in-out infinite;
 }
 .island-dot.offline {
   background: var(--c-red);
   animation: dot-glow-off 2.4s ease-in-out infinite;
 }
+.island-dot.no-cloud {
+  background: var(--c-chrome);
+  animation: none;
+  opacity: 0.5;
+}
+.island-dot.airgap { display: none; }
 @keyframes dot-glow-on  { 0%,100%{opacity:.4} 50%{opacity:1} }
 @keyframes dot-glow-off { 0%,100%{opacity:.2} 50%{opacity:.65} }
 

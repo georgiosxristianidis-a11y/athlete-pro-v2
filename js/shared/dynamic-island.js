@@ -6,6 +6,8 @@ import { RestTimer } from '../rest-timer.js';
 import { PiP } from '../features/pip.js';
 import { haptic } from './utils.js';
 import { isRu } from '../locale.store.js';
+import { getPrivacyMode } from '../privacy.store.js';
+import { deriveDotState } from './sync-dot.js';
 
 /**
  * dynamic-island.js — Interactive session overlay (PIP)
@@ -20,6 +22,7 @@ export const DynamicIsland = (() => {
   let _timerSecs = 0;
   let _timerMax = 0;
   let _setCompleteTimeout = null;
+  let _syncStatus = 'idle'; // mirrors SyncManager._status via 'ap-sync-status'
 
   // Long-press state
   let _longPressTimer = null;
@@ -49,7 +52,7 @@ export const DynamicIsland = (() => {
     
     _container.innerHTML = `
       <div class="island" id="dynamic-island" role="status" aria-live="polite" style="pointer-events: auto;">
-        <div class="island-dot online" id="di-dot"></div>
+        <div class="island-dot" id="di-dot"></div>
         <div class="island-readout">
           <div class="island-time" id="di-time">00:00</div>
           <div class="island-name-collapsed" id="di-name-collapsed"></div>
@@ -156,6 +159,14 @@ export const DynamicIsland = (() => {
     _updateNetworkStatus();
     window.addEventListener('online', _updateNetworkStatus);
     window.addEventListener('offline', _updateNetworkStatus);
+    // SyncManager broadcasts its state on 'ap-sync-status' (detail.status).
+    // analytics.view fires the same name as a refresh ping with no status —
+    // guard on the string so those are ignored.
+    window.addEventListener('ap-sync-status', (e) => {
+      const s = e && e.detail && e.detail.status;
+      if (typeof s === 'string') { _syncStatus = s; _updateNetworkStatus(); }
+    });
+    window.addEventListener('ap-privacy-mode', _updateNetworkStatus);
 
     // Initialize PiP canvas
     PiP.init();
@@ -433,8 +444,13 @@ export const DynamicIsland = (() => {
 
   function _updateNetworkStatus() {
     if (!_dot) return;
-    const online = navigator.onLine;
-    _dot.className = `island-dot ${online ? 'online' : 'offline'}`;
+    const state = deriveDotState({
+      mode: getPrivacyMode(),
+      online: navigator.onLine,
+      syncStatus: _syncStatus,
+      cloudConfigured: typeof window !== 'undefined' && !!window.__cloudConfigured,
+    });
+    _dot.className = `island-dot ${state}`;
   }
 
   function _getSetsColor(done, total) {

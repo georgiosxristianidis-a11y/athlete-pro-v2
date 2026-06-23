@@ -131,6 +131,11 @@ export function onPrivacyChange(fn) {
 }
 function _notify() {
   _listeners.forEach((fn) => { try { fn({ mode: _mode, aiEnabled: _aiEnabled }); } catch {} });
+  // Decoupled broadcast so UI not subscribed to the store (e.g. the Island sync
+  // dot) can react to a mode switch without importing the subscriber API.
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('ap-privacy-mode', { detail: { mode: _mode, aiEnabled: _aiEnabled } }));
+  }
 }
 
 /* ════════════════════════════════════════════════════════

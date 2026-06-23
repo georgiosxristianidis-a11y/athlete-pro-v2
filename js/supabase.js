@@ -4,6 +4,15 @@ const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.met
 const supabaseUrl = env.VITE_SUPABASE_URL || ''
 const supabaseKey = env.VITE_SUPABASE_ANON_KEY || ''
 
+// True only when real Supabase creds are present; otherwise `supabase` below is
+// an inert stub. Lets UI (e.g. the Island sync dot) distinguish "synced" from
+// "no cloud configured" without poking the stub.
+export const isCloudConfigured = !!(supabaseUrl && supabaseKey);
+// Mirror to a global (same pattern as window.__privacyMode) so the core Island
+// module can read it without statically importing supabase.js — that would drag
+// its top-level CDN await into the island's boot-critical import chain.
+if (typeof window !== 'undefined') window.__cloudConfigured = isCloudConfigured;
+
 // Pull the Supabase SDK from the CDN ONLY when cloud is actually configured.
 // A top-level static import fetched the CDN on every boot — in the default
 // air-gapped/offline mode that request hung/408'd, taking down supabase.js and
