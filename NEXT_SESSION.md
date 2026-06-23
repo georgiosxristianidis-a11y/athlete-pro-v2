@@ -499,3 +499,45 @@ W-1/W-2-A/B/D → 🔒 LEAD (Phase 3/4/5/7)
 BUG-2/BUG-3 → 🔒 LEAD
 Gemini residuals: 1-5/1-6/2-6/BUG-6/5-6 → ❌ НЕ СДЕЛАНО (перезапустить)
 ```
+
+---
+
+## 9. ПЛАН 2026-06-23 — UI bugs + Island sync (СВЕРЕНО с merged-линией 2026-06-24)
+
+> Источник: визуальный аудит 2026-06-23 (был набросан как «секция 8» против СТАРОГО main).
+> Сверено с реальным состоянием после Фазы M (merge): **половина уже сделана** — оставлено только реально открытое. НЕ переделывать закрытое.
+
+### ✅ Фаза M (merge) — done, в trunk
+- `7c9afd1` merge main (Gemini P.A.N.D.A.) → hungry-johnson; 4 конфликта по карте (sw.js OURS, island.css OURS Cool Steel, workout.css/claude.css союз, server.js dedup trust-proxy).
+- `a4b6e34` fix **fmtVol бесконечная рекурсия** (баг из merge 2-6: `return fmtVol(kg)` звал сам себя → stack overflow на рендере тоннажа; импорт канонического из format.js).
+- `b7bab66` fix **BUG-7 set-logger** (см. Phase A).
+- Гейт: lint 0 · unit 189/189 · e2e regressions 10/10 · визуальный смоук чист. Тег `checkpoint-2026-06-24-merged`.
+
+### Phase A — BUG-7 set-logger цифры — ✅ DONE (`b7bab66`)
+Настоящая причина — НЕ `hidden` класс (он инертен: CSS-правила `.hidden` нет, а статичный `.sw-val/.sr-val` всегда клипается ниже `.drum-track` height:100% → мёртвый fallback). **Причина: `addSet()` (handlers.js) перестраивал sets-wrap через innerHTML, сбрасывая `[data-drum-init]` и оставляя треки пустыми → нет `.drum-item--active`.** Фикс: `initDrumPickers()` в rAF после innerHTML. A-1/A-2/A-3 ✅. Остаток: **A-4** 🟦 SONNET — unit/visual тест видимости цифр после Add Set.
+- Опц. чистка: убрать мёртвые `.sw-val/.sr-val .hidden` спаны из render.js (всегда клипаются).
+
+### Phase B — 🔴 СЛЕДУЮЩИЙ ПРИОРИТЕТ: Sync Indicator в Dynamic Island
+**Реально открыто.** `_updateNetworkStatus()` (`dynamic-island.js:434`) = только `navigator.onLine` (online/offline). Supabase sync-state не подключён.
+**UX (4+1):** `synced` зелёный тихий пульс 2.4s · `syncing` cyan быстрый 1.2s · `no-cloud` серый `--c-chrome` без пульса · `offline` красный · `airgap` dot скрыт.
+| Таск | Owner | Eff | |
+|---|:--:|:--:|---|
+| **B-1** | 🔒 LEAD | M | sync-события из `js/sync.js` + `privacy.store.js` (push/pull/error/mode) |
+| **B-2** | 🔒 LEAD | M | расширить `_updateNetworkStatus()`: 4+1 состояний |
+| **B-3** | 🟦 SONNET | S | CSS: 4 цвета dot + 3 темпа пульса + airgap hide |
+| **B-4** | 🟦 SONNET | S | unit-тест переходов |
+
+### Phase C — DHL Tracker в live workout — ✅ УЖЕ СДЕЛАНО (`5f76ac1`)
+Секция 8 ошибалась (старый main): на merged-линии `dynamic-island.js` импортирует `renderIslandTracker`, рендерит `#di-tracker` в острове, `chamber-jump`→scroll к блоку (C-1/C-2/C-3), e2e regressions #7 покрывает (C-4). **Не переделывать.** Опц.: консолидировать analytics-demo на тот же компонент.
+
+### Phase D — 🟢 Spacing sweep (открыто) — 🟩 GEMINI
+D-1 grep hardcoded `padding:`/`margin:` мимо `--sp-*`; D-2 заменить на точные `--sp-*` (4/8/12/16/24/32/40/48); D-3 🟦 ревью.
+
+### Phase E — Cool Steel / Palette B sweep — частично сделано merge'ем
+- ✅ E-2 (1-5 FAB rgba в claude.css токенизирован, `b9e2c18` + союз merge) · ✅ BUG-6 intel.view (`5e6151b`).
+- 🟢 Открыто: **E-1** sweep декор `--c-accent`→`--c-chrome`; **E-3** `#000`→`--c-bg*`; **E-4** rgba в `workout.css`/`athlete-room.css`; **E-5** 🟦 ревью.
+
+### ⚠️ Гигиена (за пользователем)
+- `.gitignore` — **бинарный (UTF-16)** файл (`Bin 1398→1476` в merge): git может молча НЕ применять ignore-правила. Перекодировать в UTF-8.
+- `gitleaks.exe` в корне — untracked; добавить в `.gitignore` (не коммитить tool-бинарь).
+- `.claude/settings.json` удалён в main-ворктри (только env+permissions, не security) — решить: закоммитить удаление или восстановить.
