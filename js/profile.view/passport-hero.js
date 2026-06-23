@@ -1,5 +1,6 @@
 // @ts-check
 import { computeAge } from '../profile.store.js';
+import { fmtNum } from '../shared/format.js';
 import { athleteProScore, exrxTier } from '../strength-engine.js';
 import { DB } from '../db.js';
 import { esc } from '../shared/utils.js';
@@ -105,7 +106,7 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   <div class="pp-m-div"></div>
   <div class="pp-m-item">
     <div class="pp-m-val" style="color:${(metrics?.bmi || 0) < 25 ? 'var(--c-accent)' : 'var(--c-amber)'}">
-      ${metrics?.bmi ? metrics.bmi.toFixed(1) : '—'}
+      ${metrics?.bmi ? fmtNum(metrics.bmi) : '—'}
     </div>
     <div class="pp-m-lbl">BMI</div>
   </div>

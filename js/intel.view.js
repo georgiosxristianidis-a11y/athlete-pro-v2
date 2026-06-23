@@ -1,6 +1,6 @@
 // @ts-check
 import { IntelStore } from './intel.store.js';
-import { esc } from './shared/utils.js';
+import { esc, haptic } from './shared/utils.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { DB } from './db.js';
 
@@ -76,18 +76,22 @@ export const IntelView = (() => {
         <input type="file" id="intel-file-input" accept="image/*" style="display:none" onchange="IntelView.onFileSelected(event)">
       </div>
 
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:var(--sp-4)">
-        <button class="card-action" onclick="IntelView.generateWeekly()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
-          <div style="font-size:9px; font-weight:900; text-transform:uppercase; color:var(--c-text-3)">Weekly</div>
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:var(--sp-4)">
+        <button class="card-action" onclick="IntelView.generateWeekly()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
+          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">СВОДКА</div>
         </button>
-        <button class="card-action" onclick="IntelView.createWorkout()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-          <div style="font-size:9px; font-weight:900; text-transform:uppercase; color:var(--c-text-3)">Create</div>
+        <button class="card-action" onclick="IntelView.createWorkout()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div style="color:var(--c-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">ГЕНЕРАЦИЯ</div>
         </button>
-        <button class="card-action" onclick="IntelView.analyzeStats()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
-          <div style="font-size:9px; font-weight:900; text-transform:uppercase; color:var(--c-text-3)">Анализ</div>
+        <button class="card-action" onclick="IntelView.analyzeStats()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div style="color:var(--c-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
+          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">АНАЛИЗ</div>
+        </button>
+        <button class="card-action" onclick="IntelView.checkBiometrics()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div style="color:var(--c-red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">БИОМЕТРИЯ</div>
         </button>
       </div>
 
@@ -127,8 +131,21 @@ export const IntelView = (() => {
 
     window.addEventListener('ap-intel-log', renderLogs);
     window.addEventListener('ap-intel-status', () => {
+      const statusText = IntelStore.getStatus();
       const el = document.getElementById('intel-status-text');
-      if (el) el.textContent = IntelStore.getStatus();
+      if (el) el.textContent = statusText;
+      
+      const pill = document.getElementById('intel-logs-status-pill');
+      if (pill) {
+        pill.textContent = statusText;
+        let color = 'var(--c-intel)';
+        if (statusText.includes('ERROR')) color = 'var(--c-red)';
+        else if (statusText.includes('SCANNING')) color = 'var(--c-accent)';
+        else if (statusText.includes('COMPUTING')) color = 'var(--c-amber)';
+        else if (statusText.includes('STANDBY')) color = 'var(--c-text-3)';
+        pill.style.color = color;
+        pill.style.borderColor = color;
+      }
     });
   }
 
@@ -194,7 +211,12 @@ export const IntelView = (() => {
           </svg>
         </button>
       </div>
-      <div class="intel-feedback-text">...</div>
+      <div class="intel-feedback-text">
+        <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+          <div style="width:12px; height:12px; border-radius:50%; background:var(--c-intel); box-shadow:0 0 10px var(--c-intel); animation: it-breathe 1.5s infinite ease-in-out;"></div>
+          <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:var(--c-intel); letter-spacing:0.15em; animation: it-breathe 1.5s infinite ease-in-out 0.2s;">Analysing Intel...</div>
+        </div>
+      </div>
     `;
     feedbackFeed?.prepend(feedbackEl);
     const feedbackText = feedbackEl.querySelector('.intel-feedback-text');
@@ -243,25 +265,40 @@ export const IntelView = (() => {
               try {
                 const parsed = JSON.parse(data);
                 if (parsed.text) {
+                  haptic(2);
                   fullText += parsed.text;
                   if (feedbackText) {
-                    let renderText = fullText;
+                    let rawText = fullText;
                     
-                    // Look for JSON widget block
-                    const jsonMatch = renderText.match(/\{[\s\S]*"_widget"\s*:\s*"readiness"[\s\S]*\}/);
+                    // 1. Hide <thinking> tags and anything inside them
+                    rawText = rawText.replace(/<thinking>[\s\S]*?(<\/thinking>|$)/g, '');
+                    
+                    // 2. Extract JSON widget before escaping
+                    let htmlWidget = '';
+                    const jsonMatch = rawText.match(/\{[\s\S]*"_widget"\s*:\s*"readiness"[\s\S]*\}/);
                     if (jsonMatch) {
                       try {
                         const widgetData = JSON.parse(jsonMatch[0]);
-                        const htmlWidget = _buildReadinessWidget(widgetData);
-                        renderText = renderText.replace(jsonMatch[0], htmlWidget);
+                        htmlWidget = _buildReadinessWidget(widgetData);
+                        rawText = rawText.replace(jsonMatch[0], '[[WIDGET_PLACEHOLDER]]');
                       } catch (e) { }
                     }
                     
-                    // Hide <thinking> tags and anything inside them (even during streaming)
-                    renderText = renderText.replace(/<thinking>[\s\S]*?(<\/thinking>|$)/g, '');
+                    // 3. Escape the raw text
+                    let safeText = esc(rawText);
                     
-                    // Only replace newlines outside of HTML tags to avoid breaking the widget
-                    feedbackText.innerHTML = renderText.replace(/\n/g, '<br>').replace(/<br><div/g, '<div').replace(/div><br>/g, 'div>');
+                    // 4. Basic markdown (bold)
+                    safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    
+                    // 5. Convert newlines to breaks
+                    safeText = safeText.replace(/\n/g, '<br>');
+                    
+                    // 6. Re-insert widget
+                    if (htmlWidget) {
+                      safeText = safeText.replace('[[WIDGET_PLACEHOLDER]]', htmlWidget);
+                    }
+                    
+                    feedbackText.innerHTML = safeText;
                   }
                 }
               } catch (e) {}
@@ -272,6 +309,13 @@ export const IntelView = (() => {
 
       IntelStore.addLog('AI', 'Insight received.');
       IntelStore.setStatus('SYSTEM STANDBY');
+
+      // Auto-Speech
+      const autoSpeech = await DB.Settings.get('ai-auto-speech', true);
+      if (autoSpeech && feedbackText) {
+        const textToSpeak = feedbackText.innerText.trim();
+        if (textToSpeak) speakText(textToSpeak);
+      }
 
     } catch (err) {
       console.error(err);
@@ -384,7 +428,7 @@ export const IntelView = (() => {
     overlay.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(5,5,7,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:20px;';
     
     overlay.innerHTML = `
-      <div style="background:#0a0a0a; width:100%; max-width:500px; border-radius:32px; border:1px solid rgba(255,255,255,0.1); padding:40px; position:relative; max-height:90vh; overflow-y:auto;">
+      <div style="background:var(--c-bg-1); width:100%; max-width:500px; border-radius:32px; border:1px solid var(--c-border-h); padding:40px; position:relative; max-height:90vh; overflow-y:auto;">
         <button onclick="this.closest('.intel-report-overlay').remove()" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:24px; cursor:pointer;">&times;</button>
         <div style="text-align:center; margin-bottom:32px;">
            <h2 style="font-family:var(--font-intel); font-size:24px; font-style:italic; color:var(--c-text-1); text-transform:uppercase; margin-bottom:16px;">Weekly Intel</h2>
@@ -394,7 +438,7 @@ export const IntelView = (() => {
            </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:24px;">
-          <section style="background:rgba(255,255,255,0.05); padding:24px; border-radius:24px; border:1px solid rgba(255,255,255,0.05);">
+          <section style="background:var(--c-surface-h); padding:24px; border-radius:24px; border:1px solid var(--c-border);">
             <p style="font-size:14px; font-style:italic; color:var(--c-text-2); line-height:1.6; font-weight:600;">"${esc(report.summary)}"</p>
           </section>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -419,21 +463,34 @@ export const IntelView = (() => {
 
 
   function createWorkout() {
+     haptic(10);
      IntelStore.addLog('SYS', 'Ready to generate workout plan');
      IntelStore.setStatus('WAITING FOR PROMPT');
      const input = document.getElementById('intel-input');
      if (input) {
+         input.value = "";
          input.focus();
          // @ts-ignore
-         input.placeholder = "e.g. 'Push workout for hypertrophy'";
+         input.placeholder = "Какую группу мышц тренируем сегодня?";
      }
   }
 
   function analyzeStats() {
+     haptic(10);
      IntelStore.addLog('SYS', 'Ready to analyze stats');
      const input = document.getElementById('intel-input');
      if (input) {
-         input.value = "Проанализируй мою последнюю тренировку и дай #gym дашборд";
+         input.value = "Проведи глубокий разбор последней тренировки. Сгенерируй readiness-виджет (_widget: readiness) с оценкой 0-100. Напиши пару строк о главном успехе и слабом месте.";
+         submit();
+     }
+  }
+
+  function checkBiometrics() {
+     haptic(10);
+     IntelStore.addLog('SYS', 'Requesting Biometrics scan');
+     const input = document.getElementById('intel-input');
+     if (input) {
+         input.value = "Проанализируй мою тепловую карту мышц (Heatmap) и историю нагрузок. Выведи отчет о биометрии: какие мышцы устали, какие готовы к взрывной работе. Дай оценку ЦНС.";
          submit();
      }
   }
@@ -452,7 +509,7 @@ export const IntelView = (() => {
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <div style="font-size:12px; font-weight:600; color:var(--c-text-2);">${label}</div>
           <div style="display:flex; align-items:center; gap:8px; width:55%;">
-            <div style="flex:1; height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
+            <div style="flex:1; height:6px; background:var(--c-surface-h); border-radius:3px; overflow:hidden;">
               <div style="width:${val}%; height:100%; background:${c}; border-radius:3px; transition: width 1s ease-out;"></div>
             </div>
             <span style="font-size:12px; font-weight:800; color:${c}; width:28px; text-align:right;">${val}</span>
@@ -468,13 +525,13 @@ export const IntelView = (() => {
       <div class="intel-readiness-widget animate-in" style="background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.1); border-radius:24px; padding:20px; margin:16px 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
           <div style="font-size:16px; font-weight:600; color:var(--c-text-1);">Индекс готовности</div>
-          <div style="width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--c-text-3);">?</div>
+          <div style="width:24px; height:24px; border-radius:50%; background:var(--c-border-h); display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--c-text-3);">?</div>
         </div>
         
         <div style="display:flex; align-items:flex-end; gap:16px; margin-bottom:32px;">
           <div style="font-size:42px; font-weight:800; color:${mainColor}; line-height:1; font-family:'Instrument Sans', sans-serif;">${data.index}</div>
           <div style="flex:1; padding-bottom:8px;">
-            <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+            <div style="height:6px; background:var(--c-border-h); border-radius:3px; overflow:hidden;">
               <div style="height:100%; width:${data.index}%; background:${mainColor}; border-radius:3px; transition: width 1s ease-out;"></div>
             </div>
             <div style="font-size:12px; color:var(--c-text-3); margin-top:8px; text-transform:uppercase; font-weight:700;">${indexLabel}</div>
@@ -490,12 +547,12 @@ export const IntelView = (() => {
           ${hbar(data.density, 'Плотность и ритм')}
         </div>
 
-        <div style="border-top:1px solid rgba(255,255,255,0.05); padding-top:20px;">
+        <div style="border-top:1px solid var(--c-border); padding-top:20px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <div style="font-size:11px; font-weight:800; letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">Цель на сегодня</div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="color:var(--c-red); font-size:12px;">ЦНС</span>
-              <div style="width:40px; height:4px; background:rgba(255,255,255,0.1); border-radius:2px;"><div style="width:${data.cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
+              <div style="width:40px; height:4px; background:var(--c-border-h); border-radius:2px;"><div style="width:${data.cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
               <span style="font-size:12px; font-weight:700; color:var(--c-red);">${data.cns}%</span>
             </div>
           </div>
@@ -519,7 +576,7 @@ export const IntelView = (() => {
     }
   }
 
-  return { load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats, playAudio, _clearImage };
+  return { load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats, checkBiometrics, playAudio, _clearImage };
 })();
 
 // Expose to window for onclick

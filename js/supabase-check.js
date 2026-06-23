@@ -104,7 +104,7 @@ export const SupabaseCheck = (() => {
       console.error(`Supabase unreachable · reason: ${result.reason} · after ${elapsed}ms`);
     }
 
-    console.log('Full result:', result);
+//     console.log('Full result:', result);
     console.groupEnd();
     return result;
   }

@@ -71,7 +71,7 @@ export function typeIcon(type, color) {
 }
 
 export function fmtVol(kg) {
-  return kg >= 1000 ? (kg / 1000).toFixed(1) + 'k' : Math.round(kg).toString();
+  return fmtVol(kg);
 }
 
 function _haptic(ms = 10) {
