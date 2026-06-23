@@ -779,6 +779,84 @@ button:focus-visible {
   box-shadow: inset 0 1px 0 var(--c-border);
 }
 
+/* ── Edit Plan rows — inputs/steppers were unstyled (native browser chrome:
+   white boxes, no glass). Tokenised to match the design system. ── */
+.plan-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+.plan-drag-handle { color: var(--c-text-3); cursor: grab; align-self: flex-start; }
+.plan-input {
+  width: 100%;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-text-1);
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color var(--t-fast);
+}
+.plan-input:focus { outline: none; border-color: var(--c-border-h); }
+.plan-row-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.plan-meta-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-text-3);
+}
+.mini-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  padding: 2px;
+}
+.mini-stepper button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--c-text-2);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.mini-stepper button:active { background: var(--c-surface-h); transform: scale(0.92); }
+.mini-stepper span {
+  min-width: 24px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+}
+.plan-delete {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--c-text-3);
+  cursor: pointer;
+  transition: color var(--t-fast), background var(--t-fast), transform var(--t-fast);
+}
+.plan-delete:active { color: var(--c-red); background: var(--c-surface-h); transform: scale(0.92); }
+
 /* PR / achievement gradient */
 .badge-accent {
   background: linear-gradient(135deg, rgba(255, 179, 0, 0.20) 0%, rgba(255, 179, 0, 0.10) 40%, rgba(0, 230, 118, 0.12) 100%);
