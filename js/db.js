@@ -895,6 +895,22 @@ const Backup = {
     const validMetrics = Array.isArray(data.metrics) ? data.metrics.filter(m => m && typeof m.weight === 'number') : [];
     const validSettings = (data.settings && typeof data.settings === 'object') ? data.settings : {};
 
+    // Value-range guard. Structural validation above only checks shape; a corrupt
+    // or hostile backup can still carry NaN/negative/absurd numbers that poison
+    // tonnage + analytics or blow up rendering ("1,000,000 sets" DoS). Clamp
+    // numerics to a sane finite range and cap collection sizes.
+    const SANE = (n) => (Number.isFinite(n) && n >= 0 && n < 1e6) ? n : 0;
+    validWorkouts.forEach((w) => {
+      w.exercises = w.exercises.slice(0, 200).map((ex) => ({
+        ...ex,
+        sets: Array.isArray(ex.sets)
+          ? ex.sets.slice(0, 200).map((s) => ({ ...s, weight: SANE(s.weight), reps: SANE(s.reps) }))
+          : [],
+      }));
+    });
+    validMetrics.forEach((m) => { m.weight = SANE(m.weight); });
+    validORM.forEach((o) => { o.value = SANE(o.value); });
+
     const [wsStore, ormStore, metStore, setStore] = await Promise.all([
       tx(S.WORKOUTS, 'readwrite'),
       tx(S.ORM, 'readwrite'),

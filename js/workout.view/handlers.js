@@ -379,7 +379,20 @@ export async function completeSession() {
  * Camera 4 (noDb:true) is still filtered out at the gate — it never enters
  * IDB and thus never skews tonnage / aggregate analytics.
  */
+let _saving = false;
 async function _executeFinalSave(summaryData, duration) {
+  // Idempotency guard: the summary modal's confirm button can be tapped twice
+  // before this async save resolves → duplicate workout rows. One save at a time.
+  if (_saving) return;
+  _saving = true;
+  try {
+    await _persistFinalSession(summaryData, duration);
+  } finally {
+    _saving = false;
+  }
+}
+
+async function _persistFinalSession(summaryData, duration) {
   const activePlan = getActivePlan();
   const session = {
     type: State.type,
