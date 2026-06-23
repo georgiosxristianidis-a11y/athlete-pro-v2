@@ -22,6 +22,7 @@ import { PROGRAMS } from '../workout-plans.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
 import { initDrumPickers } from '../ui/drum-picker.js';
+import { fmtVol } from '../shared/format.js';
 
 /* ── Render helpers ── */
 export const TYPE_COLOR = {
@@ -70,9 +71,9 @@ export function typeIcon(type, color) {
   return `<span class="type-icon kinetic-svg" style="color:${color}; filter: drop-shadow(0 0 5px ${color}) drop-shadow(0 0 15px ${color});" aria-hidden="true">${icons[type]}</span>`;
 }
 
-export function fmtVol(kg) {
-  return fmtVol(kg);
-}
+// Re-export the canonical formatter (was a self-recursive stub after a bad
+// merge of the 2-6 format.js delegation — caused stack overflow on render).
+export { fmtVol };
 
 function _haptic(ms = 10) {
   if (navigator.vibrate) navigator.vibrate(ms);
