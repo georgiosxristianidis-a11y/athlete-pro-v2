@@ -1,4 +1,4 @@
-import { fmtWeight } from '../shared/format.js';
+import { fmtWeight } from './shared/format.js';
 // @ts-check
 /* ════════════════════════════════════════════════════════
    Block 10.1 — Plate Calculator  v1.1  |  Athlete Pro
