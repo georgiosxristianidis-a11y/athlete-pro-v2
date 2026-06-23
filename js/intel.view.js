@@ -77,19 +77,19 @@ export const IntelView = (() => {
       </div>
 
       <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:var(--sp-4)">
-        <button class="card-action" onclick="IntelView.generateWeekly()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+        <button class="card-action" onclick="IntelView.generateWeekly()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
           <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">СВОДКА</div>
         </button>
-        <button class="card-action" onclick="IntelView.createWorkout()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+        <button class="card-action" onclick="IntelView.createWorkout()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
           <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">ГЕНЕРАЦИЯ</div>
         </button>
-        <button class="card-action" onclick="IntelView.analyzeStats()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+        <button class="card-action" onclick="IntelView.analyzeStats()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
           <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">АНАЛИЗ</div>
         </button>
-        <button class="card-action" onclick="IntelView.checkBiometrics()" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+        <button class="card-action" onclick="IntelView.checkBiometrics()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
           <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">БИОМЕТРИЯ</div>
         </button>
@@ -428,7 +428,7 @@ export const IntelView = (() => {
     overlay.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(5,5,7,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:20px;';
     
     overlay.innerHTML = `
-      <div style="background:#0a0a0a; width:100%; max-width:500px; border-radius:32px; border:1px solid rgba(255,255,255,0.1); padding:40px; position:relative; max-height:90vh; overflow-y:auto;">
+      <div style="background:var(--c-bg-1); width:100%; max-width:500px; border-radius:32px; border:1px solid var(--c-border-h); padding:40px; position:relative; max-height:90vh; overflow-y:auto;">
         <button onclick="this.closest('.intel-report-overlay').remove()" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:24px; cursor:pointer;">&times;</button>
         <div style="text-align:center; margin-bottom:32px;">
            <h2 style="font-family:var(--font-intel); font-size:24px; font-style:italic; color:var(--c-text-1); text-transform:uppercase; margin-bottom:16px;">Weekly Intel</h2>
@@ -438,7 +438,7 @@ export const IntelView = (() => {
            </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:24px;">
-          <section style="background:rgba(255,255,255,0.05); padding:24px; border-radius:24px; border:1px solid rgba(255,255,255,0.05);">
+          <section style="background:var(--c-surface-h); padding:24px; border-radius:24px; border:1px solid var(--c-border);">
             <p style="font-size:14px; font-style:italic; color:var(--c-text-2); line-height:1.6; font-weight:600;">"${esc(report.summary)}"</p>
           </section>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -509,7 +509,7 @@ export const IntelView = (() => {
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <div style="font-size:12px; font-weight:600; color:var(--c-text-2);">${label}</div>
           <div style="display:flex; align-items:center; gap:8px; width:55%;">
-            <div style="flex:1; height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
+            <div style="flex:1; height:6px; background:var(--c-surface-h); border-radius:3px; overflow:hidden;">
               <div style="width:${val}%; height:100%; background:${c}; border-radius:3px; transition: width 1s ease-out;"></div>
             </div>
             <span style="font-size:12px; font-weight:800; color:${c}; width:28px; text-align:right;">${val}</span>
@@ -525,13 +525,13 @@ export const IntelView = (() => {
       <div class="intel-readiness-widget animate-in" style="background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.1); border-radius:24px; padding:20px; margin:16px 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
           <div style="font-size:16px; font-weight:600; color:var(--c-text-1);">Индекс готовности</div>
-          <div style="width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--c-text-3);">?</div>
+          <div style="width:24px; height:24px; border-radius:50%; background:var(--c-border-h); display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--c-text-3);">?</div>
         </div>
         
         <div style="display:flex; align-items:flex-end; gap:16px; margin-bottom:32px;">
           <div style="font-size:42px; font-weight:800; color:${mainColor}; line-height:1; font-family:'Instrument Sans', sans-serif;">${data.index}</div>
           <div style="flex:1; padding-bottom:8px;">
-            <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+            <div style="height:6px; background:var(--c-border-h); border-radius:3px; overflow:hidden;">
               <div style="height:100%; width:${data.index}%; background:${mainColor}; border-radius:3px; transition: width 1s ease-out;"></div>
             </div>
             <div style="font-size:12px; color:var(--c-text-3); margin-top:8px; text-transform:uppercase; font-weight:700;">${indexLabel}</div>
@@ -547,12 +547,12 @@ export const IntelView = (() => {
           ${hbar(data.density, 'Плотность и ритм')}
         </div>
 
-        <div style="border-top:1px solid rgba(255,255,255,0.05); padding-top:20px;">
+        <div style="border-top:1px solid var(--c-border); padding-top:20px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <div style="font-size:11px; font-weight:800; letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">Цель на сегодня</div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="color:var(--c-red); font-size:12px;">ЦНС</span>
-              <div style="width:40px; height:4px; background:rgba(255,255,255,0.1); border-radius:2px;"><div style="width:${data.cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
+              <div style="width:40px; height:4px; background:var(--c-border-h); border-radius:2px;"><div style="width:${data.cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
               <span style="font-size:12px; font-weight:700; color:var(--c-red);">${data.cns}%</span>
             </div>
           </div>
