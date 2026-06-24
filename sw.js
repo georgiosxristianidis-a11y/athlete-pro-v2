@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v77';
+const CACHE_NAME = 'athlete-pro-v78';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -158,6 +158,13 @@ self.addEventListener('fetch', (e) => {
   if (e.request.url.startsWith('chrome-extension')) return;
 
   const url = new URL(e.request.url);
+
+  // Cross-origin (Google Fonts, jsDelivr CDN) → don't intercept; let the browser
+  // fetch it directly. Routing opaque cross-origin responses through our
+  // network-first/cache logic produced "FetchEvent ... network error" noise and
+  // net::ERR_FAILED under Save-Data / adblock / offline.
+  if (url.origin !== self.location.origin) return;
+
   const isApi = url.pathname.startsWith('/api/');
 
   if (isApi) {
