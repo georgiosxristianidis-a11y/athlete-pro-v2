@@ -3,6 +3,8 @@
 > Обновлено: 2026-06-20 (сессия 2, Opus 4.7, LEAD). **byoi == main == `a0c8673`**. Тег-чекпоинт **`checkpoint-2026-06-20-s2`**. Worktree `claude/compassionate-black-30cbfd` fast-forward'нут с `claude/brave-brown-d5209a` до `594f72d` + 3 коммита этой сессии + merge `claude/agitated-satoshi-6f04f0` (Sonnet 5-1/5-4/5-5). Предыдущий: `checkpoint-2026-06-20`.
 > Это **единый источник правды**: план, делегирование, философия Air, дизайн-система, done-list, остаток.
 > Табличный дубль — `docs/DELEGATION-PLAN.md`.
+>
+> 🛑 **ЗАЩИЩЁННАЯ ЗОНА:** аудит-спринт **Fable 5** (2026-06-12/13, security P0 + CRDT + e2e) — см. `FABLE5_FINDINGS.md`. Затронутые файлы (`crypto.worker.js`, `db.js` PII-путь, `server.js` CSP/CORS/LAN, `lib/aiOrchestrator.js` контракты/SSE, CRDT `js/sync.js`) править/реверть **только после совещания с Gio**.
 
 ---
 
