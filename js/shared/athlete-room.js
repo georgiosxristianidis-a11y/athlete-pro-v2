@@ -7,6 +7,7 @@ import { isRu } from '../locale.store.js';
 import { on, onChange } from '../events.js';
 
 const AR = () => window.AthleteRoom;
+on('ar:open',           () => AR().open());
 on('ar:close',          () => AR().close());
 on('ar:switchTab',      (el) => AR().switchTab(el.dataset.tab));
 on('ar:photoUpload',    () => AR().triggerPhotoUpload());

@@ -5,6 +5,7 @@
    ════════════════════════════════════════════════════════ */
 
 import './events.js'; // global event-delegation dispatcher (CSP: no inline on*)
+import { on } from './events.js';
 import { DB, openDB } from './db.js';
 import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
@@ -73,6 +74,9 @@ window._loadWorkout = _loadWorkout;
 window._loadProfile = _loadProfile;
 window._loadBodyStats = _loadBodyStats;
 window._loadIntel = _loadIntel;
+
+/* ── Static-shell delegation (bottom nav + avatar in index.html) ── */
+on('nav:go', (el) => window.Nav.go(el.dataset.s, el.dataset.force ? { force: true } : undefined));
 
 /* ── Clock ── */
 const clockEl = document.getElementById('status-time');
