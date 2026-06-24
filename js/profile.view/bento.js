@@ -1,4 +1,7 @@
 // @ts-check
+import { on } from '../events.js';
+
+on('bento:toggleGlow', (el) => el.classList.toggle('pp-bento-glow'));
 
 /** @param {Array<{timestamp: number}>} workouts @returns {number} */
 function _streak(workouts) {
@@ -75,7 +78,7 @@ export function renderBento(workouts, dots, lang) {
 <div class="pp-bento">
   ${cells.map(c => `
   <div class="pp-bento-cell" id="${c.id}" style="--bento-color:${c.color};--bento-glow:${c.glow}"
-       onclick="this.classList.toggle('pp-bento-glow')">
+       data-action="bento:toggleGlow">
     <div class="pp-bento-val" style="color:${c.color}">${c.val}</div>
     <div class="pp-bento-lbl">${c.lbl}</div>
     <div class="pp-bento-sub">${c.sub}</div>

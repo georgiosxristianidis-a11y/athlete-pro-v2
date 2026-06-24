@@ -3,6 +3,20 @@ import { IntelStore } from './intel.store.js';
 import { esc, haptic } from './shared/utils.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { DB } from './db.js';
+import { on, onChange, onKeydown } from './events.js';
+
+on('intel:close',         () => window.Nav.go('s-home'));
+on('intel:camera',        () => window.IntelView.handleCamera());
+on('intel:submit',        () => window.IntelView.submit());
+on('intel:weekly',        () => window.IntelView.generateWeekly());
+on('intel:createWorkout', () => window.IntelView.createWorkout());
+on('intel:analyzeStats',  () => window.IntelView.analyzeStats());
+on('intel:biometrics',    () => window.IntelView.checkBiometrics());
+on('intel:clearImage',    () => { const w = document.getElementById('intel-vision-preview-wrap'); if (w) w.innerHTML = ''; window.IntelView._clearImage(); });
+on('intel:playAudio',     (el) => window.IntelView.playAudio(el));
+on('intel:closeReport',   (el) => el.closest('.intel-report-overlay')?.remove());
+onChange('intel:fileSelected', (el, e) => window.IntelView.onFileSelected(e));
+onKeydown('intel:submitEnter', (el, e) => { if (e.key === 'Enter') window.IntelView.submit(); });
 
 /**
  * IntelView — Athlete Pro
@@ -52,7 +66,7 @@ export const IntelView = (() => {
             <span id="intel-status-text" style="color: var(--c-text-2); font-weight:800; text-transform:lowercase;">${IntelStore.getStatus()}</span>
           </div>
         </div>
-        <button onclick="Nav.go('s-home')" style="background:none; border:none; color:var(--c-text-3); font-size:28px; font-weight:200; cursor:pointer; padding:0 8px;">&times;</button>
+        <button data-action="intel:close" style="background:none; border:none; color:var(--c-text-3); font-size:28px; font-weight:200; cursor:pointer; padding:0 8px;">&times;</button>
       </header>
 
       <div id="intel-feedback-feed"></div>
@@ -61,35 +75,35 @@ export const IntelView = (() => {
 
       <div class="intel-cmd-wrap">
         <div class="intel-cmd-bar">
-          <button class="intel-btn-icon" id="intel-btn-camera" onclick="IntelView.handleCamera()">
+          <button class="intel-btn-icon" id="intel-btn-camera" data-action="intel:camera">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
             </svg>
           </button>
-          <input type="text" id="intel-input" class="intel-cmd-input" placeholder="Command or vision query..." onkeydown="if(event.key==='Enter') IntelView.submit()">
-          <button class="intel-btn-icon intel-btn-send" id="intel-btn-send" onclick="IntelView.submit()">
+          <input type="text" id="intel-input" class="intel-cmd-input" placeholder="Command or vision query..." data-keydown="intel:submitEnter">
+          <button class="intel-btn-icon intel-btn-send" id="intel-btn-send" data-action="intel:submit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
           </button>
         </div>
-        <input type="file" id="intel-file-input" accept="image/*" style="display:none" onchange="IntelView.onFileSelected(event)">
+        <input type="file" id="intel-file-input" accept="image/*" style="display:none" data-change="intel:fileSelected">
       </div>
 
       <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:var(--sp-4)">
-        <button class="card-action" onclick="IntelView.generateWeekly()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+        <button class="card-action" data-action="intel:weekly" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
           <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">СВОДКА</div>
         </button>
-        <button class="card-action" onclick="IntelView.createWorkout()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+        <button class="card-action" data-action="intel:createWorkout" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
           <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">ГЕНЕРАЦИЯ</div>
         </button>
-        <button class="card-action" onclick="IntelView.analyzeStats()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+        <button class="card-action" data-action="intel:analyzeStats" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
           <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">АНАЛИЗ</div>
         </button>
-        <button class="card-action" onclick="IntelView.checkBiometrics()" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+        <button class="card-action" data-action="intel:biometrics" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
           <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">БИОМЕТРИЯ</div>
         </button>
@@ -176,7 +190,7 @@ export const IntelView = (() => {
       <div class="intel-vision-preview animate-in zoom-in">
         <img src="${base64}" class="intel-vision-img" alt="Vision Input">
         <div class="intel-scanner-bar"></div>
-        <button onclick="document.getElementById('intel-vision-preview-wrap').innerHTML=''; window.IntelView._clearImage();" style="position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.5); border:none; color:white; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;">&times;</button>
+        <button data-action="intel:clearImage" style="position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.5); border:none; color:white; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;">&times;</button>
       </div>
     `;
     IntelStore.setStatus('VISION READY');
@@ -205,7 +219,7 @@ export const IntelView = (() => {
     feedbackEl.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <div class="intel-feedback-label" style="margin-bottom:0;">AI Feedback</div>
-        <button class="intel-btn-icon" style="opacity:0.5; width:24px; height:24px; padding:0;" title="Озвучить" onclick="IntelView.playAudio(this)">
+        <button class="intel-btn-icon" style="opacity:0.5; width:24px; height:24px; padding:0;" title="Озвучить" data-action="intel:playAudio">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
           </svg>
@@ -429,7 +443,7 @@ export const IntelView = (() => {
     
     overlay.innerHTML = `
       <div style="background:var(--c-bg-1); width:100%; max-width:500px; border-radius:32px; border:1px solid var(--c-border-h); padding:40px; position:relative; max-height:90vh; overflow-y:auto;">
-        <button onclick="this.closest('.intel-report-overlay').remove()" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:24px; cursor:pointer;">&times;</button>
+        <button data-action="intel:closeReport" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:24px; cursor:pointer;">&times;</button>
         <div style="text-align:center; margin-bottom:32px;">
            <h2 style="font-family:var(--font-intel); font-size:24px; font-style:italic; color:var(--c-text-1); text-transform:uppercase; margin-bottom:16px;">Weekly Intel</h2>
            <div style="display:flex; flex-direction:column; align-items:center;">

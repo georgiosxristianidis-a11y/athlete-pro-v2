@@ -9,6 +9,10 @@ import { renderProfile } from './profile.view.js';
 import { renderSettings } from './profile.view/settings.js';
 import { VERSION } from './version.js';
 import { Toast } from './shell.js';
+import { on, onChange } from './events.js';
+
+on('profile:clearData',        () => window.Profile.clearAllData());
+onChange('profile:importFile', (el, e) => window.Profile._onImportFile(e));
 
 export const Profile = (() => {
   /* ══════════════════════════════════════════════
@@ -61,7 +65,7 @@ export const Profile = (() => {
 
       <!-- ── DANGER ZONE ── -->
       <div class="section-label-alt" style="color:var(--c-red); opacity:0.8">DANGER ZONE</div>
-      <button class="danger-btn" id="clear-data-btn" onclick="Profile.clearAllData()">
+      <button class="danger-btn" id="clear-data-btn" data-action="profile:clearData">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
           <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
         </svg>
@@ -72,7 +76,7 @@ export const Profile = (() => {
       <div style="margin-top: 48px; padding-bottom: 120px; text-align: center; opacity: 0.25; font-size: 10px; font-weight: 800; letter-spacing: 0.15em; color: var(--c-text-2); text-transform: uppercase;">
         Athlete Pro v${VERSION} · Elite Edition
       </div>
-      <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="Profile._onImportFile(event)">
+      <input type="file" id="import-file-input" accept=".json" style="display:none" data-change="profile:importFile">
     `;
 
       const passportEl = document.getElementById('profile-passport');

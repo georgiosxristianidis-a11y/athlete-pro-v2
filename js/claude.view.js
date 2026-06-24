@@ -5,6 +5,9 @@ import { esc, haptic } from './shared/utils.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { State as WorkoutState } from './workout.store.js';
 import { Toast } from './shell.js';
+import { on } from './events.js';
+
+on('claude:dismissFAB', (el, e) => { e.stopPropagation(); window.Claude?.dismissFAB(); });
 
 /**
  * AI Assistant view layer.
@@ -46,7 +49,7 @@ export const Claude = (() => {
 
     container.innerHTML = `
       <div style="position:relative; pointer-events:auto">
-        <div class="fab-close-btn" onclick="event.stopPropagation(); Claude.dismissFAB()" title="Hide Assistant" style="opacity:1; transform:scale(1); top:-10px; right:-10px; pointer-events:auto">
+        <div class="fab-close-btn" data-action="claude:dismissFAB" title="Hide Assistant" style="opacity:1; transform:scale(1); top:-10px; right:-10px; pointer-events:auto">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </div>
         <button id="claude-fab" class="claude-fab ${isGemini ? 'gemini-mode' : ''} ${glowClass}" aria-label="AI Assistant" style="margin:0">

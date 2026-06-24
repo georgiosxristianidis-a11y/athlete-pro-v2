@@ -14,6 +14,10 @@ import { esc } from '../shared/utils.js';
 import { confirmDialog, promptDialog } from '../shared/confirm.js';
 import { isRu } from '../locale.store.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
+import { on } from '../events.js';
+
+on('wo:menuAction',  (el) => { el.closest('.modal-overlay')?.remove(); window.Workout._handleMenuAction(+el.dataset.ei, +el.dataset.i); });
+on('wo:closeModal',  (el) => el.closest('.modal-overlay')?.remove());
 import { syncDrumUI, initDrumPickers } from '../ui/drum-picker.js';
 
 let _restDuration = 90;
@@ -291,13 +295,13 @@ export async function showExerciseMenu(ei) {
       <div style="font-size: 13px; font-weight: 900; color: var(--c-text-2); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.1em; text-align:center">${esc(ex.name)}</div>
       <div style="display:flex; flex-direction:column; gap:8px">
         ${actions.map((a, i) => `
-          <button class="menu-item" onclick="this.closest('.modal-overlay').remove(); window.Workout._handleMenuAction(${ei}, ${i})" style="display:flex; align-items:center; gap:16px; width:100%; padding:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px; color:#fff; cursor:pointer">
+          <button class="menu-item" data-action="wo:menuAction" data-ei="${ei}" data-i="${i}" style="display:flex; align-items:center; gap:16px; width:100%; padding:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px; color:#fff; cursor:pointer">
             <span style="font-size:18px">${a.icon}</span>
             <span style="font-size:15px; font-weight:700">${a.label}</span>
           </button>
         `).join('')}
       </div>
-      <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()" style="width:100%; margin-top:16px; border:none; color:var(--c-text-3); font-weight:800">${ru ? 'ОТМЕНА' : 'CANCEL'}</button>
+      <button class="btn btn-ghost" data-action="wo:closeModal" style="width:100%; margin-top:16px; border:none; color:var(--c-text-3); font-weight:800">${ru ? 'ОТМЕНА' : 'CANCEL'}</button>
     </div>
   `;
   document.body.appendChild(overlay);

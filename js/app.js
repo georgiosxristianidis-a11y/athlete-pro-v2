@@ -60,7 +60,7 @@ async function _loadIntel() {
   return IntelView;
 }
 
-/* ── Bridge: expose to window for onclick="" handlers ── */
+/* ── Bridge: expose to window for legacy global handlers + delegation ── */
 window.DB = DB;
 window.Nav = Nav;
 window.Toast = Toast;

@@ -4,6 +4,10 @@
    Supabase availability tester + status badge renderer
    ════════════════════════════════════════════════════════ */
 
+import { on } from './events.js';
+
+on('sb:recheck', () => window.SupabaseCheck?.renderCard(document.getElementById('supabase-card')));
+
 export const SupabaseCheck = (() => {
   /* ── Last known result (cached for 60s) ── */
   let _cache = null;
@@ -75,7 +79,7 @@ export const SupabaseCheck = (() => {
     containerEl.innerHTML = `
       <div class="section-header" style="margin-top:var(--sp-2)">
         <span class="section-label">Cloud Sync</span>
-        <button class="btn-text" onclick="SupabaseCheck.renderCard(document.getElementById('supabase-card'))">
+        <button class="btn-text" data-action="sb:recheck">
           Recheck
         </button>
       </div>

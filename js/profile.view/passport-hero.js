@@ -4,6 +4,10 @@ import { fmtNum } from '../shared/format.js';
 import { athleteProScore, exrxTier } from '../strength-engine.js';
 import { DB } from '../db.js';
 import { esc } from '../shared/utils.js';
+import { on } from '../events.js';
+
+on('pp:openRoom',    () => window.AthleteRoom?.open());
+on('pp:openMetrics', () => { window._arActiveTab = 'metrics'; window.AthleteRoom?.open(); });
 
 const TIER_COLOR = {
   Untrained:    'var(--c-text-3)',
@@ -65,7 +69,7 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   return `
 <div class="pp-hero-v2">
   <div class="pp-avatar-wrap">
-    <div class="pp-avatar-v2" id="pp-avatar-main" onclick="window.AthleteRoom?.open()">
+    <div class="pp-avatar-v2" id="pp-avatar-main" data-action="pp:openRoom">
       <span class="pp-avatar-initials">${esc(initials)}</span>
     </div>
     <div class="pp-avatar-ring" id="pp-avatar-ring-main"></div>
@@ -93,7 +97,7 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   </div>
 </div>
 
-<div class="pp-metrics-strip" style="cursor: pointer;" onclick="window._arActiveTab = 'metrics'; window.AthleteRoom?.open()" title="Edit Metrics">
+<div class="pp-metrics-strip" style="cursor: pointer;" data-action="pp:openMetrics" title="Edit Metrics">
   <div class="pp-m-item">
     <div class="pp-m-val">${metrics?.weight || '—'}<span class="pp-m-u">kg</span></div>
     <div class="pp-m-lbl">${ru ? 'Вес' : 'Weight'}</div>
