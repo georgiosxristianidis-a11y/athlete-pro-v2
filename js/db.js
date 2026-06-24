@@ -295,7 +295,7 @@ const Workouts = {
   getAll() {
     return tx(S.WORKOUTS).then(s => {
       const idx = s.index('timestamp');
-      return req2p(idx.getAll()).then(list => list.reverse());
+      return req2p(idx.getAll()).then(list => list.reverse().filter(w => !w._deleted));
     });
   },
 
@@ -313,7 +313,7 @@ const Workouts = {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor && list.length < n) {
-            list.push(cursor.value);
+            if (!cursor.value._deleted) list.push(cursor.value);
             cursor.continue();
           } else {
             res(list);
@@ -344,7 +344,18 @@ const Workouts = {
       const idx = s.index('type');
       const req = idx.openCursor(IDBKeyRange.only(type), 'prev');
       return new Promise((res, rej) => {
-        req.onsuccess = (e) => res(e.target.result?.value || null);
+        req.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (!cursor) {
+            res(null);
+            return;
+          }
+          if (cursor.value._deleted) {
+            cursor.continue();
+          } else {
+            res(cursor.value);
+          }
+        };
         req.onerror = (e) => rej(e.target.error);
       });
     });
@@ -364,7 +375,7 @@ const Workouts = {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor) {
-            total += (cursor.value.tonnage || 0);
+            if (!cursor.value._deleted) total += (cursor.value.tonnage || 0);
             cursor.continue();
           } else {
             res(total);
@@ -388,7 +399,7 @@ const Workouts = {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor) {
-            total += (cursor.value.tonnage || 0);
+            if (!cursor.value._deleted) total += (cursor.value.tonnage || 0);
             cursor.continue();
           } else {
             res(total);
@@ -407,7 +418,7 @@ const Workouts = {
     const from = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     return tx(S.WORKOUTS).then(s => {
       const idx = s.index('timestamp');
-      return req2p(idx.count(IDBKeyRange.lowerBound(from)));
+      return req2p(idx.getAll(IDBKeyRange.lowerBound(from))).then(list => list.filter(w => !w._deleted).length);
     });
   },
 
@@ -425,7 +436,7 @@ const Workouts = {
             req.onsuccess = (e) => {
                 const cursor = e.target.result;
                 if (cursor) {
-                    r[type] += (cursor.value.tonnage || 0);
+                    if (!cursor.value._deleted) r[type] += (cursor.value.tonnage || 0);
                     cursor.continue();
                 } else {
                     res();
@@ -458,9 +469,16 @@ const Workouts = {
 
   /** Delete one session by id. */
   delete(id) {
-    // Queue a tombstone so cloud also removes the record
-    _triggerSync(S.WORKOUTS, withMeta({ id, _deleted: true, timestamp: Date.now() }));
-    return tx(S.WORKOUTS, 'readwrite').then((s) => req2p(s.delete(id)));
+    return tx(S.WORKOUTS, 'readwrite').then((s) => {
+      return req2p(s.get(id)).then((record) => {
+        if (!record) return;
+        record._deleted = true;
+        withMeta(record);
+        return req2pSafe(s.put(record), s.transaction).then(() => {
+          _triggerSync(S.WORKOUTS, record);
+        });
+      });
+    });
   },
 
   /** Wipe all sessions. */
@@ -487,8 +505,7 @@ const Workouts = {
     }
 
     if (toDelete.length > 0) {
-      const s = await tx(S.WORKOUTS, 'readwrite');
-      await Promise.all(toDelete.map(id => req2p(s.delete(id))));
+      await Promise.all(toDelete.map(id => this.delete(id)));
     }
 
     return toDelete.length;
@@ -961,6 +978,9 @@ export const DB = {
   // Raw writes for the sync pull path — plain put/delete with NO _triggerSync, so
   // applying a remote-won record locally never re-queues an upstream push (no echo).
   _putRaw: (store, row) => tx(store, 'readwrite').then(s => req2pSafe(s.put(row), s.transaction)),
-  _delRaw: (store, id) => tx(store, 'readwrite').then(s => req2p(s.delete(id))),
+  _delRaw: (store, id) => tx(store, 'readwrite').then(s => {
+    const keyField = (store === 'settings') ? 'key' : 'id';
+    return req2pSafe(s.put({ [keyField]: id, _deleted: true, updatedAt: Date.now(), deviceId: getDeviceId() }), s.transaction);
+  }),
 };
 export { openDB };
