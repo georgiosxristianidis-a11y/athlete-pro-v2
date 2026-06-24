@@ -25,8 +25,8 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-hashes'", "https://cdn.jsdelivr.net"],
-      scriptSrcAttr: ["'unsafe-inline'"], // Required for onclick handlers in templates
+      scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+      scriptSrcAttr: ["'none'"], // CSP Phase 2: all inline on* migrated to event-delegation (js/events.js)
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
       connectSrc: [
