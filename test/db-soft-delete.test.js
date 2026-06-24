@@ -28,7 +28,7 @@ test('Soft Delete Coverage (Tombstones)', async (t) => {
 
   await t.test('2. aggregations and queries ignore tombstones', async () => {
     const now = Date.now();
-    const id1 = await db.DB.Workouts.save({ type: 'push', timestamp: now - 1000, tonnage: 100 });
+    await db.DB.Workouts.save({ type: 'push', timestamp: now - 1000, tonnage: 100 });
     const id2 = await db.DB.Workouts.save({ type: 'pull', timestamp: now, tonnage: 200 });
     const idToDel = await db.DB.Workouts.save({ type: 'pull', timestamp: now + 1000, tonnage: 400 });
     
