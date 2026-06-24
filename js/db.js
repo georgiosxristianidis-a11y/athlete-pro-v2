@@ -246,6 +246,16 @@ function req2p(r) {
   });
 }
 
+/* Soft-delete: DB.delete() marks records with _deleted instead of physically
+   removing them, so the tombstone survives to (a) win LWW against a stale remote
+   copy on pull and (b) propagate the deletion to other devices. Every normal read
+   path hides tombstones via this predicate; only the raw sync helpers (_getRaw)
+   and the pull/merge logic see them.
+   TODO(gc-tombstones): tombstones accumulate forever. Add a GC sweep that hard-
+   deletes _deleted rows older than the pull high-water mark (safe once no peer can
+   still reference them). Deferred — see soft-delete handoff. */
+const _alive = (r) => !r || !r._deleted;
+
 /**
  * Trigger background sync if allowed by privacy settings.
  * @param {string} store 
@@ -265,7 +275,7 @@ async function _triggerSync(store, data) {
 }
 
 function getAll(store) {
-  return tx(store).then((s) => req2p(s.getAll()));
+  return tx(store).then((s) => req2p(s.getAll())).then((list) => list.filter(_alive));
 }
 
 /* ════════════════════════════════════════════════════════
@@ -295,7 +305,7 @@ const Workouts = {
   getAll() {
     return tx(S.WORKOUTS).then(s => {
       const idx = s.index('timestamp');
-      return req2p(idx.getAll()).then(list => list.reverse());
+      return req2p(idx.getAll()).then(list => list.filter(_alive).reverse());
     });
   },
 
@@ -313,7 +323,7 @@ const Workouts = {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor && list.length < n) {
-            list.push(cursor.value);
+            if (_alive(cursor.value)) list.push(cursor.value);
             cursor.continue();
           } else {
             res(list);
@@ -344,7 +354,12 @@ const Workouts = {
       const idx = s.index('type');
       const req = idx.openCursor(IDBKeyRange.only(type), 'prev');
       return new Promise((res, rej) => {
-        req.onsuccess = (e) => res(e.target.result?.value || null);
+        req.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (!cursor) return res(null);
+          if (!_alive(cursor.value)) return cursor.continue(); // skip tombstones
+          res(cursor.value);
+        };
         req.onerror = (e) => rej(e.target.error);
       });
     });
@@ -364,7 +379,7 @@ const Workouts = {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor) {
-            total += (cursor.value.tonnage || 0);
+            if (_alive(cursor.value)) total += (cursor.value.tonnage || 0);
             cursor.continue();
           } else {
             res(total);
@@ -388,7 +403,7 @@ const Workouts = {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor) {
-            total += (cursor.value.tonnage || 0);
+            if (_alive(cursor.value)) total += (cursor.value.tonnage || 0);
             cursor.continue();
           } else {
             res(total);
@@ -407,7 +422,21 @@ const Workouts = {
     const from = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     return tx(S.WORKOUTS).then(s => {
       const idx = s.index('timestamp');
-      return req2p(idx.count(IDBKeyRange.lowerBound(from)));
+      // Can't use idx.count() — it can't skip tombstones; walk the range instead.
+      const req = idx.openCursor(IDBKeyRange.lowerBound(from));
+      return new Promise((res, rej) => {
+        let n = 0;
+        req.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            if (_alive(cursor.value)) n++;
+            cursor.continue();
+          } else {
+            res(n);
+          }
+        };
+        req.onerror = (e) => rej(e.target.error);
+      });
     });
   },
 
@@ -425,7 +454,7 @@ const Workouts = {
             req.onsuccess = (e) => {
                 const cursor = e.target.result;
                 if (cursor) {
-                    r[type] += (cursor.value.tonnage || 0);
+                    if (_alive(cursor.value)) r[type] += (cursor.value.tonnage || 0);
                     cursor.continue();
                 } else {
                     res();
@@ -456,11 +485,14 @@ const Workouts = {
     });
   },
 
-  /** Delete one session by id. */
-  delete(id) {
-    // Queue a tombstone so cloud also removes the record
-    _triggerSync(S.WORKOUTS, withMeta({ id, _deleted: true, timestamp: Date.now() }));
-    return tx(S.WORKOUTS, 'readwrite').then((s) => req2p(s.delete(id)));
+  /** Soft-delete one session by id. Keeps the full record, flips _deleted so the
+      tombstone wins LWW on pull and propagates the deletion to other devices. */
+  async delete(id) {
+    const s = await tx(S.WORKOUTS, 'readwrite');
+    const existing = await req2p(s.get(id));
+    const tomb = withMeta({ ...(existing || { id }), _deleted: true });
+    await req2pSafe(s.put(tomb), s.transaction);
+    _triggerSync(S.WORKOUTS, tomb);
   },
 
   /** Wipe all sessions. */
@@ -480,7 +512,7 @@ const Workouts = {
     for (const w of all) {
       const key = `${w.timestamp}-${w.type}`;
       if (seen.has(key)) {
-        toDelete.push(w.id);
+        toDelete.push(w); // keep the full record — bulk-delete soft-deletes too
       } else {
         seen.add(key);
       }
@@ -488,7 +520,10 @@ const Workouts = {
 
     if (toDelete.length > 0) {
       const s = await tx(S.WORKOUTS, 'readwrite');
-      await Promise.all(toDelete.map(id => req2p(s.delete(id))));
+      await Promise.all(toDelete.map((w) => {
+        const tomb = withMeta({ ...w, _deleted: true });
+        return req2p(s.put(tomb)).then(() => _triggerSync(S.WORKOUTS, tomb));
+      }));
     }
 
     return toDelete.length;
@@ -625,7 +660,7 @@ const OneRM = {
    * @returns {Promise<OneRMRecord|undefined>}
    */
   get(exerciseName) {
-    return tx(S.ORM).then((s) => req2p(s.get(exerciseName)));
+    return tx(S.ORM).then((s) => req2p(s.get(exerciseName))).then((r) => (_alive(r) ? r : undefined));
   },
 
   /**
@@ -758,7 +793,7 @@ const Settings = {
    * @returns {Promise<*>}
    */
   get(key, fallback = null) {
-    return tx(S.SETTINGS).then((s) => req2p(s.get(key)).then((r) => (r ? r.value : fallback)));
+    return tx(S.SETTINGS).then((s) => req2p(s.get(key)).then((r) => (r && _alive(r) ? r.value : fallback)));
   },
 
   /**
@@ -816,7 +851,7 @@ const NutritionLogs = {
   getAll() {
     return tx(S.NUTRITION).then(s => {
       const idx = s.index('timestamp');
-      return req2p(idx.getAll()).then(list => list.reverse());
+      return req2p(idx.getAll()).then(list => list.filter(_alive).reverse());
     });
   },
   clear() {
@@ -840,7 +875,7 @@ const PlannedWorkouts = {
   getAll() {
     return tx(S.PLANS).then(s => {
       const idx = s.index('timestamp');
-      return req2p(idx.getAll()).then(list => list.reverse());
+      return req2p(idx.getAll()).then(list => list.filter(_alive).reverse());
     });
   },
   clear() {
@@ -961,6 +996,15 @@ export const DB = {
   // Raw writes for the sync pull path — plain put/delete with NO _triggerSync, so
   // applying a remote-won record locally never re-queues an upstream push (no echo).
   _putRaw: (store, row) => tx(store, 'readwrite').then(s => req2pSafe(s.put(row), s.transaction)),
-  _delRaw: (store, id) => tx(store, 'readwrite').then(s => req2p(s.delete(id))),
+  // Soft-delete on the raw pull path too: applying a remote tombstone writes a
+  // local tombstone (not a hard delete) so the deletion keeps winning LWW and is
+  // never silently resurrected by a later stale push. No _triggerSync (no echo).
+  _delRaw: (store, id) => tx(store, 'readwrite').then(async (s) => {
+    const existing = await req2p(s.get(id));
+    const tomb = existing
+      ? { ...existing, _deleted: true, updatedAt: Date.now(), deviceId: getDeviceId() }
+      : { [s.keyPath]: id, _deleted: true, updatedAt: Date.now(), deviceId: getDeviceId() };
+    return req2pSafe(s.put(tomb), s.transaction);
+  }),
 };
 export { openDB };
