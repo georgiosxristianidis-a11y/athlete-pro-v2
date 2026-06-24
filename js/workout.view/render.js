@@ -23,6 +23,29 @@ import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
 import { initDrumPickers } from '../ui/drum-picker.js';
 import { fmtVol } from '../shared/format.js';
+import { on } from '../events.js';
+
+const W = () => window.Workout;
+on('wo:noop',          (el, e) => e.stopPropagation());
+on('wo:toggleCore',    (el) => W()._toggleCoreItem(el.dataset.day, +el.dataset.i));
+on('wo:removeCore',    (el, e) => { e.stopPropagation(); W()._removeCoreItem(el.dataset.day, +el.dataset.i); });
+on('wo:addCore',       (el) => W()._addCoreItem(el.dataset.day));
+on('wo:toggleWeek',    () => W()._toggleWeek());
+on('wo:selectType',    (el) => W().selectType(el.dataset.type));
+on('wo:openPlanEditor',() => W().openPlanEditor());
+on('wo:startProgram',  (el) => W()._startProgram(el.dataset.pid));
+on('wo:addLiveEx',     () => W()._addLiveExercise());
+on('wo:complete',      () => W().completeSession());
+on('wo:cancel',        () => W().cancelSession());
+on('wo:toggleCard',    (el) => W().toggleCard(+el.dataset.ei));
+on('wo:smartCoach',    (el) => W().smartCoach(+el.dataset.ei, +el.dataset.si));
+on('wo:exMenu',        (el) => W().showExerciseMenu(+el.dataset.ei));
+on('wo:addSet',        (el) => W().addSet(+el.dataset.ei));
+on('wo:toggleSet',     (el) => W().toggleSet(+el.dataset.ei, +el.dataset.si));
+on('wo:closeFocus',    () => W()._closeFocus());
+on('wo:focusStepW',    (el) => W()._focusStepW(+el.dataset.amt));
+on('wo:focusStepR',    (el) => W()._focusStepR(+el.dataset.amt));
+on('wo:focusComplete', () => W()._focusCompleteSet());
 
 /* ── Render helpers ── */
 export const TYPE_COLOR = {
@@ -141,7 +164,7 @@ export function _renderCoreSection(day) {
 
     return `
       <div class="core-item ${checked}" id="core-item-${i}"
-           onclick="Workout._toggleCoreItem('${day}',${i})">
+           data-action="wo:toggleCore" data-day="${day}" data-i="${i}">
         <div class="core-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.5" stroke-linecap="round" width="13" height="13">
@@ -149,7 +172,7 @@ export function _renderCoreSection(day) {
           </svg>
         </div>
         <span class="core-name">${esc(name)}</span>
-        <button class="core-remove" onclick="event.stopPropagation();Workout._removeCoreItem('${day}',${i})"
+        <button class="core-remove" data-action="wo:removeCore" data-day="${day}" data-i="${i}"
                 aria-label="Remove">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="14" height="14">
@@ -163,7 +186,7 @@ export function _renderCoreSection(day) {
   return `
     <div class="section-header" style="margin-top:var(--sp-2)">
       <span class="section-label">Core</span>
-      <button class="btn-text" onclick="Workout._addCoreItem('${day}')">
+      <button class="btn-text" data-action="wo:addCore" data-day="${day}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.5" stroke-linecap="round" width="14" height="14">
           <line x1="12" y1="5" x2="12" y2="19"/>
@@ -198,7 +221,7 @@ export async function renderSelect() {
         <div class="screen-title">${ru ? 'Тренировки' : 'Training Hub'}</div>
         <div class="screen-sub" id="train-date"></div>
       </div>
-      <button class="week-pill week-${weekMode}" onclick="Workout._toggleWeek()"
+      <button class="week-pill week-${weekMode}" data-action="wo:toggleWeek"
               aria-label="Toggle Week A/B" title="Tap to switch week">
         <span class="week-pill-lbl">${ru ? 'Неделя' : 'Week'}</span>
         <span class="week-pill-val">${weekMode}</span>
@@ -206,7 +229,7 @@ export async function renderSelect() {
     </div>
 
     ${stats ? `
-    <div class="active-plan-card stagger-item" onclick="Workout.selectType('active')">
+    <div class="active-plan-card stagger-item" data-action="wo:selectType" data-type="active">
       <div class="active-plan-info">
         <div class="active-plan-title">${esc(stats.name)}</div>
         <div class="active-plan-meta">${ru ? 'Неделя' : 'Week'} ${stats.week} · ${ru ? 'День' : 'Day'} ${stats.day} ${ru ? 'из' : 'of'} ${stats.totalDays}</div>
@@ -225,7 +248,7 @@ export async function renderSelect() {
 
     <div class="section-header stagger-item" style="margin-top:var(--sp-2)">
       <span class="section-label">${activePlan ? (ru ? 'Свободная тренировка' : 'Free Training') : (ru ? 'Выбор типа' : 'Select Type')}</span>
-      <button class="btn-text" onclick="Workout.openPlanEditor()">
+      <button class="btn-text" data-action="wo:openPlanEditor">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
              width="14" height="14">
@@ -241,7 +264,7 @@ export async function renderSelect() {
         .map((t) => {
           const color = t === 'push' ? '#00e676' : t === 'pull' ? '#00e5ff' : '#bc13fe';
           return `
-        <button class="type-card" data-type="${t}" onclick="Workout.selectType('${t}')">
+        <button class="type-card" data-type="${t}" data-action="wo:selectType">
           <div class="type-card-icon" style="color: ${color}">
             ${typeIcon(t, color)}
           </div>
@@ -265,7 +288,7 @@ export async function renderSelect() {
     <div class="programs-carousel stagger-item">
       ${PROGRAMS.map(p => `
         <div class="program-card ${activePlan?.id === p.id ? 'active' : ''}" 
-             onclick="Workout._startProgram('${p.id}')">
+             data-action="wo:startProgram" data-pid="${p.id}">
           <div class="program-type">${p.type.toUpperCase()}</div>
           <div class="program-name">${p.name}</div>
           <div class="program-dur">${p.durationWeeks} weeks · ${p.days.length} days/split</div>
@@ -399,7 +422,7 @@ export async function renderActive() {
       })()}
     </div>
 
-    <button class="btn-add-live-ex" onclick="Workout._addLiveExercise()">
+    <button class="btn-add-live-ex" data-action="wo:addLiveEx">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="16" height="16">
         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
       </svg>
@@ -409,8 +432,8 @@ export async function renderActive() {
     <div class="core-section" id="core-section">${_renderCoreSection(State.type)}</div>
 
     <div style="display:flex;flex-direction:column;gap:var(--sp-1);margin-top:var(--sp-2)">
-      <button class="btn btn-primary" onclick="Workout.completeSession()">${ru ? 'Завершить тренировку' : 'Complete Session'}</button>
-      <button class="btn btn-ghost" onclick="Workout.cancelSession()">${ru ? 'Отмена' : 'Cancel'}</button>
+      <button class="btn btn-primary" data-action="wo:complete">${ru ? 'Завершить тренировку' : 'Complete Session'}</button>
+      <button class="btn btn-ghost" data-action="wo:cancel">${ru ? 'Отмена' : 'Cancel'}</button>
     </div>
     <div style="height:var(--sp-2)"></div>
   `;
@@ -458,8 +481,8 @@ export async function renderExerciseCard(ex, ei) {
 
   return `
     <div class="exercise-card ${ex.noDb ? 'ex-no-db' : ''}" id="ex-card-${ei}" data-ei="${ei}">
-      <div class="exercise-header" onclick="Workout.toggleCard(${ei})">
-        <div class="drag-handle" onclick="event.stopPropagation()"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/></svg></div>
+      <div class="exercise-header" data-action="wo:toggleCard" data-ei="${ei}">
+        <div class="drag-handle" data-action="wo:noop"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/></svg></div>
         <div class="exercise-icon"><span class="ex-num">${ei + 1}</span></div>
         <div class="exercise-info">
           <div class="exercise-name">
@@ -469,9 +492,9 @@ export async function renderExerciseCard(ex, ei) {
           <div class="exercise-meta ${doneSets === ex.sets.length ? 'done' : ''}" id="ex-meta-${ei}">${doneSets}/${ex.sets.length}</div>
         </div>
         
-        <div class="ex-header-actions" onclick="event.stopPropagation()">
-          <button class="ex-action-btn coach" title="Smart Coach" onclick="Workout.smartCoach(${ei},${targetSi})">${iconCoach}</button>
-          <button class="ex-action-btn" title="More options" onclick="Workout.showExerciseMenu(${ei})">
+        <div class="ex-header-actions" data-action="wo:noop">
+          <button class="ex-action-btn coach" title="Smart Coach" data-action="wo:smartCoach" data-ei="${ei}" data-si="${targetSi}">${iconCoach}</button>
+          <button class="ex-action-btn" title="More options" data-action="wo:exMenu" data-ei="${ei}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
               <circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="6" r="1.2"/><circle cx="12" cy="18" r="1.2"/>
             </svg>
@@ -488,7 +511,7 @@ export async function renderExerciseCard(ex, ei) {
           <span style="width:44px"></span>
         </div>
         ${setRows.join('')}
-        <button class="add-set-btn" onclick="Workout.addSet(${ei})">${svgArrow('plus')} Add Set</button>
+        <button class="add-set-btn" data-action="wo:addSet" data-ei="${ei}">${svgArrow('plus')} Add Set</button>
       </div>
     </div>`;
 }
@@ -515,7 +538,7 @@ export async function renderSetRow(ex, ei, set, si) {
            data-type="r" data-ei="${ei}" data-si="${si}"
            data-value="${set.reps}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sr-val stepper-val hidden">${set.reps}</span></div>
       <div class="set-done-summary">${displayWeight}&times;${set.reps}</div>
-      <button class="set-check ${set.done ? 'done' : ''}" id="chk-${ei}-${si}" onclick="Workout.toggleSet(${ei},${si})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg></button>
+      <button class="set-check ${set.done ? 'done' : ''}" id="chk-${ei}-${si}" data-action="wo:toggleSet" data-ei="${ei}" data-si="${si}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg></button>
     </div>`;
 }
 
@@ -539,17 +562,17 @@ export async function renderFocusMode(ei) {
     <div class="focus-overlay animate-in" id="focus-overlay" data-ei="${ei}">
       <div class="focus-header">
         <div class="focus-meta">${ru ? 'Упражнение' : 'Exercise'} ${ei + 1} ${ru ? 'из' : 'of'} ${totalEx}</div>
-        <button class="focus-close" onclick="Workout._closeFocus()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        <button class="focus-close" data-action="wo:closeFocus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="focus-glass-card">
         <div class="focus-ex-name">${esc(ex.name)}</div>
         <div class="focus-set-info">${ru ? 'Подход' : 'Set'} ${si + 1} ${ru ? 'из' : 'of'} ${totalSets}</div>
         <div class="focus-hero-row">
-          <div class="focus-hero-item" onclick="Workout._focusStepW(-2.5)"><div class="focus-hero-val">${set.weight}<small>kg</small></div><div class="focus-hero-lbl">${ru ? 'Вес' : 'Weight'}</div></div>
+          <div class="focus-hero-item" data-action="wo:focusStepW" data-amt="-2.5"><div class="focus-hero-val">${set.weight}<small>kg</small></div><div class="focus-hero-lbl">${ru ? 'Вес' : 'Weight'}</div></div>
           <div class="focus-hero-divider"></div>
-          <div class="focus-hero-item" onclick="Workout._focusStepR(-1)"><div class="focus-hero-val">${set.reps}</div><div class="focus-hero-lbl">${ru ? 'Повторы' : 'Reps'}</div></div>
+          <div class="focus-hero-item" data-action="wo:focusStepR" data-amt="-1"><div class="focus-hero-val">${set.reps}</div><div class="focus-hero-lbl">${ru ? 'Повторы' : 'Reps'}</div></div>
         </div>
-        <button class="focus-cta ${set.done ? 'done' : ''}" onclick="Workout._focusCompleteSet()">${set.done ? (ru ? 'Готово!' : 'Set Complete') : (ru ? 'Завершить подход' : 'Complete Set')}</button>
+        <button class="focus-cta ${set.done ? 'done' : ''}" data-action="wo:focusComplete">${set.done ? (ru ? 'Готово!' : 'Set Complete') : (ru ? 'Завершить подход' : 'Complete Set')}</button>
       </div>
       <div class="focus-footer">
         <div class="focus-progress-dots">${ex.sets.map((s, i) => `<div class="focus-dot ${s.done ? 'done' : ''} ${i === si ? 'active' : ''}"></div>`).join('')}</div>

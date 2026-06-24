@@ -8,6 +8,19 @@ import { Toast } from '../shell.js';
 import { esc } from '../shared/utils.js';
 import { confirmDialog } from '../shared/confirm.js';
 import { isRu } from '../locale.store.js';
+import { on, onChange, onInput } from '../events.js';
+
+const W = () => window.Workout;
+onChange('wo:planName',  (el, e) => W()._updatePlanName(el.dataset.type, +el.dataset.pi, e.target.value));
+on('wo:planAdjust',      (el) => W()._adjustPlan(el.dataset.type, +el.dataset.pi, el.dataset.field, +el.dataset.delta));
+on('wo:planDelete',      (el) => W()._deletePlanEx(el.dataset.type, +el.dataset.pi));
+on('wo:planAddEx',       (el) => W()._addPlanEx(el.dataset.type));
+on('wo:planClose',       () => W()._closePlanEditor());
+on('wo:planWeek',        (el) => W()._switchPlanWeek(el.dataset.week));
+on('wo:planPreset',      (el) => W()._loadPreset(el.dataset.preset));
+onInput('wo:planSearch', (el, e) => W()._setPlanSearch(e.target.value));
+on('wo:planTab',         (el) => W()._switchPlanTab(el.dataset.type));
+on('wo:planSave',        () => W()._savePlanAndClose());
 import {
   State,
   loadPlan, savePlan,
@@ -61,21 +74,21 @@ export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
         </svg>
       </div>
       <input class="plan-input" value="${esc(ex.name)}"
-        onchange="Workout._updatePlanName('${type}',${originalIndex},this.value)">
+        data-change="wo:planName" data-type="${type}" data-pi="${originalIndex}">
       <div class="plan-row-meta">
         <span class="plan-meta-label">Sets</span>
         <div class="mini-stepper">
-          <button onclick="Workout._adjustPlan('${type}',${originalIndex},'sets',-1)" aria-label="Decrease sets">${svgArrow('minus')}</button>
+          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="sets" data-delta="-1" aria-label="Decrease sets">${svgArrow('minus')}</button>
           <span id="ps-sets-${type}-${originalIndex}">${ex.sets}</span>
-          <button onclick="Workout._adjustPlan('${type}',${originalIndex},'sets',1)" aria-label="Increase sets">${svgArrow('plus')}</button>
+          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="sets" data-delta="1" aria-label="Increase sets">${svgArrow('plus')}</button>
         </div>
         <span class="plan-meta-label">Reps</span>
         <div class="mini-stepper">
-          <button onclick="Workout._adjustPlan('${type}',${originalIndex},'reps',-1)" aria-label="Decrease reps">${svgArrow('minus')}</button>
+          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="reps" data-delta="-1" aria-label="Decrease reps">${svgArrow('minus')}</button>
           <span id="ps-reps-${type}-${originalIndex}">${ex.reps}</span>
-          <button onclick="Workout._adjustPlan('${type}',${originalIndex},'reps',1)" aria-label="Increase reps">${svgArrow('plus')}</button>
+          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="reps" data-delta="1" aria-label="Increase reps">${svgArrow('plus')}</button>
         </div>
-        <button class="plan-delete" onclick="Workout._deletePlanEx('${type}',${originalIndex})" aria-label="Remove exercise">
+        <button class="plan-delete" data-action="wo:planDelete" data-type="${type}" data-pi="${originalIndex}" aria-label="Remove exercise">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="14" height="14">
             <polyline points="3 6 5 6 21 6"/>
@@ -89,7 +102,7 @@ export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
     : `<div class="plan-empty">No exercises found for "${esc(searchQuery)}"</div>`;
 
   return exercisesHTML + `
-    <button class="btn-add-ex" onclick="Workout._addPlanEx('${type}')">
+    <button class="btn-add-ex" data-action="wo:planAddEx" data-type="${type}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="1.5" stroke-linecap="round" width="16" height="16">
         <line x1="12" y1="5" x2="12" y2="19"/>
@@ -126,7 +139,7 @@ export function openPlanEditor() {
         <div class="modal-handle"></div>
         <div class="modal-header">
           <div class="modal-title">Edit Plan</div>
-          <button class="btn-icon-sm" onclick="Workout._closePlanEditor()" aria-label="Close plan editor">
+          <button class="btn-icon-sm" data-action="wo:planClose" aria-label="Close plan editor">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.5" stroke-linecap="round" width="18" height="18">
               <line x1="18" y1="6" x2="6" y2="18"/>
@@ -140,10 +153,10 @@ export function openPlanEditor() {
           <span class="plan-preset-label">Week:</span>
           <div class="week-segment" role="tablist">
             <button class="week-seg-btn ${activeWeek === 'A' ? 'active' : ''}"
-                    onclick="Workout._switchPlanWeek('A')" role="tab"
+                    data-action="wo:planWeek" data-week="A" role="tab"
                     aria-selected="${activeWeek === 'A'}">A</button>
             <button class="week-seg-btn ${activeWeek === 'B' ? 'active' : ''}"
-                    onclick="Workout._switchPlanWeek('B')" role="tab"
+                    data-action="wo:planWeek" data-week="B" role="tab"
                     aria-selected="${activeWeek === 'B'}">B</button>
           </div>
           <span class="plan-week-hint">${activeWeek === 'A' ? 'Biceps focus (Push) · Triceps (Pull)' : 'Triceps focus (Push) · Biceps (Pull)'}</span>
@@ -152,7 +165,7 @@ export function openPlanEditor() {
         <!-- Preset loader -->
         <div class="plan-preset-row">
           <span class="plan-preset-label">Preset:</span>
-          <button class="btn-preset" onclick="Workout._loadPreset('ppl-gio')">PPL | GIO</button>
+          <button class="btn-preset" data-action="wo:planPreset" data-preset="ppl-gio">PPL | GIO</button>
         </div>
 
         <!-- Search bar -->
@@ -164,7 +177,7 @@ export function openPlanEditor() {
           </svg>
           <input class="plan-search-input" id="plan-search" type="text"
                  placeholder="Search exercises..." value="${esc(searchQuery)}"
-                 oninput="Workout._setPlanSearch(this.value)">
+                 data-input="wo:planSearch">
         </div>
 
         <div class="plan-tabs">
@@ -173,7 +186,7 @@ export function openPlanEditor() {
               (t) => `
             <button class="plan-tab ${t === activeTab ? 'active' : ''}"
                     data-type="${t}"
-                    onclick="Workout._switchPlanTab('${t}')">
+                    data-action="wo:planTab">
               ${t.charAt(0).toUpperCase() + t.slice(1)}
             </button>`
             )
@@ -183,7 +196,7 @@ export function openPlanEditor() {
           ${tabContent(activeTab)}
         </div>
         <button class="btn btn-primary" style="margin-top:var(--sp-2)"
-                onclick="Workout._savePlanAndClose()">
+                data-action="wo:planSave">
           Save Plan
         </button>
       </div>`;
