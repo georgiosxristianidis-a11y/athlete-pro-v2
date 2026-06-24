@@ -1,0 +1,15 @@
+test/
+scripts/
+.github/
+.claude/
+.agents/
+.githooks/
+*.py
+*.log
+NEXT_SESSION.md
+HANDOFF_*.md
+FABLE5_FINDINGS.md
+ROADMAP_*.md
+GEMINI.md
+RULES.md
+check_onclick.py

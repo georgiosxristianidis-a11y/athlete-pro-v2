@@ -34,6 +34,9 @@
     "helmet": "^8.2.0",
     "zod": "^4.4.3"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
