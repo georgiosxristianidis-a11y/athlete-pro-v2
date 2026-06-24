@@ -11,6 +11,14 @@ import { esc } from './shared/utils.js';
 import { Toast } from './shell.js';
 import { fmtVol, fmtDuration, fmtDate } from './shared/format.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
+import { on } from './events.js';
+
+on('dash:directLaunch',  (el) => window.Dashboard.directLaunch(el.dataset.type));
+on('dash:weeklySummary', () => showWeeklySummary());
+on('dash:navStats',      () => window.Nav.go('s-stats'));
+on('dash:closeMascot',   () => window.Dashboard.closeMascot());
+on('dash:askAI',         () => askAIAboutSummary());
+on('dash:closeModal',    (el) => el.closest('.modal-overlay')?.remove());
 
 export const Dashboard = (() => {
   const TYPE_COLOR = {
@@ -87,7 +95,7 @@ export const Dashboard = (() => {
           <div class="dash-hero-title" id="dash-greeting-label">${greeting()}</div>
           <div class="dash-hero-date" id="dash-date"></div>
         </div>
-        <button class="dash-cta" onclick="window.Dashboard.directLaunch('${nextType}')">
+        <button class="dash-cta" data-action="dash:directLaunch" data-type="${nextType}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="5 12 12 5 19 12"/>
@@ -126,7 +134,7 @@ export const Dashboard = (() => {
         </div>
 
         <!-- Weekly Summary Chip -->
-      <div class="stat-chip weekly-summary-chip stagger-item" onclick="window.Dashboard.showWeeklySummary()" style="cursor:pointer;margin-top:var(--sp-2)">
+      <div class="stat-chip weekly-summary-chip stagger-item" data-action="dash:weeklySummary" style="cursor:pointer;margin-top:var(--sp-2)">
         <div class="stat-chip-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
                stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
@@ -141,7 +149,7 @@ export const Dashboard = (() => {
       </div>
 
       <!-- Streak card -->
-      <div class="streak-card stagger-item" onclick="window.Nav.go('s-stats')" style="cursor:pointer">
+      <div class="streak-card stagger-item" data-action="dash:navStats" style="cursor:pointer">
         <div class="streak-header">
           <span class="section-label">This Week</span>
           <span class="streak-count" id="streak-count"></span>
@@ -179,7 +187,7 @@ export const Dashboard = (() => {
       <div class="empty-dashboard">
         ${showMascot ? `
         <div class="empty-dash-mascot-wrap" id="mascot-draggable">
-          <button class="mascot-close-btn" onclick="window.Dashboard.closeMascot()" title="Close mascot">
+          <button class="mascot-close-btn" data-action="dash:closeMascot" title="Close mascot">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -830,8 +838,8 @@ async function showWeeklySummary() {
       </div>
 
       <div class="modal-footer" style="padding:var(--sp-2) var(--sp-3);display:flex;gap:var(--sp-2);justify-content:flex-end">
-        <button class="btn-icon-nav" onclick="window.Dashboard.askAIAboutSummary()" style="align-self:center">Ask Coach</button>
-        <button class="btn-primary" onclick="this.closest('.modal-overlay').remove()">Close</button>
+        <button class="btn-icon-nav" data-action="dash:askAI" style="align-self:center">Ask Coach</button>
+        <button class="btn-primary" data-action="dash:closeModal">Close</button>
       </div>
     </div>
   `;

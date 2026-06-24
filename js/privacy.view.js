@@ -15,6 +15,16 @@ import {
 import { t, isRu } from './locale.store.js';
 import { esc } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
+import { on } from './events.js';
+
+on('privacy:setMode',        (el) => _setMode(el.dataset.mode));
+on('privacy:toggleAi',       () => _toggleAi());
+on('privacy:passport',       () => openDataPassport());
+on('privacy:audit',          () => openAuditLog());
+on('privacy:closeOverlay',   (el) => _closeOverlay(el.dataset.overlay));
+on('privacy:exportAndClose', () => { window.Profile?.exportData(); _closeOverlay('data-passport-overlay'); });
+on('privacy:confirmDelete',  () => _confirmDelete());
+on('privacy:clearAudit',     () => _clearAudit());
 
 const MODES = [
   { id: 'cloud',  label: 'Cloud',     desc: 'AI Coach + cloud sync available.' },
@@ -44,7 +54,7 @@ export function renderPrivacyCard() {
         ${MODES.map(m => `
           <button class="privacy-seg-btn ${m.id === mode ? 'active' : ''}"
                   data-mode="${m.id}" role="tab" aria-selected="${m.id === mode}"
-                  onclick="Privacy._setMode('${m.id}')">
+                  data-action="privacy:setMode">
             ${_modeIcon(m.id)}
             <span>${t(`privacy.${m.id}`)}</span>
           </button>`).join('')}
@@ -63,7 +73,7 @@ export function renderPrivacyCard() {
           </div>
         </div>
         <div class="switch-wrap ${mode === 'airgap' ? 'switch-disabled' : ''}"
-             onclick="${mode === 'airgap' ? '' : 'Privacy._toggleAi()'}">
+             ${mode === 'airgap' ? '' : 'data-action="privacy:toggleAi"'}>
           <div class="switch ${ai && mode !== 'airgap' ? 'on' : ''}" id="sw-privacy-ai">
             <div class="switch-thumb"></div>
           </div>
@@ -71,7 +81,7 @@ export function renderPrivacyCard() {
       </div>
 
       
-      <button class="data-btn" onclick="Privacy.openDataPassport()">
+      <button class="data-btn" data-action="privacy:passport">
         <div class="data-btn-icon" style="background:var(--c-purple-bg)">
           ${_iconPassport()}
         </div>
@@ -83,7 +93,7 @@ export function renderPrivacyCard() {
       </button>
 
       
-      <button class="data-btn" onclick="Privacy.openAuditLog()">
+      <button class="data-btn" data-action="privacy:audit">
         <div class="data-btn-icon" style="background:var(--c-blue-bg)">
           ${_iconAudit()}
         </div>
@@ -156,7 +166,7 @@ export async function openDataPassport() {
       <div class="modal-handle"></div>
       <div class="modal-header">
         <div class="modal-title">${t('privacy.passport')}</div>
-        <button class="btn-icon-sm" onclick="Privacy._closeOverlay('data-passport-overlay')" aria-label="Close">
+        <button class="btn-icon-sm" data-action="privacy:closeOverlay" data-overlay="data-passport-overlay" aria-label="Close">
           ${_iconClose()}
         </button>
       </div>
@@ -191,11 +201,11 @@ export async function openDataPassport() {
       </div>
 
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:var(--sp-3)">
-        <button class="btn btn-primary" onclick="Profile.exportData();Privacy._closeOverlay('data-passport-overlay')">
+        <button class="btn btn-primary" data-action="privacy:exportAndClose">
           ${t('privacy.export_all')}
         </button>
         <button class="btn btn-ghost" style="color:var(--c-red);border-color:rgba(232,132,140,0.3)"
-                onclick="Privacy._confirmDelete()">
+                data-action="privacy:confirmDelete">
           ${t('privacy.delete_all')}
         </button>
       </div>
@@ -245,7 +255,7 @@ export function openAuditLog() {
       <div class="modal-handle"></div>
       <div class="modal-header">
         <div class="modal-title">${t('privacy.audit')}</div>
-        <button class="btn-icon-sm" onclick="Privacy._closeOverlay('audit-overlay')" aria-label="Close">
+        <button class="btn-icon-sm" data-action="privacy:closeOverlay" data-overlay="audit-overlay" aria-label="Close">
           ${_iconClose()}
         </button>
       </div>
@@ -254,7 +264,7 @@ export function openAuditLog() {
       </div>
       <div class="audit-list">${rows}</div>
       <button class="btn btn-ghost" style="margin-top:var(--sp-2)"
-              onclick="Privacy._clearAudit()">
+              data-action="privacy:clearAudit">
         ${t('privacy.clear_log')}
       </button>
     </div>`;

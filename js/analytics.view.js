@@ -20,6 +20,11 @@ import { t } from './locale.store.js';
 import { isRu } from './locale.store.js';
 import { renderStrengthHero, renderStrengthCurves } from './analytics.strength-curves.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
+import { on } from './events.js';
+
+on('analytics:calPrev',    () => calPrev());
+on('analytics:calNext',    () => calNext());
+on('analytics:startFirst', () => window.Nav.go('s-train', { force: true }));
 
 // PPL law: push=green (--c-accent) · pull=cyan (--c-blue) · legs=purple (--c-purple).
 // Kept as hex because callers append alpha (`${color}20`), which CSS vars can't do.
@@ -105,10 +110,10 @@ export async function load() {
             <div style="font-size:10px; color:var(--c-text-3); margin-top: 2px;">Workout Heatmap</div>
           </div>
           <div style="display:flex; gap:8px;">
-            <button class="btn-icon-nav" id="cal-prev" onclick="window.Analytics.calPrev()" style="background:var(--c-surface-h); border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; color:var(--c-text-2); border:none; cursor:pointer;">
+            <button class="btn-icon-nav" id="cal-prev" data-action="analytics:calPrev" style="background:var(--c-surface-h); border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; color:var(--c-text-2); border:none; cursor:pointer;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
-            <button class="btn-icon-nav" id="cal-next" onclick="window.Analytics.calNext()" style="background:var(--c-surface-h); border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; color:var(--c-text-2); border:none; cursor:pointer;">
+            <button class="btn-icon-nav" id="cal-next" data-action="analytics:calNext" style="background:var(--c-surface-h); border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; color:var(--c-text-2); border:none; cursor:pointer;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
           </div>
@@ -146,7 +151,7 @@ export async function load() {
           <div class="empty-desc" style="color: var(--c-text-3); max-width: 240px; line-height: 1.4; margin-bottom: var(--sp-4);">
             ${t('analytics.empty_desc')}
           </div>
-          <div class="pp-bento-cell pp-bento-glow" style="--bento-color: var(--c-accent); --bento-glow: var(--glow-accent-md); align-items: center; padding: 16px; margin-top: 24px;" onclick="window.Nav.go('s-train', { force: true })"><div class="pp-bento-val" style="color: var(--c-accent); font-size: 24px;">${t('analytics.start_first')}</div></div>
+          <div class="pp-bento-cell pp-bento-glow" style="--bento-color: var(--c-accent); --bento-glow: var(--glow-accent-md); align-items: center; padding: 16px; margin-top: 24px;" data-action="analytics:startFirst"><div class="pp-bento-val" style="color: var(--c-accent); font-size: 24px;">${t('analytics.start_first')}</div></div>
         </div>
       `;
       return;

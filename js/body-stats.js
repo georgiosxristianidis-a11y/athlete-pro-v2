@@ -4,6 +4,11 @@ import { Spring } from './shared/spring.js';
 import { Toast } from './shell.js';
 import { confirmDialog } from './shared/confirm.js';
 import { isRu } from './locale.store.js';
+import { on } from './events.js';
+
+on('bs:prompt',     (el) => window.bsPromptField(el.dataset.id, el.dataset.label, el.dataset.unit, +el.dataset.val || 0));
+on('bs:histToggle', (el) => el.parentElement.classList.toggle('open'));
+on('bs:delete',     (el, e) => { e.stopPropagation(); window.bsDeleteEntry(el.dataset.date); });
 
 const BS_KEY = 'ap-bodystats';
 const bsEsc = (s) => String(s).replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c]);
@@ -85,7 +90,7 @@ export async function renderBodyStats(targetEl) {
     } else { glowVar = 'rgba(255,255,255,0.1)' }
     
     return `
-    <div class="pp-bento-cell pp-bento-glow" style="--bento-color:${f.color}; --bento-glow:${glowVar}" onclick="bsPromptField('${f.id}', '${f.label}', '${f.unit}', ${val === '--' ? 0 : val})">
+    <div class="pp-bento-cell pp-bento-glow" style="--bento-color:${f.color}; --bento-glow:${glowVar}" data-action="bs:prompt" data-id="${f.id}" data-label="${f.label}" data-unit="${f.unit}" data-val="${val === '--' ? 0 : val}">
       <div class="pp-bento-lbl">${f.label}</div>
       <div class="pp-bento-val">${val}<span style="font-size:12px;opacity:0.6;margin-left:2px">${f.unit}</span></div>
       ${f.id === 'body_fat' && bfCat ? `<div class="pp-bento-sub" style="color:${bfCat.color}">${bfCat.label}</div>` : ''}
@@ -101,9 +106,9 @@ export async function renderBodyStats(targetEl) {
       </div>`).join('');
     return `
       <div class="bs-hist-card" style="background:var(--c-surface-deep); border:1px solid var(--c-border); border-radius:16px; padding:16px; margin-bottom:8px;">
-        <div class="bs-hist-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;" onclick="bsHistToggle(this.parentElement)">
+        <div class="bs-hist-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;" data-action="bs:histToggle">
           <span class="bs-hist-date" style="font-weight:700; color:var(--c-text-1)">${bsFmtDate(e.date)}</span>
-          <button class="btn-icon-sm" style="color:var(--c-red); background:none; border:none; padding:4px;" onclick="event.stopPropagation(); bsDeleteEntry('${e.date}')">
+          <button class="btn-icon-sm" style="color:var(--c-red); background:none; border:none; padding:4px;" data-action="bs:delete" data-date="${e.date}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
           </button>
         </div>
@@ -115,7 +120,7 @@ export async function renderBodyStats(targetEl) {
     <div class="bs-wrap" style="padding-top: 0; padding-bottom: calc(24px + env(safe-area-inset-bottom));">
       <div class="section-header" style="margin-top: 0; margin-bottom: var(--sp-2);">
         <span class="section-label">${ru ? 'Замеры тела' : 'Body Measurements'}</span>
-        <button class="btn-text" style="color:var(--c-accent)" onclick="bsPromptField('new', '${ru ? 'Новая запись' : 'New Entry'}', '', 0)">+ Add</button>
+        <button class="btn-text" style="color:var(--c-accent)" data-action="bs:prompt" data-id="new" data-label="${ru ? 'Новая запись' : 'New Entry'}" data-unit="" data-val="0">+ Add</button>
       </div>
       <div class="pp-bento" style="margin-bottom: var(--sp-4);">
         ${bentoHtml}
@@ -139,7 +144,7 @@ window.bsPromptField = function(id, label, unit, currVal) {
       <div class="modal-handle"></div>
       <div class="modal-header">
         <span class="modal-title">Update ${label}</span>
-        <button class="btn-icon-sm" onclick="this.closest('.modal-overlay').classList.remove('visible'); setTimeout(() => this.closest('.modal-overlay').remove(), 300)">
+        <button class="btn-icon-sm bs-close-x">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
       </div>
@@ -197,7 +202,8 @@ window.bsPromptField = function(id, label, unit, currVal) {
       onComplete: () => overlay.remove()
     });
   };
-  
+  overlay.querySelector('.bs-close-x').onclick = close;
+
   overlay.querySelector('#bsf-save').onclick = async () => {
     const date = overlay.querySelector('#bsf-date').value;
     if (!date) return;

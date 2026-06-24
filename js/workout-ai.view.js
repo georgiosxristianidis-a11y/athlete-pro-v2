@@ -9,6 +9,13 @@ import { State as WorkoutState } from './workout.store.js';
 import { DB } from './db.js';
 import { esc } from './shared/utils.js';
 import { toUserMessage } from './shared/errors-ui.js';
+import { on, onKeydown } from './events.js';
+
+on('wai:toggle',     () => toggle());
+on('wai:hideBubble', (el, e) => { e.stopPropagation(); hideBubble(); });
+on('wai:quickAsk',   (el) => quickAsk(el.dataset.q));
+on('wai:send',       () => send());
+onKeydown('wai:key', (el, e) => handleKey(e));
 
 /* ══════════════════════════════════════════════
    STATE
@@ -53,7 +60,7 @@ function _renderBubble() {
   bubble.className = 'workout-ai-bubble';
   bubble.hidden = true;
   bubble.innerHTML = `
-    <button class="bubble-main" onclick="window.WorkoutAI.toggle()" aria-label="Open AI coach">
+    <button class="bubble-main" data-action="wai:toggle" aria-label="Open AI coach">
       <svg class="bubble-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
         <path d="M12 2L13.5 7.5L19 9L13.5 10.5L12 16L10.5 10.5L5 9L10.5 7.5L12 2Z"/>
@@ -61,7 +68,7 @@ function _renderBubble() {
       </svg>
     </button>
     <button class="bubble-close" aria-label="Dismiss coach"
-      onclick="event.stopPropagation();window.WorkoutAI.hideBubble()">
+      data-action="wai:hideBubble">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
            stroke-linecap="round" width="9" height="9">
         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -91,7 +98,7 @@ function _renderChatOverlay() {
         </svg>
         Coach
       </span>
-      <button class="btn-icon-sm" onclick="window.WorkoutAI.toggle()" aria-label="Close coach">
+      <button class="btn-icon-sm" data-action="wai:toggle" aria-label="Close coach">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
              stroke-linecap="round" width="16" height="16">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -100,7 +107,7 @@ function _renderChatOverlay() {
     </div>
     <div class="chat-messages" id="workout-ai-messages"></div>
     <div class="quick-actions">
-      <button class="quick-action-chip" onclick="window.WorkoutAI.quickAsk('weight')">
+      <button class="quick-action-chip" data-action="wai:quickAsk" data-q="weight">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
              stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
           <line x1="6.5" y1="12" x2="17.5" y2="12"/>
@@ -109,7 +116,7 @@ function _renderChatOverlay() {
         </svg>
         Weight
       </button>
-      <button class="quick-action-chip" onclick="window.WorkoutAI.quickAsk('form')">
+      <button class="quick-action-chip" data-action="wai:quickAsk" data-q="form">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
              stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
           <rect x="5" y="3" width="14" height="18" rx="2"/>
@@ -119,7 +126,7 @@ function _renderChatOverlay() {
         </svg>
         Form
       </button>
-      <button class="quick-action-chip" onclick="window.WorkoutAI.quickAsk('rest')">
+      <button class="quick-action-chip" data-action="wai:quickAsk" data-q="rest">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
              stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
           <circle cx="12" cy="12" r="9"/>
@@ -134,9 +141,9 @@ function _renderChatOverlay() {
         id="workout-ai-input"
         class="chat-input"
         placeholder="Ask about this set..."
-        onkeydown="window.WorkoutAI.handleKey(event)"
+        data-keydown="wai:key"
       />
-      <button class="btn-icon-sm" onclick="window.WorkoutAI.send()" aria-label="Send">
+      <button class="btn-icon-sm" data-action="wai:send" aria-label="Send">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
              stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
           <line x1="12" y1="19" x2="12" y2="5"/>

@@ -1,4 +1,9 @@
 import { fmtWeight } from './shared/format.js';
+import { on } from './events.js';
+
+on('pc:setBar', (el) => window.PlateCalc.setBar(+el.dataset.w));
+on('pc:close',  () => window.PlateCalc.close());
+on('pc:step',   (el) => window.PlateCalc.stepWeight(+el.dataset.amt));
 // @ts-check
 /* ════════════════════════════════════════════════════════
    Block 10.1 — Plate Calculator  v1.1  |  Athlete Pro
@@ -134,21 +139,21 @@ export const PlateCalc = (() => {
     const barBtns = BAR_OPTS.map(
       (w) =>
         `<button class="pc-bar-opt${w === _barWeight ? ' active' : ''}" data-w="${w}"
-               onclick="PlateCalc.setBar(${w})">${w} kg</button>`
+               data-action="pc:setBar">${w} kg</button>`
     ).join('');
     _overlay.innerHTML = `
       <div class="modal-sheet pc-sheet">
         <div class="modal-handle"></div>
         <div class="modal-header">
           <span class="modal-title">Plate Calculator</span>
-          <button class="btn-icon-sm" onclick="PlateCalc.close()">
+          <button class="btn-icon-sm" data-action="pc:close">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
                  stroke-linecap="round" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
         <div class="pc-bar-row"><span class="pc-section-lbl">Bar weight</span><div class="pc-bar-opts">${barBtns}</div></div>
         <div class="pc-weight-row">
-          <button class="pc-step-btn" onclick="PlateCalc.stepWeight(-2.5)">
+          <button class="pc-step-btn" data-action="pc:step" data-amt="-2.5">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                  stroke-linecap="round" width="20" height="20"><path d="M5 12h14"/></svg>
           </button>
@@ -156,7 +161,7 @@ export const PlateCalc = (() => {
             <span id="pc-weight-val" class="pc-weight-num">100</span>
             <span class="pc-weight-unit">kg</span>
           </div>
-          <button class="pc-step-btn" onclick="PlateCalc.stepWeight(2.5)">
+          <button class="pc-step-btn" data-action="pc:step" data-amt="2.5">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                  stroke-linecap="round" width="20" height="20"><path d="M12 5v14M5 12h14"/></svg>
           </button>
