@@ -208,9 +208,10 @@ export const DynamicIsland = (() => {
       _island?.classList.add('mode-idle');
       
       document.getElementById('status-bar')?.classList.remove('workout-active');
-      
-      const dot = document.getElementById('di-dot');
-      if (dot) dot.className = navigator.onLine ? 'island-dot online' : 'island-dot offline';
+
+      // Surface real sync state on the home screen too (was a binary online/offline
+      // class with no matching CSS). Routes through deriveDotState like the active path.
+      _updateNetworkStatus();
       return;
     }
 
