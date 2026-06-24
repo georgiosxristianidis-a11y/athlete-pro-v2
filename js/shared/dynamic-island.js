@@ -8,6 +8,14 @@ import { haptic } from './utils.js';
 import { isRu } from '../locale.store.js';
 import { getPrivacyMode } from '../privacy.store.js';
 import { deriveDotState } from './sync-dot.js';
+import { on } from '../events.js';
+
+// Event-delegation handlers (CSP: replaced inline onclick). stopPropagation so a
+// tap on an island control doesn't also bubble to the island expand-toggle.
+on('island:skipExercise', (el, e) => { e.stopPropagation(); window.Workout?._focusNext(); });
+on('island:addRest',      (el, e) => { e.stopPropagation(); RestTimer?.addTime(+el.dataset.amt); });
+on('island:pip',          (el, e) => { e.stopPropagation(); window.DynamicIsland?.triggerPiP(); });
+on('island:skipRest',     (el, e) => { e.stopPropagation(); RestTimer?.tapSkip(); });
 
 /**
  * dynamic-island.js — Interactive session overlay (PIP)
@@ -70,14 +78,14 @@ export const DynamicIsland = (() => {
           <div class="island-sublabel" id="di-sublabel">Week 1 · PUSH · next: Bench</div>
 
           <div class="island-actions">
-            <button class="island-action-btn skip" title="Skip Exercise" onclick="event.stopPropagation(); window.Workout?._focusNext()">
+            <button class="island-action-btn skip" title="Skip Exercise" data-action="island:skipExercise">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
             </button>
-            <button class="island-action-btn plus" title="+30s Rest" onclick="event.stopPropagation(); window.RestTimer?.addTime(30)">
+            <button class="island-action-btn plus" title="+30s Rest" data-action="island:addRest" data-amt="30">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>30s</span>
             </button>
-            <button class="island-action-btn" title="Picture in Picture" onclick="event.stopPropagation(); window.DynamicIsland?.triggerPiP()" style="margin-left:auto">
+            <button class="island-action-btn" title="Picture in Picture" data-action="island:pip" style="margin-left:auto">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1"/></svg>
               <span>PiP</span>
             </button>
@@ -89,8 +97,8 @@ export const DynamicIsland = (() => {
           <span class="island-rest-time" id="di-rest-time">0:00</span>
           <span class="island-rest-label" id="di-rest-label">REST</span>
           <div class="island-rest-actions">
-            <button class="island-rest-btn" id="di-rest-plus" title="+15s" onclick="event.stopPropagation(); window.RestTimer?.addTime(15)">+15s</button>
-            <button class="island-rest-btn primary" id="di-rest-skip" title="Skip rest" onclick="event.stopPropagation(); window.RestTimer?.tapSkip()">Skip</button>
+            <button class="island-rest-btn" id="di-rest-plus" title="+15s" data-action="island:addRest" data-amt="15">+15s</button>
+            <button class="island-rest-btn primary" id="di-rest-skip" title="Skip rest" data-action="island:skipRest">Skip</button>
           </div>
         </div>
 

@@ -4,6 +4,7 @@
    Imports all modules, bridges globals for onclick, boots the app
    ════════════════════════════════════════════════════════ */
 
+import './events.js'; // global event-delegation dispatcher (CSP: no inline on*)
 import { DB, openDB } from './db.js';
 import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
