@@ -1,6 +1,28 @@
 // @ts-check
 import { esc } from '../shared/utils.js';
 import { t } from '../locale.store.js';
+import { on, onInput, onBlur } from '../events.js';
+
+const P = () => window.Profile;
+on('settings:adjustRest',  (el) => P().adjustRest(+el.dataset.amt));
+on('settings:toggleHaptic',(el) => P().toggleHaptic());
+on('settings:toggleKeepAwake', () => P().toggleKeepAwake());
+on('settings:setLang',     (el) => P().setLang(el.dataset.lang));
+on('settings:toggleAutoProgress', () => P().toggleAutoProgress());
+on('settings:setUnit',     (el) => P().setUnit(el.dataset.unit));
+on('settings:setMode',     (el) => P().setTrainingMode(el.dataset.mode));
+on('settings:setTime',     (el) => P().setSessionTime(+el.dataset.time));
+on('settings:setEngine',   (el) => P().setEngine(el.dataset.engine));
+on('settings:togglePanda', () => P().togglePanda());
+on('settings:toggleKeyVis',() => P().toggleKeyVisibility());
+on('settings:syncToggle',  (el) => el.dataset.sync === 'offline' ? P().syncConnect() : P().syncDisconnect());
+on('settings:exportData',  () => P().exportData());
+on('settings:exportCsv',   () => P().exportCsv());
+on('settings:importData',  () => P().importData());
+on('settings:dedup',       () => P().deduplicateDB());
+onBlur('settings:saveInjuries', (el) => P().saveInjuries(el.value));
+onInput('settings:keyInput',    (el) => el.dataset.engine === 'gemini' ? P().validateGeminiKey(el.value) : P().validateAnthropicKey(el.value));
+onBlur('settings:keyBlur',      (el) => el.dataset.engine === 'gemini' ? P().setGeminiKey(el.value) : P().setAnthropicKey(el.value));
 
 /**
  * Render the complete Application Settings for the Profile tab.
@@ -36,10 +58,10 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           <div class="pref-sub">${settings['rest-duration'] || 90}s ${t('settings.rest_sub')}</div>
         </div>
         <div class="mini-stepper" style="background: var(--c-bg-3); border-radius: 12px; padding: 4px; gap: 8px; display: flex; align-items: center;">
-          <button onclick="Profile.adjustRest(-15)" style="width: 28px; height: 28px; border-radius: 8px; background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text-1);">
+          <button data-action="settings:adjustRest" data-amt="-15" style="width: 28px; height: 28px; border-radius: 8px; background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text-1);">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="12" height="12"><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
-          <button onclick="Profile.adjustRest(15)" style="width: 28px; height: 28px; border-radius: 8px; background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text-1);">
+          <button data-action="settings:adjustRest" data-amt="15" style="width: 28px; height: 28px; border-radius: 8px; background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text-1);">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
         </div>
@@ -53,7 +75,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           <div class="pref-title">${t('settings.haptic')}</div>
           <div class="pref-sub">${t('settings.haptic_sub')}</div>
         </div>
-        <div class="switch-wrap" onclick="Profile.toggleHaptic()">
+        <div class="switch-wrap" data-action="settings:toggleHaptic">
           <div class="switch ${settings['haptic'] !== 'off' ? 'on' : ''}" id="sw-haptic">
             <div class="switch-thumb"></div>
           </div>
@@ -68,7 +90,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           <div class="pref-title">${t('settings.awake')}</div>
           <div class="pref-sub">${t('settings.awake_sub')}</div>
         </div>
-        <div class="switch-wrap" onclick="Profile.toggleKeepAwake()">
+        <div class="switch-wrap" data-action="settings:toggleKeepAwake">
           <div class="switch ${settings['keep-awake'] !== 'off' ? 'on' : ''}" id="sw-keep-awake">
             <div class="switch-thumb"></div>
           </div>
@@ -85,9 +107,9 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
         </div>
         <div class="toggle-group">
           <button class="toggle-btn ${lang !== 'ru' ? 'active' : ''}"
-                  onclick="Profile.setLang('en')">EN</button>
+                  data-action="settings:setLang" data-lang="en">EN</button>
           <button class="toggle-btn ${lang === 'ru' ? 'active' : ''}"
-                  onclick="Profile.setLang('ru')">RU</button>
+                  data-action="settings:setLang" data-lang="ru">RU</button>
         </div>
       </div>
     </div>
@@ -100,7 +122,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           <div class="pref-title">${t('settings.smart_progress')}</div>
           <div class="pref-sub">${t('settings.smart_progress_sub')}</div>
         </div>
-        <div class="switch-wrap" onclick="Profile.toggleAutoProgress()">
+        <div class="switch-wrap" data-action="settings:toggleAutoProgress">
           <div class="switch ${settings['auto-progress'] !== 'off' ? 'on' : ''}" id="sw-auto-progress">
             <div class="switch-thumb"></div>
           </div>
@@ -116,9 +138,9 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
         </div>
         <div class="toggle-group">
           <button class="toggle-btn ${(settings['weight-unit'] || 'kg') === 'kg' ? 'active' : ''}"
-                  onclick="Profile.setUnit('kg')">kg</button>
+                  data-action="settings:setUnit" data-unit="kg">kg</button>
           <button class="toggle-btn ${settings['weight-unit'] === 'lbs' ? 'active' : ''}"
-                  onclick="Profile.setUnit('lbs')">lbs</button>
+                  data-action="settings:setUnit" data-unit="lbs">lbs</button>
         </div>
       </div>
 
@@ -131,13 +153,13 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
         </div>
         <div class="toggle-group seg-full">
           <button class="toggle-btn seg-sm${_modeActive('strength')}"
-                  onclick="Profile.setTrainingMode('strength')">${lang === 'ru' ? 'Сила' : 'Strength'}</button>
+                  data-action="settings:setMode" data-mode="strength">${lang === 'ru' ? 'Сила' : 'Strength'}</button>
           <button class="toggle-btn seg-sm${_modeActive('hypertrophy')}"
-                  onclick="Profile.setTrainingMode('hypertrophy')">${lang === 'ru' ? 'Масса' : 'Size'}</button>
+                  data-action="settings:setMode" data-mode="hypertrophy">${lang === 'ru' ? 'Масса' : 'Size'}</button>
           <button class="toggle-btn seg-sm${_modeActive('recovery')}"
-                  onclick="Profile.setTrainingMode('recovery')">${lang === 'ru' ? 'Отдых' : 'Recov.'}</button>
+                  data-action="settings:setMode" data-mode="recovery">${lang === 'ru' ? 'Отдых' : 'Recov.'}</button>
           <button class="toggle-btn seg-sm${_modeActive('maintenance')}"
-                  onclick="Profile.setTrainingMode('maintenance')">${lang === 'ru' ? 'Подд.' : 'Maint.'}</button>
+                  data-action="settings:setMode" data-mode="maintenance">${lang === 'ru' ? 'Подд.' : 'Maint.'}</button>
         </div>
       </div>
 
@@ -149,11 +171,11 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           <div class="pref-sub">${t('settings.length_sub')}</div>
         </div>
         <div class="toggle-group">
-          <button class="toggle-btn seg-sm${_timeActive(30)}" onclick="Profile.setSessionTime(30)">30</button>
-          <button class="toggle-btn seg-sm${_timeActive(45)}" onclick="Profile.setSessionTime(45)">45</button>
-          <button class="toggle-btn seg-sm${_timeActive(60)}" onclick="Profile.setSessionTime(60)">60</button>
-          <button class="toggle-btn seg-sm${_timeActive(90)}" onclick="Profile.setSessionTime(90)">90</button>
-          <button class="toggle-btn seg-sm${_timeActive(0)}" onclick="Profile.setSessionTime(0)">—</button>
+          <button class="toggle-btn seg-sm${_timeActive(30)}" data-action="settings:setTime" data-time="30">30</button>
+          <button class="toggle-btn seg-sm${_timeActive(45)}" data-action="settings:setTime" data-time="45">45</button>
+          <button class="toggle-btn seg-sm${_timeActive(60)}" data-action="settings:setTime" data-time="60">60</button>
+          <button class="toggle-btn seg-sm${_timeActive(90)}" data-action="settings:setTime" data-time="90">90</button>
+          <button class="toggle-btn seg-sm${_timeActive(0)}" data-action="settings:setTime" data-time="0">—</button>
         </div>
       </div>
 
@@ -166,7 +188,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
         </div>
         <textarea class="pref-textarea" id="pref-injuries" maxlength="200"
                   placeholder="${t('settings.limits_placeholder')}"
-                  onblur="Profile.saveInjuries(this.value)">${esc(settings['limitations'] || '')}</textarea>
+                  data-blur="settings:saveInjuries">${esc(settings['limitations'] || '')}</textarea>
       </div>
     </div>
 
@@ -175,12 +197,12 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
     <div class="profile-card" style="padding:16px; display: flex; flex-direction: column; gap: 16px;">
         <div class="engine-toggle-grid">
           <button class="engine-toggle-btn claude-active ${currentEngine === 'anthropic' ? 'active' : ''}"
-                  onclick="Profile.setEngine('anthropic')">
+                  data-action="settings:setEngine" data-engine="anthropic">
             <span class="ai-indicator ${anthropicActive ? (currentEngine === 'anthropic' ? 'active' : 'ready') : 'missing'}"></span>
             ${t('settings.engine_claude')}
           </button>
           <button class="engine-toggle-btn gemini-active ${currentEngine === 'gemini' ? 'active' : ''} ${currentEngine === 'gemini' && !geminiActive ? 'ai-glow-error' : ''}"
-                  onclick="Profile.setEngine('gemini')">
+                  data-action="settings:setEngine" data-engine="gemini">
             <span class="ai-indicator ${geminiActive ? (currentEngine === 'gemini' ? 'active' : 'ready') : 'missing'}"></span>
             ${t('settings.engine_gemini')}
           </button>
@@ -191,7 +213,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
             <div class="pref-title">P.A.N.D.A Assistant</div>
             <div class="pref-sub">Floating AI Bubble</div>
           </div>
-          <div class="switch-wrap" onclick="Profile.togglePanda()">
+          <div class="switch-wrap" data-action="settings:togglePanda">
             <div class="switch ${settings['ai-panda-hidden'] ? '' : 'on'}" id="sw-panda">
               <div class="switch-thumb"></div>
             </div>
@@ -229,10 +251,11 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
             <input type="password" id="ai-key-input" class="pref-textarea" style="height: 38px; padding: 0 70px 0 12px; margin: 0; font-family: monospace; border-radius: 12px; width: 100%; box-sizing: border-box;"
                    placeholder="${esc(placeholder)}"
                    value="${esc(val)}"
-                   oninput="Profile.${valFn}(this.value)"
-                   onblur="Profile.${setFn}(this.value)">
+                   data-engine="${isGem ? 'gemini' : 'anthropic'}"
+                   data-input="settings:keyInput"
+                   data-blur="settings:keyBlur">
             <div style="position: absolute; right: 8px; display: flex; align-items: center; gap: 8px;">
-              <button class="btn-text" onclick="Profile.toggleKeyVisibility()" style="padding: 4px; color: var(--c-text-3);">
+              <button class="btn-text" data-action="settings:toggleKeyVis" style="padding: 4px; color: var(--c-text-3);">
                 <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                 </svg>
@@ -261,8 +284,8 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
             <div style="font-size: 10px; color: ${syncStatusColor}; font-weight: 700;">${syncStatusLabel}</div>
           </div>
         </div>
-        <button class="btn-text" 
-                onclick="Profile.${syncStatus === 'offline' ? 'syncConnect' : 'syncDisconnect'}()" 
+        <button class="btn-text"
+                data-action="settings:syncToggle" data-sync="${syncStatus}"
                 style="color: var(--c-accent); font-size: 12px; font-weight: 700;">
           ${syncStatus === 'offline' ? 'CONNECT' : 'DISCONNECT'}
         </button>
@@ -277,10 +300,10 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           <div style="font-size: 14px; font-weight: 600;">${t('data.backup')}</div>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn btn-ghost" onclick="Profile.exportData()" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.export')}</button>
-          <button class="btn btn-ghost" onclick="Profile.exportCsv()" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.export_csv')}</button>
-          <button class="btn btn-ghost" onclick="Profile.importData()" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.import')}</button>
-          <button class="btn btn-ghost" onclick="Profile.deduplicateDB()" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px; color: var(--c-text-3);">${t('data.dedup')}</button>
+          <button class="btn btn-ghost" data-action="settings:exportData" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.export')}</button>
+          <button class="btn btn-ghost" data-action="settings:exportCsv" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.export_csv')}</button>
+          <button class="btn btn-ghost" data-action="settings:importData" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.import')}</button>
+          <button class="btn btn-ghost" data-action="settings:dedup" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px; color: var(--c-text-3);">${t('data.dedup')}</button>
         </div>
       </div>
     </div>
