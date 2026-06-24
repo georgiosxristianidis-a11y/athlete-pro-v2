@@ -13,6 +13,16 @@
 
 import { DB } from './db.js';
 import { setPrivacyMode, setAiEnabled } from './privacy.store.js';
+import { on, onChange, onInput } from './events.js';
+
+on('ob:quickStart',  () => window._obQuickStart());
+on('ob:prev',        () => window._obPrev());
+on('ob:next',        () => window._obNext());
+on('ob:finish',      () => window._obFinish());
+on('ob:select',      (el) => window._obSelect(el.dataset.key));
+on('ob:setData',     (el) => window._obSetData({ [el.dataset.key]: el.dataset.value }));
+onInput('ob:setField', (el, e) => window._obSetData({ [el.dataset.key]: e.target.value }));
+onChange('ob:setDob',  (el, e) => window._obSetDob(el.dataset.part, e.target.value));
 
 const SVG = {
   strength: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6.5" y1="12" x2="17.5" y2="12"/><rect x="3" y="9" width="3" height="6" rx="1"/><rect x="18" y="9" width="3" height="6" rx="1"/><line x1="2" y1="11" x2="2" y2="13"/><line x1="22" y1="11" x2="22" y2="13"/></svg>`,
@@ -114,7 +124,7 @@ function _stepGoal(ru) {
       
       <!-- Elegant Fast Skip -->
       <div style="margin-top:32px; text-align:center;">
-        <button onclick="window._obQuickStart()" class="ob-fast-skip-btn"
+        <button data-action="ob:quickStart" class="ob-fast-skip-btn"
                 style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); color:var(--c-text-2); font-size:13px; font-weight:600; cursor:pointer; padding:12px 24px; border-radius:24px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:8px;">
           <span>${ru ? 'Пропустить настройку' : 'Skip & Quick Start'}</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="opacity:0.6"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
@@ -153,11 +163,11 @@ function _stepQuickConfirm(ru) {
     </div>
     
     <div style="display:flex; gap:12px; margin-top:auto; padding-top:24px">
-      <button onclick="window._obPrev()" 
+      <button data-action="ob:prev" 
               style="width:56px; height:56px; background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-2); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s ease;">
         ${SVG.back}
       </button>
-      <button id="ob-finish-btn" onclick="window._obFinish()" 
+      <button id="ob-finish-btn" data-action="ob:finish" 
               style="flex:1; height:56px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:16px; font-weight:800; cursor:pointer; box-shadow:0 8px 24px rgba(0,230,118,0.25); transition:transform 0.2s ease;">
         ${ru ? 'Начать тренировку' : "Start Journey"}
       </button>
@@ -206,8 +216,8 @@ function _stepBio(ru) {
             ${ru ? 'Пол' : 'Sex'}
           </label>
           <div style="display:flex; gap:12px">
-            <button class="ob-btn-tab ${_data.sex === 'm' ? 'active' : ''}" onclick="window._obSetData({sex:'m'})" style="flex:1; height:52px; border-radius:16px;">${ru ? 'М' : 'Male'}</button>
-            <button class="ob-btn-tab ${_data.sex === 'f' ? 'active' : ''}" onclick="window._obSetData({sex:'f'})" style="flex:1; height:52px; border-radius:16px;">${ru ? 'Ж' : 'Female'}</button>
+            <button class="ob-btn-tab ${_data.sex === 'm' ? 'active' : ''}" data-action="ob:setData" data-key="sex" data-value="m" style="flex:1; height:52px; border-radius:16px;">${ru ? 'М' : 'Male'}</button>
+            <button class="ob-btn-tab ${_data.sex === 'f' ? 'active' : ''}" data-action="ob:setData" data-key="sex" data-value="f" style="flex:1; height:52px; border-radius:16px;">${ru ? 'Ж' : 'Female'}</button>
           </div>
         </div>
         <div>
@@ -215,15 +225,15 @@ function _stepBio(ru) {
             ${ru ? 'Дата рождения' : 'Date of Birth'}
           </label>
           <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr; gap:10px">
-            <select onchange="window._obSetDob('y', this.value)" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 12px; font-weight:700;">
+            <select data-change="ob:setDob" data-part="y" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 12px; font-weight:700;">
               <option value="">${ru ? 'Год' : 'Year'}</option>
               ${years.map(year => `<option value="${year}" ${y === String(year) ? 'selected' : ''}>${year}</option>`).join('')}
             </select>
-            <select onchange="window._obSetDob('m', this.value)" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 8px; font-weight:700;">
+            <select data-change="ob:setDob" data-part="m" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 8px; font-weight:700;">
               <option value="">${ru ? 'Мес' : 'Month'}</option>
               ${months.map((name, i) => `<option value="${String(i + 1).padStart(2, '0')}" ${m === String(i + 1).padStart(2, '0') ? 'selected' : ''}>${name}</option>`).join('')}
             </select>
-            <select onchange="window._obSetDob('d', this.value)" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 12px; font-weight:700;">
+            <select data-change="ob:setDob" data-part="d" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 12px; font-weight:700;">
               <option value="">${ru ? 'День' : 'Day'}</option>
               ${Array.from({ length: 31 }, (_, i) => {
                 const val = String(i + 1).padStart(2, '0');
@@ -252,14 +262,14 @@ function _stepMetrics(ru) {
           <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:8px">
             ${ru ? 'Рост (см)' : 'Height (cm)'}
           </label>
-          <input type="number" value="${_data.height}" placeholder="180" oninput="window._obSetData({height:this.value})" 
+          <input type="number" value="${_data.height}" placeholder="180" data-input="ob:setField" data-key="height"
                  style="width:100%; height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-1); font-family:inherit; font-size:18px; font-weight:700; padding:0 16px; box-sizing:border-box">
         </div>
         <div>
           <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:8px">
             ${ru ? 'Вес (кг)' : 'Weight (kg)'}
           </label>
-          <input type="number" value="${_data.weight}" placeholder="80" oninput="window._obSetData({weight:this.value})" 
+          <input type="number" value="${_data.weight}" placeholder="80" data-input="ob:setField" data-key="weight"
                  style="width:100%; height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-1); font-family:inherit; font-size:18px; font-weight:700; padding:0 16px; box-sizing:border-box">
         </div>
       </div>
@@ -298,7 +308,7 @@ function _stepReady(ru) {
       <p style="font-size:16px; font-weight:500; color:var(--c-text-3); line-height:1.5; margin-bottom:40px">
         ${ru ? 'Твой профиль настроен. Начнем тренировку?' : 'Your athlete profile is ready. Let\'s start training.'}
       </p>
-      <button onclick="window._obFinish()" style="width:100%; height:56px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:17px; font-weight:800; cursor:pointer; box-shadow:0 12px 24px rgba(0,230,118,0.25)">
+      <button data-action="ob:finish" style="width:100%; height:56px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:17px; font-weight:800; cursor:pointer; box-shadow:0 12px 24px rgba(0,230,118,0.25)">
         ${ru ? 'Начать тренировку' : 'Start First Workout'}
       </button>
     </div>
@@ -308,7 +318,7 @@ function _stepReady(ru) {
 function _choiceCard(key, icon, label, sub, color) {
   const active = _step === 1 ? _data.goal === key : _step === 2 ? _data.exp === key : _data.privacy === key;
   return `
-    <button class="ob-card ${active ? 'active' : ''}" data-key="${key}" onclick="window._obSelect('${key}')" 
+    <button class="ob-card ${active ? 'active' : ''}" data-key="${key}" data-action="ob:select"
             style="--active-c:${color}; position:relative; display:flex; align-items:center; text-align:left; gap:20px; padding:20px 24px; background:var(--c-surface); border:1px solid ${active ? color : 'var(--c-border)'}; border-radius:var(--r-xl); cursor:pointer; width:100%; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow:hidden; z-index:1;">
       ${active ? `<div style="position:absolute; inset:0; background:radial-gradient(circle at left, ${color}20 0%, transparent 80%); z-index:-1;"></div>` : ''}
       <div style="width:44px; height:44px; border-radius:14px; background:${color}15; color:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow: ${active ? `0 0 16px ${color}40` : 'none'}; transition:all 0.3s ease;">
@@ -325,12 +335,12 @@ function _navButtons(ru, canNext) {
   return `
     <div style="display:flex; gap:12px; margin-top:auto; padding-top:32px">
       ${_step > 1 ? `
-        <button onclick="window._obPrev()" 
+        <button data-action="ob:prev" 
                 style="width:52px; height:52px; background:none; border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-2); display:flex; align-items:center; justify-content:center; cursor:pointer">
           ${SVG.back}
         </button>
       ` : ''}
-      <button id="ob-next-btn" onclick="window._obNext()" ${canNext ? '' : 'disabled'} 
+      <button id="ob-next-btn" data-action="ob:next" ${canNext ? '' : 'disabled'}
               style="flex:1; height:52px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:15px; font-weight:800; cursor:pointer; opacity:${canNext ? 1 : 0.4}">
         ${ru ? 'Продолжить' : 'Continue'}
       </button>

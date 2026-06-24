@@ -4,6 +4,22 @@ import { athleteProScore, dotsScore } from '../strength-engine.js';
 import { loadProfile, updateProfile, updateWeightAndHeight } from '../profile.store.js';
 import { esc, haptic } from './utils.js';
 import { isRu } from '../locale.store.js';
+import { on, onChange } from '../events.js';
+
+const AR = () => window.AthleteRoom;
+on('ar:close',          () => AR().close());
+on('ar:switchTab',      (el) => AR().switchTab(el.dataset.tab));
+on('ar:photoUpload',    () => AR().triggerPhotoUpload());
+on('ar:removePhoto',    (el, e) => AR().removePhoto(e));
+on('ar:editName',       () => AR().editName());
+on('ar:editStat',       (el) => AR().editStat(el.dataset.stat, +el.dataset.val));
+on('ar:saveStat',       () => AR().saveStat());
+on('ar:cancelStatEdit', () => AR().cancelStatEdit());
+on('ar:selectColor',    (el) => AR().selectColor(+el.dataset.i));
+on('ar:selectFrame',    (el) => AR().selectFrame(+el.dataset.i));
+on('ar:saveName',       () => AR().saveName());
+on('ar:cancelEdit',     () => AR().cancelEdit());
+onChange('ar:photoSelected', (el, e) => AR().handlePhotoSelected(e));
 
 /* ════════════════════════════════════════════════════════
    athlete-room.js — Athlete Room: личный кабинет атлета
@@ -164,7 +180,7 @@ export const AthleteRoom = (() => {
       <div class="ar-sheet">
         <div class="ar-header" style="flex-direction: column; align-items: flex-start; padding-bottom: 0;">
           <div style="display: flex; align-items: center; width: 100%; justify-content: space-between; margin-bottom: 16px;">
-            <button class="ar-back-btn" onclick="window.AthleteRoom.close()">
+            <button class="ar-back-btn" data-action="ar:close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
             <div style="font-weight: 700; font-size: 16px;">${ru ? 'Мой профиль' : 'Athlete Room'}</div>
@@ -172,8 +188,8 @@ export const AthleteRoom = (() => {
           </div>
           
           <div class="bs-tab-bar" style="margin-bottom: 0; width: 100%; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
-            <button class="bs-tab ${activeTab === 'profile' ? 'active' : ''}" onclick="window.AthleteRoom.switchTab('profile')">${ru ? 'Профиль' : 'Profile'}</button>
-            <button class="bs-tab ${activeTab === 'metrics' ? 'active' : ''}" onclick="window.AthleteRoom.switchTab('metrics')">${ru ? 'Замеры' : 'Body Metrics'}</button>
+            <button class="bs-tab ${activeTab === 'profile' ? 'active' : ''}" data-action="ar:switchTab" data-tab="profile">${ru ? 'Профиль' : 'Profile'}</button>
+            <button class="bs-tab ${activeTab === 'metrics' ? 'active' : ''}" data-action="ar:switchTab" data-tab="metrics">${ru ? 'Замеры' : 'Body Metrics'}</button>
           </div>
         </div>
 
@@ -194,7 +210,7 @@ export const AthleteRoom = (() => {
     // Update active state in UI if overlay is open
     if (_overlay) {
       _overlay.querySelectorAll('.bs-tab').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${window._arActiveTab}'`));
+        btn.classList.toggle('active', btn.dataset.tab === window._arActiveTab);
       });
     }
 
@@ -254,10 +270,10 @@ export const AthleteRoom = (() => {
     
     // Use the existing avatar init logic but wrap the HTML
     const avatarHtml = photo
-      ? `<div class="ar-avatar has-photo" style="background-image: url('${photo}')" onclick="window.AthleteRoom.triggerPhotoUpload()">
+      ? `<div class="ar-avatar has-photo" style="background-image: url('${photo}')" data-action="ar:photoUpload">
            <div class="ar-avatar-ring" style="--c1:${f1}; --c2:${f2}"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
          </div>`
-      : `<div class="ar-avatar" id="ar-avatar-circle" style="background: linear-gradient(135deg, ${c1}, ${c2})" onclick="window.AthleteRoom.triggerPhotoUpload()">
+      : `<div class="ar-avatar" id="ar-avatar-circle" style="background: linear-gradient(135deg, ${c1}, ${c2})" data-action="ar:photoUpload">
            <div class="ar-avatar-ring" style="--c1:${f1}; --c2:${f2}"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
            <div class="ar-avatar-initials">${initials}</div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
          </div>`;
@@ -266,11 +282,11 @@ export const AthleteRoom = (() => {
           <div class="ar-passport">
             <div style="position:relative">
               ${avatarHtml}
-              ${photo ? `<button class="ar-remove-photo" onclick="window.AthleteRoom.removePhoto(event)" title="Remove photo">&times;</button>` : ''}
-              <input type="file" id="ar-photo-input" accept="image/jpeg, image/png, image/webp" style="display:none" onchange="window.AthleteRoom.handlePhotoSelected(event)">
+              ${photo ? `<button class="ar-remove-photo" data-action="ar:removePhoto" title="Remove photo">&times;</button>` : ''}
+              <input type="file" id="ar-photo-input" accept="image/jpeg, image/png, image/webp" style="display:none" data-change="ar:photoSelected">
             </div>
             
-            <div class="ar-name" onclick="window.AthleteRoom.editName()">
+            <div class="ar-name" data-action="ar:editName">
               <span>${esc(name)}</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </div>
@@ -282,11 +298,11 @@ export const AthleteRoom = (() => {
           </div>
 
           <div class="ar-stats" style="margin-bottom:12px">
-            <div class="ar-stat" onclick="window.AthleteRoom.editStat('weight', ${metrics?.weight||80})" style="cursor:pointer">
+            <div class="ar-stat" data-action="ar:editStat" data-stat="weight" data-val="${metrics?.weight||80}" style="cursor:pointer">
               <div class="ar-stat-val">${metrics?.weight||'—'} <span style="font-size:12px;opacity:0.6">kg</span></div>
               <div class="ar-stat-lbl">${ru?'Вес':'Weight'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:4px; opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
-            <div class="ar-stat" onclick="window.AthleteRoom.editStat('height', ${metrics?.height||180})" style="cursor:pointer">
+            <div class="ar-stat" data-action="ar:editStat" data-stat="height" data-val="${metrics?.height||180}" style="cursor:pointer">
               <div class="ar-stat-val">${metrics?.height||'—'} <span style="font-size:12px;opacity:0.6">cm</span></div>
               <div class="ar-stat-lbl">${ru?'Рост':'Height'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:4px; opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
@@ -328,8 +344,8 @@ export const AthleteRoom = (() => {
               <div class="ar-editor-label" id="ar-stat-label">Value</div>
               <input type="number" id="ar-stat-input" class="ar-name-input" value="0" step="0.1">
               <div class="ar-editor-actions" style="margin-top:24px">
-                <button class="ar-btn-save" onclick="window.AthleteRoom.saveStat()">${ru ? 'Сохранить' : 'Save'}</button>
-                <button class="ar-btn-cancel" onclick="window.AthleteRoom.cancelStatEdit()">${ru ? 'Отмена' : 'Cancel'}</button>
+                <button class="ar-btn-save" data-action="ar:saveStat">${ru ? 'Сохранить' : 'Save'}</button>
+                <button class="ar-btn-cancel" data-action="ar:cancelStatEdit">${ru ? 'Отмена' : 'Cancel'}</button>
               </div>
             </div>
           </div>
@@ -352,7 +368,7 @@ export const AthleteRoom = (() => {
                 ${AVATAR_COLORS.map(([e, t], i) => `
                   <div class="ar-color-swatch ${i === (parseInt(ctx.colorIdx) || 0) ? 'active' : ''}"
                        style="background:linear-gradient(135deg, ${e}, ${t})"
-                       onclick="window.AthleteRoom.selectColor(${i})"></div>`).join('')}
+                       data-action="ar:selectColor" data-i="${i}"></div>`).join('')}
               </div>
 
               <div class="ar-editor-colors-label" style="margin-top:16px">${ru ? 'Цвет рамки' : 'Frame Color'}</div>
@@ -360,12 +376,12 @@ export const AthleteRoom = (() => {
                 ${FRAME_COLORS.map(([e, t], i) => `
                   <div class="ar-color-swatch ar-frame-swatch ${i === (parseInt(ctx.frameIdx) || 0) ? 'active' : ''}"
                        style="background:conic-gradient(from 0deg, ${e}, ${t}, ${e})"
-                       onclick="window.AthleteRoom.selectFrame(${i})"></div>`).join('')}
+                       data-action="ar:selectFrame" data-i="${i}"></div>`).join('')}
               </div>
 
               <div class="ar-editor-actions" style="margin-top:24px">
-                <button class="ar-btn-save" onclick="window.AthleteRoom.saveName()">${ru ? 'Применить' : 'Apply'}</button>
-                <button class="ar-btn-cancel" onclick="window.AthleteRoom.cancelEdit()">${ru ? 'Отмена' : 'Cancel'}</button>
+                <button class="ar-btn-save" data-action="ar:saveName">${ru ? 'Применить' : 'Apply'}</button>
+                <button class="ar-btn-cancel" data-action="ar:cancelEdit">${ru ? 'Отмена' : 'Cancel'}</button>
               </div>
             </div>
           </div>
