@@ -28,7 +28,6 @@ import {
   getExerciseLibrary,
   PPL_GIO_PLAN,
 } from '../workout.store.js';
-import { svgArrow, renderActive } from './render.js';
 
 function _haptic(ms = 10) {
   if (navigator.vibrate) navigator.vibrate(ms);

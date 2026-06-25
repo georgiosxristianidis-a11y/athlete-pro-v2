@@ -132,25 +132,4 @@ test('Gate: No inline on* attributes (CSP strict)', () => {
     assert.fail(`Found inline event handler '${match[1]}' in index.html. Inline handlers are forbidden due to strict CSP (script-src-attr 'none').`);
   }
 
-  // Also check all JS files for innerHTML with inline handlers
-  const jsDir = path.join(rootDir, 'js');
-  
-  function checkDir(dir) {
-    const files = fs.readdirSync(dir);
-    for (const file of files) {
-      const fullPath = path.join(dir, file);
-      if (fs.statSync(fullPath).isDirectory()) {
-        checkDir(fullPath);
-      } else if (fullPath.endsWith('.js')) {
-        const content = fs.readFileSync(fullPath, 'utf8');
-        const jsMatch = content.match(inlineEventRegex);
-        if (jsMatch) {
-          // If we find it in JS, it might be in a template string
-          assert.fail(`Found inline event handler '${jsMatch[1]}' in ${path.relative(rootDir, fullPath)}. Inline handlers are forbidden.`);
-        }
-      }
-    }
-  }
-  
-  // checkDir(jsDir); // we can enable this if needed, but the user said "греп в тесте", we can grep the whole src or js folder.
 });
