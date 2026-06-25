@@ -8,11 +8,10 @@ import { Toast } from '../shell.js';
 import { esc } from '../shared/utils.js';
 import { confirmDialog } from '../shared/confirm.js';
 import { isRu } from '../locale.store.js';
-import { on, onChange, onInput } from '../events.js';
+import { on, onInput } from '../events.js';
+import { TextField, NumberStepper, Button } from '../ui/factory.js';
 
 const W = () => window.Workout;
-onChange('wo:planName',  (el, e) => W()._updatePlanName(el.dataset.type, +el.dataset.pi, e.target.value));
-on('wo:planAdjust',      (el) => W()._adjustPlan(el.dataset.type, +el.dataset.pi, el.dataset.field, +el.dataset.delta));
 on('wo:planDelete',      (el) => W()._deletePlanEx(el.dataset.type, +el.dataset.pi));
 on('wo:planAddEx',       (el) => W()._addPlanEx(el.dataset.type));
 on('wo:planClose',       () => W()._closePlanEditor());
@@ -44,15 +43,32 @@ let _planEditorActiveWeek = () => getWeekMode();
 let _planEditorSetTab = () => {};
 let _planEditorSetWeek = (_w) => {};
 
+const _SVG_DRAG = `<svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
+  <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
+  <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
+  <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
+</svg>`;
+const _SVG_TRASH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.5" stroke-linecap="round" width="14" height="14">
+  <polyline points="3 6 5 6 21 6"/>
+  <path d="M19 6l-1 14H6L5 6"/>
+  <path d="M10 11v6M14 11v6"/>
+</svg>`;
+const _SVG_PLUS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.5" stroke-linecap="round" width="16" height="16">
+  <line x1="12" y1="5" x2="12" y2="19"/>
+  <line x1="5" y1="12" x2="19" y2="12"/>
+</svg>`;
+
 /**
- * Factory: builds the inner HTML for one PPL tab in the Plan Editor.
- * Pure function — no DOM reads/writes.
+ * Builds the plan-tab DOM for one PPL type. Returns a DocumentFragment so
+ * factory components keep their direct event listeners (no event delegation).
  * @param {'push'|'pull'|'legs'} type
  * @param {'A'|'B'} activeWeek
  * @param {string} searchQuery
- * @returns {string} HTML string
+ * @returns {DocumentFragment}
  */
-export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
+function _buildPlanTabDOM(type, activeWeek, searchQuery) {
   const plan = loadPlan(activeWeek);
   let exercises = plan[type] || [];
   if (searchQuery.trim()) {
@@ -60,56 +76,91 @@ export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
     exercises = exercises.filter(ex => ex.name.toLowerCase().includes(q));
   }
 
-  const exercisesHTML = exercises.length > 0
-    ? exercises
-        .map((ex) => {
-          const originalIndex = plan[type].indexOf(ex);
-          return `
-    <div class="plan-row" id="plan-row-${type}-${originalIndex}" data-pi="${originalIndex}">
-      <div class="plan-drag-handle">
-        <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
-          <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
-          <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
-          <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
-        </svg>
-      </div>
-      <input class="plan-input" value="${esc(ex.name)}"
-        data-change="wo:planName" data-type="${type}" data-pi="${originalIndex}">
-      <div class="plan-row-meta">
-        <span class="plan-meta-label">Sets</span>
-        <div class="mini-stepper">
-          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="sets" data-delta="-1" aria-label="Decrease sets">${svgArrow('minus')}</button>
-          <span id="ps-sets-${type}-${originalIndex}">${ex.sets}</span>
-          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="sets" data-delta="1" aria-label="Increase sets">${svgArrow('plus')}</button>
-        </div>
-        <span class="plan-meta-label">Reps</span>
-        <div class="mini-stepper">
-          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="reps" data-delta="-1" aria-label="Decrease reps">${svgArrow('minus')}</button>
-          <span id="ps-reps-${type}-${originalIndex}">${ex.reps}</span>
-          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="reps" data-delta="1" aria-label="Increase reps">${svgArrow('plus')}</button>
-        </div>
-        <button class="plan-delete" data-action="wo:planDelete" data-type="${type}" data-pi="${originalIndex}" aria-label="Remove exercise">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.5" stroke-linecap="round" width="14" height="14">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6l-1 14H6L5 6"/>
-            <path d="M10 11v6M14 11v6"/>
-          </svg>
-        </button>
-      </div>
-    </div>`;
-        }).join('')
-    : `<div class="plan-empty">No exercises found for "${esc(searchQuery)}"</div>`;
+  const frag = document.createDocumentFragment();
 
-  return exercisesHTML + `
-    <button class="btn-add-ex" data-action="wo:planAddEx" data-type="${type}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.5" stroke-linecap="round" width="16" height="16">
-        <line x1="12" y1="5" x2="12" y2="19"/>
-        <line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      Add Exercise
-    </button>`;
+  if (!exercises.length && searchQuery.trim()) {
+    const empty = document.createElement('div');
+    empty.className = 'plan-empty';
+    empty.textContent = `No exercises found for "${searchQuery}"`;
+    frag.appendChild(empty);
+  } else {
+    exercises.forEach((ex) => {
+      const originalIndex = plan[type].indexOf(ex);
+
+      const row = document.createElement('div');
+      row.className = 'plan-row';
+      row.id = `plan-row-${type}-${originalIndex}`;
+      row.dataset.pi = String(originalIndex);
+
+      const dragHandle = document.createElement('div');
+      dragHandle.className = 'plan-drag-handle';
+      dragHandle.innerHTML = _SVG_DRAG;
+
+      const nameField = TextField({
+        value: ex.name,
+        placeholder: 'Exercise name',
+        onInput: (val) => {
+          const p = loadPlan(_planEditorActiveWeek());
+          p[type][originalIndex].name = val.trim() || p[type][originalIndex].name;
+          savePlan(p, _planEditorActiveWeek());
+        },
+      });
+
+      const meta = document.createElement('div');
+      meta.className = 'plan-row-meta';
+
+      const setsLabel = document.createElement('span');
+      setsLabel.className = 'plan-meta-label';
+      setsLabel.textContent = 'Sets';
+
+      const setsStepper = NumberStepper({
+        value: ex.sets, min: 1, max: 10, step: 1,
+        ariaLabel: 'Sets',
+        onChange: (v) => {
+          const p = loadPlan(_planEditorActiveWeek());
+          p[type][originalIndex].sets = v;
+          savePlan(p, _planEditorActiveWeek());
+        },
+      });
+
+      const repsLabel = document.createElement('span');
+      repsLabel.className = 'plan-meta-label';
+      repsLabel.textContent = 'Reps';
+
+      const repsStepper = NumberStepper({
+        value: ex.reps, min: 1, max: 50, step: 1,
+        ariaLabel: 'Reps',
+        onChange: (v) => {
+          const p = loadPlan(_planEditorActiveWeek());
+          p[type][originalIndex].reps = v;
+          savePlan(p, _planEditorActiveWeek());
+        },
+      });
+
+      const delBtn = Button({
+        variant: 'ghost',
+        icon: _SVG_TRASH,
+        ariaLabel: 'Remove exercise',
+        onClick: () => W()._deletePlanEx(type, originalIndex),
+      });
+      delBtn.className = 'plan-delete';
+
+      meta.append(setsLabel, setsStepper, repsLabel, repsStepper, delBtn);
+      row.append(dragHandle, nameField, meta);
+      frag.appendChild(row);
+    });
+  }
+
+  const addBtn = Button({
+    label: 'Add Exercise',
+    variant: 'ghost',
+    icon: _SVG_PLUS,
+    onClick: () => W()._addPlanEx(type),
+  });
+  addBtn.classList.add('btn-add-ex');
+  frag.appendChild(addBtn);
+
+  return frag;
 }
 
 
@@ -127,7 +178,7 @@ export function openPlanEditor() {
 
   function tabContent(type) {
     plan = loadPlan(activeWeek); // keep local cache fresh
-    return _buildPlanTabHTML(type, activeWeek, searchQuery);
+    return _buildPlanTabDOM(type, activeWeek, searchQuery);
   }
 
 
@@ -192,14 +243,13 @@ export function openPlanEditor() {
             )
             .join('')}
         </div>
-        <div class="plan-list" id="plan-list">
-          ${tabContent(activeTab)}
-        </div>
+        <div class="plan-list" id="plan-list"></div>
         <button class="btn btn-primary" style="margin-top:var(--sp-2)"
                 data-action="wo:planSave">
           Save Plan
         </button>
       </div>`;
+    overlay.querySelector('#plan-list').appendChild(tabContent(activeTab));
   }
 
   render();
@@ -290,11 +340,8 @@ export function _updatePlanName(type, i, val) {
 export function _adjustPlan(type, i, field, delta) {
   const w = _planEditorActiveWeek();
   const plan = loadPlan(w);
-  const min = field === 'sets' ? 1 : 1;
-  plan[type][i][field] = Math.max(min, plan[type][i][field] + delta);
+  plan[type][i][field] = Math.max(1, plan[type][i][field] + delta);
   savePlan(plan, w);
-  const el = document.getElementById(`ps-${field}-${type}-${i}`);
-  if (el) el.textContent = plan[type][i][field];
 }
 
 export function _addPlanEx(type) {
