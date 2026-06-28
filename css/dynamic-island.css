@@ -161,8 +161,8 @@
   inset: 0;
   display: none;
   align-items: center;
-  gap: 7px;
-  padding: 0 8px 0 16px;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-1) 0 var(--sp-3);
   z-index: 5;
 }
 .island.timer-mode .island-rest { display: flex; }
@@ -177,16 +177,10 @@
   letter-spacing: -0.02em;
   color: var(--c-accent);
   min-width: 34px;
+  padding-left: 2px; /* air between sync-dot and green countdown */
 }
 .island-rest-time.warning { color: var(--c-amber); }
 .island-rest-time.done    { color: var(--c-blue); }
-.island-rest-label {
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--c-text-3);
-}
 .island-rest-actions {
   display: flex;
   gap: 6px;

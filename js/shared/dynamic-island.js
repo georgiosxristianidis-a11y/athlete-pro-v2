@@ -50,7 +50,6 @@ export const DynamicIsland = (() => {
   let _progressFill = null;
   let _timerProg = null;
   let _restTimeEl = null;
-  let _restLabelEl = null;
 
   function init() {
     if (document.getElementById('dynamic-island')) return;
@@ -95,7 +94,6 @@ export const DynamicIsland = (() => {
         <!-- Rest HUD (in-frame replacement for the old standalone rest modal) -->
         <div class="island-rest" id="di-rest">
           <span class="island-rest-time" id="di-rest-time">0:00</span>
-          <span class="island-rest-label" id="di-rest-label">REST</span>
           <div class="island-rest-actions">
             <button class="island-rest-btn" id="di-rest-plus" title="+15s" data-action="island:addRest" data-amt="15">+15s</button>
             <button class="island-rest-btn primary" id="di-rest-skip" title="Skip rest" data-action="island:skipRest">Skip</button>
@@ -135,7 +133,6 @@ export const DynamicIsland = (() => {
     _progressFill = document.getElementById('di-progress-fill');
     _timerProg = document.getElementById('di-timer-progress');
     _restTimeEl = document.getElementById('di-rest-time');
-    _restLabelEl = document.getElementById('di-rest-label');
 
     // Load preference
     _displayMode = localStorage.getItem('ap-di-mode') || 'mini';
@@ -349,7 +346,6 @@ export const DynamicIsland = (() => {
       _restTimeEl.classList.toggle('warning', secs <= 10 && secs > 0);
       _restTimeEl.classList.toggle('done', secs <= 0);
     }
-    if (_restLabelEl) _restLabelEl.textContent = isRu() ? 'ОТДЫХ' : 'REST';
 
     // Progress-bar colour escalation each second (class only — no layout)
     if (_timerProg) {
