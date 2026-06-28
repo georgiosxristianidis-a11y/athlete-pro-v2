@@ -18,7 +18,7 @@ import { on } from '../events.js';
 
 on('wo:menuAction',  (el) => { el.closest('.modal-overlay')?.remove(); window.Workout._handleMenuAction(+el.dataset.ei, +el.dataset.i); });
 on('wo:closeModal',  (el) => el.closest('.modal-overlay')?.remove());
-import { syncDrumUI, initDrumPickers } from '../ui/drum-picker.js';
+import { syncDrumUI, initDrumPickers, flushDrum } from '../ui/drum-picker.js';
 
 let _restDuration = 90;
 let _focusEi = -1;
@@ -129,6 +129,10 @@ export async function toggleSet(ei, si) {
   if (!ex) return;
   const set = ex.sets[si];
   if (!set) return;
+  // Flush drum scroll position before reading weight/reps — guards against the
+  // race where the user taps the checkmark before scrollend/80ms settle fires.
+  flushDrum('w', ei, si);
+  flushDrum('r', ei, si);
   set.done = !set.done;
   // Phase W-2-A: stamp block timing on every "set just became done" event.
   // Reverting (done → undone) does NOT roll back the timestamps — minor

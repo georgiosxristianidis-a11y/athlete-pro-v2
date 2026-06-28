@@ -14,6 +14,25 @@ export function initDrumPickers() {
   });
 }
 
+/**
+ * Flush the current scroll position of a drum into State immediately.
+ * Call before reading set.weight/reps in toggleSet to avoid race where
+ * the user taps "done" before scrollend/80ms settle fires.
+ */
+export function flushDrum(type, ei, si) {
+  const key = `${type}-${ei}-${si}`;
+  const d   = _drums.get(key);
+  if (!d) return;
+  const rawIdx = Math.round(d.track.scrollTop / ITEM_H);
+  const newIdx = Math.max(0, Math.min(d.count - 1, rawIdx));
+  if (newIdx === d.lastIdx) return;
+  const diff  = newIdx - d.lastIdx;
+  d.lastIdx   = newIdx;
+  const delta = diff * d.step;
+  if (type === 'w') window.Workout?.stepWeight(ei, si, delta);
+  else              window.Workout?.stepReps(ei, si, diff);
+}
+
 export function syncDrumUI(type, ei, si, value) {
   const key = `${type}-${ei}-${si}`;
   const d   = _drums.get(key);
