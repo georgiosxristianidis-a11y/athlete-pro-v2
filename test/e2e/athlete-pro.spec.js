@@ -314,20 +314,30 @@ test.describe('App with Onboarding Bypassed', () => {
     /* The legacy #claude-overlay was replaced: FAB now routes to the Intel
        screen (Neural Command Center). XSS escaping of AI errors is covered
        at unit level via esc() in shared/utils.js. */
+    // dispatchEvent('click') instead of .click(): the FAB has a drag handler
+    // (claude.view.js _initDraggable) whose capturing click listener swallows
+    // the event if Playwright's synthetic pointer trajectory trips the 5px drag
+    // threshold between pointerdown/up — making .click() badly flaky. A direct
+    // click event tests the real click→navigate contract deterministically.
     test('clicking FAB navigates to Intel screen', async ({ page }) => {
-      await page.locator('#claude-fab').click({ force: true });
+      await page.locator('#claude-fab').dispatchEvent('click');
       await expect(page.locator('#s-intel')).toHaveClass(/active/, { timeout: 10000 });
     });
 
     test('Intel screen renders content after FAB navigation', async ({ page }) => {
-      await page.locator('#claude-fab').click({ force: true });
+      await page.locator('#claude-fab').dispatchEvent('click');
       await expect(page.locator('#s-intel')).toHaveClass(/active/, { timeout: 10000 });
-      const html = await page.locator('#s-intel').innerHTML();
-      expect(html.length).toBeGreaterThan(100);
+      // Intel content renders async (API-key check hits /api/ai-status), so the
+      // screen gains the active class before its markup lands — poll the length
+      // instead of reading innerHTML once and racing the network round-trip.
+      await expect.poll(
+        async () => (await page.locator('#s-intel').innerHTML()).length,
+        { timeout: 10000 }
+      ).toBeGreaterThan(100);
     });
 
     test('FAB is hidden while on Intel screen', async ({ page }) => {
-      await page.locator('#claude-fab').click({ force: true });
+      await page.locator('#claude-fab').dispatchEvent('click');
       await expect(page.locator('#s-intel')).toHaveClass(/active/, { timeout: 10000 });
       await expect(page.locator('#claude-fab-container')).toBeHidden();
     });

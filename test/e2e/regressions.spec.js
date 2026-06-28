@@ -174,7 +174,8 @@ test.describe('Set logger drum', () => {
   test('active drum value is visible and vertically centred in its wrap', async ({ page }) => {
     const wrap = page.locator('.drum-wrap').first();
     await expect(wrap).toBeVisible({ timeout: 5000 });
-    const geo = await wrap.evaluate((el) => {
+
+    const readGeo = () => wrap.evaluate((el) => {
       const active = el.querySelector('.drum-item--active');
       if (!active) return null;
       const wr = el.getBoundingClientRect();
@@ -187,12 +188,20 @@ test.describe('Set logger drum', () => {
         text: active.textContent,
       };
     });
+
+    // The drum centres its active item via requestAnimationFrame scrollTop after
+    // render, so the geometry isn't settled the instant the wrap turns visible —
+    // poll until it's centred instead of reading once and racing the rAF.
+    await expect.poll(async () => {
+      const g = await readGeo();
+      return g ? Math.abs(g.activeCenter - g.wrapCenter) : 999;
+    }, { timeout: 5000 }).toBeLessThanOrEqual(2);
+
+    const geo = await readGeo();
     expect(geo).not.toBeNull();
     expect(geo.opacity).toBe(1);
     expect(geo.text?.trim().length).toBeGreaterThan(0);
     expect(geo.insideWrap).toBe(true);
-    // centred within ~2px tolerance
-    expect(Math.abs(geo.activeCenter - geo.wrapCenter)).toBeLessThanOrEqual(2);
   });
 });
 
