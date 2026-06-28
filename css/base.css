@@ -35,7 +35,9 @@
   --font-main: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-heading: 'Instrument Sans', sans-serif;
   
-  /* Spatial Rhythm */
+  /* Spatial Rhythm.
+     --side-padding 20px is an intentional Apple-style "Air" exception that sits
+     off the 8px grid (8×2.5) — do not snap it to 16/24px. --sp-island is on-grid. */
   --side-padding: 20px;
   --sp-island: 32px;
   

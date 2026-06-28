@@ -7,6 +7,11 @@
      .island              → collapsed: dot · time · sets
      .island.expanded     → full: name · time · sets · progress
      .island.timer-mode   → PIP timer: countdown + progress line
+
+   Spacing: values that land on the 8px grid use --sp-* tokens. The pill is a
+   compact status-bar HUD with its own tighter optical scale — 6/7/11/14px are
+   deliberate optical tuning, NOT off-grid mistakes. Do not round them to the
+   token grid; it distorts the calibrated look.
    ════════════════════════════════════════════════════════ */
 
 /* ── Island container in status bar ── */
@@ -292,17 +297,17 @@
 .island-expanded-content {
   display: none;
   flex-direction: column;
-  gap: 4px;
-  padding: 0 16px;
-  margin-top: 12px;
+  gap: var(--sp-0-5);
+  padding: 0 var(--sp-2);
+  margin-top: var(--sp-1-5);
 }
 
 .island-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: 12px;
-  padding: 0 4px;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1-5);
+  padding: 0 var(--sp-0-5);
 }
 .island-action-btn {
   display: flex;
