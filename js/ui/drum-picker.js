@@ -23,6 +23,8 @@ export function flushDrum(type, ei, si) {
   const key = `${type}-${ei}-${si}`;
   const d   = _drums.get(key);
   if (!d) return;
+  // Don't read a hidden/collapsed drum (scrollTop would be a phantom 0).
+  if (!d.track.clientHeight) return;
   const rawIdx = Math.round(d.track.scrollTop / ITEM_H);
   const newIdx = Math.max(0, Math.min(d.count - 1, rawIdx));
   if (newIdx === d.lastIdx) return;
@@ -101,6 +103,12 @@ function _buildDrum(wrap) {
   /* Settle: fire state update once scroll stops */
   const onSettle = () => {
     if (d.syncing) return;
+    // Guard: completing a set hides the drum (`.set-done .drum-wrap{display:none}`),
+    // which collapses scrollTop to 0 and fires a stray scroll/scrollend. Without
+    // this bail, onSettle would read idx 0, compute a huge negative delta against
+    // lastIdx, and zero out the just-logged weight. A laid-out drum always has
+    // clientHeight > 0, so this only blocks phantom settles from hidden tracks.
+    if (!track.clientHeight) return;
     const rawIdx = Math.round(track.scrollTop / ITEM_H);
     const newIdx = Math.max(0, Math.min(count - 1, rawIdx));
     if (newIdx === d.lastIdx) return;

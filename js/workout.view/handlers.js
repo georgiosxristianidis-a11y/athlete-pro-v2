@@ -168,6 +168,14 @@ export async function toggleSet(ei, si) {
   const row = document.getElementById(`set-row-${ei}-${si}`);
   if (row) {
     row.classList.toggle('set-done', set.done);
+    // The .set-done-summary is baked at render time, so without this it would
+    // show the weight/reps the row had when last rendered — not what the user
+    // scrolled the drum to. Refresh it from live State on every completion.
+    const summaryEl = row.querySelector('.set-done-summary');
+    if (summaryEl) {
+      const dispW = ex.isBW ? (set.weight > 0 ? `+${set.weight}` : 'BW') : set.weight;
+      summaryEl.textContent = `${dispW}×${set.reps}`;
+    }
     const nextIdx = ex.sets.findIndex(s => !s.done);
     ex.sets.forEach((_, idx) => {
       const r = document.getElementById(`set-row-${ei}-${idx}`);
