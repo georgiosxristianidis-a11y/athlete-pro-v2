@@ -3,12 +3,21 @@
   "builds": [
     {
       "src": "server.js",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "index.html",
+          "manifest.json",
+          "sw.js",
+          "exercises-library.json",
+          "css/**",
+          "js/**",
+          "icons/**"
+        ]
+      }
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/server.js" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    { "src": "/(.*)", "dest": "/server.js" }
   ]
 }

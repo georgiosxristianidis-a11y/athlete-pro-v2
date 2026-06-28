@@ -110,6 +110,15 @@ app.use(express.static(__dirname, {
   },
 }));
 
+// SPA deep-link fallback: any non-API GET that didn't match a static file
+// returns index.html so direct URLs / client-side nav resolve. Sits after
+// express.static (real files win) and before the error middleware. On Vercel
+// every request is routed to this function, so this also serves the app shell.
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // ── Global Error Handling
 app.use(errorMiddleware);
 
