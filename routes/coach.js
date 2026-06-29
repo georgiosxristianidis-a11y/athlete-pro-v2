@@ -118,6 +118,8 @@ router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
 
 const COACH_MAX_MESSAGES = 40;
 const COACH_MAX_CONTENT_LEN = 12000;
+// Idle keep-alive: proxies (nginx/Vercel) drop silent connections while the model thinks.
+const SSE_HEARTBEAT_MS = Number(process.env.COACH_SSE_HEARTBEAT_MS) || 15000;
 
 const coachMessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -166,20 +168,51 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering so chunks flush immediately
 
   const system = _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats);
 
-  await AIOrchestrator.streamResponse({
-    system,
-    messages,
-    images,
-    engine,
-    customKey,
-    onChunk: (text) => res.write(`data: ${JSON.stringify({ text })}\n\n`)
-  }, req);
+  // Track client disconnect so we never write to a dead socket.
+  let clientGone = false;
+  res.on('close', () => { clientGone = true; });
+  const canWrite = () => !clientGone && !res.writableEnded;
 
-  res.write('data: [DONE]\n\n');
-  res.end();
+  const heartbeat = setInterval(() => {
+    if (canWrite()) res.write(': ping\n\n');
+  }, SSE_HEARTBEAT_MS);
+
+  try {
+    await AIOrchestrator.streamResponse({
+      system,
+      messages,
+      images,
+      engine,
+      customKey,
+      onChunk: (text) => { if (canWrite()) res.write(`data: ${JSON.stringify({ text })}\n\n`); }
+    }, req);
+
+    if (canWrite()) res.write('data: [DONE]\n\n');
+  } catch (err) {
+    if (res.headersSent) {
+      // Mid-stream failure: headers already flushed, so a JSON error is impossible.
+      // Emit a structured SSE error frame the client can render instead of a silent drop.
+      logWarn(req, 'coach_stream_failed', err.message, { code: err.code });
+      if (canWrite()) {
+        res.write(`data: ${JSON.stringify({ error: err.message || 'AI stream failed', code: err.code || 'STREAM_ERROR' })}\n\n`);
+      }
+    } else {
+      // Failed before the first byte (e.g. missing API key): drop the staged stream
+      // headers so errorMiddleware can respond as clean application/json.
+      res.removeHeader('Content-Type');
+      res.removeHeader('X-Accel-Buffering');
+      throw err;
+    }
+  } finally {
+    clearInterval(heartbeat);
+    // Only close here in streaming mode; the rethrow path leaves the response
+    // open so errorMiddleware can still send a JSON error (e.g. missing API key).
+    if (res.headersSent && !res.writableEnded) res.end();
+  }
 }));
 
 const ttsSchema = z.object({
