@@ -1,0 +1,18 @@
+{
+  "ignoreFiles": ["css/base.css", "dist/**"],
+  "rules": {
+    "declaration-property-value-disallowed-list": [
+      {
+        "/^(color|background|background-color|border.*|box-shadow|fill|stroke|outline.*)$/": [
+          "/^#[0-9a-fA-F]{3,8}$/",
+          "/^rgba?\\(/",
+          "/^hsla?\\(/"
+        ]
+      },
+      {
+        "severity": "warning",
+        "message": "Сырые цвета запрещены — используй токены var(--c-*) из css/base.css :root (карточка STYLE-LINT)"
+      }
+    ]
+  }
+}

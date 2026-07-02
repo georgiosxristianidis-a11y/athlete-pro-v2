@@ -8,7 +8,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "dev:lan": "node server.js --lan",
-    "lint": "eslint .",
+    "lint": "eslint . && stylelint \"css/**/*.css\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "node --test \"test/*.test.js\"",
@@ -46,6 +46,7 @@
     "fake-indexeddb": "^6.2.5",
     "globals": "^17.4.0",
     "playwright": "^1.60.0",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "stylelint": "^17.14.0"
   }
 }
