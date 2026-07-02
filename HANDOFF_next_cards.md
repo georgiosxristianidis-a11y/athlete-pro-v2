@@ -2,15 +2,15 @@
 
 > Обновлено 2026-07-02. Правило: 1 карточка = 1 сессия, сверху вниз.
 > Гейт перед коммитом: `npm test` (214) + `npm run lint` (0 err). Перед рискованным — тег `checkpoint-<date>`.
-> База: trunk `claude/csp-soft-delete` @ 488fe96 (локально, НЕ запушено).
+> База: trunk `claude/csp-soft-delete` @ 4ef45b2 == main == origin (release 1.19.0 задеплоен).
 
 ---
 
-## Карточка R — RELEASE 1.19.0: мёрж в main + деплой (первая — полевой фикс BUG-NAV должен доехать до телефона)
+## Карточка R — RELEASE 1.19.0 — ✅ ЗАКРЫТА 2026-07-02
 
-- **ЦЕЛЬ:** выровнять версии (package.json 1.17.0 → 1.19.0, js/version.js 1.18.2 → 1.19.0), запушить trunk, FF main, дождаться Vercel-деплоя (прод = **athlete-pro-v7**, чек через gh api — см. memory reference-vercel-deploy).
-- **ГДЕ СТОП:** main == trunk на remote, прод отвечает, профайл-меню показывает v1.19.0. Ручной тест «назад» на телефоне — за Gio после деплоя.
-- **НЕ ТРОГАТЬ:** код приложения — только version-бамп и git.
+- Версии выровнены на 1.19.0 (package.json, js/version.js), SW v84→v85 (version.js в прекэше), package-lock догнал stylelint-деревом.
+- Гейт 214/214 + lint 0 err. Коммит `4ef45b2` → FF push trunk + main, Vercel success, прод отдаёт VERSION 1.19.0 и SW v85 (curl-проверено).
+- Осталось за Gio: ручной тест «назад» (BUG-NAV) на телефоне.
 
 ## Карточка 4b — DB-SPLIT: мелкие сторы (Metrics + Events + NutritionLogs + PlannedWorkouts)
 
