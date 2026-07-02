@@ -90,6 +90,7 @@ node scripts/telemetry-server.mjs --lan
 - Animations: GPU-only (`transform`/`opacity`), Spring Physics из `shared/spring.js`
 - Route files: suffix only (`/coach` not `/api/coach`)
 - `sw.js`: ASSETS генерить через `npm run build:sw` (НЕ руками), затем бамп `CACHE_NAME`
+- **Версия:** при каждом стабильном мёрже в main бампить `VERSION` в `js/version.js` (показывается в профайл-меню) + синхронно `version` в `package.json`
 - `server.js` никогда не заменять отладочными стабами — для телеметрии есть `scripts/telemetry-server.mjs`
 - **Анти-хрупкость:** рискованный код — за флагом `js/flags.js` (Strangler-Fig); ветки < 24ч (trunk-based); застрял → `git checkout .` и дроби. Детали — `NEXT_SESSION.md` § Анти-хрупкий workflow
 
