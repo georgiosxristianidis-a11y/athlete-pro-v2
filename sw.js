@@ -28,6 +28,7 @@ const ASSETS = [
   '/js/db/onerm.js',
   '/js/db/planned.js',
   '/js/db/settings.js',
+  '/js/db/workouts.js',
   '/js/db.js',
   '/js/events.js',
   '/js/features/pip.js',
