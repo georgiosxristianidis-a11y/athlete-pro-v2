@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.18.x] — 2026-06-12 → 2026-07-02 (сводка, перенесено из NEXT_SESSION.md при DOC-SYNC)
+
+### Air Cleanup (2026-07-02, HANDOFF_air_cleanup.md)
+- **BUG-NAV** (`6637719`) — системная «назад» больше не закрывает PWA: History API в `js/shell.js` (pushState/popstate).
+- **CI** (`4ec2e0b`) — GitHub Actions: lint → test → audit; e2e отдельным job (retries=2).
+- **ARCH-DEL** (`84660fb`) — удалён `js/_archive` (−3482 строк), SW v82.
+- **DB-SPLIT** (частично, `2af782b`/`ad7b769`) — `js/db/` фасад: вынесены core/Settings/OneRM, публичный API не менялся; SW v83 (`9a5c1ae`).
+- **STYLE-LINT** (`2d24f7d`) — stylelint запрещает сырые hex/rgba вне `base.css :root` (139 legacy → warnings).
+
+### SSE hardening + reconcile (2026-07-01)
+- Coach-стрим: error-frame, heartbeat, обработка disconnect; `errors.js` headersSent-guard; +3 теста (214/214). Линии trunk↔origin/main примирены → FF push `a599d9d`.
+
+### Кэш и деплой (2026-06-27)
+- esbuild content-hash → `dist`, immutable cache; dev = source, prod = dist. Vercel прод = athlete-pro-v7; `vercel.json` includeFiles + SPA-fallback (`7aab4a1`).
+
+### Island / workout (2026-06-24 → 2026-06-29)
+- **CSP Phase 2** — inline-хендлеры 158→0, `scriptSrcAttr 'none'`; `events.js` +onInput/onBlur (тег `checkpoint-2026-06-24-csp-done`).
+- **FAB→Intel** (`580e0ae`) — e2e 29/29.
+- **Sync Indicator в Island** (`f8fa53c`) — deriveDotState: synced/syncing/no-cloud/offline/airgap.
+- **W-1 Add Exercise Live** — фича была с `3925863`, e2e-гард `d160903`.
+- **BUG-3** layout thrashing `_initDrag` (`412f0ce`); **BUG-2** `window._coreCheckedState` устранён.
+- **Drum weight fix** (`fd99a2e`) — скрытый барабан (display:none → scrollTop 0) обнулял вес + стейл `.set-done-summary`.
+- **Q1 prefill** — drum стартует с веса прошлой сессии (`_getLastSessionWeight` в render.js).
+- CSS/island полиш frosty-nobel влит FF (`3221af7`).
+
+### Merge-спринт + PANDA (2026-06-22 → 2026-06-24)
+- Фаза M: merge Gemini-линии (`7c9afd1`), fmtVol-рекурсия (`a4b6e34`), BUG-7 set-logger (`b7bab66`); тег `checkpoint-2026-06-24-merged`.
+- SW → network-first для JS/CSS/HTML, убран синтетический 408, прекэш с лимитом 6 (`39404de`); DHL 4-камерный трекер в острове + Cool Steel chrome (`5f76ac1`); drum-центровка (`96fe049`); error-boundary benign-фильтр (`4d01a2c`); e2e regressions (`e90f2ec`).
+- PANDA: per-engine BYOK-ключ (`0d46ecb`), esc() на ключе (`db4127e`), модель в env-конфиг + симметричный BYOK (`50855ee`); гибрид движков — отклонён.
+- XSS-аудит S1 (`cc145bd`); 5-6 onboarding progress готов; `.env` чист.
+
+### Дизайн-лок + CRDT (2026-06-18 → 2026-06-20)
+- Design Lock: 4 камеры ▣▥◆○ (геометрия, не цвет), DHL-трекер, Cool Steel B (`--c-chrome`), Камера 4 UI-only (фильтр `!coreOnly`).
+- CRDT-UUID Фаза 6: `DB_VERSION` 3→4 без autoIncrement, legacy int→UUID; `SyncManager.pull()` мёрдж-вниз + `sync-merge.js`.
+- Импорт истории из Excel: ETL `scripts/import-etl.py` → 128 тренировок (2023-05→2025-09, 0 unmatched).
+- Strength Progression кривые + scrub, PPL semi-donut gauge, Strength Index хиро; Lighthouse a11y 88→100.
+
+---
+
 ## [1.17.0] — 2026-06-08
 
 ### Phase 5: Smart UX & Micro-interactions — COMPLETE
