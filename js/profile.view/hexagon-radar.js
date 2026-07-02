@@ -87,7 +87,7 @@ export function renderHexagonRadar(oneRMs, bw, sex, age, workouts, lang) {
   return `
 <div class="pp-section-lbl" style="margin-top:var(--sp-3)">${ru ? 'Профиль силы' : 'Strength Profile'}</div>
 <div class="pp-radar-wrap">
-  <svg class="pp-radar" viewBox="0 0 240 240" role="img" aria-label="${ru ? 'Радар силы' : 'Strength radar'}">
+  <svg class="pp-radar" viewBox="-15 0 270 240" role="img" aria-label="${ru ? 'Радар силы' : 'Strength radar'}">
     ${ringSVG}
     ${spokeSVG}
     <polygon points="${dataPts}" fill="var(--c-accent-bg)" stroke="var(--c-accent)" stroke-width="1.5" stroke-linejoin="round">
