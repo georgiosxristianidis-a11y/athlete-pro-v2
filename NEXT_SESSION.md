@@ -21,7 +21,7 @@
 | 5 | STYLE-LINT — запрет сырых цветов | ✅ `2d24f7d` (39 legacy warnings — миграция фоном) |
 | 6 | DOC-SYNC — этот файл | ✅ 2026-07-02 |
 
-Дальше по роадмапу (после Air Cleanup): CRDT foundation — см. `ROADMAP_elite_athlete-pro.md`.
+Стек следующих сессий — **`HANDOFF_next_cards.md`**: R (RELEASE 1.19.0 → main+деплой, выровнять package.json 1.17.0/version.js 1.18.2) → 4b/4c/4d (DB-SPLIT остаток) → Q2 → A-4. Дальше по роадмапу: CRDT foundation — `ROADMAP_elite_athlete-pro.md`.
 
 ---
 
