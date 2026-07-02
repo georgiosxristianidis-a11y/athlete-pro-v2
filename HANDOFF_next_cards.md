@@ -16,17 +16,9 @@
 
 Все 4 стора (Metrics/Events/NutritionLogs/PlannedWorkouts) вынесены за одну сессию в `js/db/{metrics,events,nutrition,planned}.js`; db.js — фасад, cryptoClient-импорт уехал в metrics.js. Гейт 214/214 + lint 0 err + превью-смоук (онбординг quick-start → Metrics.save/Settings.set → записи в IDB). Тег `checkpoint-2026-07-02-dbsplit-4b`.
 
-## Карточка FS — FAST SKIP: онбординг в один тап (полевой фидбек №2, брат Gio — ставить первой)
+## Карточка FS — FAST SKIP: онбординг в один тап — ✅ DONE 2026-07-02 (dd03202)
 
-Проблема с поля: брат не заметил skip-кнопку и завис на ярких карточках выбора. Плюс текущий «Skip & Quick Start» — это НЕ один тап: ведёт на экран Quick Confirm (step 99, приватность + «Start Journey»). Философия Gio: один тап → смотрю приложение, настройка — потом из профиля.
-
-- **ЦЕЛЬ (3 мелочи):**
-  1. Один тап: `_obQuickStart` в `js/onboarding.js` применяет дефолты (goal/exp/bio как сейчас, privacy = airgap — это и так дефолт `privacy.store.js`, данные никуда не уходят) и СРАЗУ вызывает finish-путь. Экран Quick Confirm из quick-пути убрать.
-  2. Текст: «Fast Skip» / ru «Быстрый старт» (i18n через `isRu()` из locale.store.js, НЕ navigator.language).
-  3. Заметность без конкуренции с Continue: текст `--c-text-1`, рамка `var(--c-border-h)`; шеврон `»` оставить. НЕ красить в бренд-зелёный. Попутно: инлайн-rgba кнопки (`rgba(255,255,255,...)`) → токены, стили из инлайна — в css-файл (stylelint-закон).
-- **ГДЕ СТОП:** превью со свежим профилем: один тап по Fast Skip → дашборд, ноль промежуточных экранов; `onboarding-complete` записан, режим airgap. Гейт: npm test + lint. Анимации (chevron wave и т.п.) — вне скоупа, отдельно и только если захочется после.
-- **НЕ ТРОГАТЬ:** полный визард (шаги 1–6, включая шаг приватности — кто настраивает по шагам, тому выбор уместен), дефолты `privacy.store.js`, логику `needsOnboarding()`.
-- Примечание превью: делегированный клик по `data-action` в превью срабатывает через `preview_eval` `.click()`, а не `preview_click` (замечено 2026-07-02).
+Quick Confirm (step 99) убран из quick-пути, текст «Fast Skip»/«Быстрый старт» через isRu(), инлайн-rgba кнопки → css-токены (--c-surface/--c-border-h/--c-text-1). Превью-смоук: один тап → дашборд, ноль экранов, режим airgap. Гейт 214/214 + lint 0 err. Анимации — вне скоупа (не делались).
 
 ## Карточка 4c — DB-SPLIT: Workouts (самый нагруженный)
 
