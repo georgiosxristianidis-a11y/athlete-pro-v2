@@ -34,7 +34,7 @@ const SVG = {
   advanced: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
   check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
   shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-  cloud: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.3-1.7-4.2-3.9-4.5-1.1-3.1-4-5.4-7.4-5.4-4 0-7.3 3.1-7.7 7.1-2 .3-3.5 2-3.5 4 0 2.2 1.8 4 4 4h11.5"/></svg>`,
+  cloud: `<svg viewBox="-2 -2 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.3-1.7-4.2-3.9-4.5-1.1-3.1-4-5.4-7.4-5.4-4 0-7.3 3.1-7.7 7.1-2 .3-3.5 2-3.5 4 0 2.2 1.8 4 4 4h11.5"/></svg>`,
   back: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>`,
   anonymous: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M18 21a6 6 0 0 0-12 0"/><line x1="3" y1="3" x2="21" y2="21"/></svg>`,
   };
@@ -371,6 +371,6 @@ style.textContent = `
   @keyframes ob-fade-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
   .ob-btn-tab { background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-3); padding:12px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.2s; }
   .ob-btn-tab.active { background:var(--c-accent-bg); border-color:var(--c-accent); color:var(--c-accent); }
-  .ob-fast-skip-btn { background:var(--c-surface); border:1px solid var(--c-border-h); color:var(--c-text-1); font-size:13px; font-weight:600; cursor:pointer; padding:12px 24px; border-radius:24px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:8px; font-family:inherit; }
+  .ob-fast-skip-btn { background:var(--c-surface); border:1px solid var(--c-border-h); color:var(--c-text-1); font-size:14px; font-weight:600; cursor:pointer; min-height:44px; padding:12px 28px; border-radius:24px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:8px; font-family:inherit; }
 `;
 document.head.appendChild(style);
