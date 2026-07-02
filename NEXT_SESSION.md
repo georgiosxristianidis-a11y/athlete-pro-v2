@@ -17,7 +17,7 @@
 | 1 | BUG-NAV — системная «назад» | ✅ `6637719` (остаток: ручной тест на телефоне после деплоя) |
 | 2 | CI — GitHub Actions гейт | ✅ `4ec2e0b` |
 | 3 | ARCH-DEL — удалить `js/_archive` | ✅ `84660fb` |
-| 4 | DB-SPLIT — `js/db.js` через фасад | 🔶 в процессе: вынесены Settings + OneRM (`2af782b`, `ad7b769`); остались Workouts / Metrics / Events / NutritionLogs / PlannedWorkouts / Backup — по одному за сессию; после каждого — `npm run build:sw` + бамп `CACHE_NAME` |
+| 4 | DB-SPLIT — `js/db.js` через фасад | 🔶 в процессе: Settings + OneRM (`2af782b`, `ad7b769`) + Metrics/Events/Nutrition/Planned (4b, `ae9ec9a`, SW v87); остались Workouts (4c) и Backup (4d); после каждого — `npm run build:sw` + бамп `CACHE_NAME` |
 | 5 | STYLE-LINT — запрет сырых цветов | ✅ `2d24f7d` (39 legacy warnings — миграция фоном) |
 | 6 | DOC-SYNC — этот файл | ✅ 2026-07-02 |
 

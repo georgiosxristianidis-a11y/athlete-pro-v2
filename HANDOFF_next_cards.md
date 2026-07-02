@@ -12,12 +12,9 @@
 - Гейт 214/214 + lint 0 err. Коммит `4ef45b2` → FF push trunk + main, Vercel success, прод отдаёт VERSION 1.19.0 и SW v85 (curl-проверено).
 - Осталось за Gio: ручной тест «назад» (BUG-NAV) на телефоне.
 
-## Карточка 4b — DB-SPLIT: мелкие сторы (Metrics + Events + NutritionLogs + PlannedWorkouts)
+## Карточка 4b — DB-SPLIT: мелкие сторы — ✅ DONE 2026-07-02 (ae9ec9a, SW v87)
 
-- **ЦЕЛЬ:** вынести 4 простых CRUD-стора в `js/db/{metrics,events,nutrition,planned}.js` по паттерну settings.js; `js/db.js` — тонкий re-export, публичный API не меняется. После — `npm run build:sw` + бамп `CACHE_NAME`.
-- **ГДЕ СТОП:** гейт зелёный, приложение грузится offline. Если 4 за сессию тяжело — стоп после любого целого стора.
-- **НЕ ТРОГАТЬ:** сигнатуры API, миграции v3→v4, sync.js, Workouts/Backup.
-- Тег `checkpoint-<date>` перед стартом.
+Все 4 стора (Metrics/Events/NutritionLogs/PlannedWorkouts) вынесены за одну сессию в `js/db/{metrics,events,nutrition,planned}.js`; db.js — фасад, cryptoClient-импорт уехал в metrics.js. Гейт 214/214 + lint 0 err + превью-смоук (онбординг quick-start → Metrics.save/Settings.set → записи в IDB). Тег `checkpoint-2026-07-02-dbsplit-4b`.
 
 ## Карточка 4c — DB-SPLIT: Workouts (самый нагруженный)
 
