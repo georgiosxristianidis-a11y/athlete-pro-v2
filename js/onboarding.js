@@ -14,6 +14,7 @@
 import { DB } from './db.js';
 import { setPrivacyMode, setAiEnabled } from './privacy.store.js';
 import { on, onChange, onInput } from './events.js';
+import { isRu } from './locale.store.js';
 
 on('ob:quickStart',  () => window._obQuickStart());
 on('ob:prev',        () => window._obPrev());
@@ -97,7 +98,6 @@ function _buildStep(ru) {
   if (_step === 3) return _stepBio(ru);
   if (_step === 4) return _stepMetrics(ru);
   if (_step === 5) return _stepPrivacy(ru);
-  if (_step === 99) return _stepQuickConfirm(ru);
   return _stepReady(ru);
 }
 
@@ -124,53 +124,14 @@ function _stepGoal(ru) {
       
       <!-- Elegant Fast Skip -->
       <div style="margin-top:32px; text-align:center;">
-        <button data-action="ob:quickStart" class="ob-fast-skip-btn"
-                style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); color:var(--c-text-2); font-size:13px; font-weight:600; cursor:pointer; padding:12px 24px; border-radius:24px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:8px;">
-          <span>${ru ? 'Пропустить настройку' : 'Skip & Quick Start'}</span>
+        <button data-action="ob:quickStart" class="ob-fast-skip-btn">
+          <span>${isRu() ? 'Быстрый старт' : 'Fast Skip'}</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="opacity:0.6"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
         </button>
       </div>
     </div>
     <div style="margin-top:24px;">
       ${_navButtons(ru, !!_data.goal)}
-    </div>
-  `;
-}
-
-function _stepQuickConfirm(ru) {
-  return `
-    <div class="animate-in" style="display:flex; flex-direction:column; min-height: 70vh;">
-      <div style="margin-bottom: 40px; position: relative;">
-        <!-- Premium Hero Background Glow -->
-        <div style="position:absolute; top:-20px; left:-20px; right:-20px; bottom:-20px; background: radial-gradient(circle at top left, rgba(139,92,246,0.15), transparent 70%); filter:blur(30px); z-index:-1; pointer-events:none;"></div>
-        
-        <h1 style="font-size:36px; font-weight:900; letter-spacing:-0.05em; color:var(--c-text-1); margin-bottom:12px; line-height:1.1;">
-          ${ru ? 'Приватность' : 'Data Privacy'}
-        </h1>
-        <p style="font-size:15px; font-weight:500; color:var(--c-text-3); line-height:1.5; max-width:90%;">
-          ${ru ? 'Выбери режим синхронизации. По умолчанию — локальный.' : 'Default: Full anonymity. Choose your sync engine.'}
-        </p>
-      </div>
-
-      <div style="display:flex; flex-direction:column; gap:12px;">
-        ${_choiceCard('airgap', SVG.shield, ru ? 'Анонимно (Off-line)' : 'Anonymous (Offline)', ru ? 'Данные только в телефоне. ИИ работает локально.' : 'All data stays on device. Zero tracking.', 'var(--c-accent)')}
-        ${_choiceCard('cloud', SVG.cloud, ru ? 'Облако (Опционально)' : 'Cloud Sync (Optional)', ru ? 'Синхронизация между устройствами через облако.' : 'Encrypted sync across your devices.', 'var(--c-blue)')}
-      </div>
-      
-      <p style="font-size:12px; font-weight:500; color:var(--c-text-3); margin-top:24px; text-align:center; line-height:1.4; opacity:0.6;">
-        ${ru ? 'Остальные данные (вес, возраст) можно настроить в профиле.' : 'Other bio-metrics (weight, age) can be set in your profile.'}
-      </p>
-    </div>
-    
-    <div style="display:flex; gap:12px; margin-top:auto; padding-top:24px">
-      <button data-action="ob:prev" 
-              style="width:56px; height:56px; background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-2); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s ease;">
-        ${SVG.back}
-      </button>
-      <button id="ob-finish-btn" data-action="ob:finish" 
-              style="flex:1; height:56px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:16px; font-weight:800; cursor:pointer; box-shadow:0 8px 24px rgba(0,230,118,0.25); transition:transform 0.2s ease;">
-        ${ru ? 'Начать тренировку' : "Start Journey"}
-      </button>
     </div>
   `;
 }
@@ -360,7 +321,6 @@ window._obSetDob = (part, val) => {
 };
 
 window._obQuickStart = () => {
-  _step = 99; // Special Quick Confirm step
   _data.goal = _data.goal || 'hypertrophy';
   _data.exp = _data.exp || 'intermediate';
   _data.sex = 'm';
@@ -368,7 +328,7 @@ window._obQuickStart = () => {
   _data.weight = '80';
   _data.height = '180';
   _data.privacy = 'airgap';
-  _render();
+  window._obFinish();
 };
 
 window._obSelect = (key) => {
@@ -411,5 +371,6 @@ style.textContent = `
   @keyframes ob-fade-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
   .ob-btn-tab { background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-3); padding:12px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.2s; }
   .ob-btn-tab.active { background:var(--c-accent-bg); border-color:var(--c-accent); color:var(--c-accent); }
+  .ob-fast-skip-btn { background:var(--c-surface); border:1px solid var(--c-border-h); color:var(--c-text-1); font-size:13px; font-weight:600; cursor:pointer; padding:12px 24px; border-radius:24px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:8px; font-family:inherit; }
 `;
 document.head.appendChild(style);
