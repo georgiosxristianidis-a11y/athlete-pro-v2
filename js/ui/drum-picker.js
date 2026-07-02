@@ -25,6 +25,13 @@ export function flushDrum(type, ei, si) {
   if (!d) return;
   // Don't read a hidden/collapsed drum (scrollTop would be a phantom 0).
   if (!d.track.clientHeight) return;
+  // BUG-DRUM-0: display:none resets scrollTop to 0 and the browser does NOT
+  // restore it on reshow, so even a laid-out track can hold a phantom
+  // position. Only trust scrollTop after a genuine user scroll (dirty) —
+  // otherwise the stale lastIdx turns the reset into a huge negative delta
+  // and the set logs as «0×1».
+  if (!d.dirty) return;
+  d.dirty = false;
   const rawIdx = Math.round(d.track.scrollTop / ITEM_H);
   const newIdx = Math.max(0, Math.min(d.count - 1, rawIdx));
   if (newIdx === d.lastIdx) return;
@@ -85,13 +92,19 @@ function _buildDrum(wrap) {
   const initIdx = Math.max(0, Math.min(count - 1, Math.round((current - min) / step)));
   track.scrollTop = initIdx * ITEM_H;
 
-  const d = { track, step, min, max, count, lastIdx: initIdx, syncing: false };
+  // dirty — scrollTop has been moved by a real user scroll since the last
+  // commit; only then may flushDrum/onSettle derive a delta from it.
+  const d = { track, step, min, max, count, lastIdx: initIdx, syncing: false, dirty: false };
   _drums.set(key, d);
   _updateActive(track, initIdx);
 
   /* Haptic + live highlight on each item crossing */
   let _hapticIdx = initIdx;
   track.addEventListener('scroll', () => {
+    // A hidden track only "scrolls" when the browser resets it (display:none
+    // → scrollTop 0): that read is poison, drop trust instead of marking dirty.
+    if (!track.clientHeight) { d.dirty = false; return; }
+    if (!d.syncing) d.dirty = true;
     const cur = Math.round(track.scrollTop / ITEM_H);
     if (cur !== _hapticIdx) {
       _hapticIdx = cur;
@@ -109,6 +122,10 @@ function _buildDrum(wrap) {
     // lastIdx, and zero out the just-logged weight. A laid-out drum always has
     // clientHeight > 0, so this only blocks phantom settles from hidden tracks.
     if (!track.clientHeight) return;
+    // BUG-DRUM-0: same trust rule as flushDrum — a settle without a genuine
+    // user scroll means the position is a display:none reset, not an input.
+    if (!d.dirty) return;
+    d.dirty = false;
     const rawIdx = Math.round(track.scrollTop / ITEM_H);
     const newIdx = Math.max(0, Math.min(count - 1, rawIdx));
     if (newIdx === d.lastIdx) return;
@@ -127,6 +144,24 @@ function _buildDrum(wrap) {
       clearTimeout(t);
       t = setTimeout(onSettle, 80);
     }, { passive: true });
+  }
+
+  // BUG-DRUM-0 heal: display:none zeroes scrollTop and the browser never
+  // brings it back, so a reshown drum sits at 0/1 while State still holds the
+  // real weight/reps. When the track regains layout (set un-done, card
+  // expand, screen return, hidden build), restore the position from lastIdx —
+  // it mirrors State and is the source of truth.
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(() => {
+      if (!track.clientHeight) return;
+      const want = d.lastIdx * ITEM_H;
+      if (Math.abs(track.scrollTop - want) < 1) return;
+      d.syncing = true;
+      d.dirty   = false;
+      track.scrollTop = want;
+      _updateActive(track, d.lastIdx);
+      setTimeout(() => { d.syncing = false; }, 50);
+    }).observe(track);
   }
 }
 
