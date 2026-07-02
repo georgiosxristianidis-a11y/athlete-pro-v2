@@ -26,7 +26,7 @@ const DEFAULTS = {
   // PERF-DRUM: set-logger drums render a ~15-item window around the current
   // value instead of the full range (was 86% of the workout screen's DOM).
   // Kill switch on device: Flags.setFlag('drum-virtual', false)
-  'drum-virtual': false,
+  'drum-virtual': true,
 };
 
 /** @param {string} name @returns {boolean} */
