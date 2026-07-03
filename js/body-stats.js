@@ -105,7 +105,7 @@ export async function renderBodyStats(targetEl) {
         <span class="bs-hist-val" style="color:var(--c-text-1); font-weight:600;">${e[f.id]} ${f.unit}</span>
       </div>`).join('');
     return `
-      <div class="bs-hist-card" style="background:var(--c-surface-deep); border:1px solid var(--c-border); border-radius:16px; padding:16px; margin-bottom:8px;">
+      <div class="bs-hist-card" style="background:var(--c-bg-2); border:1px solid var(--c-border); border-radius:16px; padding:16px; margin-bottom:8px;">
         <div class="bs-hist-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;" data-action="bs:histToggle">
           <span class="bs-hist-date" style="font-weight:700; color:var(--c-text-1)">${bsFmtDate(e.date)}</span>
           <button class="btn-icon-sm" style="color:var(--c-red); background:none; border:none; padding:4px;" data-action="bs:delete" data-date="${e.date}">
@@ -151,14 +151,14 @@ window.bsPromptField = function(id, label, unit, currVal) {
       ${id === 'new' ? `
         <div class="bs-date-row" style="margin-bottom:16px;">
           <label class="bs-field-label" style="display:block; margin-bottom:8px;">Date</label>
-          <input type="date" id="bsf-date" class="bs-date-inp" style="width:100%; height:48px; border-radius:12px; background:var(--c-surface-deep); border:1px solid var(--c-border); color:var(--c-text-1); padding:0 16px;" value="${today}" max="${today}">
+          <input type="date" id="bsf-date" class="bs-date-inp" style="width:100%; height:48px; border-radius:12px; background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); padding:0 16px;" value="${today}" max="${today}">
         </div>
         <div style="max-height:50vh; overflow-y:auto; padding-bottom:16px;">
           ${BS_FIELDS.filter(f => f.id !== 'body_fat').map(f => `
             <div class="bs-field" style="margin-bottom:12px;">
               <label class="bs-field-label" style="display:block; margin-bottom:4px; font-size:13px;">${f.label}</label>
               <div class="bs-field-inp-wrap" style="position:relative;">
-                <input type="number" step="0.1" class="bs-field-inp" id="bsf-${f.id}" placeholder="—" style="width:100%; height:48px; border-radius:12px; background:var(--c-surface-deep); border:1px solid var(--c-border); color:var(--c-text-1); padding:0 16px;">
+                <input type="number" step="0.1" class="bs-field-inp" id="bsf-${f.id}" placeholder="—" style="width:100%; height:48px; border-radius:12px; background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); padding:0 16px;">
                 <span class="bs-field-unit" style="position:absolute; right:16px; top:14px; color:var(--c-text-3); pointer-events:none;">${f.unit}</span>
               </div>
             </div>
@@ -167,12 +167,12 @@ window.bsPromptField = function(id, label, unit, currVal) {
       ` : `
         <div class="bs-date-row" style="margin-bottom:16px;">
           <label class="bs-field-label" style="display:block; margin-bottom:8px;">Date (auto-merges)</label>
-          <input type="date" id="bsf-date" class="bs-date-inp" style="width:100%; height:48px; border-radius:12px; background:var(--c-surface-deep); border:1px solid var(--c-border); color:var(--c-text-1); padding:0 16px;" value="${today}" max="${today}">
+          <input type="date" id="bsf-date" class="bs-date-inp" style="width:100%; height:48px; border-radius:12px; background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); padding:0 16px;" value="${today}" max="${today}">
         </div>
         <div class="bs-field" style="margin-bottom:16px;">
           <label class="bs-field-label" style="display:block; margin-bottom:8px;">${label}</label>
           <div class="bs-field-inp-wrap" style="position:relative;">
-            <input type="number" step="0.1" class="bs-field-inp" id="bsf-${id}" value="${currVal || ''}" style="width:100%; height:48px; border-radius:12px; background:var(--c-surface-deep); border:1px solid var(--c-border); color:var(--c-text-1); padding:0 16px;" autofocus>
+            <input type="number" step="0.1" class="bs-field-inp" id="bsf-${id}" value="${currVal || ''}" style="width:100%; height:48px; border-radius:12px; background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); padding:0 16px;" autofocus>
             <span class="bs-field-unit" style="position:absolute; right:16px; top:14px; color:var(--c-text-3); pointer-events:none;">${unit}</span>
           </div>
         </div>

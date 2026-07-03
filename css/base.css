@@ -433,7 +433,7 @@
   transition: filter 0.15s ease, background 0.15s ease;
 }
 .confirm-cancel {
-  background: var(--c-surface-deep);
+  background: var(--c-bg-2);
   color: var(--c-text-1);
 }
 .confirm-ok {

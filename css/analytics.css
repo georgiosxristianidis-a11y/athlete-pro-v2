@@ -82,7 +82,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  background: var(--c-surface-deep);
+  background: var(--c-bg-2);
   border: 1px solid var(--c-border);
   border-radius: 20px;
   padding: 6px;

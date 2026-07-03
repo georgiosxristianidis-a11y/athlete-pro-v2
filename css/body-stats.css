@@ -15,7 +15,7 @@
 .bs-tab-bar {
   display: flex;
   gap: 6px;
-  background: var(--c-surface-deep);
+  background: var(--c-bg-2);
   border: 1px solid var(--c-border);
   border-radius: 16px;
   padding: 6px;
