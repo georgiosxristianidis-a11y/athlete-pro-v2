@@ -754,10 +754,13 @@ button:focus-visible {
 .chart-card,
 .checklist-card,
 .bs-stat-card {
-  /* GLASS-LITE: solid surface instead of backdrop blur — 7 cards on the
-     workout screen were repainting blur layers on scroll = flicker on mobile
-     GPU. Blur kept only on island/nav/modals. */
-  background: var(--c-bg-2);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.028) 0%,
+    rgba(255, 255, 255, 0.014) 100%
+  );
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
   border: 1px solid var(--c-border);
   border-radius: var(--r-l) !important;
   box-shadow:

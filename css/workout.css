@@ -183,12 +183,13 @@
 .set-row.set-done .set-done-summary { display: flex; align-items: center; justify-content: center; }
 
 /* ── Drum Picker — Elite Refinement ── */
-/* BLACK-DRUM (вариант B): тотальный минимализм — только цифры.
-   Барабан без рамки и подложки; фон = чистый var(--c-bg). */
+/* BLACK-DRUM (Total black / AIR): барабан прозрачный — сливается с
+   поверхностью карточки set logger (var(--c-bg-2)); без своей рамки/подложки.
+   Только цифры + две hairline-линии выбора. */
 .drum-wrap {
   position: relative;
   height: 72px;          /* 5-1: compact — was 100px; drum-item 36px + 2×18px padding */
-  background: var(--c-bg);
+  background: transparent;
   overflow: hidden;
   touch-action: none;
   transition: opacity var(--t-fast);
