@@ -118,7 +118,7 @@
   text-shadow: 0 0 8px color-mix(in srgb, var(--c-purple) 40%, transparent);
 }
 
-.live-bar { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); background: var(--c-surface); border-radius: 20px; padding: 24px var(--sp-2); margin-bottom: var(--sp-2); box-shadow: 0 8px 24px color-mix(in srgb, var(--c-bg) 20%, transparent); }
+.live-bar { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); background: var(--c-bg-2); border: 1px solid var(--c-border); border-radius: 20px; padding: 24px var(--sp-2); margin-bottom: var(--sp-2); }
 
 
 /* ── Global Workout Progress — Neon Purple Sync ── */

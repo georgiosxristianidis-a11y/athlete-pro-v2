@@ -4,7 +4,7 @@
 
 /* ── Calendar ── */
 .cal-card {
-  background: var(--c-surface);
+  background: var(--c-bg-2);
   border: 1px solid var(--c-border);
   border-radius: var(--r-l);
   padding: var(--sp-2);
@@ -120,13 +120,11 @@
   margin-bottom: var(--sp-3);
 }
 .stat-chip {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--c-bg-2);
   border: 1px solid var(--c-border);
   border-radius: 20px;
   padding: 12px;
   text-align: center;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 .stat-chip-val {
   font-family: var(--font-heading);
@@ -151,7 +149,7 @@
 
 /* ── Chart cards ── */
 .chart-card {
-  background: var(--c-surface);
+  background: var(--c-bg-2);
   border: 1px solid var(--c-border);
   border-radius: 20px;
   padding: var(--sp-2);

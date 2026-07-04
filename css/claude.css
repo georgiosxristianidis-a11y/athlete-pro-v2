@@ -239,7 +239,7 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background: var(--c-surface);
+  background: var(--c-bg-2);
   border: 1px solid var(--c-border);
   border-radius: var(--r-l);
   padding: var(--sp-2);
@@ -319,7 +319,7 @@
 
 /* ── Coach card ── */
 .coach-card {
-  background: var(--c-surface);
+  background: var(--c-bg-2);
   border: 1px solid var(--c-border);
   border-radius: var(--r-l);
   padding: var(--sp-2);

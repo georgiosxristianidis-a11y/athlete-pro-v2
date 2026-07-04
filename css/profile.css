@@ -48,7 +48,7 @@
 
 /* ── Profile card ── */
 .profile-card {
-  background: var(--c-surface);
+  background: var(--c-bg-2);
   border: 1px solid var(--c-border);
   border-radius: var(--r-l);
   padding: var(--sp-2);
