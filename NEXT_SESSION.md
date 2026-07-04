@@ -1,10 +1,10 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-04 (Fable 5, LEAD merge queue).
-> **Trunk: `claude/csp-soft-delete` @ `651072d`** — merge queue 2026-07-04: 5 линий (4b+FS / 4c / PERF-DRUM / drum-AIR / AIR-0.5) собраны cherry-pick в одну прямую линию, FF в trunk. **НЕ запушено**; main/прод = 1.19.1 `c39f33f` (прод БЕЗ FS и DB-SPLIT 4b/4c).
-> Гейт: unit **229/229** · lint **0 err** · e2e **39/39**. SW `athlete-pro-v90` (следующий свободный v91), VERSION `1.19.1`.
-> Теги: `checkpoint-2026-07-04-merge-queue` (=trunk) · `checkpoint-2026-07-04-pre-air` (`ac0f1e5`) · `checkpoint-2026-07-03-drum-0` (`c39f33f`, прод).
-> Активная программа: **AIR-рефакторинг** — `HANDOFF_air_refactor.md` (AIR-1 разблокирована). Стек карточек: `HANDOFF_next_cards.md`.
+> Обновлено: 2026-07-04 (Fable 5, AIR-1 влита).
+> **Trunk: `claude/csp-soft-delete` @ `a2900c5`** — AIR-1 (`674553d`) FF-влита после полевого OLED-чека Gio. **НЕ запушено**; main/прод = 1.19.1 `c39f33f` (прод БЕЗ FS и DB-SPLIT 4b/4c).
+> Гейт: unit **229/229** · lint **0 err** (stylelint warnings 38). SW `athlete-pro-v91` (следующий свободный v92), VERSION `1.19.1`.
+> Теги: `checkpoint-2026-07-04-merge-queue` (`a62f3ee`) · `checkpoint-2026-07-04-pre-air` (`ac0f1e5`) · `checkpoint-2026-07-03-drum-0` (`c39f33f`, прод).
+> Активная программа: **AIR-рефакторинг** — `HANDOFF_air_refactor.md` (AIR-1 ✅, next AIR-2). Стек карточек: `HANDOFF_next_cards.md`.
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
 
 ---
