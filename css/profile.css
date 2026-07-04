@@ -634,11 +634,11 @@
 }
 
 .pp-m-val {
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 800;
   color: var(--c-text-1);
   letter-spacing: -0.04em;
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .pp-m-u {

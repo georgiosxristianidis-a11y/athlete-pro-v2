@@ -125,7 +125,15 @@
   text-shadow: 0 0 8px color-mix(in srgb, var(--c-purple) 40%, transparent);
 }
 
-.live-bar { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); background: var(--c-bg-2); border: 1px solid var(--c-border); border-radius: 20px; padding: 24px var(--sp-2); margin-bottom: var(--sp-2); }
+/* Live stats readout — matches the Profile passport metrics strip
+   (.pp-metrics-strip) pattern 1:1: surface panel, no border, sp-3/sp-1
+   padding, flex:1 equal thirds, 24px/800 value, uppercase micro-label,
+   thin 32px divider. Single source of truth for the 3-stat readout look. */
+.live-bar { display: flex; align-items: center; justify-content: center; background: var(--c-surface); border-radius: var(--r-xl); padding: 14px var(--sp-1); margin-bottom: var(--sp-2); }
+.live-stat { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.live-bar .live-val { font-size: 21px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.2; color: var(--c-text-1); }
+.live-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-text-3); margin-top: 6px; }
+.live-divider { width: 1px; height: 32px; background: var(--c-border); opacity: 0.5; flex-shrink: 0; }
 
 
 /* ── Global Workout Progress — Neon Purple Sync ── */
@@ -135,11 +143,10 @@
 }
 
 .workout-progress-track {
-  height: 6px;
-  background: var(--c-surface);
+  height: 3px;
+  background: var(--c-border-h);
   border-radius: 10px;
-  overflow: hidden;
-  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--c-bg) 30%, transparent);
+  overflow: visible;
 }
 
 .workout-progress-fill {
@@ -149,7 +156,7 @@
   transform-origin: left;
   background: var(--c-purple);
   border-radius: 10px;
-  box-shadow: 0 0 12px var(--c-purple), 0 0 6px var(--c-purple);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c-purple) 55%, transparent), 0 1px 4px color-mix(in srgb, var(--c-purple) 40%, transparent);
   transition: transform 0.6s var(--ease-spring);
 }
 
@@ -164,7 +171,7 @@
 .exercise-meta.done { opacity: 0.25 !important; }
 
 /* ── Header Actions — Premium Distribution ── */
-.ex-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; padding-left: 20px; padding-right: 4px; flex-shrink: 0; }
+.ex-header-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; padding-left: 20px; padding-right: 4px; flex-shrink: 0; }
 .ex-action-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--c-text-3); cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; border-radius: 10px; opacity: 0.4; font-size: 9px; font-weight: 800; }
 .ex-action-btn:active { transform: scale(0.85); background: var(--c-bg-3); opacity: 1; color: var(--c-text-1); }
 .ex-action-btn.active { color: var(--c-accent); opacity: 0.9; }
