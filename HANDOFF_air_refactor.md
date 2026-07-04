@@ -17,7 +17,7 @@
 
 1. **База:** ветка от свежего trunk (`claude/csp-soft-delete`), сверить хеш с NEXT_SESSION.md. ✅ Пререквизит закрыт: `ac0f1e5` (drum AIR) влит в trunk merge queue 2026-07-04 — AIR-1 разблокирована.
 2. **Гейт:** `npm test` + `npm run lint` зелёные ДО и ПОСЛЕ. Тесты не править. CSS-only (исключение — AIR-0.5, там inline-стили в body-stats.js).
-3. **SW-ритуал:** после каждой фазы `npm run build:sw` + бамп `CACHE_NAME` в sw.js. Номер брать следующий свободный — после merge queue 2026-07-04 trunk = v90, следующий v91.
+3. **SW-ритуал:** после каждой фазы `npm run build:sw` + бамп `CACHE_NAME` в sw.js. Номер брать следующий свободный — после AIR-1 = v91, следующий v92.
 4. **Verify (обязательный блок):**
    - preview порт 3001 (конфиг athlete-pro), mobile 375, dark;
    - `preview_inspect` затронутых селекторов: `background-color` = `rgb(12, 12, 18)` (`--c-bg-2`), `backdrop-filter` = `none`;
@@ -58,11 +58,11 @@ Active-состояния контролов: вместо белых гради
 - **ГДЕ СТОП:** grep `--c-surface-deep` по репо = 0 вхождений (кроме .planning/ архива), гейт зелёный, SW-бамп, 1 коммит. Это баг-фикс, отдельный от визуала — дальше не идти.
 - **НЕ ТРОГАТЬ:** blur-свойства, Tier 2, остальные карточки.
 
-### AIR-1 — Workout + Dashboard — [ ]
+### AIR-1 — Workout + Dashboard — ✅ `674553d` (happy-tereshkova, SW v91; остаток: полевой OLED-чек Gio)
 
-- **ЦЕЛЬ:** применить рецепт AIR к: `.live-bar` (`css/workout.css:121` — снять `--c-surface`-плашку и тень) и группе карточек `css/base.css:746-769` (11 классов: exercise-card, type-card, stat-chip, profile-card, plan-row, cal-card, heatmap-card, coach-card, chart-card, checklist-card, bs-stat-card). ПЛЮС сразу погасить дубль `.stat-chip` в `css/analytics.css:122-130` (локальный blur перекроет base и фаза будет выглядеть провальной) — это перенос из фазы 2, делать здесь.
-- **ГДЕ СТОП:** verify-блок пройден, скрины before/after, полевой чек, 1 коммит + SW-бамп. Сегмент-контролы НЕ трогать (это AIR-2).
-- **НЕ ТРОГАТЬ:** `base.css:697-741` (контролы), Tier 2, `.modal-sheet` блок `:771-777`.
+- Сделано: `.live-bar` + группа 11 карточек base.css → рецепт AIR; дубль `.stat-chip` (analytics) погашен ПЛЮС найденные при verify дубли `var(--c-surface)` поверх базы: `.cal-card`/`.chart-card` (analytics), `.profile-card` (profile), `.bs-stat-card` (body-stats), `.heatmap-card`/`.coach-card` (claude) → все на `var(--c-bg-2)`. PPL-тинты `.type-card[data-type]` сохранены (семантика). Verify: 12 классов bg=rgb(12,12,18)/blur none/shadow none; Tier 2 blur жив (island/modal-sheet/toast). Гейт 229/229, lint 0 err (warnings 39→38). Скрины не сняты — preview_screenshot висел, доказательство = inspect-значения в коммите.
+- **ЦЕЛЬ (была):** применить рецепт AIR к: `.live-bar` (`css/workout.css:121` — снять `--c-surface`-плашку и тень) и группе карточек `css/base.css:746-769` (11 классов: exercise-card, type-card, stat-chip, profile-card, plan-row, cal-card, heatmap-card, coach-card, chart-card, checklist-card, bs-stat-card). ПЛЮС сразу погасить дубль `.stat-chip` в `css/analytics.css:122-130` (локальный blur перекроет base и фаза будет выглядеть провальной) — это перенос из фазы 2, делать здесь.
+- **НЕ ТРОГАТЬ:** `base.css:697-741` (контролы), Tier 2, `.modal-sheet` блок (теперь `:762-768`).
 
 ### AIR-2 — Controls + Analytics — [ ]
 
