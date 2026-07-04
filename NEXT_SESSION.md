@@ -1,9 +1,10 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-02 (Fable 5, карточка 6 DOC-SYNC).
-> **Trunk: `claude/csp-soft-delete` @ `8052a89`** (main синхронизируется из неё FF; последний пуш в main = `a599d9d` SSE hardening; локальный trunk впереди — Air Cleanup **НЕ запушен**).
-> Гейт: unit **214/214** · lint **0 err** · e2e **39/39** · audit 0 vuln. SW `athlete-pro-v83`, VERSION `1.18.2`.
-> Теги: `checkpoint-2026-07-02-*` (bugnav / dbsplit-start / dbsplit-settings / pre-onerm / dbsplit-onerm).
+> Обновлено: 2026-07-04 (Fable 5, LEAD merge queue).
+> **Trunk: `claude/csp-soft-delete` @ `651072d`** — merge queue 2026-07-04: 5 линий (4b+FS / 4c / PERF-DRUM / drum-AIR / AIR-0.5) собраны cherry-pick в одну прямую линию, FF в trunk. **НЕ запушено**; main/прод = 1.19.1 `c39f33f` (прод БЕЗ FS и DB-SPLIT 4b/4c).
+> Гейт: unit **229/229** · lint **0 err** · e2e **39/39**. SW `athlete-pro-v90` (следующий свободный v91), VERSION `1.19.1`.
+> Теги: `checkpoint-2026-07-04-merge-queue` (=trunk) · `checkpoint-2026-07-04-pre-air` (`ac0f1e5`) · `checkpoint-2026-07-03-drum-0` (`c39f33f`, прод).
+> Активная программа: **AIR-рефакторинг** — `HANDOFF_air_refactor.md` (AIR-1 разблокирована). Стек карточек: `HANDOFF_next_cards.md`.
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
 
 ---
@@ -17,7 +18,7 @@
 | 1 | BUG-NAV — системная «назад» | ✅ `6637719` (остаток: ручной тест на телефоне после деплоя) |
 | 2 | CI — GitHub Actions гейт | ✅ `4ec2e0b` |
 | 3 | ARCH-DEL — удалить `js/_archive` | ✅ `84660fb` |
-| 4 | DB-SPLIT — `js/db.js` через фасад | 🔶 в процессе: Settings + OneRM (`2af782b`, `ad7b769`) + Metrics/Events/Nutrition/Planned (4b, `ae9ec9a`, SW v87); остались Workouts (4c) и Backup (4d); после каждого — `npm run build:sw` + бамп `CACHE_NAME` |
+| 4 | DB-SPLIT — `js/db.js` через фасад | 🔶 Settings + OneRM + Metrics/Events/Nutrition/Planned (4b) + Workouts (4c) — всё в trunk после merge queue 2026-07-04; остался Backup (4d) |
 | 5 | STYLE-LINT — запрет сырых цветов | ✅ `2d24f7d` (39 legacy warnings — миграция фоном) |
 | 6 | DOC-SYNC — этот файл | ✅ 2026-07-02 |
 
