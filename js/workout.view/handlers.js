@@ -11,7 +11,7 @@ import {
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
 import { esc } from '../shared/utils.js';
-import { confirmDialog, promptDialog } from '../shared/confirm.js';
+import { confirmDialog } from '../shared/confirm.js';
 import { isRu } from '../locale.store.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
 import { on } from '../events.js';
@@ -502,20 +502,15 @@ export function _toggleCoreItem(day, idx) {
 }
 
 export async function _addCoreItem(day) {
-  const ru = isRu();
-  const name = await promptDialog({
-    title: ru ? 'Упражнение на корпус' : 'Core exercise',
-    placeholder: ru ? 'Название' : 'Name',
-    confirmLabel: ru ? 'Добавить' : 'Add',
-    cancelLabel: ru ? 'Отмена' : 'Cancel',
+  const { openExercisePickerModal } = await import('./modals.js');
+  await openExercisePickerModal('core', async ({ name }) => {
+    const items = loadCoreChecklist(day);
+    items.push(name.trim());
+    saveCoreChecklist(day, items);
+    const section = document.getElementById('core-section');
+    // @ts-ignore
+    if (section) section.innerHTML = (await import('./render.js'))._renderCoreSection(day);
   });
-  if (!name) return;
-  const items = loadCoreChecklist(day);
-  items.push(name.trim());
-  saveCoreChecklist(day, items);
-  const section = document.getElementById('core-section');
-  // @ts-ignore
-  if (section) section.innerHTML = (await import('./render.js'))._renderCoreSection(day);
 }
 
 export async function _removeCoreItem(day, idx) {

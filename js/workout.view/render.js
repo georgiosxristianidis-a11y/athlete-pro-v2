@@ -435,7 +435,7 @@ export async function renderActive() {
       <button class="btn btn-primary" data-action="wo:complete">${ru ? 'Завершить тренировку' : 'Complete Session'}</button>
       <button class="btn btn-ghost" data-action="wo:cancel">${ru ? 'Отмена' : 'Cancel'}</button>
     </div>
-    <div style="height:var(--sp-2)"></div>
+    <div style="height:var(--sp-4)"></div>
   `;
 
   requestAnimationFrame(() => {

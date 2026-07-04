@@ -69,6 +69,13 @@
 .btn-text { display: flex; align-items: center; gap: 4px; background: none; border: none; font-size: 11px; font-weight: 800; color: var(--c-accent); cursor: pointer; text-transform: uppercase; line-height: 1; transition: opacity 0.2s; }
 .btn-text:active { opacity: 0.6; }
 
+/* Section headers with a trailing action (Core "Add", "Edit Plan"): keep
+   label + button on one row, and give the button real vertical tap-room —
+   negative margin cancels the padding's layout shift, so hit-area grows
+   without the row itself getting taller. */
+#s-train .section-header { display: flex; align-items: center; justify-content: space-between; }
+#s-train .section-header .btn-text { padding: 10px 6px; margin: -10px -6px; }
+
 .week-pill {
   display: flex;
   align-items: center;
@@ -315,7 +322,7 @@
    Circle glyph ○ communicates non-weighted movement without emoji.
    ══════════════════════════════════════════════════════════ */
 .core-section {
-  margin-top: var(--sp-3);
+  margin-top: var(--sp-4);
 }
 
 .core-list {
