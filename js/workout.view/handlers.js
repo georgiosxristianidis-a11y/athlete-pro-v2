@@ -515,6 +515,16 @@ export async function _addCoreItem(day) {
 
 export async function _removeCoreItem(day, idx) {
   const items = loadCoreChecklist(day);
+  const name = items[idx];
+  const ru = isRu();
+  const ok = await confirmDialog({
+    title: ru ? 'Удалить упражнение?' : 'Remove exercise?',
+    message: name || '',
+    confirmLabel: ru ? 'Удалить' : 'Remove',
+    cancelLabel: ru ? 'Назад' : 'Keep',
+    danger: true,
+  });
+  if (!ok) return;
   items.splice(idx, 1);
   saveCoreChecklist(day, items);
   const section = document.getElementById('core-section');
