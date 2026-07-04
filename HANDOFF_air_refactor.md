@@ -15,9 +15,9 @@
 
 ## Правила для агентов (каждая сессия)
 
-1. **База:** ветка от свежего trunk (`claude/csp-soft-delete`), сверить хеш с NEXT_SESSION.md. Перед AIR-1 убедиться, что `ac0f1e5` (drum AIR) влит в trunk; если нет — сначала влитие FF-only, это пререквизит.
+1. **База:** ветка от свежего trunk (`claude/csp-soft-delete`), сверить хеш с NEXT_SESSION.md. ✅ Пререквизит закрыт: `ac0f1e5` (drum AIR) влит в trunk merge queue 2026-07-04 — AIR-1 разблокирована.
 2. **Гейт:** `npm test` + `npm run lint` зелёные ДО и ПОСЛЕ. Тесты не править. CSS-only (исключение — AIR-0.5, там inline-стили в body-stats.js).
-3. **SW-ритуал:** после каждой фазы `npm run build:sw` + бамп `CACHE_NAME` в sw.js. Номер брать следующий свободный — параллельные ветки уже заняли v87 (determined-yalow) и v88 (awesome-davinci), при rebase-конфликте SW-версии — брать большую +1.
+3. **SW-ритуал:** после каждой фазы `npm run build:sw` + бамп `CACHE_NAME` в sw.js. Номер брать следующий свободный — после merge queue 2026-07-04 trunk = v90, следующий v91.
 4. **Verify (обязательный блок):**
    - preview порт 3001 (конфиг athlete-pro), mobile 375, dark;
    - `preview_inspect` затронутых селекторов: `background-color` = `rgb(12, 12, 18)` (`--c-bg-2`), `backdrop-filter` = `none`;

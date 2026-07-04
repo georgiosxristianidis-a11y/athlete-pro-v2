@@ -1,9 +1,9 @@
 # HANDOFF — стек карточек (после Air Cleanup 1-3/5/6)
 
-> Обновлено 2026-07-04 (вечер, сессия awesome-davinci: PERF-DRUM закрыта). Правило: 1 карточка = 1 сессия, сверху вниз (исключение: GLASS-LITE + BLACK-DRUM — пара в одной сессии).
+> Обновлено 2026-07-04 (ночь, LEAD: merge queue закрыта — 5 линий в trunk одной прямой линией, SW v90). Правило: 1 карточка = 1 сессия, сверху вниз.
 > Гейт перед коммитом: `npm test` (229) + `npm run lint` (0 err). Перед рискованным — тег `checkpoint-<date>`.
-> База: trunk `claude/csp-soft-delete` @ c39f33f == main == origin (1.19.1 на проде) + ветка `claude/awesome-davinci-3ae27c` (815eec7+f73a6f3, SW v88, НЕ влито). Тег отката: `checkpoint-2026-07-03-drum-0`.
-> ЭТА версия файла новее 4a703f7 (gallant-wu) и ab2afe8 (bold-fermi) — при конфликте на rebase брать её.
+> База: trunk `claude/csp-soft-delete` = merge queue 2026-07-04 (4b+FS + 4c + PERF-DRUM + drum-AIR + AIR-0.5), SW v90, следующий свободный v91. НЕ запушено; main/прод = 1.19.1 `c39f33f` (без FS и DB-SPLIT 4b/4c!). Тег отката: `checkpoint-2026-07-03-drum-0`.
+> ЭТА версия файла — каноническая после merge queue; старые копии в ветках yalow/fermi/davinci/wu/chatelet протухли.
 
 ---
 
@@ -13,27 +13,11 @@
 - **4c — DB-SPLIT Workouts** (`e3b2992`, bold-fermi, SW v87).
 - **BUG-DRUM-0 — сет «0×1»** (релиз 1.19.1 `c39f33f`, на проде). Репро-тесты в `test/drum-picker.test.js`.
 - **PERF-DRUM — виртуализация барабанов** (2026-07-04, `815eec7`+`f73a6f3`, awesome-davinci): окно 15 значений за флагом `drum-virtual` (default ON), спейсеры сохраняют scrollTop-математику, `_updateActive` адресно. Замеры: drum-items 4642→750 (-84%), DOM экрана 5479→1696. Все гарды BUG-DRUM-0 гоняются на обоих путях (юниты ×2). Гейт 229/229 + e2e 39/39. Kill switch: `Flags.setFlag('drum-virtual', false)`. Остаток за Gio: полевой чек скролла/фризов на телефоне.
-
-## 🔒 За LEAD (мёрж-очередь, не карточки)
-
-- **4b — DB-SPLIT мелкие сторы** — 🚧 готово в worktree determined-yalow (`ae9ec9a`), ждёт FF-мёржа. При rebase сверить SW-бампы: v87 занят (4c), v88 занят (PERF-DRUM) → им v89.
-- Ветки awesome-davinci (PERF-DRUM) и gallant-wu (`4a703f7`, docs) — влить FF после гейта.
-
----
-
-## Карточка GLASS-LITE — убрать blur с exercise-карточек 🟩 (пара с BLACK-DRUM: одна сессия — СЛЕДУЮЩАЯ, выбор Gio)
-
-- **ФАКТЫ:** групповое правило `css/base.css:745-769` вешает `backdrop-filter: blur(20px)` на 11 классов карточек; на экране воркаута 7 таких одновременно — на мобильном GPU backdrop-слои перерисовываются с лагом = мерцание при скролле/кликах.
-- **ЦЕЛЬ:** `.exercise-card` (и по решению — остальные списковые карточки) → сплошной `var(--c-surface-deep)` без blur; blur остаётся только на island/nav/модалках.
-- **ГДЕ СТОП:** скриншот-сравнение (glass-вид не должен развалиться); гейт. Полевой чек на OLED Gio — один на пару с BLACK-DRUM.
-- **НЕ ТРОГАТЬ:** модалки/Island/nav; токены палитры.
-
-## Карточка BLACK-DRUM — total black барабаны 🟩 (пара с GLASS-LITE, та же сессия)
-
-- **КОНТЕКСТ:** Gio выбрал по мокапу 2026-07-04 **вариант B** — тотальный минимализм, только цифры.
-- **ЦЕЛЬ (зафиксировано Gio):** `.drum-wrap` — БЕЗ рамки и подложки вообще (убрать `--c-surface` фон и border); фон = чистый `var(--c-bg)`; `.drum-sel` вместо плашки с рамкой → две горизонтальные hairline-линии (border-top/bottom `var(--c-border-h)`) во всю ширину полосы выбора; соседние `.drum-item` — opacity **0.4** (вместо 0.22 — на чистом чёрном 0.22 исчезает). WCAG: актив #fff на чёрном 21:1 (AAA).
-- **ГДЕ СТОП:** скриншот до/после (mobile 375px, тёмная тема); гейт + e2e drum-тест; полевой чек на OLED Gio — общий с GLASS-LITE.
-- **НЕ ТРОГАТЬ:** геометрию барабана (ITEM_H 36 / snap / виртуализацию PERF-DRUM), гарды fd99a2e/0ad7626, island-set-pulse; токены не добавлять — только существующие.
+- **4b — DB-SPLIT мелкие сторы** (`ae9ec9a`, determined-yalow): Metrics/Events/Nutrition/Planned в `js/db/*`. Влито merge queue 2026-07-04.
+- **FS — Fast Skip онбординга** (`dd03202`+`0c62350`, vigorous-hypatia) + полевые визуальные фиксы. Влито merge queue 2026-07-04 — до этого НЕ было на проде.
+- **BLACK-DRUM + GLASS-LITE (пара)** (`6c8c6e9`+`ac0f1e5`, trusting-antonelli): барабаны total-black вариант B; широкий GLASS-LITE откатан — снятие blur с карточек теперь по программе AIR (`HANDOFF_air_refactor.md`), карточки-дубли ниже удалены. `ac0f1e5` = чекпоинт `pre-air`.
+- **AIR-0.5 — Token Heal** (`2d737dd`, wizardly-chatelet): фантомный `--c-surface-deep` → `var(--c-bg-2)`. Детали — `HANDOFF_air_refactor.md`.
+- **Merge queue 2026-07-04 (LEAD)** — 5 линий собраны cherry-pick в одну прямую линию, FF в trunk; SW v87/v88/v89 параллельных веток разрулены → финал v90. Ветки yalow/fermi/davinci/wu/chatelet/hypatia/chandrasekhar/antonelli больше не нужны.
 
 ## Карточка UI-CENTER — вертикальное оцентрование текста в set logger
 
