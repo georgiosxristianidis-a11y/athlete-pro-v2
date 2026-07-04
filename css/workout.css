@@ -325,10 +325,14 @@
   margin-top: var(--sp-4);
 }
 
+.core-section .section-header {
+  margin-bottom: var(--sp-2);
+}
+
 .core-list {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-1);
+  gap: var(--sp-1-5);
 }
 
 .core-empty {
@@ -343,7 +347,7 @@
   display: flex;
   align-items: center;
   gap: var(--sp-1-5);
-  padding: 10px var(--sp-1-5);
+  padding: var(--sp-1-5) var(--sp-2);
   background: var(--c-surface);
   border: 1px dashed var(--c-border-h);
   border-radius: var(--r-m);
