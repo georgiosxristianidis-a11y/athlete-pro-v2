@@ -94,13 +94,9 @@ test.describe('Onboarding Flow (Real)', () => {
     // Step 1: goal cards are interactive
     await page.locator('.ob-card[data-key="strength"]').click();
 
-    // Premium wizard (6 steps) offers a fast path: Skip & Quick Start
+    // FS card: Fast Skip is one-tap — completes onboarding directly,
+    // no quick-confirm step anymore
     await page.locator('.ob-fast-skip-btn').click();
-
-    // Quick-confirm step → finish
-    const finishBtn = page.locator('#ob-finish-btn');
-    await expect(finishBtn).toBeVisible({ timeout: 5000 });
-    await finishBtn.click();
 
     // Onboarding should close and land on dashboard
     await expect(overlay).not.toBeAttached({ timeout: 5000 });

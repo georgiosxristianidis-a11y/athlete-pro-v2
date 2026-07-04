@@ -197,9 +197,12 @@ test.describe('Set logger drum', () => {
       return g ? Math.abs(g.activeCenter - g.wrapCenter) : 999;
     }, { timeout: 5000 }).toBeLessThanOrEqual(2);
 
+    // opacity transitions 0.4 → 1 (--t-fast) after the active class lands;
+    // poll past the transition instead of racing it
+    await expect.poll(async () => (await readGeo())?.opacity ?? 0, { timeout: 5000 }).toBe(1);
+
     const geo = await readGeo();
     expect(geo).not.toBeNull();
-    expect(geo.opacity).toBe(1);
     expect(geo.text?.trim().length).toBeGreaterThan(0);
     expect(geo.insideWrap).toBe(true);
   });
