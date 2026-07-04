@@ -790,6 +790,7 @@
   inset: 0;
   background: color-mix(in srgb, var(--c-bg) 85%, transparent);
   backdrop-filter: blur(8px);
+  will-change: backdrop-filter;
   z-index: 5000;
   display: flex;
   align-items: center;
