@@ -489,7 +489,6 @@ export async function renderExerciseCard(ex, ei) {
             ${esc(ex.name)}${muscleBadge}
             ${coach ? `<span class="coach-pill">${coach.target}<span class="coach-pill-unit">kg</span></span>` : ''}
           </div>
-          <div class="exercise-meta ${doneSets === ex.sets.length ? 'done' : ''}" id="ex-meta-${ei}">${doneSets}/${ex.sets.length}</div>
         </div>
         
         <div class="ex-header-actions" data-action="wo:noop">
@@ -508,7 +507,7 @@ export async function renderExerciseCard(ex, ei) {
           <span style="width:20px"></span>
           <span class="set-col-label">${ru ? 'Вес kg' : 'Weight kg'}</span>
           <span class="set-col-label">${ru ? 'Повторы' : 'Reps'}</span>
-          <span style="width:44px"></span>
+          <span class="set-col-label exercise-meta ${doneSets === ex.sets.length ? 'done' : ''}" id="ex-meta-${ei}">${doneSets}/${ex.sets.length}</span>
         </div>
         ${setRows.join('')}
         <button class="add-set-btn" data-action="wo:addSet" data-ei="${ei}">${svgArrow('plus')} Add Set</button>
