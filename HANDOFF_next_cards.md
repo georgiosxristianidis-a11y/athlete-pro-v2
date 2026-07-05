@@ -1,9 +1,9 @@
 # HANDOFF — стек карточек (после Air Cleanup 1-3/5/6)
 
-> Обновлено 2026-07-04 (ночь, LEAD: merge queue закрыта — 5 линий в trunk одной прямой линией, SW v90). Правило: 1 карточка = 1 сессия, сверху вниз.
+> Обновлено 2026-07-05 (реконсиляция после MERGE-QUEUE-2). Правило: 1 карточка = 1 сессия, сверху вниз.
 > Гейт перед коммитом: `npm test` (229) + `npm run lint` (0 err). Перед рискованным — тег `checkpoint-<date>`.
-> База: trunk `claude/csp-soft-delete` = merge queue 2026-07-04 (4b+FS + 4c + PERF-DRUM + drum-AIR + AIR-0.5), SW v90, следующий свободный v91. НЕ запушено; main/прод = 1.19.1 `c39f33f` (без FS и DB-SPLIT 4b/4c!). Тег отката: `checkpoint-2026-07-03-drum-0`.
-> ЭТА версия файла — каноническая после merge queue; старые копии в ветках yalow/fermi/davinci/wu/chatelet протухли.
+> База: trunk `claude/csp-soft-delete` = main = origin/main = **`bb980c8` (релиз 1.20.0, SW v92, следующий свободный v93)** — включает blur-фикс, CORE-TAP, статбар, STATS-1. Проверять принадлежность коммита линии через `git merge-base --is-ancestor <hash> <trunk>`, НЕ по имени ветки/визуально — хеши меняются на rebase (a0d55f4→88508f2, e29a4a9→0369e7c).
+> ЭТА версия файла — каноническая; старые копии в боковых ветках протухли.
 
 ---
 
@@ -18,25 +18,10 @@
 - **BLACK-DRUM + GLASS-LITE (пара)** (`6c8c6e9`+`ac0f1e5`, trusting-antonelli): барабаны total-black вариант B; широкий GLASS-LITE откатан — снятие blur с карточек теперь по программе AIR (`HANDOFF_air_refactor.md`), карточки-дубли ниже удалены. `ac0f1e5` = чекпоинт `pre-air`.
 - **AIR-0.5 — Token Heal** (`2d737dd`, wizardly-chatelet): фантомный `--c-surface-deep` → `var(--c-bg-2)`. Детали — `HANDOFF_air_refactor.md`.
 - **Merge queue 2026-07-04 (LEAD)** — 5 линий собраны cherry-pick в одну прямую линию, FF в trunk; SW v87/v88/v89 параллельных веток разрулены → финал v90. Ветки yalow/fermi/davinci/wu/chatelet/hypatia/chandrasekhar/antonelli больше не нужны.
-- **BLUR-SCROLL** — код готов: `1e098fa` (nervous-williamson), глобальный snap-off заменён точечным `will-change`. ⚠ НЕ влит — влитие в MERGE-QUEUE-2 ниже.
-- **CORE-TAP-SAFETY** — код готов: `a0d55f4` (funny-tharp), confirm перед remove-X + зазор. ⚠ НЕ влит — влитие в MERGE-QUEUE-2 ниже.
-- **STATS-1 — герой+рельс** (`e29a4a9`, silly-antonelli, SW v92): live-bar → `.live-hero` (тоннаж count-up + сегментный рельс по сетам + чип ex). Детали — `HANDOFF_stats_redesign.md`. ⚠ НЕ влит.
-
-## Карточка MERGE-QUEUE-2 — LEAD: влить 3 боковые линии, закрывает blur на summary 🔴 (первая!)
-
-- **ПОЧЕМУ 🔴:** Gio 2026-07-05 повторно словил «блур пропадает при скролле» на summary после тренировки. Диагностика (silly-antonelli): фикс BLUR-SCROLL **уже написан и корректен** (`1e098fa`, ветка `claude/nervous-williamson-995099`) — но НЕ влит: trunk/прод/все остальные ветки до сих пор несут `css/base.css:951` `body.is-scrolling * { backdrop-filter: none !important; }` + scroll-listener `js/app.js:355-363`. Это ЕДИНСТВЕННАЯ причина: одно глобальное правило гасит все 9 blur-поверхностей разом (summary-карточки `summary.css:100` — где жалоба, самый контрастный фон; modal overlay/sheet `base.css:360/371`; toast `:565`; glass-панель `:703`; tab-bar `:765`; Island `dynamic-island.css:40`; intel `:80`; athlete-room `:792`). Отдельных «аналогичных багов» по экранам НЕТ — после мёржа 1e098fa симптом уходит везде; `1e098fa` уже кладёт `will-change: backdrop-filter` на все эти поверхности.
-- **ЦЕЛЬ:** merge queue от `395b61c`: (1) `nervous-williamson` = `1e098fa` BLUR-SCROLL + `c8ad2a3` CORE-air (тег `checkpoint-2026-07-05-blur-scroll-core-air`); (2) `funny-tharp` = `a0d55f4` CORE-TAP-SAFETY (конфликт с c8ad2a3 в workout.css/handlers.js возможен — обе про core-секцию); (3) `silly-antonelli` = serene-статбар + STATS-1 `e29a4a9` (SW v92 — сверить нумерацию, следующий свободный после мёржа). FF-only в trunk, один SW-бамп в конце. Реконсилировать этот файл (копии в ветках разошлись — эта версия каноническая после мёржа).
-- **ГДЕ СТОП:** гейт 229 + lint 0 после каждой линии; полевой чек Gio: скролл на summary + nav/Island/модалки — blur не пропадает нигде; если на телефоне появятся фризы скролла (Phase 5-хак что-то компенсировал) — не откатывать вслепую, решить с Gio.
-- **НЕ ТРОГАТЬ:** сами фиксы (код готов, только влитие); island-set-pulse.
-
-## ✅ CORE-TAP-SAFETY — закрыта 2026-07-05
-
-- **Подход (б) confirmDialog** — `_removeCoreItem` в `handlers.js` теперь спрашивает подтверждение (тот же паттерн, что `cancelSession`: `danger:true`, фокус по умолчанию на safe-кнопке «Keep/Назад»), удаление больше не мгновенное.
-- **CSS:** `.core-list` получил `margin-top: var(--sp-2)` (+16px, `css/workout.css:331`) — зазор между рядом ADD и первым `.core-remove` увеличен.
-- Проверено в превью: клик по крестику → диалог «Remove exercise? / Hanging Leg Raises», Cancel сохраняет item (2/2), Remove-кнопка красная (`--c-red`), Keep — фокус по умолчанию.
-- **Гейт юнит-теста НЕ добавлен** — в проекте нет DOM-инфры (jsdom/аналог) ни для одного файла в `workout.view/*`; `handlers.js` тянет `document`/`window`/IndexedDB на импорте модуля (проверено — `timer.js`, `shell.js`, `db.js` падают без браузерных глобалов). Добавление полноценного DOM-шима — отдельная карточка, если нужно тестовое покрытие этого слоя.
-- Гейт: `npm test` 229/229 (без изменений в тестах).
-- **НЕ ТРОГАТЬ (соблюдено):** `wo:toggleCore`, `loadCoreChecklist`/`saveCoreChecklist`.
+- **BLUR-SCROLL** — ✅ влит: `1e098fa` в trunk/main (проверено `merge-base --is-ancestor` 2026-07-05). Глобальный `body.is-scrolling *` snap-off снят (в `css/base.css` остался только комментарий), точечный `will-change` на всех 9 glass-поверхностях (summary/modal/toast/tab-bar/Island/intel/athlete-room). Класс `is-scrolling` в `js/app.js:355` остался, но безвреден — CSS на него больше не реагирует. Симптом «блур гаснет при скролле summary» закрыт этим одним правилом — отдельных багов по экранам не было.
+- **CORE-TAP-SAFETY** — ✅ влит: `a0d55f4` → после rebase `88508f2`, в trunk/main. confirmDialog перед remove-X (паттерн `cancelSession`, `danger:true`) + `.core-list` margin-top +16px. Юнит-тест не добавлен — нет DOM-инфры для `workout.view/*` (handlers.js тянет document/IDB на импорте); DOM-шим = отдельная карточка при надобности.
+- **STATS-1 — герой+рельс** — ✅ влит: `e29a4a9` → после rebase `0369e7c`, в trunk/main. live-bar → `.live-hero` (тоннаж count-up + сегментный рельс по сетам + чип ex). Детали — `HANDOFF_stats_redesign.md`.
+- **MERGE-QUEUE-2 (LEAD, Sonnet 5)** — ✅ закрыта 2026-07-05: nervous-williamson + funny-tharp + silly-antonelli собраны в прямую линию → релиз **1.20.0 `bb980c8`** (SW v92), запушено в origin/main, прод редеплой. Полевой чек blur пройден Gio. Ветки-доноры больше не нужны.
 
 ## Карточка SET-STALE — чек-боксы сетов не перерисовываются при внешнем апдейте State 🟦 (найдено при верификации STATS-1, 2026-07-05)
 
