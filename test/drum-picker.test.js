@@ -17,14 +17,25 @@ const ITEM_H = 36;
 /* ── DOM stubs ─────────────────────────────────────────────────────────── */
 
 function makeEl() {
-  return {
+  const el = {
     className: '', textContent: '', style: {},
     classList: {
-      toggle() {},
-      add() {},
-      remove() {},
+      toggle(cls, force) {
+        const has = el.className.split(' ').filter(Boolean).includes(cls);
+        const want = force === undefined ? !has : force;
+        if (want) el.classList.add(cls); else el.classList.remove(cls);
+      },
+      add(cls) {
+        const parts = el.className.split(' ').filter(Boolean);
+        if (!parts.includes(cls)) { parts.push(cls); el.className = parts.join(' '); }
+      },
+      remove(cls) {
+        el.className = el.className.split(' ').filter((c) => c && c !== cls).join(' ');
+      },
+      contains(cls) { return el.className.split(' ').filter(Boolean).includes(cls); },
     },
   };
+  return el;
 }
 
 class FakeTrack {
@@ -115,7 +126,7 @@ async function buildDrum(ei, { hidden = false, value = '180', virt = false } = {
   globalThis.window.Workout = { stepWeight, stepReps };
   globalThis.document._wraps.push(wrap);
   initDrumPickers();
-  return { track, stepWeight, stepReps, flushDrum, syncDrumUI };
+  return { track, stepWeight, stepReps, flushDrum, syncDrumUI, initDrumPickers };
 }
 
 /* ── tests — every BUG-DRUM-0 trust guard must hold on BOTH render paths
@@ -210,3 +221,78 @@ test('[legacy] full range still renders all 161 items (proven path untouched)', 
   const { track } = await buildDrum(6, { virt: false });
   assert.equal(countItems(track), 161);
 });
+
+/* ── BUG-7 repro: "+ add set" numbers vanish (fixed b7bab66, folded into the
+      drum-fix line alongside fd99a2e) ──────────────────────────────────────
+   addSet() rebuilds the sets-wrap via innerHTML, which throws away the old
+   .drum-wrap (and its [data-drum-init] marker) and gives the new row a brand
+   new, empty .drum-track. Without re-running initDrumPickers() after that
+   swap, the new row's track never gets a .drum-item--active element at all
+   (or, if some stale item survives, it can carry the wrong number) — the
+   picker renders with no visible active value. */
+
+function activeItem(track) {
+  return track.children.find((el) => el.classList.contains('drum-item--active'));
+}
+
+/** Simulate addSet(): wipe the row's DOM (innerHTML replacement) and hand back
+ *  a fresh wrap/track pair for the same key, as the real DOM would after the
+ *  old nodes are discarded. Optionally re-run initDrumPickers() afterward —
+ *  the caller decides, so the test can prove the fix requires that call. */
+function simulateAddSetRerender(ei, { value = '80', si = 0 } = {}) {
+  const track = new FakeTrack();
+  const wrap = {
+    dataset: { type: 'w', ei: String(ei), si: String(si), value },
+    querySelector: () => track,
+  };
+  globalThis.document._wraps.push(wrap);
+  return track;
+}
+
+for (const virt of [false, true]) {
+  const label = virt ? '[virtual]' : '[legacy]';
+  const base = virt ? 40 : 30;
+
+  test(`${label} BUG-7 repro: add-set row rebuild must re-init the drum with a visible active number`, async () => {
+    const { initDrumPickers, track: firstTrack } = await buildDrum(base + 0, { virt, value: '80' });
+    assert.ok(activeItem(firstTrack), 'sanity: initial build has an active item');
+    assert.equal(activeItem(firstTrack).textContent, '80');
+
+    // addSet(): innerHTML = ... replaces the row -> fresh, un-initialised track/wrap.
+    const newTrack = simulateAddSetRerender(base + 0, { value: '80' });
+    assert.equal(newTrack.children.length, 0); // freshly wiped, nothing rendered yet
+
+    // The real fix re-runs initDrumPickers() after the rebuild (handlers.js).
+    initDrumPickers();
+
+    const active = activeItem(newTrack);
+    assert.ok(active, 'new row must have a .drum-item--active element after rebuild');
+    assert.notEqual(active.textContent, '', 'active element must show a value, not blank');
+    assert.equal(active.textContent, '80', 'active element must show the row\'s own value, not stale/wrong number');
+  });
+
+  test(`${label} BUG-7 repro: without re-running initDrumPickers, the rebuilt row has no active number`, async () => {
+    const { track: firstTrack } = await buildDrum(base + 1, { virt, value: '80' });
+    assert.ok(activeItem(firstTrack));
+
+    const newTrack = simulateAddSetRerender(base + 1, { value: '80' });
+    // Deliberately skip initDrumPickers() here — this is the pre-fix behaviour
+    // (BUG-7): the new track is left exactly as innerHTML rebuild produced it,
+    // with no drum items at all, so there is no visible active number.
+    assert.equal(activeItem(newTrack), undefined, 'pre-fix: rebuilt row has no active item to show a number');
+  });
+
+  test(`${label} BUG-7 repro: second add-set on a multi-row exercise gives each row its own correct value`, async () => {
+    const { initDrumPickers, track: row0 } =
+      await buildDrum(base + 2, { virt, value: '60' });
+    // second row, same exercise, different weight — mimics ex.sets[1] with its
+    // own lastSet-derived value once addSet() pushes a new set.
+    const row1 = simulateAddSetRerender(base + 2, { value: '100', si: 1 });
+    initDrumPickers();
+
+    assert.equal(activeItem(row0).textContent, '60');
+    const active1 = activeItem(row1);
+    assert.ok(active1, 'second row must also get an active element');
+    assert.equal(active1.textContent, '100', 'second row must not inherit the first row\'s stale value');
+  });
+}
