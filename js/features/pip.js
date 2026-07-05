@@ -18,11 +18,7 @@ export const PiP = (() => {
   /** @type {any} */
   let _pipWindow = null;
 
-  let _lastState = { time: '00:00', name: 'Workout', sets: '', nextName: '', bpm: 0 };
-  
-  // HR Wave animation state
-  let _hrPoints = Array(20).fill(0);
-  let _hrPhase = 0;
+  let _lastState = { time: '00:00', name: 'Workout', sets: '', nextName: '' };
 
   function init() {
     if (_canvas) return;
@@ -94,40 +90,6 @@ export const PiP = (() => {
       const ru = isRu();
       _ctx.fillText(`${ru ? 'ДАЛЕЕ' : 'NEXT'}: ${state.nextName.toUpperCase()}`, _canvas.width / 2, _canvas.height / 2 + 80);
     }
-
-    // HR Graph (Elite Feature)
-    _drawHRGraph(state.bpm);
-  }
-
-  function _drawHRGraph(bpm) {
-    if (!_ctx || !_canvas) return;
-    const xBase = 420;
-    const yBase = 200;
-    const width = 80;
-    const height = 40;
-
-    // Pulse points
-    _hrPhase += 0.2;
-    _hrPoints.shift();
-    // Simulate pulse wave
-    const val = Math.sin(_hrPhase) * 10 + (Math.random() * 5);
-    _hrPoints.push(val);
-
-    _ctx.strokeStyle = '#ff4d88';
-    _ctx.lineWidth = 2;
-    _ctx.beginPath();
-    _hrPoints.forEach((p, i) => {
-      const x = xBase + (i * (width / _hrPoints.length));
-      const y = yBase - p;
-      if (i === 0) _ctx.moveTo(x, y);
-      else _ctx.lineTo(x, y);
-    });
-    _ctx.stroke();
-
-    // BPM text
-    _ctx.fillStyle = '#ff4d88';
-    _ctx.font = 'bold 16px monospace';
-    _ctx.fillText(`${bpm || '--'} BPM`, xBase + width/2, yBase + 20);
   }
 
   function drawFrame(state) {
@@ -139,11 +101,9 @@ export const PiP = (() => {
       const timeEl = _pipWindow.document.getElementById('pip-time');
       const nameEl = _pipWindow.document.getElementById('pip-name');
       const nextEl = _pipWindow.document.getElementById('pip-next-ex');
-      const bpmEl = _pipWindow.document.getElementById('pip-bpm');
       if (timeEl) timeEl.textContent = _lastState.sets || _lastState.time;
       if (nameEl) nameEl.textContent = _lastState.name + " • " + _lastState.time;
       if (nextEl) nextEl.textContent = _lastState.nextName ? `NEXT: ${_lastState.nextName}` : '';
-      if (bpmEl) bpmEl.textContent = _lastState.bpm ? `${_lastState.bpm} BPM` : '-- BPM';
     }
   }
 
@@ -188,8 +148,7 @@ export const PiP = (() => {
       #pip-time { font-size: 64px; font-weight: 900; color: #00e676; margin-bottom: 2px; letter-spacing: -2px; }
       #pip-name { font-size: 15px; font-weight: 800; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
       #pip-next-ex { font-size: 11px; font-weight: 700; opacity: 0.4; margin-top: 4px; color: #a78bfa; text-transform: uppercase; }
-      .pip-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-      #pip-bpm { font-size: 12px; font-weight: 800; color: #ff4d88; }
+      .pip-header { width: 100%; display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px; }
       .pip-actions { display: flex; gap: 10px; margin-top: 20px; width: 100%; }
       .pip-btn {
         flex: 1; padding: 12px; border-radius: 14px;
@@ -204,7 +163,6 @@ export const PiP = (() => {
 
     d.body.innerHTML = `
       <div class="pip-header">
-        <span id="pip-bpm">${_lastState.bpm || '--'} BPM</span>
         <span style="font-size:10px; opacity:0.3; font-weight:900">ATH-PRO</span>
       </div>
       <div id="pip-time">${_lastState.sets || _lastState.time}</div>

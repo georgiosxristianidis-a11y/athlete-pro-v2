@@ -24,8 +24,10 @@ on('island:skipRest',     (el, e) => { e.stopPropagation(); RestTimer?.tapSkip()
  */
 
 export const DynamicIsland = (() => {
+  // Apple-style 2-state model: COMPACT (content driven by context) ↔ EXPANDED.
+  // No manual size-cycle — the pill hugs whatever the current context needs
+  // (idle dot / active readout / rest HUD); one tap toggles the full card.
   let _expanded = false;
-  let _displayMode = 'mini'; // 'ultra-min' | 'mini' | 'detailed'
   let _timerActive = false;
   let _timerSecs = 0;
   let _timerMax = 0;
@@ -49,7 +51,6 @@ export const DynamicIsland = (() => {
   let _trackerEl = null;
   let _progressFill = null;
   let _timerProg = null;
-  let _restTimeEl = null;
 
   function init() {
     if (document.getElementById('dynamic-island')) return;
@@ -91,12 +92,17 @@ export const DynamicIsland = (() => {
           </div>
         </div>
 
-        <!-- Rest HUD (in-frame replacement for the old standalone rest modal) -->
+        <!-- Rest HUD (in-frame replacement for the old standalone rest modal).
+             No numeric readout: the depleting bar + colour escalation (amber ≤10s,
+             blue done) carry "how much is left". Two SVG icon buttons only. -->
         <div class="island-rest" id="di-rest">
-          <span class="island-rest-time" id="di-rest-time">0:00</span>
           <div class="island-rest-actions">
-            <button class="island-rest-btn" id="di-rest-plus" title="+15s" data-action="island:addRest" data-amt="15">+15s</button>
-            <button class="island-rest-btn primary" id="di-rest-skip" title="Skip rest" data-action="island:skipRest">Skip</button>
+            <button class="island-rest-btn" id="di-rest-plus" title="+15s Rest" aria-label="Add 15 seconds" data-action="island:addRest" data-amt="15">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <button class="island-rest-btn primary" id="di-rest-skip" title="Skip rest" aria-label="Skip rest" data-action="island:skipRest">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+            </button>
           </div>
         </div>
 
@@ -132,11 +138,6 @@ export const DynamicIsland = (() => {
     }
     _progressFill = document.getElementById('di-progress-fill');
     _timerProg = document.getElementById('di-timer-progress');
-    _restTimeEl = document.getElementById('di-rest-time');
-
-    // Load preference
-    _displayMode = localStorage.getItem('ap-di-mode') || 'mini';
-    _island?.classList.add(`mode-${_displayMode}`);
 
     // Long-press events (no drag)
     _island?.addEventListener('pointerdown', _onPointerDown);
@@ -150,15 +151,12 @@ export const DynamicIsland = (() => {
       window.PrivacyRapid?.toggle();
     });
 
-    // Expand toggle or cycle mode (only if not long-pressed)
+    // Single tap toggles the full card (Apple 2-state). Idle pill = privacy
+    // button, not an expand target; long-press opens settings, so ignore it here.
     _island?.addEventListener('click', (e) => {
       if (_island?.classList.contains('mode-idle')) return;
       if (_isLongPress) return;
-      if (_expanded) {
-        toggleExpand();
-      } else {
-        _cycleMode();
-      }
+      toggleExpand();
     });
 
     _updateNetworkStatus();
@@ -190,9 +188,6 @@ export const DynamicIsland = (() => {
     _expanded = false;
     _island?.classList.remove('expanded');
     _island?.classList.remove('timer-mode');
-
-    // Switch to mode-idle instead of translating Y
-    _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');
     _island?.classList.add('mode-idle');
   }
 
@@ -201,7 +196,8 @@ export const DynamicIsland = (() => {
 
     // IDLE MODE: If no workout, act as the ONLINE button
     if (!State.plan || !State.plan.length) {
-      _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed', 'timer-mode', 'expanded');
+      _expanded = false;
+      _island?.classList.remove('timer-mode', 'expanded');
       _island?.classList.add('mode-idle');
       
       document.getElementById('status-bar')?.classList.remove('workout-active');
@@ -216,12 +212,10 @@ export const DynamicIsland = (() => {
     // so skip the whole re-render — keeps the rest path conflict-free and cheap.
     if (_timerActive) { _updateNetworkStatus(); return; }
 
-    // ACTIVE WORKOUT: Remove idle mode and apply selected mode
+    // ACTIVE WORKOUT: leave idle. COMPACT-active hugs its content (dot · name ·
+    // sets) via .island-readout; EXPANDED / rest HUD are class-driven. No size mode.
     _island?.classList.remove('mode-idle');
     document.getElementById('status-bar')?.classList.add('workout-active');
-    if (!_island?.classList.contains('timer-mode') && !_island?.classList.contains('expanded')) {
-      _island?.classList.add(`mode-${_displayMode}`);
-    }
 
     const ru = isRu();
 
@@ -247,29 +241,25 @@ export const DynamicIsland = (() => {
     const exTotal = currentEx ? currentEx.sets.length : 0;
     const setsLabel = exTotal ? `${exDone}/${exTotal}` : '';
 
-    // Prominent readout: current-exercise sets (falls back to session time)
-    if (_timeEl) _timeEl.textContent = setsLabel || Timer.fmt(Timer.seconds());
-    
-    
+    // COMPACT-active readout is a single row: dot · name · sets. The dot is a
+    // left accent (absolute); the flex row carries name then the sets badge.
+    // #di-time is unused in the collapsed row — the session clock lives in the
+    // expanded card / PiP, not the pill.
+    if (_timeEl) _timeEl.textContent = '';
 
-    // Collapsed name for 'detailed' mode
+    // Exercise name (clean — sets are NOT appended here; the badge owns them,
+    // avoids the old "Bench - 2/3 … 2/3" double print).
     if (_nameCollapsedEl) {
-      _nameCollapsedEl.textContent = '';
-      if (currentEx) {
-        _nameCollapsedEl.appendChild(document.createTextNode(currentEx.name));
-        const setsSpan = document.createElement('span');
-        setsSpan.style.color = 'var(--c-text-3)';
-        setsSpan.textContent = ` - ${setsLabel}`;
-        _nameCollapsedEl.appendChild(setsSpan);
-      }
+      _nameCollapsedEl.textContent = currentEx ? currentEx.name : '';
     }
     if (_setsEl) {
       _setsEl.textContent = setsLabel;
       _setsEl.style.color = _getSetsColor(exDone, exTotal);
     }
+    // Sets badge in the collapsed row (single source of "2/3").
     if (_setsCollapsedEl) {
-      _setsCollapsedEl.textContent = Timer.fmt(Timer.seconds());
-      _setsCollapsedEl.style.color = 'var(--c-text-2)';
+      _setsCollapsedEl.textContent = setsLabel;
+      _setsCollapsedEl.style.color = _getSetsColor(exDone, exTotal);
     }
 
     // Sublabel
@@ -301,7 +291,7 @@ export const DynamicIsland = (() => {
         sessionType: State.type,
         progress: { done: chDone, total: chTotal },
         label: BLOCK_LABEL[curBlock] || '',
-        expanded: _expanded || _displayMode === 'detailed',
+        expanded: _expanded,
       });
     }
 
@@ -320,11 +310,10 @@ export const DynamicIsland = (() => {
     // must not overwrite the "RESTING…" frame (was flickering).
     if (!_timerActive) {
       PiP.drawFrame({
-        time: _timeEl?.textContent || '00:00',
+        time: Timer.fmt(Timer.seconds()),
         name: currentEx ? currentEx.name : 'Workout',
         sets: setsLabel,
-        nextName: nextEx ? nextEx.name : '',
-        bpm: 72 + Math.floor(Math.random() * 10)
+        nextName: nextEx ? nextEx.name : ''
       });
     }
   }
@@ -338,14 +327,8 @@ export const DynamicIsland = (() => {
     _timerActive = true;
     _island?.classList.add('timer-mode');
 
-    // Countdown readout (mm:ss when >= 1 min, else Ns) — updated each second
-    if (_restTimeEl) {
-      _restTimeEl.textContent = secs >= 60
-        ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
-        : `${secs}s`;
-      _restTimeEl.classList.toggle('warning', secs <= 10 && secs > 0);
-      _restTimeEl.classList.toggle('done', secs <= 0);
-    }
+    // No numeric readout by design — the depleting bar + colour escalation below
+    // carry "how much rest is left". (Old #di-rest-time removed.)
 
     // Progress-bar colour escalation each second (class only — no layout)
     if (_timerProg) {
@@ -375,7 +358,6 @@ export const DynamicIsland = (() => {
   function stopTimer() {
     _timerActive = false;
     _island?.classList.remove('timer-mode');
-    _restTimeEl?.classList.remove('warning', 'done');
     if (_timerProg) {
       _timerProg.style.transition = 'none';
       _timerProg.style.transform = 'scaleX(0)';
@@ -393,30 +375,13 @@ export const DynamicIsland = (() => {
     }, 2000);
   }
 
-  function _cycleMode() {
-    haptic(5);
-    if (_displayMode === 'ultra-min') _displayMode = 'mini';
-    else if (_displayMode === 'mini') _displayMode = 'detailed';
-    else _displayMode = 'ultra-min';
-
-    _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');
-    _island?.classList.add(`mode-${_displayMode}`);
-    localStorage.setItem('ap-di-mode', _displayMode);
-    // Size morph is handled entirely by the CSS width/height transition.
-    update();
-  }
-
   function toggleExpand() {
+    haptic(5);
     _expanded = !_expanded;
     _island?.classList.toggle('expanded', _expanded);
-    if (_expanded) {
-        _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');
-        _island?.classList.add('mode-detailed');
-    } else {
-        _island?.classList.remove('mode-ultra-min', 'mode-mini', 'mode-detailed');
-        _island?.classList.add(`mode-${_displayMode}`);
-    }
-    // Expand/collapse morph is handled by the CSS width/height/border-radius transition.
+    // Expand/collapse morph is handled by the CSS width/height/border-radius
+    // transition. Re-render so the tracker picks up its expanded/compact layout.
+    update();
   }
 
   function _onPointerDown(e) {

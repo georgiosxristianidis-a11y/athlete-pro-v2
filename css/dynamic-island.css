@@ -77,13 +77,17 @@
   display: flex;
 }
 
-/* ── Display Modes ── */
+/* ── Compact ↔ Expanded (Apple 2-state) ──
+   IDLE = 40px privacy dot (no workout). COMPACT-active = one row that hugs its
+   content (dot · name · sets); the pill auto-sizes via `width: max-content`
+   instead of a fixed size-mode. EXPANDED = full card. */
 .island.mode-idle {
   width: 40px;
   height: 40px;
   border-radius: 20px;
 }
 .island.mode-idle .island-time,
+.island.mode-idle .island-name-collapsed,
 .island.mode-idle .island-sets-collapsed,
 .island.mode-idle .island-expanded-content {
   opacity: 0 !important;
@@ -95,34 +99,25 @@
 }
 .island.mode-idle::after { content: none; }
 
-.island.mode-ultra-min {
-  width: 140px;
-  height: 40px;
-  border-radius: 20px;
-}
-.island.mode-ultra-min .island-time { font-size: 13px; }
-.island.mode-ultra-min .island-dot {
-  left: 16px;
-  transform: translateY(-50%);
+/* COMPACT-active: not idle, not expanded, not resting. Pill hugs content. */
+.island:not(.mode-idle):not(.expanded):not(.timer-mode) {
+  width: max-content;
+  min-width: 120px;
+  max-width: min(280px, calc(100vw - 32px));
+  height: 44px;
 }
 
-.island.mode-mini {
-  width: 184px;
-  height: 50px;
-}
-.island.mode-mini .island-time { font-size: 13px; }
-
-/* Centered readout cluster — replaces the old per-mode absolute offsets so the
-   pill hugs its content instead of stretching into a "sausage". The dot stays a
-   left accent; this flex row centres time · name · sets. */
+/* Centered readout cluster — the pill hugs its content instead of stretching
+   into a "sausage". The dot stays a left accent; this flex row lays out
+   name · sets (time hidden in the collapsed row). */
 .island-readout {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 0 26px;
+  gap: 8px;
+  padding: 0 16px 0 26px;
   z-index: 2;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -130,28 +125,22 @@
 .island.expanded .island-readout,
 .island.timer-mode .island-readout { opacity: 0; }
 
+/* #di-time is unused in the collapsed row (name+sets only). */
+.island-readout .island-time { display: none; }
+
 .island-sets-collapsed {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--c-text-2);
   white-space: nowrap;
-  display: none;
-}
-.island.mode-mini .island-sets-collapsed,
-.island.mode-ultra-min .island-sets-collapsed,
-.island.mode-detailed .island-sets-collapsed {
-  display: block;
+  flex-shrink: 0;
 }
 
-.island.mode-detailed {
-  width: 240px; /* 3) max 240*50 */
-  height: 50px;
-}
-
-/* Rest timer mode — in-frame HUD (replaces standalone rest modal) */
+/* Rest timer mode — in-frame HUD (replaces standalone rest modal). No numeric
+   readout now, just the depleting bar + two icon buttons → narrower pill. */
 .island.timer-mode {
-  width: 232px;
+  width: 140px;
   height: 44px;
   border-radius: 22px;
 }
@@ -161,14 +150,14 @@
   border-radius: 24px;
 }
 
-/* ── Rest HUD content ── */
+/* ── Rest HUD content — two icon buttons, no numeric readout ── */
 .island-rest {
   position: absolute;
   inset: 0;
   display: none;
   align-items: center;
-  gap: var(--sp-1);
-  padding: 0 var(--sp-1) 0 var(--sp-3);
+  justify-content: center;
+  padding: 0 var(--sp-3) 0 var(--sp-4);
   z-index: 5;
 }
 .island.timer-mode .island-rest { display: flex; }
@@ -176,41 +165,32 @@
 .island.timer-mode .island-time,
 .island.timer-mode .island-name-collapsed,
 .island.timer-mode .island-sets-collapsed { opacity: 0; }
-.island-rest-time {
-  font-size: 16px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  color: var(--c-accent);
-  min-width: 34px;
-  padding-left: 2px; /* air between sync-dot and green countdown */
-}
-.island-rest-time.warning { color: var(--c-amber); }
-.island-rest-time.done    { color: var(--c-blue); }
 .island-rest-actions {
   display: flex;
-  gap: 6px;
-  margin-left: auto;
+  align-items: center;
+  gap: var(--sp-1);
 }
 .island-rest-btn {
-  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--c-border-h);
   border-radius: 11px;
-  height: 28px;
-  padding: 0 11px;
-  font-size: 11px;
-  font-weight: 700;
-  font-family: inherit;
+  width: 32px;
+  height: 30px;
+  padding: 0;
   cursor: pointer;
   background: var(--c-surface-h);
-  color: var(--c-text-1);
+  color: var(--c-chrome);
   transition: filter 0.15s ease;
 }
 .island-rest-btn.primary {
-  /* Cool Steel: primary CTA uses chrome fill + dark chrome text, not green. */
+  /* Cool Steel: primary CTA (skip) uses chrome fill + dark chrome glyph. */
   background: var(--c-chrome-h);
   color: var(--c-chrome-t);
-  font-weight: 800;
+  border-color: transparent;
 }
+.island-rest-btn svg { display: block; }
 .island-rest-btn:active { filter: brightness(0.88); }
 
 /* ── Set-complete pulse animation ── */
@@ -284,16 +264,14 @@
 }
 
 .island-name-collapsed {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--c-text-2);
+  color: var(--c-text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
-  display: none;
+  max-width: 160px;
 }
-.island.mode-detailed .island-name-collapsed { display: block; }
 
 .island-expanded-content {
   display: none;
