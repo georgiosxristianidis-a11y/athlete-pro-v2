@@ -360,28 +360,15 @@ export async function renderActive() {
       </div>
     </div>
 
-    <div class="live-bar">
-      <div class="live-stat">
-        <span class="live-val" id="live-tonnage">0</span>
-        <span class="live-lbl">kg</span>
+    <div class="live-hero">
+      <div class="live-hero-top">
+        <div class="live-hero-num">
+          <span class="live-hero-val" id="live-tonnage">0</span>
+          <span class="live-hero-unit">kg</span>
+        </div>
+        <span class="live-hero-chip"><span id="live-ex-done">0</span>/${exCount} ex</span>
       </div>
-      <div class="live-divider"></div>
-      <div class="live-stat">
-        <span class="live-val" id="live-sets-done">0</span>
-        <span class="live-lbl">/ ${totalSets} sets</span>
-      </div>
-      <div class="live-divider"></div>
-      <div class="live-stat">
-        <span class="live-val" id="live-ex-done">0</span>
-        <span class="live-lbl">/ ${exCount} ex</span>
-      </div>
-    </div>
-
-    <!-- ── Global Workout Progress ── -->
-    <div class="workout-progress-wrap">
-      <div class="workout-progress-track">
-        <div class="workout-progress-fill" id="workout-progress-fill"></div>
-      </div>
+      <div class="live-rail" id="live-rail">${'<div class="live-rail-seg"></div>'.repeat(totalSets)}</div>
     </div>
 
     <div id="exercise-list">

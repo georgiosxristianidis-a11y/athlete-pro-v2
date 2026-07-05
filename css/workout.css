@@ -125,40 +125,19 @@
   text-shadow: 0 0 8px color-mix(in srgb, var(--c-purple) 40%, transparent);
 }
 
-/* Live stats readout — matches the Profile passport metrics strip
-   (.pp-metrics-strip) pattern 1:1: surface panel, no border, sp-3/sp-1
-   padding, flex:1 equal thirds, 24px/800 value, uppercase micro-label,
-   thin 32px divider. Single source of truth for the 3-stat readout look. */
-.live-bar { display: flex; align-items: center; justify-content: center; background: var(--c-surface); border-radius: var(--r-xl); padding: 14px var(--sp-1); margin-bottom: var(--sp-2); }
-.live-stat { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
-.live-bar .live-val { font-size: 21px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.2; color: var(--c-text-1); }
-.live-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-text-3); margin-top: 6px; }
-.live-divider { width: 1px; height: 32px; background: var(--c-border); opacity: 0.5; flex-shrink: 0; }
-
-
-/* ── Global Workout Progress — Neon Purple Sync ── */
-.workout-progress-wrap {
-  padding: 0 var(--sp-2);
-  margin-bottom: var(--sp-3);
-}
-
-.workout-progress-track {
-  height: 3px;
-  background: var(--c-border-h);
-  border-radius: 10px;
-  overflow: visible;
-}
-
-.workout-progress-fill {
-  height: 100%;
-  width: 100%;
-  transform: scaleX(0);
-  transform-origin: left;
-  background: var(--c-purple);
-  border-radius: 10px;
-  box-shadow: 0 0 10px color-mix(in srgb, var(--c-purple) 55%, transparent), 0 1px 4px color-mix(in srgb, var(--c-purple) 40%, transparent);
-  transition: transform 0.6s var(--ease-spring);
-}
+/* STATS-1 «один герой + живой рельс»: hero = тоннаж (count-up на закрытии
+   сета), рельс = сегмент на подход с зелёной заливкой по факту (он же стат
+   sets), чип exercises = шёпот. Профильный .pp-metrics-strip не трогать —
+   это workout-специфичная подача. */
+.live-hero { background: var(--c-surface); border-radius: var(--r-xl); padding: var(--sp-2) var(--sp-3) 14px; margin-bottom: var(--sp-3); }
+.live-hero-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-1); }
+.live-hero-num { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.live-hero-val { font-size: 38px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; color: var(--c-text-1); }
+.live-hero-unit { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-text-3); }
+.live-hero-chip { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-3); opacity: 0.7; white-space: nowrap; }
+.live-rail { display: flex; gap: 3px; margin-top: var(--sp-2); }
+.live-rail-seg { flex: 1; height: 4px; border-radius: 2px; background: var(--c-border-h); transition: background 0.3s ease, box-shadow 0.3s ease; }
+.live-rail-seg.done { background: var(--c-accent); box-shadow: 0 0 6px color-mix(in srgb, var(--c-accent) 45%, transparent); }
 
 .exercise-card { background: var(--c-bg-2) !important; border: 1.5px solid var(--c-border); border-radius: 20px; overflow: hidden; margin-bottom: var(--sp-3); transition: transform 0.2s, border-color 0.2s; }
 .exercise-header { display: flex; align-items: center; padding: 12px var(--sp-2); gap: var(--sp-1); cursor: pointer; min-height: 56px; }

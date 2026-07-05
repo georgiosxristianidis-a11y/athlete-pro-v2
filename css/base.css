@@ -936,7 +936,7 @@ button:focus-visible {
 }
 
 /* ── Section 6: Data & Digits ─────────────────────────── */
-.sw-val, .sr-val, .stepper-val, .live-val, .orm-val, .focus-hero-val {
+.sw-val, .sr-val, .stepper-val, .live-hero-val, .orm-val, .focus-hero-val {
   font-family: var(--font-heading);
   font-variant-numeric: tabular-nums;
   font-weight: 600;

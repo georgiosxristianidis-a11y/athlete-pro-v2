@@ -1,6 +1,15 @@
 # HANDOFF — Elite Stats Redesign (Concept 1)
 
-> Ветка: `claude/serene-ishizaka-b9bef7`. Обновлено 2026-07-05.
+> Ветка: `claude/silly-antonelli-d0a2cb` (FF-поверх serene-ishizaka). Обновлено 2026-07-05.
+
+## STATS-1 — РЕАЛИЗОВАНО 2026-07-05 (silly-antonelli, SW v92)
+
+- Бар из 3 чисел + прогресс-линия схлопнуты в `.live-hero`: герой-тоннаж 38px/800 tabular-nums + unit kg, чип `0/7 ex` (шёпот, справа), рельс `#live-rail` — сегмент на подход, done = `--c-accent` + glow.
+- Count-up: `Spring.animate` (stiffness 170 / damping 28 — овердемп, без овершута), from = текущее число на экране (переживает re-render и прерывание анимации). `#live-sets-done` / `#workout-progress-fill` удалены; рельс перестраивается при live-добавлении сетов (W-1).
+- Правки: `js/workout.view/render.js` (разметка), `js/workout.view/handlers.js` (`_updateLiveStats`), `css/workout.css` (старые .live-bar/.workout-progress-* удалены), `css/base.css:934` (.live-val → .live-hero-val в digit-списке).
+- Верифицировано в превью: рельс == State (19/19), count-up монотонный 0→1059→…→1818, скрин ок. Гейт 229/229 + eslint 0 + stylelint 0 (38 старых warn).
+- Замечено (pre-existing, НЕ STATS-1): при апдейте стейта извне (другая вкладка) set-check чекбоксы в DOM не перерисовываются — стата обновляется, строки нет.
+- Остаток: полевой чек на телефоне + вердикт Gio по подаче (размер героя / цвет рельса).
 > Гейт: `npm test` (229) + `npm run lint` (0 err). Скриншот в превью виснет из-за canvas-фона — усыплять rAF/canvas/fab перед снимком, мерить через preview_eval (DOM-замеры точнее скринов).
 
 ## Сделано в этой сессии (2 коммита, не запушены, main не тронут)

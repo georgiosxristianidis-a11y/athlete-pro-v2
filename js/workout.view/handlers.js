@@ -11,6 +11,7 @@ import {
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
 import { esc } from '../shared/utils.js';
+import { Spring } from '../shared/spring.js';
 import { confirmDialog } from '../shared/confirm.js';
 import { isRu } from '../locale.store.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
@@ -22,6 +23,7 @@ import { syncDrumUI, initDrumPickers, flushDrum } from '../ui/drum-picker.js';
 
 let _restDuration = 90;
 let _focusEi = -1;
+let _tonnageAnim = null;
 
 function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
 
@@ -682,17 +684,31 @@ export function _updateLiveStats() {
   });
 
   const tEl = document.getElementById('live-tonnage');
-  const sEl = document.getElementById('live-sets-done');
   const eEl = document.getElementById('live-ex-done');
-  const pEl = document.getElementById('workout-progress-fill');
-  
-  if (tEl) tEl.textContent = tonnage.toLocaleString();
-  if (sEl) sEl.textContent = String(setsDone);
+  const rail = document.getElementById('live-rail');
+
+  if (tEl) {
+    // count-up от того, что сейчас на экране — переживает re-render и
+    // прерывание собственной анимации без рывков
+    const shown = parseInt(tEl.textContent.replace(/\D/g, ''), 10) || 0;
+    if (shown !== tonnage) {
+      _tonnageAnim?.stop();
+      _tonnageAnim = Spring.animate({
+        from: shown, to: tonnage, stiffness: 170, damping: 28,
+        onUpdate: (v) => { tEl.textContent = Math.round(v).toLocaleString(); },
+        onComplete: () => { _tonnageAnim = null; }
+      });
+    }
+  }
   if (eEl) eEl.textContent = String(exDone);
-  
-  if (pEl && totalSets > 0) {
-    const pct = (setsDone / totalSets) * 100;
-    pEl.style.transform = `scaleX(${pct / 100})`;
+
+  if (rail) {
+    if (rail.children.length !== totalSets) {
+      rail.innerHTML = '<div class="live-rail-seg"></div>'.repeat(totalSets);
+    }
+    for (let i = 0; i < rail.children.length; i++) {
+      rail.children[i].classList.toggle('done', i < setsDone);
+    }
   }
 }
 
