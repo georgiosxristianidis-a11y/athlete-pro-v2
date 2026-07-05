@@ -1,5 +1,6 @@
 'use strict';
 import express from 'express';
+import { logInfo } from '../lib/logger.js';
 const router = express.Router();
 
 /* ── GET /supabase-status — proxy health check (avoids browser CORS) ── */
@@ -66,7 +67,7 @@ router.get('/ai-status', (req, res) => {
   const hasGemini = !!geminiKey && !geminiKey.includes('your-') && geminiKey.length > 10;
   const hasAnthropic = !!anthropicKey && !anthropicKey.includes('your-') && anthropicKey.length > 10;
 
-  console.log(`[ai-status] Gemini: ${hasGemini}, Anthropic: ${hasAnthropic} (Key lengths: G=${geminiKey?.length}, A=${anthropicKey?.length})`);
+  logInfo(req, 'ai-status', 'API key availability checked', { gemini: hasGemini, anthropic: hasAnthropic });
 
   res.json({
     gemini: hasGemini,

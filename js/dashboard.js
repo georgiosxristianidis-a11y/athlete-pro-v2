@@ -865,7 +865,7 @@ async function askAIAboutSummary() {
   // Wait for panel to open then send message
   setTimeout(async () => {
     await fetchCoach(message, {
-      onText: (text) => console.log('[AI]', text),
+      onText: () => {},
       onDone: () => {},
       onError: (err) => Toast.show(`Error: ${err}`, 'error')
     });
