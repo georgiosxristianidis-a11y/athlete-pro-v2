@@ -186,6 +186,13 @@
   overflow: hidden;
   touch-action: none;
   transition: opacity var(--t-fast);
+  /* GLOW-SL (a): neighbour rows (opacity 0.4, BLACK-DRUM) hard-cut at the
+     72px box edge, which reads as bleed into the row above/below. A mask
+     fade actually clips the content instead of just dimming it further —
+     top/bottom ~18px (half an item) fade to transparent, selection band
+     (middle 36px) stays fully opaque. */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 18px, #000 54px, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 18px, #000 54px, transparent 100%);
 }
 /* Полоса выбора — две hairline-линии во всю ширину вместо плашки. */
 .drum-sel {
@@ -283,7 +290,10 @@
 .add-ex-item:active { transform: scale(0.98); }
 .add-ex-empty { text-align: center; color: var(--c-text-3); font-size: 13px; padding: 32px 16px; }
 
-.add-set-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; border: 1.5px dashed var(--c-border); border-radius: 14px; font-size: 11px; font-weight: 600; color: var(--c-text-3); opacity: 0.5; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s; }
+/* GLOW-SL (b): no background was ever set on the base rule, so the native
+   <button> UA-default (light grey) showed through at opacity 0.5 as a scrim
+   overlapping the dashed row. Explicit transparent background removes it. */
+.add-set-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; background: transparent; border: 1.5px dashed var(--c-border); border-radius: 14px; font-size: 11px; font-weight: 600; color: var(--c-text-3); opacity: 0.5; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s; }
 .add-set-btn:active { background: var(--c-surface); opacity: 1; }
 .add-set-btn svg { width: 14px; height: 14px; }
 
