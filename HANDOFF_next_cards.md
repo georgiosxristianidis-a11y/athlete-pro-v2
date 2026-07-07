@@ -18,6 +18,8 @@
 
 ## ⏳ Готово, ждёт полевого чека + мёржа
 
+- **DHL-CLASSIFY** (ветка `claude/youthful-babbage-7c696f`, SW **v96**, +10 тестов → 245/245, lint 0): дыра DHL закрыта в 2 слоя. (1) Дефолт-фолбэк `loadPlan()` `workout.store.js` теперь `PPL_GIO_PLAN.weekA/weekB` (блочный, 4 камеры из коробки) вместо плоского `DEFAULT_PLAN` — свежий юзер сразу с живым DHL; `DEFAULT_PLAN` оставлен экспортом (не fallback). (2) `classifyChamber(ex)` — чистый фолбэк для безблочных упражнений (legacy edited/сохранённые планы): heavy▣/shape▥/arms◆/core○; применён в обеих ветках `buildSession`. Live-add сохраняет намеренный `block:'custom'` (отдельная камера). Миграция не нужна — `DEFAULT_PLAN` не персистился при первом рендере (`savePlan` только Edit Plan/preset). Браузер-смоук: fresh push → power/shape/arms/core, legacy безблочный → heavy/arms/core (нулей нет). **Остаток:** полевой чек Gio (свежая установка → DHL 4 камеры) → FF в trunk + релиз **1.21.0** пакетом с ISL/AIR-3.
+
 - **ISL-REDESIGN** (`dbe6f60`, ветка `worktree-agent-a2128654...`, SW **v94**, net −99 строк): 2 состояния острова вместо 3-цикла (выпилены `_displayMode`/`_cycleMode`/localStorage/`mode-mini/ultra-min/detailed`); тап=expand toggle, долгий=настройки. COMPACT-active = hug-content, дубль «2/3» убран. Отдых = полоса+2 SVG-иконки, число `1:16` убрано. Fake-BPM вырезан из PiP (canvas+DPiP). Запреты (island-set-pulse/DHL/rest-математика) соблюдены. Гейт 235/235, lint 0. **Остаток:** пиксель-геометрия expanded-карты не подтверждена в превью (превью-status-bar схлопывается — нужен живой workout-экран) → **полевой чек Gio**. После → `git merge --ff-only` в trunk + релиз 1.21.0.
 
 ---

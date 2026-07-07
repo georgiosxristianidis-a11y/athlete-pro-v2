@@ -447,19 +447,23 @@ function _migrateLegacyPlan() {
 
 /**
  * Load plan for given week ('A' default). Migrates legacy key on first call.
- * Falls back to DEFAULT_PLAN if no stored plan or data is corrupt.
+ * Falls back to the PPL | GIO preset (blocked → live 4-chamber DHL out of the
+ * box) when no stored plan exists or data is corrupt. Legacy flat DEFAULT_PLAN
+ * is no longer the fallback; blockless saved plans are chamber-classified at
+ * buildSession via classifyChamber().
  * @param {'A'|'B'} [week] — defaults to current week mode
- * @returns {Object<string, Array<{name: string, sets: number, reps: number, weight: number, isUnilateral?: boolean}>>}
+ * @returns {Object<string, Array<{name: string, sets: number, reps: number, weight: number, isUnilateral?: boolean, block?: string}>>}
  */
 export function loadPlan(week) {
   _migrateLegacyPlan();
   const w = week || getWeekMode();
   const key = w === 'B' ? PLAN_KEY_B : PLAN_KEY_A;
+  const preset = () => JSON.parse(JSON.stringify(w === 'B' ? PPL_GIO_PLAN.weekB : PPL_GIO_PLAN.weekA));
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_PLAN));
+    return raw ? JSON.parse(raw) : preset();
   } catch {
-    return JSON.parse(JSON.stringify(DEFAULT_PLAN));
+    return preset();
   }
 }
 
@@ -534,6 +538,28 @@ function _smartNextWeight(lastSets, targetReps) {
 }
 
 /**
+ * Fallback chamber classifier for plan exercises that carry no explicit
+ * `block` (legacy flat plans, blockless program templates). Maps a lift to one
+ * of the four canonical chambers so the DHL tracker / summary never collapse
+ * into a single "custom" blob. An explicit `ex.block` always wins upstream, and
+ * live-added exercises keep their deliberate 'custom' block (a distinct chamber).
+ * Design lock 2026-06-20: chambers are geometric — Heavy ▣ / Shape ▥ / Accent ◆ / Core ○.
+ * @param {{name?: string, noDb?: boolean}} ex
+ * @returns {'heavy'|'shape'|'arms'|'core'}
+ */
+export function classifyChamber(ex) {
+  const name = String(ex?.name || '').toLowerCase();
+  // ○ Core / alignment — flagged noDb, or unmistakable core-move names.
+  if (ex?.noDb || /plank|dead ?bug|hollow|pallof|crunch|sit.?up|russian twist|ab wheel|leg raise|hyperext/.test(name)) return 'core';
+  // ◆ Accent — single-joint isolation for arms / delts / calves.
+  if (/curl|pushdown|tricep|lateral raise|face pull|calf|shrug|kickback|rear delt|preacher|upright row/.test(name)) return 'arms';
+  // ▣ Heavy — the big multi-joint barbell / machine compounds.
+  if (/squat|deadlift|bench|press|\brow\b|pull.?up|chin.?up|pulldown|leg press|hip thrust|lunge|dip/.test(name)) return 'heavy';
+  // ▥ Shape — default hypertrophy bucket (flys, pullovers, machine shaping).
+  return 'shape';
+}
+
+/**
  * Build an active workout session.
  * Switches between 'ActivePlan' cycle logic or fallback 'Free Training' PPL.
  * @param {string} [type] — 'push'|'pull'|'legs' for free training; ignored for ActivePlan
@@ -562,7 +588,7 @@ export function buildSession(type, opts = {}) {
         const progression = prog.getProgression(ex, lastEx);
         return {
           name: ex.name,
-          block: ex.block || null,
+          block: ex.block || classifyChamber(ex),
           noDb: ex.noDb || false,
           isUnilateral: ex.isUnilateral || false,
           autoBumped: progression.autoBumped || false,
@@ -595,7 +621,7 @@ export function buildSession(type, opts = {}) {
     }
     return {
       name: ex.name,
-      block: ex.block || null,
+      block: ex.block || classifyChamber(ex),
       noDb: ex.noDb || false,
       isUnilateral: ex.isUnilateral || false,
       autoBumped: bumped,
