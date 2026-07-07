@@ -1,10 +1,10 @@
 # HANDOFF — стек карточек (после MERGE-QUEUE-3)
 
-> Обновлено 2026-07-06 (реконсиляция после MERGE-QUEUE-3 + ISL-REDESIGN). Правило: 1 карточка = 1 сессия, сверху вниз.
-> Гейт перед коммитом: `npm test` (235) + `npm run lint` (0 err). Перед рискованным — тег `checkpoint-<date>`.
-> База: trunk `claude/csp-soft-delete` = **`f47d3a8`** (SW **v93**, запушено origin). Содержит Q2/A-4/GLOW-SL/AIR-2 поверх 1.20.0.
-> Прод/main = **`bb980c8` (релиз 1.20.0, SW v92)** — ОТСТАЁТ от trunk на 4 карты (не задеплоено). Следующий релиз в main = **1.21.0**.
-> ⏳ ISL-REDESIGN (`dbe6f60`, SW v94) — код готов на ветке `worktree-agent-a2128654...`, НЕ влит: ждёт полевого чека Gio.
+> Обновлено 2026-07-07 (релиз 1.21.0 выкачен + старт островной программы). Правило: 1 карточка = 1 сессия, сверху вниз.
+> Гейт перед коммитом: `npm test` (245) + `npm run lint` (0 err). Перед рискованным — тег `checkpoint-<date>`.
+> База: trunk `claude/csp-soft-delete` = **`0431ca4`** (SW **v96**, запушено origin). **main == trunk == прод == `0431ca4` (релиз 1.21.0)** — Vercel Production success (athlete-pro-v7). Тег `checkpoint-2026-07-07-release-1.21.0`.
+> Следующий релиз в main = **1.22.0** (планово — островная программа профилей).
+> В worktree нет `node_modules` (резолв из родителя); pre-push зовёт `stylelint` голым именем → падает. Фикс: `npm install` в worktree ИЛИ пуш из главного чекаута. НЕ обходить хук `--no-verify` на main (auto-mode блокирует).
 > Проверять принадлежность коммита линии через `git merge-base --is-ancestor <hash> <trunk>`, НЕ по имени ветки — хеши меняются на rebase.
 
 ---
@@ -16,11 +16,22 @@
 - **GLOW-SL — фантомы set logger** (`86f0a8e`, только `css/workout.css`): mask-image края барабана + `background:transparent` на ADD SET. Симптомы (в)/(г) оказались несуществующими, остров не тронут.
 - **AIR-2 — Controls на рецепт AIR** (`6b5c515`): сегмент-контролы `base.css:695-724` Tier-1 flat, active `--c-chrome-t`+hairline.
 
-## ⏳ Готово, ждёт полевого чека + мёржа
+## ✅ Выкачено в релизе 1.21.0 (2026-07-07, main==trunk `0431ca4`, прод-Vercel success)
 
-- **DHL-CLASSIFY** (ветка `claude/youthful-babbage-7c696f`, SW **v96**, +10 тестов → 245/245, lint 0): дыра DHL закрыта в 2 слоя. (1) Дефолт-фолбэк `loadPlan()` `workout.store.js` теперь `PPL_GIO_PLAN.weekA/weekB` (блочный, 4 камеры из коробки) вместо плоского `DEFAULT_PLAN` — свежий юзер сразу с живым DHL; `DEFAULT_PLAN` оставлен экспортом (не fallback). (2) `classifyChamber(ex)` — чистый фолбэк для безблочных упражнений (legacy edited/сохранённые планы): heavy▣/shape▥/arms◆/core○; применён в обеих ветках `buildSession`. Live-add сохраняет намеренный `block:'custom'` (отдельная камера). Миграция не нужна — `DEFAULT_PLAN` не персистился при первом рендере (`savePlan` только Edit Plan/preset). Браузер-смоук: fresh push → power/shape/arms/core, legacy безблочный → heavy/arms/core (нулей нет). **Остаток:** полевой чек Gio (свежая установка → DHL 4 камеры) → FF в trunk + релиз **1.21.0** пакетом с ISL/AIR-3.
+- **ISL-REDESIGN** (SW v94): 2 состояния острова вместо 3-цикла (выпилены `_displayMode`/`_cycleMode`/localStorage). Полевой-чек Gio (видео) пройден.
+- **AIR-3** (`c538300`, SW v95): снят glass с summ-island + intel-cmd-bar.
+- **DHL-CLASSIFY** (`60b1609`, SW v96): дефолт-фолбэк `loadPlan()` → `PPL_GIO_PLAN.weekA/weekB` (4 камеры из коробки) вместо плоского `DEFAULT_PLAN` (оставлен экспортом); `classifyChamber(ex)` — фолбэк для безблочных упр. (heavy▣/shape▥/arms◆/core○) в обеих ветках `buildSession`. Live-add сохраняет `block:'custom'`. +10 тестов. Полевой-чек Gio (десктоп) ок.
+- **FOCUS-QUARANTINE** (`f82bc25`): Focus Mode (`_openFocus`, лонг-пресс карточки) вылезал сырым DOM за колонку — **у фичи нет CSS вообще**. Триггер отключён early-return в `_initFocusLongPress` (обратимо 1 строкой). Судьба фичи — решается в островной программе.
 
-- **ISL-REDESIGN** (`dbe6f60`, ветка `worktree-agent-a2128654...`, SW **v94**, net −99 строк): 2 состояния острова вместо 3-цикла (выпилены `_displayMode`/`_cycleMode`/localStorage/`mode-mini/ultra-min/detailed`); тап=expand toggle, долгий=настройки. COMPACT-active = hug-content, дубль «2/3» убран. Отдых = полоса+2 SVG-иконки, число `1:16` убрано. Fake-BPM вырезан из PiP (canvas+DPiP). Запреты (island-set-pulse/DHL/rest-математика) соблюдены. Гейт 235/235, lint 0. **Остаток:** пиксель-геометрия expanded-карты не подтверждена в превью (превью-status-bar схлопывается — нужен живой workout-экран) → **полевой чек Gio**. После → `git merge --ff-only` в trunk + релиз 1.21.0.
+---
+
+## 🏝 ОСТРОВНАЯ ПРОГРАММА (утв. Gio 2026-07-07) — цель: остров = DHL-навигация + минимализм/AIR
+
+Решения Gio: остров во время тренировки = **навигатор по камерам (DHL) + минимализм (уйти с глаз, AIR-воздух, не панель)**. Переключение профилей = **настройка** (НЕ цикл по тапу — не воскрешать выпиленный `_cycleMode`). Тап = expand/collapse. Долгий-пресс = экран настроек острова. Custom = **фаза 2**. Целевой релиз программы = **1.22.0**.
+
+- **Карта ISL-SET** (первая, маленькая, самодостаточная): долгий-пресс острова → отдельный экран **Island Settings** (`s-island-settings`); туда же перенести privacy-режим. Тап оставить expand/collapse. ГДЕ СТОП: экран открывается по лонг-прессу, privacy работает оттуда, гейт. НЕ ТРОГАТЬ: island-set-pulse, тап-логику.
+- **Карта ISL-PROFILE**: абстракция профиля — одна render-функция острова `render(profile, state)`, ветвление layout внутри, за флагом `js/flags.js`. Профили: **Minimal-DHL** (дефолт: свёрнутый = тонкая полоска с DHL 4-точки + `КАМЕРА N/M`, near-black+hairline, без панели; развёрнутый = крупный DHL-трекер кликабельный + компактный контекст камеры, без пустого центра; отдых = крупная убывающая полоса + next + `+время`) и **Apple-2-state** (текущий ISL-REDESIGN как legacy-опция). Выбор — в Island Settings, персист. ГДЕ СТОП: оба профиля переключаются из настроек, дефолт Minimal-DHL, гейт + полевой чек.
+- **Карта ISL-CUSTOM** (фаза 2, опц.): кастом-профиль/конструктор лейаута. Не начинать, пока не подтверждена реальная нужда.
 
 ---
 
