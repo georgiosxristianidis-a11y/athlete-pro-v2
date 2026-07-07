@@ -595,6 +595,12 @@ async function _refreshFocusUI() {
 }
 
 export function _initFocusLongPress() {
+  // QUARANTINE 2026-07-07: Focus Mode ships no CSS — the overlay renders as
+  // raw DOM appended to <body> and spills outside the app column. Trigger
+  // disabled until the feature is designed (or removed). Code kept intact so
+  // re-enabling is a one-line revert. See island-AIR rethink brief.
+  return;
+  // eslint-disable-next-line no-unreachable
   document.querySelectorAll('.exercise-card').forEach((card) => {
     const header = card.querySelector('.exercise-header');
     if (!header) return;
