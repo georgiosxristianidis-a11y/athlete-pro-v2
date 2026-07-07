@@ -76,17 +76,15 @@
   align-items: center;
   gap: 12px;
   padding: 8px;
-  background: var(--c-surface);
-  backdrop-filter: blur(20px);
-  will-change: backdrop-filter;
+  background: var(--c-bg-2);
   border: 1px solid var(--c-border);
   border-radius: 20px;
   transition: opacity var(--t-normal), transform var(--t-normal), background-color var(--t-normal), border-color var(--t-normal), color var(--t-normal);
 }
 
 .intel-cmd-bar:focus-within {
-  border-color: rgba(0, 209, 255, 0.4);
-  background: var(--c-surface-h);
+  border-color: color-mix(in srgb, var(--c-intel) 40%, transparent);
+  background: var(--c-bg-3);
 }
 
 .intel-cmd-input {
