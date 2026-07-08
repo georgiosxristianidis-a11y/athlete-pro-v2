@@ -99,8 +99,8 @@
 }
 .island.mode-idle::after { content: none; }
 
-/* COMPACT-active: not idle, not expanded, not resting. Pill hugs content. */
-.island:not(.mode-idle):not(.expanded):not(.timer-mode) {
+/* COMPACT-active: not idle, not expanded, not resting, not finishing. Pill hugs content. */
+.island:not(.mode-idle):not(.expanded):not(.timer-mode):not(.finish-mode) {
   width: max-content;
   min-width: 120px;
   max-width: min(280px, calc(100vw - 32px));
@@ -192,6 +192,53 @@
 }
 .island-rest-btn svg { display: block; }
 .island-rest-btn:active { filter: brightness(0.88); }
+
+/* ── Finish HUD — session-complete double-confirm ──
+   The final set closed every block, so no rest is armed. The pill morphs into a
+   single Finish button; 1st tap darkens it (.finish-armed) + "Confirm?", a 2nd
+   tap within 3s commits. Replaces the meaningless rest controls. */
+.island.finish-mode {
+  width: 168px;
+  height: 44px;
+  border-radius: 22px;
+}
+.island-finish {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  z-index: 6;
+}
+.island.finish-mode .island-finish { display: flex; }
+/* Mute the readouts/dot sitting behind the finish button */
+.island.finish-mode .island-readout,
+.island.finish-mode .island-dot { opacity: 0; }
+.island-finish-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 18px;
+  background: var(--c-accent);
+  color: var(--c-bg);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: filter 0.15s ease, background 0.25s ease, color 0.25s ease;
+}
+.island-finish-btn svg { display: block; }
+.island-finish-btn:active { filter: brightness(0.9); }
+/* Armed (1st tap): dark chrome fill signals "tap again to confirm". */
+.island.finish-armed .island-finish-btn {
+  background: var(--c-chrome-t);
+  color: var(--c-chrome);
+}
 
 /* ── Set-complete pulse animation ── */
 .island.set-complete {

@@ -155,8 +155,19 @@ export async function toggleSet(ei, si) {
   if (set.done) {
     // @ts-ignore
     if (window.DynamicIsland) window.DynamicIsland.pulseSetComplete();
-    RestTimer.start(ex.name, `Set ${si + 1}`, _restDuration);
-    
+
+    // If this set closed the WHOLE session, there is nothing to rest for — skip
+    // the rest timer and hand the island a Finish (double-confirm) affordance
+    // instead of leaving a pointless +time / skip-rest HUD in the status bar.
+    const sessionDone = State.plan.every(e => e.sets.every(s => s.done));
+    if (sessionDone) {
+      RestTimer.stop();                       // clear any rest still running from the prior set
+      // @ts-ignore
+      if (window.DynamicIsland) window.DynamicIsland.showFinishReady();
+    } else {
+      RestTimer.start(ex.name, `Set ${si + 1}`, _restDuration);
+    }
+
     // Elite Auto-collapse logic: ONLY if ALL sets are done (e.g. 4/4)
     const allDone = ex.sets.every(s => s.done);
     if (allDone) {
@@ -171,6 +182,9 @@ export async function toggleSet(ei, si) {
     }
   } else {
     RestTimer.stop();
+    // Un-checking a set re-opens the session → drop any Finish affordance.
+    // @ts-ignore
+    if (window.DynamicIsland) window.DynamicIsland.clearFinishReady();
   }
 
   const row = document.getElementById(`set-row-${ei}-${si}`);

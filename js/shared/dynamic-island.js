@@ -16,6 +16,7 @@ on('island:skipExercise', (el, e) => { e.stopPropagation(); window.Workout?._foc
 on('island:addRest',      (el, e) => { e.stopPropagation(); RestTimer?.addTime(+el.dataset.amt); });
 on('island:pip',          (el, e) => { e.stopPropagation(); window.DynamicIsland?.triggerPiP(); });
 on('island:skipRest',     (el, e) => { e.stopPropagation(); RestTimer?.tapSkip(); });
+on('island:finish',        (el, e) => { e.stopPropagation(); DynamicIsland?._tapFinish(); });
 
 /**
  * dynamic-island.js — Interactive session overlay (PIP)
@@ -37,6 +38,10 @@ export const DynamicIsland = (() => {
   // Long-press state
   let _longPressTimer = null;
   let _isLongPress = false;
+
+  // Finish double-confirm state
+  let _finishArmed = false;
+  let _finishTimer = null;
 
   // DOM elements cache
   let _container = null;
@@ -106,6 +111,17 @@ export const DynamicIsland = (() => {
           </div>
         </div>
 
+        <!-- Finish HUD — appears when the LAST set closes the whole session.
+             No rest is armed on the final set; instead this double-confirm
+             Finish button replaces the meaningless rest controls. One tap arms
+             (darkens + "Confirm?"); a second tap within 3s runs completeSession. -->
+        <div class="island-finish" id="di-finish">
+          <button class="island-finish-btn" id="di-finish-btn" data-action="island:finish" title="Finish workout" aria-label="Finish workout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+            <span id="di-finish-label">Finish</span>
+          </button>
+        </div>
+
         <!-- Timer progress line (for Rest intervals) -->
         <div class="island-timer-progress" id="di-timer-progress"></div>
 
@@ -155,6 +171,8 @@ export const DynamicIsland = (() => {
     // button, not an expand target; long-press opens settings, so ignore it here.
     _island?.addEventListener('click', (e) => {
       if (_island?.classList.contains('mode-idle')) return;
+      // Finish HUD owns the whole pill — its button handles the tap; never expand.
+      if (_island?.classList.contains('finish-mode')) return;
       if (_isLongPress) return;
       toggleExpand();
     });
@@ -186,8 +204,10 @@ export const DynamicIsland = (() => {
   function hide() {
     if (!_island) return;
     _expanded = false;
+    _disarmFinish();
     _island?.classList.remove('expanded');
     _island?.classList.remove('timer-mode');
+    _island?.classList.remove('finish-mode');
     _island?.classList.add('mode-idle');
   }
 
@@ -227,6 +247,13 @@ export const DynamicIsland = (() => {
         if (s.done) done++;
       });
     });
+
+    // Safety: if we're showing the Finish HUD but the session is no longer
+    // complete (e.g. a live exercise was added after the last set), drop it.
+    if (_island?.classList.contains('finish-mode') && (total === 0 || done !== total)) {
+      _disarmFinish();
+      _island.classList.remove('finish-mode');
+    }
 
     // Time
     // Current Exercise
@@ -375,6 +402,58 @@ export const DynamicIsland = (() => {
     }, 2000);
   }
 
+  /**
+   * Session-complete state: the final set closed every block, so there is no
+   * rest to run. Swap the pill into a single Finish button (double-confirm)
+   * instead of leaving the meaningless +time / skip-rest HUD floating.
+   */
+  function showFinishReady() {
+    if (!_island) init();
+    _timerActive = false;
+    _expanded = false;
+    _disarmFinish();
+    _island?.classList.remove('timer-mode', 'expanded', 'mode-idle');
+    _island?.classList.add('finish-mode');
+  }
+
+  /** Leave finish state (e.g. the user un-checked the last set) → normal readout. */
+  function clearFinishReady() {
+    _disarmFinish();
+    if (!_island) return;
+    _island.classList.remove('finish-mode');
+    update();
+  }
+
+  /**
+   * Double-confirm Finish. 1st tap arms (darken + "Confirm?" + haptic) and opens
+   * a 3s window; 2nd tap inside it commits → completeSession() (summary modal).
+   * No window.confirm — that gets blocked in the PWA/iframe shell.
+   */
+  function _tapFinish() {
+    if (!_finishArmed) {
+      _finishArmed = true;
+      haptic(20);
+      _island?.classList.add('finish-armed');
+      const lbl = document.getElementById('di-finish-label');
+      if (lbl) lbl.textContent = isRu() ? 'Ещё раз' : 'Confirm?';
+      clearTimeout(_finishTimer);
+      _finishTimer = setTimeout(_disarmFinish, 3000);
+      return;
+    }
+    _disarmFinish();
+    haptic([0, 40, 30, 40]);
+    window.Workout?.completeSession();
+  }
+
+  function _disarmFinish() {
+    clearTimeout(_finishTimer);
+    _finishTimer = null;
+    _finishArmed = false;
+    _island?.classList.remove('finish-armed');
+    const lbl = document.getElementById('di-finish-label');
+    if (lbl) lbl.textContent = isRu() ? 'Финиш' : 'Finish';
+  }
+
   function toggleExpand() {
     haptic(5);
     _expanded = !_expanded;
@@ -434,7 +513,7 @@ export const DynamicIsland = (() => {
     PiP.requestPiP();
   }
 
-  return { init, show, hide, update, setRestProgress, stopTimer, pulseSetComplete, toggleExpand, triggerPiP };
+  return { init, show, hide, update, setRestProgress, stopTimer, pulseSetComplete, toggleExpand, triggerPiP, showFinishReady, clearFinishReady, _tapFinish };
 })();
 
 window.DynamicIsland = DynamicIsland;
