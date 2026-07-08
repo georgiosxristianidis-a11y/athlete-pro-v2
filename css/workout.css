@@ -213,6 +213,10 @@
   scroll-snap-type: y mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  /* PERF-DRUM: spacer heights change on every window re-render; scroll
+     anchoring would «helpfully» shift scrollTop after each one and corrupt
+     the scrollTop ↔ index math (P0 0kg). */
+  overflow-anchor: none;
 }
 .drum-track::-webkit-scrollbar { display: none; }
 .drum-item {

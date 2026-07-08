@@ -10,7 +10,7 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { execSync, execFile } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -25,21 +25,56 @@ const MAX_BODY = 64 * 1024;
 /* Build identity of the tree this server actually serves. Field checks failed
    silently before: the LAN server kept serving an old worktree while a fix
    landed on another branch with the same VERSION string — the phone had no way
-   to tell. Computed per request (not at startup) so a rebase/checkout under a
-   long-running server is reflected immediately. */
-function buildInfo() {
-  const run = (cmd) => execSync(cmd, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-  try {
-    return {
-      branch: run('git rev-parse --abbrev-ref HEAD'),
-      hash: run('git rev-parse --short HEAD'),
-      dirty: run('git status --porcelain') !== '',
-      root: ROOT,
-    };
-  } catch {
-    return { branch: 'unknown', hash: 'unknown', dirty: false, root: ROOT };
-  }
+   to tell. Refreshed with a short TTL so a rebase/checkout under a
+   long-running server shows up within seconds — but асинхронно: `git status`
+   takes seconds on Windows worktrees and execSync per request would freeze the
+   whole event loop (observed: /__build hung >10s and starved static files). */
+const BUILD_TTL = 10_000;
+let _build = null;
+let _buildAt = 0;
+let _refreshing = false;
+
+function _git(args, cb) {
+  execFile('git', args, { cwd: ROOT, encoding: 'utf8' }, (err, out) => cb(err ? null : String(out).trim()));
 }
+
+function refreshBuildInfo() {
+  if (_refreshing) return;
+  _refreshing = true;
+  _git(['rev-parse', '--abbrev-ref', 'HEAD'], (branch) => {
+    _git(['rev-parse', '--short', 'HEAD'], (hash) => {
+      _git(['status', '--porcelain', '-uno'], (st) => {
+        _build = {
+          branch: branch || 'unknown',
+          hash: hash || 'unknown',
+          dirty: st !== null && st !== '',
+          root: ROOT,
+        };
+        _buildAt = Date.now();
+        _refreshing = false;
+      });
+    });
+  });
+}
+
+/* Serves the last known value immediately; a stale one kicks off a background
+   refresh (stale-while-revalidate). Startup seeds it synchronously so the
+   banner and first request are already correct. */
+function buildInfo() {
+  if (!_build || Date.now() - _buildAt > BUILD_TTL) refreshBuildInfo();
+  return _build || { branch: 'unknown', hash: 'pending', dirty: false, root: ROOT };
+}
+
+try {
+  const run = (cmd) => execSync(cmd, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  _build = {
+    branch: run('git rev-parse --abbrev-ref HEAD'),
+    hash: run('git rev-parse --short HEAD'),
+    dirty: run('git status --porcelain -uno') !== '',
+    root: ROOT,
+  };
+  _buildAt = Date.now();
+} catch { /* non-git checkout — endpoint reports unknown */ }
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -57,6 +92,10 @@ const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', LAN ? '*' : 'http://localhost');
   res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST, GET');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Field stand must never serve stale bytes: without validators the browser
+  // heuristically caches JS/CSS and a «fixed» build keeps running old code on
+  // the phone — the exact failure mode this server exists to prevent.
+  res.setHeader('Cache-Control', 'no-store');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -88,7 +127,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.url === '/__build') {
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(buildInfo()));
     return;
   }

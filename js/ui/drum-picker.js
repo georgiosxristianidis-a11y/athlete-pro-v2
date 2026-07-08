@@ -43,6 +43,10 @@ export function flushDrum(type, ei, si) {
   if (!d.dirty) return;
   d.dirty = false;
   const rawIdx = Math.round(d.track.scrollTop / ITEM_H);
+  // Virtualization tripwire: a rest position inside a spacer is impossible
+  // (mandatory snap only lands on rendered items) — the position is corrupt,
+  // heal back to State instead of committing a garbage delta.
+  if (_healIfOutsideWindow(d, rawIdx)) return;
   const newIdx = Math.max(0, Math.min(d.count - 1, rawIdx));
   if (newIdx === d.lastIdx) return;
   const diff  = newIdx - d.lastIdx;
@@ -52,6 +56,18 @@ export function flushDrum(type, ei, si) {
   else              window.Workout?.stepReps(ei, si, diff);
 }
 
+/* Shared corruption tripwire for flushDrum/onSettle: scrollTop resolves to an
+   index outside the rendered window → the write/scroll never landed on a real
+   item. Restore the position State knows about and report «healed». */
+function _healIfOutsideWindow(d, rawIdx) {
+  if (!d.virt || (rawIdx >= d.winStart && rawIdx <= d.winEnd)) return false;
+  d.syncing = true;
+  _seekTo(d, d.lastIdx);
+  _updateActive(d, d.lastIdx);
+  setTimeout(() => { d.syncing = false; }, 50);
+  return true;
+}
+
 export function syncDrumUI(type, ei, si, value) {
   const key = `${type}-${ei}-${si}`;
   const d   = _drums.get(key);
@@ -59,10 +75,25 @@ export function syncDrumUI(type, ei, si, value) {
   const idx = Math.max(0, Math.min(d.count - 1, Math.round((value - d.min) / d.step)));
   if (idx === d.lastIdx) return;
   d.syncing      = true;
-  d.track.scrollTop = idx * ITEM_H;
+  _seekTo(d, idx);
   d.lastIdx      = idx;
   _updateActive(d, idx);
   setTimeout(() => { d.syncing = false; }, 50);
+}
+
+/* Programmatic scroll that survives virtualization (P0 «0 kg» root cause).
+   With scroll-snap-type:mandatory the browser clamps any scrollTop write to
+   the nearest snap point, and a virtualized track only has snap points inside
+   the rendered window — a write outside it silently lands on the window's
+   edge item while the caller records lastIdx = target. Every later delta is
+   then computed from a lie and the weight drifts, down to 0. Render the
+   window around the target FIRST so its snap point exists, then write, then
+   verify the readback (snap may still round by a sub-pixel). */
+function _seekTo(d, idx) {
+  if (d.virt) _renderWindow(d, idx);
+  const want = idx * ITEM_H;
+  d.track.scrollTop = want;
+  if (Math.abs(d.track.scrollTop - want) > 1) d.track.scrollTop = want;
 }
 
 function _buildDrum(wrap) {
@@ -149,6 +180,9 @@ function _buildDrum(wrap) {
     if (!d.dirty) return;
     d.dirty = false;
     const rawIdx = Math.round(track.scrollTop / ITEM_H);
+    // Same virtualization tripwire as flushDrum — never commit a position
+    // that resolves into a spacer.
+    if (_healIfOutsideWindow(d, rawIdx)) return;
     const newIdx = Math.max(0, Math.min(count - 1, rawIdx));
     if (newIdx === d.lastIdx) return;
     const diff  = newIdx - d.lastIdx;
@@ -180,7 +214,7 @@ function _buildDrum(wrap) {
       if (Math.abs(track.scrollTop - want) < 1) return;
       d.syncing = true;
       d.dirty   = false;
-      track.scrollTop = want;
+      _seekTo(d, d.lastIdx);
       _updateActive(d, d.lastIdx);
       setTimeout(() => { d.syncing = false; }, 50);
     }).observe(track);
@@ -201,22 +235,30 @@ function _renderWindow(d, centerIdx) {
   const start = Math.max(0, Math.min(centerIdx - (VIRT_WINDOW >> 1), d.count - VIRT_WINDOW));
   const end   = Math.min(d.count - 1, start + VIRT_WINDOW - 1);
   if (start === d.winStart && end === d.winEnd) return;
-  for (const el of d.items) d.track.removeChild(el);
-  d.items    = [];
-  d.activeEl = null;
+  // Mandatory snap re-evaluates on every DOM mutation and may yank scrollTop
+  // to a snap point of the OLD window (observed collapsing to 0 → «0 kg»).
+  // Insert the new items before removing the old ones so the track never
+  // passes through a snap-point-free state, then restore the position if the
+  // browser still moved it (>1px = beyond snap rounding).
+  const st   = d.track.scrollTop;
   const frag = document.createDocumentFragment();
+  const items = [];
   for (let i = start; i <= end; i++) {
     const div = document.createElement('div');
     div.className   = 'drum-item';
     div.textContent = _label(d.type, +(d.min + i * d.step).toFixed(1));
-    d.items.push(div);
+    items.push(div);
     frag.appendChild(div);
   }
   d.track.insertBefore(frag, d.botPad);
+  for (const el of d.items) d.track.removeChild(el);
+  d.items    = items;
+  d.activeEl = null;
   d.topPad.style.height = start * ITEM_H + 'px';
   d.botPad.style.height = (d.count - 1 - end) * ITEM_H + 'px';
   d.winStart = start;
   d.winEnd   = end;
+  if (Math.abs(d.track.scrollTop - st) > 1) d.track.scrollTop = st;
 }
 
 function _updateActive(d, activeIdx) {
