@@ -193,6 +193,14 @@
 /* Ultra-minimal collapsed dots — a whisper of the journey, tap = expand. */
 .island-minimal-compact .it-svg { width: 52px; height: 12px; }
 
+/* Status light in the collapsed strip is a tiny 4px corner dot — present but
+   never competing with the DHL chamber markers. */
+.island.profile-minimal:not(.mode-idle):not(.expanded):not(.timer-mode) .island-dot {
+  width: 4px;
+  height: 4px;
+  left: 12px;
+}
+
 /* Expanded stays a PILL that hugs its content (no fixed window, no button
    panel): large tappable DHL + chamber context + "next". Controls live on the
    workout screen / rest HUD, so the island is pure navigation. */
@@ -380,7 +388,13 @@
   animation: none;
   opacity: 0.5;
 }
-.island-dot.airgap { display: none; }
+/* Air-gapped: neutral grey — "device is live, nothing syncs by design". Shown
+   (not hidden) so the default privacy mode still has a visible status light. */
+.island-dot.airgap {
+  background: var(--c-chrome);
+  animation: none;
+  opacity: 0.5;
+}
 @keyframes dot-glow-on  { 0%,100%{opacity:.4} 50%{opacity:1} }
 @keyframes dot-glow-off { 0%,100%{opacity:.2} 50%{opacity:.65} }
 

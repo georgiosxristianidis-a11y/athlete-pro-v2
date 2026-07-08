@@ -256,9 +256,11 @@ export const DynamicIsland = (() => {
       _island?.classList.add('mode-idle');
       
       document.getElementById('status-bar')?.classList.remove('workout-active');
-      
-      const dot = document.getElementById('di-dot');
-      if (dot) dot.className = navigator.onLine ? 'island-dot online' : 'island-dot offline';
+
+      // Idle dot reflects the real privacy/sync state (deriveDotState) — the old
+      // hardcoded 'online' class had no CSS rule, so the idle circle rendered
+      // empty (transparent). airgap → grey, synced → green, offline → red.
+      _updateNetworkStatus();
       return;
     }
 
@@ -356,15 +358,15 @@ export const DynamicIsland = (() => {
       // context. Rendered always (cheap); CSS shows it only for profile-minimal
       // while collapsed. Cap the chamber count at 4 to match the 4-marker track.
       if (prof === 'minimal' && _minTrackerEl && _minLabelEl) {
-        const total4 = Math.min(blocks.length, 4);
         renderIslandTracker(_minTrackerEl, {
           current: Math.min(curChamber, 3),
           sessionType: State.type,
           expanded: false,
         });
-        // Ultra-minimal: the dots ARE the chambers, so the label is just the
-        // count (no "CHAMBER" word — it clipped the pill and read as noise).
-        _minLabelEl.textContent = `${Math.min(curChamber + 1, total4)}/${total4}`;
+        // The dots give position; the label names the current phase (POWER /
+        // SHAPE / ARMS / CORE) — the actionable "what am I training now", not a
+        // count (the dots already carry the count).
+        _minLabelEl.textContent = BLOCK_LABEL[curBlock] || '';
       }
     }
 
