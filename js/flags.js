@@ -26,7 +26,12 @@ const DEFAULTS = {
   // PERF-DRUM: set-logger drums render a ~15-item window around the current
   // value instead of the full range (was 86% of the workout screen's DOM).
   // Kill switch on device: Flags.setFlag('drum-virtual', false)
-  'drum-virtual': true,
+  // 1.21.1 HOTFIX: OFF — windowed items + scroll-snap-mandatory clamp
+  // programmatic scrollTop writes to the rendered window's edge, corrupting
+  // the scrollTop↔index math (field: weights drift to 0 / random values).
+  // Re-enable together with the virtualization fix on
+  // claude/p0-bug-investigation-fix-d7d50e (e4b2df6) after its field check.
+  'drum-virtual': false,
 };
 
 /** @param {string} name @returns {boolean} */
