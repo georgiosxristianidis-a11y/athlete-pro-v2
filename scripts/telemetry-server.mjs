@@ -15,6 +15,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const LAN = process.argv.includes('--lan');
 const HOST = LAN ? '0.0.0.0' : '127.0.0.1';
+// Fixed port for stable phone URLs (e.g. http://<host>.local:3000). Falls back
+// to an OS-assigned ephemeral port when PORT is unset.
+const PORT = Number(process.env.PORT) || 0;
 const LOG_FILE = path.join(ROOT, 'telemetry.log');
 const MAX_BODY = 64 * 1024;
 
@@ -93,7 +96,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(0, HOST, () => {
+server.listen(PORT, HOST, () => {
   const { port } = server.address();
   console.log('\n==============================================');
   console.log('Athlete Pro Telemetry Server (field testing)');
