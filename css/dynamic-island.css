@@ -67,7 +67,7 @@
 }
 
 .island.expanded {
-  height: 124px;
+  height: 116px;
   width: calc(100vw - 32px);
   max-width: 400px;
   border-radius: 24px;
@@ -278,7 +278,7 @@
   flex-direction: column;
   gap: var(--sp-0-5);
   padding: 0 var(--sp-2);
-  margin-top: var(--sp-1-5);
+  margin-top: var(--sp-1);
 }
 
 .island-actions {
