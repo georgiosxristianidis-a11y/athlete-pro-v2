@@ -4,7 +4,6 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
-import { renderPrivacyCard } from './privacy.view.js';
 import { renderProfile } from './profile.view.js';
 import { renderSettings } from './profile.view/settings.js';
 import { VERSION } from './version.js';
@@ -58,10 +57,6 @@ export const Profile = (() => {
 
       <!-- ── APP SETTINGS (MODULAR) ── -->
       ${renderSettings(settings, lang, serverStatus, syncStatus)}
-
-      <!-- ── PRIVACY ── -->
-      <div class="section-label-alt">${ru ? 'ПРИВАТНОСТЬ' : 'PRIVACY'}</div>
-      ${renderPrivacyCard()}
 
       <!-- ── DANGER ZONE ── -->
       <div class="section-label-alt" style="color:var(--c-red); opacity:0.8">DANGER ZONE</div>

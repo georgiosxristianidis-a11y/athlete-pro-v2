@@ -115,7 +115,7 @@ function _renderPrivacyIndicator() {
   // Logic Fix: Indicator is always visible and clickable to open Privacy Menu
   el.style.cursor = 'pointer';
   el.removeAttribute('hidden');
-  el.onclick = () => window.Nav.go('s-privacy');
+  el.onclick = () => window.Nav.go('s-island-settings');
   el.onpointerdown = (e) => window.PrivacyRapid?.startLongPress(e);
   el.onpointerup = () => window.PrivacyRapid?.cancelLongPress();
   el.onpointerleave = () => window.PrivacyRapid?.cancelLongPress();
@@ -210,6 +210,12 @@ Nav.on('s-intel', async () => {
   const IntelView = await _loadIntel();
   await IntelView.load();
 });
+Nav.on('s-island-settings', async () => {
+  const { loadIslandSettings } = await import('./island-settings.view.js');
+  loadIslandSettings();
+});
+
+on('nav:back', () => history.back());
 
 /* ── Error boundary — F3 ─────────────────────────────────────────────────── */
 window.onerror = (_msg, _src, _line, _col, err) => {
@@ -308,7 +314,7 @@ const PrivacyRapid = (() => {
 
   async function toggle() {
     haptic([30, 50, 30]);
-    window.Nav?.go('s-privacy');
+    window.Nav?.go('s-island-settings');
   }
 
   function startLongPress(e) {

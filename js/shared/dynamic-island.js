@@ -491,7 +491,7 @@ export const DynamicIsland = (() => {
 
   function _onLongPress() {
     haptic([30, 50, 30]);
-    window.location.hash = 'timer-settings';
+    window.Nav?.go('s-island-settings');
   }
 
   function _updateNetworkStatus() {
