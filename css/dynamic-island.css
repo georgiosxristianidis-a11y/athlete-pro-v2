@@ -95,8 +95,14 @@
 }
 .island.mode-idle .island-dot {
   left: 50%;
+  width: 3px;
+  height: 3px;
   transform: translate(-50%, -50%);
+  /* Calm 3px "breathing" idle light — overrides the per-state glow so the
+     resting island reads as a single quiet heartbeat regardless of colour. */
+  animation: dot-breathe 2.8s ease-in-out infinite;
 }
+@keyframes dot-breathe { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.65; } }
 .island.mode-idle::after { content: none; }
 
 /* COMPACT-active: not idle, not expanded, not resting, not finishing. Pill hugs content. */
