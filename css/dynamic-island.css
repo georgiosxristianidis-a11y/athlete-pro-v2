@@ -180,6 +180,42 @@
 .island.timer-mode .island-minimal-compact,
 .island.mode-idle .island-minimal-compact { display: none; }
 
+/* Solid OLED-true black + hairline — a crisp floating chip, not translucent
+   glass. Drops the Tier-2 blur (island is a HUD chip, not a modal). */
+.island.profile-minimal {
+  background: var(--c-black);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--c-border-h);
+}
+.island.profile-minimal:active { background: var(--c-black); }
+
+/* Ultra-minimal collapsed dots — a whisper of the journey, tap = expand. */
+.island-minimal-compact .it-svg { width: 52px; height: 12px; }
+
+/* Expanded stays a PILL that hugs its content (no fixed window, no button
+   panel): large tappable DHL + chamber context + "next". Controls live on the
+   workout screen / rest HUD, so the island is pure navigation. */
+.island.profile-minimal.expanded {
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  height: auto;
+  min-height: 58px;
+  border-radius: 22px;
+  padding: 10px 20px 12px;
+}
+.island.profile-minimal.expanded .island-status-line,
+.island.profile-minimal.expanded .island-actions { display: none; }
+.island.profile-minimal.expanded .island-expanded-content {
+  margin-top: 0;
+  padding: 0;
+  align-items: center;
+  gap: 6px;
+}
+/* Enlarge the tracker into a comfortable tap target for chamber-jump. */
+.island.profile-minimal.expanded .island-tracker .it-svg { width: 150px; height: 34px; }
+.island.profile-minimal.expanded .island-sublabel { opacity: 0.75; }
+
 /* Rest timer mode — in-frame HUD (replaces standalone rest modal). No numeric
    readout now, just the depleting bar + two icon buttons → narrower pill. */
 .island.timer-mode {

@@ -362,8 +362,9 @@ export const DynamicIsland = (() => {
           sessionType: State.type,
           expanded: false,
         });
-        _minLabelEl.textContent =
-          `${ru ? 'КАМЕРА' : 'CHAMBER'} ${Math.min(curChamber + 1, total4)}/${total4}`;
+        // Ultra-minimal: the dots ARE the chambers, so the label is just the
+        // count (no "CHAMBER" word — it clipped the pill and read as noise).
+        _minLabelEl.textContent = `${Math.min(curChamber + 1, total4)}/${total4}`;
       }
     }
 
