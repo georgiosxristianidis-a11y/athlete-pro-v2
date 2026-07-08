@@ -135,6 +135,15 @@ export async function toggleSet(ei, si) {
   // race where the user taps the checkmark before scrollend/80ms settle fires.
   flushDrum('w', ei, si);
   flushDrum('r', ei, si);
+  // BUG-0KG guard: seed plans (PPL_GIO_PLAN) ship weight:0, and a no-history
+  // user has no prefill — completing a loaded lift at 0 kg silently zeroes
+  // tonnage. Block "done" on a non-bodyweight set left at 0 kg and prompt for a
+  // weight. isBW lifts (pull-ups, dips, core/planks) legitimately log 0 = BW.
+  if (!set.done && !ex.isBW && (!set.weight || set.weight <= 0)) {
+    _haptic(20);
+    Toast.show(isRu() ? 'Укажи вес перед завершением' : 'Enter weight before completing', 'info');
+    return;
+  }
   set.done = !set.done;
   // Phase W-2-A: stamp block timing on every "set just became done" event.
   // Reverting (done → undone) does NOT roll back the timestamps — minor

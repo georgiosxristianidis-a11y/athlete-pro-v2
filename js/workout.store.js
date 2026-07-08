@@ -590,6 +590,7 @@ export function buildSession(type, opts = {}) {
           name: ex.name,
           block: ex.block || classifyChamber(ex),
           noDb: ex.noDb || false,
+          isBW: ex.isBW || false,
           isUnilateral: ex.isUnilateral || false,
           autoBumped: progression.autoBumped || false,
           sets: Array.from({ length: progression.sets }, () => ({
@@ -623,6 +624,7 @@ export function buildSession(type, opts = {}) {
       name: ex.name,
       block: ex.block || classifyChamber(ex),
       noDb: ex.noDb || false,
+      isBW: ex.isBW || false,
       isUnilateral: ex.isUnilateral || false,
       autoBumped: bumped,
       sets: Array.from({ length: ex.sets }, () => ({
