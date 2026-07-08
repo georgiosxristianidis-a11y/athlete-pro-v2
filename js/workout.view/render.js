@@ -507,6 +507,10 @@ export async function renderSetRow(ex, ei, set, si) {
   const isActive = !set.done && si === firstUndoneIdx;
   const isBW = ex.isBW || false;
   const step = ex.isUnilateral ? 2 : 2.5;
+  // Reps drum cap (field request 2026-07-08): strength work never needs the
+  // full 50-item wheel — 20 covers it and shortens the scroll. Core/abs work
+  // is the exception (high-rep sets, Plank logs seconds) — 90 there.
+  const repsMax = (ex.noDb || ex.block === 'core' || ex.block === 'align') ? 90 : 20;
 
   // Formatting weight: if BW, show as +Weight or BW
   const displayWeight = isBW 
@@ -522,7 +526,8 @@ export async function renderSetRow(ex, ei, set, si) {
            data-step="${step}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sw-val stepper-val hidden">${displayWeight}</span></div>
       <div class="drum-wrap" id="sr-${ei}-${si}"
            data-type="r" data-ei="${ei}" data-si="${si}"
-           data-value="${set.reps}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sr-val stepper-val hidden">${set.reps}</span></div>
+           data-value="${set.reps}"
+           data-max="${repsMax}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sr-val stepper-val hidden">${set.reps}</span></div>
       <div class="set-done-summary">${displayWeight}&times;${set.reps}</div>
       <button class="set-check ${set.done ? 'done' : ''}" id="chk-${ei}-${si}" data-action="wo:toggleSet" data-ei="${ei}" data-si="${si}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg></button>
     </div>`;

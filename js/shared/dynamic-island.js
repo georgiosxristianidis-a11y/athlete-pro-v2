@@ -1,5 +1,5 @@
 // @ts-check
-import { State, getWeekMode, BLOCK_LABEL } from '../workout.store.js';
+import { State } from '../workout.store.js';
 import { renderIslandTracker } from './island-tracker.js';
 import { Timer } from '../timer.js';
 import { RestTimer } from '../rest-timer.js';
@@ -12,7 +12,11 @@ import { on } from '../events.js';
 
 // Event-delegation handlers (CSP: replaced inline onclick). stopPropagation so a
 // tap on an island control doesn't also bubble to the island expand-toggle.
-on('island:skipExercise', (el, e) => { e.stopPropagation(); window.Workout?._focusNext(); });
+// Focus Mode is quarantined (f82bc25: ships no CSS, raw DOM spills outside the
+// app column) — _focusNext() was its last live trigger, reproduced in the
+// field 2026-07-08 via this button. Scroll-jump to the next open exercise
+// instead: same intent, no overlay.
+on('island:skipExercise', (el, e) => { e.stopPropagation(); window.Workout?.jumpToNextExercise?.(); });
 on('island:addRest',      (el, e) => { e.stopPropagation(); RestTimer?.addTime(+el.dataset.amt); });
 on('island:pip',          (el, e) => { e.stopPropagation(); window.DynamicIsland?.triggerPiP(); });
 on('island:skipRest',     (el, e) => { e.stopPropagation(); RestTimer?.tapSkip(); });
@@ -289,11 +293,13 @@ export const DynamicIsland = (() => {
       _setsCollapsedEl.style.color = _getSetsColor(exDone, exTotal);
     }
 
-    // Sublabel
+    // Sublabel — NEXT only. Week/type/chamber duplicated the workout screen
+    // header underneath (field feedback 2026-07-08: info overload in the
+    // expanded island); the screen owns context, the island owns "what's next".
     const nextEx = State.plan[activeIdx + 1];
     const status = nextEx ? `${ru ? 'далее' : 'next'}: ${nextEx.name}` : (ru ? 'готово!' : 'complete!');
     if (_sublabelEl) {
-      _sublabelEl.textContent = `W${getWeekMode()} · ${String(State.type).toUpperCase()} · ${status}`;
+      _sublabelEl.textContent = status;
     }
 
     // DHL 4-chamber journey tracker (Cool Steel). Chambers = ordered unique
@@ -307,17 +313,11 @@ export const DynamicIsland = (() => {
       const curBlock = currentEx?.block || 'custom';
       let curChamber = blocks.indexOf(curBlock);
       if (curChamber < 0) curChamber = 0;
-      let chDone = 0, chTotal = 0;
-      for (const ex of State.plan) {
-        if ((ex.block || 'custom') === curBlock) {
-          for (const s of ex.sets) { chTotal++; if (s.done) chDone++; }
-        }
-      }
+      // Dots only — chamber label + set count duplicated the on-screen block
+      // header (field feedback 2026-07-08: expanded island too noisy).
       renderIslandTracker(_trackerEl, {
         current: Math.min(curChamber, 3),
         sessionType: State.type,
-        progress: { done: chDone, total: chTotal },
-        label: BLOCK_LABEL[curBlock] || '',
         expanded: _expanded,
       });
     }

@@ -102,9 +102,13 @@ function _buildDrum(wrap) {
   const si      = parseInt(wrap.dataset.si);
   const step    = parseFloat(wrap.dataset.step) || (type === 'w' ? W_STEP : R_STEP);
   const min     = type === 'w' ? W_MIN  : R_MIN;
-  const max     = type === 'w' ? W_MAX  : R_MAX;
   const key     = `${type}-${ei}-${si}`;
   const current = parseFloat(wrap.dataset.value) || (type === 'r' ? 10 : 0);
+  // Optional per-drum cap (data-max), e.g. reps 20 for strength / 90 for core.
+  // Never cap below the current value — a restored session with reps above the
+  // cap must keep displaying honestly, not clamp State↔UI apart.
+  const capMax  = parseFloat(wrap.dataset.max);
+  const max     = type === 'w' ? W_MAX : (capMax ? Math.max(capMax, current) : R_MAX);
   const track   = wrap.querySelector('.drum-track');
   if (!track) return;
 

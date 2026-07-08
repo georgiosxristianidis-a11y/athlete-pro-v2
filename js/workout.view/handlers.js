@@ -638,6 +638,19 @@ export function _initFocusLongPress() {
   });
 }
 
+/**
+ * Island "skip exercise": scroll the next exercise with open sets into view.
+ * Replaces the old _focusNext() wiring — Focus Mode is quarantined (no CSS,
+ * spills raw DOM outside the app column), so the island must not open it.
+ */
+export function jumpToNextExercise() {
+  const cur = State.plan.findIndex((ex) => ex.sets.some((s) => !s.done));
+  if (cur === -1) return;
+  const next = State.plan.findIndex((ex, i) => i > cur && ex.sets.some((s) => !s.done));
+  if (next === -1) return;
+  document.getElementById(`ex-card-${next}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 /* ════════════════════════════════════════════════════════
    SMART ACTIONS
    ════════════════════════════════════════════════════════ */
