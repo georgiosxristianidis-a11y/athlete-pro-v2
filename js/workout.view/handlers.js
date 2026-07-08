@@ -6,7 +6,7 @@ import {
   State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession,
   getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout,
   loadCoreChecklist, saveCoreChecklist, getActivePlan, startPlan, advancePlan,
-  recordBlockTiming
+  recordBlockTiming, canCompleteSet
 } from '../workout.store.js';
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
@@ -135,11 +135,8 @@ export async function toggleSet(ei, si) {
   // race where the user taps the checkmark before scrollend/80ms settle fires.
   flushDrum('w', ei, si);
   flushDrum('r', ei, si);
-  // BUG-0KG guard: seed plans (PPL_GIO_PLAN) ship weight:0, and a no-history
-  // user has no prefill — completing a loaded lift at 0 kg silently zeroes
-  // tonnage. Block "done" on a non-bodyweight set left at 0 kg and prompt for a
-  // weight. isBW lifts (pull-ups, dips, core/planks) legitimately log 0 = BW.
-  if (!set.done && !ex.isBW && (!set.weight || set.weight <= 0)) {
+  // BUG-0KG guard — rules live in the store predicate (unit-tested there).
+  if (!canCompleteSet(ex, set)) {
     _haptic(20);
     Toast.show(isRu() ? 'Укажи вес перед завершением' : 'Enter weight before completing', 'info');
     return;

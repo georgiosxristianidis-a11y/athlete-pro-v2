@@ -10,6 +10,7 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -20,6 +21,25 @@ const HOST = LAN ? '0.0.0.0' : '127.0.0.1';
 const PORT = Number(process.env.PORT) || 0;
 const LOG_FILE = path.join(ROOT, 'telemetry.log');
 const MAX_BODY = 64 * 1024;
+
+/* Build identity of the tree this server actually serves. Field checks failed
+   silently before: the LAN server kept serving an old worktree while a fix
+   landed on another branch with the same VERSION string — the phone had no way
+   to tell. Computed per request (not at startup) so a rebase/checkout under a
+   long-running server is reflected immediately. */
+function buildInfo() {
+  const run = (cmd) => execSync(cmd, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  try {
+    return {
+      branch: run('git rev-parse --abbrev-ref HEAD'),
+      hash: run('git rev-parse --short HEAD'),
+      dirty: run('git status --porcelain') !== '',
+      root: ROOT,
+    };
+  } catch {
+    return { branch: 'unknown', hash: 'unknown', dirty: false, root: ROOT };
+  }
+}
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -67,6 +87,12 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.url === '/__build') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify(buildInfo()));
+    return;
+  }
+
   if (req.url === '/api/ai-status') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ gemini: false, anthropic: false }));
@@ -98,8 +124,11 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, HOST, () => {
   const { port } = server.address();
+  const b = buildInfo();
   console.log('\n==============================================');
   console.log('Athlete Pro Telemetry Server (field testing)');
+  console.log(`   Build:   ${b.branch}@${b.hash}${b.dirty ? ' (dirty)' : ''}`);
+  console.log(`   Root:    ${b.root}`);
   console.log(`   Local:   http://localhost:${port}`);
   if (LAN) {
     import('os').then((os) => {

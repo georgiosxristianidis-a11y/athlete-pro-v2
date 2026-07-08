@@ -73,7 +73,7 @@ export const Profile = (() => {
       </button>
 
       <!-- ── Version (Subtle Elite) ── -->
-      <div style="margin-top: 48px; padding-bottom: 120px; text-align: center; opacity: 0.25; font-size: 10px; font-weight: 800; letter-spacing: 0.15em; color: var(--c-text-2); text-transform: uppercase;">
+      <div id="app-build-stamp" style="margin-top: 48px; padding-bottom: 120px; text-align: center; opacity: 0.25; font-size: 10px; font-weight: 800; letter-spacing: 0.15em; color: var(--c-text-2); text-transform: uppercase;">
         Athlete Pro v${VERSION} · Elite Edition
       </div>
       <input type="file" id="import-file-input" accept=".json" style="display:none" data-change="profile:importFile">
@@ -81,10 +81,29 @@ export const Profile = (() => {
 
       const passportEl = document.getElementById('profile-passport');
       if (passportEl) renderProfile(passportEl, lang).catch(console.error);
+      _appendBuildStamp();
     } catch (err) {
       console.error('Profile load error', err);
       screen.innerHTML = '<div style="padding:20px;">Error loading profile</div>';
     }
+  }
+
+  /* Field-check identity: the dev/LAN server exposes /__build (branch+hash of
+     the tree it serves). VERSION alone can't distinguish builds — the 0kg-fix
+     retest silently ran an old worktree with the same version string. On prod
+     the endpoint does not exist → fetch fails/404 → the line stays as is.
+     textContent only — no markup injection surface. */
+  async function _appendBuildStamp() {
+    try {
+      const res = await fetch('/__build', { cache: 'no-store' });
+      if (!res.ok) return;
+      const b = await res.json();
+      if (!b || !b.hash) return;
+      const el = document.getElementById('app-build-stamp');
+      if (!el) return;
+      el.textContent = el.textContent.trim() +
+        ` · ${b.branch}@${b.hash}${b.dirty ? '+' : ''}`;
+    } catch { /* prod / offline — no stamp */ }
   }
 
   async function adjustRest(delta) {

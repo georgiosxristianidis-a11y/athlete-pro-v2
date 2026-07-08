@@ -839,6 +839,25 @@ export const BLOCK_LABEL = {
 };
 
 /**
+ * BUG-0KG completion gate. Seed plans (PPL_GIO_PLAN) ship weight:0 and a
+ * no-history user has no prefill, so an unguarded "done" logs a loaded lift
+ * at 0 kg and silently zeroes tonnage/analytics. A set may complete when:
+ *   • it is already done (un-doing is always allowed), or
+ *   • the exercise is bodyweight (isBW — 0 legitimately means BW), or
+ *   • a positive weight has been entered.
+ * Pure predicate, kept in the store so data-correctness rules are unit-tested
+ * instead of living inline in a DOM handler.
+ * @param {{isBW?: boolean}} ex
+ * @param {{done?: boolean, weight?: number}} set
+ * @returns {boolean}
+ */
+export function canCompleteSet(ex, set) {
+  if (set.done) return true;
+  if (ex.isBW) return true;
+  return (set.weight || 0) > 0;
+}
+
+/**
  * Build the post-session summary data for the W-2-C report sheet.
  *
  * Engineering constraints honoured (from the PPL | GIO blueprint, locked in
