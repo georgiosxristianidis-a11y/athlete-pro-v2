@@ -9,6 +9,13 @@ import { isRu } from '../locale.store.js';
 import { getPrivacyMode } from '../privacy.store.js';
 import { deriveDotState } from './sync-dot.js';
 import { on } from '../events.js';
+import { flag } from '../flags.js';
+import { getIslandProfile } from '../island-profile.store.js';
+
+/** Active island layout profile. Flag off → always the proven Apple path. */
+function activeProfile() {
+  return flag('island-profiles') ? getIslandProfile() : 'apple';
+}
 
 // Event-delegation handlers (CSP: replaced inline onclick). stopPropagation so a
 // tap on an island control doesn't also bubble to the island expand-toggle.
@@ -58,6 +65,9 @@ export const DynamicIsland = (() => {
   let _nameCollapsedEl = null;
   let _sublabelEl = null;
   let _trackerEl = null;
+  let _minCompactEl = null;
+  let _minTrackerEl = null;
+  let _minLabelEl = null;
   let _progressFill = null;
   let _timerProg = null;
 
@@ -74,6 +84,14 @@ export const DynamicIsland = (() => {
           <div class="island-time" id="di-time">00:00</div>
           <div class="island-name-collapsed" id="di-name-collapsed"></div>
           <div class="island-sets-collapsed" id="di-sets-collapsed"></div>
+        </div>
+
+        <!-- Minimal-DHL compact strip (ISL-PROFILE): DHL 4-dots + CAMERA N/M.
+             Replaces the name·sets readout when the 'minimal' profile is active
+             and the pill is collapsed. Non-interactive: a tap expands the card. -->
+        <div class="island-minimal-compact" id="di-min-compact">
+          <div class="island-tracker" id="di-min-tracker"></div>
+          <span class="island-min-label" id="di-min-label"></span>
         </div>
 
         <div class="island-expanded-content">
@@ -146,6 +164,9 @@ export const DynamicIsland = (() => {
     _nameCollapsedEl = document.getElementById('di-name-collapsed');
     _sublabelEl = document.getElementById('di-sublabel');
     _trackerEl = document.getElementById('di-tracker');
+    _minCompactEl = document.getElementById('di-min-compact');
+    _minTrackerEl = document.getElementById('di-min-tracker');
+    _minLabelEl = document.getElementById('di-min-label');
     // Tap a chamber marker → scroll its block into view in the workout list.
     if (_trackerEl && !_trackerEl.__jumpWired) {
       _trackerEl.__jumpWired = true;
@@ -221,6 +242,12 @@ export const DynamicIsland = (() => {
 
   function update() {
     if (!_island) return;
+
+    // ISL-PROFILE: tag the pill with the active layout profile so CSS can swap
+    // the collapsed content (Minimal-DHL strip ↔ Apple name·sets readout).
+    const prof = activeProfile();
+    _island.classList.toggle('profile-minimal', prof === 'minimal');
+    _island.classList.toggle('profile-apple', prof !== 'minimal');
 
     // IDLE MODE: If no workout, act as the ONLINE button
     if (!State.plan || !State.plan.length) {
@@ -324,6 +351,20 @@ export const DynamicIsland = (() => {
         sessionType: State.type,
         expanded: _expanded,
       });
+
+      // Minimal-DHL collapsed strip: same DHL dots + "CAMERA N/M" navigation
+      // context. Rendered always (cheap); CSS shows it only for profile-minimal
+      // while collapsed. Cap the chamber count at 4 to match the 4-marker track.
+      if (prof === 'minimal' && _minTrackerEl && _minLabelEl) {
+        const total4 = Math.min(blocks.length, 4);
+        renderIslandTracker(_minTrackerEl, {
+          current: Math.min(curChamber, 3),
+          sessionType: State.type,
+          expanded: false,
+        });
+        _minLabelEl.textContent =
+          `${ru ? 'КАМЕРА' : 'CHAMBER'} ${Math.min(curChamber + 1, total4)}/${total4}`;
+      }
     }
 
     // Progress bar — PPL law via canonical aliases: push=green · pull=cyan · legs=purple

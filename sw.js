@@ -37,6 +37,7 @@ const ASSETS = [
   '/js/insights.engine.js',
   '/js/intel.store.js',
   '/js/intel.view.js',
+  '/js/island-profile.store.js',
   '/js/island-settings.view.js',
   '/js/locale.store.js',
   '/js/onboarding.js',

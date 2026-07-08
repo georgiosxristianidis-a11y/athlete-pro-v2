@@ -30,6 +30,12 @@ const DEFAULTS = {
   // math fix proved insufficient in the field (weight still zeroed), so we fall
   // back to the proven kill-switch until virtualization is reworked.
   'drum-virtual': false,
+
+  // ISL-PROFILE: Dynamic Island layout profiles. ON exposes the profile
+  // system (Minimal-DHL default + Apple legacy), chosen in Island Settings
+  // and persisted in island-profile.store.js. Kill switch → island reverts
+  // to the proven Apple-2-state path: Flags.setFlag('island-profiles', false)
+  'island-profiles': true,
 };
 
 /** @param {string} name @returns {boolean} */

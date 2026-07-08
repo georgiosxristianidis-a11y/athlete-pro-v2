@@ -137,6 +137,49 @@
   flex-shrink: 0;
 }
 
+/* ── Minimal-DHL profile (ISL-PROFILE) ──
+   Collapsed pill shows the DHL 4-dot track + "CHAMBER N/M" instead of the
+   Apple name·sets readout. A thin, near-black strip — navigation over panel.
+   Expanded / rest / idle reuse the shared layouts. */
+.island-minimal-compact {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 16px;
+  z-index: 2;
+  pointer-events: none;               /* tap falls through to expand-toggle */
+  transition: opacity 0.3s ease;
+}
+.island-minimal-compact .island-tracker { min-height: 12px; }
+.island-min-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-chrome);
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+/* Show the strip only for the minimal profile while collapsed-active. */
+.island.profile-minimal:not(.mode-idle):not(.expanded):not(.timer-mode) .island-minimal-compact {
+  display: flex;
+}
+.island.profile-minimal:not(.mode-idle):not(.expanded):not(.timer-mode) .island-readout {
+  opacity: 0;
+}
+/* Thinner collapsed strip — a marker line, not a status panel. */
+.island.profile-minimal:not(.mode-idle):not(.expanded):not(.timer-mode) {
+  height: 36px;
+}
+/* Never overlap the expanded card / rest HUD / idle dot. */
+.island.expanded .island-minimal-compact,
+.island.timer-mode .island-minimal-compact,
+.island.mode-idle .island-minimal-compact { display: none; }
+
 /* Rest timer mode — in-frame HUD (replaces standalone rest modal). No numeric
    readout now, just the depleting bar + two icon buttons → narrower pill. */
 .island.timer-mode {
