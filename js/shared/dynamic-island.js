@@ -1,5 +1,5 @@
 // @ts-check
-import { State } from '../workout.store.js';
+import { State, BLOCK_LABEL } from '../workout.store.js';
 import { renderIslandTracker } from './island-tracker.js';
 import { Timer } from '../timer.js';
 import { RestTimer } from '../rest-timer.js';
@@ -351,6 +351,9 @@ export const DynamicIsland = (() => {
       renderIslandTracker(_trackerEl, {
         current: Math.min(curChamber, 3),
         sessionType: State.type,
+        // Cool-Steel: Minimal-DHL treats the tracker as chrome navigation; the
+        // Apple profile keeps the PPL session hue.
+        chrome: prof === 'minimal',
         expanded: _expanded,
       });
 
@@ -361,6 +364,7 @@ export const DynamicIsland = (() => {
         renderIslandTracker(_minTrackerEl, {
           current: Math.min(curChamber, 3),
           sessionType: State.type,
+          chrome: true,
           expanded: false,
         });
         // The dots give position; the label names the current phase (POWER /

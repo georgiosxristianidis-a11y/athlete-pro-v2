@@ -28,14 +28,18 @@ const SLOTS = [4, 23, 42, 61]; // 4 markers, equal spacing
  * @param {number} opts.current  — chamber index 0..3 currently active (−1 = none).
  * @param {'push'|'pull'|'legs'} opts.sessionType
  * @param {boolean} [opts.violetAccent]  — override PPL with --c-secondary.
+ * @param {boolean} [opts.chrome]  — Cool-Steel: force chrome (navigation is an
+ *   instrument, not decoration). Wins over PPL/violet. Used by Minimal-DHL.
  * @param {{done:number,total:number}} [opts.progress]  — optional set count.
  * @param {string} [opts.label]  — optional inline label (e.g. chamber name).
  * @param {boolean} [opts.expanded]  — render compact (default) or with label.
  */
 export function renderIslandTracker(mount, opts) {
   if (!mount) return;
-  const { current, sessionType, violetAccent, progress, label, expanded } = opts;
-  const color = violetAccent ? 'var(--c-secondary)' : (PPL_VAR[sessionType] || 'var(--c-chrome)');
+  const { current, sessionType, violetAccent, chrome, progress, label, expanded } = opts;
+  const color = chrome ? 'var(--c-chrome)'
+    : violetAccent ? 'var(--c-secondary)'
+    : (PPL_VAR[sessionType] || 'var(--c-chrome)');
 
   // Build 3 connecting lines based on state of bracketing markers.
   // Past→past: solid; past→current or current→future: half; future→future: dim.
