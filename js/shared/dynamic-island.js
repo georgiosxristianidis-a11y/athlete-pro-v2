@@ -174,6 +174,10 @@ export const DynamicIsland = (() => {
     // Single tap toggles the full card (Apple 2-state). Idle pill = privacy
     // button, not an expand target; long-press opens settings, so ignore it here.
     _island?.addEventListener('click', (e) => {
+      // A control was tapped (skip/rest/PiP/finish) — run only its action, never
+      // expand. This listener sits on _island and fires before the document
+      // delegation, so its stopPropagation can't reach us; filter by target.
+      if (e.target.closest('[data-action]')) return;
       if (_island?.classList.contains('mode-idle')) return;
       // Finish HUD owns the whole pill — its button handles the tap; never expand.
       if (_island?.classList.contains('finish-mode')) return;

@@ -291,6 +291,11 @@
   background: var(--c-red);
   animation: dot-glow-off 2.4s ease-in-out infinite;
 }
+/* Idle "online button" dot — network up (update() line ~234, not a sync state). */
+.island-dot.online {
+  background: var(--c-accent);
+  animation: dot-glow-on 2.4s ease-in-out infinite;
+}
 .island-dot.no-cloud {
   background: var(--c-chrome);
   animation: none;
