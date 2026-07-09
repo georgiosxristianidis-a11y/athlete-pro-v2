@@ -26,7 +26,10 @@ const DEFAULTS = {
   // PERF-DRUM: set-logger drums render a ~15-item window around the current
   // value instead of the full range (was 86% of the workout screen's DOM).
   // Kill switch on device: Flags.setFlag('drum-virtual', false)
-  'drum-virtual': true,
+  // 2026-07-09: default OFF — matches prod 1.21.1. The e4b2df6 scrollTop↔index
+  // math fix proved insufficient in the field (weight still zeroed), so we fall
+  // back to the proven kill-switch until virtualization is reworked.
+  'drum-virtual': false,
 };
 
 /** @param {string} name @returns {boolean} */
