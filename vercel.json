@@ -12,7 +12,8 @@
           "exercises-library.json",
           "css/**",
           "js/**",
-          "icons/**"
+          "icons/**",
+          "fonts/**"
         ]
       }
     }

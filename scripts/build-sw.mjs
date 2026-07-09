@@ -17,7 +17,7 @@ function walkDir(dir) {
 }
 
 const rootFiles = ['index.html', 'manifest.json', 'exercises-library.json'];
-const dirsToScan = ['js', 'css', 'icons', 'assets'];
+const dirsToScan = ['js', 'css', 'icons', 'assets', 'fonts'];
 
 let allFiles = [...rootFiles];
 

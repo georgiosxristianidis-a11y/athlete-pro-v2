@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v103';
+const CACHE_NAME = 'athlete-pro-v104';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -111,7 +111,16 @@ const ASSETS = [
   '/icons/pull.svg',
   '/icons/push.svg',
   '/assets/panda-idle.mp4',
-  '/assets/panda-idle.webm'
+  '/assets/panda-idle.webm',
+  '/fonts/instrument-sans-latin-ext.woff2',
+  '/fonts/instrument-sans-latin.woff2',
+  '/fonts/manrope-cyrillic-ext.woff2',
+  '/fonts/manrope-cyrillic.woff2',
+  '/fonts/manrope-greek.woff2',
+  '/fonts/manrope-latin-ext.woff2',
+  '/fonts/manrope-latin.woff2',
+  '/fonts/manrope-vietnamese.woff2',
+  '/fonts/orbitron-latin.woff2'
 ];
 
 /* ── Privacy mode — synced from main thread via postMessage ── */

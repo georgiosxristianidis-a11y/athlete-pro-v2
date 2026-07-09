@@ -27,7 +27,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
       scriptSrcAttr: ["'none'"], // CSP Phase 2: all inline on* migrated to event-delegation (js/events.js)
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"], // fonts self-hosted in /fonts — no Google origins
       imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
       connectSrc: [
         "'self'",
@@ -36,10 +36,9 @@ app.use(helmet({
         "https://*.supabase.co",
         "https://*.firebaseio.com",
         "https://*.googleapis.com",
-        "https://generativelanguage.googleapis.com",
-        "https://fonts.gstatic.com"
+        "https://generativelanguage.googleapis.com"
       ],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      fontSrc: ["'self'"],
       workerSrc: ["'self'"],
       mediaSrc: ["'self'", "blob:"],
       objectSrc: ["'none'"],
@@ -106,6 +105,9 @@ app.use(express.static(__dirname, {
       res.setHeader('Cache-Control', 'no-store');
     } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
       res.setHeader('Cache-Control', 'no-cache');
+    } else if (filePath.endsWith('.woff2')) {
+      // Self-hosted fonts never change in place (renamed if replaced)
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     }
   },
 }));
