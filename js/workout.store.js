@@ -57,28 +57,28 @@ export function resetActivePlan() {
 export const PPL_GIO_PLAN = {
   weekA: {
     push: [
-      { name: 'Flat Barbell Bench Press',     sets: 3, reps: 8,  weight: 0, block: 'power', alias: ['Bench Press'] },
-      { name: 'Incline Dumbbell Press',        sets: 3, reps: 10, weight: 0, block: 'power', isUnilateral: true, alias: ['Incline DB Press'] },
+      { name: 'Bench Press',                   sets: 3, reps: 8,  weight: 0, block: 'power', alias: ['Flat Barbell Bench Press'] },
+      { name: 'Incline DB Press',              sets: 3, reps: 10, weight: 0, block: 'power', isUnilateral: true, alias: ['Incline Dumbbell Press'] },
       { name: 'Butterfly Machine',             sets: 3, reps: 12, weight: 0, block: 'shape', alias: ['Cable Fly'] },
       { name: 'Dips (Chest Focus)',            sets: 3, reps: 10, weight: 0, block: 'shape', isBW: true },
       { name: 'Dumbbell Pullover',             sets: 3, reps: 12, weight: 0, block: 'shape', isUnilateral: true },
       // Block III — Biceps focus (Week A swap)
       { name: 'Alternating Dumbbell Curls',    sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true, alias: ['Bicep Curl'] },
-      { name: 'Hammer Curls',                  sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true, alias: ['Hammer Curl'] },
+      { name: 'Hammer Curl',                   sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true, alias: ['Hammer Curls'] },
       { name: 'Preacher Curls',                sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Bicep Curl'] },
       // Block IV — Core
       { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
       { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
     ],
     pull: [
-      { name: 'Pull-ups (Weighted)',           sets: 3, reps: 8,  weight: 0, block: 'width', isBW: true, alias: ['Pull-up'] },
+      { name: 'Pull-up',                       sets: 3, reps: 8,  weight: 0, block: 'width', isBW: true, alias: ['Pull-ups (Weighted)'] },
       { name: 'Lat Pulldown',                  sets: 3, reps: 10, weight: 0, block: 'width' },
       { name: 'Chest-Supported T-Bar Row',     sets: 3, reps: 8,  weight: 0, block: 'thickness', alias: ['Barbell Row'] },
-      { name: 'Low Block Cable Row',           sets: 3, reps: 10, weight: 0, block: 'thickness', alias: ['Cable Row'] },
+      { name: 'Cable Row',                     sets: 3, reps: 10, weight: 0, block: 'thickness', alias: ['Low Block Cable Row'] },
       { name: 'Iso-Lateral Seated Row',        sets: 3, reps: 12, weight: 0, block: 'thickness', isUnilateral: true },
       // Block III — Triceps focus (Week A swap)
-      { name: 'Triceps Rope Pushdown',         sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Tricep Pushdown'] },
-      { name: 'Overhead Cable Extension',      sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Overhead Tricep Ext.'] },
+      { name: 'Tricep Pushdown',               sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Triceps Rope Pushdown'] },
+      { name: 'Overhead Tricep Ext.',          sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Overhead Cable Extension'] },
       { name: 'Dumbbell Shrugs',               sets: 3, reps: 12, weight: 0, block: 'arms', isUnilateral: true },
       // Block IV — Core
       { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
@@ -88,9 +88,9 @@ export const PPL_GIO_PLAN = {
       { name: 'Leg Press',                     sets: 3, reps: 10, weight: 0, block: 'heavy' },
       { name: 'Barbell Hip Thrust',            sets: 3, reps: 10, weight: 0, block: 'heavy' },
       { name: 'Leg Extensions',                sets: 3, reps: 12, weight: 0, block: 'iso' },
-      { name: 'Lying Leg Curls',               sets: 3, reps: 10, weight: 0, block: 'iso', alias: ['Leg Curl'] },
-      { name: 'Standing Calf Raises',          sets: 3, reps: 15, weight: 0, block: 'iso', alias: ['Calf Raise'] },
-      { name: 'Machine Lateral Raises',        sets: 3, reps: 12, weight: 0, block: 'shoulders', isUnilateral: true, alias: ['Lateral Raise'] },
+      { name: 'Leg Curl',                      sets: 3, reps: 10, weight: 0, block: 'iso', alias: ['Lying Leg Curls'] },
+      { name: 'Calf Raise',                    sets: 3, reps: 15, weight: 0, block: 'iso', alias: ['Standing Calf Raises'] },
+      { name: 'Lateral Raise',                 sets: 3, reps: 12, weight: 0, block: 'shoulders', isUnilateral: true, alias: ['Machine Lateral Raises'] },
       { name: 'Wide-Grip Upright Row',         sets: 3, reps: 10, weight: 0, block: 'shoulders' },
       { name: 'Reverse Pec Deck',              sets: 3, reps: 12, weight: 0, block: 'shoulders' },
       // Block IV — Alignment
@@ -100,28 +100,28 @@ export const PPL_GIO_PLAN = {
   },
   weekB: {
     push: [
-      { name: 'Flat Barbell Bench Press',     sets: 3, reps: 8,  weight: 0, block: 'power', alias: ['Bench Press'] },
-      { name: 'Incline Dumbbell Press',        sets: 3, reps: 10, weight: 0, block: 'power', isUnilateral: true, alias: ['Incline DB Press'] },
+      { name: 'Bench Press',                   sets: 3, reps: 8,  weight: 0, block: 'power', alias: ['Flat Barbell Bench Press'] },
+      { name: 'Incline DB Press',              sets: 3, reps: 10, weight: 0, block: 'power', isUnilateral: true, alias: ['Incline Dumbbell Press'] },
       { name: 'Butterfly Machine',             sets: 3, reps: 12, weight: 0, block: 'shape', alias: ['Cable Fly'] },
       { name: 'Dips (Chest Focus)',            sets: 3, reps: 10, weight: 0, block: 'shape', isBW: true },
       { name: 'Dumbbell Pullover',             sets: 3, reps: 12, weight: 0, block: 'shape', isUnilateral: true },
       // Block III — Triceps focus (Week B swap)
-      { name: 'Triceps Rope Pushdown',         sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Tricep Pushdown'] },
-      { name: 'Overhead Cable Extension',      sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Overhead Tricep Ext.'] },
+      { name: 'Tricep Pushdown',               sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Triceps Rope Pushdown'] },
+      { name: 'Overhead Tricep Ext.',          sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Overhead Cable Extension'] },
       { name: 'Close-Grip Bench Press',        sets: 3, reps: 10, weight: 0, block: 'arms' },
       // Block IV — Core
       { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
       { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
     ],
     pull: [
-      { name: 'Pull-ups (Weighted)',           sets: 3, reps: 8,  weight: 0, block: 'width', isBW: true, alias: ['Pull-up'] },
+      { name: 'Pull-up',                       sets: 3, reps: 8,  weight: 0, block: 'width', isBW: true, alias: ['Pull-ups (Weighted)'] },
       { name: 'Lat Pulldown',                  sets: 3, reps: 10, weight: 0, block: 'width' },
       { name: 'Chest-Supported T-Bar Row',     sets: 3, reps: 8,  weight: 0, block: 'thickness', alias: ['Barbell Row'] },
-      { name: 'Low Block Cable Row',           sets: 3, reps: 10, weight: 0, block: 'thickness', alias: ['Cable Row'] },
+      { name: 'Cable Row',                     sets: 3, reps: 10, weight: 0, block: 'thickness', alias: ['Low Block Cable Row'] },
       { name: 'Iso-Lateral Seated Row',        sets: 3, reps: 12, weight: 0, block: 'thickness', isUnilateral: true },
       // Block III — Biceps focus (Week B swap)
       { name: 'Alternating Dumbbell Curls',    sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true, alias: ['Bicep Curl'] },
-      { name: 'Hammer Curls',                  sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true, alias: ['Hammer Curl'] },
+      { name: 'Hammer Curl',                   sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true, alias: ['Hammer Curls'] },
       { name: 'Preacher Curls',                sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Bicep Curl'] },
       { name: 'Dumbbell Shrugs',               sets: 3, reps: 12, weight: 0, block: 'arms', isUnilateral: true },
       // Block IV — Core
@@ -134,8 +134,8 @@ export const PPL_GIO_PLAN = {
       // Block II — Isolation Swap
       { name: 'Hip Adductor Machine',          sets: 3, reps: 15, weight: 0, block: 'iso' },
       { name: 'Hip Abductor Machine',          sets: 3, reps: 15, weight: 0, block: 'iso' },
-      { name: 'Standing Calf Raises',          sets: 3, reps: 15, weight: 0, block: 'iso', alias: ['Calf Raise'] },
-      { name: 'Machine Lateral Raises',        sets: 3, reps: 12, weight: 0, block: 'shoulders', isUnilateral: true, alias: ['Lateral Raise'] },
+      { name: 'Calf Raise',                    sets: 3, reps: 15, weight: 0, block: 'iso', alias: ['Standing Calf Raises'] },
+      { name: 'Lateral Raise',                 sets: 3, reps: 12, weight: 0, block: 'shoulders', isUnilateral: true, alias: ['Machine Lateral Raises'] },
       { name: 'Wide-Grip Upright Row',         sets: 3, reps: 10, weight: 0, block: 'shoulders' },
       { name: 'Reverse Pec Deck',              sets: 3, reps: 12, weight: 0, block: 'shoulders' },
       // Block IV — Alignment
@@ -613,8 +613,9 @@ export function buildSession(type, opts = {}) {
       // History lookup by name OR alias. The 2026-07-08 default-plan switch
       // (DEFAULT_PLAN → PPL | GIO) renamed the lifts, and an exact-name match
       // orphaned the user's entire weight history — every exercise restarted
-      // at the seed's 0 kg. Seed exercises carry alias:[old names] so history
-      // (and its progression) follows the lift across renames.
+      // at the seed's 0 kg. Seed lifts that are the same movement kept their
+      // legacy names; alias:[] carries every other name the lift was ever
+      // logged under, so history (and its progression) follows renames.
       const names = [ex.name, ...(ex.alias || [])];
       const last = [...workouts].reverse().find(w => (w.exercises || []).some(e => names.includes(e.name)));
       const lastEx = last?.exercises?.find(e => names.includes(e.name));

@@ -29,24 +29,25 @@ const legacyHistory = [{
   ],
 }];
 
-test('alias prefill — renamed lift inherits weight from legacy-named history', () => {
+test('alias prefill — legacy-named history matches the restored seed names', () => {
   const session = buildSession('push', { workouts: legacyHistory });
-  const bench = session.find((e) => e.name === 'Flat Barbell Bench Press');
+  const bench = session.find((e) => e.name === 'Bench Press');
   assert.ok(bench, 'seed exercise missing');
   assert.ok(bench.sets[0].weight >= 80, `expected ≥80 from 'Bench Press' history, got ${bench.sets[0].weight}`);
   const fly = session.find((e) => e.name === 'Butterfly Machine');
   assert.ok(fly.sets[0].weight >= 20, `expected ≥20 from 'Cable Fly' history, got ${fly.sets[0].weight}`);
 });
 
-test('alias prefill — exact-name history still wins as before', () => {
+test('alias prefill — history logged under interim 1.21.0 names follows the rename back', () => {
   const history = [{
     type: 'push',
     timestamp: Date.now(),
     exercises: [{ name: 'Flat Barbell Bench Press', sets: [{ weight: 100, reps: 8, done: true }] }],
   }];
   const session = buildSession('push', { workouts: history });
-  const bench = session.find((e) => e.name === 'Flat Barbell Bench Press');
-  assert.ok(bench.sets[0].weight >= 100);
+  const bench = session.find((e) => e.name === 'Bench Press');
+  assert.ok(bench, 'seed exercise missing');
+  assert.ok(bench.sets[0].weight >= 100, `expected ≥100 via alias, got ${bench.sets[0].weight}`);
 });
 
 test('alias prefill — no history match keeps the seed 0 (guard handles it)', () => {

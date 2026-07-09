@@ -77,7 +77,7 @@ test('buildSession — preset fallback preserves isBW on every exercise', () => 
   const dips = byName.get('Dips (Chest Focus)');
   assert.ok(dips, 'seed exercise missing from session');
   assert.equal(dips.isBW, true);
-  const bench = byName.get('Flat Barbell Bench Press');
+  const bench = byName.get('Bench Press');
   assert.ok(bench);
   assert.equal(bench.isBW, false);
 });
