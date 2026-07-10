@@ -1,7 +1,7 @@
 {
   "name": "Athlete Pro",
   "short_name": "Athlete Pro",
-  "description": "Professional PPL workout tracker with AI coach",
+  "description": "Offline-first PPL workout tracker with drum-style set logger, strength analytics and a bring-your-own-key AI coach. Privacy by default: your data stays on your device.",
   "start_url": "/index.html",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -50,5 +50,5 @@
       ]
     }
   ],
-  "version": "1.16.0"
+  "version": "1.22.0"
 }

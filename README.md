@@ -1,30 +1,43 @@
-# Athlete Pro — PPL Workout Tracker + AI Coach
+# Athlete Pro — Offline-First Workout Tracker + AI Coach
 
-> ⚠️ **Frozen project.** Active development moved to [FIT ELITE](../fit-elite/).
-> This codebase is functional and can be used for reference, testing, or resumed later.
+Privacy-first PPL workout tracker built as an installable PWA. Your training data lives
+on your device (IndexedDB, airgap mode by default) — the cloud is optional, the AI coach
+is bring-your-own-key.
+
+**Live:** [athlete-pro-v7.vercel.app](https://athlete-pro-v7.vercel.app)
+
+## Why it's different
+
+- **Offline-first, privacy tri-state** — `airgap` (default, data never leaves the device),
+  `anon`, or `cloud`. Sync is opt-in, powered by an LWW sync engine.
+- **BYOK AI Coach** — plug in your own Anthropic or Gemini API key; streaming responses
+  over SSE, keys handled server-side only, never shipped to the frontend.
+- **Zero frameworks** — hand-tuned Vanilla JS (ES Modules), Store/View architecture,
+  spring-physics animations, GPU-only transforms. Lighthouse 97, WCAG AA.
+
+## Features
+
+- PPL workout logging with a 170-exercise library and drum-style set logger
+- Dynamic Island status bar: live session tracking, rest timer, sync indicator
+- Analytics: 1RM estimation, DOTS score, PR history, muscle fatigue heatmap
+- Cycle plans with exercise aliasing (rename lifts without losing weight history)
+- Body stats, plate calculator, 3-step onboarding with fast skip
+- Installable PWA: Service Worker precache, self-hosted fonts, works fully offline
 
 ## Quick Start
 
 ```bash
 npm install
-cp .env.example .env       # fill in ANTHROPIC_API_KEY
-npm start                   # http://localhost:3000
+cp .env.example .env       # fill in ANTHROPIC_API_KEY (optional — only for AI coach)
+npm run dev                 # http://localhost:3000
 ```
-
-## What's Here
-
-- PPL workout logging with 170-exercise library
-- AI coach via Claude Opus (SSE streaming)
-- 1RM estimation, muscle fatigue heatmap
-- Dashboard, analytics, body stats, profile
-- Offline PWA (Service Worker + IndexedDB)
-- Rest timer, plate calculator
-- Lighthouse 97/100, WCAG AA compliant
 
 ## Tech
 
-Vanilla JS frontend (no frameworks) + Express backend + IndexedDB.
-Optional cloud sync via Supabase or Firebase.
+- **Frontend:** Vanilla JS (ES Modules), no frameworks. Store/View split per module.
+- **Backend:** Express (ESM) — helmet + CSP, compression, rate limiting, zod validation.
+- **Storage:** IndexedDB (offline-first) + optional Supabase/Firebase cloud sync.
+- **AI:** `lib/aiOrchestrator.js` — multi-engine (Anthropic / Gemini), BYOK, SSE via `POST /api/coach`.
 
 ## Env Variables
 
@@ -35,9 +48,16 @@ Optional cloud sync via Supabase or Firebase.
 | `SUPABASE_URL` | No | Cloud sync |
 | `SUPABASE_ANON_KEY` | No | Cloud sync |
 
+## Tests
+
+```bash
+npm test                # unit + integration (node --test)
+npm run test:e2e        # Playwright e2e
+```
+
 ## Docs
 
 - `CLAUDE.md` — dev guide for Claude Code
-- `DESIGN.md` — Vantablack Luxury design system
-- `ROADMAP_elite_athlete-pro.md` — 8-phase plan
+- `DESIGN.md` — design system spec (OLED near-black, glassmorphism, token palette)
+- `ROADMAP_elite_athlete-pro.md` — roadmap
 - `CHANGELOG.md` — version history
