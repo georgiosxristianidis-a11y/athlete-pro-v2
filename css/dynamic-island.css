@@ -14,21 +14,23 @@
    token grid; it distorts the calibrated look.
    ════════════════════════════════════════════════════════ */
 
-/* ── Island container in status bar ── */
+/* ── Island container in status bar ──
+   Spans the bar's 55px content box (below the safe area). Collapsed pills
+   center in it; expanded states anchor to its top and grow DOWNWARD over the
+   content (iOS Dynamic Island) — the old translate(-50%,-50%) centering made
+   tall states overflow symmetrically: clipped above the viewport and shoved
+   over the logo/clock. */
 #status-island-container {
   position: absolute;
-  left: 50%;
-  top: 50%; /* Center in the status bar vertically */
-  transform: translate(-50%, -50%);
+  left: 0;
+  right: 0;
+  top: var(--safe-top);
+  height: 55px;
   z-index: 300;
   display: flex;
   justify-content: center;
   align-items: center;
-  /* Top safe area should be accommodated by the status bar's padding, but since we absolute position from 50%, 
-     we should adjust top if the status bar height is taller. 
-     Wait, status bar is 55px + safe-top. 
-     Let's position relative to the bottom of the status bar. */
-  margin-top: calc(var(--safe-top) / 2); /* offset for safe area */
+  pointer-events: none; /* the pill itself re-enables */
 }
 
 /* ── Island pill ── */
@@ -71,6 +73,14 @@
   width: calc(100vw - 32px);
   max-width: 400px;
   border-radius: 24px;
+}
+
+/* Any expanded/tall state hangs from the bar top instead of centering — the
+   card floats over the screen content below, never past the viewport top. */
+.island.expanded,
+.island.timer-mode {
+  align-self: flex-start;
+  margin-top: 9px;
 }
 
 .island.expanded .island-expanded-content {

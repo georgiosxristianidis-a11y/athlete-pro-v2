@@ -22,6 +22,17 @@
   transition: opacity 0.4s ease;
 }
 
+/* Expanded island owns the whole bar — side chrome fully yields. A 0.5 dim is
+   not enough here: the wide card physically overlaps the logo and clock, and
+   two stacked layers read as visual debris. */
+#status-bar:has(.island.expanded) .status-logo,
+#status-bar:has(.island.expanded) .status-right,
+#status-bar:has(.island.timer-mode) .status-logo,
+#status-bar:has(.island.timer-mode) .status-right {
+  opacity: 0;
+  pointer-events: none;
+}
+
 #status-bar .status-logo { flex: 1; min-width: 0; }
 #status-time { margin-left: auto; }
 
