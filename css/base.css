@@ -572,9 +572,11 @@ button:focus-visible {
 }
 
 /* ── Section 4.5: Layout & Spacing ────────────────────────
-   Apple-inspired 'Air' logic: 20px side margins, 40px screen headers. */
+   Apple-inspired 'Air' logic: 20px side margins, 40px screen headers.
+   80px top = 55px bar + 25px of air, so the screen title breathes below the
+   bar and the collapsed island instead of butting against them. */
 .screen {
-  padding: 64px var(--side-padding) 120px;
+  padding: 80px var(--side-padding) 120px;
 }
 .screen-header {
   margin-bottom: var(--sp-island);

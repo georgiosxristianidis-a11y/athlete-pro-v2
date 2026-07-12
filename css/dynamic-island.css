@@ -224,9 +224,10 @@
   width: max-content;
   max-width: calc(100vw - 32px);
   height: auto;
-  min-height: 58px;
+  min-height: 56px;
   border-radius: 22px;
-  padding: 10px 20px 12px;
+  /* Top padding reserves a centered row for the status dot above the DHL. */
+  padding: 16px 18px 9px;
 }
 .island.profile-minimal.expanded .island-status-line,
 .island.profile-minimal.expanded .island-actions { display: none; }
@@ -234,11 +235,21 @@
   margin-top: 0;
   padding: 0;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
-/* Enlarge the tracker into a comfortable tap target for chamber-jump. */
-.island.profile-minimal.expanded .island-tracker .it-svg { width: 150px; height: 34px; }
-.island.profile-minimal.expanded .island-sublabel { opacity: 0.75; }
+/* Status dot gets its own centered slot above the DHL track — in the corner it
+   had no home and collided with the track's first marker. */
+.island.profile-minimal.expanded .island-dot {
+  left: 50%;
+  top: 7px;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+}
+/* Compact vertical stack: dot / DHL / next. The tracker stays the tap target
+   but ~30% smaller — the card reads as one centered column, not a billboard. */
+.island.profile-minimal.expanded .island-tracker .it-svg { width: 105px; height: 24px; }
+.island.profile-minimal.expanded .island-sublabel { font-size: 8px; opacity: 0.75; }
 
 /* Rest timer mode — in-frame HUD (replaces standalone rest modal). No numeric
    readout now, just the depleting bar + two icon buttons → narrower pill. */
