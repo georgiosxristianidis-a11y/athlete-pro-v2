@@ -22,7 +22,7 @@
 **ГДЕ СТОП:** trunk == remote, одна прямая линия, прод отдаёт новую версию + остров стабилен.
 **НЕ ТРОГАТЬ:** `island-set-pulse` (жёсткий запрет); порядок FF (сначала rebase, отказ FF = trunk уехал).
 
-### L2 · GESTURE-MERGE 🟠 P1 (программа острова в одну линию)
+### L2 · GESTURE-MERGE 🟠 P1 — ЗАКРЫТА 2026-07-12 (линия isl-profile-next rebase→FF в trunk 3aee4aa, SW v106, гейт 263/263; мёртвый хэш timer-settings убит ещё в ISL-SET — long-press = Nav.go('s-island-settings'))
 **ЦЕЛЬ:** свести островную программу — влить ISL-SET (`4cc1f14`) + ISL-PROFILE (`01d74ce`) в trunk-цепочку, убить мёртвый жест.
 **Продумать:** long-press острова ставит мёртвый хэш `timer-settings` (нет обработчика, `js/shared/dynamic-island.js` ~L490) → унифицировать на `s-island-settings`; dbl-click → privacy (уже есть). Порядок влития: ISL-SET как база → ISL-PROFILE → (хвост уже влит в L1).
 **ГДЕ СТОП:** long-press открывает island-настройки с селектором профиля; мёртвый хэш удалён; гейт зелёный.
