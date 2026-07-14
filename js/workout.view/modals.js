@@ -35,6 +35,12 @@ function _haptic(ms = 10) {
   if (navigator.vibrate) navigator.vibrate(ms);
 }
 
+/** Numeric coercion for dataset indices — NaN-safe fallback avoids corrupting splice(). */
+function n(v, fallback = 0) {
+  const parsed = Number(v);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 /* ════════════════════════════════════════════════════════
    PLAN EDITOR — module-level closure state
    (re-assigned by openPlanEditor each time it opens)
@@ -326,44 +332,63 @@ function _initPlanDrag() {
 
     let dragging = false;
     let startY = 0;
-    let srcIdx = parseInt(row.dataset.pi);
+    let raf = 0;
+    let lastClientY = 0;
+    const srcIdx = n(row.dataset.pi);
+    /** @type {{el:HTMLElement, top:number, bottom:number}[]} */
+    let cachedRects = [];
+
+    // Same fix as _initDrag (BUG-3): rects cached once on pointerdown, moves
+    // coalesced into one rAF — zero layout reads on the pointermove hot path.
+    function paint() {
+      raf = 0;
+      row.style.transform = `translateY(${lastClientY - startY}px)`;
+      row.style.zIndex = '50';
+      for (const r of cachedRects) {
+        r.el.classList.toggle('plan-row-over', lastClientY >= r.top && lastClientY <= r.bottom);
+      }
+    }
 
     handle.addEventListener('pointerdown', (e) => {
+      if (dragging) return; // guard: ignore re-entrant pointerdown (multi-touch/stylus)
       e.preventDefault();
       e.stopPropagation();
       dragging = true;
       startY = e.clientY;
+      lastClientY = e.clientY;
       handle.setPointerCapture(e.pointerId);
       row.classList.add('plan-row-dragging');
       _haptic(15);
+      cachedRects = [];
+      list.querySelectorAll('.plan-row').forEach((other) => {
+        if (other === row) return;
+        const rect = other.getBoundingClientRect();
+        cachedRects.push({ el: /** @type {HTMLElement} */ (other), top: rect.top, bottom: rect.bottom });
+      });
     });
 
     handle.addEventListener('pointermove', (e) => {
       if (!dragging) return;
-      const dy = e.clientY - startY;
-      row.style.transform = `translateY(${dy}px)`;
-      row.style.zIndex = '50';
-      list.querySelectorAll('.plan-row').forEach((other) => {
-        if (other === row) return;
-        const rect = other.getBoundingClientRect();
-        other.classList.toggle('plan-row-over', e.clientY >= rect.top && e.clientY <= rect.bottom);
-      });
+      lastClientY = e.clientY;
+      if (!raf) raf = requestAnimationFrame(paint);
     });
 
     handle.addEventListener('pointerup', () => {
       if (!dragging) return;
       dragging = false;
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
       row.style.transform = '';
       row.style.zIndex = '';
       row.classList.remove('plan-row-dragging');
 
       let dropIdx = srcIdx;
-      list.querySelectorAll('.plan-row').forEach((other) => {
-        if (other.classList.contains('plan-row-over')) {
-          dropIdx = parseInt(other.dataset.pi);
-          other.classList.remove('plan-row-over');
+      for (const r of cachedRects) {
+        if (r.el.classList.contains('plan-row-over')) {
+          dropIdx = n(r.el.dataset.pi, srcIdx);
+          r.el.classList.remove('plan-row-over');
         }
-      });
+      }
+      cachedRects = [];
 
       if (dropIdx !== srcIdx) {
         const type = _planEditorActiveTab();
