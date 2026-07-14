@@ -17,6 +17,7 @@ import { AthleteRoom } from './shared/athlete-room.js';
 import { Integrity } from './shared/integrity.js';
 import { haptic } from './shared/utils.js';
 import { initLocale } from './locale.store.js';
+import { State } from './workout.store.js';
 
 /* ── Lazy-loaded modules ── */
 async function _loadWorkout() {
@@ -338,14 +339,37 @@ window.PrivacyRapid = PrivacyRapid;
 
 /* ── Service Worker ── */
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker.register('/sw.js').then((reg) => {
+    // Coming back online is the one moment a stale SW is most likely to be
+    // sitting around — nudge it to check for a fresh version.
+    window.addEventListener('online', () => reg.update());
+  }).catch(() => {});
+
   // When a new SW takes control, reload once so fresh code/CSS is applied
-  // without the user having to clear storage from the Application tab.
+  // without the user having to clear storage from the Application tab. But
+  // never reload out from under an in-progress workout (data-loss) — defer
+  // via a toast the user can apply now, and otherwise apply silently once
+  // the session ends.
   let _swReloaded = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
+  const _applyUpdate = () => {
     if (_swReloaded) return;
     _swReloaded = true;
     window.location.reload();
+  };
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (_swReloaded) return;
+    if (State.phase !== 'active') {
+      _applyUpdate();
+      return;
+    }
+    Toast.show('Update ready — apply now?', 'info', 0, { action: { label: 'Apply', onClick: _applyUpdate } });
+    const waitForEnd = setInterval(() => {
+      if (State.phase !== 'active') {
+        clearInterval(waitForEnd);
+        _applyUpdate();
+      }
+    }, 5000);
   });
 }
 

@@ -680,6 +680,18 @@ button:focus-visible {
   flex-shrink: 0;
 }
 
+.toast-action {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--c-accent);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .toast-success { border-color: rgba(0, 230, 118, 0.2); }
 .toast-success .toast-icon { color: var(--c-accent); }
 
