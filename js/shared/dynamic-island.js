@@ -351,9 +351,10 @@ export const DynamicIsland = (() => {
       renderIslandTracker(_trackerEl, {
         current: Math.min(curChamber, 3),
         sessionType: State.type,
-        // Cool-Steel: Minimal-DHL treats the tracker as chrome navigation; the
-        // Apple profile keeps the PPL session hue.
-        chrome: prof === 'minimal',
+        // Cool-Steel law (реш. №4, governing over DHL реш. №3): the tracker is
+        // navigation, so it is chrome in EVERY profile — PPL lives only on
+        // data (progress bar) and celebration (set-pulse).
+        chrome: true,
         expanded: _expanded,
       });
 
