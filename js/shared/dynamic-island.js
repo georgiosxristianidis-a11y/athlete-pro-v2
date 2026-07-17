@@ -184,16 +184,12 @@ export const DynamicIsland = (() => {
     _island?.addEventListener('pointerdown', _onPointerDown);
     window.addEventListener('pointerup', _onPointerUp);
     window.addEventListener('pointercancel', _onPointerUp);
-    _island?.addEventListener('pointerleave', (e) => {
-      if (_island?.classList.contains('mode-idle')) window.PrivacyRapid?.cancelLongPress();
+    _island?.addEventListener('pointerleave', () => {
+      clearTimeout(_longPressTimer);
     });
 
-    _island?.addEventListener('dblclick', (e) => {
-      window.PrivacyRapid?.toggle();
-    });
-
-    // Single tap toggles the full card (Apple 2-state). Idle pill = privacy
-    // button, not an expand target; long-press opens settings, so ignore it here.
+    // Single tap toggles the full card (Apple 2-state). Idle pill is not an
+    // expand target; long-press opens settings in every mode, so ignore it here.
     _island?.addEventListener('click', (e) => {
       // A control was tapped (skip/rest/PiP/finish) — run only its action, never
       // expand. This listener sits on _island and fires before the document
@@ -517,10 +513,6 @@ export const DynamicIsland = (() => {
   }
 
   function _onPointerDown(e) {
-    if (_island?.classList.contains('mode-idle')) {
-      window.PrivacyRapid?.startLongPress(e);
-      return;
-    }
     _isLongPress = false;
 
     clearTimeout(_longPressTimer);
@@ -531,10 +523,6 @@ export const DynamicIsland = (() => {
   }
 
   function _onPointerUp(e) {
-    if (_island?.classList.contains('mode-idle')) {
-      window.PrivacyRapid?.cancelLongPress();
-    }
-
     clearTimeout(_longPressTimer);
   }
 

@@ -15,7 +15,6 @@ import { Privacy } from './privacy.view.js';
 import { DynamicIsland } from './shared/dynamic-island.js';
 import { AthleteRoom } from './shared/athlete-room.js';
 import { Integrity } from './shared/integrity.js';
-import { haptic } from './shared/utils.js';
 import { initLocale } from './locale.store.js';
 import { State } from './workout.store.js';
 
@@ -117,9 +116,6 @@ function _renderPrivacyIndicator() {
   el.style.cursor = 'pointer';
   el.removeAttribute('hidden');
   el.onclick = () => window.Nav.go('s-island-settings');
-  el.onpointerdown = (e) => window.PrivacyRapid?.startLongPress(e);
-  el.onpointerup = () => window.PrivacyRapid?.cancelLongPress();
-  el.onpointerleave = () => window.PrivacyRapid?.cancelLongPress();
 
   el.classList.remove('mode-cloud', 'mode-anon', 'mode-airgap');
   el.classList.add('mode-' + mode);
@@ -307,35 +303,6 @@ new MutationObserver((mutations) => {
   }
 }).observe(document.body, { childList: true });
 
-/* ════════════════════════════════════════════════
-   RAPID PRIVACY SWITCHING
-   ════════════════════════════════════════════════ */
-const PrivacyRapid = (() => {
-  let _timer = null;
-
-  async function toggle() {
-    haptic([30, 50, 30]);
-    window.Nav?.go('s-island-settings');
-  }
-
-  function startLongPress(e) {
-    if (_timer) clearTimeout(_timer);
-    _timer = setTimeout(() => {
-      toggle();
-      _timer = null;
-    }, 3000);
-  }
-
-  function cancelLongPress() {
-    if (_timer) {
-      clearTimeout(_timer);
-      _timer = null;
-    }
-  }
-
-  return { toggle, startLongPress, cancelLongPress };
-})();
-window.PrivacyRapid = PrivacyRapid;
 
 /* ── Service Worker ── */
 if ('serviceWorker' in navigator) {
