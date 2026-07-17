@@ -1,45 +1,39 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-04 (Fable 5, AIR-1 влита).
-> **Trunk: `claude/csp-soft-delete` @ `a2900c5`** — AIR-1 (`674553d`) FF-влита после полевого OLED-чека Gio. **НЕ запушено**; main/прод = 1.19.1 `c39f33f` (прод БЕЗ FS и DB-SPLIT 4b/4c).
-> Гейт: unit **229/229** · lint **0 err** (stylelint warnings 38). SW `athlete-pro-v91` (следующий свободный v92), VERSION `1.19.1`.
-> Теги: `checkpoint-2026-07-04-merge-queue` (`a62f3ee`) · `checkpoint-2026-07-04-pre-air` (`ac0f1e5`) · `checkpoint-2026-07-03-drum-0` (`c39f33f`, прод).
-> Активная программа: **AIR-рефакторинг** — `HANDOFF_air_refactor.md` (AIR-1 ✅, next AIR-2). Стек карточек: `HANDOFF_next_cards.md`.
+> Обновлено: 2026-07-17 (Fable 5, прополка W после релиза 1.24.2).
+> **Trunk: `claude/csp-soft-delete` @ `c2e5f16`** == **main == прод (релиз 1.24.2, Vercel success)**. Оба запушены в origin.
+> Гейт: unit **263/263** (39 сьютов) · lint **0 err** (stylelint warnings ~36). SW **`athlete-pro-v108`** (следующий свободный v109), VERSION `1.24.2`.
+> Активная программа: **GYM-GRADE** — `HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `HANDOFF_isl_tail.md`. AIR-хвост: `HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
 
 ---
 
-## 🎯 АКТИВНАЯ ФАЗА — Air Cleanup
+## 🎯 АКТУАЛЬНАЯ ОЧЕРЕДЬ (2026-07-17, по критичности)
 
-Карточки и правила — **`HANDOFF_air_cleanup.md`** (1 карточка = 1 сессия, по порядку). Статус:
-
-| # | Карточка | Статус |
-|---|---|---|
-| 1 | BUG-NAV — системная «назад» | ✅ `6637719` (остаток: ручной тест на телефоне после деплоя) |
-| 2 | CI — GitHub Actions гейт | ✅ `4ec2e0b` |
-| 3 | ARCH-DEL — удалить `js/_archive` | ✅ `84660fb` |
-| 4 | DB-SPLIT — `js/db.js` через фасад | 🔶 Settings + OneRM + Metrics/Events/Nutrition/Planned (4b) + Workouts (4c) — всё в trunk после merge queue 2026-07-04; остался Backup (4d) |
-| 5 | STYLE-LINT — запрет сырых цветов | ✅ `2d24f7d` (39 legacy warnings — миграция фоном) |
-| 6 | DOC-SYNC — этот файл | ✅ 2026-07-02 |
-
-Стек следующих сессий — **`HANDOFF_next_cards.md`**: ~~R (RELEASE 1.19.0)~~ ✅ 2026-07-02 задеплоен (`4ef45b2`, прод v1.19.0 / SW v85; за Gio — ручной тест «назад» на телефоне) → 4b/4c/4d (DB-SPLIT остаток) → Q2 → A-4. Дальше по роадмапу: CRDT foundation — `ROADMAP_elite_athlete-pro.md`.
+1. **BACKUP** (`HANDOFF_gym_grade.md` §3 + карточка 4d в next_cards) — страховка истории, DoD-5.
+2. **DRUM-PERF-2** (gym_grade §4) — плавный барабан, DoD-3.
+3. **P-1 ISL-REST-BTN** (gym_grade, полиш) — визуально легче rest-кнопки.
+4. **AIR-4** (air_refactor) — sweep + тест-гард backdrop-filter + DESIGN.md sync; защищает DoD-2.
+5. **AIR-2b** (next_cards) — body-stats таб-каскад, хвост DoD-2.
+6. Островные хвосты — `HANDOFF_isl_tail.md` (ISL-REST-NEXT, ISL-SEG-FILL, 2 «проверить»).
 
 ---
 
-## 📦 ОТКРЫТЫЙ БЭКЛОГ (вне активной фазы; перед взятием перепроверить grep'ом)
+## 📦 ОТКРЫТЫЙ БЭКЛОГ (вне очереди; перед взятием перепроверить grep'ом)
 
-- **Q2 🟩** PII console.log sweep — живо: `routes/integrations.js:69` логирует длины ключей (G=/A=).
-- **A-4 🟦** unit/visual тест видимости цифр drum после Add Set.
-- **Phase D 🟩** spacing sweep: hardcoded `padding:`/`margin:` → `--sp-*` (теперь ловится stylelint-подходом — расширить конфиг или ручной свип).
-- **Phase E** Cool Steel residuals: E-1 декор `--c-accent`→`--c-chrome` · E-3 `#000`→`--c-bg*` · E-4 rgba в `workout.css`/`athlete-room.css` (39 stylelint-warnings = карта) · E-5 🟦 ревью.
+- **Phase D 🟩** spacing sweep: hardcoded `padding:`/`margin:` → `--sp-*` (расширить stylelint-конфиг или ручной свип).
+- **Phase E** Cool Steel residuals: E-1 декор `--c-accent`→`--c-chrome` · E-3 `#000`→`--c-bg*` · E-4 rgba в `workout.css`/`athlete-room.css` (stylelint-warnings = карта) · E-5 🟦 ревью.
 - **Sonnet residuals 🟦:** 2-7 тесты форматтера · 3-3 метафоры иконок · 4-2 Edit Plan→фабрики · 4-3 CORE-унификация.
+- **SET-STALE 🟦** — карточка в next_cards (низкий: одна вкладка в поле).
 - **S0 (опц.)** gitleaks detect read-only.
-- **D3 (опц.)** гард на pending `startViewTransition` в `shell.js` (benign VT-abort глушится boundary).
+- **D3 (опц.)** гард на pending `startViewTransition` в `shell.js` (benign VT-abort глушится boundary; всё ещё виден в консоли превью 2026-07-17).
 - UI-кнопка «назад» (Apple-паттерн, top-left шеврон на сабэкранах) — микро-карточка, обсудить дизайн с Gio.
-- **Отложено осознанно (НЕ тащить):** zod на ответах AI · Signals/Proxy state (YAGNI) · выпил `unsafe-inline` целиком (XL-хвост Strangler после `` html`` ``-тега, D2) · роадмап Фаза 5 полиш.
+- **Отложено осознанно (НЕ тащить):** zod на ответах AI · Signals/Proxy state (YAGNI) · выпил `unsafe-inline` целиком (XL-хвост Strangler после `` html`` ``-тега, D2) · ISL-CUSTOM (фаза 2, только при подтверждённой нужде) · роадмап Фаза 5 полиш.
+
+После стека: роадмап CRDT foundation (UUID вместо autoIncrement) — `ROADMAP_elite_athlete-pro.md`.
 
 ### 🩸 DATA-SAFETY (срочное поле, за пользователем + LEAD)
-- **DS1 🔴** поле-тест IDB v3→v4 миграции на живых данных (workouts/metrics/1RM целы).
+- **DS1 🔴** поле-тест IDB v3→v4 миграции на живых данных (workouts/metrics/1RM целы). Пара к карточке BACKUP.
 - **DS2 🔴** CRDT 2-девайс конвергенция в cloud ДО merge CRDT-ветки.
 
 ### 🧭 Решения пользователя (не код)
@@ -50,10 +44,10 @@
 
 ## 🔴 ЗА ПОЛЬЗОВАТЕЛЕМ
 
-- Запушить trunk (Air Cleanup `9a5c1ae`+ не на remote) → FF в main + бамп VERSION (`js/version.js` + `package.json`) по правилу.
-- Ручная проверка BUG-NAV «назад» на телефоне после деплоя (Vercel прод = **athlete-pro-v7**, не v2 — см. memory).
-- Полевой CRDT 2-девайс (DS2) + миграция v3→v4 на живых данных (DS1).
-- Гигиена: `.gitignore` не-UTF8 (UTF-16 → git может молча игнорить правила); `gitleaks.exe` в корне добавить в `.gitignore`; `js/shell.js` содержит не-UTF8 байт (grep видит как binary) — проверить и перекодировать.
+- Полевые DS1 (миграция на живых данных) + DS2 (CRDT 2-девайс) — с телефонами.
+- Журнал DoD-1: серия 3/10 — писать заметки-раздражения после каждой тренировки (POLISH-LOOP).
+- Ревизия правил CLAUDE.md (вторая половина карточки W) — вместе с LEAD: какое правило ни разу не срабатывало → в заметку/удалить.
+- Гигиена (всё ещё актуально на 2026-07-17): `.gitignore` не-UTF8 (UTF-16 → git может молча игнорить правила); `js/shell.js` содержит не-UTF8 байт (grep видит как binary); `gitleaks.exe` в корневом чекауте — добавить в `.gitignore`.
 
 ---
 
@@ -83,6 +77,8 @@
 | 🟦 SONNET | Sonnet | scoped рефактор · тесты · компонент по спеку | новая архитектура |
 | 🟩 GEMINI | Gemini | массовый CSS/SVG sweep · find/replace | логика с условиями · дизайн |
 
+Sonnet сейчас: **S1 TEST-ISL-GUARD** в полёте (`HANDOFF_isl_tail.md`).
+
 ---
 
 ## 🌬 ФИЛОСОФИЯ «AIR» — инварианты (нарушение = регрессия)
@@ -95,14 +91,16 @@
 6. Без эмодзи в UI и коде — только SVG. Типографика `→ ✓ ·` — не эмодзи.
 7. `island-set-pulse` — НЕ ТРОГАТЬ (жёсткий запрет пользователя).
 
-Полная дизайн-система: `DESIGN.md` + секция Design в `CLAUDE.md` (палитра BRAND/SEMANTIC, PPL-закон, Cool Steel B, 4 камеры ▣▥◆○, i18n через `getLang()`/`isRu()`).
+Полная дизайн-система: `DESIGN.md` + секция Design в `CLAUDE.md` (палитра BRAND/SEMANTIC, PPL-закон, Cool Steel B, 4 камеры ▣▥◆○, i18n через `getLang()`/`isRu()`). ⚠️ DESIGN.md протух (описывает до-OBSIDIAN эпоху) — синхронизация входит в AIR-4.
 
 ---
 
 ## 🔧 ТЕХНИЧЕСКИЕ ЗАМЕТКИ
 
 - **Запуск:** `npm run dev` → :3000 (порт 3000 = пользователь, 3001 = Claude preview). Телеметрия — `scripts/telemetry-server.mjs --lan`, `server.js` не подменять.
-- **Тесты:** `npm test` = unit+integration (214). `npx playwright test` — e2e отдельно, **на тёплом сервере** (холодный/зомби :3000 → флаки goto-таймаутов).
-- **SW:** `athlete-pro-v83`; ASSETS только через `npm run build:sw`, затем бамп `CACHE_NAME`.
+- **Тесты:** `npm test` = unit+integration (**263**, тёплый прогон ~1с, холодный ~23с). `npx playwright test` — e2e отдельно, **на тёплом сервере** (холодный/зомби :3000 → флаки goto-таймаутов).
+- **SW:** `athlete-pro-v108`; ASSETS только через `npm run build:sw`, затем бамп `CACHE_NAME`.
 - **Билд:** dev = source, prod = `dist` (esbuild content-hash, immutable) — см. memory cache-hash.
-- **Версия:** стабильный мёрж в main = бамп `VERSION` в `js/version.js` + `version` в `package.json`.
+- **Версия:** стабильный мёрж в main = бамп `VERSION` в `js/version.js` + `version` в `package.json` (+package-lock через `npm version --no-git-tag-version`).
+- **Прод:** Vercel-проект `gio-g7/athlete-pro-v7` (алиас athlete-pro-v7.vercel.app), git-репо athlete-pro-v2, деплой с `main`. Локальный `main` в корневом чекауте протух — релиз пушить `git push origin <trunk>:main`, корень не трогать.
+- **Git в worktree:** после убитой по таймауту команды git может висеть (pager держит tty) — использовать `GIT_PAGER=cat` и `</dev/null`.
