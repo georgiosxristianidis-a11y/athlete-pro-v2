@@ -11,7 +11,8 @@
  *   error    → amber, slow pulse         (sync failed while online — actionable)
  *   offline  → red                       (no network, or sync reports offline)
  *   no-cloud → grey (--c-chrome), static (sync allowed but Supabase not set up)
- *   airgap   → hidden                    (privacy mode: never show a network dot)
+ *   airgap   → grey (--c-chrome), static (privacy by design: visible neutral
+ *              light, never a network colour — L3 decision 2026-07-15)
  */
 
 /**

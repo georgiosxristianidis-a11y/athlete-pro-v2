@@ -4,7 +4,7 @@ import { deriveDotState } from '../js/shared/sync-dot.js';
 
 const base = { mode: 'cloud', online: true, syncStatus: 'idle', cloudConfigured: true };
 
-test('airgap mode hides the dot regardless of everything else', () => {
+test('airgap mode wins regardless of everything else (renders neutral grey)', () => {
   assert.equal(deriveDotState({ ...base, mode: 'airgap' }), 'airgap');
   assert.equal(deriveDotState({ mode: 'airgap', online: false, syncStatus: 'syncing', cloudConfigured: false }), 'airgap');
 });
