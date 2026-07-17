@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v107';
+const CACHE_NAME = 'athlete-pro-v108';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
