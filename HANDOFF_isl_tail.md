@@ -36,7 +36,7 @@
 **ГДЕ СТОП:** точка видна и осмысленна во всех режимах и профилях (Minimal-DHL + Apple); семантика sync-состояний в `js/shared/sync-dot.js` цела; гейт зелёный.
 **НЕ ТРОГАТЬ:** `deriveDotState` контракт (4+1 состояний); `island-set-pulse`.
 
-### L4 · GESTURE-UNIFY 🟠 P2 (аудит idle-острова 2026-07-15)
+### L4 · GESTURE-UNIFY — ✅ ЗАКРЫТА 2026-07-17 (e6ee1b1: idle-ветка через PrivacyRapid (3с) убита — long-press 450мс → `s-island-settings` во ВСЕХ режимах; PrivacyRapid выпилен целиком — его toggle() давно был просто Nav.go; rapid-privacy = long-press + 1 тап в Island Settings (2 действия); dblclick-дубль и pointer-обвязка индикатора удалены, клик по индикатору по-прежнему ведёт в настройки; верифай в превью: long-press навигирует, короткий тап и pointerleave — нет; гейт 263/263)
 **ЦЕЛЬ:** один жест = один смысл во всех режимах: long-press острова ВСЕГДА → `s-island-settings`.
 **Продумать:** сейчас long-press в idle уходит в `PrivacyRapid.startLongPress` (`dynamic-island.js` `_onPointerDown`), а в тренировке → Island Settings — один жест, два исхода, ментальная модель ломается. Rapid-переключение privacy перенести: рекомендация — double-tap в idle (dbl-click → privacy уже существовал как паттерн) ИЛИ только через Island Settings (privacy-блок там уже живёт). Решить по месту, что дешевле и чище.
 **ГДЕ СТОП:** long-press ведёт в настройки из любого режима; rapid-privacy доступен не дольше чем за 2 действия; ничего не отвалилось в idle-точке (L3).
