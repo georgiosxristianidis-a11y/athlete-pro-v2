@@ -31,6 +31,15 @@ const DEFAULTS = {
   // back to the proven kill-switch until virtualization is reworked.
   'drum-virtual': false,
 
+  // DRUM-PERF-2 (flag 'drum-window'): set-logger drums render a ±20-item
+  // window around the current value (DOM cap, fresh nodes each rebuild — no
+  // recycling). Unlike 'drum-virtual', the window is NEVER rebuilt mid-scroll:
+  // only at rest (scrollend commit / programmatic seek), so mandatory
+  // scroll-snap cannot yank the position during a gesture — the exact
+  // drum-virtual field-failure mode. Default OFF until Gio's field check.
+  // Kill switch on device: Flags.setFlag('drum-window', false)
+  'drum-window': false,
+
   // ISL-PROFILE: Dynamic Island layout profiles. ON exposes the profile
   // system (Minimal-DHL default + Apple legacy), chosen in Island Settings
   // and persisted in island-profile.store.js. Kill switch → island reverts

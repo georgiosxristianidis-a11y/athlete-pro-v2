@@ -10,9 +10,20 @@ const R_STEP  = 1,   R_MIN = 1,   R_MAX = 50;
    current value instead of the full range (161 weight + 50 reps per set row
    was 86% of the workout screen's DOM). Spacer divs keep the track's scroll
    height identical, so scrollTop ↔ index math — and every BUG-DRUM-0 trust
-   guard built on it — is untouched. */
-const VIRT_WINDOW = 15; // rendered items around the active index
-const VIRT_EDGE   = 3;  // re-centre when active drifts this close to the edge
+   guard built on it — is untouched.
+   Field-failed twice (weight zeroed): it re-centres the window from the
+   `scroll` tick, and mandatory snap re-evaluates on that mid-gesture DOM
+   mutation, yanking scrollTop. Kept OFF — do not resurrect.
+
+   DRUM-PERF-2 (flag 'drum-window'): same spacer/window DOM cap, but the
+   window is rebuilt ONLY at rest — scrollend commit, programmatic seek,
+   reshow heal — never from a scroll tick. A fling therefore runs on a frozen
+   snap grid; its reach per gesture is the window edge (±20 items = ±50 kg),
+   after which the settle re-centres and the next fling continues. Contract
+   suite: test/drum-contract.test.js. */
+const VIRT_WINDOW = 15; // drum-virtual: rendered items around the active index
+const VIRT_EDGE   = 3;  // drum-virtual: re-centre when active nears the edge
+const WIN_SIZE    = 41; // drum-window: ±20 items around the current value
 
 /* key: `${type}-${ei}-${si}` → drum state */
 const _drums = new Map();
@@ -60,7 +71,7 @@ export function flushDrum(type, ei, si) {
    index outside the rendered window → the write/scroll never landed on a real
    item. Restore the position State knows about and report «healed». */
 function _healIfOutsideWindow(d, rawIdx) {
-  if (!d.virt || (rawIdx >= d.winStart && rawIdx <= d.winEnd)) return false;
+  if (!(d.virt || d.windowed) || (rawIdx >= d.winStart && rawIdx <= d.winEnd)) return false;
   d.syncing = true;
   _seekTo(d, d.lastIdx);
   _updateActive(d, d.lastIdx);
@@ -90,7 +101,7 @@ export function syncDrumUI(type, ei, si, value) {
    window around the target FIRST so its snap point exists, then write, then
    verify the readback (snap may still round by a sub-pixel). */
 function _seekTo(d, idx) {
-  if (d.virt) _renderWindow(d, idx);
+  if (d.virt || d.windowed) _renderWindow(d, idx);
   const want = idx * ITEM_H;
   d.track.scrollTop = want;
   if (Math.abs(d.track.scrollTop - want) > 1) d.track.scrollTop = want;
@@ -115,14 +126,18 @@ function _buildDrum(wrap) {
   const count   = Math.round((max - min) / step) + 1;
   const initIdx = Math.max(0, Math.min(count - 1, Math.round((current - min) / step)));
   const virt    = flag('drum-virtual');
+  // drum-virtual (if someone force-enables it on-device) wins over drum-window
+  // so the two window strategies can never run on one track at once.
+  const windowed = !virt && flag('drum-window');
 
   // dirty — scrollTop has been moved by a real user scroll since the last
   // commit; only then may flushDrum/onSettle derive a delta from it.
   const d = { track, type, step, min, count, lastIdx: initIdx, syncing: false, dirty: false,
-              virt, winStart: 0, winEnd: -1, items: [], topPad: null, botPad: null,
+              virt, windowed, winSize: virt ? VIRT_WINDOW : WIN_SIZE,
+              winStart: 0, winEnd: -1, items: [], topPad: null, botPad: null,
               activeIdx: initIdx, activeEl: null };
 
-  if (virt) {
+  if (virt || windowed) {
     d.topPad = document.createElement('div');
     d.topPad.className = 'drum-spacer';
     d.botPad = document.createElement('div');
@@ -194,6 +209,12 @@ function _buildDrum(wrap) {
     const delta = diff * step;
     if (type === 'w') window.Workout?.stepWeight(ei, si, delta, true);
     else              window.Workout?.stepReps(ei, si, diff, true);
+    // DRUM-PERF-2: the drum is at rest on a committed snap point — the only
+    // moment a window rebuild is snap-safe. Re-apply the active highlight:
+    // the rebuild created fresh nodes and no further scroll tick will come.
+    // (flushDrum deliberately does NOT re-centre: its scroll may still be in
+    // flight; the next settle or the ResizeObserver heal covers it.)
+    if (d.windowed) { _renderWindow(d, newIdx); _updateActive(d, newIdx); }
   };
 
   if ('onscrollend' in window) {
@@ -236,8 +257,9 @@ function _label(type, v) {
    total scroll height constant, so an in-flight scroll position survives the
    swap and scroll-snap still lands on a real item. */
 function _renderWindow(d, centerIdx) {
-  const start = Math.max(0, Math.min(centerIdx - (VIRT_WINDOW >> 1), d.count - VIRT_WINDOW));
-  const end   = Math.min(d.count - 1, start + VIRT_WINDOW - 1);
+  const size  = d.winSize;
+  const start = Math.max(0, Math.min(centerIdx - (size >> 1), d.count - size));
+  const end   = Math.min(d.count - 1, start + size - 1);
   if (start === d.winStart && end === d.winEnd) return;
   // Mandatory snap re-evaluates on every DOM mutation and may yank scrollTop
   // to a snap point of the OLD window (observed collapsing to 0 → «0 kg»).
@@ -267,11 +289,16 @@ function _renderWindow(d, centerIdx) {
 
 function _updateActive(d, activeIdx) {
   d.activeIdx = activeIdx;
-  if (d.virt) {
-    // Address by index — no querySelectorAll per scroll tick. Drifting near
-    // the window edge re-centres it first.
-    if ((activeIdx < d.winStart + VIRT_EDGE && d.winStart > 0) ||
-        (activeIdx > d.winEnd - VIRT_EDGE && d.winEnd < d.count - 1)) {
+  if (d.virt || d.windowed) {
+    // Address by index — no querySelectorAll per scroll tick.
+    // drum-virtual re-centres from here, i.e. DURING the gesture — the exact
+    // mutation-under-mandatory-snap that corrupted positions in the field.
+    // drum-window never touches the DOM on a scroll tick; an index that has
+    // drifted past the frozen window simply shows no highlight until snap
+    // pulls it back onto a rendered item.
+    if (d.virt &&
+        ((activeIdx < d.winStart + VIRT_EDGE && d.winStart > 0) ||
+         (activeIdx > d.winEnd - VIRT_EDGE && d.winEnd < d.count - 1))) {
       _renderWindow(d, activeIdx);
     }
     if (d.activeEl) d.activeEl.classList.remove('drum-item--active');

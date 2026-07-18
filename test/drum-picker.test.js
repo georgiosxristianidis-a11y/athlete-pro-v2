@@ -21,7 +21,7 @@ import {
 // each mode its own ei range so the drums never collide.
 const GUARD_BASE = { legacy: 0, virtual: 10, window: 50 };
 
-for (const mode of ['legacy', 'virtual']) {
+for (const mode of ['legacy', 'virtual', 'window']) {
   const label = `[${mode}]`;
   const base = GUARD_BASE[mode];
 
@@ -132,7 +132,7 @@ function simulateAddSetRerender(ei, { value = '80', si = 0 } = {}) {
 
 const BUG7_BASE = { legacy: 30, virtual: 40, window: 60 };
 
-for (const mode of ['legacy', 'virtual']) {
+for (const mode of ['legacy', 'virtual', 'window']) {
   const label = `[${mode}]`;
   const base = BUG7_BASE[mode];
 
