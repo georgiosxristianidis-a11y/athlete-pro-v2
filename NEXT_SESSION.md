@@ -1,8 +1,8 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-18 (Fable 5, BACKUP влит FF).
-> **Trunk: `claude/csp-soft-delete` @ `68f670e`** (BACKUP, НЕ запушен). Прод/main = `f073cb0` (релиз 1.24.2, Vercel success) — trunk впереди на релизный поезд BACKUP.
-> Гейт: unit **273/273** (41 сьют) · lint **0 err** (stylelint warnings ~36). SW в trunk **`athlete-pro-v109`** (на проде v108; следующий свободный v110), VERSION `1.24.2`.
+> Обновлено: 2026-07-18 (Fable 5, релиз 1.24.3).
+> **Trunk: `claude/csp-soft-delete` @ `8c69551`** == **main == прод (релиз 1.24.3, Vercel success, curl-верифай)**. Оба запушены в origin.
+> Гейт: unit **273/273** (41 сьют) · lint **0 err** (stylelint warnings ~36). SW **`athlete-pro-v109`** (следующий свободный v110), VERSION `1.24.3`.
 > Активная программа: **GYM-GRADE** — `HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `HANDOFF_isl_tail.md`. AIR-хвост: `HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
 
@@ -10,7 +10,7 @@
 
 ## 🎯 АКТУАЛЬНАЯ ОЧЕРЕДЬ (2026-07-17, по критичности)
 
-1. ~~BACKUP~~ — ✅ `22f7638` (2026-07-18, ветка `claude/next-backup-export-history-d9ce42`, гейт 273/273, ждёт FF в trunk + релизный поезд; SW в ветке уже v109). Остаток DoD-5 — полевой DS1 за Gio.
+1. ~~BACKUP~~ — ✅ `22f7638`, выкачен в **1.24.3** (`8c69551`, SW v109). Остаток DoD-5 — полевой DS1 + полевой чек экспорта/напоминалки за Gio.
 2. **DRUM-PERF-2** (gym_grade §4) — плавный барабан, DoD-3.
 3. **P-1 ISL-REST-BTN** (gym_grade, полиш) — визуально легче rest-кнопки.
 4. **AIR-4** (air_refactor) — sweep + тест-гард backdrop-filter + DESIGN.md sync; защищает DoD-2.
@@ -47,7 +47,7 @@
 - Полевые DS1 (миграция на живых данных) + DS2 (CRDT 2-девайс) — с телефонами.
 - Журнал DoD-1: серия 3/10 — писать заметки-раздражения после каждой тренировки (POLISH-LOOP).
 - Ревизия правил CLAUDE.md (вторая половина карточки W) — вместе с LEAD: какое правило ни разу не срабатывало → в заметку/удалить.
-- Гигиена (всё ещё актуально на 2026-07-17): `.gitignore` не-UTF8 (UTF-16 → git может молча игнорить правила); `js/shell.js` содержит не-UTF8 байт (grep видит как binary); `gitleaks.exe` в корневом чекауте — добавить в `.gitignore`.
+- Гигиена (актуально на 2026-07-18): `.gitignore` не-UTF8 (UTF-16 → git может молча игнорить правила); `gitleaks.exe` в корневом чекауте — добавить в `.gitignore`. (~~shell.js не-UTF8~~ — закрыто 1.24.3: это был NUL в dedup-ключе тоста.)
 
 ---
 
@@ -98,8 +98,8 @@ Sonnet сейчас: **S1 TEST-ISL-GUARD** в полёте (`HANDOFF_isl_tail.md
 ## 🔧 ТЕХНИЧЕСКИЕ ЗАМЕТКИ
 
 - **Запуск:** `npm run dev` → :3000 (порт 3000 = пользователь, 3001 = Claude preview). Телеметрия — `scripts/telemetry-server.mjs --lan`, `server.js` не подменять.
-- **Тесты:** `npm test` = unit+integration (**263**, тёплый прогон ~1с, холодный ~23с). `npx playwright test` — e2e отдельно, **на тёплом сервере** (холодный/зомби :3000 → флаки goto-таймаутов).
-- **SW:** `athlete-pro-v108`; ASSETS только через `npm run build:sw`, затем бамп `CACHE_NAME`.
+- **Тесты:** `npm test` = unit+integration (**273**, тёплый прогон ~1с, холодный ~23с). `npx playwright test` — e2e отдельно, **на тёплом сервере** (холодный/зомби :3000 → флаки goto-таймаутов).
+- **SW:** `athlete-pro-v109`; ASSETS только через `npm run build:sw`, затем бамп `CACHE_NAME`.
 - **Билд:** dev = source, prod = `dist` (esbuild content-hash, immutable) — см. memory cache-hash.
 - **Версия:** стабильный мёрж в main = бамп `VERSION` в `js/version.js` + `version` в `package.json` (+package-lock через `npm version --no-git-tag-version`).
 - **Прод:** Vercel-проект `gio-g7/athlete-pro-v7` (алиас athlete-pro-v7.vercel.app), git-репо athlete-pro-v2, деплой с `main`. Локальный `main` в корневом чекауте протух — релиз пушить `git push origin <trunk>:main`, корень не трогать.

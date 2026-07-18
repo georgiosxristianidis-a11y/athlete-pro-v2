@@ -1,15 +1,15 @@
 # HANDOFF — стек карточек
 
 > Обновлено 2026-07-17 (прополка W после релиза 1.24.2). Правило: 1 карточка = 1 сессия, сверху вниз.
-> Гейт перед коммитом: `npm test` (263) + `npm run lint` (0 err). Перед рискованным — тег `checkpoint-<date>`.
-> База: trunk `claude/csp-soft-delete` = **`c2e5f16`** == main == прод (релиз **1.24.2**, SW **v108**, Vercel success).
+> Гейт перед коммитом: `npm test` (273) + `npm run lint` (0 err). Перед рискованным — тег `checkpoint-<date>`.
+> База: trunk `claude/csp-soft-delete` = **`8c69551`** == main == прод (релиз **1.24.3**, SW **v109**, Vercel success).
 > Очередь и приоритеты — `HANDOFF_gym_grade.md` (активная программа); здесь — полные тексты карточек.
 > В worktree нет `node_modules` (резолв из родителя) → `npm install` в worktree ИЛИ пуш из главного чекаута. НЕ обходить хук `--no-verify` на main.
 > Принадлежность коммита линии проверять `git merge-base --is-ancestor <hash> <trunk>`, НЕ по имени ветки.
 
 ---
 
-## Карточка 4d — DB-SPLIT: Backup + финализация — ✅ `22f7638` (2026-07-18, ветка claude/next-backup-export-history-d9ce42, ждёт FF в trunk)
+## Карточка 4d — DB-SPLIT: Backup + финализация — ✅ `22f7638` (2026-07-18, ветка claude/next-backup-export-history-d9ce42, выкачен в 1.24.3 `8c69551`)
 
 - Сделано: `js/db/backup.js` (verbatim, формат JSON v1 не тронут) · 1-тап карточка Save History под паспортом профиля · напоминание-тост раз в 2 недели с кнопкой Export (`shouldRemindBackup`, 10 unit) · SW v109. Попутно: NUL-байт в shell.js убран (файл снова UTF-8) · `requestIdleCallback` с timeout 2000 (rAF-шторм голодал Island/FAB/reminder — репро в превью).
 - Остаток DoD-5: полевой DS1 (миграция v3→v4 на живых данных, за Gio) + полевой чек напоминалки/экспорта на телефоне.
