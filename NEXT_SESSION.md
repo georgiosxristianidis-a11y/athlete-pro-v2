@@ -10,7 +10,7 @@
 
 ## 🎯 АКТУАЛЬНАЯ ОЧЕРЕДЬ (2026-07-17, по критичности)
 
-1. **BACKUP** (`HANDOFF_gym_grade.md` §3 + карточка 4d в next_cards) — страховка истории, DoD-5.
+1. ~~BACKUP~~ — ✅ `22f7638` (2026-07-18, ветка `claude/next-backup-export-history-d9ce42`, гейт 273/273, ждёт FF в trunk + релизный поезд; SW в ветке уже v109). Остаток DoD-5 — полевой DS1 за Gio.
 2. **DRUM-PERF-2** (gym_grade §4) — плавный барабан, DoD-3.
 3. **P-1 ISL-REST-BTN** (gym_grade, полиш) — визуально легче rest-кнопки.
 4. **AIR-4** (air_refactor) — sweep + тест-гард backdrop-filter + DESIGN.md sync; защищает DoD-2.
