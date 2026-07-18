@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v108';
+const CACHE_NAME = 'athlete-pro-v109';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -21,6 +21,7 @@ const ASSETS = [
   '/js/claude.store.js',
   '/js/claude.view.js',
   '/js/dashboard.js',
+  '/js/db/backup.js',
   '/js/db/core.js',
   '/js/db/events.js',
   '/js/db/metrics.js',

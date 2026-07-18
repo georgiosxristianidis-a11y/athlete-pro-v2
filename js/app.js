@@ -139,6 +139,33 @@ function _renderPrivacyIndicator() {
   el.title = mode === 'airgap' ? 'Air-Gapped' : (mode === 'anon' ? 'Anonymous' : 'Cloud Enabled');
 }
 
+/* ── Backup reminder (GYM-GRADE DoD-5) — soft nudge, ≤1 toast / 2 weeks ── */
+async function _checkBackupReminder() {
+  try {
+    const { shouldRemindBackup, K_LAST_EXPORT, K_LAST_REMIND } = await import('./db/backup.js');
+    const [lastExportAt, lastRemindAt, workouts] = await Promise.all([
+      DB.Settings.get(K_LAST_EXPORT, 0),
+      DB.Settings.get(K_LAST_REMIND, 0),
+      DB.Workouts.getAll(),
+    ]);
+    if (!shouldRemindBackup({
+      lastExportAt: Number(lastExportAt) || 0,
+      lastRemindAt: Number(lastRemindAt) || 0,
+      workoutCount: workouts.length,
+    })) return;
+    await DB.Settings.set(K_LAST_REMIND, Date.now());
+    const { t } = await import('./locale.store.js');
+    Toast.show(t('backup.remind'), 'info', 12000, {
+      action: {
+        label: t('backup.remind_cta'),
+        onClick: async () => (await _loadProfile()).exportData(),
+      },
+    });
+  } catch (e) {
+    console.warn('[backup] reminder check failed', e);
+  }
+}
+
 openDB()
   .then(initPrivacy)
   .then(initLocale)
@@ -147,8 +174,12 @@ openDB()
     _renderPrivacyIndicator();
     onPrivacyChange(_renderPrivacyIndicator);
 
-    // Defer non-critical logic to improve boot performance
-    const defer = window.requestIdleCallback || ((fn) => setTimeout(fn, 200));
+    // Defer non-critical logic to improve boot performance. The timeout is
+    // load-bearing: continuous rAF work (springs/island) can starve idle
+    // callbacks forever, which would silently skip Island/FAB/reminder init.
+    const defer = window.requestIdleCallback
+      ? (fn) => window.requestIdleCallback(fn, { timeout: 2000 })
+      : (fn) => setTimeout(fn, 200);
     defer(() => {
       DynamicIsland.init();
       AthleteRoom.initAvatar().catch(() => {});
@@ -158,6 +189,8 @@ openDB()
         window.Claude = Claude;
         Claude.renderFAB();
       });
+
+      _checkBackupReminder();
     });
   })
   .then(async () => {

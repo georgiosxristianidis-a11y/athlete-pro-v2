@@ -4,6 +4,8 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
+import { K_LAST_EXPORT } from './db/backup.js';
+import { t, getLang } from './locale.store.js';
 import { renderProfile } from './profile.view.js';
 import { renderSettings } from './profile.view/settings.js';
 import { VERSION } from './version.js';
@@ -35,10 +37,11 @@ export const Profile = (() => {
         console.warn('Offline mode: sync.js failed to load', e.message);
       }
       
-      const [settings, langRaw, serverStatus] = await Promise.all([
+      const [settings, langRaw, serverStatus, lastExportAt] = await Promise.all([
         DB.Settings.getAll(),
         DB.Settings.get('lang', 'en'),
-        fetch('/api/ai-status').then(r => r.json()).catch(() => ({ gemini: false, anthropic: false }))
+        fetch('/api/ai-status').then(r => r.json()).catch(() => ({ gemini: false, anthropic: false })),
+        DB.Settings.get(K_LAST_EXPORT, 0)
       ]);
       const lang = langRaw || 'en';
       const ru = lang === 'ru';
@@ -54,6 +57,19 @@ export const Profile = (() => {
 
       <!-- ── Passport UI ── -->
       <div id="profile-passport"></div>
+
+      <!-- ── BACKUP — 1-tap history export (GYM-GRADE DoD-5) ── -->
+      <button class="profile-card pref-row-icon" data-action="settings:exportData"
+              style="width:100%; text-align:left; font:inherit; color:inherit; cursor:pointer;">
+        <div class="pref-icon-box" style="background:rgba(0,230,118,0.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <div class="pref-info">
+          <div class="pref-title">${t('backup.save')}</div>
+          <div class="pref-sub" id="backup-cta-sub">${_backupSubLabel(lastExportAt)}</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
 
       <!-- ── APP SETTINGS (MODULAR) ── -->
       ${renderSettings(settings, lang, serverStatus, syncStatus)}
@@ -188,12 +204,29 @@ async function setEngine(engine) {
     load();
   }
 
+  /** Human label for the backup CTA sub-line ("Last backup: 18 Jul" / "never"). */
+  function _backupSubLabel(lastExportAt) {
+    const ts = Number(lastExportAt) || 0;
+    if (!ts) return t('backup.save_sub_never');
+    const d = new Date(ts).toLocaleDateString(getLang() === 'ru' ? 'ru' : 'en', { day: 'numeric', month: 'short' });
+    return t('backup.save_sub_last', { d });
+  }
+
   async function exportData() {
     const json = await DB.Backup.export();
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'athlete-pro-backup.json'; a.click();
+    const date = new Date().toISOString().split('T')[0];
+    a.href = url; a.download = `athlete-pro-backup-${date}.json`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    const now = Date.now();
+    await DB.Settings.set(K_LAST_EXPORT, now);
+    Toast.show(t('backup.done'), 'success');
+    // Refresh the CTA sub-line in place — no full re-render (export can be
+    // triggered from the reminder toast while another screen is active).
+    const sub = document.getElementById('backup-cta-sub');
+    if (sub) sub.textContent = _backupSubLabel(now);
   }
 
   function importData() {
