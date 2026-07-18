@@ -357,7 +357,12 @@ if ('serviceWorker' in navigator) {
     window.location.reload();
   };
 
+  // On the very first visit there is no old controller — the page is already
+  // running the freshest code, so claim() must not trigger a reload.
+  let _hadController = !!navigator.serviceWorker.controller;
+
   navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!_hadController) { _hadController = true; return; }
     if (_swReloaded) return;
     if (State.phase !== 'active') {
       _applyUpdate();
