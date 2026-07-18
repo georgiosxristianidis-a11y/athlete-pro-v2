@@ -5,11 +5,11 @@
 
 ## Multi-Agent Protocol
 
-- **Рабочая ветка:** `2026-04-14-byoi` (main синхронизируется из неё). Перед стартом сверь `git branch --show-current`.
+- **Trunk:** имя и хеш — в шапке `NEXT_SESSION.md` (единственный источник правды, ветки мутируют). Перед стартом сверь `git branch --show-current`.
 - **Handoff между сессиями/агентами:** `NEXT_SESSION.md` в корне (правило GIO Context Integrity) — читать первым.
 - Незакоммиченные диффы могут быть живым WIP другого агента — сверяйся с NEXT_SESSION.md, не откатывай вслепую.
 - Antigravity-артефакты (task/plan/walkthrough): `~/.gemini/antigravity/brain/<uuid>/`.
-- Стандарты GIO: `~/.gemini/GEMINI.md` (глобальный) + `GEMINI.md` в корне (Karpathy guidelines). Триггер `#Аудит` — элитная диагностика.
+- Стандарты GIO: `~/.gemini/GEMINI.md` (глобальный) + `GEMINI.md` в корне (Karpathy guidelines). Аудиты — слэш-команды `/audit_core` / `/audit_cyber` / `/audit_speed`.
 
 ## Session Protocol (ассистент)
 
@@ -28,7 +28,7 @@
 
 - Frontend: Vanilla JS (ES Modules), no frameworks
 - Backend: Express/Node.js (**ESM**, `"type": "module"`)
-- DB: IndexedDB (offline-first) + optional Supabase/Firebase
+- DB: IndexedDB (offline-first) + optional Supabase
 - AI: `lib/aiOrchestrator.js` — Anthropic + Gemini, BYOK, SSE via `POST /api/coach`
 - PWA: Service Worker + manifest
 
