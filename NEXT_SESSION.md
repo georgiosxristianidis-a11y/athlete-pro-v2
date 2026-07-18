@@ -1,8 +1,8 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-17 (Fable 5, прополка W после релиза 1.24.2).
-> **Trunk: `claude/csp-soft-delete` @ `c2e5f16`** == **main == прод (релиз 1.24.2, Vercel success)**. Оба запушены в origin.
-> Гейт: unit **263/263** (39 сьютов) · lint **0 err** (stylelint warnings ~36). SW **`athlete-pro-v108`** (следующий свободный v109), VERSION `1.24.2`.
+> Обновлено: 2026-07-18 (Fable 5, BACKUP влит FF).
+> **Trunk: `claude/csp-soft-delete` @ `68f670e`** (BACKUP, НЕ запушен). Прод/main = `f073cb0` (релиз 1.24.2, Vercel success) — trunk впереди на релизный поезд BACKUP.
+> Гейт: unit **273/273** (41 сьют) · lint **0 err** (stylelint warnings ~36). SW в trunk **`athlete-pro-v109`** (на проде v108; следующий свободный v110), VERSION `1.24.2`.
 > Активная программа: **GYM-GRADE** — `HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `HANDOFF_isl_tail.md`. AIR-хвост: `HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
 
