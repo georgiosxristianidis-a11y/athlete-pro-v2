@@ -743,7 +743,7 @@ async function loadWeeklySummary() {
       chipValue.style.color = 'var(--c-gold)';
     } else if (plateauAlerts.length > 0) {
       chipValue.textContent = `${plateauAlerts.length} plateau${plateauAlerts.length > 1 ? 's' : ''}`;
-      chipValue.style.color = '#ff4757';
+      chipValue.style.color = 'var(--c-red)';
     } else {
       const since = Date.now() - 7 * 24 * 3600000;
       const count = workouts.filter(w => w.timestamp >= since).length;
