@@ -1,8 +1,9 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-18 (Fable 5, релиз 1.24.3).
-> **Trunk: `claude/csp-soft-delete` @ `8c69551`** == **main == прод (релиз 1.24.3, Vercel success, curl-верифай)**. Оба запушены в origin.
-> Гейт: unit **273/273** (41 сьют) · lint **0 err** (stylelint warnings ~36). SW **`athlete-pro-v109`** (следующий свободный v110), VERSION `1.24.3`.
+> Обновлено: 2026-07-18 (Fable 5, сессия 2 — DRUM-PERF-2 + SW-FIRST-LOAD влиты).
+> **Trunk: `claude/csp-soft-delete` @ `8653ae1`** (= 8c69551 + drum-окно за флагом + фикс SW-релоада). **main == прод == `8c69551` (1.24.3)** — trunk впереди на 3 коммита, НЕ запушен, поедет релизным поездом (бамп SW v110 + VERSION при релизе).
+> Гейт: unit **308/308** (41 сьют) · lint **0 err** (stylelint warnings ~36). Lighthouse из worktree: perf **96** / a11y 100 / bp 100 (было 80; фикс: не релоадить страницу при первой установке SW). SW **`athlete-pro-v109`** (следующий свободный v110), VERSION `1.24.3`.
+> ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
 > Активная программа: **GYM-GRADE** — `HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `HANDOFF_isl_tail.md`. AIR-хвост: `HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
 
@@ -11,7 +12,7 @@
 ## 🎯 АКТУАЛЬНАЯ ОЧЕРЕДЬ (2026-07-17, по критичности)
 
 1. ~~BACKUP~~ — ✅ `22f7638`, выкачен в **1.24.3** (`8c69551`, SW v109). Остаток DoD-5 — полевой DS1 + полевой чек экспорта/напоминалки за Gio.
-2. **DRUM-PERF-2** (gym_grade §4) — плавный барабан, DoD-3.
+2. ~~DRUM-PERF-2~~ — ✅ код в trunk (`0bd5d88`), флаг `drum-window` **OFF**. Остаток — полевой чек за Gio: включить флаг, покрутить барабан, при ОК — дефолт ON.
 3. **P-1 ISL-REST-BTN** (gym_grade, полиш) — визуально легче rest-кнопки.
 4. **AIR-4** (air_refactor) — sweep + тест-гард backdrop-filter + DESIGN.md sync; защищает DoD-2.
 5. **AIR-2b** (next_cards) — body-stats таб-каскад, хвост DoD-2.
