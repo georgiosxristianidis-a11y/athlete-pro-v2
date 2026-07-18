@@ -1,8 +1,8 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-18 (Fable 5, сессия 3 — верификация внешних аудитов, дизайн-фиксы влиты).
-> **Trunk: `claude/csp-soft-delete` @ `fc5f3d4`** (= 8c69551 + drum-окно за флагом + фикс SW-релоада + токен-фикс #ff4757→--c-red + OG-теги). **main == прод == `8c69551` (1.24.3)** — trunk впереди, НЕ запушен, поедет релизным поездом (бамп SW v110 + VERSION при релизе).
-> Гейт: unit **308/308** (41 сьют) · lint **0 err** (stylelint warnings ~36). Lighthouse из worktree: perf **96** / a11y 100 / bp 100 (было 80; фикс: не релоадить страницу при первой установке SW). SW **`athlete-pro-v109`** (следующий свободный v110), VERSION `1.24.3`.
+> Обновлено: 2026-07-18 (Fable 5, сессия 3 — поезд v110 ВЫКАЧЕН).
+> **Trunk: `claude/csp-soft-delete`. Релиз 1.24.4 = `a77f298` НА ПРОДЕ** (origin main == trunk, Vercel success, прод curl-верифай: VERSION 1.24.4, SW v110). Состав: drum-окно за флагом OFF + фикс SW-релоада (perf 80→96) + токен-фикс #ff4757→--c-red + OG-теги.
+> Гейт: unit **308/308** (41 сьют) · lint **0 err** (stylelint warnings ~36). Lighthouse из worktree: perf **96** / a11y 100 / bp 100. SW **`athlete-pro-v110`** (следующий свободный v111), VERSION `1.24.4`.
 > ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
 > Активная программа: **GYM-GRADE** — `HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `HANDOFF_isl_tail.md`. AIR-хвост: `HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
@@ -11,8 +11,8 @@
 
 ## 🎯 АКТУАЛЬНАЯ ОЧЕРЕДЬ (2026-07-17, по критичности)
 
-1. ~~BACKUP~~ — ✅ `22f7638`, выкачен в **1.24.3** (`8c69551`, SW v109). Остаток DoD-5 — полевой DS1 + полевой чек экспорта/напоминалки за Gio.
-2. ~~DRUM-PERF-2~~ — ✅ код в trunk (`0bd5d88`), флаг `drum-window` **OFF**. Остаток — полевой чек за Gio: включить флаг, покрутить барабан, при ОК — дефолт ON.
+1. ~~BACKUP~~ — ✅ `22f7638`, выкачен в 1.24.3. Остаток DoD-5 — полевой DS1 + полевой чек экспорта/напоминалки за Gio (можно на проде).
+2. ~~DRUM-PERF-2~~ — ✅ код НА ПРОДЕ (1.24.4), флаг `drum-window` **OFF**. Остаток — полевой чек за Gio на проде: включить флаг (`Flags.setFlag('drum-window', true)`), покрутить барабан, при ОК — дефолт ON.
 3. **P-1 ISL-REST-BTN** (gym_grade, полиш) — визуально легче rest-кнопки.
 4. **AIR-4** (air_refactor) — sweep + тест-гард backdrop-filter + DESIGN.md sync; защищает DoD-2.
 5. **AIR-2b** (next_cards) — body-stats таб-каскад, хвост DoD-2.
