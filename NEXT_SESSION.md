@@ -1,9 +1,8 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-19 (Fable 5 — FAB-VIDEO влит FF).
-> **Trunk: `claude/csp-soft-delete`, код `9a61f96` (+докс-коммит сверху), НЕ запушен — trunk впереди origin.** Прод: релиз 1.24.4 = `a77f298` (origin main == `36c6f88`, SW v110).
-> Новое в trunk (поезд v111 не выкачен): **FAB-VIDEO** — живая панда с озвучкой за флагом `fab-video` (дефолт **OFF**): Claude FAB + интро в маскоте пустого дашборда; общий модуль `js/shared/panda-video.js`; ассет `assets/panda-voice.mp4` 327КБ; попутно `assets/**` добавлен в vercel.json includeFiles (чинил латентный 404 медиа на проде).
-> Гейт trunk: unit **308/308** (41 сьют) · lint **0 err** (stylelint warnings ~36). Lighthouse из worktree: perf **96** / a11y 100 / bp 100. SW **`athlete-pro-v111`** (следующий свободный v112), VERSION `1.24.4` (бамп — на релизном поезде).
+> Обновлено: 2026-07-19 (Fable 5 — поезд v111 ВЫКАЧЕН).
+> **Trunk: `claude/csp-soft-delete`. Релиз 1.25.0 = `44ca0bb` НА ПРОДЕ** (origin main == trunk == `44ca0bb`, Vercel Production success, прод curl-верифай: VERSION 1.25.0, SW v111, `/assets/panda-voice.mp4` 200+Accept-Ranges). Состав: **FAB-VIDEO** за флагом `fab-video` (дефолт **OFF**) — живая панда с озвучкой (звук в mp4-дорожке = синхрон) в Claude FAB + интро в маскоте пустого дашборда; общий модуль `js/shared/panda-video.js`; попутно `assets/**` в vercel.json includeFiles (чинил латентный 404 медиа).
+> Гейт: unit **308/308** (41 сьют) · lint **0 err** (stylelint warnings ~36). Lighthouse из worktree: perf **96** / a11y 100 / bp 100. SW **`athlete-pro-v111`** (следующий свободный v112), VERSION `1.25.0`.
 > ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
 > Активная программа: **GYM-GRADE** — `HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `HANDOFF_isl_tail.md`. AIR-хвост: `HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
@@ -14,7 +13,7 @@
 
 1. ~~BACKUP~~ — ✅ `22f7638`, выкачен в 1.24.3. Остаток DoD-5 — полевой DS1 + полевой чек экспорта/напоминалки за Gio (можно на проде).
 2. ~~DRUM-PERF-2~~ — ✅ код НА ПРОДЕ (1.24.4), флаг `drum-window` **OFF**. Остаток — полевой чек за Gio на проде: включить флаг (`Flags.setFlag('drum-window', true)`), покрутить барабан, при ОК — дефолт ON.
-2-bis. ~~FAB-VIDEO~~ — ✅ код в trunk (`9a61f96`), флаг `fab-video` **OFF**, НЕ выкачен. Остаток: релизный поезд v111 (бамп VERSION) → полевой чек за Gio (`Flags.setFlag('fab-video', true)` — звук/синхрон/батарея/маскот), при ОК — дефолт ON. Отдельная карточка: island-сцена «осуждающий взгляд за 5с до конца отдыха» (блокер — нет кадра «взгляда»; механика: событие ap-rest-warning из dynamic-island.js:411 + seek панды по тайм-коду).
+2-bis. ~~FAB-VIDEO~~ — ✅ НА ПРОДЕ (1.25.0), флаг `fab-video` **OFF**. Остаток — полевой чек за Gio на проде: `Flags.setFlag('fab-video', true)` — звук/синхрон/уши/батарея/маскот-интро на телефоне, при ОК — дефолт ON. Отдельная карточка: island-сцена «осуждающий взгляд за 5с до конца отдыха» (блокер — нет кадра «взгляда»; механика: событие ap-rest-warning из dynamic-island.js:411 + seek панды по тайм-коду).
 3. **P-1 ISL-REST-BTN** (gym_grade, полиш) — визуально легче rest-кнопки.
 4. **AIR-4** (air_refactor) — sweep + тест-гард backdrop-filter + DESIGN.md sync; защищает DoD-2.
 5. **AIR-2b** (next_cards) — body-stats таб-каскад, хвост DoD-2.
