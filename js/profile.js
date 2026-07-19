@@ -169,6 +169,25 @@ export const Profile = (() => {
     load();
   }
 
+  /** Тумблер живой панды (флаг 'fab-video' на устройстве) — полевой чек без консоли. */
+  async function toggleFabVideo() {
+    const { flag, setFlag } = await import('./flags.js');
+    const next = !flag('fab-video');
+    setFlag('fab-video', next);
+    if (next) {
+      // маскот/FAB должны быть видимы, иначе включение «в пустоту»
+      await DB.Settings.set('ai-panda-hidden', false);
+      await DB.Settings.set('show-mascot', 'on');
+    }
+    // применить вживую: пересобрать FAB под новый флаг
+    const { Claude } = await import('./claude.view.js');
+    document.getElementById('claude-fab-container')?.remove();
+    await Claude.renderFAB();
+    const ru = document.documentElement.lang === 'ru';
+    Toast.show(next ? (ru ? 'Живой маскот включён' : 'Live mascot on') : (ru ? 'Живой маскот выключен' : 'Live mascot off'), 'success');
+    load();
+  }
+
 async function setEngine(engine) {
     const { getPrivacyMode } = await import('./privacy.store.js');
     const mode = getPrivacyMode();
@@ -389,7 +408,7 @@ async function setEngine(engine) {
 
   return {
     load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
-    togglePanda, setLang, setEngine, setTrainingMode, setGeminiKey,
+    togglePanda, toggleFabVideo, setLang, setEngine, setTrainingMode, setGeminiKey,
     validateGeminiKey, setAnthropicKey, validateAnthropicKey, toggleKeyVisibility,
     setSessionTime, exportData, exportCsv, importData, toggleReminder,
     _onImportFile, clearAllData, saveInjuries,

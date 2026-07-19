@@ -17,6 +17,7 @@ import { AthleteRoom } from './shared/athlete-room.js';
 import { Integrity } from './shared/integrity.js';
 import { initLocale } from './locale.store.js';
 import { State } from './workout.store.js';
+import { VERSION } from './version.js';
 
 /* ── Lazy-loaded modules ── */
 async function _loadWorkout() {
@@ -339,7 +340,9 @@ new MutationObserver((mutations) => {
 
 /* ── Service Worker ── */
 if ('serviceWorker' in navigator) {
+  let _swReg = null;
   navigator.serviceWorker.register('/sw.js').then((reg) => {
+    _swReg = reg;
     // Coming back online is the one moment a stale SW is most likely to be
     // sitting around — nudge it to check for a fresh version.
     window.addEventListener('online', () => reg.update());
@@ -376,6 +379,33 @@ if ('serviceWorker' in navigator) {
       }
     }, 5000);
   });
+
+  // SW-UX: версия-поллинг — на старте и при возврате из фона сверяем VERSION
+  // с сервером (cache:no-store, мимо SW-кеша и HTTP-кеша). Свежее на сервере →
+  // будим SW (путь controllerchange выше применит с гардом тренировки); если
+  // SW за 8с так и не сменился — action-тост с ручным reload (network-first
+  // для кода гарантирует свежий бандл даже при упрямом SW).
+  let _lastVerCheck = 0;
+  let _promptedVer = '';
+  const _checkVersion = async () => {
+    if (Date.now() - _lastVerCheck < 5 * 60 * 1000) return;
+    _lastVerCheck = Date.now();
+    _swReg?.update().catch(() => {});
+    try {
+      const res = await fetch('/js/version.js?uc=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) return;
+      const remote = (await res.text()).match(/VERSION = '([^']+)'/)?.[1];
+      if (!remote || remote === VERSION || _promptedVer === remote) return;
+      _promptedVer = remote;
+      if (State.phase === 'active') return; // после тренировки SW-путь предложит сам
+      setTimeout(() => {
+        if (_swReloaded) return; // SW уже применил обновление сам
+        Toast.show(`Update available — v${remote}`, 'info', 0, { action: { label: 'Update', onClick: _applyUpdate } });
+      }, 8000);
+    } catch { /* офлайн — молчим */ }
+  };
+  setTimeout(_checkVersion, 4000); // не толкаемся с первым рендером
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) _checkVersion(); });
 }
 
 /* ── Storage Persistence (Phase 5) ── */

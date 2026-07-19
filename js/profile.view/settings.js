@@ -2,6 +2,7 @@
 import { esc } from '../shared/utils.js';
 import { t } from '../locale.store.js';
 import { on, onInput, onBlur } from '../events.js';
+import { flag } from '../flags.js';
 
 const P = () => window.Profile;
 on('settings:adjustRest',  (el) => P().adjustRest(+el.dataset.amt));
@@ -14,6 +15,7 @@ on('settings:setMode',     (el) => P().setTrainingMode(el.dataset.mode));
 on('settings:setTime',     (el) => P().setSessionTime(+el.dataset.time));
 on('settings:setEngine',   (el) => P().setEngine(el.dataset.engine));
 on('settings:togglePanda', () => P().togglePanda());
+on('settings:toggleFabVideo', () => P().toggleFabVideo());
 on('settings:toggleKeyVis',() => P().toggleKeyVisibility());
 on('settings:syncToggle',  (el) => el.dataset.sync === 'offline' ? P().syncConnect() : P().syncDisconnect());
 on('settings:exportData',  () => P().exportData());
@@ -215,6 +217,18 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           </div>
           <div class="switch-wrap" data-action="settings:togglePanda">
             <div class="switch ${settings['ai-panda-hidden'] ? '' : 'on'}" id="sw-panda">
+              <div class="switch-thumb"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; padding: 4px 0;">
+          <div class="pref-info">
+            <div class="pref-title">${lang === 'ru' ? 'Живой маскот (бета)' : 'Live Mascot (beta)'}</div>
+            <div class="pref-sub">${lang === 'ru' ? 'Видео-панда с озвучкой' : 'Panda video with voice'}</div>
+          </div>
+          <div class="switch-wrap" data-action="settings:toggleFabVideo">
+            <div class="switch ${flag('fab-video') ? 'on' : ''}" id="sw-fab-video">
               <div class="switch-thumb"></div>
             </div>
           </div>
