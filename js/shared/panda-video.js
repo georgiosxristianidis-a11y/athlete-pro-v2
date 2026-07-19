@@ -7,6 +7,7 @@
    ════════════════════════════════════════════════ */
 
 export const PANDA_VIDEO_SRC = 'assets/panda-voice.mp4';
+export const PANDA_POSTER_SRC = 'assets/panda-poster.jpg';
 
 /* Тайм-коды ролика (10.0с): панда поднимает голову на ~5.6–5.8с —
    наезд стартует на 5.5с и достигает пика, когда взгляд уже в камеру. */
@@ -26,7 +27,15 @@ const OUT_DUR = 0.8;
 export function initPandaVideo(host, videoEl) {
   const v = videoEl;
   if (!(v instanceof HTMLVideoElement)) return;
-  v.play().catch(() => { /* autoplay blocked (e.g. Low Power Mode) — static plate stays */ });
+  v.play().catch(() => { /* autoplay blocked (Low Power / Data Saver) — poster stays, unlock below */ });
+
+  // Энергосбережение/экономия трафика блокируют автоплей даже muted-видео —
+  // первый же тап по экрану (жест) снимает блокировку и запускает панду.
+  const unlock = () => {
+    if (!host.isConnected) return;
+    if (v.paused && !document.hidden) v.play().catch(() => {});
+  };
+  document.addEventListener('pointerdown', unlock, { once: true, passive: true });
 
   // Батарея: видео играет только когда его реально видно.
   const onVis = () => {
