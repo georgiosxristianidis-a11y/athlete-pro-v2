@@ -7,6 +7,7 @@ import { State as WorkoutState } from './workout.store.js';
 import { Toast } from './shell.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
+import { initPandaVideo, togglePandaSound, PANDA_VIDEO_SRC } from './shared/panda-video.js';
 
 on('claude:dismissFAB', (el, e) => { e.stopPropagation(); window.Claude?.dismissFAB(); });
 
@@ -18,12 +19,10 @@ on('claude:toggleSound', (el, e) => {
   const v = document.getElementById('claude-fab-video');
   if (!(v instanceof HTMLVideoElement)) return;
   haptic(10);
-  v.muted = !v.muted;
-  v.volume = 1;
-  v.play().catch(() => {});
-  el.innerHTML = v.muted ? ICON_SND_OFF : ICON_SND_ON;
-  el.classList.toggle('on', !v.muted);
-  el.setAttribute('aria-pressed', v.muted ? 'false' : 'true');
+  const muted = togglePandaSound(v);
+  el.innerHTML = muted ? ICON_SND_OFF : ICON_SND_ON;
+  el.classList.toggle('on', !muted);
+  el.setAttribute('aria-pressed', muted ? 'false' : 'true');
 });
 
 /**
@@ -86,7 +85,7 @@ export const Claude = (() => {
       const content = container.querySelector('.fab-content');
       if (content) {
         if (videoMode) {
-          content.innerHTML = `<video id="claude-fab-video" class="fab-video" autoplay loop muted playsinline preload="auto" src="assets/panda-voice.mp4" aria-hidden="true"></video>`;
+          content.innerHTML = `<video id="claude-fab-video" class="fab-video" autoplay loop muted playsinline preload="auto" src="${PANDA_VIDEO_SRC}" aria-hidden="true"></video>`;
         } else {
           content.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
             <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/>
@@ -96,20 +95,27 @@ export const Claude = (() => {
 
     fab.addEventListener('click', open);
     document.body.appendChild(container);
-    if (videoMode) _initFabVideo(container);
+    if (videoMode) initPandaVideo(container, container.querySelector('#claude-fab-video'));
 
     _initDraggable(container);
     _snapFAB(container);
     window.addEventListener('resize', () => _snapFAB(container));
 
+    // Скрыт на s-intel и на s-home, пока там живёт большой маскот-видео
+    // (иначе две панды на экране); дашборд шлёт 'ap-mascot-video' при
+    // рендере/уходе маскота.
+    let screenId = document.querySelector('.screen.active')?.id || 's-home';
+    const applyVis = () => {
+      const mascotAlive = !!document.querySelector('.empty-dash-mascot video');
+      container.style.display = (screenId === 's-intel' || (screenId === 's-home' && mascotAlive)) ? 'none' : '';
+    };
     window.addEventListener('ap-nav-change', (e) => {
       // @ts-ignore
-      if (e.detail && e.detail.id === 's-intel') {
-        container.style.display = 'none';
-      } else {
-        container.style.display = '';
-      }
+      if (e.detail && e.detail.id) screenId = e.detail.id;
+      applyVis();
     });
+    window.addEventListener('ap-mascot-video', applyVis);
+    applyVis();
   }
 
   function _snapFAB(el) {
@@ -127,46 +133,6 @@ export const Claude = (() => {
     } else {
       el.style.right = '14px';
     }
-  }
-
-  /**
-   * Live panda mode (flag 'fab-video'): timecode-driven zoom + background pause.
-   * The zoom follows video.currentTime, so it stays in sync with the voiceover
-   * even across pause/resume. GPU transform only — no relayout.
-   */
-  function _initFabVideo(container) {
-    const v = container.querySelector('#claude-fab-video');
-    if (!(v instanceof HTMLVideoElement)) return;
-    v.play().catch(() => { /* autoplay blocked (e.g. Low Power Mode) — gradient plate stays */ });
-
-    const onVis = () => {
-      if (!container.isConnected) { document.removeEventListener('visibilitychange', onVis); return; }
-      if (document.hidden) v.pause();
-      else v.play().catch(() => {});
-    };
-    document.addEventListener('visibilitychange', onVis);
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const ZOOM_START = 4.5, ZOOM_SCALE = 1.35, IN_DUR = 1.2, OUT_DUR = 0.8;
-    const ease = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-    let last = '';
-    const tick = () => {
-      if (!container.isConnected) return;
-      requestAnimationFrame(tick);
-      if (v.readyState < 2) return;
-      const dur = v.duration || 10;
-      const t = v.currentTime;
-      let s = 1;
-      if (t >= ZOOM_START) {
-        const holdEnd = dur - OUT_DUR;
-        if (t < ZOOM_START + IN_DUR) s = 1 + (ZOOM_SCALE - 1) * ease((t - ZOOM_START) / IN_DUR);
-        else if (t < holdEnd) s = ZOOM_SCALE;
-        else s = 1 + (ZOOM_SCALE - 1) * (1 - ease(Math.min(1, (t - holdEnd) / OUT_DUR)));
-      }
-      const next = `translateZ(0) scale(${s.toFixed(4)})`;
-      if (last !== next) { last = next; v.style.transform = next; }
-    };
-    requestAnimationFrame(tick);
   }
 
   function _initDraggable(el) {

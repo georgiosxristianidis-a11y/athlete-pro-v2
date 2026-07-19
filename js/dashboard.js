@@ -12,11 +12,31 @@ import { Toast } from './shell.js';
 import { fmtVol, fmtDuration, fmtDate } from './shared/format.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { on } from './events.js';
+import { flag } from './flags.js';
+import { initPandaVideo, togglePandaSound, PANDA_VIDEO_SRC } from './shared/panda-video.js';
 
 on('dash:directLaunch',  (el) => window.Dashboard.directLaunch(el.dataset.type));
 on('dash:weeklySummary', () => showWeeklySummary());
 on('dash:navStats',      () => window.Nav.go('s-stats'));
 on('dash:closeMascot',   () => window.Dashboard.closeMascot());
+on('dash:mascotSound',   (el, e) => {
+  e.stopPropagation();
+  const v = el.querySelector('video');
+  if (!(v instanceof HTMLVideoElement)) return;
+  window.haptic?.(10);
+  const muted = togglePandaSound(v);
+  el.querySelector('.empty-dash-mascot')?.classList.toggle('sound-on', !muted);
+});
+
+// Экраны прячутся через opacity, не display — IntersectionObserver в
+// panda-video это не ловит, поэтому маскот-видео паузим по навигации сами.
+window.addEventListener('ap-nav-change', (e) => {
+  const v = document.querySelector('.empty-dash-mascot video');
+  if (!(v instanceof HTMLVideoElement)) return;
+  // @ts-ignore
+  if (e.detail && e.detail.id === 's-home') { if (!document.hidden) v.play().catch(() => {}); }
+  else v.pause();
+});
 on('dash:askAI',         () => askAIAboutSummary());
 on('dash:closeModal',    (el) => el.closest('.modal-overlay')?.remove());
 
@@ -183,19 +203,23 @@ export const Dashboard = (() => {
   }
 
   function _buildEmptyState(showMascot = true) {
+    const videoMode = flag('fab-video');
+    const mascotInner = videoMode
+      ? `<video autoplay loop muted playsinline preload="auto" src="${PANDA_VIDEO_SRC}" aria-hidden="true"></video>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent, #00e676)" stroke-width="1.5" stroke-linejoin="round" width="64" height="64" style="filter: drop-shadow(0 0 12px rgba(0, 230, 118, 0.4))">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>`;
     return `
       <div class="empty-dashboard">
         ${showMascot ? `
-        <div class="empty-dash-mascot-wrap" id="mascot-draggable">
+        <div class="empty-dash-mascot-wrap" id="mascot-draggable" ${videoMode ? 'data-action="dash:mascotSound" title="Sound"' : ''}>
           <button class="mascot-close-btn" data-action="dash:closeMascot" title="Close mascot">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
           <div class="empty-dash-mascot" style="display:flex;align-items:center;justify-content:center;height:100%;width:100%;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent, #00e676)" stroke-width="1.5" stroke-linejoin="round" width="64" height="64" style="filter: drop-shadow(0 0 12px rgba(0, 230, 118, 0.4))">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-            </svg>
+            ${mascotInner}
           </div>
         </div>` : ''}
         <div class="empty-dash-title">Ready to crush it?</div>
@@ -221,10 +245,15 @@ export const Dashboard = (() => {
     let isDragging = false;
     let startX = 0, startY = 0;
     let currentX = 0, currentY = 0;
+    let gestureX = 0, gestureY = 0;
+    let moved = false;
 
     el.addEventListener('pointerdown', (e) => {
       if (e.target.closest('.mascot-close-btn')) return;
       isDragging = true;
+      moved = false;
+      gestureX = e.clientX;
+      gestureY = e.clientY;
       startX = e.clientX - currentX;
       startY = e.clientY - currentY;
       el.style.transition = 'none';
@@ -233,6 +262,8 @@ export const Dashboard = (() => {
 
     window.addEventListener('pointermove', (e) => {
       if (!isDragging) return;
+      // 5px threshold: реальный драг не должен превращаться в тап по звуку
+      if (!moved && (Math.abs(e.clientX - gestureX) > 5 || Math.abs(e.clientY - gestureY) > 5)) moved = true;
       currentX = e.clientX - startX;
       currentY = e.clientY - startY;
       el.style.transform = `translate(${currentX}px, ${currentY}px)`;
@@ -243,6 +274,14 @@ export const Dashboard = (() => {
       isDragging = false;
       el.style.transition = 'transform 0.4s var(--ease-std)';
     });
+
+    el.addEventListener('click', (e) => {
+      if (moved) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        moved = false;
+      }
+    }, true);
   }
 
   /**
@@ -253,7 +292,10 @@ export const Dashboard = (() => {
     if (el) {
       el.style.opacity = '0';
       el.style.transform = 'scale(0.8)';
-      setTimeout(() => el.remove(), 400);
+      setTimeout(() => {
+        el.remove();
+        window.dispatchEvent(new CustomEvent('ap-mascot-video'));
+      }, 400);
     }
     await DB.Settings.set('show-mascot', 'off');
     window.Toast?.show('Mascot hidden', 'info');
@@ -605,6 +647,9 @@ export const Dashboard = (() => {
     if (!allWorkouts.length) {
       screen.innerHTML = _buildEmptyState(showMascot);
       _initMascotDrag();
+      const mascotWrap = document.getElementById('mascot-draggable');
+      if (mascotWrap) initPandaVideo(mascotWrap, mascotWrap.querySelector('video'));
+      window.dispatchEvent(new CustomEvent('ap-mascot-video'));
       screen.querySelector('.btn-start-workout')?.addEventListener('click', () => {
         if (window.haptic) window.haptic([15, 50, 15]);
         window.Toast.show("Let's go!", 'success');
@@ -612,6 +657,9 @@ export const Dashboard = (() => {
       });
       return;
     }
+
+    // Маскот пустого дашборда ушёл (первая тренировка записана) — FAB может вернуться
+    window.dispatchEvent(new CustomEvent('ap-mascot-video'));
 
     // Determine nextType based on last workout (DB already sorted)
     const lastWorkout = allWorkouts[0];

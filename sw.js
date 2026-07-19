@@ -66,6 +66,7 @@ const ASSETS = [
   '/js/shared/integrity.js',
   '/js/shared/island-tracker.js',
   '/js/shared/lww.js',
+  '/js/shared/panda-video.js',
   '/js/shared/ppl-gauge.js',
   '/js/shared/sparkline.js',
   '/js/shared/spring.js',

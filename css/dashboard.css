@@ -340,6 +340,22 @@
   height: 100%;
   object-fit: cover;
   pointer-events: none;
+  transform-origin: 50% 32%;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .empty-dash-mascot video {
+    transform: none !important;
+    will-change: auto;
+  }
+}
+/* Тап по маскоту = тумблер озвучки (флаг 'fab-video') */
+.empty-dash-mascot-wrap[data-action] { cursor: pointer; }
+.empty-dash-mascot.sound-on {
+  border-color: color-mix(in srgb, var(--c-accent) 45%, transparent);
+  box-shadow:
+    0 0 40px color-mix(in srgb, var(--c-accent) 20%, transparent),
+    0 8px 32px color-mix(in srgb, var(--c-black) 40%, transparent);
 }
 
 .mascot-close-btn {
