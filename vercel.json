@@ -13,7 +13,8 @@
           "css/**",
           "js/**",
           "icons/**",
-          "fonts/**"
+          "fonts/**",
+          "assets/**"
         ]
       }
     }

@@ -40,6 +40,14 @@ const DEFAULTS = {
   // Kill switch on device: Flags.setFlag('drum-window', false)
   'drum-window': false,
 
+  // FAB-VIDEO: Claude FAB renders the live panda video with voiceover instead
+  // of the SVG icon. Audio lives inside the mp4 track (one <video> = picture
+  // and voice always in sync); the zoom is driven by video.currentTime, not
+  // timers. Starts muted (autoplay policy), sound toggled by the mini button.
+  // Default OFF until Gio's field check.
+  // Kill switch on device: Flags.setFlag('fab-video', false)
+  'fab-video': false,
+
   // ISL-PROFILE: Dynamic Island layout profiles. ON exposes the profile
   // system (Minimal-DHL default + Apple legacy), chosen in Island Settings
   // and persisted in island-profile.store.js. Kill switch → island reverts

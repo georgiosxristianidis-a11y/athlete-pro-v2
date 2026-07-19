@@ -6,8 +6,25 @@ import { toUserMessage } from './shared/errors-ui.js';
 import { State as WorkoutState } from './workout.store.js';
 import { Toast } from './shell.js';
 import { on } from './events.js';
+import { flag } from './flags.js';
 
 on('claude:dismissFAB', (el, e) => { e.stopPropagation(); window.Claude?.dismissFAB(); });
+
+const ICON_SND_ON = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>`;
+const ICON_SND_OFF = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>`;
+
+on('claude:toggleSound', (el, e) => {
+  e.stopPropagation();
+  const v = document.getElementById('claude-fab-video');
+  if (!(v instanceof HTMLVideoElement)) return;
+  haptic(10);
+  v.muted = !v.muted;
+  v.volume = 1;
+  v.play().catch(() => {});
+  el.innerHTML = v.muted ? ICON_SND_OFF : ICON_SND_ON;
+  el.classList.toggle('on', !v.muted);
+  el.setAttribute('aria-pressed', v.muted ? 'false' : 'true');
+});
 
 /**
  * AI Assistant view layer.
@@ -47,12 +64,15 @@ export const Claude = (() => {
     let glowClass = isGemini ? '' : 'ai-glow-selection';
     if (isGemini && !hasKey) glowClass = 'ai-glow-error';
 
+    const videoMode = flag('fab-video');
+
     container.innerHTML = `
       <div style="position:relative; pointer-events:auto">
         <div class="fab-close-btn" data-action="claude:dismissFAB" title="Hide Assistant" style="opacity:1; transform:scale(1); top:-10px; right:-10px; pointer-events:auto">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </div>
-        <button id="claude-fab" class="claude-fab ${isGemini ? 'gemini-mode' : ''} ${glowClass}" aria-label="AI Assistant" style="margin:0">
+        ${videoMode ? `<button type="button" class="fab-sound-btn" data-action="claude:toggleSound" title="Sound" aria-label="Toggle sound" aria-pressed="false" style="top:-10px; left:-10px">${ICON_SND_OFF}</button>` : ''}
+        <button id="claude-fab" class="claude-fab ${isGemini ? 'gemini-mode' : ''} ${glowClass} ${videoMode ? 'video-mode' : ''}" aria-label="AI Assistant" style="margin:0">
           <div class="ai-status-wrap">
             <span class="ai-indicator ${hasKey ? 'active' : 'missing'}"></span>
           </div>
@@ -65,13 +85,18 @@ export const Claude = (() => {
       const fab = container.querySelector('#claude-fab');
       const content = container.querySelector('.fab-content');
       if (content) {
-        content.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
-          <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/>
-        </svg>`;
+        if (videoMode) {
+          content.innerHTML = `<video id="claude-fab-video" class="fab-video" autoplay loop muted playsinline preload="auto" src="assets/panda-voice.mp4" aria-hidden="true"></video>`;
+        } else {
+          content.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+            <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+          </svg>`;
+        }
       }
 
     fab.addEventListener('click', open);
     document.body.appendChild(container);
+    if (videoMode) _initFabVideo(container);
 
     _initDraggable(container);
     _snapFAB(container);
@@ -104,12 +129,52 @@ export const Claude = (() => {
     }
   }
 
+  /**
+   * Live panda mode (flag 'fab-video'): timecode-driven zoom + background pause.
+   * The zoom follows video.currentTime, so it stays in sync with the voiceover
+   * even across pause/resume. GPU transform only — no relayout.
+   */
+  function _initFabVideo(container) {
+    const v = container.querySelector('#claude-fab-video');
+    if (!(v instanceof HTMLVideoElement)) return;
+    v.play().catch(() => { /* autoplay blocked (e.g. Low Power Mode) — gradient plate stays */ });
+
+    const onVis = () => {
+      if (!container.isConnected) { document.removeEventListener('visibilitychange', onVis); return; }
+      if (document.hidden) v.pause();
+      else v.play().catch(() => {});
+    };
+    document.addEventListener('visibilitychange', onVis);
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const ZOOM_START = 4.5, ZOOM_SCALE = 1.35, IN_DUR = 1.2, OUT_DUR = 0.8;
+    const ease = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    let last = '';
+    const tick = () => {
+      if (!container.isConnected) return;
+      requestAnimationFrame(tick);
+      if (v.readyState < 2) return;
+      const dur = v.duration || 10;
+      const t = v.currentTime;
+      let s = 1;
+      if (t >= ZOOM_START) {
+        const holdEnd = dur - OUT_DUR;
+        if (t < ZOOM_START + IN_DUR) s = 1 + (ZOOM_SCALE - 1) * ease((t - ZOOM_START) / IN_DUR);
+        else if (t < holdEnd) s = ZOOM_SCALE;
+        else s = 1 + (ZOOM_SCALE - 1) * (1 - ease(Math.min(1, (t - holdEnd) / OUT_DUR)));
+      }
+      const next = `translateZ(0) scale(${s.toFixed(4)})`;
+      if (last !== next) { last = next; v.style.transform = next; }
+    };
+    requestAnimationFrame(tick);
+  }
+
   function _initDraggable(el) {
     let startX = 0, startY = 0;
     let moved = false;
-    
+
     el.onpointerdown = (e) => {
-      if (e.target.closest('.fab-close-btn')) return;
+      if (e.target.closest('.fab-close-btn') || e.target.closest('.fab-sound-btn')) return;
       e.preventDefault();
       startX = e.clientX;
       startY = e.clientY;
