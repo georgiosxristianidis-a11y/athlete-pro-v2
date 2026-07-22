@@ -13,7 +13,7 @@ import { fmtVol, fmtDuration, fmtDate } from './shared/format.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
-import { initPandaVideo, togglePandaSound, PANDA_VIDEO_SRC } from './shared/panda-video.js';
+import { initPandaVideo, togglePandaSound, PANDA_VIDEO_SRC, PANDA_POSTER_SRC } from './shared/panda-video.js';
 
 on('dash:directLaunch',  (el) => window.Dashboard.directLaunch(el.dataset.type));
 on('dash:weeklySummary', () => showWeeklySummary());
@@ -205,7 +205,7 @@ export const Dashboard = (() => {
   function _buildEmptyState(showMascot = true) {
     const videoMode = flag('fab-video');
     const mascotInner = videoMode
-      ? `<video autoplay loop muted playsinline preload="auto" src="${PANDA_VIDEO_SRC}" aria-hidden="true"></video>`
+      ? `<video autoplay loop muted playsinline preload="auto" src="${PANDA_VIDEO_SRC}" poster="${PANDA_POSTER_SRC}" aria-hidden="true"></video>`
       : `<svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent, #00e676)" stroke-width="1.5" stroke-linejoin="round" width="64" height="64" style="filter: drop-shadow(0 0 12px rgba(0, 230, 118, 0.4))">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
             </svg>`;

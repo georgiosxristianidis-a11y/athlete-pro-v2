@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v112';
+const CACHE_NAME = 'athlete-pro-v113';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -116,6 +116,7 @@ const ASSETS = [
   '/icons/push.svg',
   '/assets/panda-idle.mp4',
   '/assets/panda-idle.webm',
+  '/assets/panda-poster.jpg',
   '/assets/panda-voice.mp4',
   '/fonts/instrument-sans-latin-ext.woff2',
   '/fonts/instrument-sans-latin.woff2',
