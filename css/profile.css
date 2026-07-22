@@ -193,7 +193,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border-radius: 16px;
+  border-radius: var(--r-l);
   font-family: var(--font-heading);
   font-weight: 800;
   border: 1.5px solid var(--c-border);
@@ -328,7 +328,7 @@
 .switch {
   width: 54px;   /* Increased length */
   height: 28px;  /* Decreased height (~5-10% for sleeker look) */
-  border-radius: 14px;
+  border-radius: var(--r-m);
   background: rgba(255, 255, 255, 0.1);
   border: none;
   position: relative;
@@ -378,7 +378,7 @@
 .pref-icon-box {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--r-s);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -458,7 +458,7 @@
   gap: 10px;
   background: rgba(255, 77, 136, 0.05);
   border: 1.2px solid rgba(255, 77, 136, 0.3);
-  border-radius: 12px;
+  border-radius: var(--r-m);
   color: var(--c-red);
   font-size: 13px;          
   font-weight: 600;
@@ -520,7 +520,7 @@
 .pp-avatar-v2 {
   width: 72px;
   height: 72px;
-  border-radius: 24px;
+  border-radius: var(--r-xxl);
   background: var(--c-bg-3);
   border: 1.5px solid var(--c-border);
   display: flex;
@@ -582,7 +582,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   border: 1px solid;
 }
 
@@ -592,7 +592,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   background: var(--c-accent-bg);
   color: var(--c-accent);
   border: 1px solid rgba(0,230,118,0.2);

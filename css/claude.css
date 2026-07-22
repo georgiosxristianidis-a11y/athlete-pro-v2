@@ -194,14 +194,14 @@
   position: absolute;
   inset: 0;
   z-index: 600;
-  border-radius: 24px;
+  border-radius: var(--r-xxl);
   overflow: hidden;
 }
 /* Hard cap: sheet never wider than mobile column even when overlay is body-mounted */
 .claude-sheet {
   max-width: 412px;
   width: 100%;
-  border-radius: 24px 24px 0 0;
+  border-radius: var(--r-xxl) var(--r-xxl) 0 0;
 }
 .claude-overlay.visible {
   background: color-mix(in srgb, var(--c-bg) 72%, transparent);
@@ -210,7 +210,7 @@
   width: 100%;
   background: var(--c-bg-2);
   border-top: 1px solid var(--c-border);
-  border-radius: 24px 24px 0 0;
+  border-radius: var(--r-xxl) var(--r-xxl) 0 0;
   padding: 12px var(--sp-2) 0;
   max-height: 92vh;
   overflow-y: auto;
@@ -240,7 +240,7 @@
   position: relative;
   padding: 4px 8px;
   margin-left: -8px;
-  border-radius: 12px;
+  border-radius: var(--r-m);
   transition: background 0.2s ease;
 }
 .claude-logo-wrap:hover {
@@ -256,7 +256,7 @@
   align-items: center;
   justify-content: center;
   background: var(--c-border);
-  border-radius: 6px;
+  border-radius: var(--r-xs);
   color: var(--c-text-3);
   margin-left: 4px;
   opacity: 0;
@@ -281,7 +281,7 @@
 .claude-sheet .btn-icon-sm {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: var(--r-s);
 }
 
 /* ── Heatmap card ── */
@@ -549,7 +549,7 @@
 .chat-msg {
   max-width: 88%;
   padding: 10px 14px;
-  border-radius: 14px;
+  border-radius: var(--r-m);
   font-size: 13px;
   font-weight: 500;
   line-height: 1.55;
@@ -607,7 +607,7 @@
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  border-radius: 9px;
+  border-radius: var(--r-s);
   background: var(--c-secondary);
   border: none;
   cursor: pointer;

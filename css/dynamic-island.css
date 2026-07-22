@@ -43,7 +43,7 @@
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
   will-change: backdrop-filter;
   border: 1px solid var(--c-border-h);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   height: 32px; /* Prominent idle height */
   width: 120px; /* Prominent idle width */
   overflow: hidden;
@@ -72,7 +72,7 @@
   height: 116px;
   width: calc(100vw - 32px);
   max-width: 400px;
-  border-radius: 24px;
+  border-radius: var(--r-xxl);
 }
 
 /* Any expanded/tall state hangs from the bar top instead of centering — the
@@ -94,7 +94,7 @@
 .island.mode-idle {
   width: 40px;
   height: 40px;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
 }
 .island.mode-idle .island-time,
 .island.mode-idle .island-name-collapsed,
@@ -225,7 +225,7 @@
   max-width: calc(100vw - 32px);
   height: auto;
   min-height: 56px;
-  border-radius: 22px;
+  border-radius: var(--r-xl);
   /* Top padding reserves a centered row for the status dot above the DHL. */
   padding: 16px 18px 9px;
 }
@@ -256,12 +256,12 @@
 .island.timer-mode {
   width: 140px;
   height: 44px;
-  border-radius: 22px;
+  border-radius: var(--r-xl);
 }
 .island.timer-mode.expanded {
   width: 290px;
   height: 62px;
-  border-radius: 24px;
+  border-radius: var(--r-xxl);
 }
 
 /* ── Rest HUD content — two icon buttons, no numeric readout ── */
@@ -289,7 +289,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--c-border-h);
-  border-radius: 11px;
+  border-radius: var(--r-s);
   width: 32px;
   height: 30px;
   padding: 0;
@@ -314,7 +314,7 @@
 .island.finish-mode {
   width: 168px;
   height: 44px;
-  border-radius: 22px;
+  border-radius: var(--r-xl);
 }
 .island-finish {
   position: absolute;
@@ -337,7 +337,7 @@
   width: 100%;
   height: 100%;
   border: none;
-  border-radius: 18px;
+  border-radius: var(--r-l);
   background: var(--c-accent);
   color: var(--c-bg);
   font-size: 13px;
@@ -461,7 +461,7 @@
   gap: 6px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--c-border-h);
-  border-radius: 12px;
+  border-radius: var(--r-m);
   padding: 6px 12px;
   color: var(--c-text-2);
   font-size: 11px;
@@ -505,7 +505,7 @@
   font-size: 10px;
   font-weight: 800;
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: var(--r-xs);
   letter-spacing: 0.05em;
   flex-shrink: 0;
 }
@@ -541,7 +541,7 @@
 }
 .island-progress-fill {
   height: 100%;
-  border-radius: 0 0 20px 20px;
+  border-radius: 0 0 var(--r-xl) var(--r-xl);
   transition: transform 0.5s var(--ease-std);
 }
 

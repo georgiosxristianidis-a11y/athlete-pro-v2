@@ -78,7 +78,7 @@
   padding: 8px;
   background: var(--c-bg-2);
   border: 1px solid var(--c-border);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   transition: opacity var(--t-normal), transform var(--t-normal), background-color var(--t-normal), border-color var(--t-normal), color var(--t-normal);
 }
 
@@ -104,7 +104,7 @@
 .intel-btn-icon {
   width: 40px;
   height: 40px;
-  border-radius: 14px;
+  border-radius: var(--r-m);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -165,7 +165,7 @@
   font-weight: 800;
   text-transform: uppercase;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: var(--r-xs);
   background: var(--c-intel-bg);
   color: var(--c-intel);
 }

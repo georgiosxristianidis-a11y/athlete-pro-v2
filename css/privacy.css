@@ -47,7 +47,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--r-m);
   color: var(--c-text-2);
 }
 .privacy-mode-tag.privacy-mode-cloud {
@@ -70,7 +70,7 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   background: rgba(255, 255, 255, 0.025);
-  border-radius: 12px;
+  border-radius: var(--r-m);
   padding: 4px;
   margin-bottom: var(--sp-2);
 }
@@ -81,7 +81,7 @@
   justify-content: center;
   gap: 4px;
   padding: 10px 4px;
-  border-radius: 9px;
+  border-radius: var(--r-s);
   background: transparent;
   border: 0;
   color: var(--c-text-2);

@@ -167,7 +167,7 @@
   padding: 2px 7px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--c-border);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   letter-spacing: 0.02em;
 }
 
@@ -371,7 +371,7 @@
   padding: 2px 6px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--c-border);
-  border-radius: 7px;
+  border-radius: var(--r-sm);
 }
 
 /* Completion checkmark — shown in completed mode */
