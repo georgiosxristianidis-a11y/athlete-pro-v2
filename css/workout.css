@@ -117,12 +117,12 @@
 }
 
 .week-pill.week-B {
-  border-color: color-mix(in srgb, var(--c-purple) 30%, transparent);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--c-purple) 8%, transparent);
+  border-color: color-mix(in srgb, var(--c-secondary) 30%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c-secondary) 8%, transparent);
 }
 .week-pill.week-B .week-pill-val {
-  color: var(--c-purple);
-  text-shadow: 0 0 8px color-mix(in srgb, var(--c-purple) 40%, transparent);
+  color: var(--c-secondary);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--c-secondary) 40%, transparent);
 }
 
 /* STATS-1 «один герой + живой рельс»: hero = тоннаж (count-up на закрытии
@@ -311,8 +311,8 @@
 .ex-no-db { border-style: dashed !important; opacity: 0.7; }
 
 /* ── Contextual Colors ── */
-[data-day="pull"] .exercise-icon { border-top-color: var(--c-purple); }
-[data-day="legs"] .exercise-icon { border-top-color: var(--c-blue); }
+[data-day="pull"] .exercise-icon { border-top-color: var(--c-pull); }
+[data-day="legs"] .exercise-icon { border-top-color: var(--c-legs); }
 
 .progress-fill { transform-origin: left; transform: scaleX(0); width: 100%; }
 

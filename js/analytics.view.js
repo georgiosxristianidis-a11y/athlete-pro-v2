@@ -26,7 +26,7 @@ on('analytics:calPrev',    () => calPrev());
 on('analytics:calNext',    () => calNext());
 on('analytics:startFirst', () => window.Nav.go('s-train', { force: true }));
 
-// PPL law: push=green (--c-accent) · pull=cyan (--c-blue) · legs=purple (--c-purple).
+// PPL law: push=green (--c-push) · pull=cyan (--c-pull) · legs=purple (--c-legs).
 // Kept as hex because callers append alpha (`${color}20`), which CSS vars can't do.
 const TYPE_COLOR = {
   push: '#00e676',
@@ -387,7 +387,7 @@ function _renderORMList(orms) {
     <div class="orm-row stagger-item" style="animation-delay: ${0.2 + i * 0.05}s">
       <div class="orm-name">${esc(o.id)}</div>
       <div class="orm-val">${o.value}<span class="orm-unit">kg</span></div>
-      <div class="orm-bar-wrap"><div class="orm-bar-fill" id="an-orm-bar-${i}" style="background:linear-gradient(90deg, var(--c-purple), #8b5cf6)"></div></div>
+      <div class="orm-bar-wrap"><div class="orm-bar-fill" id="an-orm-bar-${i}" style="background:linear-gradient(90deg, var(--c-legs), var(--c-legs))"></div></div>
     </div>`).join('');
 
   // Spring animation for bars

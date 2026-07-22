@@ -478,7 +478,7 @@
 .top-lift-val {
   font-size: 18px;
   font-weight: 600;
-  color: var(--c-purple);
+  color: var(--c-secondary);
   font-variant-numeric: tabular-nums;
 }
 
@@ -493,7 +493,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--c-purple);
+  background: var(--c-secondary);
   animation: ai-bounce 1.2s ease-in-out infinite;
   opacity: 0.5;
 }
@@ -556,7 +556,7 @@
 }
 .chat-msg.user-msg {
   align-self: flex-end;
-  background: var(--c-purple-bg);
+  background: var(--c-secondary-bg);
   border: 1px solid color-mix(in srgb, var(--c-secondary) 20%, transparent);
   color: var(--c-text-1);
   border-bottom-right-radius: 4px;
@@ -598,7 +598,7 @@
   font-weight: 500;
   color: var(--c-text-1);
   font-family: 'Manrope', sans-serif;
-  caret-color: var(--c-purple);
+  caret-color: var(--c-secondary);
 }
 .chat-input::placeholder {
   color: var(--c-text-3);
@@ -608,7 +608,7 @@
   height: 32px;
   flex-shrink: 0;
   border-radius: 9px;
-  background: var(--c-purple);
+  background: var(--c-secondary);
   border: none;
   cursor: pointer;
   display: flex;
@@ -619,7 +619,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 .chat-send-btn:active {
-  background: var(--c-purple);
+  background: var(--c-secondary);
   transform: scale(0.9);
 }
 .chat-send-btn:disabled {
@@ -628,7 +628,7 @@
 }
 @media (hover: hover) {
   .chat-send-btn:hover:not(:disabled) {
-    background: var(--c-purple);
+    background: var(--c-secondary);
   }
 }
 

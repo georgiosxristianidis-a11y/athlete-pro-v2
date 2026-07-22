@@ -69,7 +69,7 @@ export function renderBento(workouts, dots, lang) {
       val: totalHrs || '—',
       lbl: ru ? 'Часы' : 'Hours',
       sub: ru ? 'тренировок' : 'trained',
-      color: 'var(--c-purple)',
+      color: 'var(--c-secondary)',
       glow: 'var(--glow-purple-md)',
     },
   ];

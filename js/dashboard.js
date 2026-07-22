@@ -506,7 +506,7 @@ export const Dashboard = (() => {
         </div>
         <div class="orm-val">${o.value}<span class="orm-unit">kg</span>${deltaHtml}</div>
         <div class="orm-bar-wrap">
-          <div class="orm-bar-fill" id="dash-orm-bar-${i}" style="background:var(--c-purple)"></div>
+          <div class="orm-bar-fill" id="dash-orm-bar-${i}" style="background:var(--c-legs)"></div>
         </div>
       </div>`;
         }

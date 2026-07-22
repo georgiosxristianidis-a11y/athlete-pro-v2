@@ -118,7 +118,7 @@ function _stepGoal(ru) {
       
       <div style="display:flex; flex-direction:column; gap:12px; flex:1;">
         ${_choiceCard('strength', SVG.strength, ru ? 'Сила' : 'Strength', ru ? 'Максимальные веса, 1-5 повторений.' : 'Maximal weight, 1–5 reps.', 'var(--c-accent)')}
-        ${_choiceCard('hypertrophy', SVG.hypertrophy, ru ? 'Масса' : 'Hypertrophy', ru ? 'Объем и рост мышц, 6-12 повторений.' : 'Muscle size and volume, 6–12 reps.', 'var(--c-purple)')}
+        ${_choiceCard('hypertrophy', SVG.hypertrophy, ru ? 'Масса' : 'Hypertrophy', ru ? 'Объем и рост мышц, 6-12 повторений.' : 'Muscle size and volume, 6–12 reps.', 'var(--c-secondary)')}
         ${_choiceCard('endurance', SVG.endurance, ru ? 'Выносливость' : 'Endurance', ru ? 'Кондиции и тонус, 15+ повторений.' : 'Conditioning and stamina, 15+ reps.', 'var(--c-blue)')}
       </div>
       
@@ -148,7 +148,7 @@ function _stepExp(ru) {
       <div style="display:grid; gap:var(--sp-1)">
         ${_choiceCard('beginner', SVG.beginner, ru ? 'Новичок' : 'Beginner', ru ? 'До 1 года' : 'Under 1 year', 'var(--c-accent)')}
         ${_choiceCard('intermediate', SVG.intermediate, ru ? 'Средний' : 'Intermediate', ru ? '1–3 года' : '1–3 years', 'var(--c-amber)')}
-        ${_choiceCard('advanced', SVG.advanced, ru ? 'Продвинутый' : 'Advanced', ru ? '3+ года' : '3+ years', 'var(--c-purple)')}
+        ${_choiceCard('advanced', SVG.advanced, ru ? 'Продвинутый' : 'Advanced', ru ? '3+ года' : '3+ years', 'var(--c-secondary)')}
       </div>
     </div>
     ${_navButtons(ru, !!_data.exp)}

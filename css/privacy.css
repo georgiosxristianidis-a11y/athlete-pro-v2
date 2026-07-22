@@ -20,7 +20,7 @@
 }
 .privacy-indicator[hidden] { display: none; }
 .privacy-indicator.mode-anon {
-  color: var(--c-purple);
+  color: var(--c-secondary);
   background: rgba(139, 92, 246, 0.08);
 }
 .privacy-indicator.mode-airgap {
@@ -55,7 +55,7 @@
 }
 .privacy-mode-tag.privacy-mode-anon {
   background: rgba(139, 92, 246, 0.10);
-  color: var(--c-purple);
+  color: var(--c-secondary);
 }
 .privacy-mode-tag.privacy-mode-airgap {
   background: rgba(0, 230, 118, 0.10);
@@ -116,7 +116,7 @@
   text-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
 }
 .privacy-seg-btn[data-mode="anon"].active {
-  color: var(--c-purple);
+  color: var(--c-secondary);
   background: linear-gradient(
     180deg,
     rgba(139, 92, 246, 0.18) 0%,
