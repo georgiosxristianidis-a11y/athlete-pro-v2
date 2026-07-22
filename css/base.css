@@ -154,8 +154,6 @@
   --c-secondary-bg: rgba(139, 92, 246, 0.12);
 
   /* ── SEMANTIC (reserved — not for decoration) ── */
-  --c-purple: #8b5cf6;            /* Legs (PPL) — shares the brand violet */
-  --c-purple-bg: rgba(139, 92, 246, 0.12);
   --c-blue: #00b8d4;              /* Pull (PPL) / info — Deep Cyan */
   --c-blue-bg: rgba(0, 184, 212, 0.12);
   --c-gemini: #448aff;            /* Gemini engine accent (Claude FAB alt mode) */
@@ -164,10 +162,17 @@
   --c-red: #ff4d88;               /* Error / danger / HR — Elite Pink */
   --c-red-bg: rgba(255, 77, 136, 0.12);
 
-  /* PPL semantic aliases (use these in workout-type code, not raw hues) */
-  --c-push: var(--c-accent);
-  --c-pull: var(--c-blue);
-  --c-legs: var(--c-purple);
+  /* PPL semantic — own literals, decoupled from BRAND (2026-07-22).
+     Push green & Legs violet now match brand by VALUE, not by reference:
+     brand --c-accent / --c-secondary can move without dragging PPL. */
+  --c-push: #00e676;              /* Push — Neon Emerald (own hue) */
+  --c-pull: var(--c-blue);        /* Pull — Deep Cyan */
+  --c-legs: #8b5cf6;              /* Legs — Electric Violet (own hue) */
+  --c-legs-bg: rgba(139, 92, 246, 0.12);
+
+  /* legacy alias — raw Legs hue kept for existing refs; tracks --c-legs */
+  --c-purple: var(--c-legs);
+  --c-purple-bg: var(--c-legs-bg);
 
   /* ── CHROME — Cool Steel B (neutral UI scaffolding) ──
      Lock 2026-06-20: brand --c-accent was over-saturating Push days.
