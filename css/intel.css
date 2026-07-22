@@ -188,7 +188,7 @@
 .intel-log-type { font-weight: 800; text-transform: uppercase; min-width: 32px; }
 .intel-log-type.sys { color: var(--c-intel); }
 .intel-log-type.db { color: var(--c-accent); }
-.intel-log-type.ai { color: var(--c-purple); }
+.intel-log-type.ai { color: var(--c-secondary); }
 .intel-log-type.error { color: var(--c-red); }
 .intel-log-msg { color: var(--c-text-2); }
 

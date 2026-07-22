@@ -955,7 +955,7 @@ button:focus-visible {
 }
 
 .chat-send-btn {
-  background: linear-gradient(180deg, var(--c-purple) 0%, rgba(139, 92, 246, 0.85) 100%) !important;
+  background: linear-gradient(180deg, var(--c-secondary) 0%, rgba(139, 92, 246, 0.85) 100%) !important;
   box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35) !important;
 }
 

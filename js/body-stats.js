@@ -24,13 +24,13 @@ const BS_FIELDS = [
   { id: 'chest',     label: 'Chest',     unit: 'cm', color: 'var(--c-accent)' },  // push
   { id: 'shoulders', label: 'Shoulders', unit: 'cm', color: 'var(--c-accent)' },  // push
   { id: 'waist',     label: 'Waist',     unit: 'cm', color: 'var(--c-text-1)' },  // composition
-  { id: 'hips',      label: 'Hips',      unit: 'cm', color: 'var(--c-purple)' },  // legs
+  { id: 'hips',      label: 'Hips',      unit: 'cm', color: 'var(--c-legs)' },  // legs
   { id: 'arm_l',     label: 'Left Arm',  unit: 'cm', color: 'var(--c-blue)' },    // pull (biceps)
   { id: 'arm_r',     label: 'Right Arm', unit: 'cm', color: 'var(--c-blue)' },    // pull (biceps)
-  { id: 'thigh_l',   label: 'Left Thigh',unit: 'cm', color: 'var(--c-purple)' },  // legs
-  { id: 'thigh_r',   label: 'Right Thigh',unit:'cm', color: 'var(--c-purple)' },  // legs
-  { id: 'calf_l',    label: 'Left Calf', unit: 'cm', color: 'var(--c-purple)' },  // legs
-  { id: 'calf_r',    label: 'Right Calf',unit: 'cm', color: 'var(--c-purple)' },  // legs
+  { id: 'thigh_l',   label: 'Left Thigh',unit: 'cm', color: 'var(--c-legs)' },  // legs
+  { id: 'thigh_r',   label: 'Right Thigh',unit:'cm', color: 'var(--c-legs)' },  // legs
+  { id: 'calf_l',    label: 'Left Calf', unit: 'cm', color: 'var(--c-legs)' },  // legs
+  { id: 'calf_r',    label: 'Right Calf',unit: 'cm', color: 'var(--c-legs)' },  // legs
   { id: 'neck',      label: 'Neck',      unit: 'cm', color: 'var(--c-text-1)' }   // structural
 ];
 

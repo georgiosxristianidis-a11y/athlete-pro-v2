@@ -82,7 +82,7 @@ export function renderPrivacyCard() {
 
       
       <button class="data-btn" data-action="privacy:passport">
-        <div class="data-btn-icon" style="background:var(--c-purple-bg)">
+        <div class="data-btn-icon" style="background:var(--c-secondary-bg)">
           ${_iconPassport()}
         </div>
         <div class="data-btn-info">
@@ -329,7 +329,7 @@ function _modeIcon(mode) {
 }
 
 function _iconPassport() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--c-purple)"
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="var(--c-secondary)"
     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
     <polyline points="14 2 14 8 20 8"/>
