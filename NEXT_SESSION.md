@@ -93,7 +93,7 @@ Sonnet сейчас: **S1 TEST-ISL-GUARD** в полёте (`HANDOFF_isl_tail.md
 6. Без эмодзи в UI и коде — только SVG. Типографика `→ ✓ ·` — не эмодзи.
 7. `island-set-pulse` — НЕ ТРОГАТЬ (жёсткий запрет пользователя).
 
-Полная дизайн-система: `DESIGN.md` + секция Design в `CLAUDE.md` (палитра BRAND/SEMANTIC, PPL-закон, Cool Steel B, 4 камеры ▣▥◆○, i18n через `getLang()`/`isRu()`). ⚠️ DESIGN.md протух (описывает до-OBSIDIAN эпоху) — синхронизация входит в AIR-4.
+Полная дизайн-система: секция Design в `CLAUDE.md` (палитра BRAND/SEMANTIC, PPL-закон, Cool Steel B, 4 камеры ▣▥◆○, i18n через `getLang()`/`isRu()`). Старый `DESIGN.md` (Vantablack, протух) заархивирован → `docs/_archive/DESIGN-vantablack-DEPRECATED.md`.
 
 ---
 

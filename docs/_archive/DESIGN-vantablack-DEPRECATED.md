@@ -1,3 +1,5 @@
+> **DEPRECATED / АРХИВ (2026-07-22).** Этот спек описывает несуществующий «Vantablack» (золото #F2CA50, Plus Jakarta, «границы запрещены») и противоречит живой Obsidian-палитре. Не источник правды. Актуальный дизайн-спек — `CLAUDE.md` § Design. Хранится только для истории.
+
 # Design System: Vantablack Luxury & Performance
 
 ## 1. Overview & Creative North Star
