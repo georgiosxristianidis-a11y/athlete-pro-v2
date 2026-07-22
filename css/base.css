@@ -198,10 +198,14 @@
   --sp-4: 32px;
   --sp-5: 40px;
   --sp-6: 48px;
+  --r-xs: 6px;
+  --r-sm: 8px;
   --r-s: 10px;
   --r-m: 14px;
   --r-l: 18px;
   --r-xl: 22px;
+  --r-xxl: 24px;
+  --r-pill: 999px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --nav-h: 68px;
@@ -215,7 +219,7 @@
   position: relative;
   overflow: hidden;
   background: var(--c-bg-3) !important;
-  border-radius: 6px;
+  border-radius: var(--r-xs);
   color: transparent !important;
   pointer-events: none;
   user-select: none;
@@ -259,7 +263,7 @@
   height: 48px;
   background: var(--c-accent);
   color: var(--c-text-inverse);
-  border-radius: 14px;
+  border-radius: var(--r-m);
   border: none;
   font-family: var(--font-main);
   font-size: 15px;
@@ -283,7 +287,7 @@
   background: transparent;
   border: 1px solid var(--c-border);
   color: var(--c-text-2);
-  border-radius: 14px;
+  border-radius: var(--r-m);
   font-family: var(--font-main);
   font-size: 15px;
   font-weight: 600;
@@ -298,7 +302,7 @@
 .btn-icon-sm {
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   color: var(--c-text-2);
@@ -317,7 +321,7 @@
 .btn-icon-nav {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--r-m);
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   color: var(--c-text-2);
@@ -465,7 +469,7 @@
   -webkit-backdrop-filter: blur(40px) saturate(150%) brightness(1.1);
   will-change: backdrop-filter;
   box-shadow: inset 0 1px 0 var(--c-border);
-  border-radius: 24px 24px 0 0;
+  border-radius: var(--r-xxl) var(--r-xxl) 0 0;
   border-top: 1px solid var(--c-border);
   padding: var(--sp-3) var(--sp-2) calc(var(--sp-3) + var(--safe-bottom));
   animation: sheet-in 0.4s var(--ease-pop) forwards;
@@ -519,7 +523,7 @@
 .confirm-btn {
   flex: 1;
   height: 48px;
-  border-radius: 14px;
+  border-radius: var(--r-m);
   font-size: 16px;
   font-weight: 600;
   border: 1px solid var(--c-border);
@@ -614,7 +618,7 @@ button:focus-visible {
   padding: 6px 12px;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: 12px;
+  border-radius: var(--r-m);
   cursor: pointer;
   transition: transform, opacity var(--t-fast);
 }
@@ -664,7 +668,7 @@ button:focus-visible {
   border: 1px solid var(--c-border);
   color: var(--c-text-1);
   padding: 12px 16px;
-  border-radius: 16px;
+  border-radius: var(--r-l);
   font-size: 13px;
   font-weight: 600;
   display: flex;
@@ -791,7 +795,7 @@ button:focus-visible {
   @media (min-height: 900px) {
     body { padding: 20px; }
     #app {
-      border-radius: 24px;
+      border-radius: var(--r-xxl);
       height: calc(100vh - 40px);
       margin: 0 auto;
     }
@@ -870,7 +874,7 @@ button:focus-visible {
   width: 100%;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: 10px;
+  border-radius: var(--r-s);
   padding: 10px 12px;
   font-size: 14px;
   font-weight: 600;
@@ -894,7 +898,7 @@ button:focus-visible {
   gap: 4px;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: 10px;
+  border-radius: var(--r-s);
   padding: 2px;
 }
 .mini-stepper button {
@@ -905,7 +909,7 @@ button:focus-visible {
   justify-content: center;
   background: none;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   color: var(--c-text-2);
   cursor: pointer;
   transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
@@ -928,7 +932,7 @@ button:focus-visible {
   justify-content: center;
   background: none;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   color: var(--c-text-3);
   cursor: pointer;
   transition: color var(--t-fast), background var(--t-fast), transform var(--t-fast);
@@ -941,7 +945,7 @@ button:focus-visible {
   border: 1px solid rgba(255, 179, 0, 0.30);
   color: var(--c-text-1);
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--r-m);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -1087,7 +1091,7 @@ button:focus-visible {
   align-items: stretch;
   gap: 2px;
   padding: 4px;
-  border-radius: 22px;
+  border-radius: var(--r-xl);
   background: var(--c-bg-2);
   border: 0.8px solid color-mix(in srgb, var(--cp-rim) 45%, transparent);
 }
@@ -1099,7 +1103,7 @@ button:focus-visible {
   background: transparent;
   border: none;
   padding: 6px 6px;
-  border-radius: 18px;
+  border-radius: var(--r-l);
   color: var(--c-text-1);
   font-family: inherit;
   cursor: pointer;

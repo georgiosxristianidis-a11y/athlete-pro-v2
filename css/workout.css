@@ -8,7 +8,7 @@
   height: 200px; padding: 32px 8px 24px;
   background: color-mix(in srgb, var(--c-text-1) 2%, transparent); 
   border: 1px solid var(--c-border); 
-  border-radius: 24px; cursor: pointer; 
+  border-radius: var(--r-xxl); cursor: pointer; 
   transition: opacity 0.3s var(--ease-std), transform 0.3s var(--ease-std), background-color 0.3s var(--ease-std), border-color 0.3s var(--ease-std), color 0.3s var(--ease-std);
   -webkit-tap-highlight-color: transparent; 
   position: relative;
@@ -60,7 +60,7 @@
 .programs-carousel { display: flex; flex-direction: column; gap: var(--sp-2); padding-bottom: var(--sp-2); }
 .program-card {
   transition: transform 0.2s ease, opacity 0.2s ease;
-  will-change: transform; width: 100%; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 24px; padding: 24px; cursor: pointer; }
+  will-change: transform; width: 100%; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xxl); padding: 24px; cursor: pointer; }
 .program-card:active { transform: scale(0.96); }
 .program-type { font-size: 9px; font-weight: 800; color: var(--c-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
 .program-name { font-size: 16px; font-weight: 800; color: var(--c-text-1); letter-spacing: -0.02em; margin-bottom: 2px; }
@@ -83,7 +83,7 @@
   padding: 6px 14px;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   cursor: pointer;
   transition: opacity 0.2s var(--ease-std), transform 0.2s var(--ease-std), background-color 0.2s var(--ease-std), border-color 0.2s var(--ease-std), color 0.2s var(--ease-std);
   -webkit-tap-highlight-color: transparent;
@@ -139,7 +139,7 @@
 .live-rail-seg { flex: 1; height: 4px; border-radius: 2px; background: var(--c-border-h); transition: background 0.3s ease, box-shadow 0.3s ease; }
 .live-rail-seg.done { background: var(--c-accent); box-shadow: 0 0 6px color-mix(in srgb, var(--c-accent) 45%, transparent); }
 
-.exercise-card { background: var(--c-bg-2) !important; border: 1.5px solid var(--c-border); border-radius: 20px; overflow: hidden; margin-bottom: var(--sp-3); transition: transform 0.2s, border-color 0.2s; }
+.exercise-card { background: var(--c-bg-2) !important; border: 1.5px solid var(--c-border); border-radius: var(--r-xl); overflow: hidden; margin-bottom: var(--sp-3); transition: transform 0.2s, border-color 0.2s; }
 .exercise-header { display: flex; align-items: center; padding: 12px var(--sp-2); gap: var(--sp-1); cursor: pointer; min-height: 56px; }
 .exercise-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--c-accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .ex-num { font-size: 14px; font-weight: 800; color: var(--c-text-inverse); opacity: 0.35; }
@@ -151,7 +151,7 @@
 
 /* ── Header Actions — Premium Distribution ── */
 .ex-header-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; padding-left: 20px; padding-right: 4px; flex-shrink: 0; }
-.ex-action-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--c-text-3); cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; border-radius: 10px; opacity: 0.4; font-size: 9px; font-weight: 800; }
+.ex-action-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--c-text-3); cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; border-radius: var(--r-s); opacity: 0.4; font-size: 9px; font-weight: 800; }
 .ex-action-btn:active { transform: scale(0.85); background: var(--c-bg-3); opacity: 1; color: var(--c-text-1); }
 .ex-action-btn.active { color: var(--c-accent); opacity: 0.9; }
 .ex-action-btn.coach { color: var(--c-accent); opacity: 0.7; }
@@ -166,7 +166,7 @@
 
 .set-row { display: grid; grid-template-columns: 20px 1fr 1fr 44px; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 0; }
 .set-num { font-size: 10px; font-weight: 800; color: var(--c-text-3); text-align: center; opacity: 0.35; }
-.set-row.set-active { background: linear-gradient(180deg, color-mix(in srgb, var(--c-text-1) 2%, transparent) 0%, transparent 100%); border-radius: 10px; margin: 0 -8px; padding: 12px 8px; }
+.set-row.set-active { background: linear-gradient(180deg, color-mix(in srgb, var(--c-text-1) 2%, transparent) 0%, transparent 100%); border-radius: var(--r-s); margin: 0 -8px; padding: 12px 8px; }
 
 .stepper-val { font-size: 22px !important; font-weight: 800 !important; letter-spacing: -0.04em !important; color: color-mix(in srgb, var(--c-text-1) 60%, transparent) !important; }
 .set-row.set-active .stepper-val { color: var(--c-text-1) !important; }
@@ -241,7 +241,7 @@
   transform: scale(1.1);
 }
 
-.set-check { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid var(--c-surface-h); background: transparent; cursor: pointer; color: var(--c-text-3); display: flex; align-items: center; justify-content: center; }
+.set-check { width: 44px; height: 44px; border-radius: var(--r-m); border: 1.5px solid var(--c-surface-h); background: transparent; cursor: pointer; color: var(--c-text-3); display: flex; align-items: center; justify-content: center; }
 .set-check.done { background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent); }
 .set-check svg { width: 16px; height: 16px; stroke-width: 2.5; }
 
@@ -252,7 +252,7 @@
   width: 100%;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: 12px;
+  border-radius: var(--r-m);
   padding: 12px 14px;
   font-size: 14px;
   font-weight: 500;
@@ -266,7 +266,7 @@
 .pill-filter {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 7px 14px;
   font-size: 12px;
   font-weight: 700;
@@ -286,7 +286,7 @@
   width: 100%;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: 12px;
+  border-radius: var(--r-m);
   cursor: pointer;
   transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
 }
@@ -297,17 +297,17 @@
 /* GLOW-SL (b): no background was ever set on the base rule, so the native
    <button> UA-default (light grey) showed through at opacity 0.5 as a scrim
    overlapping the dashed row. Explicit transparent background removes it. */
-.add-set-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; background: transparent; border: 1.5px dashed var(--c-border); border-radius: 14px; font-size: 11px; font-weight: 600; color: var(--c-text-3); opacity: 0.5; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s; }
+.add-set-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; background: transparent; border: 1.5px dashed var(--c-border); border-radius: var(--r-m); font-size: 11px; font-weight: 600; color: var(--c-text-3); opacity: 0.5; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s; }
 .add-set-btn:active { background: var(--c-surface); opacity: 1; }
 .add-set-btn svg { width: 14px; height: 14px; }
 
-.btn-add-live-ex { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 24px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 24px; color: var(--c-text-1); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: var(--sp-2); }
+.btn-add-live-ex { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 24px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xxl); color: var(--c-text-1); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: var(--sp-2); }
 .btn-add-live-ex svg { width: 16px; height: 16px; }
 
 /* ── Elite Block Tags ── */
-.ex-block-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--c-text-3); margin: 12px var(--sp-2) 0; padding: 4px 10px; background: var(--c-bg-3); border-radius: 8px; opacity: 0.6; }
+.ex-block-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--c-text-3); margin: 12px var(--sp-2) 0; padding: 4px 10px; background: var(--c-bg-3); border-radius: var(--r-sm); opacity: 0.6; }
 
-.muscle-badge { border-radius: 6px; padding: 2px 6px; font-size: 8px; font-weight: 800; margin-left: 8px; opacity: 0.8; }
+.muscle-badge { border-radius: var(--r-xs); padding: 2px 6px; font-size: 8px; font-weight: 800; margin-left: 8px; opacity: 0.8; }
 .ex-no-db { border-style: dashed !important; opacity: 0.7; }
 
 /* ── Contextual Colors ── */

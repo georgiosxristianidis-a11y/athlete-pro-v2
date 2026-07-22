@@ -108,7 +108,7 @@
   aspect-ratio: 1;
   max-width: 40px;
   max-height: 40px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: var(--c-bg-3);
   border: 1.5px solid var(--c-border);
   display: flex;
