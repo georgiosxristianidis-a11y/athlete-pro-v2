@@ -43,12 +43,8 @@ router.get('/firebase-config', (req, res) => {
     return res.json({ configured: false });
   }
 
-  // 🛡️ API Masking & Basic Origin Check
-  const origin = req.get('origin') || req.get('referer');
-  const isLocal = origin && (origin.includes('localhost') || origin.includes('127.0.0.1'));
-  
-  // Only expose full config if on allowed dev environment or if production logic requires it.
-  // For PWA client, these are public keys, but we minimize exposure.
+  // Firebase client config is inherently public (shipped in every browser bundle);
+  // real access control lives in Firebase Security Rules, not in hiding this response.
   res.json({
     configured: true,
     apiKey: process.env.FIREBASE_API_KEY,
