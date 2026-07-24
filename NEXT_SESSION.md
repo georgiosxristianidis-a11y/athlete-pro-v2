@@ -1,11 +1,27 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-20 (Opus 4.8 — поезд v113 ВЫКАЧЕН).
+> Обновлено: 2026-07-24 (Opus 4.8 — аудит-консолидация ждёт FF, см. блок ниже). Ранее 2026-07-20 (поезд v113 ВЫКАЧЕН).
 > **Trunk: `claude/csp-soft-delete`. Релиз 1.25.2 = `be908bf` НА ПРОДЕ** (origin main == `be908bf`, прод curl-верифай: VERSION 1.25.2, SW v113, `/assets/panda-poster.jpg` 200). ⚠️ Локальный trunk `claude/csp-soft-delete` занят worktree `focused-chaum-8a0fa6` на `9acdc49` — origin main обновлён напрямую (`git push origin HEAD:main`); тот worktree надо **FF-нуть на `be908bf`**, чтобы trunk == origin main. Состав v113: **FAB-VIDEO fix** (`9acdc49`) — постер-кадр `assets/panda-poster.jpg` в `poster` обоих `<video>` (кружок никогда не пустой) + запуск видео по первому тапу (лечит блокировку автоплея энергосбережением, полевой баг «пустые кружки»). Ранее v111+v112: **FAB-VIDEO** за флагом `fab-video` (дефолт **OFF**) — живая панда с озвучкой в Claude FAB + интро в маскоте пустого дашборда (`js/shared/panda-video.js`, `assets/panda-voice.mp4`); **тумблер «Живой маскот»** в Профиль→AI; **SW-UX** версия-поллинг + Update-тост.
 > Гейт: unit **308/308** (41 сьют) · lint **0 err** (stylelint warnings ~36). Lighthouse из worktree: perf **95-96** / a11y 100 / bp 100. SW **`athlete-pro-v113`** (следующий свободный v114), VERSION `1.25.2`.
 > ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
 > Активная программа: **GYM-GRADE** — `HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `HANDOFF_isl_tail.md`. AIR-хвост: `HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
+
+---
+
+## ⏳ ЖДЁТ FF-МЁРЖА В TRUNK (2026-07-24, аудит-консолидация)
+
+**Ветка `claude/sonnet-5-audit-review-a58ec9`** — линейна от trunk `9c28d5c`, FF-ready, гейт **308/308**:
+- `8fed1ae` fix(security): `.env.example` (валидный `GOOGLE_GENERATIVE_AI_API_KEY` + HOST/NODE_ENV/ALLOWED_ORIGINS/модели/таймауты коуча) + выпил мёртвого `isLocal` в `integrations.js` (Firebase-config публичен по природе; защита = Firebase Security Rules, не origin-check).
+- `2654637` fix(sprint-a): автобамп `CACHE_NAME` контент-хешом манифеста (`build-sw.mjs` дописывает sha1-суффикс → `athlete-pro-v113-<hash>`; ручной бамп поезда больше НЕ точка отказа, кейс «телефон залип на старом SW»).
+
+**LEAD:** `git merge --ff-only claude/sonnet-5-audit-review-a58ec9` из своего чекаута → затем **удалить ветку `claude/app-professional-audit-b86b9a`**: её `3c6a38c` уже вобран в `8fed1ae` (тот же tree), мёрж обеих = конфликт/дубль на `integrations.js`. В origin ничего не улетало (только локальный worktree). Бэкап исходного варианта до сведения — тег `backup-35d2afd`.
+
+**Спринт A residuals (НЕ в этой ветке, отдельно):**
+- Branch protection: `main` защищён (required checks `test`+`e2e`, enforce_admins on). Trunk `claude/csp-soft-delete` — **НЕ защищён** (опц. накинуть ту же защиту).
+- stylelint цвето-правило `warning→error` — отложено осознанно: сначала чистка 84 rgba (Phase E), иначе гейт мгновенно красный.
+- `profile.css:546` = 28px — единственный реальный сырой border-radius (токена 28px нет). Остальные «сырые px» из аудита = микро <6px (ниже `--r-xs`), легитимны.
+- CORS `credentials:true` (`server.js`) — опц. чистка; origin-allowlist уже строгий, не открытая дыра.
 
 ---
 
@@ -60,7 +76,7 @@
    Дефолты OFF. Сломалось на устройстве → `Flags.setFlag('v2-x', false)` в консоли, без отката Git.
 2. **Strangler-Fig.** Легаси не сносим. Новый код рядом за флагом, переключаем по микро-элементу, коммитим зелёным.
 3. **Trunk-based (ветки < 24ч).** Задача дня = микро. Застрял > 24ч → `git checkout .`, дроби на два.
-4. **Safety net:** перед крупным — тег `checkpoint-<date>`; CI (`.github/workflows/ci.yml`) + pre-push hook — зелёный гейт обязателен. SW-манифест только `npm run build:sw` + бамп `CACHE_NAME`.
+4. **Safety net:** перед крупным — тег `checkpoint-<date>`; CI (`.github/workflows/ci.yml`) + pre-push hook — зелёный гейт обязателен. SW-манифест только `npm run build:sw` (после FF `2654637` — сам бампит `CACHE_NAME` контент-хешом, ручной бамп не нужен).
 5. **FF-only в trunk.** Влитие = `git merge --ff-only <ветка>`. Отказ FF → `git rebase <trunk>` у себя → гейт → FF. Старт от свежего trunk, влитие сразу после гейта, push пакетом. История — одна прямая линия, ноль развилок.
 
 ---
@@ -101,7 +117,7 @@ Sonnet сейчас: **S1 TEST-ISL-GUARD** в полёте (`HANDOFF_isl_tail.md
 
 - **Запуск:** `npm run dev` → :3000 (порт 3000 = пользователь, 3001 = Claude preview). Телеметрия — `scripts/telemetry-server.mjs --lan`, `server.js` не подменять.
 - **Тесты:** `npm test` = unit+integration (**273**, тёплый прогон ~1с, холодный ~23с). `npx playwright test` — e2e отдельно, **на тёплом сервере** (холодный/зомби :3000 → флаки goto-таймаутов).
-- **SW:** `athlete-pro-v109`; ASSETS только через `npm run build:sw`, затем бамп `CACHE_NAME`.
+- **SW:** `athlete-pro-v113`; ASSETS + `CACHE_NAME` через `npm run build:sw` (после FF `2654637` CACHE_NAME авто-бампится sha1-суффиксом манифеста; до мёржа в trunk — ручной бамп).
 - **Билд:** dev = source, prod = `dist` (esbuild content-hash, immutable) — см. memory cache-hash.
 - **Версия:** стабильный мёрж в main = бамп `VERSION` в `js/version.js` + `version` в `package.json` (+package-lock через `npm version --no-git-tag-version`).
 - **Прод:** Vercel-проект `gio-g7/athlete-pro-v7` (алиас athlete-pro-v7.vercel.app), git-репо athlete-pro-v2, деплой с `main`. Локальный `main` в корневом чекауте протух — релиз пушить `git push origin <trunk>:main`, корень не трогать.
