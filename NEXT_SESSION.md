@@ -1,6 +1,6 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-24 (Opus 4.8 — РЕЛИЗ 1.25.4 ВЫКАЧЕН через PR#10 rebase-merge). Ранее 2026-07-20 (поезд v113).
+> Обновлено: 2026-07-24 (Fable 5 — DESIGN.md заархивирован через PR#13). Ранее 2026-07-24 (Opus 4.8 — РЕЛИЗ 1.25.4 через PR#10). Ещё ранее 2026-07-20 (поезд v113).
 > **Trunk: `claude/csp-soft-delete`. Релиз 1.25.4 = `cb9fbe2` НА ПРОДЕ** (origin main == `cb9fbe2`, прод curl-верифай: VERSION 1.25.4, SW digest `athlete-pro-v113-82d713d9`). Trunk-worktree `focused-chaum-8a0fa6` переставлен на `cb9fbe2` (== origin main). ⚠️ **main защищён branch-protection** — обяз. чеки `test`+`e2e` + enforce_admins; **релизить ТОЛЬКО через PR** (`gh pr create --base main` → чеки зелёные → `gh pr merge --rebase`), прямой `git push HEAD:main` отклоняется (GH006). Состав 1.25.4: аудит-консолидация Sonnet 5 (security `.env.example` + выпил мёртвого `isLocal` в `integrations.js`) + Спринт A (SW-автобамп `CACHE_NAME` контент-хешом) + border-radius токены + npm audit fix (вкл. high `postcss` path-traversal, который ловит CI-шаг «Security audit (high+)», а локальный `npm test` — нет). Ранее v113 FAB-VIDEO fix (постер+тап); v111+v112 FAB-VIDEO за флагом `fab-video` (OFF) + тумблер «Живой маскот» в Профиль→AI + SW-UX версия-поллинг.
 > Гейт: unit **308/308** (41 сьют) · lint **0 err** (stylelint warnings ~36) · npm audit **0 vuln**. Lighthouse из worktree: perf **95-96** / a11y 100 / bp 100. SW `athlete-pro-v113-<hash>` (CACHE_NAME теперь **автобамп** контент-хешом манифеста — ручной vNNN больше НЕ нужен), VERSION `1.25.4`.
 > ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
@@ -14,6 +14,8 @@
 Линейная ветка `a58ec9` (security `8fed1ae` + SW-автобамп `2654637` + handoff) сведена LEAD поверх trunk, бамп VERSION 1.25.4, релиз через **PR #10** (rebase-merge — main защищён, прямой push отклонён). Trunk переставлен на `cb9fbe2`; ветки `claude/app-professional-audit-b86b9a` и `claude/sonnet-5-audit-review-a58ec9` **удалены** (контент в main); их worktree-папки — сироты (Windows-лок, регистрация снята, дочистить вручную). Бэкап-тег `backup-35d2afd` остался.
 
 **Session-close 2026-07-24 (после PR #10):** handoff актуализирован PR #11 → trunk `540f5a3` (== origin main). **Авто-мёрж вооружён:** правило `Bash(gh pr merge:*)` в `.claude/settings.local.json` (персональный, gitignored) — релиз/handoff-PR вливаются `gh pr merge --auto --rebase --delete-branch` без ручного подтверждения и без поллинга (main-защита = гейт). Условия — память `feedback-auto-merge-conditions`. **Дочистить вручную:** папки-сироты `.claude/worktrees/app-professional-audit-b86b9a` и `athlete-pro-design-audit-829571` (git-регистрация снята, физ. папки залочены Windows).
+
+**DESIGN.md заархивирован (2026-07-24, PR #13):** повтор потерянной работы PR#9 (`e4685e9` откатился при пересборке trunk — НЕ ancestor origin/main, `DESIGN.md` Vantablack снова врал агентам из корня). Cherry-pick от свежего origin/main, merge `8a71516` → `DESIGN.md` → `docs/_archive/DESIGN-vantablack-DEPRECATED.md` (шапка DEPRECATED), ссылки README/CONTRIBUTING/RULES/NEXT_SESSION/`CLAUDE.md` § Key Files переведены на «`CLAUDE.md` § Design». Гоча: `user.email` в worktree был битый (`georgiosxristianidis.com` без @) → GitHub 500 на POST /pulls; починен глобальный git-email на `georgiosxristianidis@gmail.com`.
 
 **Незакрытые residuals (опц.):**
 - Trunk `claude/csp-soft-delete` — **НЕ** защищён branch-protection (в отличие от main; опц. накинуть ту же защиту).
@@ -30,7 +32,7 @@
 2. ~~DRUM-PERF-2~~ — ✅ код НА ПРОДЕ (1.24.4), флаг `drum-window` **OFF**. Остаток — полевой чек за Gio на проде: включить флаг (`Flags.setFlag('drum-window', true)`), покрутить барабан, при ОК — дефолт ON.
 2-bis. ~~FAB-VIDEO~~ — ✅ НА ПРОДЕ (1.25.2, постер-кадр + запуск по тапу), флаг `fab-video` **OFF**. Остаток — полевой чек за Gio на проде: Профиль → AI → тумблер «Живой маскот» — звук/синхрон/уши/постер/батарея/маскот-интро на телефоне, при ОК — дефолт ON. Гоча поля 2026-07-19: телефон Gio залип на 1.24.1 (старый cache-first SW v107) — лечение: Chrome → Данные сайтов → удалить `athlete-pro-v7.vercel.app` → зайти заново (данные в облаке); с v111+ network-first, повторов быть не должно. Отдельная карточка: island-сцена «осуждающий взгляд за 5с до конца отдыха» (блокер — нет кадра «взгляда»; механика: событие ap-rest-warning из dynamic-island.js:411 + seek панды по тайм-коду).
 3. **P-1 ISL-REST-BTN** (gym_grade, полиш) — визуально легче rest-кнопки.
-4. **AIR-4** (air_refactor) — sweep + тест-гард backdrop-filter + DESIGN.md sync; защищает DoD-2.
+4. **AIR-4** (air_refactor) — sweep + тест-гард backdrop-filter; защищает DoD-2. (Подзадача «DESIGN.md sync» закрыта: файл заархивирован, живой спек — `CLAUDE.md` § Design.)
 5. **AIR-2b** (next_cards) — body-stats таб-каскад, хвост DoD-2.
 6. Островные хвосты — `HANDOFF_isl_tail.md` (ISL-REST-NEXT, ISL-SEG-FILL, 2 «проверить»).
 
