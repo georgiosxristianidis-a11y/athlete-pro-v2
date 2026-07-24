@@ -100,6 +100,14 @@ app.use((err, req, res, next) => {
 });
 
 app.use(express.static(__dirname, {
+  // Vercel normalizes bundled-file mtimes to a constant (Oct 2018), so
+  // Last-Modified lies and the mtime+size weak ETag COLLIDES across releases
+  // for any file whose byte size didn't change (version.js is always 35 B:
+  // '1.24.1' → '1.25.4'). A returning client revalidates → 304 → runs stale
+  // code forever (field case: phone stuck on 1.24.1 while prod served 1.25.4).
+  // No validators + no-cache ⇒ the browser must fetch the full fresh body.
+  etag: false,
+  lastModified: false,
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-store');
@@ -118,7 +126,12 @@ app.use(express.static(__dirname, {
 // every request is routed to this function, so this also serves the app shell.
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
-  res.sendFile(path.join(__dirname, 'index.html'));
+  // Same anti-stale rules as the static route: the app shell must never be
+  // cached (no-store) and must not carry Vercel's lying mtime validator.
+  res.sendFile(path.join(__dirname, 'index.html'), {
+    lastModified: false,
+    headers: { 'Cache-Control': 'no-store' },
+  });
 });
 
 // ── Global Error Handling
