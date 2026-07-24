@@ -177,8 +177,8 @@ node --test test/smoke.test.js  # Run specific test
 
 ### Design System
 
-- **Vantablack theme** - See DESIGN.md for full specs
-- **No 1px borders** - Use surface color shifts
+- **Obsidian theme** - See CLAUDE.md § Design for full specs
+- **No opaque borders** - Glass hairlines via tokens (`--c-border` / `--c-border-h`)
 - **Design tokens** - CSS variables for all colors/spacing
 - **Accessibility** - WCAG 2.1 AA compliance
 
@@ -194,6 +194,5 @@ node --test test/smoke.test.js  # Run specific test
 ## Questions or Issues?
 
 - Check [CLAUDE.md](CLAUDE.md) for development guidance
-- Check [DESIGN.md](DESIGN.md) for design system specs
 - Check [README.md](README.md) for project overview
 - Open an issue for bugs or feature requests

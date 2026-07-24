@@ -58,6 +58,6 @@ npm run test:e2e        # Playwright e2e
 ## Docs
 
 - `CLAUDE.md` — dev guide for Claude Code
-- `DESIGN.md` — design system spec (OLED near-black, glassmorphism, token palette)
+- `CLAUDE.md` § Design — design system spec (OLED near-black, glassmorphism, token palette)
 - `ROADMAP_elite_athlete-pro.md` — roadmap
 - `CHANGELOG.md` — version history
