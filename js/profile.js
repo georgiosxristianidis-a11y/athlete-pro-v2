@@ -11,6 +11,8 @@ import { renderSettings } from './profile.view/settings.js';
 import { VERSION } from './version.js';
 import { Toast } from './shell.js';
 import { on, onChange } from './events.js';
+import { haptic } from './shared/utils.js';
+import { forceUpdate } from './shared/sw-update.js';
 
 on('profile:clearData',        () => window.Profile.clearAllData());
 onChange('profile:importFile', (el, e) => window.Profile._onImportFile(e));
@@ -93,6 +95,7 @@ export const Profile = (() => {
       const passportEl = document.getElementById('profile-passport');
       if (passportEl) renderProfile(passportEl, lang).catch(console.error);
       _appendBuildStamp();
+      _wireVersionTap();
     } catch (err) {
       console.error('Profile load error', err);
       screen.innerHTML = '<div style="padding:20px;">Error loading profile</div>';
@@ -115,6 +118,30 @@ export const Profile = (() => {
       el.textContent = el.textContent.trim() +
         ` · ${b.branch}@${b.hash}${b.dirty ? '+' : ''}`;
     } catch { /* prod / offline — no stamp */ }
+  }
+
+  /* Manual escape hatch: 5 taps on the version stamp within ~3s force a clean
+     SW re-install (unregister + drop Cache Storage) — un-sticks a stubborn
+     Service Worker without "clear site data", which would also wipe IndexedDB
+     (workouts). Workouts survive here. */
+  function _wireVersionTap() {
+    const el = document.getElementById('app-build-stamp');
+    if (!el || el._tapWired) return;
+    el._tapWired = true;
+    let taps = 0;
+    let timer = null;
+    el.addEventListener('click', () => {
+      taps += 1;
+      haptic(8);
+      clearTimeout(timer);
+      timer = setTimeout(() => { taps = 0; }, 3000);
+      if (taps >= 5) {
+        taps = 0;
+        clearTimeout(timer);
+        Toast.show(getLang() === 'ru' ? 'Обновление…' : 'Updating…', 'info');
+        forceUpdate();
+      }
+    });
   }
 
   async function adjustRest(delta) {

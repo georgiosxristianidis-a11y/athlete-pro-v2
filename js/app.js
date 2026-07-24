@@ -18,6 +18,7 @@ import { Integrity } from './shared/integrity.js';
 import { initLocale } from './locale.store.js';
 import { State } from './workout.store.js';
 import { VERSION } from './version.js';
+import { forceUpdate } from './shared/sw-update.js';
 
 /* ── Lazy-loaded modules ── */
 async function _loadWorkout() {
@@ -341,12 +342,6 @@ new MutationObserver((mutations) => {
 /* ── Service Worker ── */
 if ('serviceWorker' in navigator) {
   let _swReg = null;
-  navigator.serviceWorker.register('/sw.js').then((reg) => {
-    _swReg = reg;
-    // Coming back online is the one moment a stale SW is most likely to be
-    // sitting around — nudge it to check for a fresh version.
-    window.addEventListener('online', () => reg.update());
-  }).catch(() => {});
 
   // When a new SW takes control, reload once so fresh code/CSS is applied
   // without the user having to clear storage from the Application tab. But
@@ -360,6 +355,41 @@ if ('serviceWorker' in navigator) {
     window.location.reload();
   };
 
+  // Ask a waiting worker to activate NOW (real handshake); if there is no new
+  // worker to activate, the deploy is code-only / the SW is stuck — evacuate.
+  // In both cases mark this remote as "attempted" so a repeat that still fails
+  // escalates to a one-time forceUpdate on next load instead of looping.
+  const _requestUpdate = (worker, remote) => {
+    if (remote) { try { sessionStorage.setItem('ap-upd-try', remote); } catch { /* private mode */ } }
+    if (worker) worker.postMessage({ type: 'SKIP_WAITING' });
+    else forceUpdate();
+  };
+
+  const _promptUpdate = (worker, remote) => {
+    if (_swReloaded) return;
+    const label = remote ? `Update available — v${remote}` : 'Update ready — apply now?';
+    Toast.show(label, 'info', 0, { action: { label: 'Update', onClick: () => _requestUpdate(worker, remote) } });
+  };
+
+  navigator.serviceWorker.register('/sw.js').then((reg) => {
+    _swReg = reg;
+    // Coming back online is the one moment a stale SW is most likely to be
+    // sitting around — nudge it to check for a fresh version.
+    window.addEventListener('online', () => reg.update());
+
+    // A fresh worker may already be parked (installed on a previous visit).
+    if (reg.waiting && navigator.serviceWorker.controller) _promptUpdate(reg.waiting);
+
+    // Catch a worker that finishes installing while the tab is open.
+    reg.addEventListener('updatefound', () => {
+      const nw = reg.installing;
+      if (!nw) return;
+      nw.addEventListener('statechange', () => {
+        if (nw.state === 'installed' && navigator.serviceWorker.controller) _promptUpdate(nw);
+      });
+    });
+  }).catch(() => {});
+
   // On the very first visit there is no old controller — the page is already
   // running the freshest code, so claim() must not trigger a reload.
   let _hadController = !!navigator.serviceWorker.controller;
@@ -367,6 +397,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!_hadController) { _hadController = true; return; }
     if (_swReloaded) return;
+    try { sessionStorage.removeItem('ap-upd-try'); } catch { /* private mode */ }
     if (State.phase !== 'active') {
       _applyUpdate();
       return;
@@ -383,8 +414,9 @@ if ('serviceWorker' in navigator) {
   // SW-UX: версия-поллинг — на старте и при возврате из фона сверяем VERSION
   // с сервером (cache:no-store, мимо SW-кеша и HTTP-кеша). Свежее на сервере →
   // будим SW (путь controllerchange выше применит с гардом тренировки); если
-  // SW за 8с так и не сменился — action-тост с ручным reload (network-first
-  // для кода гарантирует свежий бандл даже при упрямом SW).
+  // waiting-воркера нет — форс-эвакуация по клику. Loop-guard: если прошлый
+  // клик "Update" на этот же remote не помог (SW упрямый) — один раз
+  // forceUpdate на входе, чтобы вечный тихий луп стал одной эвакуацией.
   let _lastVerCheck = 0;
   let _promptedVer = '';
   const _checkVersion = async () => {
@@ -397,10 +429,21 @@ if ('serviceWorker' in navigator) {
       const remote = (await res.text()).match(/VERSION = '([^']+)'/)?.[1];
       if (!remote || remote === VERSION || _promptedVer === remote) return;
       _promptedVer = remote;
+      // Loop-guard: previously attempted this exact version and we're STILL on
+      // the old bundle → the SW is stuck. Evacuate once (not during a workout).
+      let _tried = null;
+      try { _tried = sessionStorage.getItem('ap-upd-try'); } catch { /* private mode */ }
+      if (_tried === remote && State.phase !== 'active') {
+        try { sessionStorage.removeItem('ap-upd-try'); } catch { /* private mode */ }
+        forceUpdate();
+        return;
+      }
       if (State.phase === 'active') return; // после тренировки SW-путь предложит сам
+      // Give the reg.update()/updatefound path ~8s to surface a waiting worker;
+      // if one appears use the clean skipWaiting handshake, else force-evacuate.
       setTimeout(() => {
         if (_swReloaded) return; // SW уже применил обновление сам
-        Toast.show(`Update available — v${remote}`, 'info', 0, { action: { label: 'Update', onClick: _applyUpdate } });
+        _promptUpdate(_swReg?.waiting || null, remote);
       }, 8000);
     } catch { /* офлайн — молчим */ }
   };
