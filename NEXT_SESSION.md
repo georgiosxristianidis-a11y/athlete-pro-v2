@@ -13,6 +13,8 @@
 
 Линейная ветка `a58ec9` (security `8fed1ae` + SW-автобамп `2654637` + handoff) сведена LEAD поверх trunk, бамп VERSION 1.25.4, релиз через **PR #10** (rebase-merge — main защищён, прямой push отклонён). Trunk переставлен на `cb9fbe2`; ветки `claude/app-professional-audit-b86b9a` и `claude/sonnet-5-audit-review-a58ec9` **удалены** (контент в main); их worktree-папки — сироты (Windows-лок, регистрация снята, дочистить вручную). Бэкап-тег `backup-35d2afd` остался.
 
+**Session-close 2026-07-24 (после PR #10):** handoff актуализирован PR #11 → trunk `540f5a3` (== origin main). **Авто-мёрж вооружён:** правило `Bash(gh pr merge:*)` в `.claude/settings.local.json` (персональный, gitignored) — релиз/handoff-PR вливаются `gh pr merge --auto --rebase --delete-branch` без ручного подтверждения и без поллинга (main-защита = гейт). Условия — память `feedback-auto-merge-conditions`. **Дочистить вручную:** папки-сироты `.claude/worktrees/app-professional-audit-b86b9a` и `athlete-pro-design-audit-829571` (git-регистрация снята, физ. папки залочены Windows).
+
 **Незакрытые residuals (опц.):**
 - Trunk `claude/csp-soft-delete` — **НЕ** защищён branch-protection (в отличие от main; опц. накинуть ту же защиту).
 - stylelint цвето-правило `warning→error` — отложено осознанно: сначала чистка 84 rgba (Phase E), иначе гейт мгновенно красный.
