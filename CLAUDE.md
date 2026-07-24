@@ -67,7 +67,6 @@ node scripts/telemetry-server.mjs --lan
 | `js/sync.js` | LWW Sync Engine V2.1 |
 | `lib/aiOrchestrator.js` | Мульти-движок AI (anthropic/gemini, BYOK) |
 | `exercises-library.json` | 170 exercises (85KB) |
-| `DESIGN.md` | Full design system spec |
 | `NEXT_SESSION.md` | Кросс-агентный handoff |
 
 ## Design
