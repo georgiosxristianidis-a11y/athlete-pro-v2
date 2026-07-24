@@ -1,27 +1,24 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-24 (Opus 4.8 — аудит-консолидация ждёт FF, см. блок ниже). Ранее 2026-07-20 (поезд v113 ВЫКАЧЕН).
-> **Trunk: `claude/csp-soft-delete`. Релиз 1.25.2 = `be908bf` НА ПРОДЕ** (origin main == `be908bf`, прод curl-верифай: VERSION 1.25.2, SW v113, `/assets/panda-poster.jpg` 200). ⚠️ Локальный trunk `claude/csp-soft-delete` занят worktree `focused-chaum-8a0fa6` на `9acdc49` — origin main обновлён напрямую (`git push origin HEAD:main`); тот worktree надо **FF-нуть на `be908bf`**, чтобы trunk == origin main. Состав v113: **FAB-VIDEO fix** (`9acdc49`) — постер-кадр `assets/panda-poster.jpg` в `poster` обоих `<video>` (кружок никогда не пустой) + запуск видео по первому тапу (лечит блокировку автоплея энергосбережением, полевой баг «пустые кружки»). Ранее v111+v112: **FAB-VIDEO** за флагом `fab-video` (дефолт **OFF**) — живая панда с озвучкой в Claude FAB + интро в маскоте пустого дашборда (`js/shared/panda-video.js`, `assets/panda-voice.mp4`); **тумблер «Живой маскот»** в Профиль→AI; **SW-UX** версия-поллинг + Update-тост.
-> Гейт: unit **308/308** (41 сьют) · lint **0 err** (stylelint warnings ~36). Lighthouse из worktree: perf **95-96** / a11y 100 / bp 100. SW **`athlete-pro-v113`** (следующий свободный v114), VERSION `1.25.2`.
+> Обновлено: 2026-07-24 (Opus 4.8 — РЕЛИЗ 1.25.4 ВЫКАЧЕН через PR#10 rebase-merge). Ранее 2026-07-20 (поезд v113).
+> **Trunk: `claude/csp-soft-delete`. Релиз 1.25.4 = `cb9fbe2` НА ПРОДЕ** (origin main == `cb9fbe2`, прод curl-верифай: VERSION 1.25.4, SW digest `athlete-pro-v113-82d713d9`). Trunk-worktree `focused-chaum-8a0fa6` переставлен на `cb9fbe2` (== origin main). ⚠️ **main защищён branch-protection** — обяз. чеки `test`+`e2e` + enforce_admins; **релизить ТОЛЬКО через PR** (`gh pr create --base main` → чеки зелёные → `gh pr merge --rebase`), прямой `git push HEAD:main` отклоняется (GH006). Состав 1.25.4: аудит-консолидация Sonnet 5 (security `.env.example` + выпил мёртвого `isLocal` в `integrations.js`) + Спринт A (SW-автобамп `CACHE_NAME` контент-хешом) + border-radius токены + npm audit fix (вкл. high `postcss` path-traversal, который ловит CI-шаг «Security audit (high+)», а локальный `npm test` — нет). Ранее v113 FAB-VIDEO fix (постер+тап); v111+v112 FAB-VIDEO за флагом `fab-video` (OFF) + тумблер «Живой маскот» в Профиль→AI + SW-UX версия-поллинг.
+> Гейт: unit **308/308** (41 сьют) · lint **0 err** (stylelint warnings ~36) · npm audit **0 vuln**. Lighthouse из worktree: perf **95-96** / a11y 100 / bp 100. SW `athlete-pro-v113-<hash>` (CACHE_NAME теперь **автобамп** контент-хешом манифеста — ручной vNNN больше НЕ нужен), VERSION `1.25.4`.
 > ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
 > Активная программа: **GYM-GRADE** — `HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `HANDOFF_isl_tail.md`. AIR-хвост: `HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
 
 ---
 
-## ⏳ ЖДЁТ FF-МЁРЖА В TRUNK (2026-07-24, аудит-консолидация)
+## ✅ АУДИТ-КОНСОЛИДАЦИЯ ВЫКАЧЕНА (2026-07-24, релиз 1.25.4)
 
-**Ветка `claude/sonnet-5-audit-review-a58ec9`** — линейна от trunk `9c28d5c`, FF-ready, гейт **308/308**:
-- `8fed1ae` fix(security): `.env.example` (валидный `GOOGLE_GENERATIVE_AI_API_KEY` + HOST/NODE_ENV/ALLOWED_ORIGINS/модели/таймауты коуча) + выпил мёртвого `isLocal` в `integrations.js` (Firebase-config публичен по природе; защита = Firebase Security Rules, не origin-check).
-- `2654637` fix(sprint-a): автобамп `CACHE_NAME` контент-хешом манифеста (`build-sw.mjs` дописывает sha1-суффикс → `athlete-pro-v113-<hash>`; ручной бамп поезда больше НЕ точка отказа, кейс «телефон залип на старом SW»).
+Линейная ветка `a58ec9` (security `8fed1ae` + SW-автобамп `2654637` + handoff) сведена LEAD поверх trunk, бамп VERSION 1.25.4, релиз через **PR #10** (rebase-merge — main защищён, прямой push отклонён). Trunk переставлен на `cb9fbe2`; ветки `claude/app-professional-audit-b86b9a` и `claude/sonnet-5-audit-review-a58ec9` **удалены** (контент в main); их worktree-папки — сироты (Windows-лок, регистрация снята, дочистить вручную). Бэкап-тег `backup-35d2afd` остался.
 
-**LEAD:** `git merge --ff-only claude/sonnet-5-audit-review-a58ec9` из своего чекаута → затем **удалить ветку `claude/app-professional-audit-b86b9a`**: её `3c6a38c` уже вобран в `8fed1ae` (тот же tree), мёрж обеих = конфликт/дубль на `integrations.js`. В origin ничего не улетало (только локальный worktree). Бэкап исходного варианта до сведения — тег `backup-35d2afd`.
-
-**Спринт A residuals (НЕ в этой ветке, отдельно):**
-- Branch protection: `main` защищён (required checks `test`+`e2e`, enforce_admins on). Trunk `claude/csp-soft-delete` — **НЕ защищён** (опц. накинуть ту же защиту).
+**Незакрытые residuals (опц.):**
+- Trunk `claude/csp-soft-delete` — **НЕ** защищён branch-protection (в отличие от main; опц. накинуть ту же защиту).
 - stylelint цвето-правило `warning→error` — отложено осознанно: сначала чистка 84 rgba (Phase E), иначе гейт мгновенно красный.
 - `profile.css:546` = 28px — единственный реальный сырой border-radius (токена 28px нет). Остальные «сырые px» из аудита = микро <6px (ниже `--r-xs`), легитимны.
 - CORS `credentials:true` (`server.js`) — опц. чистка; origin-allowlist уже строгий, не открытая дыра.
+- `.stylelintcache` не в `.gitignore` — pre-push плодит untracked-файл в каждом worktree (опц. добавить в ignore).
 
 ---
 
