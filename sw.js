@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v113-82d713d9';
+const CACHE_NAME = 'athlete-pro-v114-4e6e57b8';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -70,6 +70,7 @@ const ASSETS = [
   '/js/shared/ppl-gauge.js',
   '/js/shared/sparkline.js',
   '/js/shared/spring.js',
+  '/js/shared/sw-update.js',
   '/js/shared/sync-dot.js',
   '/js/shared/sync-merge.js',
   '/js/shared/utils.js',
@@ -136,6 +137,9 @@ self.addEventListener('message', (e) => {
   if (e.data?.type === 'privacy-mode') {
     privacyMode = e.data.mode || 'cloud';
   }
+  // Honest "apply now" handshake: the page's Update action posts this so a
+  // waiting SW activates immediately → activate/claim → controllerchange → reload.
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 /* ── Concurrency-limited precache ──
