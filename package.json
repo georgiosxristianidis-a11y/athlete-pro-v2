@@ -15,6 +15,7 @@
     "test:e2e": "playwright test --config=playwright.config.js",
     "test:all": "node --test \"test/*.test.js\" && playwright test --config=playwright.config.js",
     "lhci": "node scripts/lighthouse.js",
+    "smoke:prod": "node scripts/smoke-prod.mjs",
     "security:audit": "npm audit --audit-level=high",
     "security:sast": "npm run lint",
     "security:check": "npm run security:audit && npm run security:sast",
