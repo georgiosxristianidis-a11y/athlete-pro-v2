@@ -16,6 +16,7 @@
     "test:all": "node --test \"test/*.test.js\" && playwright test --config=playwright.config.js",
     "lhci": "node scripts/lighthouse.js",
     "preflight": "node scripts/preflight.mjs",
+    "inventory": "node scripts/branch-inventory.mjs",
     "smoke:prod": "node scripts/smoke-prod.mjs",
     "security:audit": "npm audit --audit-level=high",
     "security:sast": "npm run lint",
