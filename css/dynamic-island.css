@@ -252,9 +252,9 @@
 .island.profile-minimal.expanded .island-sublabel { font-size: 8px; opacity: 0.75; }
 
 /* Rest timer mode — in-frame HUD (replaces standalone rest modal). No numeric
-   readout now, just the depleting bar + two icon buttons → narrower pill. */
+   readout now, just the depleting bar + "далее: X" + two icon buttons. */
 .island.timer-mode {
-  width: 140px;
+  width: 236px;
   height: 44px;
   border-radius: var(--r-xl);
 }
@@ -264,17 +264,33 @@
   border-radius: var(--r-xxl);
 }
 
-/* ── Rest HUD content — two icon buttons, no numeric readout ── */
+/* ── Rest HUD content — "далее: X" + two icon buttons, no numeric readout ── */
 .island-rest {
   position: absolute;
   inset: 0;
   display: none;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
   padding: 0 var(--sp-3) 0 var(--sp-4);
   z-index: 5;
 }
 .island.timer-mode .island-rest { display: flex; }
+/* "далее: X" — the only text in the rest HUD; sublabel voice (chrome, not
+   accent), ellipsis so long exercise names never push the buttons. */
+.island-rest-next {
+  flex: 1;
+  min-width: 0;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
 /* During rest, mute the regular collapsed readouts behind the rest HUD */
 .island.timer-mode .island-time,
 .island.timer-mode .island-name-collapsed,
