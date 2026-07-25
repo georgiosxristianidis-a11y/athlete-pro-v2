@@ -100,6 +100,10 @@ node scripts/telemetry-server.mjs --lan
 ```bash
 npm test                # node --test (unit + integration)
 npx playwright test     # e2e (отдельно, не через node --test)
+
+# После мёржа в main — подтвердить, что релиз ДОЕХАЛ до прода (DoD ступень 4):
+npm run smoke:prod              # VERSION + CACHE_NAME + кеш-заголовки; exit != 0 = не доехал
+npm run smoke:prod -- --wait 180  # поллить, пока Vercel докатывает
 ```
 
 ## Status
