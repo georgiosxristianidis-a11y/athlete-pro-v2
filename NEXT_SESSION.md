@@ -4,7 +4,7 @@
 > **Trunk: `claude/csp-soft-delete`. Релиз 1.25.4 = код `cb9fbe2` НА ПРОДЕ** (прод curl-верифай: VERSION 1.25.4, SW digest `athlete-pro-v113-82d713d9`). `origin/main` == `f5c048f` — docs-only коммиты поверх релиза (PR#13 DESIGN.md пере-архив → PR#14 этот handoff); **прод-код = дерево `cb9fbe2`, не тронут**. NB: каждый docs-PR сдвигает head — сверять код по VERSION/SW, не по SHA head. Trunk-worktree `focused-chaum-8a0fa6` переставлен на `cb9fbe2` (== origin main). ⚠️ **main защищён branch-protection** — обяз. чеки `test`+`e2e` + enforce_admins; **релизить ТОЛЬКО через PR** (`gh pr create --base main` → чеки зелёные → `gh pr merge --rebase`), прямой `git push HEAD:main` отклоняется (GH006). Состав 1.25.4: аудит-консолидация Sonnet 5 (security `.env.example` + выпил мёртвого `isLocal` в `integrations.js`) + Спринт A (SW-автобамп `CACHE_NAME` контент-хешом) + border-radius токены + npm audit fix (вкл. high `postcss` path-traversal, который ловит CI-шаг «Security audit (high+)», а локальный `npm test` — нет). Ранее v113 FAB-VIDEO fix (постер+тап); v111+v112 FAB-VIDEO за флагом `fab-video` (OFF) + тумблер «Живой маскот» в Профиль→AI + SW-UX версия-поллинг.
 > Гейт: unit **308/308** (41 сьют) · lint **0 err** (stylelint warnings ~36) · npm audit **0 vuln**. Lighthouse из worktree: perf **95-96** / a11y 100 / bp 100. SW `athlete-pro-v113-<hash>` (CACHE_NAME теперь **автобамп** контент-хешом манифеста — ручной vNNN больше НЕ нужен), VERSION `1.25.4`.
 > ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
-> Активная программа: **GYM-GRADE** — `HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `HANDOFF_isl_tail.md`. AIR-хвост: `HANDOFF_air_refactor.md` (§ AIR-4).
+> Активная программа: **GYM-GRADE** — `docs/handoff/HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `docs/handoff/HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `docs/handoff/HANDOFF_isl_tail.md`. AIR-хвост: `docs/handoff/HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
 
 ---
@@ -27,7 +27,7 @@
 
 ## 🧭 ОРКЕСТРАЦИЯ — новая программа (2026-07-25)
 
-Разбор трёх инцидентов сессии (потеря влитого PR#9 · прод-фикс провисел невлитым · битый git-email → 500 на create-PR) + план из 7 карточек — **`HANDOFF_orchestration.md`**. Там же DoD-лестница (готово = на проде, не «закоммичено») и роли LEAD/worker/verifier. Замер: невлитых локальных веток **73 из 92**, worktree 35.
+Разбор трёх инцидентов сессии (потеря влитого PR#9 · прод-фикс провисел невлитым · битый git-email → 500 на create-PR) + план из 7 карточек — **`docs/handoff/HANDOFF_orchestration.md`**. Там же DoD-лестница (готово = на проде, не «закоммичено») и роли LEAD/worker/verifier. Замер: невлитых локальных веток **73 из 92**, worktree 35.
 
 Первый заход: **O-1** (гард заголовков в тестах) + **O-2** (прод-смоук) — оба P0, закрывают повтор 304-заморозки.
 
@@ -58,7 +58,7 @@
 3. **P-1 ISL-REST-BTN** (gym_grade, полиш) — визуально легче rest-кнопки.
 4. **AIR-4** (air_refactor) — sweep + тест-гард backdrop-filter; защищает DoD-2. (Подзадача «DESIGN.md sync» закрыта: файл заархивирован, живой спек — `CLAUDE.md` § Design.)
 5. **AIR-2b** (next_cards) — body-stats таб-каскад, хвост DoD-2.
-6. Островные хвосты — `HANDOFF_isl_tail.md` (ISL-REST-NEXT, ISL-SEG-FILL, 2 «проверить»).
+6. Островные хвосты — `docs/handoff/HANDOFF_isl_tail.md` (ISL-REST-NEXT, ISL-SEG-FILL, 2 «проверить»).
 
 ---
 
@@ -73,7 +73,7 @@
 - UI-кнопка «назад» (Apple-паттерн, top-left шеврон на сабэкранах) — микро-карточка, обсудить дизайн с Gio.
 - **Отложено осознанно (НЕ тащить):** zod на ответах AI · Signals/Proxy state (YAGNI) · выпил `unsafe-inline` целиком (XL-хвост Strangler после `` html`` ``-тега, D2) · ISL-CUSTOM (фаза 2, только при подтверждённой нужде) · роадмап Фаза 5 полиш.
 
-После стека: роадмап CRDT foundation (UUID вместо autoIncrement) — `ROADMAP_elite_athlete-pro.md`.
+После стека: роадмап CRDT foundation (UUID вместо autoIncrement) — `docs/ROADMAP_elite_athlete-pro.md`.
 
 ### 🩸 DATA-SAFETY (срочное поле, за пользователем + LEAD)
 - **DS1 🔴** поле-тест IDB v3→v4 миграции на живых данных (workouts/metrics/1RM целы). Пара к карточке BACKUP.
@@ -120,7 +120,7 @@
 | 🟦 SONNET | Sonnet | scoped рефактор · тесты · компонент по спеку | новая архитектура |
 | 🟩 GEMINI | Gemini | массовый CSS/SVG sweep · find/replace | логика с условиями · дизайн |
 
-Sonnet сейчас: **S1 TEST-ISL-GUARD** в полёте (`HANDOFF_isl_tail.md`).
+Sonnet сейчас: **S1 TEST-ISL-GUARD** в полёте (`docs/handoff/HANDOFF_isl_tail.md`).
 
 ---
 
