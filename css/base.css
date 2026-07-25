@@ -633,7 +633,6 @@ button:focus-visible {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--c-text-3);
-  opacity: 0.6;
 }
 
 .screen > * + * {
