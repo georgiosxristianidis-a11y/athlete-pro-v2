@@ -67,7 +67,10 @@
 .cal-num {
   font-size: 10px;
   font-weight: 600;
-  color: var(--c-text-3);
+  /* text-2, не text-3: ячейка тренировки тонируется PPL-цветом с alpha 12.5%
+     (js/analytics.view.js), и на этой подложке text-3 давал 3.84–4.21 — ниже AA.
+     Подложка семантическая (PPL-закон), глушить её нельзя, поэтому поднята цифра. */
+  color: var(--c-text-2);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
