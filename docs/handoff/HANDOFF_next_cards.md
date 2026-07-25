@@ -14,11 +14,11 @@
 - Сделано: `js/db/backup.js` (verbatim, формат JSON v1 не тронут) · 1-тап карточка Save History под паспортом профиля · напоминание-тост раз в 2 недели с кнопкой Export (`shouldRemindBackup`, 10 unit) · SW v109. Попутно: NUL-байт в shell.js убран (файл снова UTF-8) · `requestIdleCallback` с timeout 2000 (rAF-шторм голодал Island/FAB/reminder — репро в превью).
 - Остаток DoD-5: полевой DS1 (миграция v3→v4 на живых данных, за Gio) + полевой чек напоминалки/экспорта на телефоне.
 
-## Карточка AIR-2b — body-stats таб-каскад 🟨 (мелкий хвост AIR-2, пункт DoD-2)
+## Карточка AIR-2b — body-stats таб-каскад — ✅ (2026-07-25, релиз 1.25.9, SW v115)
 
-- **ЦЕЛЬ:** `css/body-stats.css:15-40` — второе, более старое правило `.bs-tab.active` (`--c-surface`+box-shadow) грузится после base.css (lazy) и перебивает AIR-2-выравнивание на экране Body Stats. Привести к рецепту AIR (плоский `--c-chrome-t`+hairline).
-- **ГДЕ СТОП:** экран Body Stats визуально консистентен с остальными таб-барами; гейт.
-- **НЕ ТРОГАТЬ:** логику табов.
+- Сделано: `.bs-tab.active` в `css/body-stats.css` переведён на рецепт AIR — плоский `--c-chrome-t` + hairline `--c-border-h`, тяжёлый box-shadow убран. Каскад больше не перебивает базовое AIR-правило (`css/base.css:818`).
+- Верифай в превью (mobile 375, dark): active `rgb(26,26,34)`, border `rgba(255,255,255,0.12)`, `box-shadow: none`, `backdrop-filter: none`, высота таба не поехала (40px == idle). Гейт: 340/340, stylelint 0 err.
+- Остаток DoD-2: полевой OLED-чек Gio в темноте (Analytics, Профиль→privacy-сегмент, сводка тренировки).
 
 ## Карточка SET-STALE — чек-боксы не перерисовываются при внешнем апдейте State 🟦 (низкий: один пользователь/одна вкладка в поле)
 
