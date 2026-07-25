@@ -125,10 +125,10 @@ export const DynamicIsland = (() => {
         <div class="island-rest" id="di-rest">
           <div class="island-rest-actions">
             <button class="island-rest-btn" id="di-rest-plus" title="+15s Rest" aria-label="Add 15 seconds" data-action="island:addRest" data-amt="15">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
             <button class="island-rest-btn primary" id="di-rest-skip" title="Skip rest" aria-label="Skip rest" data-action="island:skipRest">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
             </button>
           </div>
         </div>
