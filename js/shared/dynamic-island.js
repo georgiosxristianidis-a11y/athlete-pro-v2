@@ -70,6 +70,7 @@ export const DynamicIsland = (() => {
   let _minLabelEl = null;
   let _progressFill = null;
   let _timerProg = null;
+  let _restNextEl = null;
 
   function init() {
     if (document.getElementById('dynamic-island')) return;
@@ -123,6 +124,7 @@ export const DynamicIsland = (() => {
              No numeric readout: the depleting bar + colour escalation (amber ≤10s,
              blue done) carry "how much is left". Two SVG icon buttons only. -->
         <div class="island-rest" id="di-rest">
+          <span class="island-rest-next" id="di-rest-next"></span>
           <div class="island-rest-actions">
             <button class="island-rest-btn" id="di-rest-plus" title="+15s Rest" aria-label="Add 15 seconds" data-action="island:addRest" data-amt="15">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -179,6 +181,7 @@ export const DynamicIsland = (() => {
     }
     _progressFill = document.getElementById('di-progress-fill');
     _timerProg = document.getElementById('di-timer-progress');
+    _restNextEl = document.getElementById('di-rest-next');
 
     // Long-press events (no drag)
     _island?.addEventListener('pointerdown', _onPointerDown);
@@ -402,6 +405,15 @@ export const DynamicIsland = (() => {
     const jump = _timerActive && (_timerSecs - secs) !== 1;
     _timerActive = true;
     _island?.classList.add('timer-mode');
+
+    // "далее: X" — what the lifter returns to after this rest = the first
+    // exercise still holding an undone set (same exercise mid-block, the next
+    // one after its last set). Computed once per rest: sets can't change
+    // mid-rest, and update() deliberately skips re-renders while _timerActive.
+    if (starting && _restNextEl) {
+      const nx = State.plan?.find(ex => ex.sets.some(s => !s.done));
+      _restNextEl.textContent = nx ? `${isRu() ? 'далее' : 'next'}: ${nx.name}` : '';
+    }
 
     // No numeric readout by design — the depleting bar + colour escalation below
     // carry "how much rest is left". (Old #di-rest-time removed.)
