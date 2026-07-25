@@ -1,8 +1,14 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-24 (Fable 5 — DESIGN.md заархивирован через PR#13). Ранее 2026-07-24 (Opus 4.8 — РЕЛИЗ 1.25.4 через PR#10). Ещё ранее 2026-07-20 (поезд v113).
-> **Trunk: `claude/csp-soft-delete`. Релиз 1.25.4 = код `cb9fbe2` НА ПРОДЕ** (прод curl-верифай: VERSION 1.25.4, SW digest `athlete-pro-v113-82d713d9`). `origin/main` == `f5c048f` — docs-only коммиты поверх релиза (PR#13 DESIGN.md пере-архив → PR#14 этот handoff); **прод-код = дерево `cb9fbe2`, не тронут**. NB: каждый docs-PR сдвигает head — сверять код по VERSION/SW, не по SHA head. Trunk-worktree `focused-chaum-8a0fa6` переставлен на `cb9fbe2` (== origin main). ⚠️ **main защищён branch-protection** — обяз. чеки `test`+`e2e` + enforce_admins; **релизить ТОЛЬКО через PR** (`gh pr create --base main` → чеки зелёные → `gh pr merge --rebase`), прямой `git push HEAD:main` отклоняется (GH006). Состав 1.25.4: аудит-консолидация Sonnet 5 (security `.env.example` + выпил мёртвого `isLocal` в `integrations.js`) + Спринт A (SW-автобамп `CACHE_NAME` контент-хешом) + border-radius токены + npm audit fix (вкл. high `postcss` path-traversal, который ловит CI-шаг «Security audit (high+)», а локальный `npm test` — нет). Ранее v113 FAB-VIDEO fix (постер+тап); v111+v112 FAB-VIDEO за флагом `fab-video` (OFF) + тумблер «Живой маскот» в Профиль→AI + SW-UX версия-поллинг.
-> Гейт: unit **308/308** (41 сьют) · lint **0 err** (stylelint warnings ~36) · npm audit **0 vuln**. Lighthouse из worktree: perf **95-96** / a11y 100 / bp 100. SW `athlete-pro-v113-<hash>` (CACHE_NAME теперь **автобамп** контент-хешом манифеста — ручной vNNN больше НЕ нужен), VERSION `1.25.4`.
+> Обновлено: 2026-07-25 (Opus 5 — программа гигиены H-1..H-5 + O-3/O-5).
+>
+> **Точка интеграции одна: `origin/main`.** Долгоживущий trunk `claude/csp-soft-delete` упразднён (карточка O-3) — он был рудиментом эпохи незащищённого main и стоил потери влитого PR#9. Ветка — всегда от свежего `origin/main`, влитие — только через PR. Бэкап линии: тег `backup-trunk-6b4f80b`.
+> ⚠️ **main защищён branch-protection** — обяз. чеки `test`+`e2e` + enforce_admins; прямой `git push HEAD:main` отклоняется (GH006). Порядок: `gh pr create --base main` → чеки зелёные → `gh pr merge --rebase`.
+>
+> **SHA здесь не хранятся** — они протухают от собственного мёржа этого файла (корень R4). Добывать командой:
+> `git fetch origin && git rev-parse --short origin/main` · состояние прода — `npm run smoke:prod` · ревизия веток — `npm run inventory` · старт сессии — `npm run preflight`.
+>
+> Инварианты: VERSION `1.25.5` НА ПРОДЕ · гейт unit **332/332** · lint **0 err** (stylelint warnings ~36) · npm audit **0 vuln** · SW `CACHE_NAME` = **автобамп** контент-хешом манифеста (ручной vNNN не нужен). Lighthouse из worktree: perf 95-96 / a11y 100 / bp 100.
 > ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
 > Активная программа: **GYM-GRADE** — `docs/handoff/HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `docs/handoff/HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `docs/handoff/HANDOFF_isl_tail.md`. AIR-хвост: `docs/handoff/HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
@@ -27,9 +33,11 @@
 
 ## 🧭 ОРКЕСТРАЦИЯ — новая программа (2026-07-25)
 
-Разбор трёх инцидентов сессии (потеря влитого PR#9 · прод-фикс провисел невлитым · битый git-email → 500 на create-PR) + план из 7 карточек — **`docs/handoff/HANDOFF_orchestration.md`**. Там же DoD-лестница (готово = на проде, не «закоммичено») и роли LEAD/worker/verifier. Замер: невлитых локальных веток **73 из 92**, worktree 35.
+Разбор трёх инцидентов сессии (потеря влитого PR#9 · прод-фикс провисел невлитым · битый git-email → 500 на create-PR) + карточки — **`docs/handoff/HANDOFF_orchestration.md`**. Там же DoD-лестница (готово = на проде, не «закоммичено») и роли LEAD/worker/verifier.
 
-Первый заход: **O-1** (гард заголовков в тестах) + **O-2** (прод-смоук) — оба P0, закрывают повтор 304-заморозки.
+**Закрыто 2026-07-25 — все пять корней:** O-1 гард кеш-заголовков · O-2 `npm run smoke:prod` · O-4 `npm run preflight` · O-5 `npm run inventory` (вернул два зелёных потерянных теста + `FABLE5_FINDINGS.md`) · O-3 trunk упразднён · O-6 эта шапка без SHA. Плюс программа гигиены репо: 4492 → 270 отслеживаемых файлов и закон структуры под гардом (`CLAUDE.md` § «Где что лежит»).
+
+Замер веток теперь снимается командой, а не записывается сюда: `npm run inventory`. Осталось: удалить 76 влитых веток (нужно снять ~40 worktree, подтверждение Gio пачками) и решить O-7 (контент-хеши ассетов, конфликт с no-build).
 
 ---
 
@@ -42,7 +50,7 @@
 **DESIGN.md заархивирован (2026-07-24, PR #13):** повтор потерянной работы PR#9 (`e4685e9` откатился при пересборке trunk — НЕ ancestor origin/main, `DESIGN.md` Vantablack снова врал агентам из корня). Cherry-pick от свежего origin/main, merge `8a71516` → `DESIGN.md` → `docs/_archive/DESIGN-vantablack-DEPRECATED.md` (шапка DEPRECATED), ссылки README/CONTRIBUTING/RULES/NEXT_SESSION/`CLAUDE.md` § Key Files переведены на «`CLAUDE.md` § Design». Гоча: `user.email` в worktree был битый (`georgiosxristianidis.com` без @) → GitHub 500 на POST /pulls; починен глобальный git-email на `georgiosxristianidis@gmail.com`.
 
 **Незакрытые residuals (опц.):**
-- Trunk `claude/csp-soft-delete` — **НЕ** защищён branch-protection (в отличие от main; опц. накинуть ту же защиту).
+- Ветка `claude/csp-soft-delete` (бывший trunk) — упразднена O-3, бэкап `backup-trunk-6b4f80b`; физическое удаление ветки и снятие worktree `focused-chaum-8a0fa6` ждут подтверждения Gio.
 - stylelint цвето-правило `warning→error` — отложено осознанно: сначала чистка 84 rgba (Phase E), иначе гейт мгновенно красный.
 - `profile.css:546` = 28px — единственный реальный сырой border-radius (токена 28px нет). Остальные «сырые px» из аудита = микро <6px (ниже `--r-xs`), легитимны.
 - CORS `credentials:true` (`server.js`) — опц. чистка; origin-allowlist уже строгий, не открытая дыра.
@@ -100,9 +108,9 @@
    `import { flag } from './flags.js'; if (flag('v2-x')) renderV2(); else renderLegacy();`
    Дефолты OFF. Сломалось на устройстве → `Flags.setFlag('v2-x', false)` в консоли, без отката Git.
 2. **Strangler-Fig.** Легаси не сносим. Новый код рядом за флагом, переключаем по микро-элементу, коммитим зелёным.
-3. **Trunk-based (ветки < 24ч).** Задача дня = микро. Застрял > 24ч → `git checkout .`, дроби на два.
+3. **Короткие ветки от main (< 24ч).** Задача дня = микро. Застрял > 24ч → `git checkout .`, дроби на два.
 4. **Safety net:** перед крупным — тег `checkpoint-<date>`; CI (`.github/workflows/ci.yml`) + pre-push hook — зелёный гейт обязателен. SW-манифест только `npm run build:sw` (после FF `2654637` — сам бампит `CACHE_NAME` контент-хешом, ручной бамп не нужен).
-5. **FF-only в trunk.** Влитие = `git merge --ff-only <ветка>`. Отказ FF → `git rebase <trunk>` у себя → гейт → FF. Старт от свежего trunk, влитие сразу после гейта, push пакетом. История — одна прямая линия, ноль развилок.
+5. **Влитие только через PR в `main`** (O-3, 2026-07-25 — trunk упразднён). Старт от свежего `origin/main` → гейт → `gh pr create --base main` → зелёные чеки → `gh pr merge --rebase`. Отстал от main → `git rebase origin/main` у себя → **перегнать гейт** (в main могли приехать новые тесты) → снова PR. Влитие сразу после гейта, не копить. История — одна прямая линия, одна точка интеграции.
 
 ---
 
@@ -112,7 +120,7 @@
 
 1. Перед задачей — проверь владельца: `🔒 LEAD` не брать (цена ошибки высока).
 2. Взял — поставь маркер `🚧 <agent>@<branch>`; закончил — `✅ <hash>`.
-3. Чужой незакоммиченный WIP не откатывать (GIO Context Integrity). Один агент = один worktree; в trunk мёржит LEAD после гейта.
+3. Чужой незакоммиченный WIP не откатывать (GIO Context Integrity). Один агент = один worktree; вливает LEAD после гейта, через PR в main.
 
 | Метка | Кто | Брать | НЕ брать |
 |:--:|---|---|---|
@@ -145,5 +153,5 @@ Sonnet сейчас: **S1 TEST-ISL-GUARD** в полёте (`docs/handoff/HANDOF
 - **SW:** `athlete-pro-v113`; ASSETS + `CACHE_NAME` через `npm run build:sw` (после FF `2654637` CACHE_NAME авто-бампится sha1-суффиксом манифеста; до мёржа в trunk — ручной бамп).
 - **Билд:** dev = source, prod = `dist` (esbuild content-hash, immutable) — см. memory cache-hash.
 - **Версия:** стабильный мёрж в main = бамп `VERSION` в `js/version.js` + `version` в `package.json` (+package-lock через `npm version --no-git-tag-version`).
-- **Прод:** Vercel-проект `gio-g7/athlete-pro-v7` (алиас athlete-pro-v7.vercel.app), git-репо athlete-pro-v2, деплой с `main`. Локальный `main` в корневом чекауте протух — релиз пушить `git push origin <trunk>:main`, корень не трогать.
+- **Прод:** Vercel-проект `gio-g7/athlete-pro-v7` (алиас athlete-pro-v7.vercel.app), git-репо athlete-pro-v2, деплой с `main`. Локальный `main` в корневом чекауте протух — работать из worktree, релиз вливать через PR (прямой push в main отклоняется), корень не трогать.
 - **Git в worktree:** после убитой по таймауту команды git может висеть (pager держит tty) — использовать `GIT_PAGER=cat` и `</dev/null`.
