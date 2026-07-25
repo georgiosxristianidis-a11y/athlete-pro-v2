@@ -1,0 +1,4 @@
+# .gitignore uses box-drawing characters in its section headers, which trips
+# git's binary heuristic — its diffs then show up as "Bin 1476 -> 2221 bytes"
+# and become unreviewable. Force a textual diff.
+.gitignore diff
