@@ -35,9 +35,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 .bs-tab.active {
-  background: var(--c-surface);
+  background: var(--c-chrome-t);
+  border: 1px solid var(--c-border-h);
   color: var(--c-text-1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 .bs-header {
   display: flex;
