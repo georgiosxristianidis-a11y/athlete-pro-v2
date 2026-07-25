@@ -57,7 +57,7 @@
   gap: 10px;
   margin: 0 0 var(--sp-3);
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-m);
 }
@@ -165,7 +165,7 @@
   font-variant-numeric: tabular-nums;
   color: var(--c-text-2);
   padding: 2px 7px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-sm);
   letter-spacing: 0.02em;
@@ -183,7 +183,7 @@
   align-items: center;
   gap: 8px;
   padding: 7px 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--c-border);
 }
 
 .summ-ex-row:last-child {
@@ -369,7 +369,7 @@
   font-variant-numeric: tabular-nums;
   color: var(--c-text-2);
   padding: 2px 6px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-sm);
 }
