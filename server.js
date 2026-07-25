@@ -99,6 +99,20 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+// Media keeps a real cache policy. The blanket `etag:false` below targets
+// CODE, where a byte-size-identical edit is routine ('1.24.1' → '1.25.4') and
+// makes the mtime+size ETag lie. Binaries don't change size in place, so their
+// ETag stays honest — keep it, paired with a short max-age. Without this mount
+// media falls through to the default `public, max-age=0` with no validator,
+// i.e. panda-voice.mp4 (327 KB) is re-downloaded in full on every HTTP-cache
+// miss instead of answering 304. Staleness is bounded by max-age; the SW busts
+// its own copy via CACHE_NAME.
+app.use('/assets', express.static(path.join(__dirname, 'assets'), {
+  etag: true,
+  lastModified: false,
+  maxAge: '1h',
+}));
+
 app.use(express.static(__dirname, {
   // Vercel normalizes bundled-file mtimes to a constant (Oct 2018), so
   // Last-Modified lies and the mtime+size weak ETag COLLIDES across releases
