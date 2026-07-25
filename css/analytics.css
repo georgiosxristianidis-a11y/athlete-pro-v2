@@ -109,7 +109,7 @@
 }
 
 .seg-btn:not(.active):active {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--c-surface-h);
 }
 
 /* ── Quick Stats ── */
@@ -157,13 +157,8 @@
   overflow: hidden;
   position: relative;
 }
-.chart-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at top left, rgba(255,255,255,0.03), transparent 70%);
-  pointer-events: none;
-}
+/* AIR: the top-left white sheen was removed — Tier 1 surfaces are flat
+   --c-bg-2 + hairline, no gloss overlay. */
 
 .chart-card canvas {
   width: 100%;

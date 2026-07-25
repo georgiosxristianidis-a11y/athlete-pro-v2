@@ -1,6 +1,6 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-25 (Opus 5 — программа гигиены H-1..H-5 + O-3/O-5).
+> Обновлено: 2026-07-25 (Opus 5 — AIR-4 sweep + тест-гард blur). Ранее: программа гигиены H-1..H-5 + O-3/O-5.
 >
 > **Точка интеграции одна: `origin/main`.** Долгоживущий trunk `claude/csp-soft-delete` упразднён (карточка O-3) — он был рудиментом эпохи незащищённого main и стоил потери влитого PR#9. Ветка — всегда от свежего `origin/main`, влитие — только через PR. Бэкап линии: тег `backup-trunk-6b4f80b`.
 > ⚠️ **main защищён branch-protection** — обяз. чеки `test`+`e2e` + enforce_admins; прямой `git push HEAD:main` отклоняется (GH006). Порядок: `gh pr create --base main` → чеки зелёные → `gh pr merge --rebase`.
@@ -8,7 +8,7 @@
 > **SHA здесь не хранятся** — они протухают от собственного мёржа этого файла (корень R4). Добывать командой:
 > `git fetch origin && git rev-parse --short origin/main` · состояние прода — `npm run smoke:prod` · ревизия веток — `npm run inventory` · старт сессии — `npm run preflight`.
 >
-> Инварианты: VERSION `1.25.7` (rest-HUD «далее: X»; смоук после мёржа) · гейт unit **332/332** · lint **0 err** (stylelint warnings ~36) · npm audit **0 vuln** · SW `CACHE_NAME` = **автобамп** контент-хешом манифеста (ручной vNNN не нужен). Lighthouse из worktree: perf 95-96 / a11y 100 / bp 100.
+> Инварианты: VERSION `1.25.8` (AIR-4 sweep + гард; смоук после мёржа) · гейт unit **340/340** · lint **0 err** (stylelint warnings 28) · npm audit **0 vuln** · SW `CACHE_NAME` = **автобамп** контент-хешом манифеста (ручной vNNN не нужен). Lighthouse из worktree: perf 95-96 / a11y 100 / bp 100.
 > ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
 > Активная программа: **GYM-GRADE** — `docs/handoff/HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `docs/handoff/HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `docs/handoff/HANDOFF_isl_tail.md`. AIR-хвост: `docs/handoff/HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
@@ -64,7 +64,7 @@
 2. ~~DRUM-PERF-2~~ — ✅ код НА ПРОДЕ (1.24.4), флаг `drum-window` **OFF**. Остаток — полевой чек за Gio на проде: включить флаг (`Flags.setFlag('drum-window', true)`), покрутить барабан, при ОК — дефолт ON.
 2-bis. ~~FAB-VIDEO~~ — ✅ НА ПРОДЕ (1.25.2, постер-кадр + запуск по тапу), флаг `fab-video` **OFF**. Остаток — полевой чек за Gio на проде: Профиль → AI → тумблер «Живой маскот» — звук/синхрон/уши/постер/батарея/маскот-интро на телефоне, при ОК — дефолт ON. Гоча поля 2026-07-19: телефон Gio залип на 1.24.1 (старый cache-first SW v107) — лечение: Chrome → Данные сайтов → удалить `athlete-pro-v7.vercel.app` → зайти заново (данные в облаке); с v111+ network-first, повторов быть не должно. Отдельная карточка: island-сцена «осуждающий взгляд за 5с до конца отдыха» (блокер — нет кадра «взгляда»; механика: событие ap-rest-warning из dynamic-island.js:411 + seek панды по тайм-коду).
 3. ~~P-1 ISL-REST-BTN~~ — ✅ выкачен в 1.25.6 (кнопки 28×26, тач ≥40px). Остаток — полевой чек Gio: легче на глаз, попадание не хуже.
-4. **AIR-4** (air_refactor) — sweep + тест-гард backdrop-filter; защищает DoD-2. (Подзадача «DESIGN.md sync» закрыта: файл заархивирован, живой спек — `CLAUDE.md` § Design.)
+4. ~~AIR-4~~ — ✅ код в 1.25.8: sweep (gloss-градиенты и сырые rgba-фоны → токены, sheen `.chart-card::before` удалён) + `test/air-guard.test.js` (blur вне Tier-2 whitelist = красный гейт, потеря Tier-2 blur — тоже). Остаток — полевой OLED-чек Gio в темноте: Analytics / Профиль-privacy / сводка тренировки. DoD-2 закроется вместе с AIR-2b.
 5. **AIR-2b** (next_cards) — body-stats таб-каскад, хвост DoD-2.
 6. Островные хвосты — `docs/handoff/HANDOFF_isl_tail.md` (ISL-SEG-FILL, 2 «проверить»; ISL-REST-NEXT ✅ 1.25.7).
 
