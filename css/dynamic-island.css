@@ -282,21 +282,29 @@
 .island-rest-actions {
   display: flex;
   align-items: center;
-  gap: var(--sp-1);
+  /* Wider gap so the invisible 40px hit zones (::after) meet without overlapping. */
+  gap: var(--sp-2);
 }
 .island-rest-btn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--c-border-h);
   border-radius: var(--r-s);
-  width: 32px;
-  height: 30px;
+  width: 28px;
+  height: 26px;
   padding: 0;
   cursor: pointer;
   background: var(--c-surface-h);
   color: var(--c-chrome);
   transition: filter 0.15s ease;
+}
+/* Visual is 28x26, but sweaty gym fingers get a >=40px tap target. */
+.island-rest-btn::after {
+  content: '';
+  position: absolute;
+  inset: -7px -6px;
 }
 .island-rest-btn.primary {
   /* Cool Steel: primary CTA (skip) uses chrome fill + dark chrome glyph. */
