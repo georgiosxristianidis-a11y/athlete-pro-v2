@@ -28,31 +28,18 @@ const ROOT_CODE_ALLOWED = new Set([
   'playwright.config.js',
 ]);
 
-/** Docs a newcomer (human or agent) is expected to open first. */
+/**
+ * Docs a newcomer (human or agent) is expected to open first. GEMINI.md is here
+ * for a mechanical reason, not an editorial one: the Gemini CLI loads it only
+ * from the project root, exactly like CLAUDE.md. Everything else lives under
+ * docs/, handoffs under docs/handoff/ (card H-3).
+ */
 const ROOT_DOCS_ALLOWED = new Set([
   'README.md',
   'CLAUDE.md',
+  'GEMINI.md',
   'NEXT_SESSION.md',
   'CHANGELOG.md',
-]);
-
-/**
- * Docs still sitting at the root until card H-3 moves them under docs/.
- * Listing them keeps this guard green today while already blocking *new*
- * root-level docs — the actual failure mode. H-3 deletes this set.
- */
-const ROOT_DOCS_LEGACY = new Set([
-  'CONTRIBUTING.md',
-  'DEPLOYMENT.md',
-  'GEMINI.md',
-  'RULES.md',
-  'THREAT_MODEL.md',
-  'ROADMAP_elite_athlete-pro.md',
-  'HANDOFF_air_refactor.md',
-  'HANDOFF_gym_grade.md',
-  'HANDOFF_isl_tail.md',
-  'HANDOFF_next_cards.md',
-  'HANDOFF_orchestration.md',
 ]);
 
 /**
@@ -93,7 +80,7 @@ test('hygiene: no stray code at the repo root', () => {
 test('hygiene: no new docs at the repo root', () => {
   const strays = rootFiles
     .filter((f) => f.endsWith('.md'))
-    .filter((f) => !ROOT_DOCS_ALLOWED.has(f) && !ROOT_DOCS_LEGACY.has(f));
+    .filter((f) => !ROOT_DOCS_ALLOWED.has(f));
 
   assert.deepEqual(
     strays,

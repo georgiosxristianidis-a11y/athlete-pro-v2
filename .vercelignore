@@ -7,9 +7,9 @@ scripts/
 *.py
 *.log
 NEXT_SESSION.md
-HANDOFF_*.md
 FABLE5_FINDINGS.md
-ROADMAP_*.md
 GEMINI.md
-RULES.md
+# Внутренние доки переехали под docs/ (H-3) — раньше их отсекали поимённые
+# правила в корне; без этой строки они начали бы публиковаться на проде.
+docs/
 check_onclick.py

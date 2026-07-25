@@ -11,9 +11,25 @@
 - Antigravity-артефакты (task/plan/walkthrough): `~/.gemini/antigravity/brain/<uuid>/`.
 - Стандарты GIO: `~/.gemini/GEMINI.md` (глобальный) + `GEMINI.md` в корне (Karpathy guidelines). Аудиты — слэш-команды `/audit_core` / `/audit_cyber` / `/audit_speed`.
 
+## Где что лежит (закон структуры, H-3)
+
+Проверяется тестом `test/repo-hygiene.test.js` — не декларация, а гейт.
+
+| Место | Что |
+|-------|-----|
+| Корень | только entry-точки (`server.js`, `sw.js`, `index.html`), конфиги и 5 доков: `README` · `CLAUDE.md` · `GEMINI.md` · `NEXT_SESSION.md` · `CHANGELOG` |
+| `docs/` | `RULES`, `CONTRIBUTING`, `DEPLOYMENT`, `THREAT_MODEL`, `ROADMAP_*` |
+| `docs/handoff/` | активные `HANDOFF_*.md` |
+| `docs/_archive/` | закрытые хендоффы и протухшие спеки |
+| `scripts/` | инструментарий; одноразовые скрипты не коммитить вообще |
+
+- `CLAUDE.md` и `GEMINI.md` остаются в корне вынужденно: CLI обоих агентов читает их только оттуда.
+- **Жизненный цикл хендоффа:** живёт, пока в нём есть невзятая карточка. Все взяты и влиты → переезд в `docs/_archive/` тем же PR, что и последняя карточка.
+- Новый док в корне = красный `npm test`. Это осознанно: 15 доков в корне выросли именно из «положу пока сюда».
+
 ## Session Protocol (ассистент)
 
-> Полный гайд для человека — `RULES.md`. Здесь — что ассистент ОБЯЗАН делать каждую сессию.
+> Полный гайд для человека — `docs/RULES.md`. Здесь — что ассистент ОБЯЗАН делать каждую сессию.
 
 - **Старт:** прогнать `npm run preflight` (git-email, node_modules, свежесть базы, свои невлитые ветки; ненулевой exit = чинить до работы). Затем спросить «одна цель на сессию?»; расплывчато («по уму») → переспросить, не угадывать. Принять формат: ЦЕЛЬ / ГДЕ СТОП / НЕ ТРОГАТЬ.
 - **В процессе:** самому напоминать «Коммит?» / «Чекпоинт?» после каждого готового куска; длинно → предложить чекпоинт + новую сессию ДО compact.
@@ -111,4 +127,4 @@ npm run smoke:prod -- --wait 180  # поллить, пока Vercel докаты
 - Milestone 1.0 — COMPLETE (March 2026): архитектура, Lighthouse 97, WCAG AA, AI Autopilot
 - v1.18.x — Bento Grid UI, Dynamic Island в статус-баре, privacy tri-state, LWW sync
 - Текущий вектор: ремонт тестовой базы → SSE hardening → CRDT foundation (UUID вместо autoIncrement)
-- См. `ROADMAP_elite_athlete-pro.md` и `NEXT_SESSION.md`
+- См. `docs/ROADMAP_elite_athlete-pro.md` и `NEXT_SESSION.md`
