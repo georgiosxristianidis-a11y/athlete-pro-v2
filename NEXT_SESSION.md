@@ -1,16 +1,17 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-26 (Sonnet 5 — релиз 1.25.15, F-2+F-3+F-6 одним поездом). Ранее: программа гигиены H-1..H-5 + O-3/O-5.
+> Обновлено: 2026-07-26 (Fable 5 — прополка веток + preflight-гарды настроек, релизы 1.25.18/1.25.19). Ранее: 1.25.15-1.25.17 (F-серия), программа гигиены H-1..H-5 + O-3/O-5.
 >
-> **Точка интеграции одна: `origin/main`.** Долгоживущий trunk `claude/csp-soft-delete` упразднён (карточка O-3) — он был рудиментом эпохи незащищённого main и стоил потери влитого PR#9. Ветка — всегда от свежего `origin/main`, влитие — только через PR. Бэкап линии: тег `backup-trunk-6b4f80b`.
+> **Точка интеграции одна: `origin/main`.** Долгоживущий trunk `claude/csp-soft-delete` упразднён (карточка O-3) и **физически удалён** (2026-07-26) — был рудиментом эпохи незащищённого main, стоил потери влитого PR#9, и оказался ещё и дефолт-веткой GitHub (нашлось только при попытке удалить). Ветка — всегда от свежего `origin/main`, влитие — только через PR. Бэкап линии: тег `backup-trunk-6b4f80b`.
 > ⚠️ **main защищён branch-protection** — обяз. чеки `test`+`e2e` + enforce_admins; прямой `git push HEAD:main` отклоняется (GH006). Порядок: `gh pr create --base main` → чеки зелёные → `gh pr merge --rebase`.
 >
 > **SHA здесь не хранятся** — они протухают от собственного мёржа этого файла (корень R4). Добывать командой:
-> `git fetch origin && git rev-parse --short origin/main` · состояние прода — `npm run smoke:prod` · ревизия веток — `npm run inventory` · старт сессии — `npm run preflight`.
+> `git fetch origin && git rev-parse --short origin/main` · состояние прода — `npm run smoke:prod` · ревизия веток — `npm run inventory` · старт сессии — `npm run preflight` (теперь сторожит и дефолт-ветку/protection/прод-деплой GitHub — детали `docs/handoff/HANDOFF_orchestration.md` § O-4).
 >
-> Инварианты: VERSION `1.25.17` (F-5 сплеш + хвосты rest-HUD поверх 1.25.15) · гейт unit **355/355** · lint **0 err** (stylelint warnings 28) · npm audit **0 vuln** · SW `CACHE_NAME` = **автобамп** контент-хешом манифеста (ручной vNNN не нужен). Lighthouse из worktree: perf 95-96 / a11y 100 / bp 100.
+> Инварианты: VERSION `1.25.19` · гейт unit **355/355** · lint **0 err** (stylelint warnings 28) · npm audit **0 vuln** · SW `CACHE_NAME` = **автобамп** контент-хешом манифеста (ручной vNNN не нужен). Lighthouse из worktree: perf 95-96 / a11y 100 / bp 100.
 > ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
-> Активная программа: **GYM-GRADE** — `docs/handoff/HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `docs/handoff/HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `docs/handoff/HANDOFF_isl_tail.md`. AIR-хвост: `docs/handoff/HANDOFF_air_refactor.md` (§ AIR-4).
+> **⚠️ Правило прополки веток/worktree (Gio, действует навсегда):** возраст ≥30 дней, содержимое разбирать с Gio ПЕРЕД сносом — не удалять пачкой по одному инструменту. Детали — `HANDOFF_orchestration.md` конец файла.
+> Активная программа: **GYM-GRADE** — `docs/handoff/HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `docs/handoff/HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `docs/handoff/HANDOFF_isl_tail.md`. AIR-хвост: `docs/handoff/HANDOFF_air_refactor.md` (§ AIR-4). Оркестрация/прополка: `docs/handoff/HANDOFF_orchestration.md`.
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
 
 ---
