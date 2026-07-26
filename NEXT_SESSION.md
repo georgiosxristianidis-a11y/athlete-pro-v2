@@ -1,6 +1,6 @@
 # NEXT SESSION — Athlete Pro · Канонический хэндофф
 
-> Обновлено: 2026-07-25 (Opus 5 — AIR-4 sweep + тест-гард blur). Ранее: программа гигиены H-1..H-5 + O-3/O-5.
+> Обновлено: 2026-07-26 (Sonnet 5 — релиз 1.25.15, F-2+F-3+F-6 одним поездом). Ранее: программа гигиены H-1..H-5 + O-3/O-5.
 >
 > **Точка интеграции одна: `origin/main`.** Долгоживущий trunk `claude/csp-soft-delete` упразднён (карточка O-3) — он был рудиментом эпохи незащищённого main и стоил потери влитого PR#9. Ветка — всегда от свежего `origin/main`, влитие — только через PR. Бэкап линии: тег `backup-trunk-6b4f80b`.
 > ⚠️ **main защищён branch-protection** — обяз. чеки `test`+`e2e` + enforce_admins; прямой `git push HEAD:main` отклоняется (GH006). Порядок: `gh pr create --base main` → чеки зелёные → `gh pr merge --rebase`.
@@ -8,7 +8,7 @@
 > **SHA здесь не хранятся** — они протухают от собственного мёржа этого файла (корень R4). Добывать командой:
 > `git fetch origin && git rev-parse --short origin/main` · состояние прода — `npm run smoke:prod` · ревизия веток — `npm run inventory` · старт сессии — `npm run preflight`.
 >
-> Инварианты: VERSION `1.25.8` (AIR-4 sweep + гард; смоук после мёржа) · гейт unit **340/340** · lint **0 err** (stylelint warnings 28) · npm audit **0 vuln** · SW `CACHE_NAME` = **автобамп** контент-хешом манифеста (ручной vNNN не нужен). Lighthouse из worktree: perf 95-96 / a11y 100 / bp 100.
+> Инварианты: VERSION `1.25.17` (F-5 сплеш + хвосты rest-HUD поверх 1.25.15) · гейт unit **355/355** · lint **0 err** (stylelint warnings 28) · npm audit **0 vuln** · SW `CACHE_NAME` = **автобамп** контент-хешом манифеста (ручной vNNN не нужен). Lighthouse из worktree: perf 95-96 / a11y 100 / bp 100.
 > ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
 > Активная программа: **GYM-GRADE** — `docs/handoff/HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `docs/handoff/HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `docs/handoff/HANDOFF_isl_tail.md`. AIR-хвост: `docs/handoff/HANDOFF_air_refactor.md` (§ AIR-4).
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
@@ -71,8 +71,9 @@
 ## 🎯 АКТУАЛЬНАЯ ОЧЕРЕДЬ (2026-07-26, по критичности)
 
 0. **ПОЛЕ 2026-07-26 → карточки F-1..F-7** (`docs/handoff/HANDOFF_gym_grade.md` § POLISH-LOOP) — берутся ПЕРВЫМИ. Серия DoD-1 обнулена → 0/10.
-   - **Закрыты кодом в 1.25.12, не брать заново:** F-1 AR-SAVE-CRASH 🔴 P0 · F-4 UI-TOAST-REDESIGN 🟡 P2. Остаток F-1 — тест-гарды (unit на `saveName()` + статический гард `import('./…')` в `js/shared/*`), они всё ещё открыты. Статус сверять **ancestry**, не хешами: `git merge-base --is-ancestor <sha> origin/main`.
-   - **Свободны, в порядке взятия:** **F-7 SW-MEDIA-BUDGET 🟠 P1** (LEAD) — 3.11 MB видео в SW-прекеше, ~6-22 с сотовой закачки в зале, измерено · **F-6 ERR-CLASSIFY-MODULE 🟠 P1** (Sonnet) · **F-2 ISL-PIP-NEXT 🟠 P1** (LEAD, в один заход с ленивым `PiP.init()`) · **F-3 AR-DOB-PICKER 🟠 P1** (Sonnet) · **F-5 UI-SPLASH 🟡 P2** (LEAD).
+   - **Закрыты кодом, НЕ БРАТЬ ЗАНОВО (вся серия F-*):** F-1 AR-SAVE-CRASH 🔴 P0 + F-4 UI-TOAST-REDESIGN 🟡 P2 (1.25.12) · F-7 SW-MEDIA-BUDGET 🟠 P1 (1.25.13) · **F-2 ISL-PIP-NEXT + F-3 AR-DOB-PICKER + F-6 ERR-CLASSIFY-MODULE 🟠 P1 (1.25.15, PR#39 одним поездом)** · F-5 UI-SPLASH 🟡 P2 (1.25.16). Остаток F-1 — тест-гарды (unit на `saveName()` + статический гард `import('./…')` в `js/shared/*`), они всё ещё открыты. Статус сверять **ancestry**, не хешами: `git merge-base --is-ancestor <sha> origin/main`.
+   - **Свободных карточек F-* больше нет** — F-5 UI-SPLASH закрыта в 1.25.16 (инлайн-SVG сплеш). Следующая работа берётся из пунктов 1-5 ниже и профильных хендоффов.
+   - **Ждут полевого чека Gio (код на проде):** F-2 — репро «закрыть последний подход упражнения → отдых → свернуть приложение», «далее» в PiP и острове обязаны совпадать; F-3 — пикер даты в Athlete Room на телефоне в обеих локалях. Остаток F-2 из карточки: физическое перекрытие окна PiP пилюли острова — отдельный layout-вопрос, не тронут.
    - Перф-инструменты в репо с 1.25.12 (`scripts/profile.mjs` / `graph-audit.mjs` / `compare-bundle.mjs`). Замеры сделаны и записаны в хендофф — **не перемерять**. Главное: на S23 Ultra CPU не проблема (TBT 0, тапы 54-94 мс), проблема — сотовый трафик.
 
 1. ~~BACKUP~~ — ✅ `22f7638`, выкачен в 1.24.3. Остаток DoD-5 — полевой DS1 + полевой чек экспорта/напоминалки за Gio (можно на проде).
