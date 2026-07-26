@@ -254,9 +254,15 @@
 /* Rest timer mode — in-frame HUD (replaces standalone rest modal). No numeric
    readout now, just the depleting bar + "далее: X" + two icon buttons. */
 .island.timer-mode {
-  width: 236px;
+  width: 140px;
   height: 44px;
   border-radius: var(--r-xl);
+}
+/* The caption is what needs the width. On the last exercise there is no "next",
+   the label is empty, and the pill stays the narrow two-button HUD instead of
+   holding 236px of emptiness. Declared before .expanded so that wins. */
+.island.timer-mode.rest-has-next {
+  width: 236px;
 }
 .island.timer-mode.expanded {
   width: 290px;
@@ -291,6 +297,15 @@
   text-overflow: ellipsis;
   text-align: left;
 }
+/* No "next" (last exercise): drop the empty flex child and re-center the two
+   buttons, otherwise space-between parks them against the right edge. */
+.island-rest-next:empty { display: none; }
+.island:not(.rest-has-next) .island-rest {
+  justify-content: center;
+  /* Symmetric padding: the asymmetric one exists to clear the caption's left
+     inset, and with no caption it just parks the pair 8px off centre. */
+  padding: 0 var(--sp-3);
+}
 /* During rest, mute the regular collapsed readouts behind the rest HUD */
 .island.timer-mode .island-time,
 .island.timer-mode .island-name-collapsed,
@@ -316,11 +331,13 @@
   color: var(--c-chrome);
   transition: filter 0.15s ease;
 }
-/* Visual is 28x26, but sweaty gym fingers get a >=40px tap target. */
+/* Visual is 28x26, but sweaty gym fingers get a >=40px tap target.
+   Insets resolve against the PADDING box (26x24 — the 1px border is outside
+   it), so -7/-6 measured only 38x38 in the browser. -8/-7 lands on 40x40. */
 .island-rest-btn::after {
   content: '';
   position: absolute;
-  inset: -7px -6px;
+  inset: -8px -7px;
 }
 .island-rest-btn.primary {
   /* Cool Steel: primary CTA (skip) uses chrome fill + dark chrome glyph. */

@@ -234,7 +234,7 @@ export const DynamicIsland = (() => {
     _expanded = false;
     _disarmFinish();
     _island?.classList.remove('expanded');
-    _island?.classList.remove('timer-mode');
+    _island?.classList.remove('timer-mode', 'rest-has-next');
     _island?.classList.remove('finish-mode');
     _island?.classList.add('mode-idle');
   }
@@ -251,7 +251,7 @@ export const DynamicIsland = (() => {
     // IDLE MODE: If no workout, act as the ONLINE button
     if (!State.plan || !State.plan.length) {
       _expanded = false;
-      _island?.classList.remove('timer-mode', 'expanded');
+      _island?.classList.remove('timer-mode', 'expanded', 'rest-has-next');
       _island?.classList.add('mode-idle');
       
       document.getElementById('status-bar')?.classList.remove('workout-active');
@@ -413,6 +413,8 @@ export const DynamicIsland = (() => {
     if (starting && _restNextEl) {
       const nx = State.plan?.find(ex => ex.sets.some(s => !s.done));
       _restNextEl.textContent = nx ? `${isRu() ? 'далее' : 'next'}: ${nx.name}` : '';
+      // Only a pill that actually carries the caption gets the wide layout.
+      _island?.classList.toggle('rest-has-next', !!nx);
     }
 
     // No numeric readout by design — the depleting bar + colour escalation below
@@ -445,7 +447,7 @@ export const DynamicIsland = (() => {
 
   function stopTimer() {
     _timerActive = false;
-    _island?.classList.remove('timer-mode');
+    _island?.classList.remove('timer-mode', 'rest-has-next');
     if (_timerProg) {
       _timerProg.style.transition = 'none';
       _timerProg.style.transform = 'scaleX(0)';
@@ -473,7 +475,7 @@ export const DynamicIsland = (() => {
     _timerActive = false;
     _expanded = false;
     _disarmFinish();
-    _island?.classList.remove('timer-mode', 'expanded', 'mode-idle');
+    _island?.classList.remove('timer-mode', 'expanded', 'mode-idle', 'rest-has-next');
     _island?.classList.add('finish-mode');
   }
 
