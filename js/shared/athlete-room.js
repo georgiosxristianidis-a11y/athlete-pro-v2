@@ -471,8 +471,7 @@ export const AthleteRoom = (() => {
       await DB.Settings.set('athlete-name', newName);
     }
     
-    // We need to import updateProfile from profile.store.js to save dob/sex
-    const { updateProfile } = await import('./profile.store.js');
+    // updateProfile уже импортирован статически (см. шапку файла)
     await updateProfile({ dob, sex, name: newName || undefined });
     
     cancelEdit();
