@@ -60,9 +60,10 @@
 
 ## 🎯 АКТУАЛЬНАЯ ОЧЕРЕДЬ (2026-07-26, по критичности)
 
-0. **ПОЛЕ 2026-07-26 → карточки F-1..F-6** (`docs/handoff/HANDOFF_gym_grade.md` § POLISH-LOOP) — берутся ПЕРВЫМИ. Серия DoD-1 обнулена → 0/10.
+0. **ПОЛЕ 2026-07-26 → карточки F-1..F-7** (`docs/handoff/HANDOFF_gym_grade.md` § POLISH-LOOP) — берутся ПЕРВЫМИ. Серия DoD-1 обнулена → 0/10.
    - **Закрыты кодом в 1.25.12, не брать заново:** F-1 AR-SAVE-CRASH 🔴 P0 · F-4 UI-TOAST-REDESIGN 🟡 P2. Остаток F-1 — тест-гарды (unit на `saveName()` + статический гард `import('./…')` в `js/shared/*`), они всё ещё открыты. Статус сверять **ancestry**, не хешами: `git merge-base --is-ancestor <sha> origin/main`.
-   - **Свободны:** F-6 ERR-CLASSIFY-MODULE 🟠 P1 (Sonnet) · F-2 ISL-PIP-NEXT (LEAD) · F-3 AR-DOB-PICKER (Sonnet) · F-5 UI-SPLASH (LEAD).
+   - **Свободны, в порядке взятия:** **F-7 SW-MEDIA-BUDGET 🟠 P1** (LEAD) — 3.11 MB видео в SW-прекеше, ~6-22 с сотовой закачки в зале, измерено · **F-6 ERR-CLASSIFY-MODULE 🟠 P1** (Sonnet) · **F-2 ISL-PIP-NEXT 🟠 P1** (LEAD, в один заход с ленивым `PiP.init()`) · **F-3 AR-DOB-PICKER 🟠 P1** (Sonnet) · **F-5 UI-SPLASH 🟡 P2** (LEAD).
+   - Перф-инструменты в репо с 1.25.12 (`scripts/profile.mjs` / `graph-audit.mjs` / `compare-bundle.mjs`). Замеры сделаны и записаны в хендофф — **не перемерять**. Главное: на S23 Ultra CPU не проблема (TBT 0, тапы 54-94 мс), проблема — сотовый трафик.
 
 1. ~~BACKUP~~ — ✅ `22f7638`, выкачен в 1.24.3. Остаток DoD-5 — полевой DS1 + полевой чек экспорта/напоминалки за Gio (можно на проде).
 2. ~~DRUM-PERF-2~~ — ✅ код НА ПРОДЕ (1.24.4), флаг `drum-window` **OFF**. Остаток — полевой чек за Gio на проде: включить флаг (`Flags.setFlag('drum-window', true)`), покрутить барабан, при ОК — дефолт ON.
