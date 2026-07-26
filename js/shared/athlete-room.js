@@ -2,7 +2,7 @@
 import { DB } from '../db.js';
 import { athleteProScore, dotsScore } from '../strength-engine.js';
 import { loadProfile, updateProfile, updateWeightAndHeight } from '../profile.store.js';
-import { esc, haptic } from './utils.js';
+import { esc, haptic, dobSelectsHtml, readDobFromSelects } from './utils.js';
 import { isRu } from '../locale.store.js';
 import { on, onChange } from '../events.js';
 
@@ -356,12 +356,12 @@ export const AthleteRoom = (() => {
               <input type="text" id="ar-name-input" class="ar-name-input" value="${esc(name)}" maxlength="25">
               
               <div class="ar-editor-label" style="margin-top:16px">${ru ? 'Дата рождения' : 'Date of Birth'}</div>
-              <input type="date" id="ar-dob-input" class="ar-name-input" value="${ctx.profile?.dob || ''}">
-              
+              <div style="margin-top:8px">${dobSelectsHtml(ctx.profile?.dob || '', ru, 'ar-dob')}</div>
+
               <div class="ar-editor-label" style="margin-top:16px">${ru ? 'Пол' : 'Sex'}</div>
               <select id="ar-sex-input" class="ar-name-input" style="background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); border-radius:12px; height:48px; padding:0 16px; width:100%; font-size:16px; margin-top:8px;">
-                <option value="m" ${ctx.profile?.sex !== 'f' ? 'selected' : ''}>Male</option>
-                <option value="f" ${ctx.profile?.sex === 'f' ? 'selected' : ''}>Female</option>
+                <option value="m" ${ctx.profile?.sex !== 'f' ? 'selected' : ''}>${ru ? 'Мужской' : 'Male'}</option>
+                <option value="f" ${ctx.profile?.sex === 'f' ? 'selected' : ''}>${ru ? 'Женский' : 'Female'}</option>
               </select>
               
               <div class="ar-editor-colors-label" style="margin-top:16px">${ru ? 'Цвет аватара' : 'Avatar Color'}</div>
@@ -459,12 +459,11 @@ export const AthleteRoom = (() => {
 
   async function saveName() {
     const input = document.getElementById('ar-name-input');
-    const dobInput = document.getElementById('ar-dob-input');
     const sexInput = document.getElementById('ar-sex-input');
-    if (!input || !dobInput || !sexInput) return;
-    
+    if (!input || !sexInput) return;
+
     const newName = input.value.trim();
-    const dob = dobInput.value;
+    const dob = readDobFromSelects('ar-dob');
     const sex = sexInput.value;
     
     if (newName) {
