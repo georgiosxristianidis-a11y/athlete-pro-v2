@@ -5,6 +5,9 @@
 //   2. нет node_modules  -> pre-push падает ложным SAST-блоком (stylelint не найден)
 //   3. база ветки уехала -> мёрж не будет FF / PR тянет чужие коммиты
 //   4. невлитые свои ветки старше суток -> там может лежать готовый фикс
+//   5. дефолт-ветка на GitHub != main   -> клоны и Compare&PR целятся в мёртвую
+//      линию (кейс csp-soft-delete 2026-07-26: O-3 упразднил trunk, а настройку
+//      репо никто не проверил — аномалия неделю висела в статусе git)
 // Ненулевой exit = есть FAIL. WARN не блокирует.
 
 import { execFileSync } from 'node:child_process';
@@ -127,6 +130,25 @@ if (mainRef && (email || author)) {
     add('OK', 'невлитые ветки', 'своих старше суток нет');
   } else {
     add('WARN', 'невлитые ветки', `${stale.length} шт. старше суток — влить или закрыть (O-5)`);
+  }
+}
+
+// --- 5. Дефолт-ветка на GitHub ----------------------------------------------
+// ls-remote --symref спрашивает сам GitHub; локальный origin/HEAD может врать.
+const symref = fetched ? tryGit(['ls-remote', '--symref', 'origin', 'HEAD'], { timeout: 20000 }) : null;
+if (!symref) {
+  add('WARN', 'дефолт-ветка', 'origin недоступен — проверка пропущена');
+} else {
+  const head = symref.match(/^ref:\s+refs\/heads\/(\S+)\s+HEAD/m)?.[1];
+  if (head === 'main') {
+    add('OK', 'дефолт-ветка', 'GitHub default = main');
+  } else {
+    add(
+      'FAIL',
+      'дефолт-ветка',
+      `GitHub default = ${head ?? '(не распознана)'}`,
+      'Settings → General → Default branch → main — иначе клоны и Compare&PR целятся в мёртвую линию',
+    );
   }
 }
 
