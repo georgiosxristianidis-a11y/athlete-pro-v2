@@ -37,6 +37,23 @@ export default [
     },
   },
   {
+    // Playwright-скрипты: Node-код, внутри которого живут page.evaluate()-колбэки,
+    // исполняемые в браузере. Тот же класс, что test/** и playwright.config.js.
+    files: ['scripts/profile.mjs', 'scripts/compare-bundle.mjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
+    },
+    rules: {
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', caughtErrors: 'none' }],
+      'no-console': 'off',
+    },
+  },
+  {
     files: ['test/**/*.js', 'playwright.config.js'],
     ignores: ['test/e2e/report/**'],
     languageOptions: {
