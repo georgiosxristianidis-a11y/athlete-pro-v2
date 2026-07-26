@@ -29,10 +29,19 @@ dirsToScan.forEach(dir => {
   }
 });
 
+// Media never rides in the precache (card F-7). Measured on prod: install
+// pulled 4.15 MB, of which 3.11 MB was panda video — over cellular, in the
+// background, before the mascot had ever been shown (and it lives behind the
+// 'fab-video' flag, off by default). ~6 s on 6 Mbps LTE, ~22 s on a congested
+// gym cell. The SW caches media at runtime on first real playback, so offline
+// still works after one view; the poster stays precached for an instant frame.
+const MEDIA_RE = /\.(?:mp4|webm|m4a|mp3|ogg|mov)$/i;
+
 // Clean paths to be web-friendly (forward slash) and filter out non-web files
 const assetsArray = allFiles
   .map(f => '/' + f.replace(/\\/g, '/'))
-  .filter(f => !f.includes('.DS_Store') && !f.endsWith('.map') && !f.endsWith('.md'));
+  .filter(f => !f.includes('.DS_Store') && !f.endsWith('.map') && !f.endsWith('.md'))
+  .filter(f => !MEDIA_RE.test(f));
 
 const newAssetsString = 'const ASSETS = [\n  ' + assetsArray.map(f => `'${f}'`).join(',\n  ') + '\n];';
 
