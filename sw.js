@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v118-5321f8e8';
+const CACHE_NAME = 'athlete-pro-v118-32877fc4';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -115,10 +115,7 @@ const ASSETS = [
   '/icons/legs.svg',
   '/icons/pull.svg',
   '/icons/push.svg',
-  '/assets/panda-idle.mp4',
-  '/assets/panda-idle.webm',
   '/assets/panda-poster.jpg',
-  '/assets/panda-voice.mp4',
   '/fonts/instrument-sans-latin-ext.woff2',
   '/fonts/instrument-sans-latin.woff2',
   '/fonts/manrope-cyrillic-ext.woff2',
@@ -129,6 +126,10 @@ const ASSETS = [
   '/fonts/manrope-vietnamese.woff2',
   '/fonts/orbitron-latin.woff2'
 ];
+
+/* Media lives outside ASSETS (card F-7) — see scripts/build-sw.mjs. Kept in
+   sync with the exclusion list there. */
+const MEDIA_RE = /\.(?:mp4|webm|m4a|mp3|ogg|mov)$/i;
 
 /* ── Privacy mode — synced from main thread via postMessage ── */
 let privacyMode = 'cloud'; // default; updated when client posts message
@@ -222,6 +223,13 @@ self.addEventListener('fetch', (e) => {
   const isCode = dest === 'script' || dest === 'style' || dest === 'document' ||
     /\.(?:js|mjs|css|html)$/.test(cleanPath);
 
+  // Media is out of the precache (F-7) and gets its own cache-first path,
+  // because a <video> asks with Range and the plain path would never store it.
+  if (!isCode && (dest === 'video' || dest === 'audio' || MEDIA_RE.test(cleanPath))) {
+    e.respondWith(mediaCacheFirst(e.request, cleanReq));
+    return;
+  }
+
   e.respondWith(isCode ? networkFirst(e.request, cleanReq, dest) : cacheFirst(e.request, cleanReq));
 });
 
@@ -250,6 +258,44 @@ async function networkFirst(request, cleanReq, dest) {
     // fail hard with no retry; Response.error() surfaces the real condition.
     return Response.error();
   }
+}
+
+/* ── Media: cache-first, filled on first real playback ──
+   Serving a whole cached 200 to a ranged request is what the precached videos
+   already did before F-7 — the media element treats it as a non-seekable
+   stream and plays it, so nothing about playback changes.
+   Storing is the part that needs care: a media element asks with
+   `Range: bytes=0-`, the server answers 206, and maybeCache() drops it
+   (status !== 200). A 206 spanning the entire file is a complete body, so it
+   is re-labelled 200 and stored under the range-free key; a genuinely partial
+   response is left alone and the next full request warms the cache instead. */
+async function mediaCacheFirst(request, cleanReq) {
+  const cached = await caches.match(cleanReq, { ignoreVary: true });
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    cacheWholeMedia(response, cleanReq);
+    return response;
+  } catch {
+    return Response.error();
+  }
+}
+
+function cacheWholeMedia(response, cleanReq) {
+  if (!response || response.type === 'opaque') return;
+  if (response.status === 200) { maybeCache(response, cleanReq); return; }
+  if (response.status !== 206) return;
+  const m = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('content-range') || '');
+  if (!m || m[1] !== '0' || Number(m[2]) !== Number(m[3]) - 1) return;
+  const clone = response.clone();
+  clone.blob().then((body) => {
+    const headers = new Headers(clone.headers);
+    headers.delete('content-range');
+    headers.set('content-length', String(body.size));
+    return caches.open(CACHE_NAME).then((cache) =>
+      cache.put(cleanReq, new Response(body, { status: 200, statusText: 'OK', headers }))
+    );
+  }).catch(() => { /* body already consumed or quota exceeded — stay uncached */ });
 }
 
 async function cacheFirst(request, cleanReq) {
