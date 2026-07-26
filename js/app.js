@@ -16,6 +16,7 @@ import { DynamicIsland } from './shared/dynamic-island.js';
 import { AthleteRoom } from './shared/athlete-room.js';
 import { Integrity } from './shared/integrity.js';
 import { initLocale } from './locale.store.js';
+import { haptic } from './shared/utils.js';
 import { State } from './workout.store.js';
 import { VERSION } from './version.js';
 import { forceUpdate } from './shared/sw-update.js';
@@ -109,15 +110,48 @@ function hideLoading() {
 const bootTimeout = setTimeout(hideLoading, 5000);
 
 /* ── Privacy indicator wiring ── */
+// Island Settings is reachable by long-pressing the Island; the status-bar
+// indicator answers to the same gesture with the same timing/haptic, so the
+// hold never dead-ends (it used to react to tap only).
+const PRIVACY_LONG_PRESS_MS = 450;
+let _privacyPressTimer = null;
+let _privacyLongPressed = false;
+
+function _startPrivacyPress() {
+  clearTimeout(_privacyPressTimer);
+  _privacyLongPressed = false;
+  _privacyPressTimer = setTimeout(() => {
+    _privacyPressTimer = null;
+    _privacyLongPressed = true;
+    haptic([30, 50, 30]);
+    window.Nav.go('s-island-settings');
+  }, PRIVACY_LONG_PRESS_MS);
+}
+
+function _cancelPrivacyPress() {
+  clearTimeout(_privacyPressTimer);
+  _privacyPressTimer = null;
+}
+
 function _renderPrivacyIndicator() {
   const el = document.getElementById('privacy-indicator');
   if (!el) return;
   const mode = getPrivacyMode();
-  
+
   // Logic Fix: Indicator is always visible and clickable to open Privacy Menu
   el.style.cursor = 'pointer';
   el.removeAttribute('hidden');
-  el.onclick = () => window.Nav.go('s-island-settings');
+  el.onclick = () => {
+    // The long-press already navigated — don't run the tap action on release.
+    if (_privacyLongPressed) { _privacyLongPressed = false; return; }
+    window.Nav.go('s-island-settings');
+  };
+  el.onpointerdown = () => _startPrivacyPress();
+  el.onpointerup = () => _cancelPrivacyPress();
+  el.onpointerleave = () => _cancelPrivacyPress();
+  el.onpointercancel = () => _cancelPrivacyPress();
+  // Mobile: a hold on the icon must not raise the native callout menu.
+  el.oncontextmenu = (e) => e.preventDefault();
 
   el.classList.remove('mode-cloud', 'mode-anon', 'mode-airgap');
   el.classList.add('mode-' + mode);

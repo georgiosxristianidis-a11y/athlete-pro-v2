@@ -17,6 +17,11 @@
   color: var(--c-text-2);
   background: var(--c-surface);
   transition: background var(--t-fast), color var(--t-fast);
+  /* Long-press opens Island Settings — no native callout / text selection. */
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 .privacy-indicator[hidden] { display: none; }
 .privacy-indicator.mode-anon {
