@@ -86,7 +86,7 @@ window.addEventListener('popstate', (e) => {
 
 const ICONS = {
   success: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
-  error: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
+  error: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
   info: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`
 };
 
@@ -141,7 +141,7 @@ function show(msg, type = 'info', duration = 3000, opts = {}) {
   const t = document.createElement('div');
   t.className = `toast toast-${type}`;
   t._toastKey = key;
-  t.innerHTML = `${ICONS[type] || ICONS.info}<span>${escHtml(text)}</span>`;
+  t.innerHTML = `<span class="toast-chip">${ICONS[type] || ICONS.info}</span><span class="toast-msg">${escHtml(text)}</span>`;
   if (opts.action) {
     const btn = document.createElement('button');
     btn.className = 'toast-action';
