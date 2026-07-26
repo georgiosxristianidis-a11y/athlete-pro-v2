@@ -8,7 +8,11 @@
 //   5. дефолт-ветка на GitHub != main   -> клоны и Compare&PR целятся в мёртвую
 //      линию (кейс csp-soft-delete 2026-07-26: O-3 упразднил trunk, а настройку
 //      репо никто не проверил — аномалия неделю висела в статусе git)
+//   6. защита main снята/ослаблена  -> прямой push и красные мёржи снова возможны
+//   7. Production-деплой не с main  -> прод живёт своей жизнью (кейс: смоук чист,
+//      а раскатка шла бы с чужой ветки)
 // Ненулевой exit = есть FAIL. WARN не блокирует.
+// Проверки 5-7 сетевые: оффлайн/нет gh = WARN-пропуск, сессию не блокируют.
 
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -149,6 +153,68 @@ if (!symref) {
       `GitHub default = ${head ?? '(не распознана)'}`,
       'Settings → General → Default branch → main — иначе клоны и Compare&PR целятся в мёртвую линию',
     );
+  }
+}
+
+// --- 6+7. Настройки GitHub: защита main + источник Production-деплоя ---------
+// Тем же приёмом, что и дефолт-ветка: настройки невидимы в ежедневной работе
+// и не ломаются до первого касания — спрашиваем сам GitHub каждую сессию.
+function tryGh(args) {
+  try {
+    return execFileSync('gh', args, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      // Без shell: gh — настоящий .exe и находится по PATH, а '&' в URL
+      // деплойментов виндовый cmd иначе режет как разделитель команд.
+      timeout: 20000,
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+const originUrl = tryGit(['remote', 'get-url', 'origin']) || '';
+const repoSlug = originUrl.match(/github\.com[:/]([^/]+\/[^/.]+)/)?.[1];
+
+if (!repoSlug || !fetched) {
+  add('WARN', 'настройки GitHub', 'origin не GitHub или нет сети — проверки 6-7 пропущены');
+} else if (!tryGh(['--version'])) {
+  add('WARN', 'настройки GitHub', 'gh CLI недоступен — проверки 6-7 пропущены');
+} else {
+  // 6. Защита main: обязательные чеки test+e2e + enforce_admins.
+  const protRaw = tryGh(['api', `repos/${repoSlug}/branches/main/protection`]);
+  if (!protRaw) {
+    add('FAIL', 'защита main', 'branch protection ОТКЛЮЧЕНА (или нет прав её видеть)',
+      'Settings → Branches → main: required checks test+e2e + Include administrators');
+  } else {
+    try {
+      const prot = JSON.parse(protRaw);
+      const checks = prot.required_status_checks?.contexts ?? [];
+      const missing = ['test', 'e2e'].filter((c) => !checks.includes(c));
+      if (missing.length || !prot.enforce_admins?.enabled) {
+        const what = [
+          ...(missing.length ? [`нет обязательных чеков: ${missing.join(', ')}`] : []),
+          ...(prot.enforce_admins?.enabled ? [] : ['enforce_admins выключен']),
+        ].join('; ');
+        add('FAIL', 'защита main', what, 'Settings → Branches → main — вернуть как было');
+      } else {
+        add('OK', 'защита main', `чеки [${checks.join(', ')}] + enforce_admins`);
+      }
+    } catch {
+      add('WARN', 'защита main', 'ответ GitHub не распарсился — проверить руками');
+    }
+  }
+
+  // 7. Последний Production-деплой Vercel обязан быть коммитом из main.
+  const depRaw = tryGh(['api', `repos/${repoSlug}/deployments?environment=Production&per_page=1`]);
+  const depSha = depRaw ? (() => { try { return JSON.parse(depRaw)[0]?.sha; } catch { return null; } })() : null;
+  if (!depSha) {
+    add('WARN', 'прод-деплой', 'Production-деплоев не видно — проверить руками');
+  } else if (gitOk(['merge-base', '--is-ancestor', depSha, 'origin/main'])) {
+    add('OK', 'прод-деплой', `последний Production = ${depSha.slice(0, 7)}, лежит в main`);
+  } else {
+    add('FAIL', 'прод-деплой', `последний Production ${depSha.slice(0, 7)} НЕ из main`,
+      'Vercel деплоит не ту ветку — проверить Vercel → Settings → Git (проект athlete-pro-v7)');
   }
 }
 
