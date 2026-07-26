@@ -8,6 +8,8 @@
 - **База — только `origin/main`.** Долгоживущий trunk упразднён (O-3, 2026-07-25): он был второй точкой интеграции и стоил потери влитого PR#9. Перед стартом: `git fetch origin && git checkout -b <ветка> origin/main`.
 - **Handoff между сессиями/агентами:** `NEXT_SESSION.md` в корне (правило GIO Context Integrity) — читать первым.
 - Незакоммиченные диффы могут быть живым WIP другого агента — сверяйся с NEXT_SESSION.md, не откатывай вслепую.
+- **Вывод инфраструктуры из эксплуатации = чеклист всех мест прошивки** (урок csp-soft-delete, 2026-07-26): правила/доки · локальные ветки и worktree · remote-ветка · настройки GitHub (default branch, protection) · Vercel. Закрыть три из четырёх = мина. Дефолт-ветку сторожит `npm run preflight`.
+- **Аномалия в фоновом шуме — проговорить вслух, не игнорить:** строка вроде «Main branch: claude/csp-soft-delete» в статусе git неделю была видна всем агентам, и никто не спросил «почему». Увидел странное в статусе/выводе — один раз спроси или заведи карточку.
 - Antigravity-артефакты (task/plan/walkthrough): `~/.gemini/antigravity/brain/<uuid>/`.
 - Стандарты GIO: `~/.gemini/GEMINI.md` (глобальный) + `GEMINI.md` в корне (Karpathy guidelines). Аудиты — слэш-команды `/audit_core` / `/audit_cyber` / `/audit_speed`.
 
