@@ -20,6 +20,7 @@
 import { PiP } from './features/pip.js';
 import { isRu } from './locale.store.js';
 import { haptic } from './shared/utils.js';
+import { State } from './workout.store.js';
 
 export const RestTimer = (() => {
   let _end = 0;          // absolute epoch-ms the rest ends
@@ -27,12 +28,20 @@ export const RestTimer = (() => {
   let _interval = null;  // 1 Hz display ticker
   let _alarm = null;     // single fallback timeout aimed at _end
   let _done = false;     // guard: interval / alarm / visibility can race the finish
+  let _nextName = '';    // "next" for the PiP mirror — single source of truth (F-2)
 
   function start(_exName, _setLabel, duration) {
     stop();                       // clear any prior rest cleanly
     _total = duration;
     _end = Date.now() + duration * 1000;
     _done = false;
+
+    // Same rule dynamic-island.js uses for its rest-HUD "далее: X" sublabel
+    // (first exercise still holding an undone set). Computed once here and
+    // fed into every PiP frame during this rest so the island and the PiP
+    // mirror can never disagree (F-2: PiP was showing a stale pre-rest frame).
+    const nx = State.plan?.find(ex => ex.sets.some(s => !s.done));
+    _nextName = nx ? nx.name : '';
 
     // Proactively request notification permission on first rest
     if ('Notification' in window && Notification.permission === 'default') {
@@ -56,7 +65,7 @@ export const RestTimer = (() => {
     // Document/video PiP mirror — only visible when the browser is minimized
     const m = Math.floor(rem / 60).toString().padStart(2, '0');
     const s = (rem % 60).toString().padStart(2, '0');
-    PiP.drawFrame({ time: `${m}:${s}`, name: isRu() ? 'ОТДЫХ...' : 'RESTING...' });
+    PiP.drawFrame({ time: `${m}:${s}`, name: isRu() ? 'ОТДЫХ...' : 'RESTING...', nextName: _nextName });
 
     if (rem <= 0) _finish();
   }
