@@ -39,15 +39,17 @@ export const Profile = (() => {
         console.warn('Offline mode: sync.js failed to load', e.message);
       }
       
-      const [settings, langRaw, serverStatus, lastExportAt] = await Promise.all([
+      const [settings, langRaw, lastExportAt] = await Promise.all([
         DB.Settings.getAll(),
         DB.Settings.get('lang', 'en'),
-        fetch('/api/ai-status').then(r => r.json()).catch(() => ({ gemini: false, anthropic: false })),
         DB.Settings.get(K_LAST_EXPORT, 0)
       ]);
       const lang = langRaw || 'en';
       const ru = lang === 'ru';
       const syncStatus = SyncManager.getStatus();
+      // serverStatus is unknown at render time (offline-first: the screen must
+      // not wait for the network); indicators are patched after paint.
+      const serverStatus = { gemini: false, anthropic: false };
 
       screen.innerHTML = `
       <div class="screen-header">
@@ -96,6 +98,7 @@ export const Profile = (() => {
       if (passportEl) renderProfile(passportEl, lang).catch(console.error);
       _appendBuildStamp();
       _wireVersionTap();
+      _patchAiStatus(settings);
     } catch (err) {
       console.error('Profile load error', err);
       screen.innerHTML = '<div style="padding:20px;">Error loading profile</div>';
@@ -444,3 +447,25 @@ async function setEngine(engine) {
 })();
 
 function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+/** Update AI engine indicators after shell render (non-blocking). */
+async function _patchAiStatus(settings) {
+  try {
+    const serverStatus = await fetch('/api/ai-status').then(r => r.json());
+    const currentEngine = settings['ai-engine'] || 'anthropic';
+    const geminiActive = serverStatus.gemini || !!settings['gemini-key'];
+    const anthropicActive = serverStatus.anthropic || !!settings['anthropic-key'];
+
+    const anthropicEl = document.getElementById('ai-status-anthropic');
+    if (anthropicEl) {
+      anthropicEl.className = `ai-indicator ${anthropicActive ? (currentEngine === 'anthropic' ? 'active' : 'ready') : 'missing'}`;
+    }
+    const geminiEl = document.getElementById('ai-status-gemini');
+    if (geminiEl) {
+      geminiEl.className = `ai-indicator ${geminiActive ? (currentEngine === 'gemini' ? 'active' : 'ready') : 'missing'}`;
+    }
+    if (serverStatus.gemini) {
+      document.getElementById('engine-btn-gemini')?.classList.remove('ai-glow-error');
+    }
+  } catch (_) { /* offline — indicators already reflect local-key state */ }
+}
