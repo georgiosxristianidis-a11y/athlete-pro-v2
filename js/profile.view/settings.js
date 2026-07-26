@@ -200,12 +200,13 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
         <div class="engine-toggle-grid">
           <button class="engine-toggle-btn claude-active ${currentEngine === 'anthropic' ? 'active' : ''}"
                   data-action="settings:setEngine" data-engine="anthropic">
-            <span class="ai-indicator ${anthropicActive ? (currentEngine === 'anthropic' ? 'active' : 'ready') : 'missing'}"></span>
+            <span class="ai-indicator ${anthropicActive ? (currentEngine === 'anthropic' ? 'active' : 'ready') : 'missing'}" id="ai-status-anthropic"></span>
             ${t('settings.engine_claude')}
           </button>
           <button class="engine-toggle-btn gemini-active ${currentEngine === 'gemini' ? 'active' : ''} ${currentEngine === 'gemini' && !geminiActive ? 'ai-glow-error' : ''}"
+                  id="engine-btn-gemini"
                   data-action="settings:setEngine" data-engine="gemini">
-            <span class="ai-indicator ${geminiActive ? (currentEngine === 'gemini' ? 'active' : 'ready') : 'missing'}"></span>
+            <span class="ai-indicator ${geminiActive ? (currentEngine === 'gemini' ? 'active' : 'ready') : 'missing'}" id="ai-status-gemini"></span>
             ${t('settings.engine_gemini')}
           </button>
         </div>
