@@ -143,6 +143,7 @@ app.get('*', (req, res, next) => {
   // Same anti-stale rules as the static route: the app shell must never be
   // cached (no-store) and must not carry Vercel's lying mtime validator.
   res.sendFile(path.join(__dirname, 'index.html'), {
+    etag: false,
     lastModified: false,
     headers: { 'Cache-Control': 'no-store' },
   });

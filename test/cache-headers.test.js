@@ -107,8 +107,19 @@ test('cache: SPA deep-link fallback carries the same shell rules', async () => {
   await withServer(async (get) => {
     const res = await get('/some/deep/link');
     assert.equal(res.status, 200);
-    assert.equal(res.headers['last-modified'], undefined);
+    assertNoValidators(res, '/some/deep/link');
     assert.match(res.headers['cache-control'] ?? '', /no-store/);
+
+    // On Vercel every page load enters through this route, so replay the
+    // conditional request here too — a 304 on the fallback is the freeze bug.
+    const conditional = {
+      'If-None-Match': res.headers.etag ?? 'W/"23-18f0a1b2c3d"',
+      'If-Modified-Since':
+        res.headers['last-modified'] ?? 'Tue, 09 Oct 2018 00:00:00 GMT',
+    };
+    const replay = await get('/some/deep/link', conditional);
+    assert.equal(replay.status, 200, 'fallback must never answer 304');
+    assert.ok(replay.body.length > 0, 'body must not be empty');
   });
 });
 
