@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.25.20] — 2026-07-26
+
+### F-1-хвост — static import guard (AR-SAVE-CRASH class)
+- **TEST-IMPORT-GUARD** (`cc0f310`) — `test/import-guard.test.js`: сканирует `js/shared/*.js` на динамические `import('./x.js')` и проверяет, что цель реально существует на диске. Ловит целый класс регрессий (не только один случай AR-SAVE-CRASH, где `saveName()` кидала на несуществующем пути к `profile.store.js`).
+
 ## [1.18.x] — 2026-06-12 → 2026-07-02 (сводка, перенесено из NEXT_SESSION.md при DOC-SYNC)
 
 ### Air Cleanup (2026-07-02, HANDOFF_air_cleanup.md)
