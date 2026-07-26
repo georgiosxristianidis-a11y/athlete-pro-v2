@@ -25,6 +25,16 @@ export function toUserMessage(err, fallback) {
        || /** @type {any} */ (err).statusText || /** @type {any} */ (err).reason || '');
   const s = String(raw).toLowerCase();
 
+  // Lazy-loaded module (dynamic import()) failed. Browsers phrase this as a
+  // "fetch" error even when the real cause has nothing to do with the network
+  // (stale chunk after a deploy, syntax error in the chunk, CSP block) — check
+  // this before the generic network classifier so we don't cry "offline" while
+  // actually online (task F-6).
+  if (s.includes('dynamically imported module') || s.includes('importing a module script failed')
+      || s.includes('error loading dynamically imported module')) {
+    if (!navigator.onLine) return ru ? 'Нет соединения. Проверьте интернет.' : 'No connection — check your internet.';
+    return ru ? 'Не удалось загрузить часть приложения. Обновите страницу.' : 'Failed to load part of the app. Please refresh the page.';
+  }
   // Offline / network — also trust the live connection flag.
   if (!navigator.onLine || s.includes('failed to fetch') || s.includes('networkerror')
       || s.includes('network request failed') || s.includes('load failed') || s.includes('err_internet')) {
