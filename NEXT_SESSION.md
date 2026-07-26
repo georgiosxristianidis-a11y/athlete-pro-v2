@@ -58,7 +58,11 @@
 
 ---
 
-## 🎯 АКТУАЛЬНАЯ ОЧЕРЕДЬ (2026-07-17, по критичности)
+## 🎯 АКТУАЛЬНАЯ ОЧЕРЕДЬ (2026-07-26, по критичности)
+
+0. **ПОЛЕ 2026-07-26 → карточки F-1..F-6** (`docs/handoff/HANDOFF_gym_grade.md` § POLISH-LOOP) — берутся ПЕРВЫМИ. Серия DoD-1 обнулена → 0/10.
+   - **Уже написаны, не брать заново:** F-1 AR-SAVE-CRASH 🔴 P0 и F-4 UI-TOAST-REDESIGN 🟡 P2 — код на ветке `claude/app-profiling-optimization-63615f` (`fix(profile): F-1 AR-SAVE-CRASH…` и `style(toast): F-4 UI-TOAST-REDESIGN…`), ждут PR. Статус сверять **ancestry**, не хешами: `git merge-base --is-ancestor <sha> origin/main` — при rebase-мёрже хеши мутируют.
+   - **Свободны:** F-6 ERR-CLASSIFY-MODULE 🟠 P1 (Sonnet) · F-2 ISL-PIP-NEXT (LEAD) · F-3 AR-DOB-PICKER (Sonnet) · F-5 UI-SPLASH (LEAD).
 
 1. ~~BACKUP~~ — ✅ `22f7638`, выкачен в 1.24.3. Остаток DoD-5 — полевой DS1 + полевой чек экспорта/напоминалки за Gio (можно на проде).
 2. ~~DRUM-PERF-2~~ — ✅ код НА ПРОДЕ (1.24.4), флаг `drum-window` **OFF**. Остаток — полевой чек за Gio на проде: включить флаг (`Flags.setFlag('drum-window', true)`), покрутить барабан, при ОК — дефолт ON.
