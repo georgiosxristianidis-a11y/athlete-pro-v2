@@ -8,7 +8,8 @@
 
 ## 🔵 SONNET (4.6/5) — scoped тесты · рефактор по спеку
 
-### S1 · TEST-ISL-GUARD 🔵 P1 🚧 Sonnet (в полёте)
+### S1 · TEST-ISL-GUARD 🔵 P1 — ✅ закрыто (сверено 2026-07-26, хендофф был протухший)
+Обе половины спека в main: `test/island-guard.test.js` (deriveDotState — точка видима во всех состояниях, исчерпывающий свип классов) + `test/e2e/regressions.spec.js:219-225` (клик-гард `toggleExpand`). Карточка НЕ бралась заново, найдена по коду.
 **ЦЕЛЬ:** регресс-тест на фиксы B/C, чтобы влитие не откатило их молча.
 **Спек:** unit/DOM-тест — (1) клик по элементу с `[data-action]` внутри острова НЕ вызывает `toggleExpand`; клик по пустому телу пилюли — вызывает; (2) точка видима во всех состояниях `deriveDotState`: `.island-dot.airgap` и `.island-dot.no-cloud` имеют ненулевой `background` и НЕ `display:none` (класс `.online` удалён как мёртвый — deriveDotState его не эмитит, тест на него не писать). Репро против `js/shared/dynamic-island.js` и `css/dynamic-island.css`.
 **ГДЕ СТОП:** тесты зелёные и падают при откате гарда/CSS-правила.
