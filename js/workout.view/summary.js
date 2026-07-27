@@ -35,6 +35,7 @@ import { fmtVol } from '../shared/format.js';
 
 import { esc } from '../shared/utils.js';
 import { chamberPill, blockLabel } from '../shared/chamber-pill.js';
+import { blockTicks } from '../shared/block-ticks.js';
 
 /* ── PPL colour map (semantic, not decorative) ─────────── */
 const PPL_COLOR = {
@@ -81,13 +82,23 @@ function _exRow(ex, pplColor) {
  * Renders a single glass-cluster island for one training block.
  * @param {{ id:string, label:string, durationStr:string|null, tonnage:number, exercises:Array }} block
  * @param {string} pplColor
- * @param {number} staggerIdx  for CSS animation-delay
+ * @param {number} staggerIdx  for CSS animation-delay — он же позиция блока
+ * @param {number} blockCount  сколько всего блоков в сессии
  * @returns {string}
  */
-function _blockIsland(block, pplColor, staggerIdx) {
+function _blockIsland(block, pplColor, staggerIdx, blockCount) {
   // block.label is provided by buildSessionSummary (Lead W-2-B); blockLabel() as fallback.
   const label = block.label || blockLabel(block.id);
   const isCore = block.id === 'core' || block.id === 'align';
+
+  // Та же полоска этапов, что в живом логгере: отчёт читается тем же
+  // языком, каким тренировка шла, — без переучивания на второй словарь.
+  const ticks = blockTicks({
+    index: staggerIdx,
+    total: blockCount,
+    color: pplColor,
+    label,
+  });
 
   const pillHTML = chamberPill({
     label,
@@ -95,6 +106,7 @@ function _blockIsland(block, pplColor, staggerIdx) {
     mode: 'completed',
     time: block.durationStr ?? undefined,
     tonnage: (!isCore && block.tonnage) ? _fmtTon(block.tonnage) : undefined,
+    ticks,
   });
 
   const exRows = (block.exercises || []).map(ex => _exRow(ex, pplColor)).join('');
@@ -165,8 +177,9 @@ export function renderSummaryModal(data, onSave, ru = false) {
       </div>
     </div>`;
 
-  const blocksHTML = (data.blocks || [])
-    .map((block, i) => _blockIsland(block, pplColor, i))
+  const blockList = data.blocks || [];
+  const blocksHTML = blockList
+    .map((block, i) => _blockIsland(block, pplColor, i, blockList.length))
     .join('');
 
   const prHTML = _prSection(data.prs);
