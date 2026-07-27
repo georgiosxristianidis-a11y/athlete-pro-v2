@@ -501,12 +501,13 @@
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-1);
   margin-bottom: var(--sp-2);
+  position: relative; /* containing block для ::before — иначе glow тянется на весь .screen */
 }
 .pp-hero-v2::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at center, color-mix(in srgb, var(--c-secondary) 15%, transparent) 0%, transparent 70%);
   filter: blur(20px);
   z-index: -1;
   pointer-events: none;
