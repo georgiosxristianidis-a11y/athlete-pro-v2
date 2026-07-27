@@ -184,7 +184,7 @@
   inset: 0;
   background: rgba(0, 0, 0, 0);
   z-index: 3000;
-  transition: background 0.35s ease;
+  transition: background 0.24s var(--ease-out);
   display: flex;
   align-items: flex-end;
   justify-content: center; /* Center sheet on wide screens */
@@ -216,7 +216,7 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   transform: translateY(100%);
-  transition: transform 0.35s var(--ease-std);
+  transition: transform 0.26s var(--ease-decel);
 }
 .claude-overlay.visible .claude-sheet {
   transform: translateY(0);

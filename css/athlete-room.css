@@ -8,7 +8,7 @@
   align-items: center !important;
   gap: 8px !important;
   padding-right: 12px !important;
-  transition: filter 0.4s ease, opacity 0.4s ease !important;
+  transition: filter var(--t-enter), opacity var(--t-enter) !important;
 }
 
 /* Workout active → let the Dynamic Island lead. The island is the live HUD,
@@ -19,7 +19,7 @@
 #status-bar.workout-active .status-logo,
 #status-bar.workout-active .status-right {
   opacity: 0.5;
-  transition: opacity 0.4s ease;
+  transition: opacity var(--t-enter);
 }
 
 /* Expanded island owns the whole bar — side chrome fully yields. A 0.5 dim is
@@ -92,7 +92,7 @@
   z-index: 4000;
   background: rgba(0,0,0,0);
   pointer-events: none;
-  transition: background 0.32s ease;
+  transition: background 0.24s var(--ease-out);
   overflow: hidden;
 }
 .athlete-room-overlay.open {
@@ -119,7 +119,7 @@
   overscroll-behavior: contain;
   padding: 0 0 env(safe-area-inset-bottom, 0px);
   transform: translateY(100%);
-  transition: transform 0.36s var(--ease-decel);
+  transition: transform 0.26s var(--ease-decel);
   scrollbar-width: none;
   /* Top glow */
   box-shadow: 0 -4px 40px color-mix(in srgb, var(--c-bg) 50%, transparent), 0 -1px 0 var(--c-border);

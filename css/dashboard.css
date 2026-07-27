@@ -309,7 +309,7 @@
   text-align: center;
   min-height: 70vh;
   padding: var(--sp-3);
-  animation: fadeSlideUp 0.5s ease both;
+  animation: fadeSlideUp 0.26s var(--ease-out) both;
 }
 .empty-dash-mascot-wrap {
   position: relative;
@@ -320,7 +320,7 @@
   touch-action: none;
   user-select: none;
   z-index: 10;
-  transition: opacity 0.4s ease;
+  transition: opacity var(--t-enter);
   animation: emptyFloat 3s ease-in-out infinite;
 }
 .empty-dash-mascot-wrap:active { cursor: grabbing; animation-play-state: paused; }
@@ -449,16 +449,16 @@
 
 /* DESIGN-3: Staggered entrance animations */
 .dash-hero {
-  animation: fadeSlideUp 0.35s ease both;
+  animation: fadeSlideUp 0.26s var(--ease-out) both;
 }
 .stat-row {
-  animation: fadeSlideUp 0.35s ease 0.06s both;
+  animation: fadeSlideUp 0.26s var(--ease-out) 0.06s both;
 }
 .streak-card {
-  animation: fadeSlideUp 0.35s ease 0.12s both;
+  animation: fadeSlideUp 0.26s var(--ease-out) 0.12s both;
 }
 .ppl-gauge-card {
-  animation: fadeSlideUp 0.35s ease 0.18s both;
+  animation: fadeSlideUp 0.26s var(--ease-out) 0.18s both;
 }
 .session-item {
   animation: fadeSlideUp 0.3s ease both;
