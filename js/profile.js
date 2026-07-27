@@ -30,6 +30,9 @@ export const Profile = (() => {
     const screen = document.getElementById('s-profile');
     if (!screen) return;
 
+    const scrollEl = document.scrollingElement || document.documentElement;
+    const savedScroll = scrollEl.scrollTop;
+
     try {
       let SyncManager = { getStatus: () => 'offline' };
       try {
@@ -94,8 +97,14 @@ export const Profile = (() => {
       <input type="file" id="import-file-input" accept=".json" style="display:none" data-change="profile:importFile">
     `;
 
+      scrollEl.scrollTop = savedScroll;
+
       const passportEl = document.getElementById('profile-passport');
-      if (passportEl) renderProfile(passportEl, lang).catch(console.error);
+      if (passportEl) {
+        renderProfile(passportEl, lang)
+          .then(() => { scrollEl.scrollTop = savedScroll; })
+          .catch(console.error);
+      }
       _appendBuildStamp();
       _wireVersionTap();
       _patchAiStatus(settings);

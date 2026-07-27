@@ -2,6 +2,18 @@
    BLOCK 6 CSS — PROFILE
    ════════════════════════════════════════════════ */
 
+/* PP-5: passport fills in async after DB reads — reserve its rendered
+   height up front so the layout below doesn't jump when it pops in. */
+#profile-passport {
+  min-height: 620px;
+}
+
+/* PP-5: scroll position is restored manually in Profile.load(), don't
+   let the browser's own scroll-anchoring fight that. */
+#s-profile {
+  overflow-anchor: none;
+}
+
 /* ── Body summary strip ── */
 .body-summary {
   display: flex;
