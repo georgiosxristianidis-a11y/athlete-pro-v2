@@ -209,9 +209,14 @@
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --nav-h: 68px;
+  /* Смена свойства на месте (цвет, фон, рамка) — симметричная кривая. */
   --t-fast: 0.15s var(--ease-std);
   --t-normal: 0.25s var(--ease-std);
-  --t-slow: 0.4s var(--ease-std);
+  /* Появление/уход элемента — только ease-out/ease-in: вход должен стартовать
+     быстро (отклик), уход — уступать дорогу. Всё под 300ms: дольше — уже не
+     отклик, а ожидание. --t-slow был объявлен и не использован нигде. */
+  --t-enter: 0.18s var(--ease-out);
+  --t-exit: 0.14s var(--ease-exit);
 }
 
 /* ── Section 1.5: Global Skeletons ──────────────────── */
@@ -456,7 +461,7 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   will-change: backdrop-filter;
-  animation: overlay-in 0.2s ease forwards;
+  animation: overlay-in var(--t-enter) forwards;
 }
 @keyframes overlay-in {
   from { opacity: 0; }
@@ -472,7 +477,7 @@
   border-radius: var(--r-xxl) var(--r-xxl) 0 0;
   border-top: 1px solid var(--c-border);
   padding: var(--sp-3) var(--sp-2) calc(var(--sp-3) + var(--safe-bottom));
-  animation: sheet-in 0.4s var(--ease-pop) forwards;
+  animation: sheet-in 0.26s var(--ease-pop) forwards;
   max-height: 88vh;
   overflow-y: auto;
 }
@@ -683,7 +688,7 @@ button:focus-visible {
   max-width: 100%;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   pointer-events: auto;
-  animation: toast-in 0.42s var(--ease-pop) forwards;
+  animation: toast-in 0.24s var(--ease-pop) forwards;
 }
 
 .toast.out {
@@ -989,7 +994,7 @@ button:focus-visible {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.stat-chip { animation: card-in 0.3s var(--ease-std) both; }
+.stat-chip { animation: card-in 0.24s var(--ease-out) both; }
 .stat-chip:nth-child(1) { animation-delay: 0.06s; }
 .stat-chip:nth-child(2) { animation-delay: 0.11s; }
 .stat-chip:nth-child(3) { animation-delay: 0.16s; }
@@ -1000,7 +1005,7 @@ button:focus-visible {
 }
 
 .stagger-item {
-  animation: fadeSlideUp 0.4s var(--ease-out) both;
+  animation: fadeSlideUp 0.26s var(--ease-out) both;
 }
 .stagger-item:nth-child(1) { animation-delay: 0.05s; }
 .stagger-item:nth-child(2) { animation-delay: 0.1s; }
