@@ -9,13 +9,7 @@ import { on } from '../events.js';
 on('pp:openRoom',    () => window.AthleteRoom?.open());
 on('pp:openMetrics', () => { window._arActiveTab = 'metrics'; window.AthleteRoom?.open(); });
 
-const TIER_COLOR = {
-  Untrained:    'var(--c-text-3)',
-  Novice:       'var(--c-text-2)',
-  Intermediate: 'var(--c-text-2)',
-  Advanced:     'var(--c-text-1)',
-  Elite:        'var(--c-text-1)',
-};
+// Tier colour lives in CSS (.pp-tier-pill-v2[data-tier=...]) — tokens only, no inline hex.
 
 const TIER_RU = {
   Untrained: 'Новичок', Novice: 'Начинающий',
@@ -41,7 +35,6 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   const total = (oneRMs.squat || 0) + (oneRMs.bench || 0) + (oneRMs.deadlift || 0);
   const score = total ? athleteProScore({ total, bodyweight: bw, sex: profile.sex, age, experience: profile.experienceYears, height: metrics?.height }) : 0;
   const tier = _tierFromScore(score);
-  const tierColor = TIER_COLOR[tier];
   const tierLabel = ru ? TIER_RU[tier] : tier;
   const goalMap = ru ? GOAL_RU : GOAL_EN;
 
@@ -80,8 +73,8 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
     <div class="pp-meta-v2">${esc(metaStr) || (ru ? 'Настрой профиль' : 'Set up your profile')}</div>
     
     <div class="pp-badge-row">
-      <div class="pp-tier-pill-v2" style="color:${tierColor}; border-color:${tierColor}20; background:${tierColor}0d">
-        ${esc(tierLabel)} ${score ? `· <span style="color:var(--c-amber); text-shadow: 0 0 12px rgba(255,179,0,0.4)">${score}</span>` : ''}
+      <div class="pp-tier-pill-v2" data-tier="${esc(tier)}">
+        ${esc(tierLabel)} ${score ? `· <span class="pp-tier-score">${score}</span>` : ''}
       </div>
       ${bestPercentile > 0 ? `
         <div class="pp-percentile-pill">
