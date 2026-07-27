@@ -15,7 +15,7 @@
   overflow: hidden;
 }
 .type-card:hover { background: var(--c-surface); transform: translateY(-2px); }
-.type-card:active { transform: scale(0.96); background: var(--c-border); }
+.type-card:active { transform: scale(var(--press-scale)); background: var(--c-border); }
 
 /* Glow variants — Refined Intensity */
 .type-card[data-type="push"] { background: color-mix(in srgb, var(--c-accent) 4%, transparent); border-color: color-mix(in srgb, var(--c-accent) 10%, transparent); }
@@ -61,7 +61,7 @@
 .program-card {
   transition: transform 0.2s ease, opacity 0.2s ease;
   will-change: transform; width: 100%; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xxl); padding: 24px; cursor: pointer; }
-.program-card:active { transform: scale(0.96); }
+.program-card:active { transform: scale(var(--press-scale)); }
 .program-type { font-size: 9px; font-weight: 800; color: var(--c-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
 .program-name { font-size: 16px; font-weight: 800; color: var(--c-text-1); letter-spacing: -0.02em; margin-bottom: 2px; }
 .program-dur { font-size: 11px; font-weight: 600; color: var(--c-text-3); }
@@ -90,7 +90,7 @@
   user-select: none;
 }
 .week-pill:active {
-  transform: scale(0.92);
+  transform: scale(var(--press-scale));
   background: var(--c-surface-h);
 }
 .week-pill-lbl {
@@ -152,7 +152,7 @@
 /* ── Header Actions — Premium Distribution ── */
 .ex-header-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; padding-left: 20px; padding-right: 4px; flex-shrink: 0; }
 .ex-action-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--c-text-3); cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; border-radius: var(--r-s); opacity: 0.4; font-size: 9px; font-weight: 800; }
-.ex-action-btn:active { transform: scale(0.85); background: var(--c-bg-3); opacity: 1; color: var(--c-text-1); }
+.ex-action-btn:active { transform: scale(var(--press-scale)); background: var(--c-bg-3); opacity: 1; color: var(--c-text-1); }
 .ex-action-btn.active { color: var(--c-accent); opacity: 0.9; }
 .ex-action-btn.coach { color: var(--c-accent); opacity: 0.7; }
 .ex-action-btn svg { width: 14px; height: 14px; stroke-width: 2.2; }
@@ -244,6 +244,10 @@
 .set-check { width: 44px; height: 44px; border-radius: var(--r-m); border: 1.5px solid var(--c-surface-h); background: transparent; cursor: pointer; color: var(--c-text-3); display: flex; align-items: center; justify-content: center; }
 .set-check.done { background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent); }
 .set-check svg { width: 16px; height: 16px; stroke-width: 2.5; }
+/* Нажатие намеренно без transition: это самая нажимаемая кнопка приложения
+   (десятки раз за тренировку) — на двадцатом сете плавный скейл читается уже
+   как задержка. Дополняет Haptic Gate, не дублирует его. */
+.set-check:active { transform: scale(var(--press-scale)); transition: none; }
 
 /* ── Add Exercise picker (W-1) — styles were never shipped; the buttons fell
    back to native chrome (light-grey bg) so white text was invisible. ── */
@@ -291,7 +295,7 @@
   transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
 }
 .add-ex-item:hover { background: var(--c-surface-h); border-color: var(--c-border-h); }
-.add-ex-item:active { transform: scale(0.98); }
+.add-ex-item:active { transform: scale(var(--press-scale)); }
 .add-ex-empty { text-align: center; color: var(--c-text-3); font-size: 13px; padding: 32px 16px; }
 
 /* GLOW-SL (b): no background was ever set on the base rule, so the native

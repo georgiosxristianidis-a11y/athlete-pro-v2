@@ -217,6 +217,16 @@
      отклик, а ожидание. --t-slow был объявлен и не использован нигде. */
   --t-enter: 0.18s var(--ease-out);
   --t-exit: 0.14s var(--ease-exit);
+
+  /* Глубина нажатия — одна на всё приложение. До этого токена рядом жили
+     scale от 0.85 до 0.99: три разные «силы нажатия» читаются как три
+     разных продукта. Любой :active-скейл идёт через эти два значения.
+     --press-scale    — по умолчанию: кнопки, пилюли, чипы, плитки, ячейки.
+     --press-scale-lg — только крупные цели (FAB, hero-аватар), где дельта
+                        по умолчанию на таком размере не читается.
+     Голое число в :active-правиле писать нельзя. */
+  --press-scale: 0.97;
+  --press-scale-lg: 0.94;
 }
 
 /* ── Section 1.5: Global Skeletons ──────────────────── */
@@ -284,7 +294,7 @@
 }
 .btn-primary:active {
   background: var(--c-accent-d);
-  transform: scale(0.96);
+  transform: scale(var(--press-scale));
 }
 
 .btn-ghost {
@@ -297,11 +307,11 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform, opacity var(--t-fast);
+  transition: transform var(--t-fast), opacity var(--t-fast);
 }
 .btn-ghost:active {
   background: var(--c-surface-h);
-  transform: scale(0.96);
+  transform: scale(var(--press-scale));
 }
 
 .btn-icon-sm {
@@ -320,7 +330,7 @@
 }
 .btn-icon-sm:active {
   background: var(--c-surface-h);
-  transform: scale(0.92);
+  transform: scale(var(--press-scale));
 }
 
 .btn-icon-nav {
@@ -340,7 +350,7 @@
 }
 .btn-icon-nav:active {
   background: var(--c-surface-h);
-  transform: scale(0.92);
+  transform: scale(var(--press-scale));
 }
 
 /* ── Section 2b: UI Factory Primitives (js/ui/factory.js) ─
@@ -349,7 +359,7 @@
 
 /* Button: danger variant (red surface over primary geometry) + icon slot */
 .btn-danger { background: var(--c-red); color: #fff; }
-.btn-danger:active { background: var(--c-red); filter: brightness(0.92); transform: scale(0.96); }
+.btn-danger:active { background: var(--c-red); filter: brightness(0.92); transform: scale(var(--press-scale)); }
 .btn-ico { display: inline-flex; align-items: center; }
 .btn-ico svg { width: 18px; height: 18px; }
 
@@ -406,7 +416,7 @@
   transition: transform var(--t-fast), background var(--t-fast), opacity var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
-.ui-stepper-btn:active { transform: scale(0.9); background: var(--c-accent-bg); }
+.ui-stepper-btn:active { transform: scale(var(--press-scale)); background: var(--c-accent-bg); }
 .ui-stepper-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .ui-stepper-val {
   min-width: 64px;
@@ -439,7 +449,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 .ui-card.is-interactive:hover { background: var(--c-surface-h); border-color: var(--c-border-h); }
-.ui-card.is-interactive:active { transform: scale(0.99); }
+.ui-card.is-interactive:active { transform: scale(var(--press-scale)); }
 
 /* ── Section 3.5: View Transitions ───────────────────────
    Native cross-fade for seamless screen navigation.
@@ -625,10 +635,10 @@ button:focus-visible {
   border: 1px solid var(--c-border);
   border-radius: var(--r-m);
   cursor: pointer;
-  transition: transform, opacity var(--t-fast);
+  transition: transform var(--t-fast), opacity var(--t-fast);
 }
 .week-pill:active {
-  transform: scale(0.92);
+  transform: scale(var(--press-scale));
   background: var(--c-surface-h);
 }
 .section-label {
@@ -725,6 +735,11 @@ button:focus-visible {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition: transform var(--t-fast), opacity var(--t-fast);
+}
+.toast-action:active {
+  transform: scale(var(--press-scale));
+  opacity: 0.75;
 }
 
 .toast-success .toast-chip { background: var(--c-accent-bg); }
@@ -940,7 +955,7 @@ button:focus-visible {
   cursor: pointer;
   transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
 }
-.mini-stepper button:active { background: var(--c-surface-h); transform: scale(0.92); }
+.mini-stepper button:active { background: var(--c-surface-h); transform: scale(var(--press-scale)); }
 .mini-stepper span {
   min-width: 24px;
   text-align: center;
@@ -963,7 +978,7 @@ button:focus-visible {
   cursor: pointer;
   transition: color var(--t-fast), background var(--t-fast), transform var(--t-fast);
 }
-.plan-delete:active { color: var(--c-red); background: var(--c-surface-h); transform: scale(0.92); }
+.plan-delete:active { color: var(--c-red); background: var(--c-surface-h); transform: scale(var(--press-scale)); }
 
 /* PR / achievement gradient */
 .badge-accent {
@@ -1136,7 +1151,7 @@ button:focus-visible {
   -webkit-tap-highlight-color: transparent;
   transition: background var(--t-fast), transform var(--t-fast);
 }
-.cp-seg:active { background: var(--c-surface-h); transform: scale(0.96); }
+.cp-seg:active { background: var(--c-surface-h); transform: scale(var(--press-scale)); }
 .cp-glyph { display: flex; align-items: center; justify-content: center; line-height: 0; }
 
 /* Preview mode — glyph above, name below; equal segments */

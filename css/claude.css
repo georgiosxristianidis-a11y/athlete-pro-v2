@@ -73,7 +73,9 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transform: scale(0.5);
+  /* Стартовать рядом с конечным размером, а не «из ниоткуда»: scale(0.5)
+     заставлял бейдж влетать из точки вместо проявления на месте. */
+  transform: scale(0.92);
   transition: opacity 0.2s var(--ease-std), transform 0.2s var(--ease-std), background-color 0.2s var(--ease-std), border-color 0.2s var(--ease-std), color 0.2s var(--ease-std);
   z-index: 510;
   pointer-events: auto;
@@ -108,7 +110,7 @@
   }
 }
 .claude-fab:active {
-  transform: scale(0.88) !important;
+  transform: scale(var(--press-scale-lg)) !important;
   animation: none;
   filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--c-bg) 30%, transparent));
 }
@@ -247,7 +249,7 @@
   background: var(--c-surface);
 }
 .claude-logo-wrap:active {
-  transform: scale(0.98);
+  transform: scale(var(--press-scale));
 }
 .engine-switch-hint {
   width: 20px;
@@ -620,7 +622,7 @@
 }
 .chat-send-btn:active {
   background: var(--c-secondary);
-  transform: scale(0.9);
+  transform: scale(var(--press-scale));
 }
 .chat-send-btn:disabled {
   opacity: 0.35;
