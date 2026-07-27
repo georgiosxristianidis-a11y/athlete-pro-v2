@@ -1124,6 +1124,33 @@ button:focus-visible {
 .ppl-g-leg-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-text-3); }
 .ppl-g-leg-vol { font-size: 11px; font-weight: 600; color: var(--c-text-2); font-variant-numeric: tabular-nums; }
 
+/* ── Block ticks (позиция блока в тренировке — shared) ──
+   Та же грамматика, что в шапке онбординга: сегменты залиты
+   накопительно до текущего, текущий подсвечен. Здесь вертикально —
+   полоски стоят слева от названия блока, горизонталь строки не
+   ломается. Логика в js/shared/block-ticks.js.
+   Цвет активных приходит переменной --blk-on (PPL-цвет сессии). */
+.blk-ticks {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: var(--sp-0-5);
+  flex-shrink: 0;
+  line-height: 0;
+}
+.blk-tick {
+  width: 3px;
+  height: 12px;
+  border-radius: 1.5px;
+  background: var(--c-border-h);
+  transition: background var(--t-normal), box-shadow var(--t-normal);
+}
+.blk-tick.is-on {
+  background: var(--blk-on, var(--c-chrome));
+}
+.blk-tick.is-current {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--blk-on, var(--c-chrome)) 50%, transparent);
+}
+
 /* ── Chamber Pill (4-shape navigator — shared) ──
    Cool Steel B: rim is PPL session colour; shape carries chamber role.
    Component logic in js/shared/chamber-pill.js. */

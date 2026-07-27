@@ -138,12 +138,17 @@ function _segment({ ch, i, shape, mode, isActive, isPR, sessionType, progress })
  * Render a simple block-header pill as an HTML string (summary islands).
  * Lightweight alternative to renderChamberPill for completed-mode island headers.
  *
- * @param {{ label:string, color:string, mode?:string, time?:string, tonnage?:string }} opts
+ * `ticks` — готовая строка из js/shared/block-ticks.js. Если передана,
+ * она занимает место точки: в отчёте важнее, каким по счёту шёл блок,
+ * чем сам факт «блок есть». Точка остаётся фоллбэком для вызовов без
+ * позиции (и для блоков вне последовательности).
+ *
+ * @param {{ label:string, color:string, mode?:string, time?:string, tonnage?:string, ticks?:string }} opts
  * @returns {string}
  */
-export function chamberPill({ label, color, mode = 'active', time, tonnage }) {
+export function chamberPill({ label, color, mode = 'active', time, tonnage, ticks }) {
   const isCompleted = mode === 'completed';
-  const dot = `<span class="cpill-dot" style="background:${color};box-shadow:0 0 5px ${color}"></span>`;
+  const dot = ticks || `<span class="cpill-dot" style="background:${color};box-shadow:0 0 5px ${color}"></span>`;
   const labelEl = `<span class="cpill-label cpill-label--${mode}">${label}</span>`;
   const chips = (time || tonnage) ? `
     <span class="cpill-chips">

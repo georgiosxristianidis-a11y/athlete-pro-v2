@@ -308,8 +308,29 @@
 .btn-add-live-ex { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 24px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xxl); color: var(--c-text-1); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: var(--sp-2); }
 .btn-add-live-ex svg { width: 16px; height: 16px; }
 
-/* ── Elite Block Tags ── */
-.ex-block-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--c-text-3); margin: 12px var(--sp-2) 0; padding: 4px 10px; background: var(--c-bg-3); border-radius: var(--r-sm); opacity: 0.6; }
+/* ── Заголовок блока в логгере сетов ──
+   Разметка есть с W-2, стилей у неё не было ни одного: заголовок ехал
+   голым текстом на дефолтах браузера. Теперь это ряд полосок-этапов
+   (js/shared/block-ticks.js) + название блока.
+   Отступы по шкале: сверху --sp-3 отбивает новый блок от предыдущего
+   списка, снизу --sp-1 держит его прижатым к своим упражнениям —
+   заголовок принадлежит тому, что под ним, а не тому, что над. */
+.workout-block-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin: var(--sp-3) 0 var(--sp-1);
+  scroll-margin-top: var(--sp-6); /* прыжок из островной палитры не прячет заголовок под шапку */
+}
+.workout-block-name {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--c-text-3);
+}
+/* Первый блок не отбивается от hero — над ним и так воздух live-hero. */
+#exercise-list > .workout-block-header:first-child { margin-top: var(--sp-1); }
 
 .muscle-badge { border-radius: var(--r-xs); padding: 2px 6px; font-size: 8px; font-weight: 800; margin-left: 8px; opacity: 0.8; }
 .ex-no-db { border-style: dashed !important; opacity: 0.7; }

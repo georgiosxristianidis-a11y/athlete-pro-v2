@@ -23,7 +23,11 @@ import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
 import { initDrumPickers } from '../ui/drum-picker.js';
 import { fmtVol } from '../shared/format.js';
+import { blockTicks, blockOrder } from '../shared/block-ticks.js';
 import { on } from '../events.js';
+
+/** PPL-цвет сессии — семантика типа тренировки, не декор. */
+const PPL_VAR = { push: 'var(--c-push)', pull: 'var(--c-pull)', legs: 'var(--c-legs)' };
 
 const W = () => window.Workout;
 on('wo:noop',          (el, e) => e.stopPropagation());
@@ -375,34 +379,48 @@ export async function renderActive() {
       ${await (async () => {
         let currentBlock = '';
         const cards = [];
+
+        // Номер блока больше не пишется словом: римскую цифру заменил ряд
+        // полосок (blockTicks) — позиция читается взглядом, без перевода
+        // «IV — это который». Порядок и общее число берутся из самого плана,
+        // а не из константы: пользователь может добавить упражнение на лету.
+        const order = blockOrder(State.plan);
+        const pplColor = PPL_VAR[State.type] || 'var(--c-chrome)';
+
+        const blockMap = {
+          'power':     ru ? 'СИЛА'     : 'POWER',
+          'shape':     ru ? 'ОБЪЕМ'    : 'VOLUME',
+          'width':     ru ? 'ШИРИНА'   : 'WIDTH',
+          'thickness': ru ? 'ТОЛЩИНА'  : 'THICKNESS',
+          'heavy':     ru ? 'ТЯЖЕЛЫЙ'  : 'HEAVY',
+          'iso':       ru ? 'ИЗОЛЯЦИЯ' : 'ISOLATION',
+          'arms':      ru ? 'РУКИ'     : 'ARMS',
+          'shoulders': ru ? 'ПЛЕЧИ'    : 'SHOULDERS',
+          'core':      ru ? 'КОР'      : 'CORE',
+          'align':     ru ? 'ОСАНКА'   : 'ALIGNMENT'
+        };
+
         for (let ei = 0; ei < State.plan.length; ei++) {
           const ex = State.plan[ei];
-          
-          const blockMap = {
-            'power': ru ? 'БЛОК I: СИЛА' : 'BLOCK I: POWER',
-            'shape': ru ? 'БЛОК II: ОБЪЕМ' : 'BLOCK II: VOLUME',
-            'width': ru ? 'БЛОК I: ШИРИНА' : 'BLOCK I: WIDTH',
-            'thickness': ru ? 'БЛОК II: ТОЛЩИНА' : 'BLOCK II: THICKNESS',
-            'heavy': ru ? 'БЛОК I: ТЯЖЕЛЫЙ' : 'BLOCK I: HEAVY',
-            'iso': ru ? 'БЛОК II: ИЗОЛЯЦИЯ' : 'BLOCK II: ISOLATION',
-            'arms': ru ? 'БЛОК III: РУКИ' : 'BLOCK III: ARMS',
-            'shoulders': ru ? 'БЛОК III: ПЛЕЧИ' : 'BLOCK III: SHOULDERS',
-            'core': ru ? 'БЛОК IV: КОР' : 'BLOCK IV: CORE',
-            'align': ru ? 'БЛОК IV: ОСАНКА' : 'BLOCK IV: ALIGNMENT'
-          };
 
           const blockLabel = blockMap[ex.block] || '';
-          
+
           if (blockLabel && blockLabel !== currentBlock) {
             currentBlock = blockLabel;
+            const ticks = blockTicks({
+              index: order.indexOf(ex.block),
+              total: order.length,
+              color: pplColor,
+              label: blockLabel,
+            });
             cards.push(`
               <div class="workout-block-header stagger-item">
-                <span class="block-indicator"></span>
-                ${blockLabel}
+                ${ticks}
+                <span class="workout-block-name">${blockLabel}</span>
               </div>
             `);
           }
-          
+
           cards.push(await renderExerciseCard(ex, ei));
         }
         return cards.join('');
