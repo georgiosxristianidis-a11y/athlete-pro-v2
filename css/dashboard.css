@@ -59,7 +59,7 @@
 }
 .dash-cta:active {
   background: var(--c-accent-d);
-  transform: scale(0.96);
+  transform: scale(var(--press-scale));
 }
 
 /* ── 7-day streak strip ── */
@@ -114,7 +114,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform, opacity var(--t-fast);
+  transition: transform var(--t-fast), opacity var(--t-fast);
 }
 .streak-dot.has-workout {
   border-color: transparent;
@@ -375,13 +375,13 @@
   z-index: 20;
   opacity: 0.6;
   transform: scale(1);
-  transition: transform, opacity 0.2s ease;
+  transition: transform 0.2s ease, opacity 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .mascot-close-btn:active {
   opacity: 1;
-  transform: scale(0.9);
+  transform: scale(var(--press-scale));
   background: var(--c-red-bg);
   color: var(--c-red);
 }
@@ -433,14 +433,11 @@
   transform: scale(1.02);
 }
 .btn-start-workout:active {
-  transform: scale(0.96);
+  transform: scale(var(--press-scale));
 }
 .btn-start-workout svg {
   width: 18px;
   height: 18px;
-}
-.btn-start-workout:active {
-  transform: scale(0.96);
 }
 @keyframes glowPulse {
   0%, 100% { box-shadow: 0 0 20px rgba(0, 230, 118, 0.12), 0 4px 16px rgba(0, 0, 0, 0.3); }

@@ -512,7 +512,7 @@
 }
 .island-action-btn:active {
   background: rgba(255, 255, 255, 0.1);
-  transform: scale(0.92);
+  transform: scale(var(--press-scale));
 }
 .island-action-btn.skip {
   padding: 6px;

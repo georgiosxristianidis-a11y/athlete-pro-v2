@@ -31,9 +31,10 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform, opacity 0.3s var(--ease-std);
+  transition: transform var(--t-fast), opacity 0.3s var(--ease-std);
   -webkit-tap-highlight-color: transparent;
 }
+.bs-tab:active { transform: scale(var(--press-scale)); }
 .bs-tab.active {
   background: var(--c-chrome-t);
   border: 1px solid var(--c-border-h);
@@ -278,7 +279,7 @@
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: transform, opacity var(--t-fast);
+  transition: transform var(--t-fast), opacity var(--t-fast);
   -webkit-tap-highlight-color: transparent;
   letter-spacing: 0.02em;
 }
