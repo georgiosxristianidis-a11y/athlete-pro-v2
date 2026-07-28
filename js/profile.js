@@ -91,7 +91,7 @@ export const Profile = (() => {
       </button>
 
       <!-- ── Version (Subtle Elite) ── -->
-      <div id="app-build-stamp" style="margin-top: 48px; padding-bottom: 120px; text-align: center; opacity: 0.25; font-size: 10px; font-weight: 800; letter-spacing: 0.15em; color: var(--c-text-2); text-transform: uppercase;">
+      <div id="app-build-stamp" style="margin-top: 48px; padding-bottom: 120px; text-align: center; opacity: 0.25; font-size: var(--fs-1); font-weight: var(--fw-black); letter-spacing: 0.15em; color: var(--c-text-2); text-transform: uppercase;">
         Athlete Pro v${VERSION} · Elite Edition
       </div>
       <input type="file" id="import-file-input" accept=".json" style="display:none" data-change="profile:importFile">
@@ -439,7 +439,7 @@ async function setEngine(engine) {
                       status === 'offline' ? 'var(--c-text-3)' : 'var(--c-accent)';
         el.innerHTML = `
           <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${color}; box-shadow:0 0 8px ${status === 'offline' ? 'transparent' : color};"></span>
-          <span style="font-size:11px; font-weight:800; color:var(--c-text-3); text-transform:uppercase;">${status}</span>
+          <span style="font-size:var(--fs-1); font-weight:var(--fw-black); color:var(--c-text-3); text-transform:uppercase;">${status}</span>
         `;
       }
     });
