@@ -2,11 +2,18 @@
 /* ════════════════════════════════════════════════════════
    block-ticks.js — позиция блока в тренировке, полосками
 
-   Заменяет римскую нумерацию в заголовках блоков («БЛОК IV: КОР»)
-   на ту же грамматику, что уже стоит в шапке онбординга
-   (js/onboarding.js): ряд сегментов, залитых накопительно до текущего,
-   текущий — с подсветкой. Одна и та же метафора прогресса в двух
-   местах приложения вместо двух разных.
+   Одна шкала прогресса на всё приложение: ряд сегментов, залитых
+   накопительно до текущего, текущий — со свечением.
+
+   Два варианта одной и той же грамматики:
+     bar   — горизонтальная шкала во всю ширину (шапка онбординга);
+     ticks — вертикальные засечки в строке заголовка блока (логгер
+             сетов и отчёт после тренировки), где они заменили римскую
+             нумерацию «БЛОК IV: КОР».
+
+   Свечение, радиус и накопительная заливка живут в одном CSS-классе:
+   раньше шкала онбординга была набором inline-стилей в шаблоне, и
+   второе место неизбежно бы от неё отъехало.
 
    Почему полоски, а не цифры: римская нумерация требует чтения и
    перевода («IV — это который?»), полоски читаются периферийным
@@ -41,18 +48,21 @@ export function blockOrder(plan) {
 /**
  * HTML-строка с полосками-этапами.
  *
- * Заливка накопительная (как в онбординге): при index=3 из 4 горят
- * четыре полоски, последняя — активная. Пустой строкой отвечает на
+ * Заливка накопительная: при index=3 из 4 горят четыре полоски,
+ * последняя — активная (со свечением). Пустой строкой отвечает на
  * вырожденный вход, чтобы вызывающий код не проверял границы сам.
  *
  * @param {object} opts
- * @param {number} opts.index   позиция блока, 0-based
- * @param {number} opts.total   сколько всего блоков в тренировке
- * @param {string} [opts.color] цвет активных полосок (PPL-токен сессии)
- * @param {string} [opts.label] название блока — уходит в aria-label
+ * @param {number} opts.index   позиция этапа, 0-based
+ * @param {number} opts.total   сколько всего этапов
+ * @param {string} [opts.color] цвет зажжённых полосок
+ * @param {string} [opts.label] название этапа — уходит в aria-label
+ * @param {'ticks'|'bar'} [opts.variant]
+ *   ticks — вертикальные засечки в строку заголовка блока (по умолчанию);
+ *   bar   — горизонтальная шкала во всю ширину (шапка онбординга).
  * @returns {string}
  */
-export function blockTicks({ index, total, color = 'var(--c-chrome)', label = '' }) {
+export function blockTicks({ index, total, color = 'var(--c-accent)', label = '', variant = 'ticks' }) {
   if (!Number.isInteger(index) || !Number.isInteger(total)) return '';
   if (total < 1 || index < 0 || index >= total) return '';
 
@@ -60,8 +70,8 @@ export function blockTicks({ index, total, color = 'var(--c-chrome)', label = ''
     const on = i <= index;
     const cur = i === index;
     const cls = `blk-tick${on ? ' is-on' : ''}${cur ? ' is-current' : ''}`;
-    // Цвет приходит переменной, а не в background: активные полоски красятся
-    // PPL-цветом сессии, погашенные — токеном рамки из CSS.
+    // Цвет приходит переменной, а не в background каждой полоски: зажжённые
+    // красятся --blk-on, погашенные — токеном рамки из CSS.
     return `<i class="${cls}"></i>`;
   }).join('');
 
@@ -69,5 +79,6 @@ export function blockTicks({ index, total, color = 'var(--c-chrome)', label = ''
     ? `${esc(label)}, ${index + 1} / ${total}`
     : `${index + 1} / ${total}`;
 
-  return `<span class="blk-ticks" style="--blk-on:${color}" role="img" aria-label="${aria}">${ticks}</span>`;
+  const cls = `blk-ticks${variant === 'bar' ? ' blk-ticks--bar' : ''}`;
+  return `<span class="${cls}" style="--blk-on:${color}" role="img" aria-label="${aria}">${ticks}</span>`;
 }
