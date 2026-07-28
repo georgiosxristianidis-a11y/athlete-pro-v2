@@ -256,9 +256,9 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           return `
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <div class="pref-sub" style="font-size: 10px; margin: 0; font-weight: 700;">${esc(label)}</div>
+            <div class="pref-sub" style="font-size: var(--fs-1); margin: 0; font-weight: var(--fw-bold);">${esc(label)}</div>
             <a href="${getUrl}" target="_blank" class="pref-sub"
-               style="font-size: 10px; color: var(--c-blue); text-decoration: none; font-weight: 800;">
+               style="font-size: var(--fs-1); color: var(--c-blue); text-decoration: none; font-weight: var(--fw-black);">
                ${esc(getLbl)} ↗
             </a>
           </div>
@@ -295,13 +295,13 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           </div>
           <div>
-            <div style="font-size: 14px; font-weight: 600;">${t('sync.connect')}</div>
-            <div style="font-size: 10px; color: ${syncStatusColor}; font-weight: 700;">${syncStatusLabel}</div>
+            <div style="font-size: var(--fs-3); font-weight: var(--fw-md);">${t('sync.connect')}</div>
+            <div style="font-size: var(--fs-1); color: ${syncStatusColor}; font-weight: var(--fw-bold);">${syncStatusLabel}</div>
           </div>
         </div>
         <button class="btn-text"
                 data-action="settings:syncToggle" data-sync="${syncStatus}"
-                style="color: var(--c-accent); font-size: 12px; font-weight: 700;">
+                style="color: var(--c-accent); font-size: var(--fs-2); font-weight: var(--fw-bold);">
           ${syncStatus === 'offline' ? 'CONNECT' : 'DISCONNECT'}
         </button>
       </div>
@@ -312,13 +312,13 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 12px;">
           <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
-          <div style="font-size: 14px; font-weight: 600;">${t('data.backup')}</div>
+          <div style="font-size: var(--fs-3); font-weight: var(--fw-md);">${t('data.backup')}</div>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn btn-ghost" data-action="settings:exportData" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.export')}</button>
-          <button class="btn btn-ghost" data-action="settings:exportCsv" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.export_csv')}</button>
-          <button class="btn btn-ghost" data-action="settings:importData" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px;">${t('data.import')}</button>
-          <button class="btn btn-ghost" data-action="settings:dedup" style="flex: 1; min-width: 90px; height: 36px; font-size: 11px; color: var(--c-text-3);">${t('data.dedup')}</button>
+          <button class="btn btn-ghost" data-action="settings:exportData" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.export')}</button>
+          <button class="btn btn-ghost" data-action="settings:exportCsv" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.export_csv')}</button>
+          <button class="btn btn-ghost" data-action="settings:importData" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.import')}</button>
+          <button class="btn btn-ghost" data-action="settings:dedup" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2); color: var(--c-text-3);">${t('data.dedup')}</button>
         </div>
       </div>
     </div>

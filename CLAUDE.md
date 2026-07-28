@@ -94,6 +94,11 @@ node scripts/telemetry-server.mjs --lan
   - **BRAND (единственные декоративные акценты):** primary `--c-accent` (#00e676 green), secondary `--c-secondary` (#8b5cf6 violet, цвет лого). CTA/active/focus/бренд — только эти два.
   - **SEMANTIC (только по смыслу, не для декора):** PPL — `--c-push`(green)/`--c-pull`(cyan)/`--c-legs`(purple); статус — `--c-amber`(warning/PR)/`--c-red`(#ff4d88 error/danger/HR); achievement — `--c-gold` (PR/streak).
   - PPL-закон: Push=green · Pull=cyan · Legs=purple. В коде типа тренировки — `--c-push/--c-pull/--c-legs`, не сырые hue.
+- Типографика — шкала `--fs-*` / `--fw-*` в `css/base.css :root` (решение TYPE-1, 2026-07-28). Сырые px в `font-size` и цифры в `font-weight` запрещены.
+  - **Размер (6 ступеней, шаг ≈1.25):** `--fs-1` 10px микро-капс (подписи, единицы, пилюли) · `--fs-2` 13px вторичный текст · `--fs-3` 16px база (тело, заголовки строк, поля) · `--fs-4` 20px заголовок секции/значение · `--fs-5` 26px дисплей (имя в hero) · `--fs-6` 34px hero-число.
+  - **Насыщенность (3 варианта):** `--fw-md` 600 тело · `--fw-bold` 700 акцент · `--fw-black` 800 капс/числа/hero. 500 и 600 глазом не различимы, 900 у Manrope клэмпится к 800 — оба упразднены.
+  - Промежуточных ступеней не заводить: соседние разведены на ≥25%, иначе иерархия снова становится шумом. Нужен другой вес в макете — меняй ступень или цвет, не размер на 1px.
+  - Переведён пилот (`css/profile.css` + `js/profile.view/*`); остальные экраны — по очереди программы, см. `docs/handoff/HANDOFF_design_system.md`.
 - Glassmorphism: backdrop-filter, глубина через тени
 - Borders: glass-hairlines узаконены (решение 2026-06-12) — только полупрозрачные через токены `var(--c-border)` (6%) / `var(--c-border-h)` (12%); НЕ хардкодить rgba, непрозрачные сплошные рамки запрещены. Акцентные подсветки (цветные rgba ≤20%) допустимы точечно
 - Mobile-first, 600px breakpoint
