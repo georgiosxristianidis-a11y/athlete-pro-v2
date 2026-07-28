@@ -318,7 +318,7 @@
 .workout-block-header {
   display: flex;
   align-items: center;
-  gap: var(--sp-1-5); /* шкала и подпись — два разных знака, им нужен воздух */
+  gap: var(--sp-2); /* шкала и подпись — два разных знака, им нужен воздух */
   margin: var(--sp-4) 0 var(--sp-1-5);
   scroll-margin-top: var(--sp-6); /* прыжок из островной палитры не прячет заголовок под шапку */
 }
