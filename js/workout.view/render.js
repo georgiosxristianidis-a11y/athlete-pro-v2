@@ -24,6 +24,7 @@ import { initGravitySubmit } from '../ui/gravity-submit.js';
 import { initDrumPickers } from '../ui/drum-picker.js';
 import { fmtVol } from '../shared/format.js';
 import { blockTicks, blockOrder } from '../shared/block-ticks.js';
+import { blockLabel } from '../shared/chamber-pill.js';
 import { on } from '../events.js';
 
 /** PPL-цвет сессии — семантика типа тренировки, не декор. */
@@ -387,36 +388,27 @@ export async function renderActive() {
         const order = blockOrder(State.plan);
         const pplColor = PPL_VAR[State.type] || 'var(--c-chrome)';
 
-        const blockMap = {
-          'power':     ru ? 'СИЛА'     : 'POWER',
-          'shape':     ru ? 'ОБЪЕМ'    : 'VOLUME',
-          'width':     ru ? 'ШИРИНА'   : 'WIDTH',
-          'thickness': ru ? 'ТОЛЩИНА'  : 'THICKNESS',
-          'heavy':     ru ? 'ТЯЖЕЛЫЙ'  : 'HEAVY',
-          'iso':       ru ? 'ИЗОЛЯЦИЯ' : 'ISOLATION',
-          'arms':      ru ? 'РУКИ'     : 'ARMS',
-          'shoulders': ru ? 'ПЛЕЧИ'    : 'SHOULDERS',
-          'core':      ru ? 'КОР'      : 'CORE',
-          'align':     ru ? 'ОСАНКА'   : 'ALIGNMENT'
-        };
-
         for (let ei = 0; ei < State.plan.length; ei++) {
           const ex = State.plan[ei];
 
-          const blockLabel = blockMap[ex.block] || '';
+          // Название блока — из общей карты (shared/chamber-pill.js), а не
+          // из локального словаря: раньше логгер звал `shape` VOLUME, а
+          // отчёт после тренировки — SHAPE, и это выглядело как два разных
+          // блока.
+          const label = ex.block ? blockLabel(ex.block, ru) : '';
 
-          if (blockLabel && blockLabel !== currentBlock) {
-            currentBlock = blockLabel;
+          if (label && label !== currentBlock) {
+            currentBlock = label;
             const ticks = blockTicks({
               index: order.indexOf(ex.block),
               total: order.length,
               color: pplColor,
-              label: blockLabel,
+              label,
             });
             cards.push(`
               <div class="workout-block-header stagger-item">
                 ${ticks}
-                <span class="workout-block-name">${blockLabel}</span>
+                <span class="workout-block-name">${esc(label)}</span>
               </div>
             `);
           }
