@@ -5,6 +5,7 @@
 
 import { DB } from './db.js';
 import { getProgram } from './workout-plans.js';
+import { BLOCK_NAMES_EN } from './shared/chamber-pill.js';
 
 export const SESSION_KEY = 'ap-active-session';
 export const PLAN_KEY = 'ap-custom-plan';        // legacy — migrated → PLAN_KEY_A on first load
@@ -831,19 +832,11 @@ export function deleteCustomWorkout(id) {
    shape out of the view layer so the view does string assembly only.
    ════════════════════════════════════════════════════════ */
 
-/** Block id → uppercase semantic label. Single source of truth. */
-export const BLOCK_LABEL = {
-  power:     'POWER',
-  shape:     'SHAPE',
-  width:     'WIDTH',
-  thickness: 'THICKNESS',
-  heavy:     'HEAVY',
-  iso:       'ISO',
-  arms:      'ARMS',
-  shoulders: 'SHOULDERS',
-  core:      'CORE',
-  align:     'ALIGN',
-};
+/** Block id → uppercase semantic label.
+ *  Источник правды переехал в js/shared/chamber-pill.js: карт было три и
+ *  они разошлись (shape = VOLUME в логгере против SHAPE здесь). Экспорт
+ *  оставлен — его читают dynamic-island и тесты сессии. */
+export const BLOCK_LABEL = BLOCK_NAMES_EN;
 
 /**
  * BUG-0KG completion gate. Seed plans (PPL_GIO_PLAN) ship weight:0 and a

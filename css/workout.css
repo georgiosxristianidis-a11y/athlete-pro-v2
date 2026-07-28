@@ -318,10 +318,12 @@
 .workout-block-header {
   display: flex;
   align-items: center;
-  gap: var(--sp-1);
-  margin: var(--sp-3) 0 var(--sp-1);
+  gap: var(--sp-1-5); /* шкала и подпись — два разных знака, им нужен воздух */
+  margin: var(--sp-4) 0 var(--sp-1-5);
   scroll-margin-top: var(--sp-6); /* прыжок из островной палитры не прячет заголовок под шапку */
 }
+/* AIR: подпись — шёпот, а не заголовок. Кричит неоновая шкала слева,
+   слово только называет блок, поэтому мелкий кегль и --c-text-3. */
 .workout-block-name {
   font-size: 10px;
   font-weight: 800;
