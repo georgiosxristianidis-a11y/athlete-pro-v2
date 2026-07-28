@@ -1124,12 +1124,16 @@ button:focus-visible {
 .ppl-g-leg-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-text-3); }
 .ppl-g-leg-vol { font-size: 11px; font-weight: 600; color: var(--c-text-2); font-variant-numeric: tabular-nums; }
 
-/* ── Block ticks (позиция блока в тренировке — shared) ──
-   Та же грамматика, что в шапке онбординга: сегменты залиты
-   накопительно до текущего, текущий подсвечен. Здесь вертикально —
-   полоски стоят слева от названия блока, горизонталь строки не
-   ломается. Логика в js/shared/block-ticks.js.
-   Цвет активных приходит переменной --blk-on (PPL-цвет сессии). */
+/* ── Шкала этапов (shared) ──
+   Одна грамматика прогресса на всё приложение: сегменты залиты
+   накопительно до текущего, текущий светится. Логика — в
+   js/shared/block-ticks.js, там же оба варианта:
+     .blk-ticks        — вертикальные засечки в строке заголовка блока
+                         (логгер сетов, отчёт после тренировки);
+     .blk-ticks--bar   — горизонтальная шкала во всю ширину (онбординг).
+   Цвет зажжённых приходит переменной --blk-on: бренд-акцент в
+   онбординге, PPL-цвет сессии в тренировке. Погашенные — --c-border,
+   значение унаследовано от исходной шкалы онбординга. */
 .blk-ticks {
   display: inline-flex;
   align-items: flex-end;
@@ -1141,14 +1145,27 @@ button:focus-visible {
   width: 3px;
   height: 12px;
   border-radius: 1.5px;
-  background: var(--c-border-h);
+  background: var(--c-border);
   transition: background var(--t-normal), box-shadow var(--t-normal);
 }
 .blk-tick.is-on {
-  background: var(--blk-on, var(--c-chrome));
+  background: var(--blk-on, var(--c-accent));
 }
+/* Свечение — только на текущем сегменте: если светятся все зажжённые,
+   пропадает ответ на вопрос «где я сейчас», ради которого шкала и есть. */
 .blk-tick.is-current {
-  box-shadow: 0 0 8px color-mix(in srgb, var(--blk-on, var(--c-chrome)) 50%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--blk-on, var(--c-accent)) 50%, transparent);
+}
+
+/* Горизонтальный вариант: сегменты тянутся на всю ширину строки. */
+.blk-ticks--bar {
+  display: flex;
+  width: 100%;
+}
+.blk-ticks--bar .blk-tick {
+  flex: 1;
+  width: auto;
+  height: 3px;
 }
 
 /* ── Chamber Pill (4-shape navigator — shared) ──

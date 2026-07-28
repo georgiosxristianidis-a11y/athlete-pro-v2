@@ -58,6 +58,29 @@ test('blockTicks — накопительная заливка', async (t) => {
   });
 });
 
+test('blockTicks — варианты одной грамматики', async (t) => {
+  await t.test('по умолчанию вертикальные засечки', () => {
+    const html = blockTicks({ index: 0, total: 3 });
+    assert.match(html, /class="blk-ticks"/);
+  });
+
+  await t.test('bar добавляет модификатор, не меняя разметку сегментов', () => {
+    const bar = blockTicks({ index: 0, total: 3, variant: 'bar' });
+    assert.match(bar, /class="blk-ticks blk-ticks--bar"/);
+    // Сегменты те же: горизонталь — вопрос CSS, не второго шаблона.
+    assert.equal(
+      (bar.match(/<i class="blk-tick/g) || []).length,
+      (blockTicks({ index: 0, total: 3 }).match(/<i class="blk-tick/g) || []).length,
+    );
+  });
+
+  await t.test('шкала онбординга: шаг 1 из 6 — горит одна, светится она же', () => {
+    const html = blockTicks({ index: 0, total: 6, variant: 'bar' });
+    assert.equal((html.match(/is-on/g) || []).length, 1);
+    assert.equal((html.match(/is-current/g) || []).length, 1);
+  });
+});
+
 test('blockTicks — цвет и доступность', async (t) => {
   await t.test('цвет уезжает в переменную, а не в background каждой полоски', () => {
     const html = blockTicks({ index: 1, total: 3, color: 'var(--c-pull)' });

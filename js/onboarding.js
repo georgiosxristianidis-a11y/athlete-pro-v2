@@ -15,6 +15,7 @@ import { DB } from './db.js';
 import { setPrivacyMode, setAiEnabled } from './privacy.store.js';
 import { on, onChange, onInput } from './events.js';
 import { isRu } from './locale.store.js';
+import { blockTicks } from './shared/block-ticks.js';
 
 on('ob:quickStart',  () => window._obQuickStart());
 on('ob:prev',        () => window._obPrev());
@@ -77,11 +78,11 @@ function _render() {
   const ru = false; // Default to English for first-run
   _overlay.innerHTML = `
     <div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:var(--sp-4); padding-top:20px; position:relative; z-index:1;">
-      <!-- Progress Bar -->
-      <div style="display:flex; gap:4px; padding: 0 var(--sp-2);">
-        ${Array.from({length: STEPS}).map((_, i) => `
-          <div class="ob-progress" style="height:3px; border-radius:1.5px; flex:1; background:${i + 1 <= _step ? 'var(--c-accent)' : 'var(--c-border)'}; transition: background 0.4s ease, box-shadow 0.4s ease; ${i + 1 === _step ? 'box-shadow: 0 0 8px color-mix(in srgb, var(--c-accent) 50%, transparent);' : ''}"></div>
-        `).join('')}
+      <!-- Progress Bar — общая шкала этапов (js/shared/block-ticks.js).
+           Была набором inline-стилей; вынесена, чтобы свечение и заливка
+           жили в одном месте с полосками блоков в логгере сетов. -->
+      <div style="padding: 0 var(--sp-2);">
+        ${blockTicks({ index: _step - 1, total: STEPS, variant: 'bar', label: ru ? 'Шаг' : 'Step' })}
       </div>
 
       <!-- Step Content -->
