@@ -69,6 +69,7 @@
         --c-intel-bg: rgba(0, 209, 255, 0.1);
         --c-purple: #a78bfa;
         --c-purple-bg: rgba(167, 139, 250, 0.12);
+        --c-secondary: #8b5cf6;
         --c-blue: #60a5fa;
         --c-blue-bg: rgba(96, 165, 250, 0.12);
         --c-red: #ff4d88;
@@ -207,12 +208,24 @@
       }
       #loading.hidden { opacity: 0; pointer-events: none; }
       @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-      /* Splash mark — inline SVG (нулевой запрос на первом кадре, чёткий на любом DPR) */
+      /* Splash mark — inline SVG (нулевой запрос на первом кадре, чёткий на любом DPR).
+         Entrance pop (spring) + мягкое дыхание вместо голого opacity-мигания.
+         cubic-bezier литерал = --ease-spring из base.css: критический блок не
+         может ссылаться на переменные, которых тут нет (в этом и был баг ниже). */
+      @keyframes splash-in {
+        0% { opacity: 0; transform: scale(0.7); filter: blur(6px); }
+        100% { opacity: 1; transform: scale(1); filter: blur(0); }
+      }
+      @keyframes splash-breathe {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.65; transform: scale(0.95); }
+      }
       .splash-mark {
         width: 80px; height: 80px; border-radius: 24px;
         background: var(--c-accent-bg);
         display: flex; align-items: center; justify-content: center;
-        animation: pulse 2s infinite;
+        animation: splash-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+                   splash-breathe 1.8s ease-in-out 0.4s infinite;
       }
       .splash-mark svg { width: 48px; height: 48px; color: var(--c-secondary); }
 

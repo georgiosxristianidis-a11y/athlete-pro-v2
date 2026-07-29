@@ -343,6 +343,28 @@
   transform: scale(var(--press-scale));
 }
 
+/* ── Micro-interactions: Morph (icon state swap) + Rotate (async spin) ──
+   Shared across screens (plan editor, profile settings) — GPU-only
+   (transform/opacity/filter), spring curves from Section 1 tokens.
+   Reference: amicro.vercel.app patterns, adapted vanilla. */
+.morph-swap { position: relative; display: inline-flex; width: 18px; height: 18px; flex: none; }
+.morph-swap svg {
+  position: absolute; inset: 0; width: 18px; height: 18px;
+  transition: opacity .3s var(--ease-island), transform .3s var(--ease-island), filter .3s var(--ease-island);
+}
+.morph-swap .ic-idle { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0); }
+.morph-swap .ic-done { opacity: 0; transform: scale(.4) rotate(-45deg); filter: blur(3px); }
+.is-done .morph-swap .ic-idle { opacity: 0; transform: scale(.4) rotate(45deg); filter: blur(3px); }
+.is-done .morph-swap .ic-done { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0); }
+
+@keyframes spin-gpu { to { transform: rotate(360deg); } }
+.icon-rotate { transition: color var(--t-normal); }
+.icon-rotate.is-spinning { animation: spin-gpu .7s linear infinite; }
+.icon-rotate.is-settled {
+  animation: none; transform: rotate(360deg);
+  transition: transform .5s var(--ease-spring), color var(--t-normal);
+}
+
 .btn-icon-sm {
   width: 32px;
   height: 32px;

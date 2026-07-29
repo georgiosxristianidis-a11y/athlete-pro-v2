@@ -29,7 +29,19 @@ on('settings:setEngine',   (el) => P().setEngine(el.dataset.engine));
 on('settings:togglePanda', () => P().togglePanda());
 on('settings:toggleFabVideo', () => P().toggleFabVideo());
 on('settings:toggleKeyVis',() => P().toggleKeyVisibility());
-on('settings:syncToggle',  (el) => el.dataset.sync === 'offline' ? P().syncConnect() : P().syncDisconnect());
+on('settings:syncToggle', async (el) => {
+  const icon = document.getElementById('sync-connect-icon');
+  icon?.classList.add('is-spinning');
+  try {
+    await (el.dataset.sync === 'offline' ? P().syncConnect() : P().syncDisconnect());
+  } finally {
+    if (icon) {
+      icon.classList.remove('is-spinning');
+      icon.classList.add('is-settled');
+      setTimeout(() => icon.classList.remove('is-settled'), 500);
+    }
+  }
+});
 on('settings:exportData',  () => P().exportData());
 on('settings:exportCsv',   () => P().exportCsv());
 on('settings:importData',  () => P().importData());
@@ -259,7 +271,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 12px;">
           <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(0,230,118,0.1); color: var(--c-accent); display: flex; align-items: center; justify-content: center;">
-             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+             <svg id="sync-connect-icon" class="icon-rotate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           </div>
           <div>
             <div style="font-size: var(--fs-3); font-weight: var(--fw-md);">${t('sync.connect')}</div>
