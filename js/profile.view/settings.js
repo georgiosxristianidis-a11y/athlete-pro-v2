@@ -1,8 +1,22 @@
 // @ts-check
 import { esc } from '../shared/utils.js';
-import { t } from '../locale.store.js';
+import { t, getLang } from '../locale.store.js';
 import { on, onInput, onBlur } from '../events.js';
 import { flag } from '../flags.js';
+import { K_LAST_EXPORT } from '../db/backup.js';
+
+/**
+ * Подпись под кнопкой бэкапа: «Последний бэкап: 18 июл» / «ни разу».
+ * Живёт здесь, а не в `db/backup.js`: слою базы незачем знать про локаль.
+ * @param {number|string|undefined} lastExportAt
+ * @returns {string}
+ */
+export function backupSubLabel(lastExportAt) {
+  const ts = Number(lastExportAt) || 0;
+  if (!ts) return t('backup.save_sub_never');
+  const d = new Date(ts).toLocaleDateString(getLang() === 'ru' ? 'ru' : 'en', { day: 'numeric', month: 'short' });
+  return t('backup.save_sub_last', { d });
+}
 
 const P = () => window.Profile;
 on('settings:adjustRest',  (el) => P().adjustRest(+el.dataset.amt));
@@ -11,8 +25,6 @@ on('settings:toggleKeepAwake', () => P().toggleKeepAwake());
 on('settings:setLang',     (el) => P().setLang(el.dataset.lang));
 on('settings:toggleAutoProgress', () => P().toggleAutoProgress());
 on('settings:setUnit',     (el) => P().setUnit(el.dataset.unit));
-on('settings:setMode',     (el) => P().setTrainingMode(el.dataset.mode));
-on('settings:setTime',     (el) => P().setSessionTime(+el.dataset.time));
 on('settings:setEngine',   (el) => P().setEngine(el.dataset.engine));
 on('settings:togglePanda', () => P().togglePanda());
 on('settings:toggleFabVideo', () => P().toggleFabVideo());
@@ -22,7 +34,6 @@ on('settings:exportData',  () => P().exportData());
 on('settings:exportCsv',   () => P().exportCsv());
 on('settings:importData',  () => P().importData());
 on('settings:dedup',       () => P().deduplicateDB());
-onBlur('settings:saveInjuries', (el) => P().saveInjuries(el.value));
 onInput('settings:keyInput',    (el) => el.dataset.engine === 'gemini' ? P().validateGeminiKey(el.value) : P().validateAnthropicKey(el.value));
 onBlur('settings:keyBlur',      (el) => el.dataset.engine === 'gemini' ? P().setGeminiKey(el.value) : P().setAnthropicKey(el.value));
 
@@ -40,11 +51,6 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
   const hasLocalAnthropic = !!settings['anthropic-key'];
   const geminiActive = (serverStatus.gemini || hasLocalGemini);
   const anthropicActive = (serverStatus.anthropic || hasLocalAnthropic);
-
-  const trainingMode = settings['training-mode'] || 'strength';
-  const sessionTime  = Number(settings['session-time']) || 0;
-  const _modeActive  = (m) => trainingMode === m ? ' active' : '';
-  const _timeActive  = (t) => sessionTime === t ? ' active' : '';
 
   const syncStatusLabel = t(`sync.status.${syncStatus}`);
   const syncStatusColor = syncStatus === 'error' ? 'var(--c-red)' : (syncStatus === 'syncing' ? 'var(--c-blue)' : (syncStatus === 'offline' ? 'var(--c-text-3)' : 'var(--c-accent)'));
@@ -146,52 +152,13 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
         </div>
       </div>
 
-      <div class="pref-divider"></div>
-
-      <div class="pref-col">
-        <div class="pref-info">
-          <div class="pref-title">${t('settings.mode')}</div>
-          <div class="pref-sub">${t('settings.mode_sub')}</div>
-        </div>
-        <div class="toggle-group seg-full">
-          <button class="toggle-btn seg-sm${_modeActive('strength')}"
-                  data-action="settings:setMode" data-mode="strength">${lang === 'ru' ? 'Сила' : 'Strength'}</button>
-          <button class="toggle-btn seg-sm${_modeActive('hypertrophy')}"
-                  data-action="settings:setMode" data-mode="hypertrophy">${lang === 'ru' ? 'Масса' : 'Size'}</button>
-          <button class="toggle-btn seg-sm${_modeActive('recovery')}"
-                  data-action="settings:setMode" data-mode="recovery">${lang === 'ru' ? 'Отдых' : 'Recov.'}</button>
-          <button class="toggle-btn seg-sm${_modeActive('maintenance')}"
-                  data-action="settings:setMode" data-mode="maintenance">${lang === 'ru' ? 'Подд.' : 'Maint.'}</button>
-        </div>
-      </div>
-
-      <div class="pref-divider"></div>
-
-      <div style="display:flex; align-items:center; justify-content:space-between">
-        <div class="pref-info">
-          <div class="pref-title">${t('settings.length')}</div>
-          <div class="pref-sub">${t('settings.length_sub')}</div>
-        </div>
-        <div class="toggle-group">
-          <button class="toggle-btn seg-sm${_timeActive(30)}" data-action="settings:setTime" data-time="30">30</button>
-          <button class="toggle-btn seg-sm${_timeActive(45)}" data-action="settings:setTime" data-time="45">45</button>
-          <button class="toggle-btn seg-sm${_timeActive(60)}" data-action="settings:setTime" data-time="60">60</button>
-          <button class="toggle-btn seg-sm${_timeActive(90)}" data-action="settings:setTime" data-time="90">90</button>
-          <button class="toggle-btn seg-sm${_timeActive(0)}" data-action="settings:setTime" data-time="0">—</button>
-        </div>
-      </div>
-
-      <div class="pref-divider"></div>
-
-      <div class="pref-col">
-        <div class="pref-info">
-          <div class="pref-title">${t('settings.limits')}</div>
-          <div class="pref-sub">${t('settings.limits_sub')}</div>
-        </div>
-        <textarea class="pref-textarea" id="pref-injuries" maxlength="200"
-                  placeholder="${t('settings.limits_placeholder')}"
-                  data-blur="settings:saveInjuries">${esc(settings['limitations'] || '')}</textarea>
-      </div>
+      <!-- Здесь стояли «Режим тренировок», «Длительность сессии» и «Ограничения».
+           Убраны как мёртвые (PROF-1): все три писались в IndexedDB и не читались
+           никем — коуч отправляет только имя/возраст/пол/цель (claude.store.js),
+           генератор планов их не смотрел вовсе. У «Ограничений» вдобавок расходились
+           ключи: запись шла в limitations, чтение профиля — из coach.injuries.
+           Ключи в базе не удаляем (старые бэкапы), но UI больше не обещает влияния,
+           которого нет. Вернуть — когда коуч начнёт их реально читать. -->
     </div>
 
     <!-- ── AI ASSISTANT ── -->
@@ -308,18 +275,37 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
 
       <div class="pref-divider"></div>
 
-      <!-- JSON Management -->
+      <div class="pref-divider"></div>
+
+      <!-- Резервная копия. Главное действие — одним тапом, с датой последнего
+           бэкапа (GYM-GRADE DoD-5). Раньше эта кнопка висела отдельной картой
+           над настройками и дублировала «Экспорт JSON» здесь же: одно действие
+           в двух местах экрана. Осталось одно, в разделе про данные. -->
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 12px;">
           <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
           <div style="font-size: var(--fs-3); font-weight: var(--fw-md);">${t('data.backup')}</div>
         </div>
+        <button class="btn btn-primary" data-action="settings:exportData"
+                style="width: 100%; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+          <span id="backup-cta-title" style="font-size: var(--fs-2); font-weight: var(--fw-black);">${t('backup.save')}</span>
+          <span id="backup-cta-sub" style="font-size: var(--fs-1); font-weight: var(--fw-md); opacity: 0.75;">${esc(backupSubLabel(settings[K_LAST_EXPORT]))}</span>
+        </button>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn btn-ghost" data-action="settings:exportData" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.export')}</button>
           <button class="btn btn-ghost" data-action="settings:exportCsv" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.export_csv')}</button>
           <button class="btn btn-ghost" data-action="settings:importData" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.import')}</button>
-          <button class="btn btn-ghost" data-action="settings:dedup" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2); color: var(--c-text-3);">${t('data.dedup')}</button>
         </div>
+      </div>
+
+      <div class="pref-divider"></div>
+
+      <!-- Обслуживание — не бэкап: чинит саму базу, а не спасает данные наружу. -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div class="pref-info">
+          <div class="pref-title" style="font-size: var(--fs-2);">${t('data.maintenance')}</div>
+          <div class="pref-sub">${t('data.dedup_sub')}</div>
+        </div>
+        <button class="btn btn-ghost" data-action="settings:dedup" style="min-width: 110px; height: 36px; font-size: var(--fs-2); color: var(--c-text-3);">${t('data.dedup')}</button>
       </div>
     </div>
   `;
