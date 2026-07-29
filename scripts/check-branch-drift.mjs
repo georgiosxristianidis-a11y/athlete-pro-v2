@@ -54,8 +54,14 @@ if (process.env.DRIFT_OK === '1') {
 }
 
 const branch = tryGit(['rev-parse', '--abbrev-ref', 'HEAD']);
-if (!branch || branch === 'HEAD') {
-  console.log(green('✅ [Drift] Detached HEAD — проверка пропущена.'));
+
+/* Detached HEAD локально — это обычно середина rebase/bisect, там проверять
+   нечего. В CI же detached — НОРМА: actions/checkout по ref даёт именно его.
+   Пропускать там значит превратить job в пустышку — что и случилось при первом
+   заходе: job «прошёл» с сообщением про detached, не проверив ничего. */
+const inCI = process.env.CI === 'true' || process.env.CI === '1';
+if ((!branch || branch === 'HEAD') && !inCI) {
+  console.log(green('✅ [Drift] Detached HEAD вне CI — проверка пропущена.'));
   process.exit(0);
 }
 if (branch === 'main') {
