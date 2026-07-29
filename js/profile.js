@@ -19,6 +19,28 @@ export const Profile = (() => {
      MAIN LOAD
      ══════════════════════════════════════════════ */
   /**
+   * Fetch everything the profile screen needs to render: settings, current
+   * language, AI server status, sync status.
+   */
+  async function _fetchCtx() {
+    let SyncManager = { getStatus: () => 'offline' };
+    try {
+      const syncModule = await import('./sync.js');
+      SyncManager = syncModule.SyncManager;
+    } catch (e) {
+      console.warn('Offline mode: sync.js failed to load', e.message);
+    }
+
+    const [settings, langRaw, serverStatus] = await Promise.all([
+      DB.Settings.getAll(),
+      DB.Settings.get('lang', 'en'),
+      fetch('/api/ai-status').then(r => r.json()).catch(() => ({ gemini: false, anthropic: false }))
+    ]);
+    const lang = langRaw || 'en';
+    return { settings, lang, ru: lang === 'ru', serverStatus, syncStatus: SyncManager.getStatus() };
+  }
+
+  /**
    * Load and render the profile screen.
    * @returns {Promise<void>}
    */
@@ -28,28 +50,13 @@ export const Profile = (() => {
     if (!screen) return;
 
     try {
-      let SyncManager = { getStatus: () => 'offline' };
-      try {
-        const syncModule = await import('./sync.js');
-        SyncManager = syncModule.SyncManager;
-      } catch (e) {
-        console.warn('Offline mode: sync.js failed to load', e.message);
-      }
-      
-      const [settings, langRaw, serverStatus] = await Promise.all([
-        DB.Settings.getAll(),
-        DB.Settings.get('lang', 'en'),
-        fetch('/api/ai-status').then(r => r.json()).catch(() => ({ gemini: false, anthropic: false }))
-      ]);
-      const lang = langRaw || 'en';
-      const ru = lang === 'ru';
-      const syncStatus = SyncManager.getStatus();
+      const { settings, lang, ru, serverStatus, syncStatus } = await _fetchCtx();
 
       screen.innerHTML = `
       <div class="screen-header">
         <div>
-          <div class="screen-title">${ru ? 'Профиль' : 'Profile'}</div>
-          <div class="screen-sub">${ru ? 'Настройки и данные' : 'Settings & data'}</div>
+          <div class="screen-title" id="profile-title">${ru ? 'Профиль' : 'Profile'}</div>
+          <div class="screen-sub" id="profile-sub">${ru ? 'Настройки и данные' : 'Settings & data'}</div>
         </div>
       </div>
 
@@ -57,11 +64,11 @@ export const Profile = (() => {
       <div id="profile-passport"></div>
 
       <!-- ── APP SETTINGS (MODULAR) ── -->
-      ${renderSettings(settings, lang, serverStatus, syncStatus)}
+      <div id="profile-settings-block">${renderSettings(settings, lang, serverStatus, syncStatus)}</div>
 
       <!-- ── PRIVACY ── -->
-      <div class="section-label-alt">${ru ? 'ПРИВАТНОСТЬ' : 'PRIVACY'}</div>
-      ${renderPrivacyCard()}
+      <div class="section-label-alt" id="profile-privacy-label">${ru ? 'ПРИВАТНОСТЬ' : 'PRIVACY'}</div>
+      <div id="profile-privacy-block">${renderPrivacyCard()}</div>
 
       <!-- ── DANGER ZONE ── -->
       <div class="section-label-alt" style="color:var(--c-red); opacity:0.8">DANGER ZONE</div>
@@ -69,7 +76,7 @@ export const Profile = (() => {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
           <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
         </svg>
-        <span>${ru ? 'Сброс всех данных' : 'Clear All Data'}</span>
+        <span id="profile-danger-label">${ru ? 'Сброс всех данных' : 'Clear All Data'}</span>
       </button>
 
       <!-- ── Version (Subtle Elite) ── -->
@@ -87,11 +94,58 @@ export const Profile = (() => {
     }
   }
 
+  /* ══════════════════════════════════════════════
+     TARGETED RE-RENDER
+     Toggles only touch settings/privacy values, never the passport's own
+     data — replacing the whole screen (incl. #profile-passport) forced an
+     async DB round-trip to refill it on every tap, collapsing and popping
+     the layout back and dragging scroll with it. Re-render only the block
+     that actually changed instead (same pattern as privacy.view.js:_setMode).
+     ══════════════════════════════════════════════ */
+
+  /** Re-render the settings block in place. Used by every settings toggle. */
+  async function _refreshSettings() {
+    const el = document.getElementById('profile-settings-block');
+    if (!el) return load();
+    const { settings, lang, serverStatus, syncStatus } = await _fetchCtx();
+    el.innerHTML = renderSettings(settings, lang, serverStatus, syncStatus);
+  }
+
+  /** Re-render the privacy card in place (synchronous — no DB round-trip). */
+  function _refreshPrivacy() {
+    const el = document.getElementById('profile-privacy-block');
+    if (el) el.innerHTML = renderPrivacyCard();
+  }
+
+  /** Re-render the passport in place. Used when workout/PR data changes. */
+  async function _refreshPassport(lang) {
+    const el = document.getElementById('profile-passport');
+    if (!el) return load();
+    await renderProfile(el, lang);
+  }
+
+  /** Language touches nearly every string on the screen — refresh each
+   *  block in place rather than tearing down and rebuilding the screen. */
+  async function _refreshLangDependent() {
+    const lang = (await DB.Settings.get('lang', 'en')) || 'en';
+    const ru = lang === 'ru';
+    const title = document.getElementById('profile-title');
+    const sub = document.getElementById('profile-sub');
+    const dangerLabel = document.getElementById('profile-danger-label');
+    const privacyLabel = document.getElementById('profile-privacy-label');
+    if (title) title.textContent = ru ? 'Профиль' : 'Profile';
+    if (sub) sub.textContent = ru ? 'Настройки и данные' : 'Settings & data';
+    if (dangerLabel) dangerLabel.textContent = ru ? 'Сброс всех данных' : 'Clear All Data';
+    if (privacyLabel) privacyLabel.textContent = ru ? 'ПРИВАТНОСТЬ' : 'PRIVACY';
+    _refreshPrivacy();
+    await Promise.all([_refreshSettings(), _refreshPassport(lang)]);
+  }
+
   async function adjustRest(delta) {
     const current = parseInt((await DB.Settings.get('rest-duration')) || 90);
     const next = Math.max(15, Math.min(300, current + delta));
     await DB.Settings.set('rest-duration', next);
-    load();
+    _refreshSettings();
   }
 
   async function toggleReminder() {
@@ -106,21 +160,21 @@ export const Profile = (() => {
 
   async function setUnit(unit) {
     await DB.Settings.set('weight-unit', unit);
-    load();
+    _refreshSettings();
   }
 
   async function toggleHaptic() {
     const current = await DB.Settings.get('haptic', 'on');
     const next = current === 'off' ? 'on' : 'off';
     await DB.Settings.set('haptic', next);
-    load();
+    _refreshSettings();
   }
 
   async function toggleAutoProgress() {
     const current = await DB.Settings.get('auto-progress', 'on');
     const next = current === 'off' ? 'on' : 'off';
     await DB.Settings.set('auto-progress', next);
-    load();
+    _refreshSettings();
   }
 
   async function togglePanda() {
@@ -136,7 +190,7 @@ export const Profile = (() => {
     } else {
       Claude.renderFAB();
     }
-    load();
+    _refreshSettings();
   }
 
 async function setEngine(engine) {
@@ -161,17 +215,17 @@ async function setEngine(engine) {
       }
     }
     _haptic(20);
-    load();
+    _refreshSettings();
   }
 
   async function setTrainingMode(mode) {
     await DB.Settings.set('training-mode', mode);
-    load();
+    _refreshSettings();
   }
 
   async function setSessionTime(minutes) {
     await DB.Settings.set('session-time', minutes);
-    load();
+    _refreshSettings();
   }
 
   async function exportData() {
@@ -223,7 +277,7 @@ async function setEngine(engine) {
     const current = await DB.Settings.get('keep-awake', 'on'); // BG-1: default ON (opt-out)
     const next = current === 'off' ? 'on' : 'off';
     await DB.Settings.set('keep-awake', next);
-    load();
+    _refreshSettings();
   }
 
   async function setGeminiKey(key) {
@@ -232,7 +286,7 @@ async function setEngine(engine) {
     const fabContainer = document.getElementById('claude-fab-container');
     if (fabContainer) fabContainer.remove();
     Claude.renderFAB();
-    load();
+    _refreshSettings();
   }
 
   function toggleKeyVisibility() {
@@ -260,7 +314,7 @@ async function setEngine(engine) {
 
   async function setAnthropicKey(key) {
     await DB.Settings.set('anthropic-key', key.trim());
-    load();
+    _refreshSettings();
   }
 
   function validateAnthropicKey(val) {
@@ -273,7 +327,7 @@ async function setEngine(engine) {
   async function setLang(lang) {
     const { setLang: setLocaleLang } = await import('./locale.store.js');
     await setLocaleLang(lang);
-    load();
+    _refreshLangDependent();
   }
 
 
@@ -295,7 +349,7 @@ async function setEngine(engine) {
     const { t } = await import('./locale.store.js');
     const removed = await DB.Workouts.deduplicate();
     Toast.show(t('data.dedup_done', { n: removed }), removed > 0 ? 'success' : 'info');
-    load();
+    _refreshPassport();
   }
 
   async function syncConnect() {
@@ -317,7 +371,7 @@ async function setEngine(engine) {
     try {
       const { SyncManager } = await import('./sync.js');
       await SyncManager.signOut();
-      load();
+      _refreshSettings();
     } catch (e) {
       Toast.show('You are offline', 'error');
     }
