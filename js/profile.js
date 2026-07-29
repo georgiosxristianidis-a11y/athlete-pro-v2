@@ -7,7 +7,7 @@ import { DB } from './db.js';
 import { K_LAST_EXPORT } from './db/backup.js';
 import { t, getLang } from './locale.store.js';
 import { renderProfile } from './profile.view.js';
-import { renderSettings } from './profile.view/settings.js';
+import { renderSettings, backupSubLabel } from './profile.view/settings.js';
 import { VERSION } from './version.js';
 import { Toast } from './shell.js';
 import { on, onChange } from './events.js';
@@ -37,11 +37,10 @@ export const Profile = (() => {
     if (!screen) return;
 
     try {
-      const [syncStatus, settings, langRaw, lastExportAt] = await Promise.all([
+      const [syncStatus, settings, langRaw] = await Promise.all([
         _syncStatus(),
         DB.Settings.getAll(),
-        DB.Settings.get('lang', 'en'),
-        DB.Settings.get(K_LAST_EXPORT, 0)
+        DB.Settings.get('lang', 'en')
       ]);
       const lang = langRaw || 'en';
       const ru = lang === 'ru';
@@ -57,18 +56,10 @@ export const Profile = (() => {
       <!-- ── Passport UI ── -->
       <div id="profile-passport"></div>
 
-      <!-- ── BACKUP — 1-tap history export (GYM-GRADE DoD-5) ── -->
-      <button class="profile-card pref-row-icon" data-action="settings:exportData"
-              style="width:100%; text-align:left; font:inherit; color:inherit; cursor:pointer;">
-        <div class="pref-icon-box" style="background:rgba(0,230,118,0.1)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </div>
-        <div class="pref-info">
-          <div class="pref-title" id="backup-cta-title">${t('backup.save')}</div>
-          <div class="pref-sub" id="backup-cta-sub">${_backupSubLabel(lastExportAt)}</div>
-        </div>
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
+      <!-- Кнопка бэкапа переехала в секцию DATA настроек (PROF-1): она
+           дублировала тамошний «Экспорт JSON» — одно действие в двух местах
+           экрана. Одно-тапность сохранена, подпись с датой последнего
+           бэкапа тоже. -->
 
       <!-- ── APP SETTINGS (MODULAR) ── -->
       <!-- PP-6: wrapper exists so _refreshSettings() can swap the settings
@@ -159,10 +150,9 @@ export const Profile = (() => {
     const sub = document.getElementById('profile-sub');
     if (sub) sub.textContent = ru ? 'Настройки и данные' : 'Settings & data';
 
-    const backupTitle = document.getElementById('backup-cta-title');
-    if (backupTitle) backupTitle.textContent = t('backup.save');
-    const backupSub = document.getElementById('backup-cta-sub');
-    if (backupSub) backupSub.textContent = _backupSubLabel(await DB.Settings.get(K_LAST_EXPORT, 0));
+    /* Кнопка бэкапа больше не правится здесь поимённо: она внутри
+       #profile-settings-block, который _refreshSettings() ниже перерисовывает
+       целиком — уже на новом языке. */
 
     const clearLabel = document.getElementById('clear-data-label');
     if (clearLabel) clearLabel.textContent = ru ? 'Сброс всех данных' : 'Clear All Data';
@@ -217,16 +207,6 @@ export const Profile = (() => {
     const current = parseInt((await DB.Settings.get('rest-duration')) || 90);
     const next = Math.max(15, Math.min(300, current + delta));
     await DB.Settings.set('rest-duration', next);
-    _refreshSettings();
-  }
-
-  async function toggleReminder() {
-    const current = await DB.Settings.get('daily-reminder', 'off');
-    const next = current === 'off' ? 'on' : 'off';
-    await DB.Settings.set('daily-reminder', next);
-    if (next === 'on') {
-      Toast.show(document.documentElement.lang === 'ru' ? 'Уведомления включены' : 'Notifications enabled', 'success');
-    }
     _refreshSettings();
   }
 
@@ -309,24 +289,6 @@ async function setEngine(engine) {
     _refreshSettings();
   }
 
-  async function setTrainingMode(mode) {
-    await DB.Settings.set('training-mode', mode);
-    _refreshSettings();
-  }
-
-  async function setSessionTime(minutes) {
-    await DB.Settings.set('session-time', minutes);
-    _refreshSettings();
-  }
-
-  /** Human label for the backup CTA sub-line ("Last backup: 18 Jul" / "never"). */
-  function _backupSubLabel(lastExportAt) {
-    const ts = Number(lastExportAt) || 0;
-    if (!ts) return t('backup.save_sub_never');
-    const d = new Date(ts).toLocaleDateString(getLang() === 'ru' ? 'ru' : 'en', { day: 'numeric', month: 'short' });
-    return t('backup.save_sub_last', { d });
-  }
-
   async function exportData() {
     const json = await DB.Backup.export();
     const blob = new Blob([json], { type: 'application/json' });
@@ -341,7 +303,7 @@ async function setEngine(engine) {
     // Refresh the CTA sub-line in place — no full re-render (export can be
     // triggered from the reminder toast while another screen is active).
     const sub = document.getElementById('backup-cta-sub');
-    if (sub) sub.textContent = _backupSubLabel(now);
+    if (sub) sub.textContent = backupSubLabel(now);
   }
 
   function importData() {
@@ -446,12 +408,6 @@ async function setEngine(engine) {
   }
 
 
-  async function saveInjuries(val) {
-    await DB.Settings.set('limitations', val.trim());
-    const { t } = await import('./locale.store.js');
-    Toast.show(t('settings.limits_saved'), 'success');
-  }
-
   async function exportCsv() {
     const { workoutsToCsv, downloadCsv } = await import('./shared/csv-export.js');
     const workouts = await DB.Workouts.getAll();
@@ -512,10 +468,10 @@ async function setEngine(engine) {
 
   return {
     load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
-    togglePanda, toggleFabVideo, setLang, setEngine, setTrainingMode, setGeminiKey,
+    togglePanda, toggleFabVideo, setLang, setEngine, setGeminiKey,
     validateGeminiKey, setAnthropicKey, validateAnthropicKey, toggleKeyVisibility,
-    setSessionTime, exportData, exportCsv, importData, toggleReminder,
-    _onImportFile, clearAllData, saveInjuries,
+    exportData, exportCsv, importData,
+    _onImportFile, clearAllData,
     syncConnect, syncDisconnect, deduplicateDB
   };
 })();
