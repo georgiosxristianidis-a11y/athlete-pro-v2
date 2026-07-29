@@ -6,6 +6,29 @@ on:
   pull_request:
 
 jobs:
+  # Дрейф базы. Дублирует pre-push намеренно: локальный хук берётся из
+  # core.hooksPath, который указывает на корневой чекаут репо — а тот сам может
+  # быть протухшим. 2026-07-29: корень стоял на коде 28 июня, то есть гард,
+  # закоммиченный днём раньше, не запускался ни у одного worktree. Здесь он
+  # выполняется на стороне GitHub, где протухнуть нечему.
+  drift:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (полная история — нужен merge-base)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Проверка дрейфа базы
+        run: node scripts/check-branch-drift.mjs
+
   test:
     runs-on: ubuntu-latest
     steps:
