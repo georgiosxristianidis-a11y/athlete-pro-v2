@@ -3,6 +3,17 @@
 # Elite SCA Protocol (Solid 9)
 # pre-push hook: Runs npm audit only when pushing, blocking vulnerable code.
 
+# 0. Дрейф базы. Идёт ПЕРВЫМ и намеренно раньше SCA/SAST: те проверяют уязвимости
+# и стиль, то есть КАЧЕСТВО кода, и обе спокойно зеленеют на коде трёхнедельной
+# давности. Кейс PP-6 (2026-07-29): «pre-push SAST/SCA прошёл» прозвучало как
+# «всё хорошо», хотя ветка отставала на 233 коммита и откатывала 4 влитые карточки.
+# Сначала отвечаем на вопрос «этот код вообще про сегодняшний main?», потом на
+# все остальные.
+node scripts/check-branch-drift.mjs
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
 echo "🔒 [GIO Security] Running pre-push SCA check..."
 
 # 1. Check Airgap mode (Ping registry.npmjs.org)
