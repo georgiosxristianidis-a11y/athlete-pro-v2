@@ -15,6 +15,42 @@ export const esc = (str) => {
     .replace(/'/g, '&#039;');
 };
 
+class RawString {
+  constructor(value) {
+    this.value = String(value ?? '');
+  }
+}
+
+/**
+ * Wraps a string to bypass HTML escaping in html tagged templates.
+ * @param {any} value
+ * @returns {RawString}
+ */
+export const raw = (value) => new RawString(value);
+
+/**
+ * Tagged template literal for safe-by-default HTML rendering.
+ * Automatically escapes interpolated variables unless wrapped with raw().
+ * @param {TemplateStringsArray} strings
+ * @param {...any} values
+ * @returns {string}
+ */
+export const html = (strings, ...values) => {
+  let result = strings[0];
+  for (let i = 0; i < values.length; i++) {
+    const val = values[i];
+    if (val instanceof RawString) {
+      result += val.value;
+    } else if (Array.isArray(val)) {
+      result += val.map(item => item instanceof RawString ? item.value : esc(item)).join('');
+    } else {
+      result += esc(val);
+    }
+    result += strings[i + 1];
+  }
+  return result;
+};
+
 let _hasInteracted = false;
 if (typeof window !== 'undefined') {
   const _unlock = () => { _hasInteracted = true; window.removeEventListener('pointerdown', _unlock); };
