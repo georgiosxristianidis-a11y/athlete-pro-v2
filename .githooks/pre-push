@@ -9,6 +9,16 @@
 # «всё хорошо», хотя ветка отставала на 233 коммита и откатывала 4 влитые карточки.
 # Сначала отвечаем на вопрос «этот код вообще про сегодняшний main?», потом на
 # все остальные.
+# Скрипта нет = чекаут старше самого гарда. Это ровно тот случай, который гард
+# и ловит, поэтому падаем внятно, а не через MODULE_NOT_FOUND от node.
+if [ ! -f scripts/check-branch-drift.mjs ]; then
+  echo "❌ [Drift Block] scripts/check-branch-drift.mjs не найден."
+  echo "   Значит этот чекаут старше гарда — то есть заведомо устарел."
+  echo "   git fetch origin && git rebase origin/main"
+  echo "   Осознанный обход: DRIFT_OK=1 git push"
+  [ "$DRIFT_OK" = "1" ] || exit 1
+fi
+
 node scripts/check-branch-drift.mjs
 if [ $? -ne 0 ]; then
   exit 1
