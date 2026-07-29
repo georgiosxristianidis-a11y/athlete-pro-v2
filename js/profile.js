@@ -25,40 +25,32 @@ export const Profile = (() => {
    * Load and render the profile screen.
    * @returns {Promise<void>}
    */
+  /* PP-6: full load() rebuilds the whole screen, including #profile-passport —
+     which then refills itself from IndexedDB asynchronously. Every settings
+     toggle used to go through here, so the passport was destroyed and rebuilt
+     ~20 times a session, and the layout collapsed and re-grew under the user's
+     finger each time. load() is now reserved for entering the screen and for
+     import (which can rewrite everything); toggles go to the scoped refreshers
+     below. */
   async function load() {
-    console.log('Profile.load() called');
     const screen = document.getElementById('s-profile');
     if (!screen) return;
 
-    const scrollEl = document.scrollingElement || document.documentElement;
-    const savedScroll = scrollEl.scrollTop;
-
     try {
-      let SyncManager = { getStatus: () => 'offline' };
-      try {
-        const syncModule = await import('./sync.js');
-        SyncManager = syncModule.SyncManager;
-      } catch (e) {
-        console.warn('Offline mode: sync.js failed to load', e.message);
-      }
-      
-      const [settings, langRaw, lastExportAt] = await Promise.all([
+      const [syncStatus, settings, langRaw, lastExportAt] = await Promise.all([
+        _syncStatus(),
         DB.Settings.getAll(),
         DB.Settings.get('lang', 'en'),
         DB.Settings.get(K_LAST_EXPORT, 0)
       ]);
       const lang = langRaw || 'en';
       const ru = lang === 'ru';
-      const syncStatus = SyncManager.getStatus();
-      // serverStatus is unknown at render time (offline-first: the screen must
-      // not wait for the network); indicators are patched after paint.
-      const serverStatus = { gemini: false, anthropic: false };
 
       screen.innerHTML = `
       <div class="screen-header">
         <div>
-          <div class="screen-title">${ru ? 'Профиль' : 'Profile'}</div>
-          <div class="screen-sub">${ru ? 'Настройки и данные' : 'Settings & data'}</div>
+          <div class="screen-title" id="profile-title">${ru ? 'Профиль' : 'Profile'}</div>
+          <div class="screen-sub" id="profile-sub">${ru ? 'Настройки и данные' : 'Settings & data'}</div>
         </div>
       </div>
 
@@ -72,14 +64,17 @@ export const Profile = (() => {
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </div>
         <div class="pref-info">
-          <div class="pref-title">${t('backup.save')}</div>
+          <div class="pref-title" id="backup-cta-title">${t('backup.save')}</div>
           <div class="pref-sub" id="backup-cta-sub">${_backupSubLabel(lastExportAt)}</div>
         </div>
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
       <!-- ── APP SETTINGS (MODULAR) ── -->
-      ${renderSettings(settings, lang, serverStatus, syncStatus)}
+      <!-- PP-6: wrapper exists so _refreshSettings() can swap the settings
+           markup alone. Plain div, no styling of its own: .screen is padding
+           only (no flex/gap), so it doesn't disturb the vertical rhythm. -->
+      <div id="profile-settings-block">${renderSettings(settings, lang, _AI_UNKNOWN, syncStatus)}</div>
 
       <!-- ── DANGER ZONE ── -->
       <div class="section-label-alt" style="color:var(--c-red); opacity:0.8">DANGER ZONE</div>
@@ -87,7 +82,7 @@ export const Profile = (() => {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
           <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
         </svg>
-        <span>${ru ? 'Сброс всех данных' : 'Clear All Data'}</span>
+        <span id="clear-data-label">${ru ? 'Сброс всех данных' : 'Clear All Data'}</span>
       </button>
 
       <!-- ── Version (Subtle Elite) ── -->
@@ -97,14 +92,7 @@ export const Profile = (() => {
       <input type="file" id="import-file-input" accept=".json" style="display:none" data-change="profile:importFile">
     `;
 
-      scrollEl.scrollTop = savedScroll;
-
-      const passportEl = document.getElementById('profile-passport');
-      if (passportEl) {
-        renderProfile(passportEl, lang)
-          .then(() => { scrollEl.scrollTop = savedScroll; })
-          .catch(console.error);
-      }
+      _refreshPassport(lang);
       _appendBuildStamp();
       _wireVersionTap();
       _patchAiStatus(settings);
@@ -112,6 +100,75 @@ export const Profile = (() => {
       console.error('Profile load error', err);
       screen.innerHTML = '<div style="padding:20px;">Error loading profile</div>';
     }
+  }
+
+  /* ══════════════════════════════════════════════
+     PP-6 — SCOPED REFRESHERS
+     Same idea as privacy.view.js:_setMode — touch the node that actually
+     changed, leave the rest of the screen (and the scroll position) alone.
+     Handlers are delegated on `document` (events.js), so swapping innerHTML
+     never loses a listener and nothing needs re-binding.
+     ══════════════════════════════════════════════ */
+
+  /* AI indicators can't be known at render time — the screen must not wait for
+     the network (a15e70c). Render "unknown", patch after paint. */
+  const _AI_UNKNOWN = { gemini: false, anthropic: false };
+
+  async function _syncStatus() {
+    try {
+      const { SyncManager } = await import('./sync.js');
+      return SyncManager.getStatus();
+    } catch (e) {
+      console.warn('Offline mode: sync.js failed to load', e.message);
+      return 'offline';
+    }
+  }
+
+  /** Re-render the settings block only. Every toggle lands here. */
+  async function _refreshSettings() {
+    const block = document.getElementById('profile-settings-block');
+    if (!block) return;
+    const [syncStatus, settings, langRaw] = await Promise.all([
+      _syncStatus(),
+      DB.Settings.getAll(),
+      DB.Settings.get('lang', 'en')
+    ]);
+    block.innerHTML = renderSettings(settings, langRaw || 'en', _AI_UNKNOWN, syncStatus);
+    _patchAiStatus(settings);
+  }
+
+  /** Re-render the passport only — for actions that change workouts, not settings. */
+  function _refreshPassport(lang) {
+    const el = document.getElementById('profile-passport');
+    if (!el) return Promise.resolve();
+    const done = lang
+      ? renderProfile(el, lang)
+      : DB.Settings.get('lang', 'en').then((l) => renderProfile(el, l || 'en'));
+    return done.catch(console.error);
+  }
+
+  /* Language touches text everywhere, so this is the widest refresher — but it
+     still updates blocks in place instead of replacing the screen, which is
+     what kept the passport alive. */
+  async function _refreshLangDependent() {
+    const lang = (await DB.Settings.get('lang', 'en')) || 'en';
+    const ru = lang === 'ru';
+
+    const title = document.getElementById('profile-title');
+    if (title) title.textContent = ru ? 'Профиль' : 'Profile';
+    const sub = document.getElementById('profile-sub');
+    if (sub) sub.textContent = ru ? 'Настройки и данные' : 'Settings & data';
+
+    const backupTitle = document.getElementById('backup-cta-title');
+    if (backupTitle) backupTitle.textContent = t('backup.save');
+    const backupSub = document.getElementById('backup-cta-sub');
+    if (backupSub) backupSub.textContent = _backupSubLabel(await DB.Settings.get(K_LAST_EXPORT, 0));
+
+    const clearLabel = document.getElementById('clear-data-label');
+    if (clearLabel) clearLabel.textContent = ru ? 'Сброс всех данных' : 'Clear All Data';
+
+    await _refreshSettings();
+    await _refreshPassport(lang);
   }
 
   /* Field-check identity: the dev/LAN server exposes /__build (branch+hash of
@@ -160,7 +217,7 @@ export const Profile = (() => {
     const current = parseInt((await DB.Settings.get('rest-duration')) || 90);
     const next = Math.max(15, Math.min(300, current + delta));
     await DB.Settings.set('rest-duration', next);
-    load();
+    _refreshSettings();
   }
 
   async function toggleReminder() {
@@ -170,26 +227,26 @@ export const Profile = (() => {
     if (next === 'on') {
       Toast.show(document.documentElement.lang === 'ru' ? 'Уведомления включены' : 'Notifications enabled', 'success');
     }
-    load();
+    _refreshSettings();
   }
 
   async function setUnit(unit) {
     await DB.Settings.set('weight-unit', unit);
-    load();
+    _refreshSettings();
   }
 
   async function toggleHaptic() {
     const current = await DB.Settings.get('haptic', 'on');
     const next = current === 'off' ? 'on' : 'off';
     await DB.Settings.set('haptic', next);
-    load();
+    _refreshSettings();
   }
 
   async function toggleAutoProgress() {
     const current = await DB.Settings.get('auto-progress', 'on');
     const next = current === 'off' ? 'on' : 'off';
     await DB.Settings.set('auto-progress', next);
-    load();
+    _refreshSettings();
   }
 
   async function togglePanda() {
@@ -205,7 +262,7 @@ export const Profile = (() => {
     } else {
       Claude.renderFAB();
     }
-    load();
+    _refreshSettings();
   }
 
   /** Тумблер живой панды (флаг 'fab-video' на устройстве) — полевой чек без консоли. */
@@ -224,7 +281,7 @@ export const Profile = (() => {
     await Claude.renderFAB();
     const ru = document.documentElement.lang === 'ru';
     Toast.show(next ? (ru ? 'Живой маскот включён' : 'Live mascot on') : (ru ? 'Живой маскот выключен' : 'Live mascot off'), 'success');
-    load();
+    _refreshSettings();
   }
 
 async function setEngine(engine) {
@@ -249,17 +306,17 @@ async function setEngine(engine) {
       }
     }
     _haptic(20);
-    load();
+    _refreshSettings();
   }
 
   async function setTrainingMode(mode) {
     await DB.Settings.set('training-mode', mode);
-    load();
+    _refreshSettings();
   }
 
   async function setSessionTime(minutes) {
     await DB.Settings.set('session-time', minutes);
-    load();
+    _refreshSettings();
   }
 
   /** Human label for the backup CTA sub-line ("Last backup: 18 Jul" / "never"). */
@@ -298,6 +355,9 @@ async function setEngine(engine) {
       const text = await file.text();
       await DB.Backup.import(text);
       Toast.show('Import success', 'success');
+      // Import can rewrite everything — settings, workouts, language. This is
+      // the one case where a full rebuild is the honest answer; it's rare and
+      // heavy by nature, so the re-render cost doesn't matter.
       load();
     } catch { Toast.show('Import failed', 'error'); }
   }
@@ -328,16 +388,20 @@ async function setEngine(engine) {
     const current = await DB.Settings.get('keep-awake', 'on'); // BG-1: default ON (opt-out)
     const next = current === 'off' ? 'on' : 'off';
     await DB.Settings.set('keep-awake', next);
-    load();
+    _refreshSettings();
   }
 
+  /* Key handlers fire on BLUR, so they deliberately do NOT re-render the
+     settings block: swapping the markup between mousedown and click would eat
+     the tap that caused the blur. Only the indicators need updating, and
+     _patchAiStatus does that in place. */
   async function setGeminiKey(key) {
     await DB.Settings.set('gemini-key', key.trim());
     const { Claude } = await import('./claude.view.js');
     const fabContainer = document.getElementById('claude-fab-container');
     if (fabContainer) fabContainer.remove();
     Claude.renderFAB();
-    load();
+    _patchAiStatus(await DB.Settings.getAll());
   }
 
   function toggleKeyVisibility() {
@@ -365,7 +429,7 @@ async function setEngine(engine) {
 
   async function setAnthropicKey(key) {
     await DB.Settings.set('anthropic-key', key.trim());
-    load();
+    _patchAiStatus(await DB.Settings.getAll());
   }
 
   function validateAnthropicKey(val) {
@@ -378,7 +442,7 @@ async function setEngine(engine) {
   async function setLang(lang) {
     const { setLang: setLocaleLang } = await import('./locale.store.js');
     await setLocaleLang(lang);
-    load();
+    _refreshLangDependent();
   }
 
 
@@ -400,7 +464,8 @@ async function setEngine(engine) {
     const { t } = await import('./locale.store.js');
     const removed = await DB.Workouts.deduplicate();
     Toast.show(t('data.dedup_done', { n: removed }), removed > 0 ? 'success' : 'info');
-    load();
+    // Dedup changes workouts, not settings — only the passport is stale.
+    _refreshPassport();
   }
 
   async function syncConnect() {
@@ -422,7 +487,7 @@ async function setEngine(engine) {
     try {
       const { SyncManager } = await import('./sync.js');
       await SyncManager.signOut();
-      load();
+      _refreshSettings();
     } catch (e) {
       Toast.show('You are offline', 'error');
     }

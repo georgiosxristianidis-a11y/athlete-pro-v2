@@ -2,17 +2,17 @@
    BLOCK 6 CSS — PROFILE
    ════════════════════════════════════════════════ */
 
-/* PP-5: passport fills in async after DB reads — reserve its rendered
-   height up front so the layout below doesn't jump when it pops in. */
-#profile-passport {
-  min-height: 620px;
-}
-
-/* PP-5: scroll position is restored manually in Profile.load(), don't
-   let the browser's own scroll-anchoring fight that. */
-#s-profile {
-  overflow-anchor: none;
-}
+/* PP-5 lived here: `#profile-passport { min-height: 620px }` reserved the
+   passport's height, and `#s-profile { overflow-anchor: none }` kept the
+   browser from fighting the manual scrollTop restore in Profile.load().
+   Both are gone — PP-6 removed the cause. Toggles no longer rebuild the
+   screen, so the passport is never destroyed and there is no height to
+   reserve and no scroll to restore.
+   Measured before deleting: the reservation under-shot anyway (620px against
+   a real 1205px), and on a cold entry it only bought ~150ms of empty
+   scrollable box — the screen has no content to scroll before that. Native
+   overflow-anchor is back on purpose: with no manual restore left to fight,
+   it is what keeps the view steady. */
 
 /* ── Body summary strip ── */
 .body-summary {
