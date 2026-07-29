@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v118-8d1346ca';
+const CACHE_NAME = 'athlete-pro-v118-e5fb82e1';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -40,6 +40,8 @@ const ASSETS = [
   '/js/intel.view.js',
   '/js/island-profile.store.js',
   '/js/island-settings.view.js',
+  '/js/journal.store.js',
+  '/js/journal.view.js',
   '/js/locale.store.js',
   '/js/onboarding.js',
   '/js/plate-calc.js',
@@ -105,6 +107,7 @@ const ASSETS = [
   '/css/dashboard.css',
   '/css/dynamic-island.css',
   '/css/intel.css',
+  '/css/journal.css',
   '/css/privacy.css',
   '/css/profile.css',
   '/css/summary.css',
