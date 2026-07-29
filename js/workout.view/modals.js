@@ -201,8 +201,12 @@ export function openPlanEditor() {
         <div class="plan-list" id="plan-list">
           ${tabContent(activeTab)}
         </div>
-        <button class="btn btn-primary" style="margin-top:var(--sp-2)"
+        <button class="btn btn-primary" id="plan-save-btn" style="margin-top:var(--sp-2)"
                 data-action="wo:planSave">
+          <span class="morph-swap">
+            <svg class="ic-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+            <svg class="ic-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          </span>
           Save Plan
         </button>
       </div>`;
@@ -282,8 +286,18 @@ export function toggleChecklist(i) {
 }
 
 export function _savePlanAndClose() {
-  _closePlanEditor();
-  Toast.show('Plan saved', 'success');
+  const btn = document.getElementById('plan-save-btn');
+  if (!btn || btn.classList.contains('is-done')) {
+    _closePlanEditor();
+    Toast.show('Plan saved', 'success');
+    return;
+  }
+  btn.classList.add('is-done');
+  btn.disabled = true;
+  setTimeout(() => {
+    _closePlanEditor();
+    Toast.show('Plan saved', 'success');
+  }, 380);
 }
 
 export function _updatePlanName(type, i, val) {
