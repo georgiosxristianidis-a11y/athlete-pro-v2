@@ -1,0 +1,394 @@
+/* ════════════════════════════════════════════════════════
+   journal.css — Журнал тренировок (карточка LOG-1)
+
+   Уровни высоты по AIR: экран — near-black фон приложения,
+   строки и поля — flat-AIR (--c-bg-2 + hairline), карточка
+   тренировки — floating glass (.modal-sheet из base.css).
+   Типографика только ступенями --fs-*/--fw-*, цвета только
+   токенами. Ширина рассчитана на 375px без переполнения.
+   ════════════════════════════════════════════════════════ */
+
+/* ── Поиск ───────────────────────────────────────────── */
+.jr-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.jr-search-ico {
+  position: absolute;
+  left: var(--sp-1-5);
+  display: flex;
+  color: var(--c-text-3);
+  pointer-events: none;
+}
+.jr-search-ico svg {
+  width: 16px;
+  height: 16px;
+}
+.jr-search {
+  width: 100%;
+  min-width: 0;
+  padding: var(--sp-1-5) var(--sp-1-5) var(--sp-1-5) var(--sp-4);
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  color: var(--c-text-1);
+  font-family: var(--font-main);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+.jr-search::placeholder {
+  color: var(--c-text-3);
+  font-weight: var(--fw-md);
+}
+.jr-search:focus {
+  outline: none;
+  border-color: var(--c-border-h);
+  background: var(--c-surface-h);
+}
+/* Нативный крестик Safari/Chrome в search — чужая хромированная деталь. */
+.jr-search::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+/* ── Сегменты Push / Pull / Legs ──────────────────────── */
+.jr-segments {
+  display: flex;
+  gap: var(--sp-0-5);
+  padding: var(--sp-0-5);
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+}
+.jr-seg {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-0-5);
+  padding: var(--sp-1) var(--sp-0-5);
+  border: none;
+  border-radius: var(--r-s);
+  background: none;
+  color: var(--c-text-3);
+  font-family: var(--font-main);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.jr-seg:active {
+  transform: scale(var(--press-scale));
+}
+.jr-seg.active {
+  background: var(--c-surface-h);
+  color: var(--c-text-1);
+}
+.jr-seg-n {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  color: var(--c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+.jr-seg.active .jr-seg-n {
+  color: var(--c-chrome);
+}
+
+/* ── Список ──────────────────────────────────────────── */
+.jr-count {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-text-3);
+  margin-bottom: var(--sp-1);
+}
+.jr-month {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  margin: var(--sp-3) 0 var(--sp-1);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-text-2);
+}
+.jr-month:first-of-type {
+  margin-top: var(--sp-1);
+}
+.jr-month-n {
+  color: var(--c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.jr-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1-5);
+  padding: var(--sp-1-5);
+  margin-bottom: var(--sp-1);
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.jr-row:active {
+  transform: scale(var(--press-scale));
+  background: var(--c-surface-h);
+}
+.jr-dot {
+  flex: none;
+  width: 4px;
+  align-self: stretch;
+  min-height: 32px;
+  border-radius: var(--r-pill);
+}
+.jr-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.jr-top {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.jr-type {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-1);
+  white-space: nowrap;
+}
+.jr-date {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.jr-meta {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.jr-tail {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.jr-vol {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.jr-unit {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  color: var(--c-text-3);
+  margin-left: 2px;
+}
+.jr-chev {
+  display: flex;
+  color: var(--c-text-3);
+}
+.jr-chev svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* PR — achievement, поэтому золото, а не бренд-акцент. */
+.jr-pr {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px var(--sp-0-5);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  color: var(--c-gold);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  white-space: nowrap;
+}
+.jr-pr-ico {
+  display: flex;
+}
+.jr-pr-ico svg {
+  width: 9px;
+  height: 9px;
+}
+
+.jr-more,
+.jr-reset {
+  display: block;
+  width: 100%;
+  margin-top: var(--sp-2);
+  padding: var(--sp-1-5);
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  color: var(--c-text-2);
+  font-family: var(--font-main);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+}
+.jr-more:active,
+.jr-reset:active {
+  transform: scale(var(--press-scale));
+  background: var(--c-surface-h);
+}
+.jr-reset {
+  max-width: 220px;
+  margin-inline: auto;
+}
+
+/* ── Карточка тренировки ─────────────────────────────── */
+.jr-sheet {
+  max-width: 560px;
+  margin: auto auto 0;
+}
+.jr-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-1-5);
+  margin-bottom: var(--sp-2);
+}
+.jr-detail-type {
+  font-size: var(--fs-4);
+  font-weight: var(--fw-black);
+  letter-spacing: -0.02em;
+}
+.jr-detail-date {
+  margin-top: 2px;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+}
+.jr-x {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  color: var(--c-text-2);
+  cursor: pointer;
+}
+.jr-x:active {
+  transform: scale(var(--press-scale));
+}
+.jr-x svg {
+  width: 14px;
+  height: 14px;
+}
+
+.jr-detail-stats {
+  display: flex;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-2);
+}
+.jr-stat {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-1-5) var(--sp-1);
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  text-align: center;
+}
+.jr-stat-v {
+  font-size: var(--fs-4);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+}
+.jr-stat-k {
+  margin-top: 2px;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-3);
+}
+
+.jr-ex-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.jr-ex {
+  padding: var(--sp-1-5);
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+}
+.jr-ex-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-1);
+}
+.jr-ex-name {
+  min-width: 0;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-1);
+  overflow-wrap: anywhere;
+}
+.jr-sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-0-5);
+}
+.jr-set {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-0-5);
+  padding: var(--sp-0-5) var(--sp-1);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-s);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+}
+/* Пропущенный подход остаётся в записи, но не должен читаться как сделанный. */
+.jr-set.skipped {
+  color: var(--c-text-3);
+  text-decoration: line-through;
+}
+.jr-set-i {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  color: var(--c-text-3);
+}
+.jr-noset {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+}

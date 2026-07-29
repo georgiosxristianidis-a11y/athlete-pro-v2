@@ -264,6 +264,11 @@ Nav.on('s-stats', async () => {
   window.Analytics = Analytics;
   await Analytics.load();
 });
+Nav.on('s-journal', async () => {
+  const { Journal } = await import('./journal.view.js');
+  window.Journal = Journal;
+  await Journal.load();
+});
 Nav.on('s-body', async () => {
   const renderBodyStats = await _loadBodyStats();
   renderBodyStats();
