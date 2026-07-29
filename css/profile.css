@@ -521,8 +521,10 @@ button.pref-row-icon:active,
 .pp-hero-v2 {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-1);
+  gap: var(--sp-2);
+  /* Горизонтальный ритм — общий со .screen: боковой padding нулевой, иначе
+     hero стоит на 28px, а полоса метрик / бенто / радар — на 20px (PP-4). */
+  padding: var(--sp-3) 0;
   margin-bottom: var(--sp-2);
   position: relative; /* containing block для ::before — иначе glow тянется на весь .screen */
 }
@@ -584,19 +586,20 @@ button.pref-row-icon:active,
   color: var(--c-text-1);
   letter-spacing: -0.05em;
   line-height: 1;
-  margin-bottom: 4px;
+  margin-bottom: var(--sp-0-5);
 }
 
 .pp-meta-v2 {
   font-size: var(--fs-2);
   font-weight: var(--fw-md);
   color: var(--c-text-3);
-  margin-bottom: 12px;
+  margin-bottom: var(--sp-1-5);
 }
 
 .pp-badge-row {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap; /* на 375px пилюли переносятся целиком, а не ломаются внутри себя */
+  gap: var(--sp-1);
   align-items: center;
 }
 
@@ -606,8 +609,9 @@ button.pref-row-icon:active,
   font-weight: var(--fw-black);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 4px 12px;
+  padding: var(--sp-0-5) var(--sp-1);
   border-radius: var(--r-xl);
+  white-space: nowrap;
   color: var(--tier-c);
   background: color-mix(in srgb, var(--tier-c) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--tier-c) 20%, transparent);
@@ -630,8 +634,9 @@ button.pref-row-icon:active,
   font-weight: var(--fw-black);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 4px 12px;
+  padding: var(--sp-0-5) var(--sp-1);
   border-radius: var(--r-xl);
+  white-space: nowrap;
   background: var(--c-accent-bg);
   color: var(--c-accent);
   border: 1px solid color-mix(in srgb, var(--c-accent) 20%, transparent);

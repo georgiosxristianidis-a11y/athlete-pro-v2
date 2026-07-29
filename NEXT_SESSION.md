@@ -12,7 +12,7 @@
 > ⚠️ lhci гонять ТОЛЬКО из worktree — корень репо на протухшем main, даёт фейковые цифры (кейс perf 61 2026-07-18).
 > **⚠️ Правило прополки веток/worktree (Gio, действует навсегда):** возраст ≥30 дней, содержимое разбирать с Gio ПЕРЕД сносом — не удалять пачкой по одному инструменту. Детали — `HANDOFF_orchestration.md` конец файла.
 > Активная программа: **GYM-GRADE** — `docs/handoff/HANDOFF_gym_grade.md` (DoD из 5 пунктов, журнал полевых тренировок = 3/10). Стек карточек: `docs/handoff/HANDOFF_next_cards.md`. Остров + Sonnet-задачи: `docs/handoff/HANDOFF_isl_tail.md`. AIR-хвост: `docs/handoff/HANDOFF_air_refactor.md` (§ AIR-4). Оркестрация/прополка: `docs/handoff/HANDOFF_orchestration.md`.
-> **Дизайн-система (заведена 2026-07-27, активна):** `docs/handoff/HANDOFF_design_system.md` — иерархия · отступы · движение · отклик. Очередь: ANIM-2 (следующая, список закрыт) → TYPE-1 → PP-4 → SPACE-1 → GUARD-1; отдельно PP-6 и PP-3. Там же разбор сессии 2026-07-27 и открытые вопросы к Gio. Профиль-паспорт air/отступ до шкалы (не начато, ждёт уточнения элемента у Gio): `docs/handoff/HANDOFF_profile_hero_spacing.md`.
+> **Дизайн-система (заведена 2026-07-27, активна):** `docs/handoff/HANDOFF_design_system.md` — иерархия · отступы · движение · отклик. Очередь: ANIM-1/ANIM-2 ✅ · TYPE-1 ✅ · PP-6 ✅ · PP-4 ✅ (1.25.34) → **ПОЛЕ-1 (Gio, телефон — закрывает три висящих вопроса разом)** → TYPE-2 → SPACE-1 → GUARD-1; отдельно PP-3 (ждёт двух решений Gio). Там же разбор сессии 2026-07-27 и открытые вопросы к Gio. Профиль-паспорт air/отступ до шкалы (не начато, ждёт уточнения элемента у Gio): `docs/handoff/HANDOFF_profile_hero_spacing.md`.
 > Done-история — в `CHANGELOG.md`. Этот файл — только актуальное состояние и остаток.
 
 ---
