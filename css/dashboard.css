@@ -741,3 +741,18 @@
 }
 /* ── Weekly Summary Chip — icon layout ── */
 
+
+/* ── Recent → Журнал ──────────────────────────────────────
+   Заголовок секции с текстовым действием справа — тот же паттерн,
+   что «Edit Plan» / «Add» на экране Train (css/workout.css:76).
+   Отрицательный margin гасит сдвиг от padding: тап-зона растёт,
+   а строка выше не становится. */
+.dash-recent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dash-recent-header .btn-text {
+  padding: 10px 6px;
+  margin: -10px -6px;
+}

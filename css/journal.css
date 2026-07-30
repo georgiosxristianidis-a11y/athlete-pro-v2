@@ -8,6 +8,40 @@
    токенами. Ширина рассчитана на 375px без переполнения.
    ════════════════════════════════════════════════════════ */
 
+/* ── Шапка ───────────────────────────────────────────────
+   Журнал живёт вне нижней навигации (в таб-баре ровно четыре
+   вкладки), поэтому кнопка «назад» обязательна: без неё экран
+   становится тупиком — ровно как s-body, в который вообще
+   никто не переходит. */
+.jr-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-1-5);
+}
+.jr-back {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-top: 2px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  color: var(--c-text-2);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.jr-back:active {
+  transform: scale(var(--press-scale));
+  background: var(--c-surface-h);
+}
+.jr-back svg {
+  width: 18px;
+  height: 18px;
+}
+
 /* ── Поиск ───────────────────────────────────────────── */
 .jr-search-wrap {
   position: relative;

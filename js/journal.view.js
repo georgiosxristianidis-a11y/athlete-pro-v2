@@ -38,6 +38,7 @@ const ICON = {
   close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>',
   star: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
   empty: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><polyline points="14 3 14 8 19 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg>',
 };
 
 /** Подпись месяца в заголовке секции: «Июль 2026» / «July 2026». */
@@ -296,7 +297,8 @@ export async function load() {
   if (!screen) return;
 
   screen.innerHTML = `
-    <div class="screen-header">
+    <div class="screen-header jr-header">
+      <button class="jr-back" data-action="nav:back" aria-label="${esc(t('journal.back'))}">${ICON.back}</button>
       <div>
         <div class="screen-title">${esc(t('journal.title'))}</div>
         <div class="screen-sub">${esc(t('journal.sub'))}</div>

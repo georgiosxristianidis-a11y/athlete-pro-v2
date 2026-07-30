@@ -181,4 +181,18 @@ describe('lookup', () => {
   test('unknown id gives null, not undefined', () => {
     assert.equal(S.findWorkout(999), null);
   });
+
+  // CRDT foundation (js/db/core.js newId()) gives new rows a UUID string id;
+  // legacy rows keep a numeric autoIncrement id. Both must open from the
+  // same string `data-id` the row button carries — Number(uuid) is NaN and
+  // would silently fail to find the row (regression caught in field testing).
+  test('a UUID id (new CRDT rows) is found by its own string', () => {
+    const uid = 'cd02e570-278b-4efd-ba07-ea54818535db';
+    S.JournalState.all = [w(uid, 'push', D(2026, 6, 1))];
+    assert.equal(S.findWorkout(uid)?.id, uid);
+  });
+
+  test('a legacy numeric id still opens when looked up as a string', () => {
+    assert.equal(S.findWorkout('1')?.id, 1);
+  });
 });
