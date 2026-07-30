@@ -49,44 +49,13 @@
 - **Рекомендация, не меню:** при выборе советовать лучший для проекта вариант + 1 строка «почему»; решает человек.
 - Один разговор = одна цель; длинные ресёрчи — субагентом, в main только итог.
 
-## Ритуал агента (копировать в бриф, не пересказывать)
+## Ритуал агента
 
-> Агент не помнит правил между сессиями — значит ритуал живёт в брифе, а не в надежде на память. Шаблон ниже вставляется в задачу целиком.
-
-```text
-ЦЕЛЬ: <одна фраза, что должно работать после>
-ГДЕ СТОП: <файлы/каталоги>
-НЕ ТРОГАТЬ: <что рядом и соблазнительно, но вне карточки>
-
-СТАРТ (первым делом, до чтения кода):
-git fetch origin && git checkout -b claude/<карточка>-<2-3-слова> origin/main && npm run preflight
-
-Перед первой правкой сверь, что ожидаемый код на месте (grep ключевых символов).
-Нет его — git log origin/main -- <файл>. НЕ строй теорию, почему его нет.
-
-ФИНИШ: npm test — сверь счёт с main (см. § Tests). Меньше = база устарела.
-Затем git push -u origin HEAD. Гард дрейфа в pre-push решит, годится ли база.
-```
-
-- **Коммит по ходу:** `git add -A && git commit -m "<тип>(<область>): <что сделано>"`. Чекпоинт перед рискованным куском — тот же коммит с `checkpoint: <состояние> — до <что ломаю>`; откатываться потом дешевле.
-- **База уехала — не спорить и не угадывать, спросить гард:** `node scripts/check-branch-drift.mjs`. Зелено («твои файлы в main не менялись») = отставание неважно, пушь. Блок = он перечислит файлы и коммиты, которые их переписали.
-- **При блоке решает объём, а не принцип.** Конфликт мельче правки → `git rebase origin/main` и **перегнать гейт заново** (в main могли приехать новые тесты, старый зелёный не считается). Конфликт больше самой правки (кейс PP-6: 90 из 126 строк) → ветка от свежего `main` и переложить подход на актуальный файл. Идея переиспользуется, выбрасывается только приземление.
-
-## Stack
-
-- Frontend: Vanilla JS (ES Modules), no frameworks
-- Backend: Express/Node.js (**ESM**, `"type": "module"`)
-- DB: IndexedDB (offline-first) + optional Supabase
-- AI: `lib/aiOrchestrator.js` — Anthropic + Gemini, BYOK, SSE via `POST /api/coach`
-- PWA: Service Worker + manifest
+Шаблон брифа (ЦЕЛЬ / ГДЕ СТОП / НЕ ТРОГАТЬ + старт-финиш ритуал + правила коммита и дрейфа) — скилл `agent-brief` (`.claude/skills/agent-brief/SKILL.md`). Вызывать при постановке задачи субагенту или новой сессии; копировать в бриф целиком, не пересказывать.
 
 ## Run
 
 ```bash
-npm install
-cp .env.example .env   # заполни ANTHROPIC_API_KEY
-npm run dev             # http://localhost:3000
-
 # Полевое тестирование на телефоне (НЕ заменяй server.js!):
 node scripts/telemetry-server.mjs --lan
 ```
@@ -105,33 +74,16 @@ node scripts/telemetry-server.mjs --lan
 
 | File | What |
 |------|------|
-| `server.js` | Express entry (ESM), helmet/CSP, static + API |
 | `js/app.js` | Frontend entry, lazy loading, Integrity.check |
-| `js/db.js` | IndexedDB layer (7 stores) |
 | `js/shared/utils.js` | `esc()` — XSS escape, Haptic Gate |
-| `js/shared/spring.js` | Spring Physics для анимаций |
 | `js/shared/integrity.js` | Contract-First Integrity guard |
 | `js/privacy.store.js` | Режимы cloud / anon / airgap (default: airgap) |
-| `js/sync.js` | LWW Sync Engine V2.1 |
 | `lib/aiOrchestrator.js` | Мульти-движок AI (anthropic/gemini, BYOK) |
-| `exercises-library.json` | 170 exercises (85KB) |
 | `NEXT_SESSION.md` | Кросс-агентный handoff |
 
 ## Design
 
-- Палитра — двухуровневая (решение 1-2, 2026-06-14). Цвета только через токены `css/base.css :root`.
-  - **BRAND (единственные декоративные акценты):** primary `--c-accent` (#00e676 green), secondary `--c-secondary` (#8b5cf6 violet, цвет лого). CTA/active/focus/бренд — только эти два.
-  - **SEMANTIC (только по смыслу, не для декора):** PPL — `--c-push`(green)/`--c-pull`(cyan)/`--c-legs`(purple); статус — `--c-amber`(warning/PR)/`--c-red`(#ff4d88 error/danger/HR); achievement — `--c-gold` (PR/streak).
-  - PPL-закон: Push=green · Pull=cyan · Legs=purple. В коде типа тренировки — `--c-push/--c-pull/--c-legs`, не сырые hue.
-- Типографика — шкала `--fs-*` / `--fw-*` в `css/base.css :root` (решение TYPE-1, 2026-07-28). Сырые px в `font-size` и цифры в `font-weight` запрещены.
-  - **Размер (6 ступеней):** `--fs-1` 10px микро-капс (подписи, единицы, пилюли) · `--fs-2` 13px вторичный текст · `--fs-3` 16px база (тело, заголовки строк, поля) · `--fs-4` 19px заголовок секции/значение · `--fs-5` 23px дисплей (имя в hero) · `--fs-6` 30px hero-число.
-  - **Насыщенность (3 варианта):** `--fw-md` 600 тело · `--fw-bold` 700 акцент · `--fw-black` 800 капс/числа/hero. 500 и 600 глазом не различимы, 900 у Manrope клэмпится к 800 — оба упразднены.
-  - Промежуточных ступеней не заводить. Нужен другой вес в макете — меняй ступень, цвет или насыщенность, не размер на 1px.
-  - **Анкер закрыт двумя решениями Gio, оба по полю, переизобретать не нужно.** 2026-07-28 (по мокапам): база 16px, вариант A против более мелкого B 9/12/15/19/24/32 — читаемость важнее плотности. 2026-07-30 (по телефону, карточка TYPE-1b): низ шкалы подтверждён вживую («читается хорошо»), верх опущен 20/26/34 → 19/23/30 («буквы крупные»). Шаг после правки 1.19–1.30, а не ровно 1.25: верхние ступени сближены осознанно — на 375px им не нужен прежний размах, и различаются они ещё весом и цветом.
-  - Переведены `css/profile.css` + `js/profile.view/*` и `css/journal.css`; остальные экраны — карточка TYPE-2, см. `docs/handoff/HANDOFF_design_system.md`.
-- Glassmorphism: backdrop-filter, глубина через тени
-- Borders: glass-hairlines узаконены (решение 2026-06-12) — только полупрозрачные через токены `var(--c-border)` (6%) / `var(--c-border-h)` (12%); НЕ хардкодить rgba, непрозрачные сплошные рамки запрещены. Акцентные подсветки (цветные rgba ≤20%) допустимы точечно
-- Mobile-first, 600px breakpoint
+Полный спек (палитра BRAND/SEMANTIC, PPL-закон, шкала `--fs-*`/`--fw-*`, glass-hairlines, breakpoint) — `.claude/rules/design.md`, грузится автоматически при работе с `css/**`, `*.view.js`, `index.html`. Железное: цвета и типографика только через токены `css/base.css :root`, сырые hex/px/веса запрещены.
 
 ## Rules
 
