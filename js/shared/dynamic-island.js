@@ -96,8 +96,14 @@ export const DynamicIsland = (() => {
         </div>
 
         <div class="island-expanded-content">
+          <!-- Живая точка = «сейчас». Слово (NOW:/СЕЙЧАС:) сюда не ставим:
+               в строке всего ~160px под имя упражнения, и подпись съедала бы
+               их у самого имени. Пульс читается периферийным зрением, а взгляд
+               в логгере короткий — та же логика, по которой римскую нумерацию
+               блоков заменили полосками (block-ticks.js). -->
           <div class="island-status-line">
             <span class="island-sets-badge" id="di-sets">0/0</span>
+            <span class="island-live" id="di-live" aria-hidden="true"></span>
             <span class="island-ex-name" id="di-name">Exercise</span>
           </div>
           <!-- DHL 4-chamber journey tracker (Cool Steel) -->
@@ -380,6 +386,14 @@ export const DynamicIsland = (() => {
       _progressFill.style.transform = `scaleX(${pct / 100})`;
       const colors = { push: 'var(--c-push)', pull: 'var(--c-pull)', legs: 'var(--c-legs)' };
       _progressFill.style.background = colors[State.type] || 'var(--c-accent)';
+    }
+
+    // Живая точка красится в цвет сессии по тому же закону PPL: она говорит
+    // «что я тренирую прямо сейчас», то есть это данные, а не хром. Цвет
+    // уходит переменной — сама анимация живёт в CSS и про тип не знает.
+    if (_island) {
+      const live = { push: 'var(--c-push)', pull: 'var(--c-pull)', legs: 'var(--c-legs)' };
+      _island.style.setProperty('--isl-live', live[State.type] || 'var(--c-accent)');
     }
 
     _updateNetworkStatus();

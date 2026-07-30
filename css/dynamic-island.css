@@ -531,6 +531,47 @@
   gap: 10px;
 }
 
+/* ── «Сейчас» — пульсом, а не словом ──
+   Маркер живого упражнения. Намеренно НЕ переиспользует .island-dot: та точка
+   уже занята статусом синка с шестью состояниями и собственным стейт-машином
+   (js/shared/sync-dot.js, решение L3 2026-07-15), и три из них сами пульсируют.
+   Повесить «сейчас» туда же значило бы, что пульс отвечает сразу на два разных
+   вопроса. Поэтому отдельный маркер: сидит в строке имени, а не в углу пилюли.
+   Грамматика дыхания та же, что у island-tracker (--it-breathe): opacity +
+   scale, только GPU. Глобальный prefers-reduced-motion (base.css) обнуляет
+   длительность — точка остаётся видимой, дышать перестаёт.
+
+   Стоит ПОСЛЕ бейджа сетов, а не в начале строки: у левого края развёрнутой
+   пилюли уже сидит .island-dot (absolute, left/top 14px), и первым флекс-ребёнком
+   живая точка ложилась ровно на него — замер давал 6×6 @33,24 против 6×6 @31,28.
+   На своём месте она ещё и читается правильнее: маркер принадлежит имени
+   упражнения, рядом с которым стоит. */
+.island-live {
+  position: relative;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--isl-live, var(--c-accent));
+}
+.island-live::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: var(--isl-live, var(--c-accent));
+  animation: island-live-breathe 1.6s ease-in-out infinite;
+  transform-origin: center;
+  pointer-events: none;
+}
+@keyframes island-live-breathe {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%      { opacity: 0.12; transform: scale(1.6); }
+}
+/* Нечему быть «сейчас», когда сессии нет или она уже закрыта. */
+.island.mode-idle .island-live,
+.island.finish-mode .island-live { display: none; }
+
 /* ── DHL 4-chamber journey tracker mount ── */
 .island-tracker {
   display: flex;
