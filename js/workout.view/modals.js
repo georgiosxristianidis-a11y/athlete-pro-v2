@@ -28,6 +28,7 @@ import {
   getWeekMode, setWeekMode,
   getExerciseLibrary,
   PPL_GIO_PLAN,
+  PPL_HYBRID_PLAN,
 } from '../workout.store.js';
 import { svgArrow, renderActive } from './render.js';
 
@@ -172,6 +173,7 @@ export function openPlanEditor() {
         <div class="plan-preset-row">
           <span class="plan-preset-label">Preset:</span>
           <button class="btn-preset" data-action="wo:planPreset" data-preset="ppl-gio">PPL | GIO</button>
+          <button class="btn-preset" data-action="wo:planPreset" data-preset="ppl-hybrid">Hybrid v1</button>
         </div>
 
         <!-- Search bar -->
@@ -252,13 +254,22 @@ export function _setPlanSearch(query) {
   }
 }
 
+/**
+ * Пресеты плана. Ключ = data-preset кнопки, label — то, что видит человек
+ * в диалоге и тосте (одно имя на все три места, чтобы не расходилось).
+ */
+const PLAN_PRESETS = {
+  'ppl-gio':    { plan: PPL_GIO_PLAN,    label: 'PPL | GIO' },
+  'ppl-hybrid': { plan: PPL_HYBRID_PLAN, label: 'PPL | Hybrid v1' },
+};
+
 export async function _loadPreset(presetName) {
-  const presets = { 'ppl-gio': PPL_GIO_PLAN };
-  const preset = presets[presetName];
-  if (!preset) return;
+  const entry = PLAN_PRESETS[presetName];
+  if (!entry) return;
+  const { plan: preset, label } = entry;
   const ru = isRu();
   const ok = await confirmDialog({
-    title: ru ? 'Загрузить пресет PPL | GIO?' : 'Load PPL | GIO preset?',
+    title: ru ? `Загрузить пресет ${label}?` : `Load ${label} preset?`,
     message: ru ? 'Планы недели A и недели B будут заменены.' : 'Both Week A and Week B plans will be replaced.',
     confirmLabel: ru ? 'Загрузить' : 'Load',
     cancelLabel: ru ? 'Отмена' : 'Cancel',
@@ -268,7 +279,7 @@ export async function _loadPreset(presetName) {
   savePlan(JSON.parse(JSON.stringify(preset.weekB)), 'B');
   _closePlanEditor();
   openPlanEditor();
-  Toast.show(ru ? 'PPL | GIO загружен для недель A и B — задай рабочие веса' : 'PPL | GIO loaded for Week A & B — set your working weights', 'success');
+  Toast.show(ru ? `${label} загружен для недель A и B — задай рабочие веса` : `${label} loaded for Week A & B — set your working weights`, 'success');
 }
 
 export function _closePlanEditor() {
