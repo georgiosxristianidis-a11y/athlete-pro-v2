@@ -320,8 +320,8 @@
   border-radius: var(--r-m);
   border: none;
   font-family: var(--font-main);
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -343,8 +343,8 @@
   color: var(--c-text-2);
   border-radius: var(--r-m);
   font-family: var(--font-main);
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   cursor: pointer;
   transition: transform var(--t-fast), opacity var(--t-fast);
 }
@@ -427,8 +427,8 @@
 /* TextField: dark, tokenized — replaces white native inputs */
 .ui-field { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .ui-field-label {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   letter-spacing: 0.01em;
   color: var(--c-text-2);
 }
@@ -440,15 +440,15 @@
   border-radius: var(--r-m);
   color: var(--c-text-1);
   font-family: var(--font-main);
-  font-size: 15px;
-  font-weight: 500;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   transition: border-color var(--t-fast), background var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
 .ui-input::placeholder { color: var(--c-text-3); }
 .ui-input:hover { border-color: var(--c-border-h); }
 .ui-input:disabled { opacity: 0.5; cursor: not-allowed; }
-.ui-field-hint { font-size: 12px; color: var(--c-text-3); }
+.ui-field-hint { font-size: var(--fs-2); color: var(--c-text-3); }
 
 /* NumberStepper: −/value/+ on a token surface */
 .ui-stepper {
@@ -467,8 +467,8 @@
   border-radius: var(--r-s);
   background: var(--c-surface-h);
   color: var(--c-text-1);
-  font-size: 22px;
-  font-weight: 600;
+  font-size: var(--fs-5);
+  font-weight: var(--fw-md);
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -482,8 +482,8 @@
 .ui-stepper-val {
   min-width: 64px;
   text-align: center;
-  font-size: 17px;
-  font-weight: 700;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
   color: var(--c-text-1);
   font-variant-numeric: tabular-nums;
 }
@@ -498,8 +498,8 @@
 .ui-card.is-flush { padding: 0; }
 .ui-card-title {
   margin-bottom: 12px;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--c-text-3);
@@ -571,8 +571,8 @@
 }
 .modal-title {
   font-family: var(--font-heading);
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--fs-4);
+  font-weight: var(--fw-md);
   letter-spacing: -0.02em;
   color: var(--c-text-1);
 }
@@ -584,7 +584,7 @@
 }
 .confirm-msg {
   color: var(--c-text-2);
-  font-size: 15px;
+  font-size: var(--fs-3);
   line-height: 1.45;
   margin: 0 0 var(--sp-3);
 }
@@ -600,8 +600,8 @@
   flex: 1;
   height: 48px;
   border-radius: var(--r-m);
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   border: 1px solid var(--c-border);
   cursor: pointer;
   transition: filter 0.15s ease, background 0.15s ease;
@@ -613,7 +613,7 @@
 .confirm-ok {
   background: var(--c-accent);
   color: var(--c-black);
-  font-weight: 800;
+  font-weight: var(--fw-black);
   border-color: transparent;
 }
 .confirm-ok.is-danger {
@@ -646,8 +646,8 @@ button:focus-visible {
   color: var(--c-text-inverse);
   padding: 12px 24px;
   border-radius: var(--r-m);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   text-decoration: none;
   z-index: 10000;
   transition: transform var(--t-fast);
@@ -704,8 +704,8 @@ button:focus-visible {
 }
 .section-label {
   font-family: var(--font-heading);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--c-text-3);
@@ -749,8 +749,8 @@ button:focus-visible {
   color: var(--c-text-1);
   padding: 10px 20px 10px 10px;
   border-radius: var(--r-xxl);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   letter-spacing: -0.01em;
   line-height: 1.3;
   display: flex;
@@ -793,8 +793,8 @@ button:focus-visible {
   border: none;
   background: none;
   color: var(--c-accent);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
   cursor: pointer;
   transition: transform var(--t-fast), opacity var(--t-fast);
 }
@@ -978,8 +978,8 @@ button:focus-visible {
   border: 1px solid var(--c-border);
   border-radius: var(--r-s);
   padding: 10px 12px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   color: var(--c-text-1);
   font-family: inherit;
   box-sizing: border-box;
@@ -988,8 +988,8 @@ button:focus-visible {
 .plan-input:focus { outline: none; border-color: var(--c-border-h); }
 .plan-row-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .plan-meta-label {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--c-text-3);
@@ -1020,8 +1020,8 @@ button:focus-visible {
 .mini-stepper span {
   min-width: 24px;
   text-align: center;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
   color: var(--c-text-1);
   font-variant-numeric: tabular-nums;
 }
@@ -1048,15 +1048,15 @@ button:focus-visible {
   color: var(--c-text-1);
   padding: 4px 10px;
   border-radius: var(--r-m);
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   letter-spacing: 0.04em;
   text-shadow: 0 0 10px rgba(255, 179, 0, 0.4);
 }
 
 .streak-count {
   color: var(--c-amber);
-  font-weight: 800;
+  font-weight: var(--fw-black);
   text-shadow: 0 0 12px rgba(255, 179, 0, 0.35);
 }
 
@@ -1130,7 +1130,7 @@ button:focus-visible {
 .sw-val, .sr-val, .stepper-val, .live-hero-val, .orm-val, .focus-hero-val {
   font-family: var(--font-heading);
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  font-weight: var(--fw-md);
 }
 /* Toast Notifications — see Section 10 above (single source of truth). */
 
@@ -1175,15 +1175,21 @@ button:focus-visible {
 .ppl-g-svg { width: 100%; max-width: 280px; height: auto; display: block; }
 .ppl-g-track { fill: none; stroke: var(--c-border-h); stroke-width: 18; }
 .ppl-g-seg { fill: none; stroke-width: 18; stroke-linecap: butt; }
-.ppl-g-total { fill: var(--c-text-1); font-family: var(--font-heading); font-weight: 800; font-size: 30px; letter-spacing: -0.03em; }
-.ppl-g-cap { fill: var(--c-text-3); font-family: var(--font-main); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+/* Два правила ниже — <text> внутри viewBox="0 0 200 118" при ширине до 280px,
+   то есть их font-size задан в единицах viewBox, а не в CSS-пикселях: на экране
+   30 рендерится как ~42. Подставлять сюда --fs-* нельзя — ступень приехала бы
+   умноженной на масштаб SVG. Та же система координат, что у подписей радара
+   (js/profile.view/hexagon-radar.js), и то же исключение из шкалы.
+   font-weight от масштаба не зависит — он на токенах. */
+.ppl-g-total { fill: var(--c-text-1); font-family: var(--font-heading); font-weight: var(--fw-black); font-size: 30px; letter-spacing: -0.03em; }
+.ppl-g-cap { fill: var(--c-text-3); font-family: var(--font-main); font-weight: var(--fw-md); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
 .ppl-g-legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin-top: 2px; }
 .ppl-g-leg { display: flex; flex-direction: column; align-items: center; gap: 1px; }
 .ppl-g-leg-top { display: flex; align-items: center; gap: 5px; }
 .ppl-g-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lc); }
-.ppl-g-pct { font-family: var(--font-heading); font-weight: 800; font-size: 16px; color: var(--c-text-1); font-variant-numeric: tabular-nums; }
-.ppl-g-leg-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-text-3); }
-.ppl-g-leg-vol { font-size: 11px; font-weight: 600; color: var(--c-text-2); font-variant-numeric: tabular-nums; }
+.ppl-g-pct { font-family: var(--font-heading); font-weight: var(--fw-black); font-size: var(--fs-3); color: var(--c-text-1); font-variant-numeric: tabular-nums; }
+.ppl-g-leg-lbl { font-size: var(--fs-1); font-weight: var(--fw-md); text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-text-3); }
+.ppl-g-leg-vol { font-size: var(--fs-1); font-weight: var(--fw-md); color: var(--c-text-2); font-variant-numeric: tabular-nums; }
 
 /* ── Шкала этапов (shared) ──
    Одна грамматика прогресса на всё приложение: сегменты залиты
@@ -1262,7 +1268,7 @@ button:focus-visible {
 /* Preview mode — glyph above, name below; equal segments */
 .cp-preview .cp-seg { flex-direction: column; gap: 4px; padding: 8px 4px; }
 .cp-name-stack {
-  font-size: 9px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+  font-size: var(--fs-1); font-weight: var(--fw-bold); letter-spacing: 0.4px; text-transform: uppercase;
   color: var(--c-text-1); text-align: center;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
@@ -1275,13 +1281,13 @@ button:focus-visible {
 .cp-mastery .cp-seg:not(.is-active) { flex: 0.6; flex-direction: column; gap: 4px; padding: 6px 4px; }
 .cp-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
 .cp-name {
-  font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+  font-size: var(--fs-1); font-weight: var(--fw-black); letter-spacing: 0.5px; text-transform: uppercase;
   color: var(--c-text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .cp-progress { position: relative; height: 2px; margin-top: 2px; }
 .cp-progress-track { position: absolute; inset: 0; background: var(--c-border-h); border-radius: 1px; }
 .cp-progress-fill { position: relative; height: 100%; border-radius: 1px; transition: width var(--t-normal); }
-.cp-progress-text { font-size: 8px; font-weight: 700; color: var(--c-text-3); letter-spacing: 0.3px; }
+.cp-progress-text { font-size: var(--fs-1); font-weight: var(--fw-bold); color: var(--c-text-3); letter-spacing: 0.3px; }
 .cp-glyph-sm { opacity: 0.7; }
 .cp-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--c-text-3); opacity: 0.5; }
 
@@ -1306,12 +1312,12 @@ button:focus-visible {
   transform-box: fill-box;
 }
 .it-label {
-  font-size: 9px; font-weight: 700; letter-spacing: 0.3px;
+  font-size: var(--fs-1); font-weight: var(--fw-bold); letter-spacing: 0.3px;
   color: var(--c-text-1); text-transform: uppercase;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px;
 }
 .it-progress {
-  font-size: 9px; font-weight: 700; color: var(--c-text-2);
+  font-size: var(--fs-1); font-weight: var(--fw-bold); color: var(--c-text-2);
   font-variant-numeric: tabular-nums;
 }
 @keyframes it-breathe {
