@@ -13,6 +13,7 @@ import { fmtVol, fmtDuration, fmtDate } from './shared/format.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
+import { t } from './locale.store.js';
 import { initPandaVideo, togglePandaSound, PANDA_VIDEO_SRC, PANDA_POSTER_SRC } from './shared/panda-video.js';
 
 on('dash:directLaunch',  (el) => window.Dashboard.directLaunch(el.dataset.type));
@@ -39,6 +40,7 @@ window.addEventListener('ap-nav-change', (e) => {
 });
 on('dash:askAI',         () => askAIAboutSummary());
 on('dash:closeModal',    (el) => el.closest('.modal-overlay')?.remove());
+on('dash:openJournal',   () => window.Nav.go('s-journal'));
 
 export const Dashboard = (() => {
   const TYPE_COLOR = {
@@ -195,8 +197,9 @@ export const Dashboard = (() => {
       <div id="recommendations-section" style="display:none;margin-top:var(--sp-2)"></div>
 
       <!-- Recent sessions -->
-      <div class="section-header">
+      <div class="section-header dash-recent-header">
         <span class="section-label">Recent</span>
+        <button class="btn-text" data-action="dash:openJournal">${t('journal.see_all')}</button>
       </div>
       <div id="recent-list"></div>
     `;

@@ -159,10 +159,16 @@ export function loadMore(state = JournalState) {
   return true;
 }
 
-/** Найти тренировку по id среди загруженных. */
+/**
+ * Найти тренировку по id среди загруженных.
+ * Id сравнивается строкой: CRDT foundation (`js/db/core.js` `newId()`) даёт
+ * новым записям UUID-строку, а легаси-записи хранят числовой autoIncrement —
+ * `data-id` из разметки тоже всегда строка, так что Number() ломает поиск
+ * ровно на свежих тренировках (NaN никогда не совпадает).
+ */
 export function findWorkout(id, state = JournalState) {
-  const n = Number(id);
-  return state.all.find((w) => w?.id === n) || null;
+  const key = String(id);
+  return state.all.find((w) => String(w?.id) === key) || null;
 }
 
 /** Загрузить архив из IndexedDB (новые сверху — так отдаёт getAll). */
