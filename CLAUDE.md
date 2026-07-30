@@ -135,6 +135,7 @@ node scripts/telemetry-server.mjs --lan
 ## Rules
 
 - Vanilla JS only — no React/Vue/jQuery
+- **Нижняя навигация — ровно четыре вкладки** (Home · Train · Stats · Profile). Закон, не вкусовщина: `.nav-btn` — `flex:1`, пятая кнопка ничего не ломает визуально и проходит незамеченной (так и вышло в первом заходе LOG-1). Новый экран получает вход из того контента, который расширяет — паттерн «section-header + `.btn-text`» (Журнал открывается кнопкой «All» в заголовке Recent). Экран вне таб-бара ОБЯЗАН нести `data-action="nav:back"`, иначе тупик: живой пример — `s-body`, зарегистрирован в `Nav.on` и недостижим ниоткуда. Сторожит `test/nav-law.test.js`
 - API keys через backend proxy, никогда на фронте
 - `esc()` из `js/shared/utils.js` для ВСЕХ innerHTML с данными
 - Эмодзи в UI/коде запрещены — только SVG (правило DESIGN_DNA)
