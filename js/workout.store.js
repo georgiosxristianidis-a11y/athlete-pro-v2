@@ -147,6 +147,117 @@ export const PPL_GIO_PLAN = {
 };
 
 /**
+ * PPL | Hybrid v1 (GIO × Sonnet 5, 2026) — «нейро-гибрид»: тот же скелет, что и
+ * PPL_GIO_PLAN, с хирургическими заменами:
+ *   · блок I переведён в нейросиловой режим (5x5 / 4x5, отдых 3-5 мин);
+ *   · блок II ужат до поддержки гипертрофии (3x8 / 2x8);
+ *   · сняты дублирующие изоляции (Butterfly, Iso-Lateral Row, Preacher и т.п.);
+ *   · кор/осанка не тронуты — они вне объёма.
+ * Названия и alias скопированы из PPL_GIO_PLAN один в один: префилл истории
+ * ищет по имени, и любая «улучшенная» формулировка отвязала бы рабочие веса
+ * (кейс 0кг 2026-07-08). Блоки унифицированы под заголовки источника:
+ * power → shape → arms/shoulders → core/align.
+ * Неделя A/B наследует логику оригинала: свап рук (бицепс ↔ трицепс) на
+ * push/pull и свап изоляции ног на legs.
+ * @type {{ weekA: Object, weekB: Object }}
+ */
+export const PPL_HYBRID_PLAN = {
+  weekA: {
+    push: [
+      // Block I — Neural Power (свежая ЦНС)
+      { name: 'Bench Press',                   sets: 5, reps: 5,  weight: 0, block: 'power', alias: ['Flat Barbell Bench Press'] },
+      { name: 'Dips (Chest Focus)',            sets: 4, reps: 5,  weight: 0, block: 'power', isBW: true },
+      // Block II — Hypertrophy Support
+      { name: 'Incline DB Press',              sets: 3, reps: 8,  weight: 0, block: 'shape', isUnilateral: true, alias: ['Incline Dumbbell Press'] },
+      { name: 'Dumbbell Pullover',             sets: 2, reps: 8,  weight: 0, block: 'shape', isUnilateral: true },
+      // Block III — Biceps (Week A swap)
+      { name: 'Alternating Dumbbell Curls',    sets: 2, reps: 8,  weight: 0, block: 'arms', isUnilateral: true, alias: ['Bicep Curl'] },
+      { name: 'Hammer Curl',                   sets: 2, reps: 8,  weight: 0, block: 'arms', isUnilateral: true, alias: ['Hammer Curls'] },
+      // Block IV — Core
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+    ],
+    pull: [
+      // Block I — Neural Power
+      { name: 'Pull-up',                       sets: 5, reps: 5,  weight: 0, block: 'power', isBW: true, alias: ['Pull-ups (Weighted)'] },
+      { name: 'Chest-Supported T-Bar Row',     sets: 4, reps: 5,  weight: 0, block: 'power', alias: ['Barbell Row'] },
+      // Block II — Hypertrophy Support
+      { name: 'Cable Row',                     sets: 3, reps: 8,  weight: 0, block: 'shape', alias: ['Low Block Cable Row'] },
+      { name: 'Lat Pulldown',                  sets: 2, reps: 8,  weight: 0, block: 'shape' },
+      // Block III — Triceps & Traps (Week A swap)
+      { name: 'Tricep Pushdown',               sets: 2, reps: 8,  weight: 0, block: 'arms', alias: ['Triceps Rope Pushdown'] },
+      { name: 'Dumbbell Shrugs',               sets: 2, reps: 10, weight: 0, block: 'arms', isUnilateral: true },
+      // Block IV — Core
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+    ],
+    legs: [
+      // Block I — Neural Power
+      { name: 'Leg Press',                     sets: 5, reps: 5,  weight: 0, block: 'power' },
+      { name: 'Barbell Hip Thrust',            sets: 4, reps: 5,  weight: 0, block: 'power' },
+      // Block II — Hypertrophy Support
+      { name: 'Leg Curl',                      sets: 3, reps: 8,  weight: 0, block: 'shape', alias: ['Lying Leg Curls'] },
+      { name: 'Leg Extensions',                sets: 2, reps: 8,  weight: 0, block: 'shape' },
+      { name: 'Calf Raise',                    sets: 3, reps: 10, weight: 0, block: 'shape', alias: ['Standing Calf Raises'] },
+      // Block III — Shoulders (All Delts)
+      { name: 'Lateral Raise',                 sets: 2, reps: 8,  weight: 0, block: 'shoulders', isUnilateral: true, alias: ['Machine Lateral Raises'] },
+      { name: 'Wide-Grip Upright Row',         sets: 2, reps: 8,  weight: 0, block: 'shoulders' },
+      { name: 'Reverse Pec Deck',              sets: 2, reps: 8,  weight: 0, block: 'shoulders' },
+      // Block IV — Alignment
+      { name: 'Dead Bug',                      sets: 3, reps: 10, weight: 0, block: 'align', noDb: true, isUnilateral: true, isBW: true },
+      { name: 'Plank',                         sets: 1, reps: 60, weight: 0, block: 'align', noDb: true, isBW: true },
+    ],
+  },
+  weekB: {
+    push: [
+      // Block I — Neural Power
+      { name: 'Bench Press',                   sets: 5, reps: 5,  weight: 0, block: 'power', alias: ['Flat Barbell Bench Press'] },
+      { name: 'Dips (Chest Focus)',            sets: 4, reps: 5,  weight: 0, block: 'power', isBW: true },
+      // Block II — Hypertrophy Support
+      { name: 'Incline DB Press',              sets: 3, reps: 8,  weight: 0, block: 'shape', isUnilateral: true, alias: ['Incline Dumbbell Press'] },
+      { name: 'Dumbbell Pullover',             sets: 2, reps: 8,  weight: 0, block: 'shape', isUnilateral: true },
+      // Block III — Triceps (Week B swap)
+      { name: 'Tricep Pushdown',               sets: 2, reps: 8,  weight: 0, block: 'arms', alias: ['Triceps Rope Pushdown'] },
+      { name: 'Overhead Tricep Ext.',          sets: 2, reps: 8,  weight: 0, block: 'arms', alias: ['Overhead Cable Extension'] },
+      // Block IV — Core
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+    ],
+    pull: [
+      // Block I — Neural Power
+      { name: 'Pull-up',                       sets: 5, reps: 5,  weight: 0, block: 'power', isBW: true, alias: ['Pull-ups (Weighted)'] },
+      { name: 'Chest-Supported T-Bar Row',     sets: 4, reps: 5,  weight: 0, block: 'power', alias: ['Barbell Row'] },
+      // Block II — Hypertrophy Support
+      { name: 'Cable Row',                     sets: 3, reps: 8,  weight: 0, block: 'shape', alias: ['Low Block Cable Row'] },
+      { name: 'Lat Pulldown',                  sets: 2, reps: 8,  weight: 0, block: 'shape' },
+      // Block III — Biceps & Traps (Week B swap)
+      { name: 'Alternating Dumbbell Curls',    sets: 2, reps: 8,  weight: 0, block: 'arms', isUnilateral: true, alias: ['Bicep Curl'] },
+      { name: 'Hammer Curl',                   sets: 2, reps: 8,  weight: 0, block: 'arms', isUnilateral: true, alias: ['Hammer Curls'] },
+      { name: 'Dumbbell Shrugs',               sets: 2, reps: 10, weight: 0, block: 'arms', isUnilateral: true },
+      // Block IV — Core
+      { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+      { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
+    ],
+    legs: [
+      // Block I — Neural Power
+      { name: 'Leg Press',                     sets: 5, reps: 5,  weight: 0, block: 'power' },
+      { name: 'Barbell Hip Thrust',            sets: 4, reps: 5,  weight: 0, block: 'power' },
+      // Block II — Hypertrophy Support (изоляция-свап, как в оригинале)
+      { name: 'Hip Adductor Machine',          sets: 3, reps: 15, weight: 0, block: 'shape' },
+      { name: 'Hip Abductor Machine',          sets: 3, reps: 15, weight: 0, block: 'shape' },
+      { name: 'Calf Raise',                    sets: 3, reps: 10, weight: 0, block: 'shape', alias: ['Standing Calf Raises'] },
+      // Block III — Shoulders (All Delts)
+      { name: 'Lateral Raise',                 sets: 2, reps: 8,  weight: 0, block: 'shoulders', isUnilateral: true, alias: ['Machine Lateral Raises'] },
+      { name: 'Wide-Grip Upright Row',         sets: 2, reps: 8,  weight: 0, block: 'shoulders' },
+      { name: 'Reverse Pec Deck',              sets: 2, reps: 8,  weight: 0, block: 'shoulders' },
+      // Block IV — Alignment
+      { name: 'Dead Bug',                      sets: 3, reps: 10, weight: 0, block: 'align', noDb: true, isUnilateral: true, isBW: true },
+      { name: 'Plank',                         sets: 1, reps: 60, weight: 0, block: 'align', noDb: true, isBW: true },
+    ],
+  },
+};
+
+/**
  * Default Core checklist seeded when user loads PPL preset or first opens Train screen.
  * Visual-only — no weight/reps/tonnage.
  * @type {{ push: string[], pull: string[], legs: string[] }}
