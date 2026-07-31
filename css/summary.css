@@ -351,13 +351,26 @@
 }
 
 .summ-ledger-who {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   font-size: var(--fs-2);
-  font-weight: var(--fw-md);
+  font-weight: var(--fw-bold);
   color: var(--c-text-2);
 }
 
+/* Единица — подпись, а не счётное слово: число живёт в своей колонке,
+   поэтому «24 подходов» невозможно в принципе. */
+.summ-ledger-unit {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
 .summ-ledger-val {
-  font-size: var(--fs-2);
+  font-size: var(--fs-4);
   font-weight: var(--fw-black);
   color: var(--c-text-1);
   font-variant-numeric: tabular-nums;
