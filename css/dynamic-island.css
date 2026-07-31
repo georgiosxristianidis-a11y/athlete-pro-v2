@@ -154,31 +154,53 @@
 }
 
 /* ── Minimal-DHL profile (ISL-PROFILE) ──
-   Collapsed pill shows the DHL 4-dot track + "CHAMBER N/M" instead of the
-   Apple name·sets readout. A thin, near-black strip — navigation over panel.
+   Collapsed pill shows dot · [DHL track / exercise name] · sets — the
+   connection dot gets its own left slot (mirrored by the sets badge on the
+   right, field feedback 2026-07-31: was colliding with the first chamber
+   marker), the track sits above the name so the pill reads top-down like a
+   mini status board. A thin, near-black strip — navigation over panel.
    Expanded / rest / idle reuse the shared layouts. */
 .island-minimal-compact {
   position: absolute;
   inset: 0;
   display: none;
   align-items: center;
-  justify-content: center;
-  gap: 9px;
-  padding: 0 16px;
+  justify-content: space-between;
+  gap: 8px;
+  /* Left clears the dot's own left:24px inset + its diameter (air-law:
+     doubled from the pre-redesign 12px so the dot reads as a separate slot,
+     not a corner accent). Right mirrors the sets badge. */
+  padding: 0 14px 0 34px;
   z-index: 2;
   pointer-events: none;               /* tap falls through to expand-toggle */
   transition: opacity 0.3s ease;
 }
+.island-min-track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
 .island-minimal-compact .island-tracker { min-height: 12px; }
 .island-min-label {
   font-size: 10px;
+  font-weight: 700;
+  color: var(--c-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.island-min-sets {
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--c-chrome);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-2);
   white-space: nowrap;
   flex-shrink: 0;
-  font-variant-numeric: tabular-nums;
 }
 /* Show the strip only for the minimal profile while collapsed-active. */
 .island.profile-minimal:not(.mode-idle):not(.expanded):not(.timer-mode) .island-minimal-compact {
@@ -209,12 +231,13 @@
 /* Ultra-minimal collapsed dots — a whisper of the journey, tap = expand. */
 .island-minimal-compact .it-svg { width: 52px; height: 12px; }
 
-/* Status light in the collapsed strip is a tiny 4px corner dot — present but
-   never competing with the DHL chamber markers. */
+/* Status light in the collapsed strip has its own left slot, clear of the DHL
+   chamber markers — doubled from the original 12px (field feedback
+   2026-07-31: too close, read as part of the track). */
 .island.profile-minimal:not(.mode-idle):not(.expanded):not(.timer-mode) .island-dot {
   width: 4px;
   height: 4px;
-  left: 12px;
+  left: 24px;
 }
 
 /* Expanded stays a PILL that hugs its content (no fixed window, no button

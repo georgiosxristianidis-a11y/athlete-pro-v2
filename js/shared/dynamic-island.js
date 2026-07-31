@@ -1,5 +1,5 @@
 // @ts-check
-import { State, BLOCK_LABEL } from '../workout.store.js';
+import { State } from '../workout.store.js';
 import { renderIslandTracker } from './island-tracker.js';
 import { Timer } from '../timer.js';
 import { RestTimer } from '../rest-timer.js';
@@ -15,6 +15,15 @@ import { getIslandProfile } from '../island-profile.store.js';
 /** Active island layout profile. Flag off → always the proven Apple path. */
 function activeProfile() {
   return flag('island-profiles') ? getIslandProfile() : 'apple';
+}
+
+// Long equipment words that eat the compact strip's width budget — swapped
+// for their gym-standard short forms. CSS ellipsis (island-min-label) is the
+// safety net for whatever's still too long after this.
+const SHORT_WORDS = { dumbbell: 'DB', barbell: 'BB', machine: 'Mach', kettlebell: 'KB', overhead: 'OH' };
+function shortenExerciseName(name) {
+  if (!name) return '';
+  return name.replace(/\b(dumbbell|barbell|machine|kettlebell|overhead)\b/gi, (w) => SHORT_WORDS[w.toLowerCase()] || w);
 }
 
 // Event-delegation handlers (CSP: replaced inline onclick). stopPropagation so a
@@ -72,6 +81,7 @@ export const DynamicIsland = (() => {
   let _minCompactEl = null;
   let _minTrackerEl = null;
   let _minLabelEl = null;
+  let _minSetsEl = null;
   let _progressFill = null;
   let _timerProg = null;
   let _restNextEl = null;
@@ -91,12 +101,16 @@ export const DynamicIsland = (() => {
           <div class="island-sets-collapsed" id="di-sets-collapsed"></div>
         </div>
 
-        <!-- Minimal-DHL compact strip (ISL-PROFILE): DHL 4-dots + CAMERA N/M.
+        <!-- Minimal-DHL compact strip (ISL-PROFILE): DHL 4-dots above the
+             (abbreviated) current exercise name, sets badge on the right.
              Replaces the name·sets readout when the 'minimal' profile is active
              and the pill is collapsed. Non-interactive: a tap expands the card. -->
         <div class="island-minimal-compact" id="di-min-compact">
-          <div class="island-tracker" id="di-min-tracker"></div>
-          <span class="island-min-label" id="di-min-label"></span>
+          <div class="island-min-track">
+            <div class="island-tracker" id="di-min-tracker"></div>
+            <span class="island-min-label" id="di-min-label"></span>
+          </div>
+          <span class="island-min-sets" id="di-min-sets"></span>
         </div>
 
         <div class="island-expanded-content">
@@ -179,6 +193,7 @@ export const DynamicIsland = (() => {
     _minCompactEl = document.getElementById('di-min-compact');
     _minTrackerEl = document.getElementById('di-min-tracker');
     _minLabelEl = document.getElementById('di-min-label');
+    _minSetsEl = document.getElementById('di-min-sets');
     // Tap a chamber marker → scroll its block into view in the workout list.
     if (_trackerEl && !_trackerEl.__jumpWired) {
       _trackerEl.__jumpWired = true;
@@ -380,10 +395,15 @@ export const DynamicIsland = (() => {
           chrome: true,
           expanded: false,
         });
-        // The dots give position; the label names the current phase (POWER /
-        // SHAPE / ARMS / CORE) — the actionable "what am I training now", not a
-        // count (the dots already carry the count).
-        _minLabelEl.textContent = BLOCK_LABEL[curBlock] || '';
+        // The dots give position; the label names the current exercise
+        // (abbreviated — field feedback 2026-07-31: chamber phase alone
+        // wasn't actionable, "what am I doing right now" is). Sets badge
+        // mirrors the dot on the opposite side of the strip.
+        _minLabelEl.textContent = currentEx ? shortenExerciseName(currentEx.name) : '';
+        if (_minSetsEl) {
+          _minSetsEl.textContent = setsLabel;
+          _minSetsEl.style.color = _getSetsColor(exDone, exTotal);
+        }
       }
     }
 
