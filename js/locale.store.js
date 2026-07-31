@@ -147,10 +147,13 @@ const DICT = {
     // PANDA-1 — голос маскота. Тон: молчаливое осуждение, потолок 5 слов.
     // Он никогда не тренируется и не хвалит с пустым ртом.
     'mascot.cold_bamboo': 'Bamboo went cold.',
+    'mascot.ledger_title': 'Ledger',
     'mascot.ledger_you': 'You',
     'mascot.ledger_me': 'Me',
-    'mascot.ledger_sets': '{n} sets',
-    'mascot.ledger_bamboo': '{n} bamboo',
+    // Единицы — подписи, а не счётные слова: число живёт отдельной колонкой,
+    // поэтому склонение («24 подходов») в принципе не может сломаться.
+    'mascot.ledger_sets': 'sets',
+    'mascot.ledger_bamboo': 'bamboo',
     'mascot.draw': 'A draw.',
     'mascot.you_won': 'You won. First time.',
     'mascot.dropped_bamboo': 'You made me drop it.'
@@ -300,10 +303,11 @@ const DICT = {
     'metrics.sex_hint': 'Используется для формулы ВМС США',
     // PANDA-1 — голос маскота. Тон: молчаливое осуждение, потолок 5 слов.
     'mascot.cold_bamboo': 'Бамбук остыл.',
+    'mascot.ledger_title': 'Счёт',
     'mascot.ledger_you': 'Ты',
     'mascot.ledger_me': 'Я',
-    'mascot.ledger_sets': '{n} подходов',
-    'mascot.ledger_bamboo': '{n} бамбука',
+    'mascot.ledger_sets': 'подходы',
+    'mascot.ledger_bamboo': 'бамбук',
     'mascot.draw': 'Ничья.',
     'mascot.you_won': 'Ты выиграл. Впервые.',
     'mascot.dropped_bamboo': 'Ты уронил мой бамбук.',

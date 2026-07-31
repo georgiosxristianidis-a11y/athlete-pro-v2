@@ -147,31 +147,50 @@ export function attachMood(host, videoEl) {
   };
   window.addEventListener(MOOD_EVENT, onEvent);
 
+  /** Удержать проигрывание внутри сегмента текущей мимики. */
+  function clamp() {
+    if (dead || v.readyState < 2) return;
+    const seg = MOODS[current];
+    if (!seg) return;
+    const t = v.currentTime;
+    if (t >= seg.out - EDGE_EPS || t < seg.in - EDGE_EPS) seek(seg.in);
+  }
+
+  // Сетка безопасности под rAF. rAF не тикает на скрытой странице, и без
+  // этих двух слушателей ролик спокойно убегает за границу сегмента и
+  // умирает на последнем кадре — панда навсегда застывает в чужой мимике.
+  // timeupdate работает и в фоне (~4Гц), ended ловит добежавший до конца луп.
+  const onEnded = () => {
+    if (dead) return;
+    seek((MOODS[current] || MOODS[BASE_MOOD]).in);
+    if (!reduced && !document.hidden) v.play().catch(() => {});
+  };
+  v.addEventListener('timeupdate', clamp);
+  v.addEventListener('ended', onEnded);
+
   function destroy() {
     if (dead) return;
     dead = true;
     cancelAnimationFrame(raf);
     clearTimeout(holdTimer);
     window.removeEventListener(MOOD_EVENT, onEvent);
+    v.removeEventListener('timeupdate', clamp);
+    v.removeEventListener('ended', onEnded);
     detachLifecycle();
   }
 
   set(BASE_MOOD);
+  // Метаданные могли ещё не приехать — тогда первый seek() ушёл в пустоту.
+  v.addEventListener('loadedmetadata', () => set(current), { once: true });
 
-  if (reduced) {
-    // Без rAF: одна перемотка на кадр мимики и тишина.
-    v.addEventListener('loadedmetadata', () => set(current), { once: true });
-    return { set, destroy };
-  }
+  // reduced-motion: кадр мимики без движения, rAF не нужен вовсе.
+  if (reduced) return { set, destroy };
 
+  // rAF — точный клэмп на границе сегмента, пока страница видима.
   const tick = () => {
     if (!host.isConnected) { destroy(); return; }
     raf = requestAnimationFrame(tick);
-    if (v.readyState < 2) return;
-    const seg = MOODS[current];
-    if (!seg) return;
-    const t = v.currentTime;
-    if (t >= seg.out - EDGE_EPS || t < seg.in - EDGE_EPS) seek(seg.in);
+    clamp();
   };
   raf = requestAnimationFrame(tick);
 

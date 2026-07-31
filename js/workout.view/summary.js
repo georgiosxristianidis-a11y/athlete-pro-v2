@@ -176,15 +176,15 @@ function _ledgerSection(data) {
     <div class="summ-ledger stagger-item" style="--stagger-i:${100}">
       <div class="summ-ledger-header">
         ${ICON_BAMBOO}
-        <span class="summ-ledger-title">${esc(t('mascot.ledger_me'))} / ${esc(t('mascot.ledger_you'))}</span>
+        <span class="summ-ledger-title">${esc(t('mascot.ledger_title'))}</span>
       </div>
       <div class="summ-ledger-row">
-        <span class="summ-ledger-who">${esc(t('mascot.ledger_you'))}</span>
-        <span class="summ-ledger-val">${esc(t('mascot.ledger_sets', { n }))}</span>
+        <span class="summ-ledger-who">${esc(t('mascot.ledger_you'))}<span class="summ-ledger-unit">${esc(t('mascot.ledger_sets'))}</span></span>
+        <span class="summ-ledger-val">${n}</span>
       </div>
       <div class="summ-ledger-row">
-        <span class="summ-ledger-who">${esc(t('mascot.ledger_me'))}</span>
-        <span class="summ-ledger-val">${esc(t('mascot.ledger_bamboo', { n }))}</span>
+        <span class="summ-ledger-who">${esc(t('mascot.ledger_me'))}<span class="summ-ledger-unit">${esc(t('mascot.ledger_bamboo'))}</span></span>
+        <span class="summ-ledger-val">${n}</span>
       </div>
       <div class="summ-ledger-verdict">${esc(verdict)}</div>
     </div>`;
