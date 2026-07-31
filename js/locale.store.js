@@ -143,7 +143,17 @@ const DICT = {
     'metrics.add_entry': 'Add Entry',
     'metrics.empty_title': 'No measurements',
     'metrics.empty_sub': 'Tap "Add Entry" to record your body metrics',
-    'metrics.delete_confirm_title': 'Delete Entry?'
+    'metrics.delete_confirm_title': 'Delete Entry?',
+    // PANDA-1 — голос маскота. Тон: молчаливое осуждение, потолок 5 слов.
+    // Он никогда не тренируется и не хвалит с пустым ртом.
+    'mascot.cold_bamboo': 'Bamboo went cold.',
+    'mascot.ledger_you': 'You',
+    'mascot.ledger_me': 'Me',
+    'mascot.ledger_sets': '{n} sets',
+    'mascot.ledger_bamboo': '{n} bamboo',
+    'mascot.draw': 'A draw.',
+    'mascot.you_won': 'You won. First time.',
+    'mascot.dropped_bamboo': 'You made me drop it.'
   },
   ru: {
     'profile.title': 'Профиль',
@@ -288,6 +298,15 @@ const DICT = {
     'metrics.male': 'Муж',
     'metrics.female': 'Жен',
     'metrics.sex_hint': 'Используется для формулы ВМС США',
+    // PANDA-1 — голос маскота. Тон: молчаливое осуждение, потолок 5 слов.
+    'mascot.cold_bamboo': 'Бамбук остыл.',
+    'mascot.ledger_you': 'Ты',
+    'mascot.ledger_me': 'Я',
+    'mascot.ledger_sets': '{n} подходов',
+    'mascot.ledger_bamboo': '{n} бамбука',
+    'mascot.draw': 'Ничья.',
+    'mascot.you_won': 'Ты выиграл. Впервые.',
+    'mascot.dropped_bamboo': 'Ты уронил мой бамбук.',
   }
 };
 

@@ -1011,6 +1011,7 @@ export async function buildSessionSummary(state, durationMs, opts = {}) {
   const blockMap = new Map();
   let totalTonnage = 0;
   let totalReps = 0;
+  let setsDone = 0;   // PANDA-1: один закрытый подход = один бамбук панде
   /** @type {Array<{name:string,weight:number,reps:number,estimate:number}>} */
   const prCandidates = [];
 
@@ -1023,6 +1024,7 @@ export async function buildSessionSummary(state, durationMs, opts = {}) {
     const blk = blockMap.get(id);
 
     const doneSets = ex.sets.filter((s) => s.done).length;
+    setsDone += doneSets;
     const totalSets = ex.sets.length;
     const mul = ex.isUnilateral ? 2 : 1;
 
@@ -1090,5 +1092,5 @@ export async function buildSessionSummary(state, durationMs, opts = {}) {
     };
   });
 
-  return { type: state.type, timeStr, totalTonnage, totalReps, blocks, prs };
+  return { type: state.type, timeStr, totalTonnage, totalReps, setsDone, blocks, prs };
 }

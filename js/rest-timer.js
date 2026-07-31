@@ -18,9 +18,11 @@
    ════════════════════════════════════════════════════════ */
 
 import { PiP } from './features/pip.js';
-import { isRu } from './locale.store.js';
+import { isRu, t } from './locale.store.js';
 import { haptic } from './shared/utils.js';
 import { State } from './workout.store.js';
+import { flag } from './flags.js';
+import { emitMood, restOverrunMood, BASE_MOOD, OVERRUN_JUDGE_SEC } from './shared/panda-mood.js';
 
 export const RestTimer = (() => {
   let _end = 0;          // absolute epoch-ms the rest ends
@@ -29,9 +31,44 @@ export const RestTimer = (() => {
   let _alarm = null;     // single fallback timeout aimed at _end
   let _done = false;     // guard: interval / alarm / visibility can race the finish
   let _nextName = '';    // "next" for the PiP mirror — single source of truth (F-2)
+  let _overrun = null;   // PANDA-1: 5s watcher over "rest expired, still no set"
+  let _overrunFrom = 0;  // epoch-ms the overrun started
+
+  /** PANDA-1 — мимики живут в видео-FAB, без него включать нечего. */
+  const _moodsOn = () => flag('panda-moods') && flag('fab-video');
+
+  /**
+   * Сценарий 2 «Осуждающий отдых». Отдых истёк, подход не залогирован —
+   * панда перестаёт жевать и смотрит; через OVERRUN_JUDGE_SEC переходит
+   * к осуждению и роняет реплику в подпись острова.
+   */
+  function _startOverrun() {
+    if (!_moodsOn()) return;
+    _overrunFrom = Date.now();
+    emitMood(restOverrunMood(0));           // +0с → watch
+    _overrun = setInterval(() => {
+      const elapsed = (Date.now() - _overrunFrom) / 1000;
+      if (elapsed < OVERRUN_JUDGE_SEC) return;
+      emitMood(restOverrunMood(elapsed));   // +30с → judge
+      // @ts-ignore
+      window.DynamicIsland?.say?.(t('mascot.cold_bamboo'));
+      _stopOverrun(false);                  // выше judge эскалации нет
+    }, 5000);
+  }
+
+  /** @param {boolean} [reset=true] вернуть мимику к базовой и снять реплику */
+  function _stopOverrun(reset = true) {
+    clearInterval(_overrun); _overrun = null;
+    if (!reset) return;
+    _overrunFrom = 0;
+    if (!_moodsOn()) return;
+    emitMood(BASE_MOOD);
+    // @ts-ignore
+    window.DynamicIsland?.say?.(null);
+  }
 
   function start(_exName, _setLabel, duration) {
-    stop();                       // clear any prior rest cleanly
+    stop();                       // clear any prior rest cleanly (снимает и осуждение)
     _total = duration;
     _end = Date.now() + duration * 1000;
     _done = false;
@@ -79,6 +116,7 @@ export const RestTimer = (() => {
   function stop() {
     clearInterval(_interval); _interval = null;
     clearTimeout(_alarm); _alarm = null;
+    _stopOverrun();   // следующий подход / скип отдыха — панда возвращается к еде
     document.removeEventListener('visibilitychange', _onVisible);
     // @ts-ignore
     if (window.DynamicIsland) window.DynamicIsland.stopTimer();
@@ -104,6 +142,7 @@ export const RestTimer = (() => {
     stop();
     haptic([0, 80, 40, 80]);
     _triggerNotification().catch(() => {}); // floating promise: never let it reject globally
+    _startOverrun();                        // PANDA-1: с этой секунды панда считает перебор
   }
 
   async function _triggerNotification() {

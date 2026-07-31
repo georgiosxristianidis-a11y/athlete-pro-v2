@@ -11,6 +11,7 @@ import { fmtVol } from '../shared/format.js';
    │   timeStr: '1h 23m',                                │
    │   totalTonnage: 4200,   // kg                       │
    │   totalReps: 187,                                   │
+   │   setsDone: 24,        // PANDA-1 bamboo ledger     │
    │   blocks: [                                         │
    │     {                                               │
    │       id: 'power',                                  │
@@ -36,6 +37,9 @@ import { fmtVol } from '../shared/format.js';
 import { esc } from '../shared/utils.js';
 import { chamberPill, blockLabel } from '../shared/chamber-pill.js';
 import { blockTicks } from '../shared/block-ticks.js';
+import { t } from '../locale.store.js';
+import { flag } from '../flags.js';
+import { emitMood, ledgerVerdictKey } from '../shared/panda-mood.js';
 
 /* ── PPL colour map (semantic, not decorative) ─────────── */
 const PPL_COLOR = {
@@ -142,6 +146,47 @@ function _prSection(prs) {
         <span class="summ-pr-title">PR</span>
       </div>
       ${prRows}
+      ${flag('panda-moods') ? `<div class="summ-mascot-line">${esc(t('mascot.dropped_bamboo'))}</div>` : ''}
+    </div>`;
+}
+
+/* ── PANDA-1, сценарий 1 «Бамбуковый счёт» ──────────────
+   Ядро шутки в цифрах: панда съедает по стеблю на каждый твой подход, так что
+   счёт всегда равный. Обойти её можно только рекордом — оттого «Ничья» и
+   работает как мягкий укол, а не как поражение. */
+const ICON_BAMBOO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+  <path d="M10 3v18"/><path d="M7 8h6"/><path d="M7 13h6"/><path d="M7 18h6"/>
+  <path d="M13 6c2.4 0 4-1.6 4-3.6-2.4 0-4 1.6-4 3.6z"/>
+</svg>`;
+
+/**
+ * Renders the bamboo ledger (only when the mascot is enabled and sets were done).
+ * @param {object} data summaryData
+ * @returns {string}
+ */
+function _ledgerSection(data) {
+  if (!flag('panda-moods')) return '';
+  const n = data.setsDone || 0;
+  if (n <= 0) return '';
+
+  const verdict = t(ledgerVerdictKey((data.prs || []).length));
+
+  return `
+    <div class="summ-ledger stagger-item" style="--stagger-i:${100}">
+      <div class="summ-ledger-header">
+        ${ICON_BAMBOO}
+        <span class="summ-ledger-title">${esc(t('mascot.ledger_me'))} / ${esc(t('mascot.ledger_you'))}</span>
+      </div>
+      <div class="summ-ledger-row">
+        <span class="summ-ledger-who">${esc(t('mascot.ledger_you'))}</span>
+        <span class="summ-ledger-val">${esc(t('mascot.ledger_sets', { n }))}</span>
+      </div>
+      <div class="summ-ledger-row">
+        <span class="summ-ledger-who">${esc(t('mascot.ledger_me'))}</span>
+        <span class="summ-ledger-val">${esc(t('mascot.ledger_bamboo', { n }))}</span>
+      </div>
+      <div class="summ-ledger-verdict">${esc(verdict)}</div>
     </div>`;
 }
 
@@ -183,6 +228,7 @@ export function renderSummaryModal(data, onSave, ru = false) {
     .join('');
 
   const prHTML = _prSection(data.prs);
+  const ledgerHTML = _ledgerSection(data);
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay animate-in';
@@ -209,6 +255,7 @@ export function renderSummaryModal(data, onSave, ru = false) {
       <div class="summ-blocks-wrap">
         ${blocksHTML}
         ${prHTML}
+        ${ledgerHTML}
       </div>
 
       <div class="summ-actions">
@@ -222,6 +269,10 @@ export function renderSummaryModal(data, onSave, ru = false) {
     </div>`;
 
   document.body.appendChild(overlay);
+
+  // PANDA-1, сценарий 4: рекорд — единственный момент, когда панда перестаёт
+  // жевать. Держим ликование 4с и отпускаем обратно к базовой мимике.
+  if (flag('panda-moods') && (data.prs || []).length > 0) emitMood('cheer', { hold: 4000 });
 
   /* ── Event listeners ── */
   overlay.querySelector('#btn-summ-save')?.addEventListener('click', async () => {

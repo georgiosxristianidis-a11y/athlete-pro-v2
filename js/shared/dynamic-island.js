@@ -64,6 +64,10 @@ export const DynamicIsland = (() => {
   let _nameEl = null;
   let _nameCollapsedEl = null;
   let _sublabelEl = null;
+  /** PANDA-1: реплика маскота, временно перебивающая «далее: X». */
+  let _sayText = null;
+  /** Последний вычисленный «далее: X» — чтобы say(null) вернул его на место. */
+  let _statusText = '';
   let _trackerEl = null;
   let _minCompactEl = null;
   let _minTrackerEl = null;
@@ -336,8 +340,11 @@ export const DynamicIsland = (() => {
     // expanded island); the screen owns context, the island owns "what's next".
     const nextEx = State.plan[activeIdx + 1];
     const status = nextEx ? `${ru ? 'далее' : 'next'}: ${nextEx.name}` : (ru ? 'готово!' : 'complete!');
+    _statusText = status;
     if (_sublabelEl) {
-      _sublabelEl.textContent = status;
+      // say() временно перебивает «далее: X» — иначе любой update() затирал бы
+      // реплику маскота через долю секунды после её показа.
+      _sublabelEl.textContent = _sayText || status;
     }
 
     // DHL 4-chamber journey tracker (Cool Steel). Chambers = ordered unique
@@ -582,7 +589,18 @@ export const DynamicIsland = (() => {
     PiP.requestPiP();
   }
 
-  return { init, show, hide, update, setRestProgress, stopTimer, pulseSetComplete, toggleExpand, triggerPiP, showFinishReady, clearFinishReady, _tapFinish };
+  /**
+   * PANDA-1 — узкая щель для реплики маскота в подпись острова.
+   * Никаких новых состояний: только текст в #di-sublabel. Toast для этого
+   * не годится — он перекрывал бы экран на каждом подходе.
+   * @param {string|null} text null/'' возвращает штатное «далее: X»
+   */
+  function say(text) {
+    _sayText = text || null;
+    if (_sublabelEl) _sublabelEl.textContent = _sayText || _statusText;
+  }
+
+  return { init, show, hide, update, setRestProgress, stopTimer, pulseSetComplete, toggleExpand, triggerPiP, showFinishReady, clearFinishReady, say, _tapFinish };
 })();
 
 window.DynamicIsland = DynamicIsland;
