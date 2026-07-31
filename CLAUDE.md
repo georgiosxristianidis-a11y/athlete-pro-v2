@@ -97,7 +97,7 @@ node scripts/telemetry-server.mjs --lan
 - Animations: GPU-only (`transform`/`opacity`), Spring Physics из `shared/spring.js`
 - Route files: suffix only (`/coach` not `/api/coach`)
 - `sw.js`: ASSETS генерить через `npm run build:sw` (НЕ руками), затем бамп `CACHE_NAME`
-- **Версия:** при каждом стабильном мёрже в main бампить `VERSION` в `js/version.js` (показывается в профайл-меню) + синхронно `version` в `package.json`
+- **Версия:** при каждом стабильном мёрже в main бампить `VERSION` в `js/version.js` (показывается в профайл-меню) + синхронно `version` в `package.json` + `package-lock.json` (проще всего `npm install` — он перепишет оба поля lock сам). Отстал lock = каждый `npm install` в чистом чекауте плодит незакоммиченный diff у всех агентов. Сторожит `test/version-sync.test.js`
 - `server.js` никогда не заменять отладочными стабами — для телеметрии есть `scripts/telemetry-server.mjs`
 - **Миграция планов:** при смене сид/дефолт-плана новые имена упражнений ОБЯЗАНЫ нести `alias: [старые имена]` — префилл истории ищет по имени, без алиасов веса пользователя отвязываются (кейс 0кг 2026-07-08)
 - **Анти-хрупкость:** рискованный код — за флагом `js/flags.js` (Strangler-Fig); ветки < 24ч, от свежего `origin/main`; застрял → `git checkout .` и дроби. Детали — `NEXT_SESSION.md` § Анти-хрупкий workflow
