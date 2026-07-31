@@ -229,8 +229,22 @@
   /* Top padding reserves a centered row for the status dot above the DHL. */
   padding: 16px 18px 9px;
 }
-.island.profile-minimal.expanded .island-status-line,
 .island.profile-minimal.expanded .island-actions { display: none; }
+/* Строка имени в minimal ВОЗВРАЩЕНА (была display:none). Профиль показывал
+   камеру, блок и «далее» — то есть отвечал на всё, кроме главного вопроса
+   «что я делаю прямо сейчас». Имя + живая точка закрывают его без единого
+   служебного слова. Бейдж сетов сюда не пускаем: счёт крупно стоит на экране
+   прямо под островом, и в пилюле он был бы третьим числом подряд. */
+.island.profile-minimal.expanded .island-status-line {
+  display: flex;
+  gap: var(--sp-1);
+}
+.island.profile-minimal.expanded .island-sets-badge { display: none; }
+/* flex:1 у имени тянет строку во всю ширину и ломает центрирование стопки. */
+.island.profile-minimal.expanded .island-ex-name {
+  flex: 0 1 auto;
+  max-width: 190px;
+}
 .island.profile-minimal.expanded .island-expanded-content {
   margin-top: 0;
   padding: 0;
