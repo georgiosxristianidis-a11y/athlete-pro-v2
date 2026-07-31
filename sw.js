@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v118-0af88c5b';
+const CACHE_NAME = 'athlete-pro-v118-bc02746d';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -16,6 +16,7 @@ const ASSETS = [
   '/js/analytics.strength-curves.js',
   '/js/analytics.view.js',
   '/js/app.js',
+  '/js/body-stats.core.js',
   '/js/body-stats.js',
   '/js/boot.js',
   '/js/claude.store.js',

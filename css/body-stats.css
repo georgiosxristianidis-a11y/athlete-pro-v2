@@ -1,8 +1,8 @@
-﻿/* ══════════════════════════════════════════════
-   Block 11.1 — Body Stats  v1.2
-   • labels larger (13px)
-   • delete btn: dark bg + white, no red anywhere
-   • confirm before delete
+/* ══════════════════════════════════════════════
+   Body Stats — v2 (card BS-1)
+   • six tiles, each with a delta pill and a sparkline
+   • one form sheet for every field, grouped by region
+   • type scale --fs-* / --fw-* only (TYPE-2)
    ══════════════════════════════════════════════ */
 
 .bs-wrap {
@@ -11,7 +11,7 @@
   margin: 0 auto;
 }
 
-/* ── Tab bar ── */
+/* ── Tab bar (owned by the athlete room) ── */
 .bs-tab-bar {
   display: flex;
   gap: 6px;
@@ -28,8 +28,8 @@
   border-radius: var(--r-s);
   background: transparent;
   color: var(--c-text-3);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
   cursor: pointer;
   transition: transform var(--t-fast), opacity 0.3s var(--ease-std);
   -webkit-tap-highlight-color: transparent;
@@ -40,31 +40,35 @@
   border: 1px solid var(--c-border-h);
   color: var(--c-text-1);
 }
+
+/* ── Header ── */
 .bs-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--sp-3);
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-1);
 }
 .bs-title {
-  font-size: 22px;
-  font-weight: 800;
+  font-size: var(--fs-4);
+  font-weight: var(--fw-black);
   color: var(--c-text-1);
   margin: 0;
 }
 .bs-add-btn {
   height: 36px;
-  padding: 0 14px;
+  padding: 0 var(--sp-2);
   border-radius: var(--r-s);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
+  border: none;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  flex-shrink: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .bs-last-date {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
   color: var(--c-text-3);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -87,6 +91,20 @@
   flex-direction: column;
   gap: 4px;
   overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-fast), border-color var(--t-normal);
+  animation: card-in 0.28s var(--ease-std) both;
+}
+.bs-stat-card:nth-child(1) { animation-delay: 0.04s; }
+.bs-stat-card:nth-child(2) { animation-delay: 0.08s; }
+.bs-stat-card:nth-child(3) { animation-delay: 0.12s; }
+.bs-stat-card:nth-child(4) { animation-delay: 0.16s; }
+.bs-stat-card:nth-child(5) { animation-delay: 0.20s; }
+.bs-stat-card:nth-child(6) { animation-delay: 0.24s; }
+.bs-stat-card:active {
+  transform: scale(var(--press-scale));
+  border-color: var(--c-border-h);
 }
 .bs-stat-top {
   display: flex;
@@ -94,49 +112,55 @@
   justify-content: space-between;
   gap: 4px;
 }
-
-/* ↑ LABEL: was 11px → now 13px, brighter color ── */
 .bs-stat-label {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
   color: var(--c-text-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .bs-stat-value {
-  font-size: 28px;
-  font-weight: 800;
+  font-size: var(--fs-6);
+  font-weight: var(--fw-black);
   color: var(--c-text-1);
   line-height: 1.1;
+  letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
 .bs-stat-unit {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
   color: var(--c-text-3);
   margin-left: 2px;
 }
+.bs-stat-sub {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-3);
+  letter-spacing: 0.02em;
+}
 
-/* ── Delta — amber ↑, green ↓, NO red ── */
+/* ── Delta pill ──
+   Colour answers "is this progress", not "is this up": waist down is good,
+   arms up is good, weight alone is neither. Direction is in the sign. */
 .bs-delta {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   padding: 2px 5px;
   border-radius: 5px;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
 }
-.bs-delta-up {
-  background: rgba(255, 179, 0, 0.15);
-  color: var(--c-amber);
-}
-.bs-delta-down {
-  background: rgba(0, 230, 118, 0.13);
+.bs-delta-good {
+  background: color-mix(in srgb, var(--c-accent) 14%, transparent);
   color: var(--c-accent);
 }
-.bs-delta-0 {
+.bs-delta-warn {
+  background: color-mix(in srgb, var(--c-amber) 15%, transparent);
+  color: var(--c-amber);
+}
+.bs-delta-flat {
   background: var(--c-surface-h);
   color: var(--c-text-3);
 }
@@ -147,12 +171,16 @@
   height: 38px;
   display: block;
   margin-top: 4px;
+  opacity: 0.85;
 }
 .bs-spark-empty {
-  font-size: 10px;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
-  margin-top: 6px;
-  text-align: center;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── Empty state ── */
@@ -161,30 +189,34 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px var(--sp-3);
+  padding: 48px var(--sp-3);
   text-align: center;
-  gap: 8px;
+  gap: var(--sp-1);
 }
 .bs-empty-icon {
-  font-size: 48px;
+  color: var(--c-text-3);
+  opacity: 0.6;
+  margin-bottom: var(--sp-1);
 }
 .bs-empty-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
   color: var(--c-text-1);
   margin: 0;
 }
 .bs-empty-sub {
-  font-size: 13px;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
-  margin: 0;
-  max-width: 240px;
+  margin: 0 0 var(--sp-2);
+  max-width: 260px;
+  line-height: 1.4;
 }
 
 /* ── Section title ── */
 .bs-section-title {
-  font-size: 11px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   color: var(--c-text-3);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -202,33 +234,33 @@
   border: 1px solid var(--c-border);
   border-radius: var(--r-m);
   overflow: hidden;
-  transition: transform var(--t-fast);
+  transition: transform var(--t-fast), border-color var(--t-normal);
 }
 .bs-hist-entry.open {
-  border-color: rgba(0, 230, 118, 0.25);
+  border-color: var(--c-border-h);
 }
 .bs-hist-head {
   display: flex;
   align-items: center;
   padding: 12px 14px;
   cursor: pointer;
-  gap: 8px;
+  gap: var(--sp-1);
   -webkit-tap-highlight-color: transparent;
 }
 .bs-hist-date {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
   color: var(--c-text-1);
   flex: 1;
 }
 .bs-hist-weight {
-  font-size: 13px;
-  font-weight: 800;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
   color: var(--c-accent);
   font-variant-numeric: tabular-nums;
 }
 .bs-hist-chev {
-  font-size: 18px;
+  display: flex;
   color: var(--c-text-3);
   transition: transform var(--t-fast);
   line-height: 1;
@@ -248,35 +280,33 @@
 .bs-hist-cell {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sp-1);
   padding: 6px 0;
 }
-.bs-hist-cell:last-of-type {
-}
 .bs-hist-lbl {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   flex: 1;
 }
 .bs-hist-val {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
   color: var(--c-text-1);
   font-variant-numeric: tabular-nums;
+  min-width: 64px;
+  text-align: right;
 }
-
-/* ↑ DELETE BTN: dark bg + white text, NO red ── */
 .bs-del-btn {
-  margin-top: 8px;
+  margin-top: var(--sp-1);
   width: 100%;
   height: 36px;
   border-radius: var(--r-sm);
   background: var(--c-bg-2);
   border: 1px solid var(--c-border-h);
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 12px;
-  font-weight: 600;
+  color: var(--c-text-3);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
   font-family: inherit;
   cursor: pointer;
   transition: transform var(--t-fast), opacity var(--t-fast);
@@ -286,20 +316,19 @@
 .bs-del-btn:active {
   background: var(--c-bg-3);
   color: var(--c-text-1);
-  border-color: rgba(255, 255, 255, 0.25);
 }
 
 /* ══════════════════════════════════════
-   FORM sheet
+   FORM sheet — every field, one save
    ══════════════════════════════════════ */
 .modal-overlay.bs-overlay {
   z-index: 5000;
   animation: none;
-  background: rgba(0, 0, 0, 0);
+  background: transparent;
   transition: background 0.25s;
 }
 .modal-overlay.bs-overlay.visible {
-  background: rgba(0, 0, 0, 0.82);
+  background: color-mix(in srgb, var(--c-black) 82%, transparent);
 }
 .modal-overlay.bs-overlay .modal-sheet {
   animation: none;
@@ -317,7 +346,7 @@
   align-items: center;
   gap: var(--sp-2);
   padding: 0 0 var(--sp-2);
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--sp-1);
   flex-shrink: 0;
 }
 .bs-date-inp {
@@ -327,14 +356,16 @@
   border: 1px solid var(--c-border);
   border-radius: var(--r-sm);
   color: var(--c-text-1);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
   font-family: inherit;
   padding: 0 10px;
   -webkit-appearance: none;
 }
-.bs-date-inp:focus {
-  border-color: rgba(0, 230, 118, 0.4);
+.bs-date-inp:focus,
+.bs-field-inp:focus {
+  border-color: color-mix(in srgb, var(--c-accent) 40%, transparent);
+  outline: none;
 }
 .bs-fields-scroll {
   flex: 1;
@@ -342,8 +373,24 @@
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--sp-1);
   padding-bottom: var(--sp-2);
+}
+.bs-form-sec {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  color: var(--c-text-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: var(--sp-1);
+}
+.bs-form-sec:first-child { margin-top: 0; }
+.bs-form-note {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+  line-height: 1.4;
+  margin: var(--sp-1) 0 0;
 }
 .bs-field {
   display: flex;
@@ -351,10 +398,10 @@
   gap: var(--sp-2);
 }
 .bs-field-label {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-2);
-  width: 90px;
+  width: 100px;
   flex-shrink: 0;
 }
 .bs-field-inp-wrap {
@@ -370,15 +417,17 @@
   border: 1px solid var(--c-border);
   border-radius: var(--r-sm);
   color: var(--c-text-1);
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
   font-family: inherit;
   padding: 0 36px 0 12px;
   -webkit-appearance: none;
-  transition: transform var(--t-fast);
+  transition: transform var(--t-fast), border-color var(--t-fast);
 }
-.bs-field-inp:focus {
-  border-color: rgba(0, 230, 118, 0.4);
+.bs-field-inp::-webkit-outer-spin-button,
+.bs-field-inp::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .bs-field-inp::placeholder {
   color: var(--c-text-3);
@@ -386,8 +435,8 @@
 .bs-field-unit {
   position: absolute;
   right: 10px;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
   color: var(--c-text-3);
   pointer-events: none;
 }
@@ -399,6 +448,8 @@
   width: 100%;
   height: 48px;
   border-radius: var(--r-m);
-  font-size: 15px;
-  font-weight: 800;
+  border: none;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-black);
+  cursor: pointer;
 }
