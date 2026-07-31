@@ -6,8 +6,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  MOODS, BASE_MOOD, OVERRUN_JUDGE_SEC,
-  restOverrunMood, ledgerVerdictKey,
+  MOODS, BASE_MOOD, OVERRUN_JUDGE_SEC, IDLE_GUILT_DAYS,
+  restOverrunMood, ledgerVerdictKey, entryGreeting,
 } from '../js/shared/panda-mood.js';
 
 /** Длительность ролика, из которого нарезаны все мимики. */
@@ -64,4 +64,57 @@ test('ledgerVerdictKey: счёт всегда равный, обойти мож�
   assert.equal(ledgerVerdictKey(0), 'mascot.draw');
   assert.equal(ledgerVerdictKey(1), 'mascot.you_won');
   assert.equal(ledgerVerdictKey(4), 'mascot.you_won');
+});
+
+/* ── PANDA-3: приветствие на входе ──────────────────────────────────── */
+
+const DAY = { hour: 14 };
+
+test('entryGreeting: молчит, когда упрекнуть не в чем', () => {
+  assert.equal(entryGreeting({ daysSinceLast: 0, ...DAY }), null);
+  assert.equal(entryGreeting({ daysSinceLast: IDLE_GUILT_DAYS - 1, ...DAY }), null);
+});
+
+test('entryGreeting: простой — «я съел твой прогресс»', () => {
+  const g = entryGreeting({ daysSinceLast: IDLE_GUILT_DAYS, ...DAY });
+  assert.deepEqual(g, { mood: 'judge', key: 'mascot.ate_progress' });
+  assert.equal(entryGreeting({ daysSinceLast: 40, ...DAY }).mood, 'judge');
+});
+
+test('entryGreeting: время суток бьёт вину', () => {
+  // Пришёл в два ночи после месяца простоя — он всё-таки пришёл. Упрекать
+  // пропуском именно в этот момент мелочно, поэтому ночь выигрывает.
+  const night = entryGreeting({ daysSinceLast: 40, hour: 2 });
+  assert.equal(night.key, 'mascot.night_shift');
+  const late = entryGreeting({ daysSinceLast: 40, hour: 23 });
+  assert.equal(late.key, 'mascot.night_shift');
+  const early = entryGreeting({ daysSinceLast: 40, hour: 6 });
+  assert.equal(early.key, 'mascot.early_bird');
+});
+
+test('entryGreeting: границы окон времени', () => {
+  assert.equal(entryGreeting({ daysSinceLast: 0, hour: 22 }), null, '22:00 — ещё не ночь');
+  assert.equal(entryGreeting({ daysSinceLast: 0, hour: 23 }).key, 'mascot.night_shift');
+  assert.equal(entryGreeting({ daysSinceLast: 0, hour: 4 }).key, 'mascot.night_shift');
+  assert.equal(entryGreeting({ daysSinceLast: 0, hour: 5 }).key, 'mascot.early_bird');
+  assert.equal(entryGreeting({ daysSinceLast: 0, hour: 7 }), null, '7:00 — обычное утро');
+});
+
+test('entryGreeting: новичок без единой тренировки не получает упрёка', () => {
+  assert.equal(entryGreeting({ daysSinceLast: null, ...DAY }), null);
+  // но ночью здоровается — ему ещё нечего было пропускать
+  assert.equal(entryGreeting({ daysSinceLast: null, hour: 1 }).key, 'mascot.night_shift');
+});
+
+test('entryGreeting: мусор на входе не роняет и не выдумывает мимику', () => {
+  assert.equal(entryGreeting({ daysSinceLast: 5, hour: NaN }), null);
+  assert.equal(entryGreeting({ daysSinceLast: 5, hour: 24 }), null);
+  assert.equal(entryGreeting({}), null);
+});
+
+test('entryGreeting: возвращает только существующие мимики', () => {
+  for (let h = 0; h <= 23; h++) {
+    const g = entryGreeting({ daysSinceLast: 99, hour: h });
+    if (g) assert.ok(MOODS[g.mood], `час ${h}: несуществующая мимика ${g.mood}`);
+  }
 });

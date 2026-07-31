@@ -156,7 +156,10 @@ const DICT = {
     'mascot.ledger_bamboo': 'bamboo',
     'mascot.draw': 'A draw.',
     'mascot.you_won': 'You won. First time.',
-    'mascot.dropped_bamboo': 'You made me drop it.'
+    'mascot.dropped_bamboo': 'You made me drop it.',
+    'mascot.night_shift': 'Late. Still eating.',
+    'mascot.early_bird': 'Early. I never got up.',
+    'mascot.ate_progress': 'I ate your progress.'
   },
   ru: {
     'profile.title': 'Профиль',
@@ -311,6 +314,9 @@ const DICT = {
     'mascot.draw': 'Ничья.',
     'mascot.you_won': 'Ты выиграл. Впервые.',
     'mascot.dropped_bamboo': 'Ты уронил мой бамбук.',
+    'mascot.night_shift': 'Поздно. Я ужинаю.',
+    'mascot.early_bird': 'Рано. Я не вставал.',
+    'mascot.ate_progress': 'Я съел твой прогресс.',
   }
 };
 
