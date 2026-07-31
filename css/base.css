@@ -1041,6 +1041,169 @@ button:focus-visible {
 }
 .plan-delete:active { color: var(--c-red); background: var(--c-surface-h); transform: scale(var(--press-scale)); }
 
+/* ── Edit Plan chrome — вторая половина того же долга, что и строки выше.
+   Ряды недели/пресета, поиск и кнопки жили вообще без CSS: браузер рисовал
+   их своей нативной кнопкой (белая плашка, чёрная рамка, 13px) прямо на
+   тёмном стекле, а иконка лупы стояла в потоке, а не в поле. Раскладка тоже
+   отсутствовала — display:block вместо ряда, поэтому label, сегмент и хинт
+   складывались стопкой. Здесь только токены. ── */
+.plan-week-row,
+.plan-preset-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-1-5);
+}
+.plan-preset-label {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-text-3);
+}
+/* Хинт недели длинный — на 375px он занимает свою строку целиком,
+   иначе выдавливает сегмент A/B за край. */
+.plan-week-hint {
+  flex-basis: 100%;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+}
+
+.week-segment {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--r-s);
+}
+.week-seg-btn {
+  min-width: 40px;
+  padding: 6px 14px;
+  background: none;
+  /* Прозрачная рамка в покое: у .active она появляется цветной, и без этой
+     заглушки кнопка прыгала бы на 2px при переключении недели. */
+  border: 1px solid transparent;
+  border-radius: var(--r-xs);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-2);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.week-seg-btn:active { transform: scale(var(--press-scale)); }
+
+.btn-preset {
+  padding: 6px 12px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-text-2);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+}
+.btn-preset:active {
+  background: var(--c-surface-h);
+  border-color: var(--c-border-h);
+  color: var(--c-text-1);
+  transform: scale(var(--press-scale));
+}
+
+.plan-search-wrap {
+  position: relative;
+  margin-bottom: var(--sp-1-5);
+}
+.plan-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--c-text-3);
+  pointer-events: none;
+}
+.plan-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-s);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
+  color: var(--c-text-1);
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color var(--t-fast);
+}
+.plan-search-input::placeholder { color: var(--c-text-3); }
+.plan-search-input:focus { outline: none; border-color: var(--c-border-h); }
+
+.plan-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--r-s);
+  margin-bottom: var(--sp-1-5);
+}
+.plan-tab {
+  flex: 1;
+  padding: 8px 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--r-xs);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-2);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.plan-tab:active { transform: scale(var(--press-scale)); }
+.plan-tab.active { color: var(--c-text-1); }
+
+/* Без gap строки плана стояли вплотную — карточки сливались в одну плиту. */
+.plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.plan-empty {
+  padding: var(--sp-3) var(--sp-2);
+  text-align: center;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+}
+.btn-add-ex {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding: 12px;
+  background: var(--c-surface);
+  /* Пунктир — единственное место в редакторе, где рамка что-то значит:
+     «здесь можно добавить», а не «здесь граница карточки». */
+  border: 1px dashed var(--c-border-h);
+  border-radius: var(--r-s);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-2);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.btn-add-ex:active {
+  background: var(--c-surface-h);
+  color: var(--c-text-1);
+  transform: scale(var(--press-scale));
+}
+
 /* PR / achievement gradient */
 .badge-accent {
   background: linear-gradient(135deg, rgba(255, 179, 0, 0.20) 0%, rgba(255, 179, 0, 0.10) 40%, rgba(0, 230, 118, 0.12) 100%);
