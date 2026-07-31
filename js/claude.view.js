@@ -110,10 +110,24 @@ export const Claude = (() => {
     // Скрыт на s-intel и на s-home, пока там живёт большой маскот-видео
     // (иначе две панды на экране); дашборд шлёт 'ap-mascot-video' при
     // рендере/уходе маскота.
+    //
+    // PANDA-4: и на s-train. FAB висит над правым нижним углом карточки
+    // упражнения — то есть ровно над барабаном веса, по которому в этот
+    // момент ведут пальцем (полевой скриншот Gio, 2026-07-31). Пока маскот
+    // был декорацией, глаз его отфильтровывал; с PANDA-1 он дёргается на
+    // каждом закрытом подходе и на переборе отдыха, то есть специально
+    // тянет взгляд туда, где идёт ввод. Цена решения названа честно: во
+    // время тренировки ярлыка в P.A.N.D.A. Core больше нет — контекстный
+    // пузырь workout-ai.view.js всплывает только когда тренеру есть что
+    // сказать. Мимика при этом не теряется: панда доигрывает осуждение и
+    // ты видишь его, как только уходишь с экрана.
     let screenId = document.querySelector('.screen.active')?.id || 's-home';
     const applyVis = () => {
       const mascotAlive = !!document.querySelector('.empty-dash-mascot video');
-      container.style.display = (screenId === 's-intel' || (screenId === 's-home' && mascotAlive)) ? 'none' : '';
+      const hide = screenId === 's-intel'
+        || screenId === 's-train'
+        || (screenId === 's-home' && mascotAlive);
+      container.style.display = hide ? 'none' : '';
     };
     window.addEventListener('ap-nav-change', (e) => {
       // @ts-ignore
