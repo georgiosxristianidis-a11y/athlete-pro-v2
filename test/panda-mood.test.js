@@ -5,6 +5,7 @@
    ничего не падает, просто персонаж врёт. Отсюда гард на саму таблицу. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   MOODS, BASE_MOOD, OVERRUN_JUDGE_SEC, IDLE_GUILT_DAYS,
   restOverrunMood, ledgerVerdictKey, entryGreeting,
@@ -110,6 +111,17 @@ test('entryGreeting: мусор на входе не роняет и не выд
   assert.equal(entryGreeting({ daysSinceLast: 5, hour: NaN }), null);
   assert.equal(entryGreeting({ daysSinceLast: 5, hour: 24 }), null);
   assert.equal(entryGreeting({}), null);
+});
+
+/* ── PANDA-4: FAB не имеет права висеть над полем ввода ──────────────── */
+
+test('FAB маскота скрыт на экране тренировки', () => {
+  // Полевой скриншот 2026-07-31: панда висела ровно над барабаном веса.
+  // Это решение легко «прибрать» при следующем рефакторе видимости FAB,
+  // поэтому оно под гардом, а не только в комментарии.
+  const src = readFileSync(new URL('../js/claude.view.js', import.meta.url), 'utf8');
+  assert.match(src, /screenId === 's-train'/,
+    'claude.view.js должен прятать FAB на s-train — иначе маскот перекрывает ввод веса');
 });
 
 test('entryGreeting: возвращает только существующие мимики', () => {
