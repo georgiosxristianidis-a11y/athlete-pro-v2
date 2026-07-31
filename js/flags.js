@@ -48,6 +48,17 @@ const DEFAULTS = {
   // Kill switch on device: Flags.setFlag('fab-video', false)
   'fab-video': false,
 
+  // PANDA-1 «Бамбуковый счёт»: маскот перестаёт быть обоями и реагирует на
+  // тренировку — мимика лупится внутри сегмента assets/panda-voice.mp4
+  // (js/shared/panda-mood.js), перебор отдыха включает осуждение, в сводке
+  // считается счёт «твои подходы vs его бамбук».
+  // Рендерится в видео-FAB, поэтому читать ТОЛЬКО в паре с 'fab-video':
+  // flag('panda-moods') && flag('fab-video'). Тумблер в профиле жмёт оба.
+  // Режим отказа: нарезка по currentTime даёт видимый рывок на стыке или
+  // грызёт батарею на слабом телефоне → выключить и вернуться к ровному лупу.
+  // Kill switch on device: Flags.setFlag('panda-moods', false)
+  'panda-moods': false,
+
   // ISL-PROFILE: Dynamic Island layout profiles. ON exposes the profile
   // system (Minimal-DHL default + Apple legacy), chosen in Island Settings
   // and persisted in island-profile.store.js. Kill switch → island reverts

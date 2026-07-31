@@ -8,6 +8,7 @@ import { Toast } from './shell.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
 import { initPandaVideo, togglePandaSound, PANDA_VIDEO_SRC, PANDA_POSTER_SRC } from './shared/panda-video.js';
+import { attachMood } from './shared/panda-mood.js';
 
 on('claude:dismissFAB', (el, e) => { e.stopPropagation(); window.Claude?.dismissFAB(); });
 
@@ -64,6 +65,8 @@ export const Claude = (() => {
     if (isGemini && !hasKey) glowClass = 'ai-glow-error';
 
     const videoMode = flag('fab-video');
+    // Мимики живут внутри видео-FAB — без него включать нечего.
+    const moodMode = videoMode && flag('panda-moods');
 
     container.innerHTML = `
       <div style="position:relative; pointer-events:auto">
@@ -95,7 +98,10 @@ export const Claude = (() => {
 
     fab.addEventListener('click', open);
     document.body.appendChild(container);
-    if (videoMode) initPandaVideo(container, container.querySelector('#claude-fab-video'));
+    // Mood-режим и зум взаимоисключающи: наезд срежиссирован под линейные 10с,
+    // а мимика этот линейный проигрыш как раз и отменяет.
+    if (moodMode) attachMood(container, container.querySelector('#claude-fab-video'));
+    else if (videoMode) initPandaVideo(container, container.querySelector('#claude-fab-video'));
 
     _initDraggable(container);
     _snapFAB(container);

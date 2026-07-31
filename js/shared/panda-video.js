@@ -17,16 +17,14 @@ const IN_DUR = 1.8;
 const OUT_DUR = 0.8;
 
 /**
- * Timecode-driven zoom + background pause for a looping panda video.
- * The zoom follows video.currentTime, so it stays in sync with the
- * voiceover even across pause/resume. GPU transform only — no relayout.
- * Self-terminates once `host` leaves the DOM.
- * @param {HTMLElement} host container whose DOM lifetime bounds the loop
- * @param {Element|null} videoEl the <video> to animate
+ * Автоплей-разблокировка + энергосбережение для панда-видео.
+ * Вынесено из initPandaVideo, чтобы mood-машина (panda-mood.js) переиспользовала
+ * тот же проверенный обвес, а не заводила вторую копию тех же граблей.
+ * @param {HTMLElement} host container whose DOM lifetime bounds the listeners
+ * @param {HTMLVideoElement} v
+ * @returns {() => void} detach — снимает все слушатели и IO
  */
-export function initPandaVideo(host, videoEl) {
-  const v = videoEl;
-  if (!(v instanceof HTMLVideoElement)) return;
+export function bindPandaLifecycle(host, v) {
   v.play().catch(() => { /* autoplay blocked (Low Power / Data Saver) — poster stays, unlock below */ });
 
   // Энергосбережение/экономия трафика блокируют автоплей даже muted-видео —
@@ -39,7 +37,7 @@ export function initPandaVideo(host, videoEl) {
 
   // Батарея: видео играет только когда его реально видно.
   const onVis = () => {
-    if (!host.isConnected) { document.removeEventListener('visibilitychange', onVis); io.disconnect(); return; }
+    if (!host.isConnected) { detach(); return; }
     if (document.hidden) v.pause();
     else if (host.offsetParent !== null) v.play().catch(() => {});
   };
@@ -49,6 +47,27 @@ export function initPandaVideo(host, videoEl) {
     else v.pause();
   });
   io.observe(host);
+
+  function detach() {
+    document.removeEventListener('visibilitychange', onVis);
+    document.removeEventListener('pointerdown', unlock);
+    io.disconnect();
+  }
+  return detach;
+}
+
+/**
+ * Timecode-driven zoom + background pause for a looping panda video.
+ * The zoom follows video.currentTime, so it stays in sync with the
+ * voiceover even across pause/resume. GPU transform only — no relayout.
+ * Self-terminates once `host` leaves the DOM.
+ * @param {HTMLElement} host container whose DOM lifetime bounds the loop
+ * @param {Element|null} videoEl the <video> to animate
+ */
+export function initPandaVideo(host, videoEl) {
+  const v = videoEl;
+  if (!(v instanceof HTMLVideoElement)) return;
+  bindPandaLifecycle(host, v);
 
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   // quintic in-out — мягкий вход/выход «наезда»; rAF-цикл живёт только пока

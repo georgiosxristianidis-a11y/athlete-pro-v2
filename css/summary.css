@@ -307,6 +307,70 @@
   flex-shrink: 0;
 }
 
+/* ── PANDA-1: реплика маскота под списком рекордов ───── */
+.summ-mascot-line {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--c-border);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  font-style: italic;
+  color: var(--c-text-3);
+}
+
+/* ── PANDA-1: бамбуковый счёт ────────────────────────── */
+.summ-ledger {
+  padding: 14px 16px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-l);
+}
+
+.summ-ledger-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: var(--c-accent);
+}
+
+.summ-ledger-title {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+}
+
+.summ-ledger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.summ-ledger-who {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-2);
+}
+
+.summ-ledger-val {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.summ-ledger-verdict {
+  padding-top: 10px;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
+  text-align: center;
+  color: var(--c-text-2);
+}
+
 /* ── Actions ─────────────────────────────────────────── */
 .summ-actions {
   display: flex;

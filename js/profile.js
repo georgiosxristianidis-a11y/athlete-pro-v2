@@ -264,6 +264,28 @@ export const Profile = (() => {
     _refreshSettings();
   }
 
+  /**
+   * PANDA-1 — тумблер реакций маскота (флаг 'panda-moods' на устройстве).
+   * Мимики рендерятся в видео-FAB, поэтому включение тянет за собой 'fab-video':
+   * иначе тумблер включал бы невидимое.
+   */
+  async function togglePandaMoods() {
+    const { flag, setFlag } = await import('./flags.js');
+    const next = !flag('panda-moods');
+    setFlag('panda-moods', next);
+    if (next) {
+      setFlag('fab-video', true);
+      await DB.Settings.set('ai-panda-hidden', false);
+      await DB.Settings.set('show-mascot', 'on');
+    }
+    const { Claude } = await import('./claude.view.js');
+    document.getElementById('claude-fab-container')?.remove();
+    await Claude.renderFAB();
+    const ru = document.documentElement.lang === 'ru';
+    Toast.show(next ? (ru ? 'Панда следит за тобой' : 'The panda is watching') : (ru ? 'Реакции панды выключены' : 'Panda reactions off'), 'success');
+    _refreshSettings();
+  }
+
 async function setEngine(engine) {
     const { getPrivacyMode } = await import('./privacy.store.js');
     const mode = getPrivacyMode();
@@ -468,7 +490,7 @@ async function setEngine(engine) {
 
   return {
     load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
-    togglePanda, toggleFabVideo, setLang, setEngine, setGeminiKey,
+    togglePanda, toggleFabVideo, togglePandaMoods, setLang, setEngine, setGeminiKey,
     validateGeminiKey, setAnthropicKey, validateAnthropicKey, toggleKeyVisibility,
     exportData, exportCsv, importData,
     _onImportFile, clearAllData,

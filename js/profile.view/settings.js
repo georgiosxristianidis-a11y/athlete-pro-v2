@@ -28,6 +28,7 @@ on('settings:setUnit',     (el) => P().setUnit(el.dataset.unit));
 on('settings:setEngine',   (el) => P().setEngine(el.dataset.engine));
 on('settings:togglePanda', () => P().togglePanda());
 on('settings:toggleFabVideo', () => P().toggleFabVideo());
+on('settings:togglePandaMoods', () => P().togglePandaMoods());
 on('settings:toggleKeyVis',() => P().toggleKeyVisibility());
 on('settings:syncToggle', async (el) => {
   const icon = document.getElementById('sync-connect-icon');
@@ -213,7 +214,19 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
             </div>
           </div>
         </div>
-        
+
+        <div style="display:flex; align-items:center; justify-content:space-between; padding: 4px 0;">
+          <div class="pref-info">
+            <div class="pref-title">${lang === 'ru' ? 'Реакции панды (бета)' : 'Panda Reactions (beta)'}</div>
+            <div class="pref-sub">${lang === 'ru' ? 'Осуждает за долгий отдых, ведёт счёт' : 'Judges long rests, keeps score'}</div>
+          </div>
+          <div class="switch-wrap" data-action="settings:togglePandaMoods">
+            <div class="switch ${flag('panda-moods') ? 'on' : ''}" id="sw-panda-moods">
+              <div class="switch-thumb"></div>
+            </div>
+          </div>
+        </div>
+
         ${(() => {
           // BYOK key field for the CURRENTLY selected engine — symmetric for both
           // Claude (sk-ant-) and Gemini (AIza). Makes the two engine buttons an
