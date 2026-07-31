@@ -1,6 +1,6 @@
 {
   "name": "athlete-pro",
-  "version": "1.25.46",
+  "version": "1.25.47",
   "type": "module",
   "description": "PPL Workout Tracker with AI Coach",
   "main": "server.js",
