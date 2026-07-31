@@ -67,6 +67,36 @@ export function restOverrunMood(elapsedSec) {
   return elapsedSec >= OVERRUN_JUDGE_SEC ? 'judge' : 'watch';
 }
 
+/** Со скольких дней простоя панда начинает припоминать тебе прогресс. */
+export const IDLE_GUILT_DAYS = 3;
+
+/**
+ * Сценарии 5 «Пока тебя не было» и 6 «Ночная смена» — реакция на ВХОД в
+ * приложение, а не на тренировку. Чистая функция, вся драматургия в тесте.
+ *
+ * Порядок ветвлений неслучаен: время суток бьёт вину. Человек, открывший
+ * приложение в два ночи, как раз пришёл — упрекать его пропуском в этот
+ * момент не смешно, а мелочно.
+ *
+ * @param {{daysSinceLast: number|null, hour: number}} ctx
+ *        daysSinceLast — null, если тренировок ещё не было вовсе
+ * @returns {{mood: string, key: string}|null} null = поводов открывать рот нет
+ */
+export function entryGreeting(ctx) {
+  const hour = ctx && ctx.hour;
+  if (!(hour >= 0 && hour <= 23)) return null;
+  const idle = ctx.daysSinceLast;
+
+  // Он ест даже в два ночи — своей мимики «спит» в ролике нет, и выдумывать
+  // её нарезкой честнее не пытаться.
+  if (hour >= 23 || hour < 5) return { mood: 'chew', key: 'mascot.night_shift' };
+  if (hour < 7) return { mood: 'watch', key: 'mascot.early_bird' };
+  if (typeof idle === 'number' && idle >= IDLE_GUILT_DAYS) {
+    return { mood: 'judge', key: 'mascot.ate_progress' };
+  }
+  return null;
+}
+
 /**
  * Вердикт бамбукового счёта. Панда ест по одному стеблю на каждый твой подход,
  * поэтому счёт всегда равный — выиграть можно только рекордом.

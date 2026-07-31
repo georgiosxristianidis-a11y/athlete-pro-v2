@@ -15,6 +15,7 @@ import { on } from './events.js';
 import { flag } from './flags.js';
 import { t } from './locale.store.js';
 import { initPandaVideo, togglePandaSound, PANDA_VIDEO_SRC, PANDA_POSTER_SRC } from './shared/panda-video.js';
+import { attachMood, emitMood, entryGreeting } from './shared/panda-mood.js';
 
 on('dash:directLaunch',  (el) => window.Dashboard.directLaunch(el.dataset.type));
 on('dash:weeklySummary', () => showWeeklySummary());
@@ -285,6 +286,32 @@ export const Dashboard = (() => {
         moved = false;
       }
     }, true);
+  }
+
+  /* ── PANDA-3: сценарии 5 «Пока тебя не было» и 6 «Ночная смена» ──────
+     Реакция на вход в приложение, а не на тренировку. load() зовётся на
+     каждый переход на s-home, поэтому реплика жёстко ограничена одним разом
+     в календарные сутки — иначе персонаж превращается в назойливый попап.
+     Решение о том, ЧТО сказать, живёт в чистой entryGreeting() и покрыто
+     тестом; здесь только доставка. */
+  async function _pandaGreet(workouts) {
+    if (!flag('panda-moods')) return;
+
+    const last = workouts && workouts[0];
+    const daysSinceLast = last && last.timestamp
+      ? Math.floor((Date.now() - last.timestamp) / 86400000)
+      : null;
+    const greeting = entryGreeting({ daysSinceLast, hour: new Date().getHours() });
+    if (!greeting) return;
+
+    // Один раз в календарные сутки, по локальной дате устройства.
+    const today = new Date().toLocaleDateString('sv');   // YYYY-MM-DD
+    const seen = await DB.Settings.get('panda-greeted-on', '').catch(() => '');
+    if (seen === today) return;
+    await DB.Settings.set('panda-greeted-on', today).catch(() => {});
+
+    emitMood(greeting.mood, { hold: 6000 });
+    Toast.show(t(greeting.key), 'info');
   }
 
   /**
@@ -651,8 +678,14 @@ export const Dashboard = (() => {
       screen.innerHTML = _buildEmptyState(showMascot);
       _initMascotDrag();
       const mascotWrap = document.getElementById('mascot-draggable');
-      if (mascotWrap) initPandaVideo(mascotWrap, mascotWrap.querySelector('video'));
+      // PANDA-3: большой маскот должен слышать ту же шину, что и FAB — иначе
+      // половина персонажа реактивная, половина крутит старый зум.
+      if (mascotWrap) {
+        if (flag('panda-moods')) attachMood(mascotWrap, mascotWrap.querySelector('video'));
+        else initPandaVideo(mascotWrap, mascotWrap.querySelector('video'));
+      }
       window.dispatchEvent(new CustomEvent('ap-mascot-video'));
+      _pandaGreet(allWorkouts);   // после монтирования маскота, иначе мимика уйдёт в пустоту
       screen.querySelector('.btn-start-workout')?.addEventListener('click', () => {
         if (window.haptic) window.haptic([15, 50, 15]);
         window.Toast.show("Let's go!", 'success');
@@ -663,6 +696,7 @@ export const Dashboard = (() => {
 
     // Маскот пустого дашборда ушёл (первая тренировка записана) — FAB может вернуться
     window.dispatchEvent(new CustomEvent('ap-mascot-video'));
+    _pandaGreet(allWorkouts);
 
     // Determine nextType based on last workout (DB already sorted)
     const lastWorkout = allWorkouts[0];
