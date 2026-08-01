@@ -77,6 +77,6 @@ export function renderLiftBars(oneRMs, bw, sex, age, lang) {
   }).join('');
 
   return `
-<div class="pp-section-lbl" style="margin-top:var(--sp-4); margin-bottom:var(--sp-2)">${ru ? 'Силовые показатели' : 'Strength Records'}</div>
+<div class="pp-section-lbl pp-section-lbl-gap">${ru ? 'Силовые показатели' : 'Strength Records'}</div>
 <div class="pp-card-v2 pp-lifts-v2">${rows}</div>`;
 }
