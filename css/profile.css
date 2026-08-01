@@ -14,6 +14,14 @@
    overflow-anchor is back on purpose: with no manual restore left to fight,
    it is what keeps the view steady. */
 
+/* SPACE-1 (заход №1): отступы в этом файле идут по шкале --sp-*, сырых
+   значений в padding/margin/gap не осталось — кроме одного узаконенного
+   класса. Это микро-сдвиги 1–2px у единиц измерения и подписей
+   (`.pp-m-u`, `.lift-percentile`, `.pref-sub` и т.п.): они лежат ниже
+   нижней ступени шкалы (--sp-0-5 = 4px) и служат оптическому выравниванию
+   строки, а не ритму блоков. Поднять их до 4px значит разорвать «180» и
+   «cm». То же решение уже принято в PP-4 для `.pp-goal-lbl-v2`. */
+
 /* ── Body summary strip ── */
 .body-summary {
   display: flex;
@@ -49,7 +57,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-text-3);
-  margin-top: 4px;
+  margin-top: var(--sp-0-5);
 }
 .body-stat-divider {
   width: 1px;
@@ -77,7 +85,7 @@
 .metric-field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--sp-0-5);
   min-width: 0;
 }
 .metric-label {
@@ -142,7 +150,7 @@
 .history-row {
   display: flex;
   align-items: center;
-  padding: 12px 0; /* element-spacing: 24px between row centers */
+  padding: var(--sp-1-5) 0; /* element-spacing: 24px between row centers */
   gap: var(--sp-1);
 }
 .history-row:last-child {
@@ -171,7 +179,7 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 12px 0; /* settings rows: comfortable tap target + breathing room */
+  padding: var(--sp-1-5) 0; /* settings rows: comfortable tap target + breathing room */
 }
 .pref-row + .pref-row {
   border-top: 1px solid var(--c-border);
@@ -207,7 +215,7 @@ button.pref-row-icon:active,
 .engine-toggle-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--sp-1-5);
   width: 100%;
 }
 .engine-toggle-btn {
@@ -215,7 +223,7 @@ button.pref-row-icon:active,
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--sp-1);
   border-radius: var(--r-l);
   font-family: var(--font-heading);
   font-weight: var(--fw-black);
@@ -277,7 +285,7 @@ button.pref-row-icon:active,
   flex-shrink: 0;
 }
 .toggle-btn {
-  padding: 10px 14px;
+  padding: var(--sp-1-5) var(--sp-2);
   min-height: 44px;
   background: none;
   border: none;
@@ -300,7 +308,7 @@ button.pref-row-icon:active,
 
 /* ── Segment variants (multi-button: mode, time cap) ── */
 .toggle-btn.seg-sm {
-  padding: 8px 6px;
+  padding: var(--sp-1);
   min-height: 38px;
   font-size: var(--fs-1);
   flex: 1;
@@ -313,7 +321,7 @@ button.pref-row-icon:active,
 .pref-col {
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: var(--sp-1);
 }
 .pref-col .pref-info {
   flex: none;
@@ -330,7 +338,7 @@ button.pref-row-icon:active,
   font-family: inherit;
   font-size: var(--fs-2);
   line-height: 1.5;
-  padding: 10px 12px;
+  padding: var(--sp-1-5);
   resize: none;
   min-height: 60px;
 }
@@ -346,7 +354,7 @@ button.pref-row-icon:active,
 .switch-wrap {
   flex-shrink: 0;
   cursor: pointer;
-  padding: 4px;
+  padding: var(--sp-0-5);
 }
 .switch {
   width: 54px;   /* Increased length */
@@ -388,15 +396,15 @@ button.pref-row-icon:active,
   color: var(--c-text-3);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin: 24px 16px 8px;
+  margin: var(--sp-3) var(--sp-2) var(--sp-1);
 }
 
 /* ── Row with Icon (Reference Pattern) ── */
 .pref-row-icon {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 12px 16px;
+  gap: var(--sp-2);
+  padding: var(--sp-1-5) var(--sp-2);
 }
 .pref-icon-box {
   width: 36px;
@@ -427,7 +435,7 @@ button.pref-row-icon:active,
   align-items: center;
   gap: var(--sp-2);
   width: 100%;
-  padding: 6px 0;
+  padding: var(--sp-1) 0;
   background: none;
   border: none;
   cursor: pointer;
@@ -478,7 +486,7 @@ button.pref-row-icon:active,
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--sp-1);
   background: rgba(255, 77, 136, 0.05);
   border: 1.2px solid rgba(255, 77, 136, 0.3);
   border-radius: var(--r-m);
@@ -487,7 +495,7 @@ button.pref-row-icon:active,
   font-weight: var(--fw-md);
   cursor: pointer;
   transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
-  margin: 8px auto 0;       
+  margin: var(--sp-1) auto 0;
 }
 .danger-btn svg {
   width: 15px;              
@@ -523,9 +531,12 @@ button.pref-row-icon:active,
   align-items: center;
   gap: var(--sp-2);
   /* Горизонтальный ритм — общий со .screen: боковой padding нулевой, иначе
-     hero стоит на 28px, а полоса метрик / бенто / радар — на 20px (PP-4). */
+     hero стоит на 28px, а полоса метрик / бенто / радар — на 20px (PP-4).
+     Вертикальный air вокруг паспорта симметричен буквально: 24 сверху и
+     24 снизу, без добавочного margin (SPACE-1 — жалоба «сверху и снизу
+     по-разному»). 24 снизу и есть отступ до полосы метрик. */
   padding: var(--sp-3) 0;
-  margin-bottom: var(--sp-2);
+  margin-bottom: 0;
   position: relative; /* containing block для ::before — иначе glow тянется на весь .screen */
 }
 .pp-hero-v2::before {
@@ -569,7 +580,7 @@ button.pref-row-icon:active,
 .pp-avatar-ring {
   position: absolute;
   inset: -6px;
-  border-radius: 28px;
+  border-radius: calc(var(--r-xxl) + 6px); /* аватар --r-xxl + inset кольца */
   border: 2px solid var(--c-accent);
   opacity: 0.15;
   pointer-events: none;
@@ -682,13 +693,16 @@ button.pref-row-icon:active,
 }
 
 /* ── Metrics Strip V2 ── */
+/* Вертикальный ритм профиля — одна ступень --sp-3 между всеми крупными
+   блоками (hero · полоса метрик · бенто · карточки). До SPACE-1 их было
+   три: 16 · 32 · 24, и разъезд читался как случайность, а не как замысел. */
 .pp-metrics-strip {
   display: flex;
   align-items: center;
   background: var(--c-surface);
   border-radius: var(--r-xl);
   padding: var(--sp-3) var(--sp-1);
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-3);
 }
 
 .pp-m-item {
@@ -717,7 +731,7 @@ button.pref-row-icon:active,
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--c-text-3);
-  margin-top: 6px;
+  margin-top: var(--sp-1);
 }
 
 .pp-m-div {
@@ -738,8 +752,8 @@ button.pref-row-icon:active,
 .pp-bento {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px; /* Philosophy of Air (x2 spacing) */
-  margin-bottom: 24px;
+  gap: var(--sp-3); /* Philosophy of Air (x2 spacing) */
+  margin-bottom: var(--sp-3);
   position: relative;
 }
 .pp-bento::before {
@@ -754,10 +768,10 @@ button.pref-row-icon:active,
 .pp-bento-cell {
   background: var(--c-surface);
   border-radius: var(--r-l);
-  padding: 12px; /* Slightly decreased padding for smaller blocks */
+  padding: var(--sp-1-5);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--sp-0-5);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: box-shadow var(--t-normal), background var(--t-normal), transform var(--t-fast);
@@ -803,17 +817,27 @@ button.pref-row-icon:active,
   margin-bottom: var(--sp-1);
 }
 
+/* Заголовок секции, открывающий новый блок (радар, силовые показатели).
+   Отступ сверху жил инлайном в двух шаблонах и разъехался: у радара было
+   24, у полос — 32. Теперь одна ступень и одно место, где она задана. */
+.pp-section-lbl-gap {
+  margin-top: var(--sp-3);
+}
+
 /* ── Lift bars V2 ── */
 .pp-card-v2 {
   background: var(--c-surface);
   border-radius: var(--r-xl);
-  padding: var(--sp-2) var(--sp-3);
-  margin-bottom: var(--sp-2);
+  padding: var(--sp-2);
+  margin-bottom: var(--sp-3);
 }
 
-.pp-lifts-v2 {
-  padding: 0 var(--sp-3);
-}
+/* Было `padding: 0 var(--sp-3)` — правило перебивало карточку целиком и
+   обнуляло ей вертикальный воздух: первая и последняя полосы упирались в
+   границу («шкала прижата к краю», карточка profile-hero-spacing). Плюс
+   боковые 24 уводили содержимое на 44px от края экрана, тогда как весь
+   остальной профиль стоит на 20. Теперь карточка и её содержимое дышат
+   одинаково — отдельное правило больше не нужно. */
 
 .lift-row-v2 {
   display: flex;
@@ -849,12 +873,12 @@ button.pref-row-icon:active,
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--sp-1);
 }
 
 .lift-dots-v2 {
   display: flex;
-  gap: 4px;
+  gap: var(--sp-0-5);
 }
 
 .lift-stats-v2 {
