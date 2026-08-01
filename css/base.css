@@ -1371,10 +1371,12 @@ button:focus-visible {
   flex-shrink: 0;
   line-height: 0;
 }
+/* ×1,5 по полевому решению Gio 2026-08-01 (было 3×12, gap --sp-0-5).
+   Пропорция сохранена в обе стороны, иначе засечки поехали бы в квадратики. */
 .blk-tick {
-  width: 3px;
-  height: 12px;
-  border-radius: 1.5px;
+  width: 4.5px;
+  height: 18px;
+  border-radius: 2.25px;
   background: var(--c-border);
   transition: background var(--t-normal), box-shadow var(--t-normal);
 }
