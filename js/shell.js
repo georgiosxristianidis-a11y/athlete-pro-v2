@@ -10,6 +10,12 @@ let _current = 's-home';
 const _handlers = {};
 let _transitionQueue = Promise.resolve();
 
+/** Реджект пропущенной view-transition — не ошибка; всё остальное показываем. */
+function _swallowSkippedTransition(err) {
+  if (err?.name === 'InvalidStateError' || err?.name === 'AbortError') return;
+  console.error('[nav] view transition failed', err);
+}
+
 /**
  * Register a screen init handler.
  * @param {string} id 
@@ -58,7 +64,17 @@ async function go(id, opts = {}) {
   const run = () => {
     if (!document.startViewTransition) return performNav();
     const transition = document.startViewTransition(() => performNav());
-    return transition.finished.catch(() => {});
+    // Браузер вправе пропустить анимацию (страница скрыта, предыдущая транзиция
+    // ещё жива на boot-цепочке) — тогда ready/finished реджектятся
+    // InvalidStateError/AbortError. DOM при этом обновляется, экран переключается,
+    // так что это ожидаемый шум, а не ошибка навигации. Гасим только его; всё
+    // прочее остаётся видимым в консоли. Настоящие падения performNav() приходят
+    // из updateCallbackDone и пробрасываются вызывающему.
+    transition.ready.catch(_swallowSkippedTransition);
+    return Promise.all([
+      transition.updateCallbackDone,
+      transition.finished.catch(_swallowSkippedTransition)
+    ]).then(() => {});
   };
   _transitionQueue = _transitionQueue.then(run, run);
   await _transitionQueue;
