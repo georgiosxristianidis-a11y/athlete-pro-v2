@@ -15,24 +15,24 @@
   margin-bottom: var(--sp-2);
 }
 .dash-hero-label {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--c-text-3);
   margin-bottom: 3px;
 }
 .dash-hero-title {
-  font-size: 24px;
-  font-weight: 800;
+  font-size: var(--fs-5);
+  font-weight: var(--fw-black);
   letter-spacing: -0.03em;
   color: var(--c-text-1);
   line-height: 1;
   margin-bottom: 4px;
 }
 .dash-hero-date {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
 }
 .dash-cta {
@@ -44,8 +44,8 @@
   color: var(--c-text-inverse);
   border: none;
   border-radius: var(--r-m);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   cursor: pointer;
   flex-shrink: 0;
   transition:
@@ -77,8 +77,8 @@
   margin-bottom: var(--sp-1);
 }
 .streak-count {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-gold);
   letter-spacing: 0.04em;
 }
@@ -97,8 +97,8 @@
   min-width: 0;
 }
 .streak-day-label {
-  font-size: 9px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -150,22 +150,22 @@
   border-color: var(--c-border-blue);
 }
 .stat-chip-val {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: var(--fs-4);
+  font-weight: var(--fw-md);
   letter-spacing: -0.03em;
   color: var(--c-text-1);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 .stat-chip-unit {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   margin-left: 2px;
 }
 .stat-chip-label {
-  font-size: 9px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -203,20 +203,22 @@
   flex: 1;
   min-width: 0;
 }
+/* Строка списка Recent — тот же паттерн, что .jr-* в Журнале
+   (journal.css:200): заголовок --fs-3/bold, вторичное --fs-1, объём --fw-black. */
 .session-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
   color: var(--c-text-1);
 }
 .session-meta {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   margin-top: 1px;
 }
 .session-vol {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
   color: var(--c-text-2);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
@@ -231,8 +233,8 @@
 
 /* PR badge — gold 1px outline, AIR */
 .rec-pr-badge {
-  font-size: 8px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--c-gold);
@@ -289,13 +291,13 @@
   color: var(--c-text-3);
 }
 .empty-title {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   color: var(--c-text-2);
 }
 .empty-desc {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   line-height: 1.6;
 }
@@ -391,15 +393,15 @@
   50%      { transform: translateY(-8px); }
 }
 .empty-dash-title {
-  font-size: 26px;
-  font-weight: 800;
+  font-size: var(--fs-5);
+  font-weight: var(--fw-black);
   letter-spacing: -0.03em;
   color: var(--c-text-1);
   margin-bottom: 6px;
 }
 .empty-dash-sub {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   line-height: 1.6;
   max-width: 260px;
@@ -418,8 +420,8 @@
   border: 1.5px solid rgba(0, 230, 118, 0.25);
   border-radius: var(--r-l);
   font-family: 'Manrope', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   cursor: pointer;
   touch-action: manipulation;
   transition: transform var(--t-fast);
@@ -535,8 +537,8 @@
 }
 
 .rec-ex-name {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-1);
   white-space: nowrap;
   overflow: hidden;
@@ -544,8 +546,8 @@
 }
 
 .rec-ex-reason {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
 }
 
@@ -557,28 +559,28 @@
 }
 
 .rec-old {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   text-decoration: line-through;
 }
 
 .rec-arrow {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-accent);
 }
 
 .rec-new {
-  font-size: 14px;
-  font-weight: 800;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
   color: var(--c-accent);
   text-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
 }
 
 .rec-more {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   text-align: center;
   padding: var(--sp-1);
@@ -596,20 +598,20 @@
 }
 
 .ai-notes-icon {
-  font-size: 18px;
+  font-size: var(--fs-4);
   flex-shrink: 0;
 }
 
 .ai-notes-text {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-2);
   line-height: 1.5;
 }
 
 .ai-notes-text strong {
   color: var(--c-text-1);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
 }
 
 .fatigue-warning {
@@ -624,13 +626,13 @@
 }
 
 .fatigue-icon {
-  font-size: 16px;
+  font-size: var(--fs-3);
   flex-shrink: 0;
 }
 
 .fatigue-text {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-2);
 }
 
@@ -677,8 +679,8 @@
 }
 
 .rec-name {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-1);
   white-space: nowrap;
   overflow: hidden;
@@ -686,8 +688,8 @@
 }
 
 .rec-reason {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
 }
 
@@ -698,22 +700,27 @@
   flex-shrink: 0;
 }
 
+/* ВНИМАНИЕ: .rec-old / .rec-arrow / .rec-new объявлены выше (блок модалки,
+   dashboard.css:~559) — эти правила их перебивают. После перевода на ступени
+   оба блока совпали; верхний фактически мёртв, как и вся модалка рекомендаций
+   (.recommendations-modal / .rec-ex-* / .ai-notes-* / .fatigue-* нигде не
+   рендерятся). Снос — отдельная карточка, не в типографике. */
 .rec-old {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   text-decoration: line-through;
 }
 
 .rec-arrow {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-accent);
 }
 
 .rec-new {
-  font-size: 13px;
-  font-weight: 800;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
   color: var(--c-accent);
   text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
 }
@@ -736,8 +743,10 @@
   flex-direction: column;
   gap: 2px;
 }
+/* Ступень ниже обычного .stat-chip-val (--fs-4): чип с иконкой занят
+   горизонтальной раскладкой, значению остаётся меньше ширины. */
 .weekly-summary-chip .stat-chip-val {
-  font-size: 14px;
+  font-size: var(--fs-3);
 }
 /* ── Weekly Summary Chip — icon layout ── */
 
