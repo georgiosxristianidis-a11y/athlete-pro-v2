@@ -289,35 +289,11 @@ Nav.on('s-island-settings', async () => {
 on('nav:back', () => history.back());
 
 /* ── Error boundary — F3 ─────────────────────────────────────────────────── */
-window.onerror = (_msg, _src, _line, _col, err) => {
-  console.error('[error]', err);
-  Toast.show('Something went wrong', 'error');
-  return false; // let default error reporting proceed
-};
-// Expected, non-fatal rejections we must NOT surface as user-facing errors:
-//  · View Transition aborts (a skipped/interrupted transition rejects with
-//    InvalidStateError "Transition was aborted…" — benign by design).
-//  · AbortError — cancelled fetches/animations/operations.
-//  · Cloud-only modules (sync/supabase) failing to import in air-gapped mode.
-function _isBenignRejection(reason) {
-  if (!reason) return false;
-  const name = reason.name || '';
-  const msg = String(reason.message || reason);
-  if (name === 'AbortError') return true;
-  if (name === 'InvalidStateError' && /transition was aborted/i.test(msg)) return true;
-  if (/Failed to fetch dynamically imported module/i.test(msg) &&
-      /(sync|supabase)/i.test(msg)) return true;
-  return false;
-}
-window.addEventListener('unhandledrejection', (e) => {
-  if (_isBenignRejection(e.reason)) {
-    e.preventDefault();                       // keep console + UI clean
-    console.debug('[rejection:benign]', e.reason?.name || e.reason);
-    return;
-  }
-  console.error('[unhandledrejection]', e.reason);
-  Toast.show('Something went wrong', 'error');
-});
+// Deliberately none here. Both the `error` and the `unhandledrejection`
+// boundary live in js/boot.js, which is evaluated before this module's import
+// graph — a second pair of handlers here re-logged and re-toasted everything
+// boot.js had already classified as benign and suppressed with preventDefault()
+// (preventDefault stops the default report, not the other listeners).
 
 /* ── Modal focus trap — F6 ───────────────────────────────────────────────── */
 // Selectors for keyboard-reachable elements

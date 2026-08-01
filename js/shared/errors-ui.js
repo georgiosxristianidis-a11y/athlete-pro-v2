@@ -59,3 +59,28 @@ export function toUserMessage(err, fallback) {
   }
   return generic;
 }
+
+/**
+ * Expected, non-fatal rejections we must NOT surface as user-facing errors:
+ *  · View Transition aborts (a skipped/interrupted transition rejects with
+ *    InvalidStateError "Transition was aborted…" — benign by design).
+ *  · AbortError — cancelled fetches/animations/operations.
+ *  · Cloud-only modules (sync/supabase) failing to import in air-gapped mode.
+ *
+ * Lives here, not in the boundary, so the single `unhandledrejection` listener
+ * in boot.js can classify without duplicating the rule list (a second listener
+ * in app.js used to re-log and re-toast everything preventDefault() suppressed).
+ *
+ * @param {unknown} reason - the rejection value.
+ * @returns {boolean}
+ */
+export function isBenignRejection(reason) {
+  if (!reason) return false;
+  const name = /** @type {any} */ (reason).name || '';
+  const msg = String(/** @type {any} */ (reason).message || reason);
+  if (name === 'AbortError') return true;
+  if (name === 'InvalidStateError' && /transition was aborted/i.test(msg)) return true;
+  if (/Failed to fetch dynamically imported module/i.test(msg) &&
+      /(sync|supabase)/i.test(msg)) return true;
+  return false;
+}

@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { toUserMessage } = await import('../js/shared/errors-ui.js');
+const { toUserMessage, isBenignRejection } = await import('../js/shared/errors-ui.js');
 
 function setOnline(value) {
   Object.defineProperty(navigator, 'onLine', { value, configurable: true });
@@ -41,5 +41,44 @@ describe('toUserMessage — dynamic import failures (F-6)', () => {
     setOnline(true);
     const err = new TypeError('Failed to fetch');
     assert.match(toUserMessage(err), /connection/i);
+  });
+});
+
+// The classifier behind the single unhandled-rejection boundary (js/boot.js).
+// It used to live inline in app.js, where a second, unconditional listener in
+// boot.js re-logged and re-toasted every rejection it suppressed.
+describe('isBenignRejection', () => {
+  test('View Transition abort is benign', () => {
+    const err = Object.assign(new Error('Transition was aborted because of invalid state'),
+      { name: 'InvalidStateError' });
+    assert.equal(isBenignRejection(err), true);
+  });
+
+  test('AbortError is benign', () => {
+    assert.equal(isBenignRejection(Object.assign(new Error('aborted'), { name: 'AbortError' })), true);
+  });
+
+  test('cloud-only module import failure is benign (air-gapped mode)', () => {
+    const err = new TypeError('Failed to fetch dynamically imported module: https://app/js/sync.js');
+    assert.equal(isBenignRejection(err), true);
+  });
+
+  test('an app module failing to import is NOT benign', () => {
+    const err = new TypeError('Failed to fetch dynamically imported module: https://app/js/workout.view.js');
+    assert.equal(isBenignRejection(err), false);
+  });
+
+  test('an InvalidStateError with another message is NOT benign', () => {
+    const err = Object.assign(new Error('The object is in an invalid state'), { name: 'InvalidStateError' });
+    assert.equal(isBenignRejection(err), false);
+  });
+
+  test('a genuine TypeError is NOT benign', () => {
+    assert.equal(isBenignRejection(new TypeError('x is not a function')), false);
+  });
+
+  test('a null/undefined reason is not treated as benign', () => {
+    assert.equal(isBenignRejection(null), false);
+    assert.equal(isBenignRejection(undefined), false);
   });
 });
