@@ -5,36 +5,13 @@
 
 import { DB } from './db.js';
 import { loadProfile, computeAge } from './profile.store.js';
-import { dotsScore } from './strength-engine.js';
+import { mapOneRMs } from './shared/lift-map.js';
 import { renderPassportHero } from './profile.view/passport-hero.js';
 import { renderBento }        from './profile.view/bento.js';
 import { renderHexagonRadar } from './profile.view/hexagon-radar.js';
 import { renderLiftBars }     from './profile.view/lift-bars.js';
 
 export { renderPassportHero, renderBento, renderHexagonRadar, renderLiftBars };
-
-/* Exercise name → lift key mapping */
-const LIFT_PATTERNS = [
-  { key: 'bench',    tests: [/barbell bench press/i, /bench press/i] },
-  { key: 'squat',    tests: [/barbell back squat/i, /back squat/i]   },
-  { key: 'deadlift', tests: [/deadlift \(conventional\)/i, /deadlift/i] },
-  { key: 'ohp',      tests: [/overhead press/i, /\bohp\b/i]          },
-];
-
-/** @param {Array<{id: string, value: number}>} records */
-function _mapOneRMs(records) {
-  /** @type {{ bench?: number, squat?: number, deadlift?: number, ohp?: number }} */
-  const result = {};
-  for (const r of records) {
-    for (const { key, tests } of LIFT_PATTERNS) {
-      if (tests.some(re => re.test(r.id))) {
-        if (!result[key] || r.value > result[key]) result[key] = r.value;
-        break;
-      }
-    }
-  }
-  return result;
-}
 
 /**
  * Render the full Passport UI into a container element.
@@ -54,16 +31,14 @@ export async function renderProfile(container, lang) {
   const metrics = latestMetrics || null;
   const bw = metrics?.weight || 80;
   const age = computeAge(profile.dob);
-  const oneRMs = _mapOneRMs(oneRMsRaw);
+  const oneRMs = mapOneRMs(oneRMsRaw);
 
-  const total = (oneRMs.squat || 0) + (oneRMs.bench || 0) + (oneRMs.deadlift || 0);
-  // Bento "DOTS" tile shows the pure DOTS coefficient (matches Athlete Room's
-  // DOTS stat). The composite athleteProScore lives in the passport hero / room.
-  const dots = total ? dotsScore({ total, bodyweight: bw, sex: profile.sex }) : 0;
-
+  // PP-3: ячейка «DOTS» из бенто убрана — DOTS и скор висели рядом как два
+  // независимых показателя, хотя второй производен от первого. Полный разбор
+  // теперь на вкладке «Сила» в Athlete Room, вход — пилюля скора в hero.
   container.innerHTML =
     renderPassportHero(profile, metrics, oneRMs, resolvedLang) +
-    renderBento(workouts, dots, resolvedLang) +
+    renderBento(workouts, resolvedLang) +
     renderHexagonRadar(oneRMs, bw, profile.sex, age, workouts, resolvedLang) +
     renderLiftBars(oneRMs, bw, profile.sex, age, resolvedLang);
 

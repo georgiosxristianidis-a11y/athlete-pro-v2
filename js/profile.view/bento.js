@@ -28,26 +28,25 @@ function _streak(workouts) {
 }
 
 /**
+ * Бенто активности: серия · тоннаж · часы.
+ *
+ * PP-3 (решение Gio, 2026-08-01): ячейка «DOTS» убрана. Она стояла рядом с
+ * пилюлей скора в hero как ещё один независимый показатель, хотя скор из неё
+ * же и считается — отсюда вопрос «что это за цифра». Разбор целиком переехал
+ * на вкладку «Сила» в Athlete Room. Осталось три ячейки, и все три про объём
+ * работы, а не про силу — бенто стал однородным по смыслу.
+ *
  * @param {Array<{timestamp: number, tonnage?: number, duration?: number}>} workouts
- * @param {number} dots
  * @param {string} lang
  * @returns {string}
  */
-export function renderBento(workouts, dots, lang) {
+export function renderBento(workouts, lang) {
   const ru = lang === 'ru';
   const streak = _streak(workouts);
   const totalVol = Math.round(workouts.reduce((s, w) => s + (w.tonnage || 0), 0) / 1000);
   const totalHrs = Math.round(workouts.reduce((s, w) => s + (w.duration || 0), 0) / 3600000);
 
   const cells = [
-    {
-      id: 'bento-dots',
-      val: dots || '—',
-      lbl: 'DOTS',
-      sub: ru ? 'Коэффициент' : 'Score',
-      color: 'var(--c-accent)',
-      glow: 'var(--glow-accent-md)',
-    },
     {
       id: 'bento-streak',
       val: streak || '—',

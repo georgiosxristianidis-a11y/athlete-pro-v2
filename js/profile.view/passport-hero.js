@@ -1,13 +1,16 @@
 // @ts-check
 import { computeAge } from '../profile.store.js';
 import { fmtNum } from '../shared/format.js';
-import { athleteProScore, exrxTier } from '../strength-engine.js';
+import { athleteProScore, exrxTier, tierFromScore } from '../strength-engine.js';
 import { DB } from '../db.js';
 import { esc } from '../shared/utils.js';
 import { on } from '../events.js';
 
 on('pp:openRoom',    () => window.AthleteRoom?.open());
 on('pp:openMetrics', () => { window._arActiveTab = 'metrics'; window.AthleteRoom?.open(); });
+// PP-3 + PCT-1: обе пилюли ведут в одно место — вкладку «Сила», где скор
+// разложен на множители, а процентиль объяснён таблицей ExRx.
+on('pp:openScore',   () => { window._arActiveTab = 'strength'; window.AthleteRoom?.open(); });
 
 // Tier colour lives in CSS (.pp-tier-pill-v2[data-tier=...]) — tokens only, no inline hex.
 
@@ -34,7 +37,7 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   // Overall athlete score tier (composite athleteProScore, not raw DOTS)
   const total = (oneRMs.squat || 0) + (oneRMs.bench || 0) + (oneRMs.deadlift || 0);
   const score = total ? athleteProScore({ total, bodyweight: bw, sex: profile.sex, age, experience: profile.experienceYears, height: metrics?.height }) : 0;
-  const tier = _tierFromScore(score);
+  const tier = tierFromScore(score);
   const tierLabel = ru ? TIER_RU[tier] : tier;
   const goalMap = ru ? GOAL_RU : GOAL_EN;
 
@@ -73,11 +76,15 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
     <div class="pp-meta-v2">${esc(metaStr) || (ru ? 'Настрой профиль' : 'Set up your profile')}</div>
     
     <div class="pp-badge-row">
-      <div class="pp-tier-pill-v2" data-tier="${esc(tier)}">
-        ${esc(tierLabel)} ${score ? `· <span class="pp-tier-score">${score}</span>` : ''}
+      <div class="pp-tier-pill-v2" data-tier="${esc(tier)}" data-action="pp:openScore"
+           role="button" tabindex="0"
+           title="${ru ? 'Из чего собран скор' : 'How the score is built'}">
+        ${esc(tierLabel)} ${score ? `· <span class="pp-tier-score">${score}</span>
+        <span class="pp-pill-cue">${ru ? 'СКОР' : 'SCORE'}</span>` : ''}
       </div>
       ${bestPercentile > 0 ? `
-        <div class="pp-percentile-pill">
+        <div class="pp-percentile-pill" data-action="pp:openScore" role="button" tabindex="0"
+             title="${ru ? 'Откуда этот процент' : 'Where this percentage comes from'}">
           ${ru ? 'Топ' : 'Top'} ${100 - bestPercentile}%
         </div>
       ` : ''}
@@ -109,13 +116,4 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   </div>
 </div>
 `;
-}
-
-/** @param {number} score */
-function _tierFromScore(score) {
-  if (!score || score < 200) return 'Untrained';
-  if (score < 300) return 'Novice';
-  if (score < 380) return 'Intermediate';
-  if (score < 470) return 'Advanced';
-  return 'Elite';
 }

@@ -926,3 +926,159 @@
   display: flex;
   gap: 10px;
 }
+
+/* ════════════════════════════════════════════════
+   PP-3 — вкладка «Сила»: разбор скора
+   Новый блок пишется сразу на токенах (--fs-*/--fw-*/--sp-*),
+   остальной файл ещё ждёт своей очереди в TYPE-2.
+   ════════════════════════════════════════════════ */
+
+.ar-sc-head {
+  text-align: center;
+  padding: var(--sp-2) 0 var(--sp-3);
+}
+.ar-sc-score {
+  font-family: var(--font-heading);
+  font-size: var(--fs-6);
+  font-weight: var(--fw-black);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--c-gold);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--c-gold) 35%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.ar-sc-tier {
+  margin-top: var(--sp-0-5);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+}
+.ar-sc-cap {
+  margin-top: 2px;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+/* Шкала 0–500: заливка до текущего скора, риски на порогах тиров. */
+.ar-sc-scale {
+  position: relative;
+  margin: 0 var(--sp-1) var(--sp-4);
+  height: 34px;
+}
+.ar-sc-track {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-border);
+  overflow: hidden;
+}
+.ar-sc-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--c-accent) 55%, transparent), var(--c-gold));
+  transition: width var(--t-normal);
+}
+.ar-sc-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+.ar-sc-tick-line {
+  width: 1px;
+  height: 10px;
+  background: var(--c-border-h);
+  margin: 0 auto;
+}
+.ar-sc-tick-lbl {
+  margin-top: 2px;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+.ar-sc-marker {
+  position: absolute;
+  top: -3px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: var(--c-gold);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c-gold) 55%, transparent);
+}
+
+.ar-sc-next {
+  margin: 0 var(--sp-1) var(--sp-3);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-2);
+  text-align: center;
+}
+.ar-sc-next b {
+  color: var(--c-accent);
+  font-weight: var(--fw-black);
+}
+
+.ar-sc-card {
+  margin: 0 var(--sp-1) var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+}
+
+/* Строка разложения: что · почему · множитель. */
+.ar-sc-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: var(--sp-1);
+  padding: var(--sp-1) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+.ar-sc-row:last-child { border-bottom: none; }
+.ar-sc-row-lbl {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-1);
+}
+.ar-sc-row-why {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+  text-align: right;
+}
+.ar-sc-row-val {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: right;
+}
+/* Множитель ×1.00 приглушён: он есть, но на скор не повлиял. */
+.ar-sc-row-idle .ar-sc-row-lbl,
+.ar-sc-row-idle .ar-sc-row-val { color: var(--c-text-3); }
+.ar-sc-row-total .ar-sc-row-val { color: var(--c-gold); }
+
+.ar-sc-note {
+  margin: 0 var(--sp-1) var(--sp-3);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  line-height: 1.5;
+  color: var(--c-text-3);
+}
+.ar-sc-pct {
+  font-size: var(--fs-4);
+  font-weight: var(--fw-black);
+  color: var(--c-accent);
+  margin-bottom: var(--sp-0-5);
+}
