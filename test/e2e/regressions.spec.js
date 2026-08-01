@@ -266,4 +266,35 @@ test.describe('Unhandled-rejection boundary', () => {
     expect(res.prevented).toBe(false);
     expect(res.newToasts).toBeGreaterThan(0);
   });
+
+  // Regression: there used to be TWO unhandledrejection listeners — a
+  // classifying one in app.js and an unconditional one in boot.js.
+  // preventDefault() does not stop the other listener, so every benign
+  // rejection still hit console.error + an error toast, i.e. the
+  // classification was dead code. The boundary now exists only in boot.js.
+  test('a benign rejection reaches no second handler (no console.error, no toast)', async ({ page }) => {
+    const errors = [];
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+
+    const res = await fireRejection(page, { name: 'DOMException', message: 'Transition was aborted because of invalid state' });
+    await page.waitForTimeout(300);
+
+    expect(res.prevented).toBe(true);
+    expect(res.newToasts).toBe(0);
+    expect(errors.filter((t) => /transition was aborted/i.test(t))).toEqual([]);
+  });
+
+  test('a genuine rejection is reported exactly once', async ({ page }) => {
+    const errors = [];
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+
+    // Distinct handlers used to phrase the toast differently ('Something went
+    // wrong' vs toUserMessage), so Toast's dedup could not mask the double —
+    // two toasts appeared. One boundary ⇒ exactly one of each.
+    const res = await fireRejection(page, { name: 'Error', message: 'double-report canary' });
+    await page.waitForTimeout(300);
+
+    expect(res.newToasts).toBe(1);
+    expect(errors.filter((t) => /double-report canary/.test(t))).toHaveLength(1);
+  });
 });
