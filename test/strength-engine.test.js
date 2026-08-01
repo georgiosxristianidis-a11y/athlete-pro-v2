@@ -184,3 +184,82 @@ describe('symmetryIndex', () => {
     assert.equal(score, 100);
   });
 });
+
+describe('scoreBreakdown (PP-3 — разбор скора)', () => {
+  const ATHLETE = { total: 400, bodyweight: 80, sex: 'm', age: 38, experience: 2, height: 178 };
+
+  test('score совпадает с athleteProScore на тех же входах', () => {
+    const inputs = [
+      ATHLETE,
+      { total: 250, bodyweight: 60, sex: 'f', age: 45, experience: 0.5, height: 165 },
+      { total: 600, bodyweight: 110, sex: 'm', age: 22, experience: 10, height: 190 },
+      { total: 300, bodyweight: 80, sex: 'm' },
+    ];
+    for (const i of inputs) {
+      assert.equal(mod.scoreBreakdown(i).score, mod.athleteProScore(i), JSON.stringify(i));
+    }
+  });
+
+  test('множители разложены и перемножаются в скор', () => {
+    const b = mod.scoreBreakdown(ATHLETE);
+    assert.equal(b.base, mod.dotsScore({ total: 400, bodyweight: 80, sex: 'm' }));
+    assert.equal(b.ageMod, 1);                       // 38 лет — между 24 и 39, надбавки нет
+    assert.equal(b.expMod, 1.02);                    // 2 года опыта — новичковые +2%
+    assert.equal(b.leverageMod, 1);                  // BMI 80/1.78² = 25.2 — выше 25, надбавки за рычаги нет
+    assert.ok(b.bmi > 25 && b.bmi < 26);
+    assert.equal(b.score, Math.round(b.base * b.ageMod * b.leverageMod * b.expMod));
+  });
+
+  test('пустая сумма — нули, но следующий тир назван', () => {
+    const b = mod.scoreBreakdown({ total: 0, bodyweight: 80, sex: 'm' });
+    assert.equal(b.score, 0);
+    assert.equal(b.tier, 'Untrained');
+    assert.equal(b.next.id, 'Novice');
+    assert.equal(b.kgToNext, null);
+  });
+
+  test('kgToNext реально переводит через порог, и на 1 кг меньше — ещё нет', () => {
+    const cases = [
+      ATHLETE,
+      { total: 150, bodyweight: 70, sex: 'f', age: 30, experience: 5, height: 168 },
+      { total: 520, bodyweight: 95, sex: 'm', age: 41, experience: 8, height: 183 },
+    ];
+    for (const c of cases) {
+      const b = mod.scoreBreakdown(c);
+      if (!b.next) continue;
+      const after = mod.athleteProScore({ ...c, total: c.total + b.kgToNext });
+      assert.ok(after >= b.next.min, `${JSON.stringify(c)}: +${b.kgToNext} кг дало ${after}, нужно ${b.next.min}`);
+      if (b.kgToNext > 1) {
+        const before = mod.athleteProScore({ ...c, total: c.total + b.kgToNext - 1 });
+        assert.ok(before < b.next.min, `${JSON.stringify(c)}: килограмм лишний — ${before} уже ≥ ${b.next.min}`);
+      }
+    }
+  });
+
+  test('Elite — потолок: следующего тира нет', () => {
+    const b = mod.scoreBreakdown({ total: 900, bodyweight: 90, sex: 'm', age: 30, experience: 10, height: 180 });
+    assert.equal(b.tier, 'Elite');
+    assert.equal(b.next, null);
+    assert.equal(b.kgToNext, null);
+  });
+});
+
+describe('tierFromScore + SCORE_TIERS', () => {
+  test('пороги 200/300/380/470', () => {
+    assert.equal(mod.tierFromScore(0), 'Untrained');
+    assert.equal(mod.tierFromScore(199), 'Untrained');
+    assert.equal(mod.tierFromScore(200), 'Novice');
+    assert.equal(mod.tierFromScore(299), 'Novice');
+    assert.equal(mod.tierFromScore(300), 'Intermediate');
+    assert.equal(mod.tierFromScore(379), 'Intermediate');
+    assert.equal(mod.tierFromScore(380), 'Advanced');
+    assert.equal(mod.tierFromScore(469), 'Advanced');
+    assert.equal(mod.tierFromScore(470), 'Elite');
+    assert.equal(mod.tierFromScore(9999), 'Elite');
+  });
+
+  test('таблица тиров упорядочена по возрастанию', () => {
+    const mins = mod.SCORE_TIERS.map(t => t.min);
+    assert.deepEqual(mins, [...mins].sort((a, b) => a - b));
+  });
+});

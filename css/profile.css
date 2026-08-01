@@ -629,6 +629,25 @@ button.pref-row-icon:active,
   text-shadow: 0 0 12px color-mix(in srgb, var(--c-gold) 40%, transparent);
 }
 
+/* PP-3: слово рядом с числом — иначе «360» читается как «непонятная цифра».
+   Отдельным приглушённым тоном, чтобы не спорить с золотом самого скора. */
+.pp-pill-cue {
+  color: var(--c-text-3);
+  margin-left: 2px;
+}
+
+/* Обе пилюли — вход на вкладку «Сила», значит должны отзываться на тап. */
+.pp-tier-pill-v2[data-action],
+.pp-percentile-pill[data-action] {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-fast), background var(--t-fast);
+}
+.pp-tier-pill-v2[data-action]:active,
+.pp-percentile-pill[data-action]:active {
+  transform: scale(var(--press-scale));
+}
+
 .pp-percentile-pill {
   font-size: var(--fs-1);
   font-weight: var(--fw-black);
@@ -713,10 +732,12 @@ button.pref-row-icon:active,
 
 
 
-/* ── Bento 2x2 ── */
+/* ── Bento: три ячейки в ряд ──
+   Было 2×2, но PP-3 убрала ячейку DOTS (разбор скора переехал на вкладку
+   «Сила»). Три равные колонки вместо сетки с дырой в правом нижнем углу. */
 .pp-bento {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px; /* Philosophy of Air (x2 spacing) */
   margin-bottom: 24px;
   position: relative;

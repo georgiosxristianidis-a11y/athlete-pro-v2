@@ -1,7 +1,9 @@
 // @ts-check
 import { DB } from '../db.js';
-import { athleteProScore, dotsScore } from '../strength-engine.js';
-import { loadProfile, updateProfile, updateWeightAndHeight } from '../profile.store.js';
+import { scoreBreakdown, tierFromScore, SCORE_TIERS, exrxTier } from '../strength-engine.js';
+import { mapOneRMs, powerTotal } from './lift-map.js';
+import { renderLiftBars } from '../profile.view/lift-bars.js';
+import { loadProfile, updateProfile, updateWeightAndHeight, computeAge } from '../profile.store.js';
 import { esc, haptic, dobSelectsHtml, readDobFromSelects } from './utils.js';
 import { isRu } from '../locale.store.js';
 import { on, onChange } from '../events.js';
@@ -105,12 +107,58 @@ function _calcConsistency(workouts) {
   return activeWeeks >= 3;
 }
 
-function _tierFromScore(score) {
-  if (!score || score < 200) return 'Untrained';
-  if (score < 300) return 'Novice';
-  if (score < 380) return 'Intermediate';
-  if (score < 470) return 'Advanced';
-  return 'Elite';
+// Пороги тиров живут в strength-engine.js (SCORE_TIERS) — здесь была копия,
+// и разъезд порогов между hero и комнатой никто бы не заметил.
+const _tierFromScore = tierFromScore;
+
+/**
+ * Собрать всё, что нужно любой вкладке. Раньше этот блок был скопирован в
+ * `render()` и `switchTab()` — и копии успели разъехаться: возраст там считался
+ * вычитанием годов (без учёта дня рождения), а в паспорте профиля — через
+ * `computeAge`. Один и тот же атлет получал два разных скора на двух экранах.
+ */
+async function _buildContext() {
+  const [workouts, orms, customName, colorIdx, frameIdx, lang, profile, metrics, photo] = await Promise.all([
+    DB.Workouts.getAll().catch(() => []),
+    DB.OneRM.getAll().catch(() => []),
+    DB.Settings.get('athlete-name', ''),
+    DB.Settings.get('avatar-color', '0'),
+    DB.Settings.get('avatar-frame', '0'),
+    DB.Settings.get('lang', 'en'),
+    loadProfile().catch(() => null),
+    DB.Metrics.latest().catch(() => null),
+    DB.Settings.get('athlete-photo', null),
+  ]);
+
+  const ru = lang === 'ru';
+  const name = customName || profile?.name || (ru ? 'Атлет' : 'Athlete');
+  const [c1, c2] = AVATAR_COLORS[(parseInt(colorIdx) || 0) % AVATAR_COLORS.length];
+  const [f1, f2] = FRAME_COLORS[(parseInt(frameIdx) || 0) % FRAME_COLORS.length];
+  const initials = name.split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'A';
+
+  const oneRMs = mapOneRMs(orms);
+  const total = powerTotal(oneRMs);
+  const weight = metrics?.weight || 80;
+  const height = metrics?.height || null;
+  const sex = profile?.sex || 'm';
+  const age = computeAge(profile?.dob);
+
+  const breakdown = scoreBreakdown({
+    total, bodyweight: weight, sex, age,
+    experience: profile?.experienceYears, height,
+  });
+  const score = breakdown.score;
+  const dots = breakdown.base;
+  const tier = _tierFromScore(score);
+
+  return {
+    workouts, name, initials, c1, c2, f1, f2, colorIdx, frameIdx,
+    tierLabel: ru ? TIER_RU[tier] : tier, tierColor: TIER_COLOR[tier], tier,
+    streak: _calcStreak(workouts),
+    total, score, dots, breakdown, oneRMs, age, sex, weight, height,
+    unlockedAch: new Set(ACHIEVEMENTS.filter(a => a.check(workouts)).map(a => a.id)),
+    metrics, photo, profile, ru,
+  };
 }
 
 export const AthleteRoom = (() => {
@@ -137,44 +185,8 @@ export const AthleteRoom = (() => {
   }
 
   async function render() {
-    const [workouts, orms, customName, colorIdx, frameIdx, lang, profile, metrics, photo] = await Promise.all([
-      DB.Workouts.getAll().catch(() => []),
-      DB.OneRM.getAll().catch(() => []),
-      DB.Settings.get('athlete-name', ''),
-      DB.Settings.get('avatar-color', '0'),
-      DB.Settings.get('avatar-frame', '0'),
-      DB.Settings.get('lang', 'en'),
-      loadProfile().catch(() => null),
-      DB.Metrics.latest().catch(() => null),
-      DB.Settings.get('athlete-photo', null)
-    ]);
-
-    const ru = lang === 'ru';
-    const name = customName || profile?.name || (ru ? 'Атлет' : 'Athlete');
-    const [c1, c2] = AVATAR_COLORS[(parseInt(colorIdx) || 0) % AVATAR_COLORS.length];
-    const [f1, f2] = FRAME_COLORS[(parseInt(frameIdx) || 0) % FRAME_COLORS.length];
-    const initials = name.split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'A';
-    
-    // Compute level/tier
-    const bestORM = orms.reduce((acc, curr) => {
-      if (curr.id.match(/bench/i)) acc.bench = Math.max(acc.bench || 0, curr.value);
-      if (curr.id.match(/squat/i)) acc.squat = Math.max(acc.squat || 0, curr.value);
-      if (curr.id.match(/deadlift/i)) acc.deadlift = Math.max(acc.deadlift || 0, curr.value);
-      return acc;
-    }, { bench: 0, squat: 0, deadlift: 0 });
-
-    const total = (bestORM.bench || 0) + (bestORM.squat || 0) + (bestORM.deadlift || 0);
-    const weight = metrics?.weight || 80;
-    const sex = profile?.sex || 'm';
-    const score = total ? athleteProScore({ total, bodyweight: weight, sex, age: profile?.dob ? (new Date().getFullYear() - new Date(profile.dob).getFullYear()) : 30, experience: profile?.experienceYears, height: window.DB ? window.DB.Metrics.latest()?.height : 180 }) : 0;
-    const dots = total ? dotsScore({ total, bodyweight: weight, sex }) : 0;
-    const tier = _tierFromScore(score);
-    const tierColor = TIER_COLOR[tier];
-    const tierLabel = ru ? TIER_RU[tier] : tier;
-    const streak = _calcStreak(workouts);
-
-    const unlockedAch = new Set(ACHIEVEMENTS.filter(a => a.check(workouts)).map(a => a.id));
-
+    const ctx = await _buildContext();
+    const { ru } = ctx;
     const activeTab = window._arActiveTab || 'profile';
 
     _overlay.innerHTML = `
@@ -190,6 +202,7 @@ export const AthleteRoom = (() => {
           
           <div class="bs-tab-bar" style="margin-bottom: 0; width: 100%; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
             <button class="bs-tab ${activeTab === 'profile' ? 'active' : ''}" data-action="ar:switchTab" data-tab="profile">${ru ? 'Профиль' : 'Profile'}</button>
+            <button class="bs-tab ${activeTab === 'strength' ? 'active' : ''}" data-action="ar:switchTab" data-tab="strength">${ru ? 'Сила' : 'Strength'}</button>
             <button class="bs-tab ${activeTab === 'metrics' ? 'active' : ''}" data-action="ar:switchTab" data-tab="metrics">${ru ? 'Замеры' : 'Body Metrics'}</button>
           </div>
         </div>
@@ -201,7 +214,7 @@ export const AthleteRoom = (() => {
     `;
 
     _initSheetDrag();
-    await switchTab(activeTab, { workouts, name, initials, c1, c2, f1, f2, colorIdx, frameIdx, tierLabel, tierColor, streak, total, score, dots, unlockedAch, metrics, photo, profile, ru });
+    await switchTab(activeTab, ctx);
   }
 
   async function switchTab(tabId, dataContext = null) {
@@ -218,49 +231,13 @@ export const AthleteRoom = (() => {
     const container = document.getElementById('ar-tab-content');
     if (!container) return;
 
-    // Use passed context or fetch fresh if undefined
-    let ctx = dataContext;
-    if (!ctx) {
-      const [workouts, orms, customName, colorIdx, frameIdx, lang, profile, metrics, photo] = await Promise.all([
-        DB.Workouts.getAll().catch(() => []),
-        DB.OneRM.getAll().catch(() => []),
-        DB.Settings.get('athlete-name', ''),
-        DB.Settings.get('avatar-color', '0'),
-        DB.Settings.get('avatar-frame', '0'),
-        DB.Settings.get('lang', 'en'),
-        loadProfile().catch(() => null),
-        DB.Metrics.latest().catch(() => null),
-        DB.Settings.get('athlete-photo', null)
-      ]);
-      const ru = lang === 'ru';
-      const name = customName || profile?.name || (ru ? 'Атлет' : 'Athlete');
-      const [c1, c2] = AVATAR_COLORS[(parseInt(colorIdx) || 0) % AVATAR_COLORS.length];
-      const [f1, f2] = FRAME_COLORS[(parseInt(frameIdx) || 0) % FRAME_COLORS.length];
-      const initials = name.split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'A';
-      
-      const bestORM = orms.reduce((acc, curr) => {
-        if (curr.id.match(/bench/i)) acc.bench = Math.max(acc.bench || 0, curr.value);
-        if (curr.id.match(/squat/i)) acc.squat = Math.max(acc.squat || 0, curr.value);
-        if (curr.id.match(/deadlift/i)) acc.deadlift = Math.max(acc.deadlift || 0, curr.value);
-        return acc;
-      }, { bench: 0, squat: 0, deadlift: 0 });
-
-      const total = (bestORM.bench || 0) + (bestORM.squat || 0) + (bestORM.deadlift || 0);
-      const weight = metrics?.weight || 80;
-      const sex = profile?.sex || 'm';
-      const score = total ? athleteProScore({ total, bodyweight: weight, sex, age: profile?.dob ? (new Date().getFullYear() - new Date(profile.dob).getFullYear()) : 30, experience: profile?.experienceYears, height: window.DB ? window.DB.Metrics.latest()?.height : 180 }) : 0;
-      const dots = total ? dotsScore({ total, bodyweight: weight, sex }) : 0;
-      const tier = _tierFromScore(score);
-      const tierColor = TIER_COLOR[tier];
-      const tierLabel = ru ? TIER_RU[tier] : tier;
-      const streak = _calcStreak(workouts);
-      const unlockedAch = new Set(ACHIEVEMENTS.filter(a => a.check(workouts)).map(a => a.id));
-
-      ctx = { workouts, name, initials, c1, c2, f1, f2, colorIdx, frameIdx, tierLabel, tierColor, streak, total, score, dots, unlockedAch, metrics, photo, profile, ru };
-    }
+    // Контекст либо передан из render(), либо собирается заново — одним путём.
+    const ctx = dataContext || await _buildContext();
 
     if (window._arActiveTab === 'profile') {
       _renderProfileTab(container, ctx);
+    } else if (window._arActiveTab === 'strength') {
+      _renderStrengthTab(container, ctx);
     } else if (window._arActiveTab === 'metrics') {
       _renderMetricsTab(container, ctx);
     }
@@ -388,6 +365,133 @@ export const AthleteRoom = (() => {
           </div>
     `;
     setTimeout(initAvatar, 50);
+  }
+
+  /**
+   * Вкладка «Сила» — PP-3 + PCT-1.
+   *
+   * Отвечает ровно на два вопроса, которые раньше висели без ответа:
+   * «что это за цифра рядом с тиром» и «откуда взялся Топ X%».
+   */
+  function _renderStrengthTab(container, ctx) {
+    const { ru, breakdown: b, total, oneRMs, weight, sex, age, profile } = ctx;
+    const SCALE_MAX = SCORE_TIERS[SCORE_TIERS.length - 1].min + 30; // немного воздуха за «Элитой»
+    const pos = Math.max(0, Math.min(100, (b.score / SCALE_MAX) * 100));
+    const tierLabel = (id) => (ru ? TIER_RU[id] : id);
+
+    // Ступени тира на шкале — те же пороги, что решают, каким словом назвать атлета.
+    const ticks = SCORE_TIERS.slice(1).map(t => `
+      <div class="ar-sc-tick" style="left:${(t.min / SCALE_MAX) * 100}%">
+        <div class="ar-sc-tick-line"></div>
+        <div class="ar-sc-tick-lbl">${t.min}</div>
+      </div>`).join('');
+
+    /** Строка разложения: множитель + причина, почему он такой. */
+    const modRow = (label, value, why) => {
+      const idle = Math.abs(value - 1) < 0.0005;
+      return `
+      <div class="ar-sc-row${idle ? ' ar-sc-row-idle' : ''}">
+        <div class="ar-sc-row-lbl">${esc(label)}</div>
+        <div class="ar-sc-row-why">${esc(why)}</div>
+        <div class="ar-sc-row-val">${idle ? '×1.00' : `×${value.toFixed(2)}`}</div>
+      </div>`;
+    };
+
+    const ageWhy = !age
+      ? (ru ? 'возраст не указан' : 'age not set')
+      : age >= 40 ? (ru ? `${age} лет — надбавка мастеру` : `${age} yo — masters bonus`)
+      : age <= 23 ? (ru ? `${age} лет — надбавка юниору` : `${age} yo — junior bonus`)
+      : (ru ? `${age} лет — пиковый возраст` : `${age} yo — prime years`);
+
+    const levWhy = b.bmi == null
+      ? (ru ? 'нужен рост в замерах' : 'height not set')
+      : b.bmi < 25
+        ? (ru ? `BMI ${b.bmi.toFixed(1)} — длинная амплитуда` : `BMI ${b.bmi.toFixed(1)} — longer range of motion`)
+        : (ru ? `BMI ${b.bmi.toFixed(1)} — рычаги без надбавки` : `BMI ${b.bmi.toFixed(1)} — no leverage bonus`);
+
+    const exp = profile?.experienceYears;
+    const expWhy = typeof exp !== 'number'
+      ? (ru ? 'опыт не указан' : 'experience not set')
+      : exp < 1 ? (ru ? 'меньше года в зале' : 'under a year of training')
+      : exp < 3 ? (ru ? `${exp} г. опыта — ещё новичок` : `${exp}y — still a novice`)
+      : (ru ? `${exp} г. опыта — надбавки нет` : `${exp}y — no bonus`);
+
+    // Лучшее из четырёх движений — именно оно даёт «Топ X%» в паспорте.
+    let best = null;
+    ['bench', 'squat', 'deadlift', 'ohp'].forEach(lift => {
+      const rm = oneRMs[lift];
+      if (!rm) return;
+      const res = exrxTier({ lift, sex, bodyweight: weight, oneRM: rm, age: age || 30 });
+      if (res && (!best || res.percentile > best.percentile)) best = { ...res, lift, rm };
+    });
+    const LIFT_RU = { bench: 'жим лёжа', squat: 'присед', deadlift: 'становая', ohp: 'жим стоя' };
+    const LIFT_EN = { bench: 'bench', squat: 'squat', deadlift: 'deadlift', ohp: 'overhead press' };
+
+    const empty = !total;
+
+    container.innerHTML = `
+      <div class="ar-sc-head">
+        <div class="ar-sc-score">${b.score || '—'}</div>
+        <div class="ar-sc-tier">${esc(tierLabel(b.tier))}</div>
+        <div class="ar-sc-cap">${ru ? 'Скор атлета' : 'Athlete score'}</div>
+      </div>
+
+      <div class="ar-sc-scale">
+        <div class="ar-sc-track"><div class="ar-sc-fill" style="width:${pos}%"></div></div>
+        ${ticks}
+        <div class="ar-sc-marker" style="left:${pos}%"></div>
+      </div>
+
+      <div class="ar-sc-next">
+        ${empty
+          ? (ru ? 'Запиши присед, жим и становую — скор появится сам' : 'Log squat, bench and deadlift — the score follows')
+          : b.next
+            ? (ru
+                ? `До тира «${esc(tierLabel(b.next.id))}» осталось <b>+${b.kgToNext} кг</b> в сумме трёх`
+                : `<b>+${b.kgToNext} kg</b> on the big three to reach ${esc(tierLabel(b.next.id))}`)
+            : (ru ? 'Высший тир — выше некуда' : 'Top tier — nothing above')}
+      </div>
+
+      ${empty ? '' : `
+      <div class="ar-section-label">${ru ? 'Из чего собран скор' : 'How the score is built'}</div>
+      <div class="ar-sc-card">
+        <div class="ar-sc-row ar-sc-row-base">
+          <div class="ar-sc-row-lbl">DOTS</div>
+          <div class="ar-sc-row-why">${ru
+            ? `${total} кг суммы при весе ${weight} кг`
+            : `${total} kg total at ${weight} kg bodyweight`}</div>
+          <div class="ar-sc-row-val">${b.base}</div>
+        </div>
+        ${modRow(ru ? 'Возраст' : 'Age', b.ageMod, ageWhy)}
+        ${modRow(ru ? 'Рычаги' : 'Leverage', b.leverageMod, levWhy)}
+        ${modRow(ru ? 'Опыт' : 'Experience', b.expMod, expWhy)}
+        <div class="ar-sc-row ar-sc-row-total">
+          <div class="ar-sc-row-lbl">${ru ? 'Итог' : 'Score'}</div>
+          <div class="ar-sc-row-why">${ru ? 'DOTS × три коэффициента' : 'DOTS × three modifiers'}</div>
+          <div class="ar-sc-row-val">${b.score}</div>
+        </div>
+      </div>
+
+      <div class="ar-sc-note">
+        ${ru
+          ? 'DOTS — коэффициент из пауэрлифтинга: он уже уравнивает атлетов разного веса, поэтому сумма в килограммах сама по себе ничего не говорит.'
+          : 'DOTS is a powerlifting coefficient: it already normalises across bodyweights, so raw kilograms alone say little.'}
+      </div>
+
+      ${best ? `
+      <div class="ar-section-label">${ru ? 'Откуда «Топ»' : 'Where “Top” comes from'}</div>
+      <div class="ar-sc-card">
+        <div class="ar-sc-pct">${ru ? 'Топ' : 'Top'} ${100 - best.percentile}%</div>
+        <div class="ar-sc-note" style="margin:0">
+          ${ru
+            ? `Лучшее из четырёх движений — ${LIFT_RU[best.lift]} ${best.rm} кг. Сравнение идёт по таблицам ExRx для пола, веса тела и возраста, а не с другими пользователями приложения.`
+            : `Best of the four lifts — ${LIFT_EN[best.lift]} ${best.rm} kg. Compared against ExRx tables for your sex, bodyweight and age, not against other app users.`}
+        </div>
+      </div>` : ''}
+      `}
+
+      ${renderLiftBars(oneRMs, weight, sex, age, ru ? 'ru' : 'en')}
+    `;
   }
 
   function _renderMetricsTab(container, ctx) {

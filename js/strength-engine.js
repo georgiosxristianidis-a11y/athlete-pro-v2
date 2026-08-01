@@ -310,9 +310,92 @@ export function symmetryIndex(m) {
    Custom scoring engine combining DOTS, age (McCulloch-style),
    height/leverage disadvantages, and experience.
    ════════════════════════════════════════════════════════ */
+/** Пороги тиров скора. Единственный источник — раньше таблица была скопирована
+ *  в passport-hero.js и athlete-room.js, и разъезд порогов никто бы не заметил. */
+export const SCORE_TIERS = [
+  { id: 'Untrained',    min: 0   },
+  { id: 'Novice',       min: 200 },
+  { id: 'Intermediate', min: 300 },
+  { id: 'Advanced',     min: 380 },
+  { id: 'Elite',        min: 470 },
+];
+
+/**
+ * @param {number} score
+ * @returns {'Untrained'|'Novice'|'Intermediate'|'Advanced'|'Elite'}
+ */
+export function tierFromScore(score) {
+  let tier = SCORE_TIERS[0].id;
+  for (const t of SCORE_TIERS) if (score >= t.min) tier = t.id;
+  return /** @type {any} */ (score ? tier : SCORE_TIERS[0].id);
+}
+
+/**
+ * Разложение скора на слагаемые — то же вычисление, что `athleteProScore`,
+ * но с открытыми множителями: экран «Сила» показывает, из чего собралось число.
+ *
+ * `kgToNext` считается обратным ходом: DOTS линеен по сумме трёх (total × 500 / denom),
+ * множители от суммы не зависят, поэтому нужная сумма = порог / (score / total).
+ *
+ * @param {{ total: number, bodyweight: number, sex: 'm'|'f', age?: number|null, experience?: number|null, height?: number|null }} args
+ * @returns {{ base: number, ageMod: number, leverageMod: number, expMod: number, score: number,
+ *             tier: string, tierIndex: number, next: { id: string, min: number }|null,
+ *             kgToNext: number|null, bmi: number|null }}
+ */
+export function scoreBreakdown({ total, bodyweight, sex, age, experience, height }) {
+  const empty = {
+    base: 0, ageMod: 1, leverageMod: 1, expMod: 1, score: 0,
+    tier: SCORE_TIERS[0].id, tierIndex: 0, next: SCORE_TIERS[1], kgToNext: null, bmi: null,
+  };
+  if (!total) return empty;
+
+  const base = dotsScore({ total, bodyweight, sex });
+  if (!base) return empty;
+
+  let ageMod = 1.0;
+  if (age) {
+    if (age >= 40) ageMod = 1.0 + (age - 39) * 0.015;
+    else if (age <= 23) ageMod = 1.0 + (23 - age) * 0.01;
+  }
+
+  let leverageMod = 1.0;
+  let bmi = null;
+  if (height && bodyweight && height > 100) {
+    bmi = bodyweight / Math.pow(height / 100, 2);
+    if (bmi < 25) leverageMod = 1.0 + (25 - bmi) * 0.012;
+  }
+
+  let expMod = 1.0;
+  if (typeof experience === 'number') {
+    if (experience < 1) expMod = 1.05;
+    else if (experience < 3) expMod = 1.02;
+  }
+
+  const score = Math.round(base * ageMod * leverageMod * expMod);
+  const tier = tierFromScore(score);
+  const tierIndex = SCORE_TIERS.findIndex(t => t.id === tier);
+  const next = SCORE_TIERS[tierIndex + 1] || null;
+
+  // Сколько килограммов в сумме трёх осталось до следующего тира.
+  // Аналитическая прикидка (DOTS линеен по сумме) даёт ответ ±1 кг: и сам DOTS,
+  // и итоговый скор округляются, и ошибка округления масштабируется множителями.
+  // Поэтому прикидку доводим проверкой по настоящей формуле — иначе подпись
+  // «осталось +47 кг» показывает 199 вместо обещанных 200.
+  const mods = ageMod * leverageMod * expMod;
+  const scoreAt = (t) => Math.round(dotsScore({ total: t, bodyweight, sex }) * mods);
+  let kgToNext = null;
+  if (next) {
+    kgToNext = Math.max(1, Math.ceil((next.min * total) / (base * mods) - total));
+    for (let i = 0; i < 8 && scoreAt(total + kgToNext) < next.min; i++) kgToNext++;
+    while (kgToNext > 1 && scoreAt(total + kgToNext - 1) >= next.min) kgToNext--;
+  }
+
+  return { base, ageMod, leverageMod, expMod, score, tier, tierIndex, next, kgToNext, bmi };
+}
+
 export function athleteProScore({ total, bodyweight, sex, age, experience, height }) {
   if (!total) return 0;
-  
+
   // 1. Base score: Standard DOTS
   const baseDots = dotsScore({ total, bodyweight, sex });
   if (!baseDots) return 0;
