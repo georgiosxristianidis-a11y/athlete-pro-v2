@@ -347,6 +347,23 @@
 .island.timer-mode .island-time,
 .island.timer-mode .island-name-collapsed,
 .island.timer-mode .island-sets-collapsed { opacity: 0; }
+/* …и подпись развёрнутой карточки — по той же причине, но её забыли.
+   Отдых + expanded сосуществуют (stopTimer снимает только timer-mode), и тогда
+   на экране оказывались ДВА «далее» сразу, с разными упражнениями: HUD отдыха
+   считает «к чему вернёшься» — первое упражнение с незакрытым сетом
+   (dynamic-island.js, setRestProgress), а подпись — «следующее по порядку
+   плана» (там же, update). Замер до правки, 375px: «далее: Bench Press» @75,34
+   и «далее: Incline DB Press» @133,78 в одной пилюле.
+   Прав во время отдыха HUD: жим ещё не доделан, и вернёшься ты к нему.
+   Глушим через opacity, а не display — строка держит высоту, и карточка не
+   дёргается на старте и в конце отдыха.
+
+   Второй селектор не дубль: правило профиля minimal выше по файлу
+   (`.island.profile-minimal.expanded .island-sublabel`) весит 0,4,0 и перебивало
+   бы одиночный 0,3,0 — замер после первой попытки давал opacity 0.75, то есть
+   оба «далее» оставались на месте. Профилю apple хватает первого селектора. */
+.island.timer-mode .island-sublabel,
+.island.profile-minimal.expanded.timer-mode .island-sublabel { opacity: 0; }
 .island-rest-actions {
   display: flex;
   align-items: center;
