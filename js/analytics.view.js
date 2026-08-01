@@ -106,8 +106,8 @@ export async function load() {
       <div class="chart-card stagger-item" style="padding:16px; margin-top:var(--sp-4); animation-delay: 0.12s;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
           <div>
-            <div id="cal-month-label" style="font-size:14px; font-weight:700; color:var(--c-text-1);">Month Year</div>
-            <div style="font-size:10px; color:var(--c-text-3); margin-top: 2px;">Workout Heatmap</div>
+            <div id="cal-month-label" style="font-size:var(--fs-3); font-weight:var(--fw-bold); color:var(--c-text-1);">Month Year</div>
+            <div style="font-size:var(--fs-1); color:var(--c-text-3); margin-top: 2px;">Workout Heatmap</div>
           </div>
           <div style="display:flex; gap:8px;">
             <button class="btn-icon-nav" id="cal-prev" data-action="analytics:calPrev" style="background:var(--c-surface-h); border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; color:var(--c-text-2); border:none; cursor:pointer;">
@@ -145,13 +145,13 @@ export async function load() {
               <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/>
             </svg>
           </div>
-          <div class="empty-title" style="font-size: 1.25rem; font-weight: 700; color: var(--c-text-1); margin-bottom: var(--sp-1);">
+          <div class="empty-title" style="font-size: var(--fs-4); font-weight: var(--fw-bold); color: var(--c-text-1); margin-bottom: var(--sp-1);">
             ${t('analytics.empty_title')}
           </div>
           <div class="empty-desc" style="color: var(--c-text-3); max-width: 240px; line-height: 1.4; margin-bottom: var(--sp-4);">
             ${t('analytics.empty_desc')}
           </div>
-          <div class="pp-bento-cell pp-bento-glow" style="--bento-color: var(--c-accent); --bento-glow: var(--glow-accent-md); align-items: center; padding: 16px; margin-top: 24px;" data-action="analytics:startFirst"><div class="pp-bento-val" style="color: var(--c-accent); font-size: 24px;">${t('analytics.start_first')}</div></div>
+          <div class="pp-bento-cell pp-bento-glow" style="--bento-color: var(--c-accent); --bento-glow: var(--glow-accent-md); align-items: center; padding: var(--sp-2); margin-top: var(--sp-3);" data-action="analytics:startFirst"><div class="pp-bento-val" style="color: var(--c-accent); font-size: var(--fs-5);">${t('analytics.start_first')}</div></div>
         </div>
       `;
       return;
