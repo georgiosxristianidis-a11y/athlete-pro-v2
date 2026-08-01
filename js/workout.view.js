@@ -40,12 +40,10 @@ export async function load() {
   const screen = document.getElementById('s-train');
   if (!screen) return false;
 
-  // Global error handler for workout screen
-  window.addEventListener('unhandledrejection', (event) => {
-    if (screen.style.display === 'block') {
-      console.warn('Workout Error:', event.reason);
-    }
-  });
+  // No local unhandledrejection listener here: the app's only boundary lives in
+  // js/boot.js and classifies rejections via isBenignRejection. A per-screen one
+  // re-registered on every load() leaked, and re-logged rejections the boundary
+  // had deliberately suppressed — preventDefault does not stop other listeners.
 
   // Background cleanup
   setInterval(() => {
