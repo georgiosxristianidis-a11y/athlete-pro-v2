@@ -270,9 +270,11 @@ export function renderSummaryModal(data, onSave, ru = false) {
 
   document.body.appendChild(overlay);
 
-  // PANDA-1, сценарий 4: рекорд — единственный момент, когда панда перестаёт
-  // жевать. Держим ликование 4с и отпускаем обратно к базовой мимике.
-  if (flag('panda-moods') && (data.prs || []).length > 0) emitMood('cheer', { hold: 4000 });
+  // PANDA-2, сценарий 4: рекорд — единственный момент, когда панда перестаёт
+  // жевать. Отдельный клип: жуёт → глаза распахиваются → бамбук выпадает.
+  // hold 4.5с = 3с сцены + полторы секунды замершего взгляда с пустыми лапами
+  // (мимика 'drop' помечена once, поэтому не лупится).
+  if (flag('panda-moods') && (data.prs || []).length > 0) emitMood('drop', { hold: 4500 });
 
   /* ── Event listeners ── */
   overlay.querySelector('#btn-summ-save')?.addEventListener('click', async () => {

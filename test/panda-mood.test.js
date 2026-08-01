@@ -5,29 +5,46 @@
    ничего не падает, просто персонаж врёт. Отсюда гард на саму таблицу. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import {
-  MOODS, BASE_MOOD, OVERRUN_JUDGE_SEC, IDLE_GUILT_DAYS,
+  MOODS, PANDA_CLIPS, BASE_MOOD, OVERRUN_JUDGE_SEC, IDLE_GUILT_DAYS,
   restOverrunMood, ledgerVerdictKey, entryGreeting,
 } from '../js/shared/panda-mood.js';
 
-/** Длительность ролика, из которого нарезаны все мимики. */
-const CLIP_SEC = 10.0;
+/** Фактическая длительность каждого клипа-источника, в секундах. */
+const CLIP_SEC = { voice: 10.0, drop: 3.04 };
 /** Короче этого сегмент читается как дёрганье, а не как эмоция. */
 const MIN_SEGMENT_SEC = 0.8;
 
-test('MOODS: каждый сегмент лежит внутри ролика и не вывернут', () => {
+test('MOODS: каждый сегмент лежит внутри своего клипа и не вывернут', () => {
   const names = Object.keys(MOODS);
-  assert.ok(names.length >= 5, 'мимик должно быть не меньше пяти');
+  assert.ok(names.length >= 6, 'мимик должно быть не меньше шести');
 
   for (const name of names) {
     const seg = MOODS[name];
+    assert.ok(PANDA_CLIPS[seg.clip], `${name}: ссылается на несуществующий клип «${seg.clip}»`);
     assert.ok(typeof seg.in === 'number' && typeof seg.out === 'number', `${name}: границы должны быть числами`);
     assert.ok(seg.in < seg.out, `${name}: in должен быть строго меньше out`);
-    assert.ok(seg.in >= 0, `${name}: in вылез до начала ролика`);
-    assert.ok(seg.out <= CLIP_SEC, `${name}: out вылез за конец ролика`);
+    assert.ok(seg.in >= 0, `${name}: in вылез до начала клипа`);
+    assert.ok(seg.out <= CLIP_SEC[seg.clip], `${name}: out вылез за конец клипа «${seg.clip}»`);
     assert.ok(seg.out - seg.in >= MIN_SEGMENT_SEC, `${name}: сегмент короче ${MIN_SEGMENT_SEC}с — это дёрганье, не мимика`);
   }
+});
+
+test('PANDA_CLIPS: каждый источник реально лежит на диске', () => {
+  // Опечатка в пути = маскот молча показывает poster вместо мимики: ничего
+  // не падает, персонаж просто перестаёт играть. Ловим это здесь.
+  for (const [key, path] of Object.entries(PANDA_CLIPS)) {
+    const abs = new URL('../' + path, import.meta.url);
+    assert.ok(existsSync(abs), `клип «${key}» объявлен как ${path}, но файла нет`);
+  }
+});
+
+test('MOODS: одноразовая сцена не лупится', () => {
+  // 'drop' на второй итерации телепортировал бы бамбук обратно в лапы —
+  // панчлайн рекорда ломается. Флаг once обязателен.
+  assert.equal(MOODS.drop.once, true, 'мимика drop обязана быть once');
+  assert.equal(MOODS.drop.clip, 'drop', 'drop нарезать из voice невозможно — там бамбук не выпадает');
 });
 
 test('MOODS: базовая мимика существует и это еда', () => {
@@ -37,8 +54,8 @@ test('MOODS: базовая мимика существует и это еда',
 
 test('MOODS: judge не упирается в конец ролика', () => {
   // На 10.0с браузер сам заворачивает loop в ноль и на кадр показывает
-  // чужую мимику — поэтому запас у последнего сегмента обязателен.
-  assert.ok(MOODS.judge.out < CLIP_SEC, 'у judge должен остаться запас до конца ролика');
+  // чужую мимику — поэтому запас у последнего лупящегося сегмента обязателен.
+  assert.ok(MOODS.judge.out < CLIP_SEC.voice, 'у judge должен остаться запас до конца ролика');
 });
 
 test('restOverrunMood: лестница осуждения', () => {
