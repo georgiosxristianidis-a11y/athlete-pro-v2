@@ -51,6 +51,71 @@ export function calNext() {
 }
 
 /* ══════════════════════════════════════════════
+   PERIOD SELECTOR (AN-1)
+   Rolling windows, not calendar-aligned — a calendar week/month would
+   go near-empty right after it starts (e.g. "this week" on a Monday),
+   which is a confusing default for a stats screen the user opens mid-week.
+   ══════════════════════════════════════════════ */
+
+/** @typedef {'week'|'month'|'3month'|'custom'} PeriodKey */
+/** @typedef {{ from: number, to: number }} CustomRange */
+
+export const PERIOD_DAYS = { week: 7, month: 30, '3month': 90 };
+const PERIOD_STORAGE_KEY = 'ap-analytics-period';
+
+/**
+ * Resolve a period into an inclusive [since, until] epoch-ms window.
+ * `until` is clamped to "now" so a stray future custom end-date can't pull
+ * in workouts that shouldn't exist yet.
+ * @param {PeriodKey} period
+ * @param {CustomRange|null} [customRange]
+ * @param {Date} [ref=new Date()]
+ * @returns {{ since: number, until: number }}
+ */
+export function periodRange(period, customRange = null, ref = new Date()) {
+  const now = ref.getTime();
+  if (period === 'custom' && customRange) {
+    return { since: customRange.from, until: Math.min(customRange.to, now) };
+  }
+  const days = PERIOD_DAYS[period] ?? PERIOD_DAYS.month;
+  return { since: now - days * 86400000, until: now };
+}
+
+/**
+ * Load the user's saved period choice. Falls back to 'month' (matches the
+ * pre-AN-1 default) on first run or a corrupt/unknown stored value.
+ * @returns {{ period: PeriodKey, customRange: CustomRange|null }}
+ */
+export function loadPeriodPref() {
+  try {
+    const raw = localStorage.getItem(PERIOD_STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (saved.period === 'custom' && Number.isFinite(saved.from) && Number.isFinite(saved.to)) {
+        return { period: 'custom', customRange: { from: saved.from, to: saved.to } };
+      }
+      if (Object.prototype.hasOwnProperty.call(PERIOD_DAYS, saved.period)) {
+        return { period: saved.period, customRange: null };
+      }
+    }
+  } catch { /* ignore — corrupt storage falls back to default */ }
+  return { period: 'month', customRange: null };
+}
+
+/**
+ * @param {PeriodKey} period
+ * @param {CustomRange|null} [customRange]
+ */
+export function savePeriodPref(period, customRange = null) {
+  try {
+    const payload = period === 'custom' && customRange
+      ? { period, from: customRange.from, to: customRange.to }
+      : { period };
+    localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(payload));
+  } catch { /* ignore — persistence is best-effort */ }
+}
+
+/* ══════════════════════════════════════════════
    DATA FETCHING
    ══════════════════════════════════════════════ */
 
