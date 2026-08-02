@@ -223,7 +223,16 @@ export function renderStrengthHero(workouts, mount) {
   const tons = tonnage >= 1000 ? Math.round(tonnage / 1000) : Math.round(tonnage);
   const tonsUnit = tonnage >= 1000 ? 't' : 'kg';
   const ts = workouts.map(w => w.timestamp).sort((a, b) => a - b);
-  const years = Math.max(1, Math.round((ts[ts.length - 1] - ts[0]) / 31557600000 * 10) / 10);
+  // Journeys under a year used to floor to "1y" here, which self-contradicted
+  // the date range printed right next to it (e.g. "1y" beside "Jan '26–Apr '26").
+  // Switch to months below a year, same way tonnage switches kg→t at 1000.
+  const spanMs = ts[ts.length - 1] - ts[0];
+  const spanYears = spanMs / 31557600000;
+  const showYears = spanYears >= 1;
+  const duration = showYears
+    ? Math.round(spanYears * 10) / 10
+    : Math.max(1, Math.round(spanMs / 2629800000)); // avg month = 365.25/12 days
+  const durationUnit = showYears ? (isRu() ? 'г' : 'y') : (isRu() ? 'мес' : 'mo');
 
   // index sparkline (normalised to its own min/max)
   const W = 96, H = 36, pad = 4;
@@ -246,7 +255,7 @@ export function renderStrengthHero(workouts, mount) {
       <div class="sh-stats">
         <div class="sh-stat"><b>${tons}<small>${tonsUnit}</small></b><span>${isRu() ? 'поднято' : 'lifted'}</span></div>
         <div class="sh-stat"><b>${workouts.length}</b><span>${isRu() ? 'тренировок' : 'sessions'}</span></div>
-        <div class="sh-stat"><b>${years}<small>${isRu() ? 'г' : 'y'}</small></b><span>${fmtMon(ts[0])}–${fmtMon(ts[ts.length - 1])}</span></div>
+        <div class="sh-stat"><b>${duration}<small>${durationUnit}</small></b><span>${fmtMon(ts[0])}–${fmtMon(ts[ts.length - 1])}</span></div>
       </div>
     </div>`;
 }
