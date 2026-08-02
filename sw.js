@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v118-0d44115e';
+const CACHE_NAME = 'athlete-pro-v118-be0e7125';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -64,11 +64,13 @@ const ASSETS = [
   '/js/shared/confirm.js',
   '/js/shared/cryptoClient.js',
   '/js/shared/csv-export.js',
+  '/js/shared/download.js',
   '/js/shared/dynamic-island.js',
   '/js/shared/errors-ui.js',
   '/js/shared/format.js',
   '/js/shared/integrity.js',
   '/js/shared/island-tracker.js',
+  '/js/shared/lift-map.js',
   '/js/shared/lww.js',
   '/js/shared/panda-mood.js',
   '/js/shared/panda-video.js',
@@ -78,12 +80,15 @@ const ASSETS = [
   '/js/shared/sw-update.js',
   '/js/shared/sync-dot.js',
   '/js/shared/sync-merge.js',
+  '/js/shared/theme.js',
+  '/js/shared/txt-export.js',
   '/js/shared/utils.js',
   '/js/shell.js',
   '/js/strength-engine.js',
   '/js/supabase-check.js',
   '/js/supabase.js',
   '/js/sync.js',
+  '/js/theme-boot.js',
   '/js/timer.js',
   '/js/types.d.ts',
   '/js/ui/drag-number.js',

@@ -357,7 +357,7 @@ export async function showExerciseMenu(ei) {
       <div style="font-size: 13px; font-weight: 900; color: var(--c-text-2); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.1em; text-align:center">${esc(ex.name)}</div>
       <div style="display:flex; flex-direction:column; gap:8px">
         ${actions.map((a, i) => `
-          <button class="menu-item" data-action="wo:menuAction" data-ei="${ei}" data-i="${i}" style="display:flex; align-items:center; gap:16px; width:100%; padding:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px; color:#fff; cursor:pointer">
+          <button class="menu-item" data-action="wo:menuAction" data-ei="${ei}" data-i="${i}" style="display:flex; align-items:center; gap:16px; width:100%; padding:16px; background:var(--c-surface); border:1px solid var(--c-border); border-radius:16px; color:var(--c-text-1); cursor:pointer">
             <span style="font-size:18px">${a.icon}</span>
             <span style="font-size:15px; font-weight:700">${a.label}</span>
           </button>

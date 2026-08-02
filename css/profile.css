@@ -350,17 +350,33 @@ button.pref-row-icon:active,
   color: var(--c-text-3);
 }
 
-/* ── Elite Switch (iOS Style) ── */
+/* ── Elite Switch (iOS Style) ──
+   Габарит 44×26 (было 54×28) — полевое решение Gio 2026-08-02 «тумблеры
+   слишком крупные». Опорные точки регламентов: iOS HIG 51×31, Material 3
+   52×32 — оба заметно тяжелее, потому что там тумблер сам себе цель нажатия.
+   Здесь нажимается ВСЯ строка-обёртка, поэтому дорожку можно ужать до
+   размера, который читается как индикатор, а не как кнопка. 26px = высота
+   строки текста рядом (--fs-3 16px + интерлиньяж): тумблер перестаёт
+   торчать над строкой и садится в её ритм. Ниже 24 не опускать — исчезает
+   ход большого пальца.
+
+   Цель нажатия при этом остаётся 44×44 (WCAG 2.5.5 / Apple HIG) — её держит
+   .switch-wrap, а не сама дорожка. */
 .switch-wrap {
   flex-shrink: 0;
   cursor: pointer;
   padding: var(--sp-0-5);
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 .switch {
-  width: 54px;   /* Increased length */
-  height: 28px;  /* Decreased height (~5-10% for sleeker look) */
+  width: 44px;
+  height: 26px;
   border-radius: var(--r-m);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--c-track);
   border: none;
   position: relative;
   transition: background 0.25s var(--ease-std);
@@ -372,21 +388,23 @@ button.pref-row-icon:active,
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: white;
   box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.1);
   transition: opacity 0.25s var(--ease-std), transform 0.25s var(--ease-std), background-color 0.25s var(--ease-std), border-color 0.25s var(--ease-std), color 0.25s var(--ease-std);
 }
 .switch.on .switch-thumb {
-  transform: translateX(26px);
+  transform: translateX(18px);
 }
+/* Ход большого пальца: при нажатии кругляш растягивается в капсулу — та же
+   механика, что была на 54×28, пересчитанная под новый габарит. */
 .switch-wrap:active .switch-thumb {
-  width: 28px;
+  width: 26px;
 }
 .switch.on:active .switch-thumb {
-  transform: translateX(22px);
+  transform: translateX(14px);
 }
 
 /* ── Section Label (All Caps Minimal) ── */
