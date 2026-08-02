@@ -570,12 +570,14 @@ export const AthleteRoom = (() => {
     const dob = readDobFromSelects('ar-dob');
     const sex = sexInput.value;
     
+    // updateProfile уже импортирован статически (см. шапку файла).
+    // Идёт ПЕРЕД записью 'athlete-name': если этот await упадёт, имя не
+    // осядет частично без dob/sex — тот же класс рассинхрона, что чинил F-1.
+    await updateProfile({ dob, sex, name: newName || undefined });
+
     if (newName) {
       await DB.Settings.set('athlete-name', newName);
     }
-    
-    // updateProfile уже импортирован статически (см. шапку файла)
-    await updateProfile({ dob, sex, name: newName || undefined });
     
     cancelEdit();
     render();
