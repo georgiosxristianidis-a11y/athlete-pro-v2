@@ -1,7 +1,7 @@
 // AIR-4 TEST-GUARD: regression lock for the AIR refactor (DoD-2).
 //
-// The AIR law has three elevation tiers (CLAUDE.md § Design, NEXT_SESSION.md
-// § Философия AIR):
+// The AIR law has three elevation tiers (.claude/rules/design.md
+// § Инварианты «AIR»):
 //   Tier 0 — page: near-black --c-bg
 //   Tier 1 — content: FLAT --c-bg-2 + hairline, NO backdrop-filter
 //   Tier 2 — floating glass: blur allowed (modals, toast, island, nav)
