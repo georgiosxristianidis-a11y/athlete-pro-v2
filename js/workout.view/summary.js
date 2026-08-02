@@ -172,21 +172,25 @@ function _ledgerSection(data) {
 
   const verdict = t(ledgerVerdictKey((data.prs || []).length));
 
+  // Лесенка живёт на СТРОКАХ, не на карточке: счёт заполняется на глазах, а
+  // рамка стоит с первого кадра. Класс .stagger-item здесь был бы вторым
+  // движением поверх этого — и он же тянул мёртвый --stagger-i:100 (эту
+  // переменную читает только .summ-island, у неё 100 означало бы 8с задержки).
   return `
-    <div class="summ-ledger stagger-item" style="--stagger-i:${100}">
+    <div class="summ-ledger">
       <div class="summ-ledger-header">
         ${ICON_BAMBOO}
         <span class="summ-ledger-title">${esc(t('mascot.ledger_title'))}</span>
       </div>
-      <div class="summ-ledger-row">
+      <div class="summ-ledger-row" style="--stagger-i:0">
         <span class="summ-ledger-who">${esc(t('mascot.ledger_you'))}<span class="summ-ledger-unit">${esc(t('mascot.ledger_sets'))}</span></span>
         <span class="summ-ledger-val">${n}</span>
       </div>
-      <div class="summ-ledger-row">
+      <div class="summ-ledger-row" style="--stagger-i:1">
         <span class="summ-ledger-who">${esc(t('mascot.ledger_me'))}<span class="summ-ledger-unit">${esc(t('mascot.ledger_bamboo'))}</span></span>
         <span class="summ-ledger-val">${n}</span>
       </div>
-      <div class="summ-ledger-verdict">${esc(verdict)}</div>
+      <div class="summ-ledger-verdict" style="--stagger-i:2">${esc(verdict)}</div>
     </div>`;
 }
 
