@@ -371,6 +371,43 @@ async function setEngine(engine) {
     _refreshSettings();
   }
 
+  /**
+   * Сигнал об окончании отдыха. Разрешение у браузера просим ЗДЕСЬ и только
+   * здесь — по осознанному тапу, а не посреди первого отдыха, как делал
+   * rest-timer.js до 1.26. Правило простое: системный диалог показывается
+   * ровно тогда, когда пользователь сам попросил включить.
+   *
+   * Отказ не прячем: тумблер откатывается назад, и тост объясняет, что
+   * чинить надо в настройках сайта — само приложение уже ничего не может.
+   */
+  async function toggleNotify() {
+    const supported = typeof Notification !== 'undefined';
+    const isOn = (await DB.Settings.get('notify-rest', 'off')) === 'on'
+      && supported && Notification.permission === 'granted';
+
+    if (isOn) {
+      await DB.Settings.set('notify-rest', 'off');
+      Toast.show(t('settings.notify_off'), 'info');
+      return _refreshSettings();
+    }
+
+    if (!supported) { Toast.show(t('settings.notify_denied'), 'error'); return; }
+
+    let perm = Notification.permission;
+    if (perm === 'default') perm = await Notification.requestPermission().catch(() => 'denied');
+    if (perm !== 'granted') {
+      // Настройку не включаем: иначе тумблер горел бы при глухом разрешении.
+      await DB.Settings.set('notify-rest', 'off');
+      Toast.show(t('settings.notify_denied'), 'error');
+      return _refreshSettings();
+    }
+
+    await DB.Settings.set('notify-rest', 'on');
+    haptic(10);
+    Toast.show(t('settings.notify_on'), 'success');
+    return _refreshSettings();
+  }
+
   /* Key handlers fire on BLUR, so they deliberately do NOT re-render the
      settings block: swapping the markup between mousedown and click would eat
      the tap that caused the blur. Only the indicators need updating, and
@@ -435,13 +472,66 @@ async function setEngine(engine) {
 
   /* TXT — выгрузка «для человека»: журнал текстом, читаемый без приложения.
      Дату последнего бэкапа НЕ обновляет: вернуть данные назад импортом умеет
-     только JSON, и напоминалка про бэкап обязана считать именно его. */
+     только JSON, и напоминалка про бэкап обязана считать именно его.
+
+     Шапку собираем здесь, а не в txt-export.js: та функция чистая и про базу
+     ничего не знает — ей передают готовый паспорт. Зал и страну спрашиваем
+     один раз (дальше подставляются молча из настроек), потому что журнал
+     обычно уезжает тренеру, и «где это было» — часть ответа. */
   async function exportTxt() {
+    const [gymSaved, countrySaved] = await Promise.all([
+      DB.Settings.get('gym-name', ''),
+      DB.Settings.get('gym-country', ''),
+    ]);
+
+    // Спрашиваем, пока место не заполнено. Заполнено — не мешаем: менять
+    // можно, стерев значение (следующий экспорт снова спросит).
+    let place = { gym: gymSaved || '', country: countrySaved || '' };
+    if (!gymSaved && !countrySaved) {
+      const { promptFieldsDialog } = await import('./shared/confirm.js');
+      const res = await promptFieldsDialog({
+        title: t('data.place_title'),
+        message: t('data.place_msg'),
+        fields: [
+          { key: 'gym', label: t('data.place_gym'), placeholder: t('data.place_gym') },
+          { key: 'country', label: t('data.place_country'), placeholder: t('data.place_country') },
+        ],
+        confirmLabel: t('data.place_save'),
+        cancelLabel: getLang() === 'ru' ? 'Отмена' : 'Cancel',
+      });
+      if (!res) return;                       // отмена — файл не создаём
+      place = res;
+      await Promise.all([
+        DB.Settings.set('gym-name', place.gym || ''),
+        DB.Settings.set('gym-country', place.country || ''),
+      ]);
+    }
+
     const { workoutsToTxt } = await import('./shared/txt-export.js');
     const { downloadText, exportFilename } = await import('./shared/download.js');
-    const workouts = await DB.Workouts.getAll();
+    const { loadProfile, computeAge } = await import('./profile.store.js');
+
+    const [workouts, orms, customName, profile, metrics] = await Promise.all([
+      DB.Workouts.getAll(),
+      DB.OneRM.getAll().catch(() => []),
+      DB.Settings.get('athlete-name', ''),
+      loadProfile().catch(() => null),
+      DB.Metrics.latest().catch(() => null),
+    ]);
+
     const lang = getLang() === 'ru' ? 'ru' : 'en';
-    downloadText(workoutsToTxt(workouts, { lang }), exportFilename('log', 'txt'));
+    const txt = workoutsToTxt(workouts, {
+      lang,
+      athlete: {
+        name: customName || profile?.name || '',
+        age: computeAge(profile?.dob),
+        weight: metrics?.weight || null,
+        gym: place.gym,
+        country: place.country,
+      },
+      records: (orms || []).map((r) => ({ name: r.id, value: Number(r.value) || 0 })),
+    });
+    downloadText(txt, exportFilename('log', 'txt'));
     Toast.show(t('data.export_txt_done'), 'success');
   }
 
@@ -510,7 +600,7 @@ async function setEngine(engine) {
     load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
     togglePanda, toggleFabVideo, togglePandaMoods, setLang, setEngine, setGeminiKey,
     validateGeminiKey, setAnthropicKey, validateAnthropicKey, toggleKeyVisibility,
-    exportData, exportCsv, exportTxt, importData, setTheme,
+    exportData, exportCsv, exportTxt, importData, setTheme, toggleNotify,
     _onImportFile, clearAllData,
     syncConnect, syncDisconnect, deduplicateDB
   };

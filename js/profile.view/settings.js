@@ -23,6 +23,7 @@ const P = () => window.Profile;
 on('settings:adjustRest',  (el) => P().adjustRest(+el.dataset.amt));
 on('settings:toggleHaptic',(el) => P().toggleHaptic());
 on('settings:toggleKeepAwake', () => P().toggleKeepAwake());
+on('settings:toggleNotify', () => P().toggleNotify());
 on('settings:setLang',     (el) => P().setLang(el.dataset.lang));
 on('settings:toggleAutoProgress', () => P().toggleAutoProgress());
 on('settings:setUnit',     (el) => P().setUnit(el.dataset.unit));
@@ -69,6 +70,12 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
   const anthropicActive = (serverStatus.anthropic || hasLocalAnthropic);
 
   const themePref = getThemePref();
+  // Тумблер уведомлений отражает ДВА состояния сразу: наше «хочу» из базы и
+  // ответ браузера. Разрешение можно отозвать в настройках телефона, минуя
+  // приложение, — тумблер, который об этом не знает, врал бы «включено».
+  const perm = typeof Notification !== 'undefined' ? Notification.permission : 'denied';
+  const notifyBlocked = perm === 'denied';
+  const notifyOn = settings['notify-rest'] === 'on' && perm === 'granted';
   const syncStatusLabel = t(`sync.status.${syncStatus}`);
   const syncStatusColor = syncStatus === 'error' ? 'var(--c-red)' : (syncStatus === 'syncing' ? 'var(--c-blue)' : (syncStatus === 'offline' ? 'var(--c-text-3)' : 'var(--c-accent)'));
 
@@ -93,7 +100,30 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
       </div>
       
       <div class="pref-divider" style="margin:0 var(--sp-2)"></div>
-      
+
+      <!-- Сигнал об отдыхе. Тумблер стоит сразу под длительностью отдыха —
+           это одна и та же мысль, «сколько ждать» и «как узнать, что дождался».
+           До 1.26 тумблера не было вовсе: rest-timer.js дёргал системный запрос
+           разрешения на первом же отдыхе, посреди подхода и без объяснения.
+           Теперь запрос уходит только по тапу сюда (см. Profile.toggleNotify),
+           а отказ браузера честно виден в подписи: сама подпись — единственное
+           место, где пользователь узнает, что чинить надо в настройках
+           браузера, а не в приложении. -->
+      <div class="pref-row-icon">
+        <div class="pref-icon-box" style="background:var(--c-surface-h)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+        <div class="pref-info">
+          <div class="pref-title">${t('settings.notify')}</div>
+          <div class="pref-sub">${t(notifyBlocked ? 'settings.notify_blocked' : 'settings.notify_sub')}</div>
+        </div>
+        <div class="switch-wrap" data-action="settings:toggleNotify">
+          <div class="switch ${notifyOn ? 'on' : ''}" id="sw-notify">
+            <div class="switch-thumb"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pref-divider" style="margin:0 var(--sp-2)"></div>
+
       <div class="pref-row-icon">
         <div class="pref-icon-box" style="background:var(--c-accent-bg)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2" width="18" height="18"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
         <div class="pref-info">
@@ -349,10 +379,15 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
              под ней вторым уровнем — выгрузки «наружу», обратной дороги у них
              нет. Импорт стоит рядом с ними: он парный к JSON и такой же редкий.
              TXT = журнал для человека, CSV = таблица для Excel. -->
-        <div style="display: flex; gap: var(--sp-1); flex-wrap: wrap;">
-          <button class="btn btn-ghost" data-action="settings:exportTxt" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.export_txt')}</button>
-          <button class="btn btn-ghost" data-action="settings:exportCsv" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.export_csv')}</button>
-          <button class="btn btn-ghost" data-action="settings:importData" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.import')}</button>
+        <!-- Разбивка 2+1 задана явно, а не отдана переносу по остатку ширины:
+             на 375px три кнопки в строку не влезают честно (каждая ужимается
+             до ~90px и подпись «Импорт .json» упирается в края). Наверху пара
+             выгрузок «наружу», под ними импорт — он парный к JSON-бэкапу и
+             единственный здесь, кто данные не отдаёт, а принимает. -->
+        <div style="display: flex; gap: var(--sp-1-5); flex-wrap: wrap;">
+          <button class="btn btn-soft" data-action="settings:exportTxt" style="flex: 1 1 40%;">${t('data.export_txt')}</button>
+          <button class="btn btn-soft" data-action="settings:exportCsv" style="flex: 1 1 40%;">${t('data.export_csv')}</button>
+          <button class="btn btn-soft" data-action="settings:importData" style="flex: 1 1 100%; color: var(--c-text-2);">${t('data.import')}</button>
         </div>
       </div>
 

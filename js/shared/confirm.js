@@ -109,6 +109,31 @@ export function confirmDialog({ title, message = '', confirmLabel = 'Confirm', c
  * @returns {Promise<string|null>}
  */
 export function promptDialog({ title, placeholder = '', value = '', confirmLabel = 'OK', cancelLabel = 'Cancel' } = {}) {
+  return promptFieldsDialog({
+    title,
+    fields: [{ key: 'value', placeholder, value }],
+    confirmLabel, cancelLabel,
+  }).then((res) => (res ? (res.value || null) : null));
+}
+
+/**
+ * Тот же диалог, но на несколько полей — «Зал» и «Страна» перед выгрузкой
+ * журнала спрашиваются одним листом, а не двумя подряд.
+ *
+ * Отличие от `promptDialog` в трактовке пустого: одиночный prompt считает
+ * пустую строку отменой (нечего сохранять), а здесь пустое поле — законный
+ * ответ «не указывать», и подтверждение всё равно возвращает объект.
+ * Отмена/ESC/бэкдроп → null.
+ *
+ * @param {Object} opts
+ * @param {string} opts.title
+ * @param {string} [opts.message]
+ * @param {Array<{ key: string, label?: string, placeholder?: string, value?: string }>} opts.fields
+ * @param {string} [opts.confirmLabel]
+ * @param {string} [opts.cancelLabel]
+ * @returns {Promise<Record<string,string>|null>}
+ */
+export function promptFieldsDialog({ title, message = '', fields = [], confirmLabel = 'OK', cancelLabel = 'Cancel' } = {}) {
   return new Promise((resolve) => {
     document.querySelector('.confirm-overlay')?.remove();
     const prevFocus = /** @type {HTMLElement|null} */ (document.activeElement);
@@ -123,6 +148,7 @@ export function promptDialog({ title, placeholder = '', value = '', confirmLabel
         <div class="modal-header">
           <span class="modal-title">${esc(title)}</span>
         </div>
+        ${message ? `<p class="confirm-msg">${esc(message)}</p>` : ''}
         <div class="confirm-field"></div>
         <div class="confirm-actions">
           <button type="button" class="confirm-btn confirm-cancel" data-act="cancel">${esc(cancelLabel)}</button>
@@ -131,9 +157,14 @@ export function promptDialog({ title, placeholder = '', value = '', confirmLabel
       </div>`;
     document.body.appendChild(overlay);
 
-    const field = TextField({ value, placeholder });
-    overlay.querySelector('.confirm-field')?.appendChild(field);
-    const input = field.inputEl;
+    const host = overlay.querySelector('.confirm-field');
+    /** @type {Array<{ key: string, input: HTMLInputElement }>} */
+    const inputs = fields.map((f) => {
+      const el = TextField({ label: f.label || '', value: f.value || '', placeholder: f.placeholder || '' });
+      host?.appendChild(el);
+      return { key: f.key, input: el.inputEl };
+    });
+    const input = inputs[0]?.input;
 
     const sheet = /** @type {HTMLElement} */ (overlay.querySelector('.confirm-sheet'));
     const okBtn = /** @type {HTMLElement} */ (overlay.querySelector('[data-act="ok"]'));
@@ -143,7 +174,7 @@ export function promptDialog({ title, placeholder = '', value = '', confirmLabel
     requestAnimationFrame(() => {
       overlay.classList.add('visible');
       Spring.animate({ from: 100, to: 0, stiffness: 200, damping: 20, onUpdate: (v) => { sheet.style.transform = `translateY(${v}%)`; } });
-      requestAnimationFrame(() => input.focus());
+      requestAnimationFrame(() => input?.focus());
     });
 
     let settled = false;
@@ -162,7 +193,7 @@ export function promptDialog({ title, placeholder = '', value = '', confirmLabel
         }
       });
     };
-    const submit = () => finish(input.value.trim() || null);
+    const submit = () => finish(Object.fromEntries(inputs.map(({ key, input: el }) => [key, el.value.trim()])));
 
     const onKey = (e) => {
       if (e.key === 'Escape') { e.preventDefault(); finish(null); }
