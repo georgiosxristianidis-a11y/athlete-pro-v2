@@ -6,7 +6,7 @@ import {
   State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession,
   getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout,
   loadCoreChecklist, saveCoreChecklist, getActivePlan, startPlan, advancePlan,
-  recordBlockTiming, canCompleteSet
+  recordBlockTiming, canCompleteSet, getExerciseLibrary, isBodyweightExercise
 } from '../workout.store.js';
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
@@ -238,6 +238,34 @@ export async function addSet(ei) {
     requestAnimationFrame(() => initDrumPickers());
   }
   _updateLiveStats();
+}
+
+/**
+ * Тумблер «упражнение со своим весом» — живёт в шапке колонки веса.
+ *
+ * Замок мягкий, и это решение Gio по полю (2026-08-01): барабан веса НЕ
+ * запирается. Включённый BW меняет только смысл нуля — ноль читается как «BW»,
+ * а всё выше как «+12.5». Жёсткий замок закрыл бы подтягивания и брусья с
+ * поясом — самую частую прогрессию в этой работе (в библиотеке под неё даже
+ * есть алиас «Pull-ups (Weighted)»), а взамен дал бы только то, что мягкий даёт
+ * и так: перестать требовать вес. Настоящий замок, который мешал, — это гард
+ * canCompleteSet, и он снимается самим флагом.
+ *
+ * @param {number} ei
+ */
+export function _toggleBW(ei) {
+  const ex = State.plan[ei];
+  if (!ex) return;
+  ex.isBW = !ex.isBW;
+  persistSession();
+  renderActive();
+  const ru = isRu();
+  Toast.show(
+    ex.isBW
+      ? (ru ? 'Свой вес — вес не обязателен' : 'Bodyweight — weight optional')
+      : (ru ? 'Вес обязателен' : 'Weight required'),
+    'info',
+  );
 }
 
 export function _toggleUnilateral(ei) {
@@ -780,13 +808,21 @@ export async function _addLiveExercise() {
       { weight: 0, reps: 10, done: false },
       { weight: 0, reps: 10, done: false },
     ];
+    // isBW больше не прошит false: раньше добавленные вживую подтягивания
+    // попадали под гард canCompleteSet и не закрывались без веса. Библиотека
+    // знает ответ (equipment: 'bodyweight'), её и спрашиваем. Сеть/IDB могут
+    // не ответить — тогда честный false, а тумблер в шапке колонки поправит.
+    let isBW = false;
+    try {
+      isBW = isBodyweightExercise(name, await getExerciseLibrary());
+    } catch { /* библиотека недоступна — дефолт false, правится тумблером */ }
     State.plan.push({
       name,
       block: 'custom',
       isAdded: true,
       custom: !!custom,
       isUnilateral: false,
-      isBW: false,
+      isBW,
       noDb: false,
       sets: ghostSets,
     });

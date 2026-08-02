@@ -46,6 +46,7 @@ on('wo:toggleCard',    (el) => W().toggleCard(+el.dataset.ei));
 on('wo:smartCoach',    (el) => W().smartCoach(+el.dataset.ei, +el.dataset.si));
 on('wo:exMenu',        (el) => W().showExerciseMenu(+el.dataset.ei));
 on('wo:addSet',        (el) => W().addSet(+el.dataset.ei));
+on('wo:toggleBW',      (el, e) => { e.stopPropagation(); W()._toggleBW(+el.dataset.ei); });
 on('wo:toggleSet',     (el) => W().toggleSet(+el.dataset.ei, +el.dataset.si));
 on('wo:closeFocus',    () => W()._closeFocus());
 on('wo:focusStepW',    (el) => W()._focusStepW(+el.dataset.amt));
@@ -502,7 +503,12 @@ export async function renderExerciseCard(ex, ei) {
       <div class="sets-wrap" id="sets-wrap-${ei}" style="display:${doneSets === ex.sets.length ? 'none' : 'block'}">
         <div class="set-header-row">
           <span style="width:20px"></span>
-          <span class="set-col-label">${ru ? 'Вес kg' : 'Weight kg'}</span>
+          <button class="set-col-label set-col-btn ${ex.isBW ? 'is-bw' : ''}"
+                  data-action="wo:toggleBW" data-ei="${ei}"
+                  aria-pressed="${ex.isBW ? 'true' : 'false'}"
+                  title="${ru ? 'Упражнение со своим весом' : 'Bodyweight exercise'}">${
+            ex.isBW ? (ru ? 'BW + kg' : 'BW + kg') : (ru ? 'Вес kg' : 'Weight kg')
+          }</button>
           <span class="set-col-label">${ru ? 'Повторы' : 'Reps'}</span>
           <span class="set-col-label exercise-meta ${doneSets === ex.sets.length ? 'done' : ''}" id="ex-meta-${ei}">${doneSets}/${ex.sets.length}</span>
         </div>

@@ -166,6 +166,24 @@
 .sets-wrap { padding: 4px var(--sp-2) var(--sp-2); }
 .set-header-row { display: grid; grid-template-columns: 20px 1fr 1fr 44px; gap: 12px; align-items: center; padding: 0 0 8px; }
 .set-col-label { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-text-3); text-align: center; opacity: 0.3; }
+/* Шапка колонки веса — единственная нажимаемая из трёх: тумблер «свой вес».
+   Наследует вид соседних подписей, чтобы строка не разъехалась, но получает
+   тап-зону (отрицательный margin гасит сдвиг разметки, приём из .btn-text)
+   и отклик по общему токену нажатия. */
+.set-col-btn {
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  padding: 8px 4px;
+  margin: -8px -4px;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.set-col-btn:active { transform: scale(var(--press-scale)); }
+/* Включённое состояние обязано быть видно без чтения: подпись выходит из
+   30%-шёпота в акцент. Иначе тумблер молчит о том, включён он или нет. */
+.set-col-btn.is-bw { opacity: 1; color: var(--c-accent); }
 
 .set-row { display: grid; grid-template-columns: 20px 1fr 1fr 44px; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 0; }
 .set-num { font-size: 10px; font-weight: 800; color: var(--c-text-3); text-align: center; opacity: 0.35; }
