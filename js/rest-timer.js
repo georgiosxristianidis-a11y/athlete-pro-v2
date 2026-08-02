@@ -80,11 +80,11 @@ export const RestTimer = (() => {
     const nx = State.plan?.find(ex => ex.sets.some(s => !s.done));
     _nextName = nx ? nx.name : '';
 
-    // Proactively request notification permission on first rest
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-
+    // Разрешение на уведомления здесь БОЛЬШЕ НЕ ПРОСИМ. Раньше системный
+    // диалог прилетал на первом же отдыхе — посреди тренировки, без повода и
+    // без объяснения, и отказ («не сейчас») закрывал уведомления навсегда.
+    // Теперь спрашивает только тумблер «Сигнал об отдыхе» в Настройках
+    // (Profile.toggleNotify), по тапу пользователя.
     _render();                                   // immediate paint
     _interval = setInterval(_render, 1000);      // 1 Hz — no rAF freeze, no 60fps churn
     _alarm = setTimeout(_finish, duration * 1000 + 250); // fires near on-time if page stays alive
@@ -147,6 +147,12 @@ export const RestTimer = (() => {
 
   async function _triggerNotification() {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    // Тумблер из Настроек — последнее слово. Разрешение браузера означает
+    // «можно», а не «нужно»: выключенный тумблер должен молчать даже с
+    // выданным permission.
+    const { DB } = await import('./db.js');
+    if ((await DB.Settings.get('notify-rest', 'off')) !== 'on') return;
 
     const ru = isRu();
     const title = ru ? 'Отдых завершен!' : 'Rest Complete';

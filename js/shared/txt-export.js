@@ -9,34 +9,64 @@
    Отсюда решения формата: моноширинного выравнивания нет (в мессенджерах
    всё равно поедет), эмодзи нет (правило DESIGN_DNA), единицы подписаны.
 
-   Функция чистая: ни DOM, ни базы, ни локали из глобалей — язык передают
-   параметром. Сохранение файла — `shared/download.js`.
+   Шапка отвечает на вопрос «кто, где и сколько» до первой тренировки:
+   паспорт (имя/возраст/вес), место (зал и страна) и блок ИТОГО. Без него
+   получатель видел четыре разрозненные тренировки и ни одной суммы, кроме
+   тоннажа.
+
+   Нетронутые упражнения (ни одного выполненного подхода) в текст не
+   попадают: в поле план почти всегда шире факта, и раньше 80% файла
+   занимали строки «— пропущен». Факт не теряется — в шапке тренировки
+   стоит «сделано 3 из 8».
+
+   Функция чистая: ни DOM, ни базы, ни локали из глобалей — язык и паспорт
+   передают параметрами. Сохранение файла — `shared/download.js`.
    ════════════════════════════════════════════════════════ */
 
 const L = {
   ru: {
     title: 'ATHLETE PRO — журнал тренировок',
     exported: 'Выгружено',
+    athlete: 'Атлет',
+    place: 'Зал',
+    summary: 'ИТОГО',
+    records: 'РЕКОРДЫ (1ПМ)',
     total: 'Тренировок',
+    exercises: 'Упражнений',
+    setsTotal: 'Подходов',
+    time: 'Время в зале',
     tonnage: 'Общий тоннаж',
     empty: 'История пуста — ни одной завершённой тренировки.',
+    doneOf: 'сделано {a} из {b}',
     min: 'мин',
+    hr: 'ч',
     kg: 'кг',
     skipped: 'пропущен',
     rpe: 'RPE',
-    sets: 'подходов',
+    sets: ['подход', 'подхода', 'подходов'],
+    years: ['год', 'года', 'лет'],
   },
   en: {
     title: 'ATHLETE PRO — training log',
     exported: 'Exported',
+    athlete: 'Athlete',
+    place: 'Gym',
+    summary: 'SUMMARY',
+    records: 'RECORDS (1RM)',
     total: 'Workouts',
+    exercises: 'Exercises',
+    setsTotal: 'Sets',
+    time: 'Time in gym',
     tonnage: 'Total tonnage',
     empty: 'No history yet — not a single finished workout.',
+    doneOf: 'done {a} of {b}',
     min: 'min',
+    hr: 'h',
     kg: 'kg',
     skipped: 'skipped',
     rpe: 'RPE',
-    sets: 'sets',
+    sets: ['set', 'sets', 'sets'],
+    years: ['y', 'y', 'y'],
   },
 };
 
@@ -70,43 +100,126 @@ function _num(n) {
 }
 
 /**
+ * Форма числительного. Английский обходится двумя (1 set / 2 sets), русскому
+ * нужны три, и правило не сводится к «последняя цифра»: 11 — «подходов»,
+ * 21 — «подход».
+ * @param {number} n
+ * @param {string[]} forms — [один, два, пять]
+ * @param {'ru'|'en'} lang
+ */
+function _plural(n, forms, lang) {
+  if (lang !== 'ru') return Math.abs(n) === 1 ? forms[0] : forms[1];
+  const a = Math.abs(n) % 100;
+  const b = a % 10;
+  if (a > 10 && a < 20) return forms[2];
+  if (b > 1 && b < 5) return forms[1];
+  if (b === 1) return forms[0];
+  return forms[2];
+}
+
+/**
+ * Миллисекунды → «2 ч 03 мин» / «47 мин».
+ * @param {number} ms
+ * @param {typeof L.ru} d
+ */
+function _dur(ms, d) {
+  const mins = Math.round((Number(ms) || 0) / 60000);
+  if (mins < 60) return `${mins} ${d.min}`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h} ${d.hr} ${String(m).padStart(2, '0')} ${d.min}`;
+}
+
+/** Подходы упражнения, безопасно к мусору на входе. */
+const _sets = (ex) => (Array.isArray(ex?.sets) ? ex.sets : []);
+/** `done !== false` — старые записи выполненный подход не помечали вовсе. */
+const _doneCount = (ex) => _sets(ex).filter((s) => s?.done !== false).length;
+
+/**
  * Тренировки → человекочитаемый текст.
  * @param {Array<any>} workouts — как отдаёт DB.Workouts.getAll()
- * @param {{ lang?: 'ru'|'en', now?: Date }} [opts]
+ * @param {{
+ *   lang?: 'ru'|'en',
+ *   now?: Date,
+ *   athlete?: { name?: string, age?: number|null, weight?: number|null, gym?: string, country?: string } | null,
+ *   records?: Array<{ name: string, value: number }> | null,
+ * }} [opts]
  * @returns {string}
  */
-export function workoutsToTxt(workouts, { lang = 'en', now = new Date() } = {}) {
+export function workoutsToTxt(workouts, { lang = 'en', now = new Date(), athlete = null, records = null } = {}) {
   const d = L[lang] || L.en;
   const list = (Array.isArray(workouts) ? workouts.slice() : [])
     .sort((a, b) => (b?.timestamp || 0) - (a?.timestamp || 0)); // свежие сверху
 
-  const totalTonnage = list.reduce((s, w) => s + (Number(w?.tonnage) || 0), 0);
+  let totalTonnage = 0;
+  let totalDuration = 0;
+  let totalExercises = 0;
+  let totalSets = 0;
+  for (const w of list) {
+    totalTonnage += Number(w?.tonnage) || 0;
+    totalDuration += Number(w?.duration) || 0;
+    for (const ex of (Array.isArray(w?.exercises) ? w.exercises : [])) {
+      const done = _doneCount(ex);
+      if (!done) continue;         // нетронутое в счёт не идёт — как и в тексте ниже
+      totalExercises++;
+      totalSets += done;
+    }
+  }
 
-  const head = [
-    d.title,
-    RULE,
-    `${d.exported}: ${now.toISOString().split('T')[0]}`,
-    `${d.total}: ${list.length}`,
-    `${d.tonnage}: ${_num(totalTonnage)} ${d.kg}`,
+  const head = [d.title, RULE, `${d.exported}: ${now.toISOString().split('T')[0]}`];
+
+  // Паспорт — только из того, что реально заполнено: пустые поля молчат,
+  // а не печатают «Атлет: —».
+  const who = [];
+  if (athlete?.name) who.push(String(athlete.name));
+  if (athlete?.age) who.push(`${athlete.age} ${_plural(athlete.age, d.years, lang)}`);
+  if (athlete?.weight) who.push(`${_num(athlete.weight)} ${d.kg}`);
+  if (who.length) head.push(`${d.athlete}: ${who.join('  ·  ')}`);
+
+  const where = [athlete?.gym, athlete?.country].filter(Boolean).map(String);
+  if (where.length) head.push(`${d.place}: ${where.join('  ·  ')}`);
+
+  head.push(
     '',
-  ];
+    d.summary,
+    `  ${d.total}: ${list.length}`,
+    `  ${d.exercises}: ${totalExercises}`,
+    `  ${d.setsTotal}: ${totalSets}`,
+    `  ${d.time}: ${_dur(totalDuration, d)}`,
+    `  ${d.tonnage}: ${_num(totalTonnage)} ${d.kg}`,
+    '',
+  );
+
+  const prs = (Array.isArray(records) ? records : [])
+    .filter((r) => r?.name && Number(r.value) > 0)
+    .sort((a, b) => Number(b.value) - Number(a.value));
+  if (prs.length) {
+    head.push(d.records, ...prs.map((r) => `  ${r.name}: ${_num(r.value)} ${d.kg}`), '');
+  }
 
   if (!list.length) return [...head, d.empty, ''].join('\n');
 
   const body = list.map((w) => {
-    const mins = Math.round((Number(w?.duration) || 0) / 60000);
+    const planned = Array.isArray(w?.exercises) ? w.exercises : [];
+    const performed = planned.filter((ex) => _doneCount(ex) > 0);
+
+    const meta = [`${_dur(w?.duration, d)}`, `${_num(w?.tonnage)} ${d.kg}`];
+    // Пропуск не замалчиваем — но одной строкой, а не тремя на упражнение.
+    if (performed.length < planned.length) {
+      meta.push(d.doneOf.replace('{a}', String(performed.length)).replace('{b}', String(planned.length)));
+    }
+
     const lines = [
       RULE,
       `${_day(w?.timestamp, lang)}  ·  ${String(w?.type || '').toUpperCase()}`,
-      `${mins} ${d.min}  ·  ${_num(w?.tonnage)} ${d.kg}`,
+      meta.join('  ·  '),
       '',
     ];
 
-    for (const ex of (Array.isArray(w?.exercises) ? w.exercises : [])) {
-      const sets = Array.isArray(ex?.sets) ? ex.sets : [];
-      const doneCount = sets.filter((s) => s?.done !== false).length;
-      lines.push(`  ${ex?.name || '—'}  (${doneCount} ${d.sets})`);
-      sets.forEach((s, i) => {
+    for (const ex of performed) {
+      const n = _doneCount(ex);
+      lines.push(`  ${ex?.name || '—'}  (${n} ${_plural(n, d.sets, lang)})`);
+      _sets(ex).forEach((s, i) => {
         if (s?.done === false) {
           lines.push(`    ${i + 1}. — ${d.skipped}`);
           return;

@@ -454,6 +454,33 @@
   transform: scale(var(--press-scale));
 }
 
+/* Второй уровень действия — не главный CTA, но и не «серый текст в рамке».
+   Прозрачный .btn-ghost на 36px с --c-text-2 в поле не читался: hairline 6%
+   почти невидим, подпись 13px висит в воздухе. Здесь поверхность есть,
+   подпись полной яркости, высота 44 — минимальная цель по WCAG 2.5.8. */
+.btn-soft {
+  height: 44px;
+  padding: 0 var(--sp-2);
+  background: var(--c-surface-h);
+  border: 1px solid var(--c-border-h);
+  color: var(--c-text-1);
+  border-radius: var(--r-m);
+  font-family: var(--font-main);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  cursor: pointer;
+  transition: transform var(--t-fast), background var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-soft:active {
+  background: var(--c-bg-3);
+  transform: scale(var(--press-scale));
+}
+
 /* ── Micro-interactions: Morph (icon state swap) + Rotate (async spin) ──
    Shared across screens (plan editor, profile settings) — GPU-only
    (transform/opacity/filter), spring curves from Section 1 tokens.
@@ -692,6 +719,11 @@
 /* promptDialog input slot */
 .confirm-field {
   margin: 0 0 var(--sp-3);
+  /* promptFieldsDialog кладёт сюда несколько .ui-field подряд — колонка
+     с воздухом, иначе поля слипаются в одну полосу. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
 }
 .confirm-actions {
   display: flex;
