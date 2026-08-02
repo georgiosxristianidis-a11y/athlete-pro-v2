@@ -969,6 +969,39 @@ export function canCompleteSet(ex, set) {
 }
 
 /**
+ * Угадать `isBW` для упражнения по библиотеке.
+ *
+ * В `exercises-library.json` уже размечено `equipment: "bodyweight"` (34 записи
+ * из 170), но до плана это поле никогда не доезжало: `_addLiveExercise` ставил
+ * `isBW: false` наглухо. Из-за этого добавленные вживую подтягивания попадали
+ * под гард `canCompleteSet` и не закрывались без веса — приходилось вбивать
+ * фальшивый вес, чтобы отметить сет.
+ *
+ * Предикат чистый и живёт в сторе рядом с гардом по той же причине, что и он:
+ * правило корректности данных должно проверяться юнит-тестом, а не жить внутри
+ * DOM-хендлера. Угадывание — только дефолт: пользовательский тумблер (`_toggleBW`)
+ * всегда перебивает его, потому что одно и то же упражнение бывает и с поясом,
+ * и без.
+ *
+ * Сверяем и `name`, и `nameRu`: пикер отдаёт то имя, которое видел пользователь,
+ * а оно зависит от языка интерфейса.
+ *
+ * @param {string} name — имя из пикера
+ * @param {Array<{name?: string, nameRu?: string, equipment?: string}>} library
+ * @returns {boolean}
+ */
+export function isBodyweightExercise(name, library) {
+  if (!name || !Array.isArray(library)) return false;
+  const needle = String(name).trim().toLowerCase();
+  if (!needle) return false;
+  return library.some(ex => {
+    if (!ex || ex.equipment !== 'bodyweight') return false;
+    return String(ex.name || '').trim().toLowerCase() === needle
+        || String(ex.nameRu || '').trim().toLowerCase() === needle;
+  });
+}
+
+/**
  * Build the post-session summary data for the W-2-C report sheet.
  *
  * Engineering constraints honoured (from the PPL | GIO blueprint, locked in
