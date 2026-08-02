@@ -395,3 +395,63 @@
 .sc-scrub-tip b { font-size: var(--fs-2); font-weight: var(--fw-black); color: var(--c-text-1); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .sc-scrub-tip span { font-size: var(--fs-1); font-weight: var(--fw-md); color: var(--c-text-3); }
 
+/* ── Period selector (AN-1) ── */
+.an-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.an-period-btn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.period-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.period-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--r-m);
+  color: var(--c-text-1);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast), transform var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.period-row:active { transform: scale(var(--press-scale)); }
+.period-row.active {
+  border-color: var(--c-accent);
+  background: var(--c-accent-bg);
+  color: var(--c-accent);
+}
+.period-row-hint { font-size: var(--fs-1); font-weight: var(--fw-md); color: var(--c-text-3); }
+.period-row.active .period-row-hint { color: var(--c-accent); }
+.period-custom-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1-5);
+  margin-top: var(--sp-2);
+}
+.period-field { display: flex; align-items: center; gap: var(--sp-1-5); }
+.period-field label {
+  flex: none;
+  width: 32px;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-3);
+}
+.period-field .bs-date-inp { flex: 1; height: 44px; }
+

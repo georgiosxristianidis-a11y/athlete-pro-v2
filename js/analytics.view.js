@@ -15,7 +15,12 @@ import {
   fetchWeeklyTrend,
   fmtVol,
   weekLabel,
+  periodRange,
+  loadPeriodPref,
+  savePeriodPref,
+  PERIOD_DAYS,
 } from './analytics.store.js';
+import { pplTonnageFrom } from './db.js';
 import { t } from './locale.store.js';
 import { isRu } from './locale.store.js';
 import { renderStrengthHero, renderStrengthCurves } from './analytics.strength-curves.js';
@@ -25,6 +30,7 @@ import { on } from './events.js';
 on('analytics:calPrev',    () => calPrev());
 on('analytics:calNext',    () => calNext());
 on('analytics:startFirst', () => window.Nav.go('s-train', { force: true }));
+on('analytics:periodMenu', () => _openPeriodSheet());
 
 // PPL law: push=green (--c-push) · pull=cyan (--c-pull) · legs=purple (--c-legs).
 // Kept as hex because callers append alpha (`${color}20`), which CSS vars can't do.
@@ -47,6 +53,16 @@ function svgArrow(dir) {
    ══════════════════════════════════════════════ */
 
 let _activeTab = 'performance'; // 'performance' | 'measurements'
+let _workoutsCache = [];
+let _period = 'month';
+let _customRange = null;
+
+const PERIOD_LABEL_KEY = {
+  week: 'analytics.period_week',
+  month: 'analytics.period_month',
+  '3month': 'analytics.period_3month',
+  custom: 'analytics.period_custom',
+};
 
 /**
  * Load and render the full analytics screen.
@@ -56,12 +72,21 @@ export async function load() {
   const screen = document.getElementById('s-stats');
   if (!screen) return;
 
+  ({ period: _period, customRange: _customRange } = loadPeriodPref());
+
   screen.innerHTML = `
-    <div class="screen-header">
+    <div class="screen-header an-header">
       <div>
         <div class="screen-title">${t('analytics.title')}</div>
         <div class="screen-sub">${t('analytics.sub')}</div>
       </div>
+      <button class="btn-preset an-period-btn" id="an-period-btn" data-action="analytics:periodMenu"
+              aria-label="${t('analytics.period_title')}">
+        <span id="an-period-label">${t(PERIOD_LABEL_KEY[_period])}</span>
+        <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12" aria-hidden="true">
+          <circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/>
+        </svg>
+      </button>
     </div>
 
     <div id="stats-tab-content" class="animate-in">
@@ -157,9 +182,10 @@ export async function load() {
       return;
     }
 
+    _workoutsCache = workouts;
     renderStrengthHero(workouts, document.getElementById('strength-hero'));
-    _renderQuickStats(workouts);
-    _renderPPLBalance(workouts);
+    _renderQuickStats();
+    _renderPPLBalance();
     renderStrengthCurves(workouts, document.getElementById('strength-curves'));
     _renderCalendar(workouts);
     const trend = await fetchWeeklyTrend(10);
@@ -167,11 +193,14 @@ export async function load() {
     _renderORMList(orms);
 }
 
-function _renderQuickStats(workouts) {
-  const now = Date.now();
-  const since = now - 30 * 86400000;
-  // 2-4: clamp to [since, now] — never count workouts dated in the future.
-  const recent = workouts.filter((w) => w.timestamp >= since && w.timestamp <= now);
+/** Workouts inside the currently selected period (AN-1). */
+function _periodWorkouts() {
+  const { since, until } = periodRange(_period, _customRange);
+  return _workoutsCache.filter((w) => w.timestamp >= since && w.timestamp <= until);
+}
+
+function _renderQuickStats() {
+  const recent = _periodWorkouts();
   const totalVol = recent.reduce((s, w) => s + (w.tonnage || 0), 0);
   const avgMs = recent.length ? recent.reduce((s, w) => s + (w.duration || 0), 0) / recent.length : 0;
   _set('an-total-sessions', recent.length);
@@ -179,17 +208,125 @@ function _renderQuickStats(workouts) {
   _set('an-avg-time', Math.round(avgMs / 60000) + '<span class="stat-chip-unit">m</span>');
 }
 
-function _renderPPLBalance(workouts) {
-  const ppl = { push: 0, pull: 0, legs: 0 };
-  workouts.forEach(w => {
-    if (ppl[w.type] !== undefined) ppl[w.type] += w.tonnage || 0;
-  });
-  renderPplGauge(document.getElementById('ppl-gauge-analytics'), ppl);
+function _renderPPLBalance() {
+  renderPplGauge(document.getElementById('ppl-gauge-analytics'), pplTonnageFrom(_periodWorkouts()));
+}
+
+/** Re-render only the period-scoped blocks (Quick Stats + PPL Balance).
+ *  Strength Index/Progression are all-time journeys (curves need ≥3 months
+ *  of history to draw at all), the calendar has its own month navigation,
+ *  and 1RM records are all-time PRs — filtering those to a week/month
+ *  window would make them empty or misleading, so they stay untouched. */
+function _applyPeriod(period, customRange = null) {
+  _period = period;
+  _customRange = customRange;
+  savePeriodPref(period, customRange);
+  _set('an-period-label', t(PERIOD_LABEL_KEY[period]));
+  _renderQuickStats();
+  _renderPPLBalance();
+  haptic(10);
 }
 
 function _renderCalendar(workouts) {
   CalState.workouts = workouts;
   _drawCalendar();
+}
+
+/* ══════════════════════════════════════════════
+   PERIOD SHEET (AN-1)
+   ══════════════════════════════════════════════ */
+
+function _fmtDateInput(ms) {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function _openPeriodSheet() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.zIndex = '4000';
+
+  const now = Date.now();
+  const fromVal = _fmtDateInput(_customRange?.from ?? now - 30 * 86400000);
+  const toVal = _fmtDateInput(_customRange?.to ?? now);
+  const todayVal = _fmtDateInput(now);
+
+  const rows = /** @type {Array<['week'|'month'|'3month', string]>} */ ([
+    ['week', 'analytics.period_week'],
+    ['month', 'analytics.period_month'],
+    ['3month', 'analytics.period_3month'],
+  ]).map(([key, labelKey]) => `
+    <button class="period-row ${_period === key ? 'active' : ''}" data-period="${key}">
+      <span>${t(labelKey)}</span>
+      <span class="period-row-hint">${PERIOD_DAYS[key]}${isRu() ? ' дн.' : 'd'}</span>
+    </button>`).join('');
+
+  overlay.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">${t('analytics.period_title')}</div>
+        <button class="btn-icon-sm" id="an-period-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="18" height="18">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="period-list">
+        ${rows}
+        <button class="period-row ${_period === 'custom' ? 'active' : ''}" data-period="custom" id="an-period-custom-toggle">
+          <span>${t('analytics.period_custom')}</span>
+        </button>
+      </div>
+      <div class="period-custom-fields" id="an-period-custom-fields" hidden>
+        <div class="period-field">
+          <label for="an-period-from">${t('analytics.period_from')}</label>
+          <input type="date" id="an-period-from" class="bs-date-inp" value="${fromVal}" max="${todayVal}">
+        </div>
+        <div class="period-field">
+          <label for="an-period-to">${t('analytics.period_to')}</label>
+          <input type="date" id="an-period-to" class="bs-date-inp" value="${toVal}" max="${todayVal}">
+        </div>
+        <button class="btn btn-primary" id="an-period-apply">${t('analytics.period_apply')}</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('visible'));
+
+  const close = () => {
+    overlay.classList.remove('visible');
+    setTimeout(() => overlay.remove(), 300);
+  };
+
+  const customFields = overlay.querySelector('#an-period-custom-fields');
+  if (_period === 'custom') customFields.hidden = false;
+
+  overlay.querySelectorAll('.period-row[data-period]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const period = btn.dataset.period;
+      if (period === 'custom') {
+        overlay.querySelectorAll('.period-row').forEach((r) => r.classList.toggle('active', r === btn));
+        customFields.hidden = false;
+        return;
+      }
+      _applyPeriod(period);
+      close();
+    });
+  });
+
+  overlay.querySelector('#an-period-apply')?.addEventListener('click', () => {
+    const fromInput = /** @type {HTMLInputElement} */ (overlay.querySelector('#an-period-from'));
+    const toInput = /** @type {HTMLInputElement} */ (overlay.querySelector('#an-period-to'));
+    const from = new Date(fromInput.value + 'T00:00:00').getTime();
+    const to = new Date(toInput.value + 'T23:59:59').getTime();
+    if (!Number.isFinite(from) || !Number.isFinite(to) || from > to) return;
+    _applyPeriod('custom', { from, to });
+    close();
+  });
+
+  overlay.querySelector('#an-period-close').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 export function calPrev() { storePrev(); _drawCalendar(); }
