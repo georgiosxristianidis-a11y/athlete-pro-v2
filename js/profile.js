@@ -313,12 +313,8 @@ async function setEngine(engine) {
 
   async function exportData() {
     const json = await DB.Backup.export();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const date = new Date().toISOString().split('T')[0];
-    a.href = url; a.download = `athlete-pro-backup-${date}.json`; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    const { downloadText, exportFilename } = await import('./shared/download.js');
+    downloadText(json, exportFilename('backup', 'json'), 'application/json');
     const now = Date.now();
     await DB.Settings.set(K_LAST_EXPORT, now);
     Toast.show(t('backup.done'), 'success');
@@ -432,10 +428,32 @@ async function setEngine(engine) {
 
   async function exportCsv() {
     const { workoutsToCsv, downloadCsv } = await import('./shared/csv-export.js');
+    const { exportFilename } = await import('./shared/download.js');
     const workouts = await DB.Workouts.getAll();
-    const csv = workoutsToCsv(workouts);
-    const date = new Date().toISOString().split('T')[0];
-    downloadCsv(csv, `athlete-pro-workouts-${date}.csv`);
+    downloadCsv(workoutsToCsv(workouts), exportFilename('workouts', 'csv'));
+  }
+
+  /* TXT — выгрузка «для человека»: журнал текстом, читаемый без приложения.
+     Дату последнего бэкапа НЕ обновляет: вернуть данные назад импортом умеет
+     только JSON, и напоминалка про бэкап обязана считать именно его. */
+  async function exportTxt() {
+    const { workoutsToTxt } = await import('./shared/txt-export.js');
+    const { downloadText, exportFilename } = await import('./shared/download.js');
+    const workouts = await DB.Workouts.getAll();
+    const lang = getLang() === 'ru' ? 'ru' : 'en';
+    downloadText(workoutsToTxt(workouts, { lang }), exportFilename('log', 'txt'));
+    Toast.show(t('data.export_txt_done'), 'success');
+  }
+
+  /**
+   * Тема оформления: dark | light | auto.
+   * @param {'dark'|'light'|'auto'} pref
+   */
+  async function setTheme(pref) {
+    const { setThemePref } = await import('./shared/theme.js');
+    setThemePref(pref);
+    haptic(10);
+    _refreshSettings();
   }
 
   async function deduplicateDB() {
@@ -492,7 +510,7 @@ async function setEngine(engine) {
     load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
     togglePanda, toggleFabVideo, togglePandaMoods, setLang, setEngine, setGeminiKey,
     validateGeminiKey, setAnthropicKey, validateAnthropicKey, toggleKeyVisibility,
-    exportData, exportCsv, importData,
+    exportData, exportCsv, exportTxt, importData, setTheme,
     _onImportFile, clearAllData,
     syncConnect, syncDisconnect, deduplicateDB
   };

@@ -4,6 +4,7 @@ import { t, getLang } from '../locale.store.js';
 import { on, onInput, onBlur } from '../events.js';
 import { flag } from '../flags.js';
 import { K_LAST_EXPORT } from '../db/backup.js';
+import { getThemePref } from '../shared/theme.js';
 
 /**
  * Подпись под кнопкой бэкапа: «Последний бэкап: 18 июл» / «ни разу».
@@ -43,8 +44,10 @@ on('settings:syncToggle', async (el) => {
     }
   }
 });
+on('settings:setTheme',    (el) => P().setTheme(el.dataset.theme));
 on('settings:exportData',  () => P().exportData());
 on('settings:exportCsv',   () => P().exportCsv());
+on('settings:exportTxt',   () => P().exportTxt());
 on('settings:importData',  () => P().importData());
 on('settings:dedup',       () => P().deduplicateDB());
 onInput('settings:keyInput',    (el) => el.dataset.engine === 'gemini' ? P().validateGeminiKey(el.value) : P().validateAnthropicKey(el.value));
@@ -65,6 +68,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
   const geminiActive = (serverStatus.gemini || hasLocalGemini);
   const anthropicActive = (serverStatus.anthropic || hasLocalAnthropic);
 
+  const themePref = getThemePref();
   const syncStatusLabel = t(`sync.status.${syncStatus}`);
   const syncStatusColor = syncStatus === 'error' ? 'var(--c-red)' : (syncStatus === 'syncing' ? 'var(--c-blue)' : (syncStatus === 'offline' ? 'var(--c-text-3)' : 'var(--c-accent)'));
 
@@ -73,7 +77,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
     <div class="section-label-alt">${t('settings.general')}</div>
     <div class="profile-card" style="padding:0">
       <div class="pref-row-icon">
-        <div class="pref-icon-box" style="background:rgba(255,255,255,0.05)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="pref-icon-box" style="background:var(--c-surface-h)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
         <div class="pref-info">
           <div class="pref-title">${t('settings.rest')}</div>
           <div class="pref-sub">${settings['rest-duration'] || 90}s ${t('settings.rest_sub')}</div>
@@ -91,7 +95,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
       <div class="pref-divider" style="margin:0 var(--sp-2)"></div>
       
       <div class="pref-row-icon">
-        <div class="pref-icon-box" style="background:rgba(0,230,118,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2" width="18" height="18"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+        <div class="pref-icon-box" style="background:var(--c-accent-bg)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2" width="18" height="18"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
         <div class="pref-info">
           <div class="pref-title">${t('settings.haptic')}</div>
           <div class="pref-sub">${t('settings.haptic_sub')}</div>
@@ -106,7 +110,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
       <div class="pref-divider" style="margin:0 var(--sp-2)"></div>
 
       <div class="pref-row-icon">
-        <div class="pref-icon-box" style="background:rgba(68,138,255,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="#448aff" stroke-width="2" width="18" height="18"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+        <div class="pref-icon-box" style="background:var(--c-blue-bg)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-blue)" stroke-width="2" width="18" height="18"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
         <div class="pref-info">
           <div class="pref-title">${t('settings.awake')}</div>
           <div class="pref-sub">${t('settings.awake_sub')}</div>
@@ -121,7 +125,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
       <div class="pref-divider" style="margin:0 var(--sp-2)"></div>
 
       <div class="pref-row-icon">
-        <div class="pref-icon-box" style="background:rgba(255,255,255,0.05)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+        <div class="pref-icon-box" style="background:var(--c-surface-h)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
         <div class="pref-info">
           <div class="pref-title">${t('settings.lang')}</div>
           <div class="pref-sub">${t('settings.lang_sub')}</div>
@@ -131,6 +135,30 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
                   data-action="settings:setLang" data-lang="en">EN</button>
           <button class="toggle-btn ${lang === 'ru' ? 'active' : ''}"
                   data-action="settings:setLang" data-lang="ru">RU</button>
+        </div>
+      </div>
+
+      <div class="pref-divider" style="margin:0 var(--sp-2)"></div>
+
+      <!-- Тема. Три состояния не влезают в правую колонку на 375px, поэтому
+           строка идёт колонкой (.pref-col) — сегмент во всю ширину под
+           заголовком. Дефолт — тёмная; 'auto' следует системной настройке
+           телефона и переключается на лету (matchMedia в shared/theme.js). -->
+      <div class="pref-row-icon pref-col">
+        <div style="display:flex; align-items:center; gap:var(--sp-2)">
+          <div class="pref-icon-box" style="background:var(--c-surface-h)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg></div>
+          <div class="pref-info">
+            <div class="pref-title">${t('settings.theme')}</div>
+            <div class="pref-sub">${t(themePref === 'auto' ? 'settings.theme_sub_auto' : 'settings.theme_sub')}</div>
+          </div>
+        </div>
+        <div class="toggle-group seg-full">
+          <button class="toggle-btn seg-sm ${themePref === 'dark' ? 'active' : ''}"
+                  data-action="settings:setTheme" data-theme="dark">${t('theme.dark')}</button>
+          <button class="toggle-btn seg-sm ${themePref === 'light' ? 'active' : ''}"
+                  data-action="settings:setTheme" data-theme="light">${t('theme.light')}</button>
+          <button class="toggle-btn seg-sm ${themePref === 'auto' ? 'active' : ''}"
+                  data-action="settings:setTheme" data-theme="auto">${t('theme.auto')}</button>
         </div>
       </div>
     </div>
@@ -283,7 +311,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
       <!-- Sync -->
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: var(--sp-1-5);">
-          <div style="width: 32px; height: 32px; border-radius: var(--r-s); background: rgba(0,230,118,0.1); color: var(--c-accent); display: flex; align-items: center; justify-content: center;">
+          <div style="width: 32px; height: 32px; border-radius: var(--r-s); background: var(--c-accent-bg); color: var(--c-accent); display: flex; align-items: center; justify-content: center;">
              <svg id="sync-connect-icon" class="icon-rotate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           </div>
           <div>
@@ -308,7 +336,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
            в двух местах экрана. Осталось одно, в разделе про данные. -->
       <div style="display: flex; flex-direction: column; gap: var(--sp-1-5);">
         <div style="display: flex; align-items: center; gap: var(--sp-1-5);">
-          <div style="width: 32px; height: 32px; border-radius: var(--r-s); background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
+          <div style="width: 32px; height: 32px; border-radius: var(--r-s); background: var(--c-surface-h); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
           <div style="font-size: var(--fs-3); font-weight: var(--fw-md);">${t('data.backup')}</div>
         </div>
         <button class="btn btn-primary" data-action="settings:exportData"
@@ -316,7 +344,13 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           <span id="backup-cta-title" style="font-size: var(--fs-2); font-weight: var(--fw-black);">${t('backup.save')}</span>
           <span id="backup-cta-sub" style="font-size: var(--fs-1); font-weight: var(--fw-md); opacity: 0.75;">${esc(backupSubLabel(settings[K_LAST_EXPORT]))}</span>
         </button>
+        <!-- Иерархия форматов, а не четыре равных кнопки: JSON — главная
+             (единственный формат, который умеет вернуться импортом), TXT и CSV
+             под ней вторым уровнем — выгрузки «наружу», обратной дороги у них
+             нет. Импорт стоит рядом с ними: он парный к JSON и такой же редкий.
+             TXT = журнал для человека, CSV = таблица для Excel. -->
         <div style="display: flex; gap: var(--sp-1); flex-wrap: wrap;">
+          <button class="btn btn-ghost" data-action="settings:exportTxt" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.export_txt')}</button>
           <button class="btn btn-ghost" data-action="settings:exportCsv" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.export_csv')}</button>
           <button class="btn btn-ghost" data-action="settings:importData" style="flex: 1; min-width: 90px; height: 36px; font-size: var(--fs-2);">${t('data.import')}</button>
         </div>

@@ -20,6 +20,7 @@ import { haptic } from './shared/utils.js';
 import { State } from './workout.store.js';
 import { VERSION } from './version.js';
 import { forceUpdate } from './shared/sw-update.js';
+import { applyTheme, watchSystemTheme } from './shared/theme.js';
 
 /* ── Lazy-loaded modules ── */
 async function _loadWorkout() {
@@ -201,6 +202,12 @@ async function _checkBackupReminder() {
     console.warn('[backup] reminder check failed', e);
   }
 }
+
+/* Тему уже прошил синхронный js/theme-boot.js (до первой отрисовки). Здесь —
+   то, чего классический boot-скрипт не умеет: цвет статус-бара (meta) и
+   подписка на смену системной темы для режима 'auto'. */
+applyTheme();
+watchSystemTheme();
 
 openDB()
   .then(initPrivacy)
