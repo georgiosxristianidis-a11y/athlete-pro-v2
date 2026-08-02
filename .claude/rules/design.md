@@ -22,3 +22,17 @@ paths:
 - Glassmorphism: backdrop-filter, глубина через тени
 - Borders: glass-hairlines узаконены (решение 2026-06-12) — только полупрозрачные через токены `var(--c-border)` (6%) / `var(--c-border-h)` (12%); НЕ хардкодить rgba, непрозрачные сплошные рамки запрещены. Акцентные подсветки (цветные rgba ≤20%) допустимы точечно
 - Mobile-first, 600px breakpoint
+
+## Инварианты «AIR» — нарушение = регрессия
+
+Переехало из `NEXT_SESSION.md` 2026-08-02: это дизайн-закон, а не состояние сессии.
+
+1. **Воздух вместо линий:** никаких `<hr>` и нижних бордеров — только padding/margin и сдвиг поверхности.
+2. **Hairlines только через токены** `var(--c-border)` / `var(--c-border-h)`; rgba не хардкодить (ловит stylelint). Цветные подсветки rgba ≤20% — точечно.
+3. **Отступы карточек и модалок** 24/32px (`--sp-3` / `--sp-4`).
+4. **Safe-area всегда** (`--safe-top` / `--safe-bottom`).
+5. **Mobile-first**, брейк 600px; десктоп-колонка 412px, никаких `position:fixed` к окну.
+6. **Без эмодзи** в UI и коде — только SVG. Типографика `→ ✓ ·` эмодзи не считается.
+7. **`island-set-pulse` НЕ ТРОГАТЬ** — жёсткий запрет пользователя.
+
+Три уровня высоты (OLED near-black): page near-black · content flat-AIR `--c-bg-2` + hairline · floating glass. `blur` только на Tier 2 — сторожит `test/air-guard.test.js` (blur вне whitelist = красный гейт, потеря Tier-2 blur — тоже).

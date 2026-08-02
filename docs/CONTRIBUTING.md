@@ -177,7 +177,7 @@ node --test test/smoke.test.js  # Run specific test
 
 ### Design System
 
-- **Obsidian theme** - See CLAUDE.md § Design for full specs
+- **Obsidian theme** - See `.claude/rules/design.md` for full specs
 - **No opaque borders** - Glass hairlines via tokens (`--c-border` / `--c-border-h`)
 - **Design tokens** - CSS variables for all colors/spacing
 - **Accessibility** - WCAG 2.1 AA compliance
