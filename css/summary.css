@@ -326,6 +326,25 @@
   border-radius: var(--r-l);
 }
 
+/* PANDA-A: счёт заполняется на глазах — Ты, Я, вердикт по очереди, а рамка
+   и шапка стоят с первого кадра. Рецепт тот же, что у .summ-island выше
+   (одна лесенка на файл, третью не заводим): --stagger-i из разметки,
+   --spring-soft, both. Строки мельче карточек, поэтому шаг и длительность
+   короче — 70ms против 80ms и 0.34s против 0.5s.
+   scale() здесь намеренно нет: .summ-ledger-val набран tabular-nums, и любой
+   дробный масштаб мылит цифры субпиксельно на всё время анимации. */
+.summ-ledger-row,
+.summ-ledger-verdict {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: summ-ledger-in 0.34s var(--spring-soft) both;
+  animation-delay: calc(var(--stagger-i, 0) * 70ms);
+}
+
+@keyframes summ-ledger-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .summ-ledger-header {
   display: flex;
   align-items: center;
