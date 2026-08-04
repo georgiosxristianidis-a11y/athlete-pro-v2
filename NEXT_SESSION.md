@@ -1,7 +1,7 @@
 # NEXT SESSION — Athlete Pro
 
 > Читать первым. Это **роутер**, а не свалка состояния: здесь только точка входа и указатели.
-> Обновлено 2026-08-02 (разбор god-object: 184 строки → роутер).
+> Обновлено 2026-08-04 (PR #129: гейт длины CLAUDE.md, root-cause-first, запрет пуша в main — см. ниже правку про branch-protection).
 
 ## Правило файла
 
@@ -26,9 +26,13 @@ npm run smoke:prod                                       # доехал ли р�
 Здесь они больше не дублируются: две копии правил = одна из них протухшая.
 
 **Точка интеграции одна: `origin/main`.** Долгоживущий trunk упразднён (O-3) и удалён;
-бэкап линии — тег `backup-trunk-6b4f80b`. main защищён branch-protection (`test` + `e2e`
-+ enforce_admins), прямой push отклоняется: `gh pr create --base main` → зелёные чеки →
-`gh pr merge --rebase`.
+бэкап линии — тег `backup-trunk-6b4f80b`. **Branch-protection на main НЕТ** — проверено
+2026-08-04: `gh api repos/.../branches/main` отдаёт `protected: false` (`.../protection`
+даёт 403, приватный репо на бесплатном плане её не поддерживает). Единственный барьер —
+`.githooks/pre-push` (блокирует push на ветку `main`, обход `MAIN_PUSH_OK=1`) плюс
+дисциплина: `gh pr create --base main` → зелёные чеки → `gh pr merge --rebase`. Хук живёт
+в корневом чекауте (`core.hooksPath` абсолютный) — протухший корень его молча выключает
+у всех worktree разом, см. CLAUDE.md § Multi-Agent Protocol.
 
 ## Куда идти за работой
 
