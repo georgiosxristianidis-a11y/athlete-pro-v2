@@ -44,12 +44,22 @@ const MEDIA_RE = /\.(?:mp4|webm|m4a|mp3|ogg|mov)$/i;
 // и каждый установивший тянул их дважды: один раз для ОС, второй в кеш.
 const INSTALL_ICON_RE = /\/icons\/(?:icon-384|icon-512|icon-maskable-512)\.png$/i;
 
+// Font subsets the UI never renders (LOAD-7). UI is RU/EN only — the browser
+// already skips these via @font-face unicode-range, but the SW precached them
+// anyway. Not deleted from the repo: sw.js fetch handler cache-firsts fonts
+// like media (F-7), so a stray Greek/Vietnamese/diacritic glyph still warms
+// the cache and works offline after the first real render. latin-ext is
+// included deliberately despite carrying Latin diacritics (exercise/gym
+// names) — same runtime-fallback safety net, not a functional loss.
+const FONT_SUBSET_RE = /\/fonts\/(?:manrope-(?:greek|vietnamese|latin-ext|cyrillic-ext)|instrument-sans-latin-ext)\.woff2$/i;
+
 // Clean paths to be web-friendly (forward slash) and filter out non-web files
 const assetsArray = allFiles
   .map(f => '/' + f.replace(/\\/g, '/'))
-  .filter(f => !f.includes('.DS_Store') && !f.endsWith('.map') && !f.endsWith('.md'))
+  .filter(f => !f.includes('.DS_Store') && !f.endsWith('.map') && !f.endsWith('.md') && !f.endsWith('.d.ts'))
   .filter(f => !MEDIA_RE.test(f))
-  .filter(f => !INSTALL_ICON_RE.test(f));
+  .filter(f => !INSTALL_ICON_RE.test(f))
+  .filter(f => !FONT_SUBSET_RE.test(f));
 
 const newAssetsString = 'const ASSETS = [\n  ' + assetsArray.map(f => `'${f}'`).join(',\n  ') + '\n];';
 
