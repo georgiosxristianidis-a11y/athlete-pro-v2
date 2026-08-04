@@ -360,10 +360,17 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
 
       <div class="pref-divider"></div>
 
-      <!-- Резервная копия. Главное действие — одним тапом, с датой последнего
-           бэкапа (GYM-GRADE DoD-5). Раньше эта кнопка висела отдельной картой
-           над настройками и дублировала «Экспорт JSON» здесь же: одно действие
-           в двух местах экрана. Осталось одно, в разделе про данные. -->
+      <!-- Два блока по формату, а не один список из четырёх кнопок (заявка Gio
+           2026-08-03). Граница между ними — не «важное/неважное», а наличие
+           обратной дороги: JSON уезжает и умеет вернуться импортом, поэтому
+           экспорт и импорт стоят парой; TXT и CSV уходят наружу насовсем и
+           живут отдельным блоком.
+
+           Отдельной кнопки «Export JSON» рядом с зелёной НЕТ намеренно: это
+           было бы одно действие в двух местах одного экрана — ровно тот дубль,
+           который убрали в 1.26.0. Вместо этого зелёная кнопка и называется
+           «Экспорт JSON», а дата последнего бэкапа осталась её подписью
+           (GYM-GRADE DoD-5: напоминалка про бэкап должна иметь якорь). -->
       <div style="display: flex; flex-direction: column; gap: var(--sp-1-5);">
         <div style="display: flex; align-items: center; gap: var(--sp-1-5);">
           <div style="width: 32px; height: 32px; border-radius: var(--r-s); background: var(--c-surface-h); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
@@ -374,20 +381,22 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           <span id="backup-cta-title" style="font-size: var(--fs-2); font-weight: var(--fw-black);">${t('backup.save')}</span>
           <span id="backup-cta-sub" style="font-size: var(--fs-1); font-weight: var(--fw-md); opacity: 0.75;">${esc(backupSubLabel(settings[K_LAST_EXPORT]))}</span>
         </button>
-        <!-- Иерархия форматов, а не четыре равных кнопки: JSON — главная
-             (единственный формат, который умеет вернуться импортом), TXT и CSV
-             под ней вторым уровнем — выгрузки «наружу», обратной дороги у них
-             нет. Импорт стоит рядом с ними: он парный к JSON и такой же редкий.
-             TXT = журнал для человека, CSV = таблица для Excel. -->
-        <!-- Разбивка 2+1 задана явно, а не отдана переносу по остатку ширины:
-             на 375px три кнопки в строку не влезают честно (каждая ужимается
-             до ~90px и подпись «Импорт .json» упирается в края). Наверху пара
-             выгрузок «наружу», под ними импорт — он парный к JSON-бэкапу и
-             единственный здесь, кто данные не отдаёт, а принимает. -->
-        <div style="display: flex; gap: var(--sp-1-5); flex-wrap: wrap;">
-          <button class="btn btn-soft" data-action="settings:exportTxt" style="flex: 1 1 40%;">${t('data.export_txt')}</button>
-          <button class="btn btn-soft" data-action="settings:exportCsv" style="flex: 1 1 40%;">${t('data.export_csv')}</button>
-          <button class="btn btn-soft" data-action="settings:importData" style="flex: 1 1 100%; color: var(--c-text-2);">${t('data.import')}</button>
+        <button class="btn btn-soft" data-action="settings:importData" style="width: 100%;">${t('data.import')}</button>
+      </div>
+
+      <div class="pref-divider"></div>
+
+      <!-- Выгрузка наружу. Обе кнопки равны по весу — это не «главная и
+           запасная», а два разных адресата: TXT = журнал человеку (тренеру, в
+           заметки, на печать), CSV = таблица в Excel/Sheets. -->
+      <div style="display: flex; flex-direction: column; gap: var(--sp-1-5);">
+        <div style="display: flex; align-items: center; gap: var(--sp-1-5);">
+          <div style="width: 32px; height: 32px; border-radius: var(--r-s); background: var(--c-surface-h); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+          <div style="font-size: var(--fs-3); font-weight: var(--fw-md);">${t('data.share_out')}</div>
+        </div>
+        <div style="display: flex; gap: var(--sp-1-5);">
+          <button class="btn btn-soft" data-action="settings:exportTxt" style="flex: 1 1 50%;">${t('data.export_txt')}</button>
+          <button class="btn btn-soft" data-action="settings:exportCsv" style="flex: 1 1 50%;">${t('data.export_csv')}</button>
         </div>
       </div>
 

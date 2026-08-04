@@ -37,11 +37,19 @@ dirsToScan.forEach(dir => {
 // still works after one view; the poster stays precached for an instant frame.
 const MEDIA_RE = /\.(?:mp4|webm|m4a|mp3|ogg|mov)$/i;
 
+// Крупные иконки установки — по той же логике, что и медиа. Их читает ОС при
+// установке PWA и разборе манифеста, а приложение в рантайме не трогает: в
+// index.html и в UI живёт только icon-192. Три штуки (384 · 512 · maskable-512)
+// весят 564 КБ — прекеш с ними прыгал 1.46 → 2.02 МБ, мимо потолка 1.5 МБ,
+// и каждый установивший тянул их дважды: один раз для ОС, второй в кеш.
+const INSTALL_ICON_RE = /\/icons\/(?:icon-384|icon-512|icon-maskable-512)\.png$/i;
+
 // Clean paths to be web-friendly (forward slash) and filter out non-web files
 const assetsArray = allFiles
   .map(f => '/' + f.replace(/\\/g, '/'))
   .filter(f => !f.includes('.DS_Store') && !f.endsWith('.map') && !f.endsWith('.md'))
-  .filter(f => !MEDIA_RE.test(f));
+  .filter(f => !MEDIA_RE.test(f))
+  .filter(f => !INSTALL_ICON_RE.test(f));
 
 const newAssetsString = 'const ASSETS = [\n  ' + assetsArray.map(f => `'${f}'`).join(',\n  ') + '\n];';
 
