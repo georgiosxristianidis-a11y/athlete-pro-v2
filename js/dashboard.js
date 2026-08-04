@@ -42,6 +42,15 @@ window.addEventListener('ap-nav-change', (e) => {
 on('dash:askAI',         () => askAIAboutSummary());
 on('dash:closeModal',    (el) => el.closest('.modal-overlay')?.remove());
 on('dash:openJournal',   () => window.Nav.go('s-journal'));
+on('dash:toggleList',    (el) => {
+  const target = document.getElementById(el.dataset.target);
+  if (!target) return;
+  const expanded = target.classList.toggle('expanded');
+  el.classList.toggle('expanded', expanded);
+  const label = el.querySelector('.list-toggle-label');
+  if (label) label.textContent = expanded ? t('dash.show_less') : el.dataset.moreLabel;
+  window.haptic?.(8);
+});
 
 export const Dashboard = (() => {
   const TYPE_COLOR = {
@@ -49,6 +58,27 @@ export const Dashboard = (() => {
     pull: 'var(--c-pull)',
     legs: 'var(--c-legs)',
   };
+
+  // Всегда на виду — «большая тройка», остальные 1RM свёрнуты по умолчанию.
+  const PINNED_LIFTS = ['Bench Press', 'Leg Press', 'Lat Pulldown'];
+
+  /**
+   * Build a "Show N more" collapse toggle wired to dash:toggleList.
+   * @param {string} targetId — id of the .list-collapse element it controls
+   * @param {number} restCount
+   * @returns {string}
+   */
+  function _toggleButtonHtml(targetId, restCount) {
+    const moreLabel = t('dash.show_more', { n: restCount });
+    return `
+      <button class="list-toggle" data-action="dash:toggleList" data-target="${targetId}" data-more-label="${esc(moreLabel)}">
+        <span class="list-toggle-label">${esc(moreLabel)}</span>
+        <svg class="list-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>`;
+  }
 
   /**
    * Return a time-of-day greeting string.
@@ -504,7 +534,10 @@ export const Dashboard = (() => {
   }
 
   /**
-   * Render the top 5 estimated 1RM lifts list with 30-day progress deltas.
+   * Render the estimated 1RM list. Bench Press / Leg Press / Lat Pulldown
+   * (PINNED_LIFTS) stay visible by default; everything else collapses behind
+   * a "Show more" toggle. Falls back to the top 3 by value when none of the
+   * pinned lifts have data yet.
    * @param {Array<{id: string, value: number}>} orms — 1RM estimates
    * @param {Array} allWorkouts — full workout history for delta computation
    * @returns {void}
@@ -517,35 +550,47 @@ export const Dashboard = (() => {
         color:var(--c-text-3);font-size:var(--fs-2)">Complete sets to see 1RM estimates</div>`;
       return;
     }
-    const top = [...orms].sort((a, b) => b.value - a.value).slice(0, 5);
-    const max = top[0].value;
-    const liftNames = new Set(top.map(o => o.id));
+    const sorted = [...orms].sort((a, b) => b.value - a.value);
+    const max = sorted[0].value;
+    const rank = new Map(sorted.map((o, i) => [o.id, i + 1]));
+
+    let pinned = PINNED_LIFTS.map((name) => sorted.find((o) => o.id === name)).filter(Boolean);
+    if (!pinned.length) pinned = sorted.slice(0, 3);
+    const pinnedIds = new Set(pinned.map((o) => o.id));
+    const rest = sorted.filter((o) => !pinnedIds.has(o.id)).slice(0, 5);
+    const shown = [...pinned, ...rest];
+
+    const liftNames = new Set(shown.map((o) => o.id));
     const deltas = computeLiftDeltas(allWorkouts, liftNames);
-    el.innerHTML = top
-      .map(
-        (o, i) => {
-          const delta = deltas[o.id];
-          const deltaHtml = delta != null
-            ? `<span class="orm-delta ${delta >= 0 ? 'orm-delta-up' : 'orm-delta-down'}">${delta >= 0 ? '+' : ''}${delta}kg</span>`
-            : '';
-          return `
+
+    const row = (o, i) => {
+      const delta = deltas[o.id];
+      const deltaHtml = delta != null
+        ? `<span class="orm-delta ${delta >= 0 ? 'orm-delta-up' : 'orm-delta-down'}">${delta >= 0 ? '+' : ''}${delta}kg</span>`
+        : '';
+      return `
       <div class="orm-row">
         <div class="orm-name">
           <span style="font-size:var(--fs-1);font-weight:var(--fw-bold);color:var(--c-text-3);
-            margin-right:6px;font-variant-numeric:tabular-nums">#${i + 1}</span>${esc(o.id)}
+            margin-right:6px;font-variant-numeric:tabular-nums">#${rank.get(o.id)}</span>${esc(o.id)}
         </div>
         <div class="orm-val">${o.value}<span class="orm-unit">kg</span>${deltaHtml}</div>
         <div class="orm-bar-wrap">
           <div class="orm-bar-fill" id="dash-orm-bar-${i}" style="background:var(--c-legs)"></div>
         </div>
       </div>`;
-        }
-      )
-      .join('');
+    };
+
+    const pinnedHtml = pinned.map((o, i) => row(o, i)).join('');
+    const restHtml = rest.map((o, i) => row(o, pinned.length + i)).join('');
+    const collapseHtml = rest.length
+      ? `<div class="list-collapse" id="dash-orm-more"><div class="list-collapse-inner">${restHtml}</div></div>${_toggleButtonHtml('dash-orm-more', rest.length)}`
+      : '';
+    el.innerHTML = pinnedHtml + collapseHtml;
 
     // Animate bars
     requestAnimationFrame(() => {
-      top.forEach((o, i) => {
+      shown.forEach((o, i) => {
         const bar = document.getElementById(`dash-orm-bar-${i}`);
         if (bar) {
           Spring.animate({
@@ -597,7 +642,7 @@ export const Dashboard = (() => {
       return;
     }
 
-    el.innerHTML = list.map((w) => {
+    const sessionHtml = (w) => {
       const dot   = TYPE_COLOR[w.type] || 'var(--c-text-3)';
       const date  = fmtDate(w.timestamp);
       const dur   = w.duration ? fmtDuration(w.duration) : null;
@@ -639,7 +684,15 @@ export const Dashboard = (() => {
           </div>
           <div class="session-vol">${fmtVol(w.tonnage)} kg</div>
         </div>`;
-    }).join('');
+    };
+
+    const VISIBLE = 3;
+    const visible = list.slice(0, VISIBLE);
+    const rest    = list.slice(VISIBLE);
+    const collapseHtml = rest.length
+      ? `<div class="list-collapse" id="recent-more"><div class="list-collapse-inner">${rest.map(sessionHtml).join('')}</div></div>${_toggleButtonHtml('recent-more', rest.length)}`
+      : '';
+    el.innerHTML = visible.map(sessionHtml).join('') + collapseHtml;
   }
 
   /**

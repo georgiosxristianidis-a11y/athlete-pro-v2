@@ -66,11 +66,7 @@
 .program-name { font-size: var(--fs-3); font-weight: var(--fw-black); color: var(--c-text-1); letter-spacing: -0.02em; margin-bottom: 2px; }
 .program-dur { font-size: var(--fs-1); font-weight: var(--fw-md); color: var(--c-text-3); }
 
-/* Кегль связан с .section-label (base.css): кнопка стоит в одной строке с
-   заголовком секции и не должна его перевешивать. Обе на --fs-1; различаются
-   весом и акцентным цветом, не размером. */
-.btn-text { display: flex; align-items: center; gap: 4px; background: none; border: none; font-size: var(--fs-1); font-weight: var(--fw-black); color: var(--c-accent); cursor: pointer; text-transform: uppercase; line-height: 1; transition: opacity 0.2s; }
-.btn-text:active { opacity: 0.6; }
+/* .btn-text base styles live in base.css (eager-loaded) — see note there. */
 
 /* Section headers with a trailing action (Core "Add", "Edit Plan"): keep
    label + button on one row, and give the button real vertical tap-room —
