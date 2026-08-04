@@ -72,6 +72,11 @@ export async function ensureCss(...hrefs) {
  * Экран -> его стили. Ключи совпадают с id из index.html и с ключами Nav.on,
  * так что новый экран забывает про CSS ровно там же, где забыл бы про handler.
  * s-home здесь нет намеренно: dashboard.css критический и стоит в <head>.
+ *
+ * ⚠️ Эта карта видит только ЭКРАНЫ. Оверлей поверх экрана (Athlete Room) сюда
+ * не попадает, и `ensureScreenCss` за него не отработает никогда — он обязан
+ * звать `ensureCss` сам. Симптом промаха тихий: ни ошибки в консоли, ни
+ * красного гейта, просто голый HTML (кейс AR-CSS-1, 1.27.8).
  * @type {Record<string, string[]>}
  */
 export const SCREEN_CSS = {
