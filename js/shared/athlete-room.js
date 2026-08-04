@@ -7,6 +7,7 @@ import { loadProfile, updateProfile, updateWeightAndHeight, computeAge } from '.
 import { esc, haptic, dobSelectsHtml, readDobFromSelects } from './utils.js';
 import { isRu } from '../locale.store.js';
 import { on, onChange } from '../events.js';
+import { ensureCss } from './lazy-css.js';
 
 const AR = () => window.AthleteRoom;
 on('ar:open',           () => AR().open());
@@ -172,6 +173,15 @@ export const AthleteRoom = (() => {
     _overlay.innerHTML = `<div class="ar-loader"></div>`;
     _overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
+
+    // Athlete Room — оверлей поверх ЛЮБОГО экрана, а не экран: в SCREEN_CSS
+    // (lazy-css.js) его нет, и ensureScreenCss за него не отработает никогда.
+    // При этом рендерит он чужой контент: вкладка «Метрики» — renderBodyStats
+    // (.bs-*), вкладка «Сила» — renderLiftBars (.lift-*, .pp-*), таб-бар —
+    // .bs-tab-bar. До LOAD-1 обе таблицы стояли в <head> и грузились всем, так
+    // что зависимость была невидимой; после — открытие с Home/Train/Stats
+    // рендерило голый HTML. Лоадер выше висит ровно на это ожидание.
+    await ensureCss('css/body-stats.css', 'css/profile.css');
 
     await render();
   }

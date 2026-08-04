@@ -40,6 +40,12 @@ globalThis.document = {
   removeEventListener() {},
   body: { style: {} },
   getElementById: (id) => _els.get(id) || null,
+  // open() тянет стили комнаты через ensureCss (lazy-css.js), а тот сперва
+  // ищет уже вставленный <link rel="stylesheet">. Отдаём «уже в разметке»:
+  // тест про saveName(), а не про загрузку CSS, и это ровно тот путь, которым
+  // идёт браузер, когда таблица уже стоит в <head>. Вернуть null значило бы
+  // погнать ensureCss в createElement/head.appendChild и ждать его таймаут.
+  querySelector: (sel) => (String(sel).includes('rel="stylesheet"') ? {} : null),
 };
 Object.defineProperty(globalThis, 'window', {
   value: {
