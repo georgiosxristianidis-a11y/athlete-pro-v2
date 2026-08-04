@@ -765,3 +765,47 @@
   padding: 10px 6px;
   margin: -10px -6px;
 }
+
+/* ── Collapsible tail (Top Lifts / Recent) ─────────────────────────
+   Pinned items render up-front; anything past that sits in .list-collapse,
+   closed by default. grid-template-rows 0fr→1fr collapses without measuring
+   heights in JS; the inner wrapper clips content while the row grows. */
+.list-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--t-normal);
+}
+.list-collapse.expanded {
+  grid-template-rows: 1fr;
+}
+.list-collapse-inner {
+  overflow: hidden;
+}
+
+.list-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: var(--sp-2) 6px;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: opacity var(--t-fast);
+}
+.list-toggle:active {
+  opacity: 0.6;
+}
+.list-toggle-icon {
+  flex-shrink: 0;
+  transition: transform var(--t-fast);
+}
+.list-toggle.expanded .list-toggle-icon {
+  transform: rotate(180deg);
+}

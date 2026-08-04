@@ -844,6 +844,13 @@ button:focus-visible {
   color: var(--c-text-3);
 }
 
+/* .btn-text lives here (not in a lazy-loaded screen stylesheet) because it's
+   used on the dashboard, which is eager-loaded and renders before any
+   media="print" stylesheet swaps to "all" — otherwise it's an unstyled
+   native button on first paint. */
+.btn-text { display: flex; align-items: center; gap: 4px; background: none; border: none; font-size: var(--fs-1); font-weight: var(--fw-black); color: var(--c-accent); cursor: pointer; text-transform: uppercase; line-height: 1; transition: opacity var(--t-fast); }
+.btn-text:active { opacity: 0.6; }
+
 .screen > * + * {
   margin-top: var(--sp-2);
 }
