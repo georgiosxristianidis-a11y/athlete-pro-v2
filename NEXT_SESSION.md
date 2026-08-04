@@ -36,13 +36,13 @@ npm run smoke:prod                                       # доехал ли р�
 |---|---|
 | `docs/handoff/HANDOFF_field_check.md` | **За Gio, один заход.** Карточки с кодом на проде, ждут подписи по DoD-5. Список А — дома до зала, Б — в зале. Перед заходом включить флаги `fab-video` (Профиль → AI) и `drum-window` (консоль) |
 | `docs/handoff/HANDOFF_next_cards.md` | Стек карточек + открытый бэклог + DATA-SAFETY + решения за Gio |
-| `docs/handoff/HANDOFF_load_perf.md` | **Программа LOAD** — аудит загрузки на 1.27.1 и 8 карточек. Первая — ленивый CSS: сейчас 13 файлов стилей блокируют рендер, при том что JS уже ленивый |
 | `docs/handoff/HANDOFF_design_system.md` | Дизайн-система: иерархия · отступы · движение · отклик |
 | `docs/handoff/HANDOFF_gym_grade.md` | Программа GYM-GRADE, DoD из 5 пунктов |
 | `docs/handoff/HANDOFF_isl_tail.md` | Островные хвосты, задачи Sonnet |
 | `docs/handoff/HANDOFF_orchestration.md` | Роли LEAD/worker/verifier, DoD-лестница, правило прополки веток |
 | `docs/handoff/HANDOFF_air_refactor.md` | AIR-хвост |
 | `docs/_archive/HANDOFF_releases_1.25.x.md` | Закрытые разборы релизов (304-заморозка, panda-idle, аудит-консолидация, серия F-*) |
+| `docs/_archive/HANDOFF_load_perf.md` | Закрыта — программа LOAD, все 8 карточек взяты (1.27.2–1.27.6): ленивый CSS · modulepreload · логотип статус-бара · сжатие иконок · фильтр прекеша (`.d.ts` + неиспользуемые шрифтовые подмножества) · `/__build` только на localhost/LAN |
 
 ## Порядок взятия (утверждён Gio — минимум конфликтов по файлам)
 
@@ -56,10 +56,6 @@ NAV-BACK-1 не параллелить с TYPE-2/SPACE-1 — общий `base.cs
 Дальше по очереди аналитики: **AN-2** (разрез по упражнению — тап открывает историю лифта),
 затем AN-3 (время в зале; инфраструктура периода уже есть в `analytics.store.js` `periodRange()`),
 OVW-1. После стека — роадмап CRDT foundation (`docs/ROADMAP_elite_athlete-pro.md`).
-
-Программа **LOAD** (`HANDOFF_load_perf.md`) идёт своей линией и в этот порядок не встраивается:
-её первая карточка правит `index.html` и точки загрузки стилей, с дизайн-очередью по файлам
-не пересекается. Единственное ограничение — LOAD-1 и LOAD-2 строго последовательно между собой.
 
 ## Технические заметки
 

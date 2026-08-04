@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v120-ae6dadc0';
+const CACHE_NAME = 'athlete-pro-v120-5fbf5540';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -91,7 +91,6 @@ const ASSETS = [
   '/js/sync.js',
   '/js/theme-boot.js',
   '/js/timer.js',
-  '/js/types.d.ts',
   '/js/ui/drag-number.js',
   '/js/ui/drum-picker.js',
   '/js/ui/factory.js',
@@ -128,14 +127,9 @@ const ASSETS = [
   '/icons/pull.svg',
   '/icons/push.svg',
   '/assets/panda-poster.jpg',
-  '/fonts/instrument-sans-latin-ext.woff2',
   '/fonts/instrument-sans-latin.woff2',
-  '/fonts/manrope-cyrillic-ext.woff2',
   '/fonts/manrope-cyrillic.woff2',
-  '/fonts/manrope-greek.woff2',
-  '/fonts/manrope-latin-ext.woff2',
   '/fonts/manrope-latin.woff2',
-  '/fonts/manrope-vietnamese.woff2',
   '/fonts/orbitron-latin.woff2'
 ];
 

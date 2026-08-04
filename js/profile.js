@@ -163,10 +163,23 @@ export const Profile = (() => {
 
   /* Field-check identity: the dev/LAN server exposes /__build (branch+hash of
      the tree it serves). VERSION alone can't distinguish builds — the 0kg-fix
-     retest silently ran an old worktree with the same version string. On prod
-     the endpoint does not exist → fetch fails/404 → the line stays as is.
-     textContent only — no markup injection surface. */
+     retest silently ran an old worktree with the same version string.
+     LOAD-8: prod has no such endpoint, so every profile visit there logged a
+     404 and left a dead request in the network panel. The endpoint only ever
+     exists on localhost or a LAN IP (scripts/telemetry-server.mjs --lan) —
+     gate on that instead of eating the failure, so prod stays silent and the
+     stamp still works on stands. textContent only — no markup injection
+     surface. */
+  function _isLocalHost() {
+    const h = location.hostname;
+    return h === 'localhost' || h === '127.0.0.1' ||
+      /^192\.168\.\d{1,3}\.\d{1,3}$/.test(h) ||
+      /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(h) ||
+      /^172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(h);
+  }
+
   async function _appendBuildStamp() {
+    if (!_isLocalHost()) return;
     try {
       const res = await fetch('/__build', { cache: 'no-store' });
       if (!res.ok) return;
@@ -176,7 +189,7 @@ export const Profile = (() => {
       if (!el) return;
       el.textContent = el.textContent.trim() +
         ` · ${b.branch}@${b.hash}${b.dirty ? '+' : ''}`;
-    } catch { /* prod / offline — no stamp */ }
+    } catch { /* offline — no stamp */ }
   }
 
   /* Manual escape hatch: 5 taps on the version stamp within ~3s force a clean
