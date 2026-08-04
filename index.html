@@ -280,20 +280,19 @@
       }
     </style>
 
-    <!-- Design system & screen styles -->
+    <!-- Design system & first-screen styles (render-blocking, осознанно) -->
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/dashboard.css" />
-    <link rel="stylesheet" href="css/workout.css" media="print" data-lazy />
-    <link rel="stylesheet" href="css/summary.css" media="print" data-lazy />
-    <link rel="stylesheet" href="css/analytics.css" media="print" data-lazy />
-    <link rel="stylesheet" href="css/profile.css" media="print" data-lazy />
-    <link rel="stylesheet" href="css/body-stats.css" media="print" data-lazy />
-    <link rel="stylesheet" href="css/dynamic-island.css" media="print" data-lazy />
-    <link rel="stylesheet" href="css/privacy.css" media="print" data-lazy />
-    <link rel="stylesheet" href="css/claude.css" media="print" data-lazy />
+
+    <!-- Шелл: статус-бар виден с первого кадра, эти два экранными не бывают.
+         media="print" + data-lazy → не блокируют рендер, js/boot.js включает их
+         обратно в "all". -->
     <link rel="stylesheet" href="css/athlete-room.css" media="print" data-lazy />
-    <link rel="stylesheet" href="css/intel.css" media="print" data-lazy />
-    <link rel="stylesheet" href="css/journal.css" media="print" data-lazy />
+    <link rel="stylesheet" href="css/privacy.css" media="print" data-lazy />
+
+    <!-- Остальные 9 таблиц едут лениво, вместе с модулем своего экрана:
+         js/shared/lazy-css.js (карта SCREEN_CSS) + точки в js/app.js.
+         Правило: новый экран регистрирует свой CSS там же, где Nav.on. -->
   </head>
 
   <body>

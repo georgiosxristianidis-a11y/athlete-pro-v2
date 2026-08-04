@@ -21,6 +21,7 @@ import { State } from './workout.store.js';
 import { VERSION } from './version.js';
 import { forceUpdate } from './shared/sw-update.js';
 import { applyTheme, watchSystemTheme } from './shared/theme.js';
+import { ensureCss } from './shared/lazy-css.js';
 
 /* ── Lazy-loaded modules ── */
 async function _loadWorkout() {
@@ -224,11 +225,14 @@ openDB()
       ? (fn) => window.requestIdleCallback(fn, { timeout: 2000 })
       : (fn) => setTimeout(fn, 200);
     defer(() => {
-      DynamicIsland.init();
+      // Стили Острова и FAB — здесь же, а не в шапке: контейнер Острова пуст
+      // до init(), FAB до renderFAB() не существует. Ждём CSS перед вставкой,
+      // иначе оба моргнут нестилизованными (LOAD-1).
+      ensureCss('css/dynamic-island.css').then(() => DynamicIsland.init());
       AthleteRoom.initAvatar().catch(() => {});
-      
+
       /* ── Claude FAB (lazy-loaded) ── */
-      import('./claude.view.js').then(({ Claude }) => {
+      Promise.all([import('./claude.view.js'), ensureCss('css/claude.css')]).then(([{ Claude }]) => {
         window.Claude = Claude;
         Claude.renderFAB();
       });

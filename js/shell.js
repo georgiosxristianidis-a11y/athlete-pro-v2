@@ -1,6 +1,7 @@
 'use strict';
 import { State } from './workout.store.js';
 import { haptic } from './shared/utils.js';
+import { ensureScreenCss } from './shared/lazy-css.js';
 
 /* ════════════════════════════════════════════════════════
    shell.js — Athlete Pro  |  Nav + Toast as ES Module exports
@@ -37,6 +38,11 @@ async function go(id, opts = {}) {
   if (!opts.fromPop && history.state?.screen !== id) {
     history.pushState({ screen: id }, '');
   }
+
+  // Стили экрана — ДО показа, иначе экран моргнёт нестилизованным (LOAD-1).
+  // Здесь, а не внутри performNav: startViewTransition снимает снимок
+  // страницы сразу, ждать загрузку внутри колбэка уже поздно.
+  await ensureScreenCss(id);
 
   const performNav = async () => {
     const prev = document.getElementById(_current);
