@@ -54,8 +54,9 @@ app.use(helmet({
 // ── gzip/brotli compression for all text responses
 app.use(compression());
 
-// Handle favicon.ico explicitly
-app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'icons', 'icon-192.png')));
+// Handle favicon.ico explicitly. Отдавал PNG под именем .ico, пока настоящего
+// .ico в репо не было; теперь есть — отдаём его.
+app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'icons', 'favicon.ico')));
 
 // ── Global API Rate Limiter
 const globalApiLimiter = rateLimit({

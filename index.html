@@ -22,6 +22,9 @@
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json" />
+    <!-- .ico первым и с sizes="any": его берут закладки и старые браузеры,
+         которые PNG-фавикон игнорируют. Ниже 192-й PNG для всех остальных. -->
+    <link rel="icon" href="icons/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" href="icons/icon-192.png" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 
