@@ -3,6 +3,18 @@
 # Elite SCA Protocol (Solid 9)
 # pre-push hook: Runs npm audit only when pushing, blocking vulnerable code.
 
+# -1. Прямой пуш в main запрещён (CLAUDE.md § Rules) — вливание только через
+# PR после гейта. GitHub branch protection недоступна на приватном репо
+# бесплатного плана (403 на branches/main/protection), так что единственный
+# реальный барьер — этот хук. Осознанный обход: MAIN_PUSH_OK=1 git push.
+current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+if [ "$current_branch" = "main" ] && [ "$MAIN_PUSH_OK" != "1" ]; then
+  echo "❌ [Main Block] Прямой пуш в main запрещён — только через PR."
+  echo "   git checkout -b <ветка> && git push -u origin <ветка> && gh pr create --base main"
+  echo "   Осознанный обход: MAIN_PUSH_OK=1 git push"
+  exit 1
+fi
+
 # 0. Дрейф базы. Идёт ПЕРВЫМ и намеренно раньше SCA/SAST: те проверяют уязвимости
 # и стиль, то есть КАЧЕСТВО кода, и обе спокойно зеленеют на коде трёхнедельной
 # давности. Кейс PP-6 (2026-07-29): «pre-push SAST/SCA прошёл» прозвучало как

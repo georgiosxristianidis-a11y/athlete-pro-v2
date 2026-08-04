@@ -14,7 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { statSync } from 'node:fs';
+import { statSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -50,6 +50,14 @@ const MAX_TRACKED_FILES = 400;
 
 /** Binaries belong in assets/ (and only there). */
 const MAX_FILE_BYTES = 1024 * 1024;
+
+/**
+ * CLAUDE.md is the thing every agent reads first — bloat there is bloat
+ * everyone pays for, every session. Rule stated in CLAUDE.md itself: past
+ * this, move detail to docs/RULES.md / .claude/rules/*.md and leave a
+ * one-line pointer.
+ */
+const MAX_CLAUDE_MD_LINES = 200;
 
 /** Tracked paths, POSIX-separated, exactly as git records them. */
 function trackedFiles() {
@@ -96,6 +104,16 @@ test('hygiene: tracked file count stays under the ceiling', () => {
     `${files.length} tracked files, ceiling is ${MAX_TRACKED_FILES}. ` +
       `A jump like this usually means a dependency or vendored tree got ` +
       `committed instead of ignored.`
+  );
+});
+
+test('hygiene: CLAUDE.md stays under the line ceiling', () => {
+  const lines = readFileSync(path.join(REPO_ROOT, 'CLAUDE.md'), 'utf8').split('\n').length;
+
+  assert.ok(
+    lines <= MAX_CLAUDE_MD_LINES,
+    `CLAUDE.md is ${lines} lines, ceiling is ${MAX_CLAUDE_MD_LINES}. ` +
+      `Move detail to docs/RULES.md / .claude/rules/*.md and leave a one-line pointer.`
   );
 });
 
