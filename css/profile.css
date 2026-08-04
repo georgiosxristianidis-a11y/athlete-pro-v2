@@ -864,8 +864,6 @@ button.pref-row-icon:active,
   padding: var(--sp-2) 0;
 }
 
-.lift-row-v2:last-child { border-bottom: none; }
-
 .lift-info-v2 {
   width: 70px;
   flex-shrink: 0;
@@ -894,10 +892,44 @@ button.pref-row-icon:active,
   gap: var(--sp-1);
 }
 
+/* Полоса и точки тиров (LIFT-1). Правила были удалены вместе со старой
+   разметкой `.lift-row` коммитом 9529de8, а `lift-bars.js` их всё ещё эмитит —
+   два месяца трек, заливка и точки рендерились нулевой высоты. Восстановлены
+   на токенах; 4px и 6px — размеры самих элементов, а не ритм блоков, ниже
+   нижней ступени `--sp-*` (та же оговорка, что у микро-сдвигов в шапке файла).
+   `--bar-w` / `--bar-delay` приезжают инлайном из шаблона. */
+.lift-bar-track {
+  height: 4px;
+  background: var(--c-bg-3);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.lift-bar-fill {
+  height: 100%;
+  width: var(--bar-w, 0%);
+  border-radius: var(--r-pill);
+  animation: bar-grow 0.5s var(--ease-std) both;
+  animation-delay: var(--bar-delay, 0.1s);
+}
+
 .lift-dots-v2 {
   display: flex;
   gap: var(--sp-0-5);
 }
+
+/* box-sizing: у пустой точки есть хайрлайн, у залитой нет — без border-box
+   ряд дёргается на 2px в местах перехода. */
+.lift-dot {
+  width: 6px;
+  height: 6px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-border);
+}
+
+.lift-dot.filled { border: none; }
 
 .lift-stats-v2 {
   width: 54px;
@@ -939,13 +971,15 @@ button.pref-row-icon:active,
 .pp-card {
   animation: card-in 0.3s var(--ease-std) 0.08s both;
 }
-.lift-row {
+/* Селектор был `.lift-row` — класса без `-v2` в разметке нет с 9529de8,
+   стаггер строк не работал вместе с полосами (LIFT-1). */
+.lift-row-v2 {
   animation: card-in 0.28s var(--ease-std) both;
 }
-.lift-row:nth-child(1) { animation-delay: 0.06s; }
-.lift-row:nth-child(2) { animation-delay: 0.11s; }
-.lift-row:nth-child(3) { animation-delay: 0.16s; }
-.lift-row:nth-child(4) { animation-delay: 0.21s; }
+.lift-row-v2:nth-child(1) { animation-delay: 0.06s; }
+.lift-row-v2:nth-child(2) { animation-delay: 0.11s; }
+.lift-row-v2:nth-child(3) { animation-delay: 0.16s; }
+.lift-row-v2:nth-child(4) { animation-delay: 0.21s; }
 
 /* ── Lift bar grow animation ── */
 @keyframes bar-grow {
