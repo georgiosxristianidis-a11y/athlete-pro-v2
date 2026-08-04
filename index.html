@@ -33,6 +33,49 @@
     <link rel="preload" as="font" type="font/woff2" href="fonts/manrope-cyrillic.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="fonts/instrument-sans-latin.woff2" crossorigin />
 
+    <!-- LOAD-2: без бандлера браузер узнаёт о модуле только разобрав того, кто
+         его импортирует — отсюда лестница из 12 волн на прогретом кеше
+         (docs/handoff/HANDOFF_load_perf.md). Здесь — волны 5 и глубже (модули,
+         которые app.js и boot.js достают не напрямую, а через 2+ уровня
+         import): browser качает их сразу параллельно, а не слой за слоем.
+         Волны 1-4 (entry-скрипты + их прямые импорты) уже видны HTML-сканеру
+         без подсказки. Список из замера resource-timing, не «на глазок» —
+         менять только вместе с ним. -->
+    <link rel="modulepreload" href="js/db/core.js" />
+    <link rel="modulepreload" href="js/db/settings.js" />
+    <link rel="modulepreload" href="js/db/onerm.js" />
+    <link rel="modulepreload" href="js/db/metrics.js" />
+    <link rel="modulepreload" href="js/db/events.js" />
+    <link rel="modulepreload" href="js/db/nutrition.js" />
+    <link rel="modulepreload" href="js/db/planned.js" />
+    <link rel="modulepreload" href="js/db/backup.js" />
+    <link rel="modulepreload" href="js/db/workouts.js" />
+    <link rel="modulepreload" href="js/shared/sparkline.js" />
+    <link rel="modulepreload" href="js/claude.store.js" />
+    <link rel="modulepreload" href="js/shared/spring.js" />
+    <link rel="modulepreload" href="js/flags.js" />
+    <link rel="modulepreload" href="js/shared/format.js" />
+    <link rel="modulepreload" href="js/shared/ppl-gauge.js" />
+    <link rel="modulepreload" href="js/shared/panda-video.js" />
+    <link rel="modulepreload" href="js/shared/panda-mood.js" />
+    <link rel="modulepreload" href="js/shared/confirm.js" />
+    <link rel="modulepreload" href="js/shared/island-tracker.js" />
+    <link rel="modulepreload" href="js/rest-timer.js" />
+    <link rel="modulepreload" href="js/features/pip.js" />
+    <link rel="modulepreload" href="js/shared/sync-dot.js" />
+    <link rel="modulepreload" href="js/island-profile.store.js" />
+    <link rel="modulepreload" href="js/strength-engine.js" />
+    <link rel="modulepreload" href="js/shared/lift-map.js" />
+    <link rel="modulepreload" href="js/profile.view/lift-bars.js" />
+    <link rel="modulepreload" href="js/profile.store.js" />
+    <link rel="modulepreload" href="js/workout-plans.js" />
+    <link rel="modulepreload" href="js/shared/chamber-pill.js" />
+    <link rel="modulepreload" href="js/shared/cryptoClient.js" />
+    <link rel="modulepreload" href="js/ui/factory.js" />
+    <link rel="modulepreload" href="js/onboarding.js" />
+    <link rel="modulepreload" href="js/claude.view.js" />
+    <link rel="modulepreload" href="js/shared/block-ticks.js" />
+
     <!-- ── BLOCK 0: Critical CSS (inline — zero flash) ──────────────── -->
     <style>
       /* RESET */
