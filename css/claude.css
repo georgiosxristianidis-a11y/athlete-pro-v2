@@ -269,14 +269,14 @@
   transform: translateX(2px);
 }
 .claude-title {
-  font-size: 17px;
-  font-weight: 800;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-black);
   color: var(--c-text-1);
   letter-spacing: -0.02em;
 }
 .claude-sub {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
 }
 /* btn-icon-sm — moved to css/base.css; claude panel uses slightly larger variant */
@@ -327,18 +327,18 @@
   gap: 1px;
 }
 .legend-group {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-2);
 }
 .legend-status {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   letter-spacing: 0.04em;
 }
 .legend-hours {
-  font-size: 10px;
-  font-weight: 500;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   flex-shrink: 0;
   text-align: right;
@@ -362,8 +362,8 @@
 .heat-scale-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -378,8 +378,8 @@
   margin-bottom: var(--sp-1);
 }
 .coach-msg-text {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-2);
   line-height: 1.6;
 }
@@ -394,15 +394,15 @@
   padding: 10px var(--sp-2);
 }
 .coach-rec-label {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-text-3);
 }
 .coach-rec-type {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-black);
   letter-spacing: -0.02em;
 }
 
@@ -430,19 +430,19 @@
 }
 .next-ex-name {
   flex: 1;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-1);
 }
 .next-ex-meta {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   font-variant-numeric: tabular-nums;
 }
 .next-ex-more {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   text-align: center;
   padding-top: 8px;
@@ -465,21 +465,21 @@
 .top-lift-row:last-child {
 }
 .top-lift-rank {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   min-width: 20px;
   letter-spacing: 0.04em;
 }
 .top-lift-name {
   flex: 1;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-1);
 }
 .top-lift-val {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--fs-4);
+  font-weight: var(--fw-md);
   color: var(--c-secondary);
   font-variant-numeric: tabular-nums;
 }
@@ -520,15 +520,15 @@
 
 /* ── Streamed AI text ── */
 .ai-text {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   color: var(--c-text-2);
   line-height: 1.7;
   min-height: 0;
 }
 .ai-error {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-red);
   line-height: 1.6;
 }
@@ -552,8 +552,8 @@
   max-width: 88%;
   padding: 10px 14px;
   border-radius: var(--r-m);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   line-height: 1.55;
 }
 .chat-msg.user-msg {
@@ -596,8 +596,8 @@
   flex: 1;
   background: none;
   border: none;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   color: var(--c-text-1);
   font-family: 'Manrope', sans-serif;
   caret-color: var(--c-secondary);
