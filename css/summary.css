@@ -34,16 +34,16 @@
 
 .summ-title {
   font-family: var(--font-heading);
-  font-size: 20px;
-  font-weight: 900;
+  font-size: var(--fs-4);
+  font-weight: var(--fw-black);
   letter-spacing: 0.04em;
   color: var(--c-text-1);
   line-height: 1.1;
 }
 
 .summ-subtitle {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   margin-top: 4px;
@@ -71,16 +71,18 @@
 
 .summ-stat-val {
   font-family: var(--font-heading);
-  font-size: 18px;
-  font-weight: 900;
+  font-size: var(--fs-4);
+  font-weight: var(--fw-black);
   color: var(--c-text-1);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
 
+/* Было 8px — ниже нижней ступени шкалы. Подписи трёх чипов подняты до --fs-1;
+   разрядка оставлена прежней, ширина колонки от этого не поехала (замер 375px). */
 .summ-stat-lbl {
-  font-size: 8px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   color: var(--c-text-3);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -139,8 +141,8 @@
 }
 
 .summ-island-label {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--c-text-2);
@@ -160,8 +162,8 @@
 
 /* Micro-sparkline chip (time / tonnage) */
 .summ-chip {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
   color: var(--c-text-2);
   padding: 2px 7px;
@@ -192,8 +194,8 @@
 
 .summ-ex-name {
   flex: 1;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-2);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -204,9 +206,11 @@
   color: var(--c-text-1);
 }
 
+/* Имя и метрика были 13/12 — разница в 1px не читалась, а ступени между ними
+   в шкале нет. Один кегль, различаются цветом (text-2 против text-3). */
 .summ-ex-meta {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   font-variant-numeric: tabular-nums;
   color: var(--c-text-3);
   flex-shrink: 0;
@@ -221,8 +225,8 @@
 }
 
 .summ-ex-partial {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
   color: var(--c-amber);
   font-variant-numeric: tabular-nums;
 }
@@ -230,8 +234,8 @@
 /* UI-only tag for noDb exercises (Block IV) */
 .summ-ex-ui-tag {
   display: inline-block;
-  font-size: 7px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   letter-spacing: 0.08em;
   color: var(--c-text-3);
   border: 1px dashed var(--c-border-h);
@@ -243,7 +247,7 @@
 }
 
 .summ-ex-empty {
-  font-size: 12px;
+  font-size: var(--fs-2);
   color: var(--c-text-3);
   opacity: 0.4;
   text-align: center;
@@ -270,8 +274,8 @@
 }
 
 .summ-pr-title {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--c-gold);
@@ -290,8 +294,8 @@
 }
 
 .summ-pr-name {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-2);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -300,8 +304,8 @@
 }
 
 .summ-pr-val {
-  font-size: 13px;
-  font-weight: 800;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
   color: var(--c-gold);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
@@ -440,8 +444,8 @@
 }
 
 .cpill-label {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--c-text-2);
@@ -460,8 +464,8 @@
 }
 
 .cpill-chip {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
   color: var(--c-text-2);
   padding: 2px 6px;

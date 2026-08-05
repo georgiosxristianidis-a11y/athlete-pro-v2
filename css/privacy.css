@@ -47,8 +47,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 4px 10px;
@@ -90,8 +90,8 @@
   background: transparent;
   border: 0;
   color: var(--c-text-2);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   letter-spacing: 0.04em;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -117,7 +117,7 @@
 }
 
 .privacy-desc {
-  font-size: 12px;
+  font-size: var(--fs-2);
   color: var(--c-text-2);
   line-height: 1.5;
   padding: 4px 8px var(--sp-1);
@@ -131,8 +131,8 @@
 
 /* ── Data Passport modal ──────────────────────────────── */
 .passport-section-label {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -154,16 +154,16 @@
 }
 .passport-tile.dim { opacity: 0.5; }
 .passport-num {
-  font-size: 24px;
-  font-weight: 800;
+  font-size: var(--fs-5);
+  font-weight: var(--fw-black);
   color: var(--c-text-1);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 .passport-lbl {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--c-text-3);
@@ -173,23 +173,25 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 4px;
-  font-size: 12px;
+  font-size: var(--fs-2);
 }
 .passport-row + .passport-row {
   border-top: 1px solid var(--c-border);
 }
 .passport-row-key {
   color: var(--c-text-2);
-  font-weight: 600;
+  font-weight: var(--fw-md);
 }
+/* Ключ и значение были 12/11 — шкала промежуточной ступени не знает, а разница
+   в 1px и не читалась. Один кегль, разделяет их цвет (text-2 против text-3). */
 .passport-row-val {
   color: var(--c-text-3);
-  font-size: 11px;
+  font-size: var(--fs-2);
 }
 
 /* ── Audit log modal ──────────────────────────────────── */
 .audit-summary {
-  font-size: 11px;
+  font-size: var(--fs-1);
   color: var(--c-text-3);
   padding: 4px 8px var(--sp-2);
   letter-spacing: 0.04em;
@@ -202,7 +204,7 @@
   padding: var(--sp-3);
   text-align: center;
   color: var(--c-text-3);
-  font-size: 12px;
+  font-size: var(--fs-2);
 }
 .audit-row {
   display: flex;
@@ -231,24 +233,24 @@
   background: var(--c-amber);
 }
 .audit-url {
-  font-size: 13px;
+  font-size: var(--fs-2);
   color: var(--c-text-1);
-  font-weight: 600;
+  font-weight: var(--fw-md);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-family: 'SF Mono', Menlo, monospace;
 }
 .audit-meta {
-  font-size: 10px;
+  font-size: var(--fs-1);
   color: var(--c-text-3);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-top: 2px;
 }
 .audit-status {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--c-text-3);

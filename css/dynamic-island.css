@@ -145,8 +145,8 @@
 .island-readout .island-time { display: none; }
 
 .island-sets-collapsed {
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   font-variant-numeric: tabular-nums;
   color: var(--c-text-2);
   white-space: nowrap;
@@ -185,8 +185,8 @@
 }
 .island-minimal-compact .island-tracker { min-height: 12px; }
 .island-min-label {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
   color: var(--c-text-2);
   white-space: nowrap;
   overflow: hidden;
@@ -195,8 +195,8 @@
   font-variant-numeric: tabular-nums;
 }
 .island-min-sets {
-  font-size: 11px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   font-variant-numeric: tabular-nums;
   color: var(--c-text-2);
   white-space: nowrap;
@@ -286,7 +286,9 @@
 /* Compact vertical stack: dot / DHL / next. The tracker stays the tap target
    but ~30% smaller — the card reads as one centered column, not a billboard. */
 .island.profile-minimal.expanded .island-tracker .it-svg { width: 105px; height: 24px; }
-.island.profile-minimal.expanded .island-sublabel { font-size: 8px; opacity: 0.75; }
+/* Было 8px — на ступень ниже нижней ступени шкалы, ради одного состояния.
+   Кегль остаётся общим (--fs-1 базового .island-sublabel), приглушение — opacity. */
+.island.profile-minimal.expanded .island-sublabel { opacity: 0.75; }
 
 /* Rest timer mode — in-frame HUD (replaces standalone rest modal). No numeric
    readout now, just the depleting bar + "далее: X" + two icon buttons. */
@@ -324,8 +326,8 @@
 .island-rest-next {
   flex: 1;
   min-width: 0;
-  font-size: 9px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -435,8 +437,8 @@
   border-radius: var(--r-l);
   background: var(--c-accent);
   color: var(--c-bg);
-  font-size: 13px;
-  font-weight: 800;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
   letter-spacing: 0.01em;
   cursor: pointer;
   transition: filter 0.15s ease, background 0.25s ease, color 0.25s ease;
@@ -517,8 +519,8 @@
 
 /* ── Readout items (flex children of .island-readout) ── */
 .island-time {
-  font-size: 14px;
-  font-weight: 800;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-black);
   font-variant-numeric: tabular-nums;
   color: var(--c-text-1);
   white-space: nowrap;
@@ -526,8 +528,8 @@
 }
 
 .island-name-collapsed {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-1);
   white-space: nowrap;
   overflow: hidden;
@@ -559,8 +561,8 @@
   border-radius: var(--r-m);
   padding: 6px 12px;
   color: var(--c-text-2);
-  font-size: 11px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   cursor: pointer;
   transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s;
 }
@@ -638,8 +640,8 @@
   background: transparent;
   border: 1px solid var(--c-border-h);
   color: var(--c-chrome);
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   padding: 2px 8px;
   border-radius: var(--r-xs);
   letter-spacing: 0.05em;
@@ -647,8 +649,8 @@
 }
 
 .island-ex-name {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
   color: var(--c-text-1);
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -658,8 +660,8 @@
 }
 
 .island-sublabel {
-  font-size: 9px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
