@@ -13,8 +13,8 @@
 
 .intel-title {
   font-family: var(--font-heading);
-  font-size: 26px;
-  font-weight: 800;
+  font-size: var(--fs-5);
+  font-weight: var(--fw-black);
   color: var(--c-intel);
   letter-spacing: -0.02em;
   line-height: 1.2;
@@ -22,8 +22,8 @@
 
 .intel-sub {
   font-family: var(--font-main);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -50,8 +50,8 @@
 }
 
 .intel-feedback-label {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   text-transform: uppercase;
   color: var(--c-intel);
   letter-spacing: 0.1em;
@@ -59,8 +59,8 @@
 }
 
 .intel-feedback-text {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
   color: var(--c-text-1);
   line-height: 1.5;
 }
@@ -93,7 +93,7 @@
   border: none;
   padding: 8px 4px;
   color: var(--c-text-1);
-  font-size: 15px;
+  font-size: var(--fs-3);
   font-family: var(--font-main);
 }
 
@@ -153,16 +153,16 @@
 
 .intel-logs-title {
   font-family: var(--font-heading);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
   color: var(--c-text-3);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .intel-logs-status {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
   text-transform: uppercase;
   padding: 3px 8px;
   border-radius: var(--r-xs);
@@ -174,7 +174,7 @@
   display: flex;
   gap: 12px;
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--fs-1);
   margin-bottom: 8px;
   animation: intel-log-in 0.3s ease;
 }
@@ -185,7 +185,7 @@
 }
 
 .intel-log-time { color: var(--c-text-3); }
-.intel-log-type { font-weight: 800; text-transform: uppercase; min-width: 32px; }
+.intel-log-type { font-weight: var(--fw-black); text-transform: uppercase; min-width: 32px; }
 .intel-log-type.sys { color: var(--c-intel); }
 .intel-log-type.db { color: var(--c-accent); }
 .intel-log-type.ai { color: var(--c-secondary); }
