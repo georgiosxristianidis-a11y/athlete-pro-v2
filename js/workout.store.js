@@ -949,39 +949,27 @@ export function deleteCustomWorkout(id) {
  *  оставлен — его читают dynamic-island и тесты сессии. */
 export const BLOCK_LABEL = BLOCK_NAMES_EN;
 
-/**
- * BUG-0KG completion gate. Seed plans (PPL_GIO_PLAN) ship weight:0 and a
- * no-history user has no prefill, so an unguarded "done" logs a loaded lift
- * at 0 kg and silently zeroes tonnage/analytics. A set may complete when:
- *   • it is already done (un-doing is always allowed), or
- *   • the exercise is bodyweight (isBW — 0 legitimately means BW), or
- *   • a positive weight has been entered.
- * Pure predicate, kept in the store so data-correctness rules are unit-tested
- * instead of living inline in a DOM handler.
- * @param {{isBW?: boolean}} ex
- * @param {{done?: boolean, weight?: number}} set
- * @returns {boolean}
- */
-export function canCompleteSet(ex, set) {
-  if (set.done) return true;
-  if (ex.isBW) return true;
-  return (set.weight || 0) > 0;
-}
+/* Гард завершения сета (`canCompleteSet`, BUG-0KG) снят по решению Gio
+   2026-08-05: 0 — легальное значение, сет с нулём закрывается и пускает
+   дальше как любой другой. Гард ловил реальную проблему (сид ставит weight:0,
+   и у пользователя без истории нет префилла), но лечил её запретом, а платил
+   за это пользователь в зале — упражнение без снаряда или с забытым весом
+   упиралось в тост вместо того, чтобы просто отметиться. `isBW` остался: он
+   не про запрет, а про отображение — в сводке сета 0 показывается как «BW»,
+   а не как «0». */
 
 /**
  * Угадать `isBW` для упражнения по библиотеке.
  *
  * В `exercises-library.json` уже размечено `equipment: "bodyweight"` (34 записи
  * из 170), но до плана это поле никогда не доезжало: `_addLiveExercise` ставил
- * `isBW: false` наглухо. Из-за этого добавленные вживую подтягивания попадали
- * под гард `canCompleteSet` и не закрывались без веса — приходилось вбивать
- * фальшивый вес, чтобы отметить сет.
+ * `isBW: false` наглухо, и добавленные вживую подтягивания показывались как
+ * «0», а не «BW».
  *
- * Предикат чистый и живёт в сторе рядом с гардом по той же причине, что и он:
- * правило корректности данных должно проверяться юнит-тестом, а не жить внутри
- * DOM-хендлера. Угадывание — только дефолт: пользовательский тумблер (`_toggleBW`)
- * всегда перебивает его, потому что одно и то же упражнение бывает и с поясом,
- * и без.
+ * Предикат чистый и живёт в сторе затем же, зачем там жил гард: правило
+ * корректности данных должно проверяться юнит-тестом, а не внутри DOM-хендлера.
+ * Угадывание — только дефолт: пользовательский тумблер (`_toggleBW`) всегда
+ * перебивает его, потому что одно и то же упражнение бывает и с поясом, и без.
  *
  * Сверяем и `name`, и `nameRu`: пикер отдаёт то имя, которое видел пользователь,
  * а оно зависит от языка интерфейса.
