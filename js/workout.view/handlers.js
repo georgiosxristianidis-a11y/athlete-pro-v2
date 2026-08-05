@@ -6,7 +6,7 @@ import {
   State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession,
   getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout,
   loadCoreChecklist, saveCoreChecklist, getActivePlan, startPlan, advancePlan,
-  recordBlockTiming, canCompleteSet, getExerciseLibrary, isBodyweightExercise
+  recordBlockTiming, getExerciseLibrary, isBodyweightExercise
 } from '../workout.store.js';
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
@@ -135,12 +135,8 @@ export async function toggleSet(ei, si) {
   // race where the user taps the checkmark before scrollend/80ms settle fires.
   flushDrum('w', ei, si);
   flushDrum('r', ei, si);
-  // BUG-0KG guard — rules live in the store predicate (unit-tested there).
-  if (!canCompleteSet(ex, set)) {
-    _haptic(20);
-    Toast.show(isRu() ? 'Укажи вес перед завершением' : 'Enter weight before completing', 'info');
-    return;
-  }
+  // Гарда «нельзя закрыть сет на 0 кг» здесь больше нет (решение Gio
+  // 2026-08-05) — 0 закрывается и пускает дальше как любое другое значение.
   set.done = !set.done;
   // Phase W-2-A: stamp block timing on every "set just became done" event.
   // Reverting (done → undone) does NOT roll back the timestamps — minor
@@ -247,9 +243,11 @@ export async function addSet(ei) {
  * запирается. Включённый BW меняет только смысл нуля — ноль читается как «BW»,
  * а всё выше как «+12.5». Жёсткий замок закрыл бы подтягивания и брусья с
  * поясом — самую частую прогрессию в этой работе (в библиотеке под неё даже
- * есть алиас «Pull-ups (Weighted)»), а взамен дал бы только то, что мягкий даёт
- * и так: перестать требовать вес. Настоящий замок, который мешал, — это гард
- * canCompleteSet, и он снимается самим флагом.
+ * есть алиас «Pull-ups (Weighted)»), а взамен не дал бы ничего.
+ *
+ * С 2026-08-05 тумблер вообще ни на что не запирает: гард `canCompleteSet`,
+ * который раньше требовал вес, снят целиком, и флаг остался чисто
+ * отображательным — «BW» вместо «0» в сводке сета.
  *
  * @param {number} ei
  */
@@ -808,10 +806,10 @@ export async function _addLiveExercise() {
       { weight: 0, reps: 10, done: false },
       { weight: 0, reps: 10, done: false },
     ];
-    // isBW больше не прошит false: раньше добавленные вживую подтягивания
-    // попадали под гард canCompleteSet и не закрывались без веса. Библиотека
-    // знает ответ (equipment: 'bodyweight'), её и спрашиваем. Сеть/IDB могут
-    // не ответить — тогда честный false, а тумблер в шапке колонки поправит.
+    // isBW больше не прошит false: иначе добавленные вживую подтягивания
+    // показывались бы как «0», а не «BW». Библиотека знает ответ
+    // (equipment: 'bodyweight'), её и спрашиваем. Сеть/IDB могут не ответить —
+    // тогда честный false, а тумблер в шапке колонки поправит.
     let isBW = false;
     try {
       isBW = isBodyweightExercise(name, await getExerciseLibrary());

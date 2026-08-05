@@ -1,13 +1,29 @@
 // @ts-check
 // BW-TOGGLE — упражнение со своим весом получает isBW из библиотеки, а не
 // наглухо прошитый false. До этой правки _addLiveExercise ставил false всегда,
-// и добавленные вживую подтягивания не закрывались без веса: их резал гард
-// canCompleteSet (см. test/set-completion-guard.test.js). Здесь проверяется
-// предикат-угадыватель и то, что его результат действительно снимает гард.
-import { test } from 'node:test';
+// и добавленные вживую подтягивания показывались как «0» вместо «BW».
+//
+// Гард завершения сета (`canCompleteSet`) снят 2026-08-05 по решению Gio —
+// ноль больше ничего не запрещает. Тесты связки с гардом уехали вместе с ним
+// (файл test/set-completion-guard.test.js удалён), но инварианты сида,
+// которые он охранял, живут здесь: isBW по-прежнему решает, как читается ноль.
+import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { isBodyweightExercise, canCompleteSet } from '../js/workout.store.js';
+import { isBodyweightExercise, buildSession, PPL_GIO_PLAN } from '../js/workout.store.js';
+
+/** Минимальный localStorage на Map — стор пишет туда при buildSession. */
+function mockStorage() {
+  const m = new Map();
+  globalThis.localStorage = {
+    getItem: (k) => (m.has(k) ? m.get(k) : null),
+    setItem: (k, v) => { m.set(k, String(v)); },
+    removeItem: (k) => { m.delete(k); },
+    clear: () => m.clear(),
+  };
+}
+
+beforeEach(mockStorage);
 
 const LIB = [
   { name: 'Pull-up', nameRu: 'Подтягивания', equipment: 'bodyweight' },
@@ -49,19 +65,33 @@ test('isBodyweightExercise — пустой nameRu не матчится пус�
   assert.equal(isBodyweightExercise('   ', LIB), false);
 });
 
-// ── связка с гардом: ради этого предикат и существует ───────────────────────
+// ── инварианты сида: ради этого предикат и существует ───────────────────────
 
-test('угаданный isBW снимает гард завершения сета на 0 кг', () => {
-  const name = 'Pull-up';
-  const ex = { isBW: isBodyweightExercise(name, LIB) };
-  assert.equal(ex.isBW, true);
-  assert.equal(canCompleteSet(ex, { done: false, weight: 0 }), true);
+const allSeedExercises = () => {
+  const out = [];
+  for (const week of Object.values(PPL_GIO_PLAN)) {
+    for (const day of Object.values(week)) out.push(...day);
+  }
+  return out;
+};
+
+test('PPL_GIO_PLAN — каждое noDb (кор/чеклист) упражнение размечено isBW', () => {
+  for (const ex of allSeedExercises()) {
+    if (ex.noDb) {
+      assert.equal(ex.isBW, true, `${ex.name} — noDb, но не isBW: ноль покажется как «0» вместо «BW»`);
+    }
+  }
 });
 
-test('для снарядного упражнения гард остаётся на месте', () => {
-  const ex = { isBW: isBodyweightExercise('Barbell Bench Press', LIB) };
-  assert.equal(canCompleteSet(ex, { done: false, weight: 0 }), false);
-  assert.equal(canCompleteSet(ex, { done: false, weight: 40 }), true);
+test('buildSession — пресет-фолбэк доносит isBW до каждого упражнения', () => {
+  const session = buildSession('push');
+  const byName = new Map(session.map((e) => [e.name, e]));
+  const dips = byName.get('Dips (Chest Focus)');
+  assert.ok(dips, 'сид-упражнение потерялось из сессии');
+  assert.equal(dips.isBW, true);
+  const bench = byName.get('Bench Press');
+  assert.ok(bench);
+  assert.equal(bench.isBW, false);
 });
 
 // ── реальная библиотека: разметка должна быть на месте ──────────────────────
