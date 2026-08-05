@@ -136,6 +136,9 @@ export const PiP = (() => {
   function _setupPiPWindow(pipWin) {
     const d = pipWin.document;
     const style = d.createElement('style');
+    // Узаконенное исключение TYPE-2: этот <style> живёт в чужом документе
+    // (documentPictureInPicture), var(--fs-*)/var(--c-*) из css/base.css туда
+    // не доезжают — сырые px/hex здесь единственный рабочий вариант.
     style.textContent = `
       body {
         margin: 0; padding: 20px;

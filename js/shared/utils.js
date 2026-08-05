@@ -100,7 +100,7 @@ export const dobSelectsHtml = (dob, ru, idPrefix) => {
   const months = ru
     ? ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const selStyle = 'height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-1); font-weight:700;';
+  const selStyle = 'height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-1); font-weight:var(--fw-bold);';
   return `
     <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr; gap:10px">
       <select id="${idPrefix}-y" style="${selStyle} padding:0 12px;">
