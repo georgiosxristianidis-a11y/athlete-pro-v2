@@ -201,7 +201,19 @@
   height: 72px;          /* 5-1: compact — was 100px; drum-item 36px + 2×18px padding */
   background: transparent;
   overflow: hidden;
-  touch-action: none;
+  /* DRUM-TOUCH-1 (поле 2026-08-05, iPhone 17): было `touch-action: none`, и
+     барабан не крутился пальцем на iOS, работая при этом идеально на Android.
+     Скроллит НЕ этот элемент, а дочерний `.drum-track`, и движки расходятся в
+     том, докуда идти по цепочке предков за touch-action для вложенного
+     скроллера. Blink доходит только до самого скроллера, поэтому `none` здесь
+     для него no-op (проверено: свайп скроллит трек при `none` на обёртке и
+     блокируется при `none` на самом треке). WebKit строже — жест умирал, не
+     дойдя до трека, и ложились разом все браузеры iOS (в App Store у всех
+     один движок).
+     `pan-y` сохраняет исходный смысл — горизонтальный свайп и pinch по-прежнему
+     не проходят, — но пропускает вертикальный жест самого барабана.
+     Регрессию сторожит test/drum-touch-action.test.js. */
+  touch-action: pan-y;
   transition: opacity var(--t-fast);
   /* GLOW-SL (a): neighbour rows (opacity 0.4, BLACK-DRUM) hard-cut at the
      72px box edge, which reads as bleed into the row above/below. A mask
