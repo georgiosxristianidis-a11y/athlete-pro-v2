@@ -61,12 +61,12 @@ export const IntelView = (() => {
           <h1 class="intel-title">P.A.N.D.A. Core</h1>
           <div class="intel-sub">
             <span class="ai-indicator ${_hasValidKey ? 'active' : 'missing'}" style="margin-right:4px;"></span>
-            <span style="color: ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-text-3)'}; font-weight:700; text-transform:lowercase; opacity:0.8;">${_hasValidKey ? 'system secure' : 'key missing'}</span>
+            <span style="color: ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-text-3)'}; font-weight:var(--fw-bold); text-transform:lowercase; opacity:0.8;">${_hasValidKey ? 'system secure' : 'key missing'}</span>
             <span style="opacity:0.2; margin: 0 6px;">|</span>
-            <span id="intel-status-text" style="color: var(--c-text-2); font-weight:800; text-transform:lowercase;">${IntelStore.getStatus()}</span>
+            <span id="intel-status-text" style="color: var(--c-text-2); font-weight:var(--fw-black); text-transform:lowercase;">${IntelStore.getStatus()}</span>
           </div>
         </div>
-        <button data-action="intel:close" style="background:none; border:none; color:var(--c-text-3); font-size:28px; font-weight:200; cursor:pointer; padding:0 8px;">&times;</button>
+        <button data-action="intel:close" style="background:none; border:none; color:var(--c-text-3); font-size:var(--fs-6); font-weight:var(--fw-md); cursor:pointer; padding:0 8px;">&times;</button>
       </header>
 
       <div id="intel-feedback-feed"></div>
@@ -93,19 +93,19 @@ export const IntelView = (() => {
       <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:var(--sp-4)">
         <button class="card-action" data-action="intel:weekly" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
-          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">СВОДКА</div>
+          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">СВОДКА</div>
         </button>
         <button class="card-action" data-action="intel:createWorkout" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">ГЕНЕРАЦИЯ</div>
+          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">ГЕНЕРАЦИЯ</div>
         </button>
         <button class="card-action" data-action="intel:analyzeStats" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
-          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">АНАЛИЗ</div>
+          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">АНАЛИЗ</div>
         </button>
         <button class="card-action" data-action="intel:biometrics" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
           <div style="color:var(--c-red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-          <div style="font-size:8px; font-weight:900; text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">БИОМЕТРИЯ</div>
+          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">БИОМЕТРИЯ</div>
         </button>
       </div>
 
@@ -190,7 +190,7 @@ export const IntelView = (() => {
       <div class="intel-vision-preview animate-in zoom-in">
         <img src="${base64}" class="intel-vision-img" alt="Vision Input">
         <div class="intel-scanner-bar"></div>
-        <button data-action="intel:clearImage" style="position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.5); border:none; color:white; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;">&times;</button>
+        <button data-action="intel:clearImage" style="position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.5); border:none; color:white; display:flex; align-items:center; justify-content:center; font-size:var(--fs-3); cursor:pointer;">&times;</button>
       </div>
     `;
     IntelStore.setStatus('VISION READY');
@@ -228,7 +228,7 @@ export const IntelView = (() => {
       <div class="intel-feedback-text">
         <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
           <div style="width:12px; height:12px; border-radius:50%; background:var(--c-intel); box-shadow:0 0 10px var(--c-intel); animation: it-breathe 1.5s infinite ease-in-out;"></div>
-          <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:var(--c-intel); letter-spacing:0.15em; animation: it-breathe 1.5s infinite ease-in-out 0.2s;">Analysing Intel...</div>
+          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-intel); letter-spacing:0.15em; animation: it-breathe 1.5s infinite ease-in-out 0.2s;">Analysing Intel...</div>
         </div>
       </div>
     `;
@@ -443,28 +443,28 @@ export const IntelView = (() => {
     
     overlay.innerHTML = `
       <div style="background:var(--c-bg-1); width:100%; max-width:500px; border-radius:32px; border:1px solid var(--c-border-h); padding:40px; position:relative; max-height:90vh; overflow-y:auto;">
-        <button data-action="intel:closeReport" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:24px; cursor:pointer;">&times;</button>
+        <button data-action="intel:closeReport" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:var(--fs-5); cursor:pointer;">&times;</button>
         <div style="text-align:center; margin-bottom:32px;">
-           <h2 style="font-family:var(--font-intel); font-size:24px; font-style:italic; color:var(--c-text-1); text-transform:uppercase; margin-bottom:16px;">Weekly Intel</h2>
+           <h2 style="font-family:var(--font-intel); font-size:var(--fs-5); font-style:italic; color:var(--c-text-1); text-transform:uppercase; margin-bottom:16px;">Weekly Intel</h2>
            <div style="display:flex; flex-direction:column; align-items:center;">
-             <span style="font-size:72px; font-weight:900; color:var(--c-intel); text-shadow:0 0 20px rgba(0,209,255,0.4); line-height:1;">${report.score}</span>
-             <span style="font-size:10px; font-weight:900; color:var(--c-text-3); text-transform:uppercase; letter-spacing:0.5em; margin-top:8px;">Performance Score</span>
+             <span style="font-size:var(--fs-6); font-weight:var(--fw-black); color:var(--c-intel); text-shadow:0 0 20px rgba(0,209,255,0.4); line-height:1;">${report.score}</span>
+             <span style="font-size:var(--fs-1); font-weight:var(--fw-black); color:var(--c-text-3); text-transform:uppercase; letter-spacing:0.5em; margin-top:8px;">Performance Score</span>
            </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:24px;">
           <section style="background:var(--c-surface-h); padding:24px; border-radius:24px; border:1px solid var(--c-border);">
-            <p style="font-size:14px; font-style:italic; color:var(--c-text-2); line-height:1.6; font-weight:600;">"${esc(report.summary)}"</p>
+            <p style="font-size:var(--fs-3); font-style:italic; color:var(--c-text-2); line-height:1.6; font-weight:var(--fw-md);">"${esc(report.summary)}"</p>
           </section>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
             <div style="background:rgba(0,230,118,0.05); padding:20px; border-radius:24px; border:1px solid rgba(0,230,118,0.1);">
-               <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:var(--c-accent); margin-bottom:12px; letter-spacing:0.2em;">Wins</h4>
-               <ul style="font-size:12px; color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
+               <h4 style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-accent); margin-bottom:12px; letter-spacing:0.2em;">Wins</h4>
+               <ul style="font-size:var(--fs-2); color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
                  ${report.pros.map(p => `<li style="display:flex; gap:8px;"><span style="color:var(--c-accent)">+</span>${esc(p)}</li>`).join('')}
                </ul>
             </div>
             <div style="background:rgba(255,77,136,0.05); padding:20px; border-radius:24px; border:1px solid rgba(255,77,136,0.1);">
-               <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:var(--c-red); margin-bottom:12px; letter-spacing:0.2em;">Leaks</h4>
-               <ul style="font-size:12px; color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
+               <h4 style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-red); margin-bottom:12px; letter-spacing:0.2em;">Leaks</h4>
+               <ul style="font-size:var(--fs-2); color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
                  ${report.cons.map(c => `<li style="display:flex; gap:8px;"><span style="color:var(--c-red)">-</span>${esc(c)}</li>`).join('')}
                </ul>
             </div>
@@ -521,12 +521,12 @@ export const IntelView = (() => {
       const c = getColor(val);
       return `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div style="font-size:12px; font-weight:600; color:var(--c-text-2);">${label}</div>
+          <div style="font-size:var(--fs-2); font-weight:var(--fw-md); color:var(--c-text-2);">${label}</div>
           <div style="display:flex; align-items:center; gap:8px; width:55%;">
             <div style="flex:1; height:6px; background:var(--c-surface-h); border-radius:3px; overflow:hidden;">
               <div style="width:${val}%; height:100%; background:${c}; border-radius:3px; transition: width 1s ease-out;"></div>
             </div>
-            <span style="font-size:12px; font-weight:800; color:${c}; width:28px; text-align:right;">${val}</span>
+            <span style="font-size:var(--fs-2); font-weight:var(--fw-black); color:${c}; width:28px; text-align:right;">${val}</span>
           </div>
         </div>
       `;
@@ -538,17 +538,17 @@ export const IntelView = (() => {
     return `
       <div class="intel-readiness-widget animate-in" style="background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.1); border-radius:24px; padding:20px; margin:16px 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
-          <div style="font-size:16px; font-weight:600; color:var(--c-text-1);">Индекс готовности</div>
-          <div style="width:24px; height:24px; border-radius:50%; background:var(--c-border-h); display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--c-text-3);">?</div>
+          <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1);">Индекс готовности</div>
+          <div style="width:24px; height:24px; border-radius:50%; background:var(--c-border-h); display:flex; align-items:center; justify-content:center; font-size:var(--fs-2); color:var(--c-text-3);">?</div>
         </div>
         
         <div style="display:flex; align-items:flex-end; gap:16px; margin-bottom:32px;">
-          <div style="font-size:42px; font-weight:800; color:${mainColor}; line-height:1; font-family:'Instrument Sans', sans-serif;">${data.index}</div>
+          <div style="font-size:var(--fs-6); font-weight:var(--fw-black); color:${mainColor}; line-height:1; font-family:'Instrument Sans', sans-serif;">${data.index}</div>
           <div style="flex:1; padding-bottom:8px;">
             <div style="height:6px; background:var(--c-border-h); border-radius:3px; overflow:hidden;">
               <div style="height:100%; width:${data.index}%; background:${mainColor}; border-radius:3px; transition: width 1s ease-out;"></div>
             </div>
-            <div style="font-size:12px; color:var(--c-text-3); margin-top:8px; text-transform:uppercase; font-weight:700;">${indexLabel}</div>
+            <div style="font-size:var(--fs-2); color:var(--c-text-3); margin-top:8px; text-transform:uppercase; font-weight:var(--fw-bold);">${indexLabel}</div>
           </div>
         </div>
 
@@ -563,15 +563,15 @@ export const IntelView = (() => {
 
         <div style="border-top:1px solid var(--c-border); padding-top:20px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-            <div style="font-size:11px; font-weight:800; letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">Цель на сегодня</div>
+            <div style="font-size:var(--fs-1); font-weight:var(--fw-black); letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">Цель на сегодня</div>
             <div style="display:flex; align-items:center; gap:8px;">
-              <span style="color:var(--c-red); font-size:12px;">ЦНС</span>
+              <span style="color:var(--c-red); font-size:var(--fs-2);">ЦНС</span>
               <div style="width:40px; height:4px; background:var(--c-border-h); border-radius:2px;"><div style="width:${data.cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
-              <span style="font-size:12px; font-weight:700; color:var(--c-red);">${data.cns}%</span>
+              <span style="font-size:var(--fs-2); font-weight:var(--fw-bold); color:var(--c-red);">${data.cns}%</span>
             </div>
           </div>
           <div style="border-left:2px solid ${mainColor}; padding-left:12px;">
-            <div style="font-size:16px; font-weight:600; color:var(--c-text-1); margin-bottom:4px;">${data.goal}</div>
+            <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1); margin-bottom:4px;">${data.goal}</div>
           </div>
         </div>
       </div>
