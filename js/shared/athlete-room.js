@@ -206,7 +206,7 @@ export const AthleteRoom = (() => {
             <button class="ar-back-btn" data-action="ar:close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
-            <div style="font-weight: 700; font-size: 16px;">${ru ? 'Мой профиль' : 'Athlete Room'}</div>
+            <div style="font-weight: var(--fw-bold); font-size: var(--fs-3);">${ru ? 'Мой профиль' : 'Athlete Room'}</div>
             <div style="width: 44px;"></div> <!-- spacer -->
           </div>
           
@@ -287,11 +287,11 @@ export const AthleteRoom = (() => {
 
           <div class="ar-stats" style="margin-bottom:12px">
             <div class="ar-stat" data-action="ar:editStat" data-stat="weight" data-val="${metrics?.weight||80}" style="cursor:pointer">
-              <div class="ar-stat-val">${metrics?.weight||'—'} <span style="font-size:12px;opacity:0.6">kg</span></div>
+              <div class="ar-stat-val">${metrics?.weight||'—'} <span style="font-size:var(--fs-1);opacity:0.6">kg</span></div>
               <div class="ar-stat-lbl">${ru?'Вес':'Weight'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:4px; opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
             <div class="ar-stat" data-action="ar:editStat" data-stat="height" data-val="${metrics?.height||180}" style="cursor:pointer">
-              <div class="ar-stat-val">${metrics?.height||'—'} <span style="font-size:12px;opacity:0.6">cm</span></div>
+              <div class="ar-stat-val">${metrics?.height||'—'} <span style="font-size:var(--fs-1);opacity:0.6">cm</span></div>
               <div class="ar-stat-lbl">${ru?'Рост':'Height'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:4px; opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
             <div class="ar-stat" style="box-shadow: 0 4px 16px ${tierColor}20; border-color: ${tierColor}40">
@@ -301,11 +301,11 @@ export const AthleteRoom = (() => {
           </div>
           <div class="ar-stats">
             <div class="ar-stat">
-              <div class="ar-stat-val">${streak} <span style="font-size:12px;opacity:0.6">d</span></div>
+              <div class="ar-stat-val">${streak} <span style="font-size:var(--fs-1);opacity:0.6">d</span></div>
               <div class="ar-stat-lbl">${ru ? 'Стрик' : 'Streak'}</div>
             </div>
             <div class="ar-stat">
-              <div class="ar-stat-val">${total} <span style="font-size:12px;opacity:0.6">kg</span></div>
+              <div class="ar-stat-val">${total} <span style="font-size:var(--fs-1);opacity:0.6">kg</span></div>
               <div class="ar-stat-lbl">${ru ? 'Сумма 1RM' : '1RM Total'}</div>
             </div>
             <div class="ar-stat" style="box-shadow: 0 4px 16px ${tierColor}20; border-color: ${tierColor}40">
@@ -346,7 +346,7 @@ export const AthleteRoom = (() => {
               <div style="margin-top:8px">${dobSelectsHtml(ctx.profile?.dob || '', ru, 'ar-dob')}</div>
 
               <div class="ar-editor-label" style="margin-top:16px">${ru ? 'Пол' : 'Sex'}</div>
-              <select id="ar-sex-input" class="ar-name-input" style="background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); border-radius:12px; height:48px; padding:0 16px; width:100%; font-size:16px; margin-top:8px;">
+              <select id="ar-sex-input" class="ar-name-input" style="background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); border-radius:12px; height:48px; padding:0 16px; width:100%; font-size:var(--fs-3); margin-top:8px;">
                 <option value="m" ${ctx.profile?.sex !== 'f' ? 'selected' : ''}>${ru ? 'Мужской' : 'Male'}</option>
                 <option value="f" ${ctx.profile?.sex === 'f' ? 'selected' : ''}>${ru ? 'Женский' : 'Female'}</option>
               </select>
