@@ -129,7 +129,7 @@ export const SupabaseCheck = (() => {
       <div class="supabase-badge" title="${title}"
            style="display:flex;align-items:center;gap:6px;padding:4px 10px;
                   border-radius:8px;border:1px solid ${c.text}22;
-                  background:${c.bg};font-size:11px;font-weight:700;
+                  background:${c.bg};font-size:var(--fs-1);font-weight:var(--fw-bold);
                   color:${c.text};width:fit-content">
         <span style="width:6px;height:6px;border-radius:50%;
                      background:${c.dot};flex-shrink:0;${pulse}"></span>
@@ -141,7 +141,7 @@ export const SupabaseCheck = (() => {
     return `
       <div style="display:flex;align-items:center;gap:8px;padding:var(--sp-1) 0">
         <div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div>
-        <span style="font-size:12px;color:var(--c-text-3)">Checking Supabase…</span>
+        <span style="font-size:var(--fs-2);color:var(--c-text-3)">Checking Supabase…</span>
       </div>`;
   }
 
@@ -156,7 +156,7 @@ export const SupabaseCheck = (() => {
           </div>
           <span class="cloud-status-val" style="color:var(--c-amber)">Setup needed</span>
         </div>
-        <div style="font-size:11px;color:var(--c-text-3);margin-top:var(--sp-1);line-height:1.6">
+        <div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:var(--sp-1);line-height:1.6">
           Add <code style="background:var(--c-bg-3);padding:1px 4px;border-radius:4px">SUPABASE_URL</code>
           and <code style="background:var(--c-bg-3);padding:1px 4px;border-radius:4px">SUPABASE_ANON_KEY</code>
           to your <strong>.env</strong> file.

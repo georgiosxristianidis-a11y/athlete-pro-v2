@@ -467,7 +467,7 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       </div>
 
       <!-- Results count -->
-      <div style="font-size:11px;color:var(--c-text-3);padding:6px 0">
+      <div style="font-size:var(--fs-1);color:var(--c-text-3);padding:6px 0">
         <span id="add-ex-count">Loading…</span>
       </div>
 
@@ -541,8 +541,8 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       btn.className = 'add-ex-item';
       btn.style.cssText = 'text-align:left;padding:10px 12px;height:auto';
       btn.innerHTML = `
-        <div style="font-weight:700;font-size:13px;color:var(--c-text-1)">${esc(ex.name)}</div>
-        <div style="font-size:10px;color:var(--c-text-3);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
+        <div style="font-weight:var(--fw-bold);font-size:var(--fs-2);color:var(--c-text-1)">${esc(ex.name)}</div>
+        <div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
           <span style="text-transform:capitalize">${esc(ex.muscleGroup)}</span>
           <span>·</span>
           <span style="text-transform:capitalize">${esc(ex.equipment)}</span>
@@ -641,7 +641,7 @@ export async function openReplaceExModal(ei) {
       </div>
 
       <!-- Results count -->
-      <div style="font-size:11px;color:var(--c-text-3);padding:6px 0">
+      <div style="font-size:var(--fs-1);color:var(--c-text-3);padding:6px 0">
         <span id="replace-count">Loading…</span>
       </div>
 
@@ -715,8 +715,8 @@ export async function openReplaceExModal(ei) {
       btn.className = 'add-ex-item';
       btn.style.cssText = 'text-align:left;padding:10px 12px;height:auto';
       btn.innerHTML = `
-        <div style="font-weight:700;font-size:13px;color:var(--c-text-1)">${esc(ex.name)}</div>
-        <div style="font-size:10px;color:var(--c-text-3);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
+        <div style="font-weight:var(--fw-bold);font-size:var(--fs-2);color:var(--c-text-1)">${esc(ex.name)}</div>
+        <div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
           <span style="text-transform:capitalize">${esc(ex.muscleGroup)}</span>
           <span>·</span>
           <span style="text-transform:capitalize">${esc(ex.equipment)}</span>
