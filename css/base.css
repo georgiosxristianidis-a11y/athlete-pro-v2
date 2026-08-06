@@ -817,24 +817,11 @@ button:focus-visible {
   letter-spacing: 0.02em;
 }
 
-.week-pill {
-  position: absolute;
-  top: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-m);
-  cursor: pointer;
-  transition: transform var(--t-fast), opacity var(--t-fast);
-}
-.week-pill:active {
-  transform: scale(var(--press-scale));
-  background: var(--c-surface-h);
-}
+/* .week-pill переехал целиком в css/workout.css (CSS-2): пилюля живёт только
+   в шапке Train, а здесь её вид перебивался экранным файлом по всем свойствам,
+   кроме позиционирования — оно одно и продолжало приезжать отсюда. Владелец
+   компонента обязан быть один, иначе следующая правка отступов в workout.css
+   опять разъедется с невидимым `position: absolute` в base.css. */
 .section-label {
   font-family: var(--font-heading);
   font-size: var(--fs-1);
@@ -1357,22 +1344,23 @@ button:focus-visible {
   text-shadow: 0 0 10px rgba(255, 179, 0, 0.4);
 }
 
-.streak-count {
-  color: var(--c-amber);
-  font-weight: var(--fw-black);
-  text-shadow: 0 0 12px rgba(255, 179, 0, 0.35);
-}
+/* .streak-count здесь больше нет (CSS-2). Правило осталось от янтарной версии
+   счётчика: dashboard.css перевёл его на --c-gold + --fw-md, и оба свойства
+   отсюда были мертвы — а `text-shadow` пережил переезд и подсвечивал золотой
+   текст янтарным нимбом. Владелец компонента — css/dashboard.css. */
 
-.chat-send-btn {
-  background: linear-gradient(180deg, var(--c-secondary) 0%, rgba(139, 92, 246, 0.85) 100%) !important;
-  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35) !important;
-}
+/* .chat-send-btn здесь больше нет (CSS-2). `background`/`box-shadow` стояли с
+   `!important` и глушили css/claude.css, где тот же фон объявлен трижды
+   (базовый, :active, :hover) — ни одно из трёх состояний не применялось. */
 
 @keyframes card-in {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Дубль с `.stat-chip` из dashboard.css законный: там коробка (фон, рамка,
+   паддинги), здесь только анимация входа — общая для обоих экранов, где чип
+   живёт. Пересечения свойств нет (CSS-2). */
 .stat-chip { animation: card-in 0.24s var(--ease-out) both; }
 .stat-chip:nth-child(1) { animation-delay: 0.06s; }
 .stat-chip:nth-child(2) { animation-delay: 0.11s; }
@@ -1434,6 +1422,87 @@ button:focus-visible {
   font-family: var(--font-heading);
   font-variant-numeric: tabular-nums;
   font-weight: var(--fw-md);
+}
+
+/* ── Список 1RM — ОБЩИЙ компонент двух экранов ──
+   Рендерится и на Stats (analytics.view.js), и на Дашборде (dashboard.js), а
+   объявлен был только в css/analytics.css — лениво загружаемом файле экрана
+   Stats. Пока пользователь не открыл Stats, на Дашборде не было ни одного
+   правила `.orm-*`: строки шли голым `display: block`. Переехало сюда целиком
+   (CSS-2), потому что base.css грузится всегда и первым.
+   Экранных отличий у компонента нет — если появятся, они идут скоупом
+   (`#s-stats .orm-row`), а не второй копией правила в файле экрана. */
+.orm-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 10px var(--sp-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  margin-bottom: var(--sp-2); /* card→card minimum 16px */
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.orm-row:active {
+  background: var(--c-surface-h);
+}
+.orm-name {
+  flex: 1;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-1);
+  min-width: 0;
+}
+.orm-val {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.orm-unit {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+  margin-left: 2px;
+}
+/* 30-day progress delta badge on each lift row */
+.orm-delta {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  padding: 2px 5px;
+  border-radius: 4px;
+  margin-left: 5px;
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+.orm-delta-up   { color: var(--c-accent); background: var(--c-accent-bg); }
+.orm-delta-down { color: var(--c-red);    background: var(--c-red-bg); }
+.orm-bar-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--c-border);
+}
+.orm-bar-fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.8s var(--ease-std);
+}
+@media (hover: hover) {
+  .orm-row:hover {
+    border-color: var(--c-border-h);
+    background: var(--c-surface-h);
+  }
 }
 /* Toast Notifications — see Section 10 above (single source of truth). */
 

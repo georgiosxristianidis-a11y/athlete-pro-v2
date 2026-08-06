@@ -96,7 +96,13 @@
 #s-train .section-header { display: flex; align-items: center; justify-content: space-between; }
 #s-train .section-header .btn-text { padding: var(--sp-1-5) var(--sp-1); margin: calc(-1 * var(--sp-1-5)) calc(-1 * var(--sp-1)); }
 
+/* Позиционирование приехало из base.css вместе с остальным компонентом (CSS-2).
+   Якорь — `.screen-header` (position: relative, base.css § Screen header):
+   пилюля прижата к правому верху шапки Train и не участвует в потоке. */
 .week-pill {
+  position: absolute;
+  top: 0;
+  right: 0;
   display: flex;
   align-items: center;
   gap: var(--sp-1);
@@ -154,6 +160,10 @@
 .live-hero { background: var(--c-surface); border-radius: var(--r-xl); padding: var(--sp-2) var(--sp-3) var(--sp-1-5); margin-bottom: var(--sp-3); }
 .live-hero-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-1); }
 .live-hero-num { display: flex; align-items: baseline; gap: var(--sp-0-5); min-width: 0; }
+/* `.live-hero-val` и `.stepper-val` ниже намеренно объявлены и здесь, и в
+   группе «Data & Digits» base.css: база даёт цифрам общий вид (шрифт заголовка,
+   tabular-nums, --fw-md), экран поднимает вес до --fw-black и задаёт размер.
+   Пересекается один --fw-*, и перебивается он осознанно (CSS-2). */
 .live-hero-val { font-size: var(--fs-6); font-weight: var(--fw-black); letter-spacing: -0.04em; line-height: 1; color: var(--c-text-1); }
 .live-hero-unit { font-size: var(--fs-1); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-text-3); }
 .live-hero-chip { font-size: var(--fs-1); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-3); opacity: 0.7; white-space: nowrap; }

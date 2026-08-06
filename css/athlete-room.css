@@ -2,7 +2,12 @@
    athlete-room.css — Athlete Room overlay styles
    ════════════════════════════════════════════════════════ */
 
-/* ── Status-bar layout: logo left, avatar right ── */
+/* ── Status-bar layout: logo left, avatar right ──
+   `#status-bar` объявлен в трёх местах, и это законно — пересечений свойств
+   нет (проверено CSSOM, CSS-2): критический инлайн в index.html держит каркас
+   (position/height/z-index/фон), base.css — только десктопную геометрию внутри
+   `@media (min-width: 481px) and (hover: hover)`, а здесь лежит раскладка
+   содержимого. Добавляя сюда свойство, сверься с теми двумя. */
 #status-bar {
   display: flex !important;
   align-items: center !important;
