@@ -128,10 +128,12 @@
   gap: 12px;
   margin-bottom: var(--sp-3);
 }
+/* border-radius здесь не объявляется намеренно — см. базовую группу AIR Tier 1
+   в css/base.css: она прибивает радиус через `--r-l !important`. Стоявший тут
+   `var(--r-xl)` не применялся ни разу — чип всегда был 18px, а не 22px. */
 #s-stats .stat-chip {
   background: var(--c-bg-2);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-xl);
   padding: 12px;
   text-align: center;
 }
@@ -216,75 +218,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── 1RM list ── */
-.orm-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  padding: 10px var(--sp-2);
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-m);
-  margin-bottom: var(--sp-2); /* card→card minimum 16px */
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-}
-.orm-row:active {
-  background: var(--c-surface-h);
-}
-.orm-name {
-  flex: 1;
-  font-size: var(--fs-2);
-  font-weight: var(--fw-md);
-  color: var(--c-text-1);
-  min-width: 0;
-}
-.orm-val {
-  font-size: var(--fs-3);
-  font-weight: var(--fw-md);
-  color: var(--c-text-1);
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-.orm-unit {
-  font-size: var(--fs-1);
-  font-weight: var(--fw-md);
-  color: var(--c-text-3);
-  margin-left: 2px;
-}
-/* 30-day progress delta badge on each lift row */
-.orm-delta {
-  display: inline-flex;
-  align-items: center;
-  font-size: var(--fs-1);
-  font-weight: var(--fw-md);
-  padding: 2px 5px;
-  border-radius: 4px;
-  margin-left: 5px;
-  vertical-align: middle;
-  font-variant-numeric: tabular-nums;
-}
-.orm-delta-up   { color: var(--c-accent); background: var(--c-accent-bg); }
-.orm-delta-down { color: var(--c-red);    background: var(--c-red-bg); }
-.orm-bar-wrap {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--c-border);
-}
-.orm-bar-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: transform 0.8s var(--ease-std);
-}
+/* ── 1RM list ──
+   Компонент `.orm-*` переехал в css/base.css (CSS-2). Он рендерится на ДВУХ
+   экранах — Stats (analytics.view.js) и Дашборде (dashboard.js), — а жил
+   только здесь, в лениво загружаемом файле экрана Stats. До первого захода в
+   Stats блок 1RM на Дашборде оставался голым: `.orm-row` = display:block, без
+   фона, паддинга и полосы прогресса. Общий компонент обязан лежать в base.css,
+   иначе его вид зависит от того, какие экраны пользователь успел открыть. */
 @media (hover: hover) {
-  .orm-row:hover {
-    border-color: var(--c-border-h);
-    background: var(--c-surface-h);
-  }
   .cal-cell:not(.empty):hover {
     border-color: var(--c-border-h);
     background: var(--c-surface-h);
@@ -347,8 +288,6 @@
   gap: 8px;
   -webkit-tap-highlight-color: transparent;
 }
-
-.orm-bar-fill { transform-origin: left; width: 100%; transform: scaleX(0); }
 
 /* ── Strength Index hero (premium overview) ── */
 .sh-hero { padding: 16px 18px 14px; }
