@@ -85,7 +85,6 @@
 .bs-stat-card {
   background: var(--c-bg-2);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-m);
   padding: 12px 12px 8px;
   display: flex;
   flex-direction: column;

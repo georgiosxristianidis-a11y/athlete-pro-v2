@@ -6,7 +6,6 @@
 .cal-card {
   background: var(--c-bg-2);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-l);
   padding: var(--sp-2);
   margin-bottom: var(--sp-1);
   overflow: hidden;
@@ -162,7 +161,6 @@
 .chart-card {
   background: var(--c-bg-2);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-xl);
   padding: var(--sp-2);
   margin-bottom: var(--sp-2);
   overflow: hidden;
