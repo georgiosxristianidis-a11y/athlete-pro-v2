@@ -10,6 +10,14 @@
 # Два сигнала:
 #   1. CI на коммите в main не зелёный — значит PR слили с красными чеками.
 #   2. У коммита нет связанного PR — значит прямой пуш мимо хука (MAIN_PUSH_OK=1).
+#
+# Сторож, который падает, — это сторож, которого нет: в 1.27.23 он был мёртв с
+# момента установки, потому что запрос связанных PR отдавал 403 (не хватало
+# pull-requests: read), необработанная ошибка убивала job целиком и вместе с ним
+# ОБА сигнала. Поэтому каждый вызов API обёрнут: отказ деградирует в жалобу
+# «сторож не смог проверить происхождение», а не в упавший прогон. Единственное
+# место, где падать правильно, — не удалось завести issue: там сигналу больше
+# некуда деться.
 name: Main watchdog
 
 on:
@@ -18,10 +26,24 @@ on:
     types: [completed]
     branches: [main]
 
-# Минимум прав: читать коммиты и заводить issue. Ничего писать в код не нужно.
+  # Ручной прогон на произвольном прогоне CI. Не удобство, а единственный способ
+  # проверить сторожа: workflow_run не воспроизвести иначе, как слив что-то в
+  # main, а прямой пуш в main запрещён (CLAUDE.md § Session Protocol). Без этого
+  # входа проверка сторожа требует нарушить правило, ради которого он стоит.
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'ID прогона CI, на котором прогнать сторожа'
+        required: true
+
+# Минимум прав: читать коммиты и заводить issue.
+# pull-requests: read — для listPullRequestsAssociatedWithCommit, без него 403.
+# actions: read — чтобы достать прогон CI по run_id на ручном запуске.
 permissions:
   contents: read
   issues: write
+  pull-requests: read
+  actions: read
 
 jobs:
   watch:
@@ -31,10 +53,30 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const run = context.payload.workflow_run;
+            const { owner, repo } = context.repo;
+
+            // Прогон CI: из payload на workflow_run, по run_id — на ручном.
+            let run = context.payload.workflow_run;
+            if (!run) {
+              const runId = Number(context.payload.inputs?.run_id);
+              if (!Number.isInteger(runId) || runId <= 0) {
+                core.setFailed('Ручной запуск: run_id должен быть числом — ID прогона CI.');
+                return;
+              }
+              const res = await github.rest.actions.getWorkflowRun({ owner, repo, run_id: runId });
+              run = res.data;
+              core.info(
+                `Ручной прогон сторожа на CI #${runId}: ветка ${run.head_branch}, ` +
+                `итог ${run.conclusion}, коммит ${run.head_sha.slice(0, 7)}.`
+              );
+            }
+
             const sha = run.head_sha;
             const short = sha.slice(0, 7);
-            const problems = [];
+            const commitUrl = `https://github.com/${owner}/${repo}/commit/${sha}`;
+
+            const problems = []; // нарушения: приехало мимо ворот
+            let blind = null; // сторож не смог проверить
 
             if (run.conclusion !== 'success') {
               problems.push(
@@ -46,51 +88,83 @@ jobs:
 
             // Связанный PR. Мёрж идёт через --rebase, то есть SHA на main новый —
             // GitHub при этом сохраняет связь коммита с PR. Пусто = пуш мимо PR.
-            const { data: prs } =
-              await github.rest.repos.listPullRequestsAssociatedWithCommit({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                commit_sha: sha,
-              });
-            const merged = prs.filter((p) => p.merged_at);
-            if (merged.length === 0) {
+            // Отказ API — не «PR нет»: считать ослепшего сторожа обвинителем нельзя,
+            // но и молчать он не должен, поэтому отдельная жалоба.
+            let merged = null;
+            try {
+              const { data: prs } =
+                await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                  owner,
+                  repo,
+                  commit_sha: sha,
+                });
+              merged = prs.filter((p) => p.merged_at);
+            } catch (err) {
+              blind =
+                `**Сторож не смог проверить происхождение коммита.** Запрос связанных PR ` +
+                `вернул \`${err.status ?? '?'}\`: ${err.message}. Проверить руками, что ` +
+                `\`${short}\` приехал через PR с зелёными чеками, и починить права в ` +
+                `\`.github/workflows/main-watchdog.yml\` (нужен \`pull-requests: read\`).`;
+              core.warning(`Проверка связанных PR не прошла (${err.status ?? '?'}): ${err.message}`);
+            }
+
+            if (merged !== null && merged.length === 0) {
               problems.push(
                 `**У коммита нет связанного смёрженного PR** — похоже на прямой пуш в \`main\` ` +
                 `мимо \`.githooks/pre-push\` (обход \`MAIN_PUSH_OK=1\`) или на мёрж чужой линии.`
               );
             }
 
-            if (problems.length === 0) {
+            const findings = blind ? [...problems, blind] : problems;
+            if (findings.length === 0) {
               core.info(`main ${short}: CI зелёный, PR #${merged.map((p) => p.number).join(', #')} — чисто.`);
               return;
             }
 
-            const title = `Сторож main: ${short} приехал мимо ворот`;
+            const marker = `Сторож main: ${short}`;
+            const title = problems.length > 0
+              ? `${marker} приехал мимо ворот`
+              : `${marker} — не удалось проверить происхождение`;
 
-            // Не плодить дубли: тот же коммит — тот же issue.
-            const { data: found } = await github.rest.search.issuesAndPullRequests({
-              q: `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open in:title "${short} приехал мимо ворот"`,
-            });
-            if (found.total_count > 0) {
-              core.info(`issue на ${short} уже есть: ${found.items[0].html_url}`);
-              return;
+            // Не плодить дубли: тот же коммит — тот же issue. Список открытых
+            // issue, а не search: поисковый индекс отстаёт на минуты, и сторож
+            // успел бы завести второй. Отказ здесь не смертелен — дубль лучше
+            // молчания.
+            try {
+              const open = await github.paginate(github.rest.issues.listForRepo, {
+                owner,
+                repo,
+                state: 'open',
+                per_page: 100,
+              });
+              const dup = open.find((i) => !i.pull_request && i.title.startsWith(marker));
+              if (dup) {
+                core.info(`issue на ${short} уже есть: ${dup.html_url}`);
+                return;
+              }
+            } catch (err) {
+              core.warning(
+                `Не удалось проверить дубли (${err.status ?? '?'}): ${err.message}. ` +
+                `Завожу issue: дубль лучше молчания.`
+              );
             }
 
-            const { data: commit } = await github.rest.repos.getCommit({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: sha,
-            });
+            let commit = null;
+            try {
+              ({ data: commit } = await github.rest.repos.getCommit({ owner, repo, ref: sha }));
+            } catch (err) {
+              core.warning(`Не удалось прочитать коммит (${err.status ?? '?'}): ${err.message}`);
+            }
 
             const body = [
               `В \`main\` приехал коммит, не прошедший обычный путь «PR → зелёные чеки → мёрж».`,
               ``,
-              `- **Коммит:** ${commit.html_url}`,
-              `- **Сообщение:** ${commit.commit.message.split('\n')[0]}`,
-              `- **Автор:** ${commit.commit.author?.name ?? 'неизвестно'}`,
+              `- **Коммит:** ${commit?.html_url ?? commitUrl}`,
+              `- **Сообщение:** ${commit?.commit.message.split('\n')[0] ?? 'не удалось прочитать'}`,
+              `- **Автор:** ${commit?.commit.author?.name ?? 'неизвестно'}`,
               ``,
               `### Что не так`,
-              ...problems.map((p) => `- ${p}`),
+              ...findings.map((p) => `- ${p}`),
               ``,
               `### Что делать`,
               `Прогнать гейт на сегодняшнем \`main\` (\`npm test\`, \`npm run lint\`) и, если он красный,`,
@@ -102,10 +176,14 @@ jobs:
               `бесплатном плане приватного репозитория нет, поэтому сторож не запрещает, а показывает.`,
             ].join('\n');
 
-            const { data: issue } = await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title,
-              body,
-            });
-            core.warning(`Заведён issue ${issue.html_url}`);
+            // Завести issue не вышло — сигналу больше некуда деться. Вот здесь
+            // красный прогон и есть последний канал, поэтому падаем намеренно.
+            try {
+              const { data: issue } = await github.rest.issues.create({ owner, repo, title, body });
+              core.warning(`Заведён issue ${issue.html_url}`);
+            } catch (err) {
+              core.setFailed(
+                `Сторож нашёл проблему на ${short}, но не смог завести issue ` +
+                `(${err.status ?? '?'}): ${err.message}\n\n${title}\n\n${body}`
+              );
+            }
