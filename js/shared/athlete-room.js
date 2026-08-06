@@ -164,6 +164,15 @@ async function _buildContext() {
 
 export const AthleteRoom = (() => {
   let _overlay = null;
+  /**
+   * Контекст последнего render(). Переключение вкладки данных не меняет, а
+   * пересчёт стоил полного чтения базы (все тренировки + 1RM + расшифровка
+   * профиля + base64-фото) — отсюда и задержка в полсекунды на каждый тап.
+   * Любая мутация (вес, имя, фото, цвет) идёт через render(), который кэш
+   * перезаписывает, так что устареть ему негде.
+   * @type {Object|null}
+   */
+  let _ctx = null;
 
   async function open() {
     haptic(15);
@@ -196,6 +205,7 @@ export const AthleteRoom = (() => {
 
   async function render() {
     const ctx = await _buildContext();
+    _ctx = ctx;
     const { ru } = ctx;
     const activeTab = window._arActiveTab || 'profile';
 
@@ -241,8 +251,11 @@ export const AthleteRoom = (() => {
     const container = document.getElementById('ar-tab-content');
     if (!container) return;
 
-    // Контекст либо передан из render(), либо собирается заново — одним путём.
-    const ctx = dataContext || await _buildContext();
+    // Контекст либо передан из render(), либо взят из кэша последнего render()
+    // — переключение вкладки данных не меняет, а полное чтение базы стоило
+    // задержки на каждый тап. Чтение остаётся только на аварийный случай
+    // «switchTab до первого render()».
+    const ctx = dataContext || _ctx || (_ctx = await _buildContext());
 
     if (window._arActiveTab === 'profile') {
       _renderProfileTab(container, ctx);

@@ -248,7 +248,8 @@ function openForm(focusId) {
     });
     const target = /** @type {HTMLInputElement|null} */ (
       focusId ? overlay.querySelector('#bsf-' + focusId) : null);
-    if (target) { target.focus(); target.select(); target.scrollIntoView({ block: 'center' }); }
+    // inline: 'nearest' явно: дефолт умеет уводить контейнер по горизонтали.
+    if (target) { target.focus(); target.select(); target.scrollIntoView({ block: 'center', inline: 'nearest' }); }
   });
 
   const close = () => {
