@@ -2,7 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://plausible.io https://cdn.jsdelivr.net ws: wss:; img-src 'self' data: https:; media-src 'self' data:;" />
+    <!-- CSP живёт только в helmet (server.js). Мета здесь была второй копией и
+         протухла: держала снятые Phase 2 'unsafe-inline'/script-src-attr и не
+         знала про blob:. Браузер применяет ПЕРЕСЕЧЕНИЕ политик, поэтому более
+         узкая копия молча резала голосовой синтез (media-src, js/intel.view.js).
+         vercel.json гонит все маршруты через server.js — заголовок есть везде.
+         Сторожит test/csp-single-source.test.js. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#050507" />
     <meta name="description" content="Professional PPL workout tracker" />
