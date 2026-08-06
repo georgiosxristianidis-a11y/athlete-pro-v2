@@ -1,0 +1,111 @@
+# Сторож main. Стоит вместо branch protection, которой на этом плане не бывает.
+#
+# Приватный репо на бесплатном плане не даёт ни classic protection, ни rulesets
+# (403 Upgrade to GitHub Pro), поэтому GitHub не может ЗАПРЕТИТЬ слить красный PR
+# или толкнуть в main напрямую. Этот workflow не запрещает — он не даёт пройти
+# незамеченным: заводит issue сразу после того, как в main приехало что-то мимо
+# ворот. В отличие от .githooks/pre-push живёт на сервере и не дрейфует вместе
+# с чекаутом (CLAUDE.md § Multi-Agent Protocol).
+#
+# Два сигнала:
+#   1. CI на коммите в main не зелёный — значит PR слили с красными чеками.
+#   2. У коммита нет связанного PR — значит прямой пуш мимо хука (MAIN_PUSH_OK=1).
+name: Main watchdog
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+
+# Минимум прав: читать коммиты и заводить issue. Ничего писать в код не нужно.
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Проверить, как код попал в main
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const sha = run.head_sha;
+            const short = sha.slice(0, 7);
+            const problems = [];
+
+            if (run.conclusion !== 'success') {
+              problems.push(
+                `**CI на этом коммите — \`${run.conclusion}\`, а не \`success\`.** ` +
+                `Значит PR слили, не дождавшись зелёных чеков, либо гейт упал уже на main. ` +
+                `[Прогон CI](${run.html_url})`
+              );
+            }
+
+            // Связанный PR. Мёрж идёт через --rebase, то есть SHA на main новый —
+            // GitHub при этом сохраняет связь коммита с PR. Пусто = пуш мимо PR.
+            const { data: prs } =
+              await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: sha,
+              });
+            const merged = prs.filter((p) => p.merged_at);
+            if (merged.length === 0) {
+              problems.push(
+                `**У коммита нет связанного смёрженного PR** — похоже на прямой пуш в \`main\` ` +
+                `мимо \`.githooks/pre-push\` (обход \`MAIN_PUSH_OK=1\`) или на мёрж чужой линии.`
+              );
+            }
+
+            if (problems.length === 0) {
+              core.info(`main ${short}: CI зелёный, PR #${merged.map((p) => p.number).join(', #')} — чисто.`);
+              return;
+            }
+
+            const title = `Сторож main: ${short} приехал мимо ворот`;
+
+            // Не плодить дубли: тот же коммит — тот же issue.
+            const { data: found } = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open in:title "${short} приехал мимо ворот"`,
+            });
+            if (found.total_count > 0) {
+              core.info(`issue на ${short} уже есть: ${found.items[0].html_url}`);
+              return;
+            }
+
+            const { data: commit } = await github.rest.repos.getCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: sha,
+            });
+
+            const body = [
+              `В \`main\` приехал коммит, не прошедший обычный путь «PR → зелёные чеки → мёрж».`,
+              ``,
+              `- **Коммит:** ${commit.html_url}`,
+              `- **Сообщение:** ${commit.commit.message.split('\n')[0]}`,
+              `- **Автор:** ${commit.commit.author?.name ?? 'неизвестно'}`,
+              ``,
+              `### Что не так`,
+              ...problems.map((p) => `- ${p}`),
+              ``,
+              `### Что делать`,
+              `Прогнать гейт на сегодняшнем \`main\` (\`npm test\`, \`npm run lint\`) и, если он красный,`,
+              `починить или откатить. Если всё зелёное — закрыть issue: сторож поймал ложное срабатывание,`,
+              `и это стоит записать, чтобы не ловить его снова.`,
+              ``,
+              `---`,
+              `Заведено автоматически: \`.github/workflows/main-watchdog.yml\`. Server-side защиты ветки на`,
+              `бесплатном плане приватного репозитория нет, поэтому сторож не запрещает, а показывает.`,
+            ].join('\n');
+
+            const { data: issue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+            });
+            core.warning(`Заведён issue ${issue.html_url}`);
