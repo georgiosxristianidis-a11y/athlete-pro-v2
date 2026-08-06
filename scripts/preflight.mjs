@@ -8,7 +8,9 @@
 //   5. дефолт-ветка на GitHub != main   -> клоны и Compare&PR целятся в мёртвую
 //      линию (кейс csp-soft-delete 2026-07-26: O-3 упразднил trunk, а настройку
 //      репо никто не проверил — аномалия неделю висела в статусе git)
-//   6. защита main снята/ослаблена  -> прямой push и красные мёржи снова возможны
+//   6. защита main снята/ослаблена  -> прямой push и красные мёржи снова возможны.
+//      Если план репо её вообще не даёт (приватный на free: 403 Upgrade to Pro),
+//      проверяем то, что реально держит main на этом плане, — .githooks/pre-push.
 //   7. Production-деплой не с main  -> прод живёт своей жизнью (кейс: смоук чист,
 //      а раскатка шла бы с чужой ветки)
 // Ненулевой exit = есть FAIL. WARN не блокирует.
@@ -16,6 +18,7 @@
 
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
 
 const STALE_MS = 24 * 60 * 60 * 1000;
 const MAX_LISTED = 10;
@@ -159,18 +162,45 @@ if (!symref) {
 // --- 6+7. Настройки GitHub: защита main + источник Production-деплоя ---------
 // Тем же приёмом, что и дефолт-ветка: настройки невидимы в ежедневной работе
 // и не ломаются до первого касания — спрашиваем сам GitHub каждую сессию.
-function tryGh(args) {
+function ghDetail(args) {
   try {
-    return execFileSync('gh', args, {
+    const out = execFileSync('gh', args, {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       // Без shell: gh — настоящий .exe и находится по PATH, а '&' в URL
       // деплойментов виндовый cmd иначе режет как разделитель команд.
       timeout: 20000,
-    }).trim();
-  } catch {
-    return null;
+    });
+    return { ok: true, out: out.trim(), err: '' };
+  } catch (e) {
+    // stderr нужен целиком: по нему отличается «настройки нет» от «плана нет».
+    return { ok: false, out: '', err: String(e.stderr ?? '') + String(e.stdout ?? '') };
   }
+}
+
+function tryGh(args) {
+  const r = ghDetail(args);
+  return r.ok ? r.out : null;
+}
+
+// Реальный барьер против прямого пуша в main, когда server-side его нет.
+// Хук ищем по core.hooksPath: он абсолютный и смотрит в КОРНЕВОЙ чекаут —
+// протух корень, и хук молча мёртв сразу у всех worktree (CLAUDE.md
+// § Multi-Agent Protocol). Именно это и надо ловить на старте сессии.
+function checkPrePushHook() {
+  const hooksPath = tryGit(['config', 'core.hooksPath']);
+  if (!hooksPath) {
+    return { ok: false, why: 'core.hooksPath не задан — хуки не подключены' };
+  }
+  const hookFile = path.resolve(tryGit(['rev-parse', '--show-toplevel']) || '.', hooksPath, 'pre-push');
+  if (!fs.existsSync(hookFile)) {
+    return { ok: false, why: `хука нет по пути core.hooksPath: ${hookFile}` };
+  }
+  const src = fs.readFileSync(hookFile, 'utf8');
+  if (!src.includes('MAIN_PUSH_OK')) {
+    return { ok: false, why: `${hookFile} есть, но блока прямого пуша в main в нём нет` };
+  }
+  return { ok: true, why: hookFile };
 }
 
 const originUrl = tryGit(['remote', 'get-url', 'origin']) || '';
@@ -182,8 +212,23 @@ if (!repoSlug || !fetched) {
   add('WARN', 'настройки GitHub', 'gh CLI недоступен — проверки 6-7 пропущены');
 } else {
   // 6. Защита main: обязательные чеки test+e2e + enforce_admins.
-  const protRaw = tryGh(['api', `repos/${repoSlug}/branches/main/protection`]);
-  if (!protRaw) {
+  const protRes = ghDetail(['api', `repos/${repoSlug}/branches/main/protection`]);
+  const protRaw = protRes.ok ? protRes.out : null;
+  // Приватный репо на бесплатном плане: и classic protection, и rulesets отдают
+  // 403 «Upgrade to GitHub Pro». Это не «защиту сняли», а «её тут не бывает», и
+  // подсказка «Settings → Branches» ведёт на экран апгрейда. Вечный красный FAIL
+  // в таком виде дороже отсутствия проверки: его перестают читать целиком.
+  // Поэтому спрашиваем то, что на этом плане реально держит main, — pre-push.
+  const planGated = !protRes.ok && /Upgrade to GitHub (Pro|Team)/i.test(protRes.err);
+  if (planGated) {
+    const hook = checkPrePushHook();
+    if (hook.ok) {
+      add('OK', 'защита main', `server-side защиты нет (план репо), барьер жив — ${hook.why}`);
+    } else {
+      add('FAIL', 'защита main', `server-side защиты нет (план репо), и локальный барьер тоже: ${hook.why}`,
+        'npm install в этом чекауте (postinstall ставит core.hooksPath) либо освежить корневой чекаут');
+    }
+  } else if (!protRaw) {
     add('FAIL', 'защита main', 'branch protection ОТКЛЮЧЕНА (или нет прав её видеть)',
       'Settings → Branches → main: required checks test+e2e + Include administrators');
   } else {
