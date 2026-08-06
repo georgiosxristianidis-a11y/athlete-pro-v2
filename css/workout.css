@@ -25,7 +25,7 @@
   height: 200px; padding: var(--sp-4) var(--sp-1) var(--sp-3);
   background: color-mix(in srgb, var(--c-text-1) 2%, transparent); 
   border: 1px solid var(--c-border); 
-  border-radius: var(--r-xxl); cursor: pointer; 
+  cursor: pointer;
   transition: opacity 0.3s var(--ease-std), transform 0.3s var(--ease-std), background-color 0.3s var(--ease-std), border-color 0.3s var(--ease-std), color 0.3s var(--ease-std);
   -webkit-tap-highlight-color: transparent; 
   position: relative;
@@ -171,7 +171,7 @@
 .live-rail-seg { flex: 1; height: 4px; border-radius: 2px; background: var(--c-border-h); transition: background 0.3s ease, box-shadow 0.3s ease; }
 .live-rail-seg.done { background: var(--c-accent); box-shadow: 0 0 6px color-mix(in srgb, var(--c-accent) 45%, transparent); }
 
-.exercise-card { background: var(--c-bg-2) !important; border: 1.5px solid var(--c-border); border-radius: var(--r-xl); overflow: hidden; margin-bottom: var(--sp-3); transition: transform 0.2s, border-color 0.2s; }
+.exercise-card { background: var(--c-bg-2) !important; border: 1.5px solid var(--c-border); overflow: hidden; margin-bottom: var(--sp-3); transition: transform 0.2s, border-color 0.2s; }
 .exercise-header { display: flex; align-items: center; padding: var(--sp-1-5) var(--sp-2); gap: var(--sp-1); cursor: pointer; min-height: 56px; }
 .exercise-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--c-accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .ex-num { font-size: var(--fs-3); font-weight: var(--fw-black); color: var(--c-text-inverse); opacity: 0.35; }

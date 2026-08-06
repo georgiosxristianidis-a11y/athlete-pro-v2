@@ -1069,6 +1069,11 @@ button:focus-visible {
 
 /* ════════════════════════════════════════════════
    AIR (Tier 1) — flat cards: --c-bg-2 + hairline, no blur
+   Радиус карточки объявляется ЗДЕСЬ и только здесь (CSS-3, 2026-08-06).
+   До этого строка несла `!important` — попутная правка из чужого коммита
+   f45b12d, когда группа была ещё glass. Восемь файлов экранов объявляли
+   свой радиус (22/24/22/14 и четыре дубля 18), и он не применялся никогда.
+   Снято и то и другое: рендер прежний, 18px, но каскад больше не врёт.
    ════════════════════════════════════════════════ */
 .exercise-card,
 .type-card,
@@ -1083,7 +1088,7 @@ button:focus-visible {
 .bs-stat-card {
   background: var(--c-bg-2);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-l) !important;
+  border-radius: var(--r-l);
 }
 
 .modal-sheet,

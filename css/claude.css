@@ -293,7 +293,6 @@
   gap: 12px;
   background: var(--c-bg-2);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-l);
   padding: var(--sp-2);
   margin-bottom: var(--sp-1);
 }
@@ -373,7 +372,6 @@
 .coach-card {
   background: var(--c-bg-2);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-l);
   padding: var(--sp-2);
   margin-bottom: var(--sp-1);
 }
