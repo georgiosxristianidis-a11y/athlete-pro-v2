@@ -367,9 +367,16 @@
   border-color: color-mix(in srgb, var(--c-accent) 40%, transparent);
   outline: none;
 }
+/* overflow-x объявлен явно, чтобы не наследовать auto от overflow-y: подстраховка
+   на случай, если внутрь попадёт что-то шире контейнера. Рядом с
+   overflow-y: auto браузер приводит clip к hidden, то есть прокрутку кодом он
+   не запрещает — реальная защита от съезда подписей это min-width: 0 ниже
+   (прокручивать нечего). */
 .bs-fields-scroll {
   flex: 1;
   overflow-y: auto;
+  overflow-x: clip;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
@@ -396,6 +403,7 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
+  min-width: 0;
 }
 .bs-field-label {
   font-size: var(--fs-2);
@@ -404,14 +412,19 @@
   width: 100px;
   flex-shrink: 0;
 }
+/* min-width: 0 обязателен на всей цепочке: у <input> собственная внутренняя
+   ширина (~244px), а flex-элемент по умолчанию ниже неё не сжимается — форма
+   вылезала за экран на 17px и уезжала под правый край. */
 .bs-field-inp-wrap {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   position: relative;
 }
 .bs-field-inp {
   flex: 1;
+  min-width: 0;
   height: 40px;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
