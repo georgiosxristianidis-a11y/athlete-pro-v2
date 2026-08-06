@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
+import { computeDigest } from './sw-digest.mjs';
 
 function walkDir(dir) {
   let results = [];
@@ -72,12 +72,8 @@ swContent = swContent.replace(/const ASSETS = \[[\s\S]*?\];/, newAssetsString);
 // Auto-bump CACHE_NAME from a content hash of the precache manifest.
 // Guarantees the cache invalidates whenever any precached file changes —
 // removes the manual-bump failure mode (field bug: phone stuck on old SW).
-const hash = crypto.createHash('sha1');
-for (const webPath of [...assetsArray].sort()) {
-  hash.update(webPath);
-  try { hash.update(fs.readFileSync(webPath.slice(1))); } catch { /* missing file: path still hashed */ }
-}
-const digest = hash.digest('hex').slice(0, 8);
+// Hashing rules (incl. why text assets are normalized to LF) — scripts/sw-digest.mjs.
+const digest = computeDigest(assetsArray, fs.readFileSync);
 swContent = swContent.replace(/const CACHE_NAME = '([^']+)';/, (_m, full) => {
   const base = full.replace(/-[0-9a-f]{8}$/, '');
   return `const CACHE_NAME = '${base}-${digest}';`;
