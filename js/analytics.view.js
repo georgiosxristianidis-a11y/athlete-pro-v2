@@ -143,7 +143,7 @@ export async function load() {
             </button>
           </div>
         </div>
-        <div id="cal-card"></div>
+        <div id="cal-card" class="cal-card"></div>
       </div>
 
       <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.15s">
