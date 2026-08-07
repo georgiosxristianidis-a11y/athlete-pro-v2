@@ -305,6 +305,7 @@ AI-коуч отправляет только имя, возраст, пол и 
 - **Phase E** Cool Steel residuals: E-1 декор `--c-accent`→`--c-chrome` · E-3 `#000`→`--c-bg*` · E-4 rgba в `workout.css` / `athlete-room.css` (stylelint-warnings = карта) · E-5 ревью.
 - **Sonnet residuals:** 2-7 тесты форматтера · 3-3 метафоры иконок · 4-2 Edit Plan→фабрики · 4-3 CORE-унификация.
 - **SET-STALE** — карточка выше (низкий приоритет: одна вкладка в поле).
+- **SAST-2** — 57 `no-unused-vars` перестали быть невидимыми после 1.27.30 (шум SAST снят с 344 до 68, см. CHANGELOG). Разобрать и поднять правило до `error` в `eslint.config.js` — иначе они снова обрастут. Порядок обязателен: сперва уборка, потом `error`, иначе гейт краснеет на первом же push. Карта — `npx eslint . -f json`, топ: `js/workout.view/handlers.js` (14), `js/claude.view.js` (5), `js/workout.view/render.js` (5).
 - **S0 (опц.)** gitleaks detect read-only.
 - **D3 (опц.)** гард на pending `startViewTransition` в `shell.js`.
 - **Отложено осознанно (НЕ тащить):** zod на ответах AI · Signals/Proxy state (YAGNI) · выпил `unsafe-inline` целиком (XL-хвост Strangler после `` html`` ``-тега, D2) · ISL-CUSTOM (фаза 2, только при подтверждённой нужде) · роадмап Фаза 5 полиш.
