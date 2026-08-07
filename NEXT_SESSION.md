@@ -1,7 +1,7 @@
 # NEXT SESSION — Athlete Pro
 
 > Читать первым. Это **роутер**, а не свалка состояния: здесь только точка входа и указатели.
-> Обновлено 2026-08-07 (фаза сторожа `main` закрыта, хендофф в архиве; WATCH-2 переехала в `HANDOFF_next_cards.md`).
+> Обновлено 2026-08-07 (линия WATCH закрыта целиком: сторож `main` видит и коммит без единого прогона CI, 1.27.29).
 
 ## Правило файла
 
@@ -45,9 +45,10 @@ npm run smoke:prod                                       # доехал ли р�
 > сторонами: зелёный прогон на чистом мёрже и ручной прогон на заведомом нарушении, который
 > реально завёл issue. Последний необёрнутый вызов закрыт в 1.27.28: отказ на ручном пути
 > падает через `setFailed` с названным правом, а не необработанной ошибкой.
-> **Но он не всесилен:** коммит, на котором CI не запускался ВООБЩЕ, сторож не видит по
-> построению — он висит на `workflow_run` от CI. Карточка **WATCH-2** открыта и лежит в
-> `docs/handoff/HANDOFF_next_cards.md`; история фазы — `docs/_archive/HANDOFF_main_watchdog.md`.
+> Слепое пятно закрыто в 1.27.29 (WATCH-2): третий вход `schedule` раз в час идёт от
+> `HEAD main`, а не от события, и заводит issue, если прогонов CI на коммите ноль. Раньше
+> такой коммит был невидим по построению — нет прогона, нет `workflow_run`.
+> История фазы — `docs/_archive/HANDOFF_main_watchdog.md`.
 > **Зелёная галочка на коммите ≠ чеки прошли:** `combined status` бывает `success` от одного
 > Vercel при нуле check-runs. Считать: `gh api repos/:owner/:repo/commits/<sha>/check-runs`.
 
@@ -57,13 +58,13 @@ npm run smoke:prod                                       # доехал ли р�
 |---|---|
 | `docs/handoff/HANDOFF_field_check.md` | **За Gio, один заход.** Карточки с кодом на проде, ждут подписи по DoD-5. Список А — дома до зала, Б — в зале. Перед заходом включить флаги `fab-video` (Профиль → AI) и `drum-window` (консоль) |
 | `docs/handoff/HANDOFF_next_cards.md` → **DRUM-TOUCH-1** | **За Gio, один тап.** Барабан веса/повторов на iPhone не крутился (`touch-action:none` на предке при живом скроллере-ребёнке — WebKit-специфика, Blink её не видит). Фикс на проде с 1.27.13 (`pan-y`), но WebKit-половина доказана только выводом — Playwright не даёт touch-drag для WebKit. Закрыть может только полевая проверка: покрутить барабан на телефоне |
-| `docs/handoff/HANDOFF_next_cards.md` | Стек карточек + открытый бэклог + DATA-SAFETY + решения за Gio. Сюда переехала **WATCH-2** — сторож не видит коммит, на котором CI не запускался вообще |
+| `docs/handoff/HANDOFF_next_cards.md` | Стек карточек + открытый бэклог + DATA-SAFETY + решения за Gio |
 | `docs/handoff/HANDOFF_design_system.md` | Дизайн-система: иерархия · отступы · движение · отклик |
 | `docs/handoff/HANDOFF_gym_grade.md` | Программа GYM-GRADE, DoD из 5 пунктов |
 | `docs/handoff/HANDOFF_isl_tail.md` | Островные хвосты, задачи Sonnet |
 | `docs/handoff/HANDOFF_orchestration.md` | Роли LEAD/worker/verifier, DoD-лестница, правило прополки веток |
 | `docs/handoff/HANDOFF_air_refactor.md` | AIR-хвост |
-| `docs/_archive/HANDOFF_main_watchdog.md` | Закрыт — сторож `main`: WATCH-1 (был мёртв с установки, 1.27.26) и WATCH-3 (последний необёрнутый вызов, 1.27.28), обе проверены живыми прогонами. WATCH-2 вынесена в `HANDOFF_next_cards.md` |
+| `docs/_archive/HANDOFF_main_watchdog.md` | Закрыт целиком — сторож `main`: WATCH-1 (был мёртв с установки, 1.27.26), WATCH-3 (последний необёрнутый вызов, 1.27.28), WATCH-2 (вход по расписанию, 1.27.29) |
 | `docs/_archive/HANDOFF_releases_1.25.x.md` | Закрытые разборы релизов (304-заморозка, panda-idle, аудит-консолидация, серия F-*) |
 | `docs/_archive/HANDOFF_load_perf.md` | Закрыта — программа LOAD, все 8 карточек взяты (1.27.2–1.27.6): ленивый CSS · modulepreload · логотип статус-бара · сжатие иконок · фильтр прекеша (`.d.ts` + неиспользуемые шрифтовые подмножества) · `/__build` только на localhost/LAN |
 

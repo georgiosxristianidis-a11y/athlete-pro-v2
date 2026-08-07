@@ -7,9 +7,18 @@
 # ворот. В отличие от .githooks/pre-push живёт на сервере и не дрейфует вместе
 # с чекаутом (CLAUDE.md § Multi-Agent Protocol).
 #
-# Два сигнала:
+# Три сигнала:
 #   1. CI на коммите в main не зелёный — значит PR слили с красными чеками.
 #   2. У коммита нет связанного PR — значит прямой пуш мимо хука (MAIN_PUSH_OK=1).
+#   3. На коммите НЕТ НИ ОДНОГО прогона CI — гейт не гонялся вообще.
+#
+# Третий сигнал стоит на отдельном входе и не может стоять на общем. Сторож
+# висит на workflow_run от CI: нет прогона — нет события — сторож не просыпается,
+# и коммит въезжает в main абсолютно молча. Это не теория: в окно аварии Actions
+# 1.27.24 и 1.27.25 слиты с нулём check-runs, причём combined status на них был
+# `success` — единственный контекст там от Vercel. Зелёная галочка в UI не значит,
+# что чеки прошли. Поэтому вход по расписанию смотрит сам HEAD main и ни от каких
+# событий не зависит (карточка WATCH-2).
 #
 # Сторож, который падает, — это сторож, которого нет: в 1.27.23 он был мёртв с
 # момента установки, потому что запрос связанных PR отдавал 403 (не хватало
@@ -28,6 +37,12 @@ on:
     types: [completed]
     branches: [main]
 
+  # Вход, не зависящий от того, добежал ли CI (WATCH-2). Не в ноль минут: GitHub
+  # на пике часа задерживает cron, а лишняя точность здесь не нужна — сигнал не
+  # срочный, он про то, что коммит уже въехал.
+  schedule:
+    - cron: '23 * * * *'
+
   # Ручной прогон на произвольном прогоне CI. Не удобство, а единственный способ
   # проверить сторожа: workflow_run не воспроизвести иначе, как слив что-то в
   # main, а прямой пуш в main запрещён (CLAUDE.md § Session Protocol). Без этого
@@ -40,7 +55,10 @@ on:
 
 # Минимум прав: читать коммиты и заводить issue.
 # pull-requests: read — для listPullRequestsAssociatedWithCommit, без него 403.
-# actions: read — чтобы достать прогон CI по run_id на ручном запуске.
+# actions: read — прогон CI по run_id на ручном запуске и список прогонов на SHA
+#   по расписанию. Новых прав третий сигнал не потребовал намеренно: считать
+#   прогоны можно и через checks: read, но это было бы новое право, а именно
+#   недостающее право убило сторожа в 1.27.23.
 permissions:
   contents: read
   issues: write
@@ -57,52 +75,134 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
 
-            // Прогон CI: из payload на workflow_run, по run_id — на ручном.
-            let run = context.payload.workflow_run;
-            if (!run) {
-              const runId = Number(context.payload.inputs?.run_id);
-              if (!Number.isInteger(runId) || runId <= 0) {
-                core.setFailed('Ручной запуск: run_id должен быть числом — ID прогона CI.');
-                return;
-              }
-              // Второе место, где падать правильно: прогон не прочитан — проверять
-              // нечего, и любой вывод был бы выдуман. Но падать контролируемо:
-              // необработанная ошибка дала бы стек вместо имени причины и лечения.
-              try {
-                ({ data: run } = await github.rest.actions.getWorkflowRun({
-                  owner,
-                  repo,
-                  run_id: runId,
-                }));
-              } catch (err) {
-                core.setFailed(
-                  `Ручной запуск: не удалось прочитать прогон CI #${runId} ` +
-                  `(${err.status ?? '?'}): ${err.message}. Без прогона сторожу нечего ` +
-                  `проверять. Если статус 403 — не хватает права \`actions: read\` в ` +
-                  `\`.github/workflows/main-watchdog.yml\`; если 404 — такого прогона нет.`
-                );
-                return;
-              }
-              core.info(
-                `Ручной прогон сторожа на CI #${runId}: ветка ${run.head_branch}, ` +
-                `итог ${run.conclusion}, коммит ${run.head_sha.slice(0, 7)}.`
-              );
-            }
+            // Льгота свежему коммиту: CI на нём мог ещё не завестись. Жалоба в этот
+            // момент — обвинение пустого места. Прогон раз в час, так что коммит
+            // всё равно будет проверен, просто следующим заходом.
+            const GRACE_MINUTES = 30;
 
-            const sha = run.head_sha;
-            const short = sha.slice(0, 7);
-            const commitUrl = `https://github.com/${owner}/${repo}/commit/${sha}`;
+            // Прогоны CI отбираются по ПУТИ файла, а не по имени workflow: `name`
+            // подменяется на `run-name`, если его когда-нибудь добавят в ci.yml, и
+            // сторож начал бы врать «прогонов нет» на каждом коммите.
+            const CI_PATH = '.github/workflows/ci.yml';
+
+            const scheduled = context.eventName === 'schedule';
 
             const problems = []; // нарушения: приехало мимо ворот
             let blind = null; // сторож не смог проверить
 
-            if (run.conclusion !== 'success') {
-              problems.push(
-                `**CI на этом коммите — \`${run.conclusion}\`, а не \`success\`.** ` +
-                `Значит PR слили, не дождавшись зелёных чеков, либо гейт упал уже на main. ` +
-                `[Прогон CI](${run.html_url})`
-              );
+            let run = null;
+            let sha = null;
+
+            if (scheduled) {
+              // Вход WATCH-2. Здесь прогона CI нет по определению — его отсутствие
+              // и есть проверяемое условие, поэтому идём не от события, а от HEAD.
+              let head;
+              try {
+                ({ data: head } = await github.rest.repos.getCommit({ owner, repo, ref: 'main' }));
+              } catch (err) {
+                // Единственная осознанная тишина сторожа, и она вынужденная: без SHA
+                // нет ключа дедупликации, а часовой прогон завёл бы issue КАЖДЫЙ час.
+                // Отказ здесь либо разовый (следующий заход через час), либо системный
+                // (тогда молчат все три сигнала и это видно по истории прогонов).
+                core.warning(
+                  `Расписание: не удалось прочитать HEAD main (${err.status ?? '?'}): ${err.message}. ` +
+                  `Issue не завожу — без SHA нечем дедуплицировать, следующий заход через час.`
+                );
+                return;
+              }
+              sha = head.sha;
+
+              const ageMin = (Date.now() - Date.parse(head.commit.committer.date)) / 60000;
+              if (ageMin < GRACE_MINUTES) {
+                core.info(
+                  `main ${sha.slice(0, 7)}: ${Math.round(ageMin)} мин от роду, CI ещё может ` +
+                  `завестись (льгота ${GRACE_MINUTES} мин). Проверю следующим заходом.`
+                );
+                return;
+              }
+
+              let ciRuns = null;
+              try {
+                const { data } = await github.rest.actions.listWorkflowRunsForRepo({
+                  owner,
+                  repo,
+                  head_sha: sha,
+                  per_page: 100,
+                });
+                ciRuns = data.workflow_runs.filter((r) => r.path === CI_PATH);
+              } catch (err) {
+                blind =
+                  `**Сторож не смог проверить, запускался ли CI.** Запрос прогонов на \`${sha.slice(0, 7)}\` ` +
+                  `вернул \`${err.status ?? '?'}\`: ${err.message}. Проверить руками, что на коммите есть ` +
+                  `завершённый прогон CI, и починить право \`actions: read\` в ` +
+                  `\`.github/workflows/main-watchdog.yml\`.`;
+                core.warning(`Проверка прогонов CI не прошла (${err.status ?? '?'}): ${err.message}`);
+              }
+
+              if (ciRuns !== null && ciRuns.length === 0) {
+                problems.push(
+                  `**На коммите нет НИ ОДНОГО прогона CI.** Это не «чеки красные», а «чеков не было»: ` +
+                  `гейт не гонялся вообще. Путь \`workflow_run\` такой коммит не видит по построению — ` +
+                  `нет прогона, нет события. Осторожно с зелёной галочкой в UI: \`combined status\` ` +
+                  `бывает \`success\` от одного Vercel при нуле check-runs. ` +
+                  `Считать: \`gh api repos/${owner}/${repo}/commits/${sha}/check-runs\`.`
+                );
+              }
+
+              // Прогоны CI на месте — путь workflow_run отработал, добавить нечего.
+              if (problems.length === 0 && blind === null) {
+                core.info(
+                  `main ${sha.slice(0, 7)}: прогонов CI на коммите — ${ciRuns.length}, ` +
+                  `путь workflow_run отработал. Расписанию делать нечего.`
+                );
+                return;
+              }
+            } else {
+              // Прогон CI: из payload на workflow_run, по run_id — на ручном.
+              run = context.payload.workflow_run;
+              if (!run) {
+                const runId = Number(context.payload.inputs?.run_id);
+                if (!Number.isInteger(runId) || runId <= 0) {
+                  core.setFailed('Ручной запуск: run_id должен быть числом — ID прогона CI.');
+                  return;
+                }
+                // Второе место, где падать правильно: прогон не прочитан — проверять
+                // нечего, и любой вывод был бы выдуман. Но падать контролируемо:
+                // необработанная ошибка дала бы стек вместо имени причины и лечения.
+                try {
+                  ({ data: run } = await github.rest.actions.getWorkflowRun({
+                    owner,
+                    repo,
+                    run_id: runId,
+                  }));
+                } catch (err) {
+                  core.setFailed(
+                    `Ручной запуск: не удалось прочитать прогон CI #${runId} ` +
+                    `(${err.status ?? '?'}): ${err.message}. Без прогона сторожу нечего ` +
+                    `проверять. Если статус 403 — не хватает права \`actions: read\` в ` +
+                    `\`.github/workflows/main-watchdog.yml\`; если 404 — такого прогона нет.`
+                  );
+                  return;
+                }
+                core.info(
+                  `Ручной прогон сторожа на CI #${runId}: ветка ${run.head_branch}, ` +
+                  `итог ${run.conclusion}, коммит ${run.head_sha.slice(0, 7)}.`
+                );
+              }
+
+              sha = run.head_sha;
+
+              if (run.conclusion !== 'success') {
+                problems.push(
+                  `**CI на этом коммите — \`${run.conclusion}\`, а не \`success\`.** ` +
+                  `Значит PR слили, не дождавшись зелёных чеков, либо гейт упал уже на main. ` +
+                  `[Прогон CI](${run.html_url})`
+                );
+              }
             }
+
+            const short = sha.slice(0, 7);
+            const commitUrl = `https://github.com/${owner}/${repo}/commit/${sha}`;
 
             // Связанный PR. Мёрж идёт через --rebase, то есть SHA на main новый —
             // GitHub при этом сохраняет связь коммита с PR. Пусто = пуш мимо PR.
