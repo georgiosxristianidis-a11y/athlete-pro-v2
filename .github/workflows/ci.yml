@@ -1,5 +1,13 @@
 name: CI
 
+# Пины экшенов держатся на мажорах, объявляющих `runs.using: node24`. Node 20 на
+# раннерах объявлен устаревшим (2025-09-19): GitHub пока форсирует node24 сам, но
+# принудительный запуск однажды сменится отказом, и тогда встанут разом CI и сторож.
+# Проверять раннер, а не номер: «поднять на один мажор» здесь неверный рефлекс —
+# upload-artifact@v5 всё ещё node20, минимум там v6. Источник правды у каждого
+# экшена свой, читается напрямую:
+#   gh api repos/actions/<name>/contents/action.yml?ref=<tag> --jq .content | base64 -d | grep using:
+
 on:
   push:
     branches: ['**']
@@ -20,14 +28,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (полная история — нужен merge-base)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           # На push событие пусто → checkout берёт ref по умолчанию.
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 
@@ -38,10 +46,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -65,10 +73,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -84,7 +92,7 @@ jobs:
 
       - name: Upload report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: test/e2e/report/
