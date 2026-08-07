@@ -29,14 +29,26 @@
  *      на гейте, а не в проде: поведенческие моки не знают про GitHub-права,
  *      а `permissions:` не знает про код. Соединяет их только этот блок.
  *
- * Ручной путь (`workflow_dispatch`) держится на другом контракте — не на более
- * слабом. Разница в направлении, а не в строгости. На `workflow_run` сторож —
- * единственный зритель: упавший job уносит сигнал в тишину, поэтому там «не
- * падать» абсолютно. На ручном прогоне без самого прогона CI проверять нечего,
- * и падение — единственный честный исход; требование в том, ЧЕМ падать. Только
- * `core.setFailed` с названной причиной: необработанная ошибка даёт стек вместо
- * «не хватает `actions: read`» — тот же способ умирания, что и в 1.27.23,
- * просто на пути, где смерть заметят.
+ * Входов три, и контракт у каждого свой — не по строгости, а по направлению.
+ *
+ *   `workflow_run` — сторож единственный зритель, упавший job уносит сигнал в
+ *      тишину. «Не падать» абсолютно, любой отказ API деградирует в жалобу.
+ *   `workflow_dispatch` — без прогона CI проверять нечего, падение и есть
+ *      честный исход; требование в том, ЧЕМ падать. Только `core.setFailed` с
+ *      названной причиной: необработанная ошибка даёт стек вместо «не хватает
+ *      `actions: read`» — тот же способ умирания, что и в 1.27.23, просто на
+ *      пути, где смерть заметят.
+ *   `schedule` (WATCH-2) — закрывает слепое пятно: коммит, на котором CI не
+ *      запускался ВООБЩЕ, события не создаёт, и `workflow_run` его не видит по
+ *      построению. Контракт как у автоматического пути, «не падать», но с одним
+ *      исключением: не прочитан HEAD `main` — сторож молчит. Это не поблажка, а
+ *      арифметика. Без SHA нет ключа дедупликации, а прогон часовой: жалоба без
+ *      ключа означала бы новый issue КАЖДЫЙ час. Молчание с записью в лог здесь
+ *      дешевле спама, который научат игнорировать.
+ *
+ * У расписания есть льготное окно: на свежем коммите CI мог ещё не завестись, и
+ * жалоба в этот момент — обвинение пустого места. Окно обязано отсекать ДО
+ * запроса прогонов, иначе «сторож не спешит» превращается в «сторож гадает».
  *
  * YAML разбирается по отступам, а не через js-yaml: js-yaml в проекте только
  * транзитивный (stylelint → cosmiconfig), и тянуть его в прямые зависимости
@@ -141,7 +153,23 @@ const runPayload = (over = {}) => ({
  * Мок Octokit. Каждый эндпоинт умеет отказать — так воспроизводится ровно та
  * ситуация, которая убила сторожа 1.27.23 (403 без права).
  */
-function makeGithub({ fail = {}, prs = [], openIssues = [], run = runPayload() } = {}) {
+/** Коммит старше льготного окна — дефолт для расписания. */
+const OLD_COMMIT = new Date(Date.now() - 3 * 3600_000).toISOString();
+/** Коммит внутри льготного окна: CI на нём ещё может завестись. */
+const FRESH_COMMIT = new Date(Date.now() - 5 * 60_000).toISOString();
+
+const CI_RUN = { path: '.github/workflows/ci.yml', conclusion: 'success' };
+/** Прогон другого воркфлоу на том же SHA — за CI считаться не должен. */
+const WATCHDOG_RUN = { path: '.github/workflows/main-watchdog.yml', conclusion: 'success' };
+
+function makeGithub({
+  fail = {},
+  prs = [],
+  openIssues = [],
+  run = runPayload(),
+  runsOnSha = [CI_RUN],
+  headDate = OLD_COMMIT,
+} = {}) {
   const calls = [];
 
   const endpoint = (name, handler) => (params) => {
@@ -165,16 +193,28 @@ function makeGithub({ fail = {}, prs = [], openIssues = [], run = runPayload() }
   const rest = {
     actions: {
       getWorkflowRun: endpoint('actions.getWorkflowRun', () => ({ data: run })),
+      // Отдаёт прогоны ВСЕХ воркфлоу на SHA — отбор «какие из них CI» делает сам
+      // скрипт, и именно этот отбор проверяется тестом про чужие прогоны.
+      listWorkflowRunsForRepo: endpoint('actions.listWorkflowRunsForRepo', () => ({
+        data: { total_count: runsOnSha.length, workflow_runs: runsOnSha },
+      })),
     },
     repos: {
       listPullRequestsAssociatedWithCommit: endpoint(
         'repos.listPullRequestsAssociatedWithCommit',
         () => ({ data: prs })
       ),
+      // Один и тот же мок обслуживает два вызова: HEAD main на расписании (нужны
+      // sha и дата) и чтение коммита для тела issue (нужны message и author).
       getCommit: endpoint('repos.getCommit', () => ({
         data: {
+          sha: SHA,
           html_url: `https://github.com/o/r/commit/${SHA}`,
-          commit: { message: 'fix: что-то\n\nтело', author: { name: 'Gio' } },
+          commit: {
+            message: 'fix: что-то\n\nтело',
+            author: { name: 'Gio' },
+            committer: { date: headDate },
+          },
         },
       })),
     },
@@ -210,12 +250,21 @@ function makeCore() {
 }
 
 /** Один прогон сторожа. Никогда не пробрасывает — падение возвращается как факт. */
-async function runWatchdog({ dispatch = null, ...opts } = {}) {
+async function runWatchdog({ dispatch = null, scheduled = false, ...opts } = {}) {
   const github = makeGithub(opts);
   const core = makeCore();
+  // Вход скрипт различает по context.eventName, а не по форме payload: на
+  // расписании payload пуст, и «пусто» само по себе ничего не значит.
+  const eventName = scheduled ? 'schedule' : dispatch ? 'workflow_dispatch' : 'workflow_run';
+  const payload = scheduled
+    ? {}
+    : dispatch
+      ? { inputs: dispatch }
+      : { workflow_run: opts.run ?? runPayload() };
   const context = {
     repo: { owner: 'o', repo: 'r' },
-    payload: dispatch ? { inputs: dispatch } : { workflow_run: opts.run ?? runPayload() },
+    eventName,
+    payload,
   };
 
   let threw = null;
@@ -425,6 +474,117 @@ test('ручной прогон: отказ getWorkflowRun не проходит
   assert.equal(r.called('issues.create'), false, 'сторож завёл issue, не прочитав прогон');
 });
 
+// ─── Расписание: слепое пятно WATCH-2 ────────────────────────────────────────
+
+/** База пути расписания: старый коммит, прогонов CI на нём нет. */
+const BLIND_SPOT = { scheduled: true, runsOnSha: [], prs: MERGED_PR };
+
+test('расписание: на коммите нет НИ ОДНОГО прогона CI — заводится issue', async () => {
+  const r = await runWatchdog(BLIND_SPOT);
+  assert.equal(r.threw, null);
+  assert.ok(r.created, 'коммит без единого прогона CI прошёл незамеченным — ровно баг WATCH-2');
+  assert.match(r.created.params.title, /приехал мимо ворот/);
+  assert.match(r.created.params.body, /нет НИ ОДНОГО прогона CI/);
+  assert.match(
+    r.created.params.body,
+    /check-runs/,
+    'issue не говорит, чем проверить руками'
+  );
+});
+
+test('расписание: прогон CI на месте — issue не заводится', async () => {
+  const r = await runWatchdog({ ...BLIND_SPOT, runsOnSha: [CI_RUN] });
+  assert.equal(r.threw, null);
+  assert.equal(r.called('issues.create'), false, 'сторож обвинил коммит с живым прогоном CI');
+  assert.deepEqual(r.log.failed, []);
+});
+
+/**
+ * Отбор идёт по пути файла, а не по имени воркфлоу: `name` у прогона
+ * подменяется на `run-name`, если его когда-нибудь добавят в ci.yml. Без этого
+ * теста подмена превратила бы сторожа в генератор ложных issue на каждый коммит.
+ */
+test('расписание: прогон чужого воркфлоу за CI не считается', async () => {
+  const r = await runWatchdog({ ...BLIND_SPOT, runsOnSha: [WATCHDOG_RUN] });
+  assert.ok(r.created, 'прогон другого воркфлоу зачтён за CI — отбор по пути не работает');
+  assert.match(r.created.params.body, /нет НИ ОДНОГО прогона CI/);
+});
+
+test('расписание: свежий коммит внутри льготы не обвиняется', async () => {
+  const r = await runWatchdog({ ...BLIND_SPOT, headDate: FRESH_COMMIT });
+  assert.equal(r.threw, null);
+  assert.equal(
+    r.called('issues.create'),
+    false,
+    'обвинён коммит, на котором CI ещё мог не завестись — сторож гадает, а не ждёт'
+  );
+  assert.equal(
+    r.called('actions.listWorkflowRunsForRepo'),
+    false,
+    'льгота обязана отсекать ДО запроса прогонов, иначе она ничего не экономит и не значит'
+  );
+  assert.deepEqual(r.log.failed, []);
+});
+
+test('расписание: отказ listWorkflowRunsForRepo — сторож слепнет, но не молчит', async () => {
+  const r = await runWatchdog({
+    ...BLIND_SPOT,
+    fail: { 'actions.listWorkflowRunsForRepo': REFUSAL },
+  });
+  assert.equal(r.threw, null, 'отказ уронил сторожа — тот же способ, что и в 1.27.23');
+  assert.ok(r.created, 'ослепший сторож промолчал');
+  assert.match(r.created.params.body, /не смог проверить, запускался ли CI/);
+  assert.match(r.created.params.body, /actions: read/, 'issue не называет лечение');
+  assert.deepEqual(r.log.failed, [], 'слепота — не повод ронять job');
+});
+
+/**
+ * Единственная осознанная тишина сторожа, и она вынужденная: без SHA нет ключа
+ * дедупликации, а прогон часовой — жалоба без ключа означала бы новый issue
+ * каждый час. Тишина обязана быть хотя бы записана в лог.
+ */
+test('расписание: не прочитан HEAD main — молчит, но не падает и не гадает', async () => {
+  const r = await runWatchdog({ ...BLIND_SPOT, fail: { 'repos.getCommit': REFUSAL } });
+  assert.equal(r.threw, null, 'отказ чтения HEAD уронил сторожа');
+  assert.equal(
+    r.called('issues.create'),
+    false,
+    'issue без SHA ломает дедуп — часовой прогон завёл бы его каждый час'
+  );
+  assert.ok(
+    r.log.warning.some((w) => /HEAD main/.test(w)),
+    'сторож замолчал, не оставив в логе ни слова'
+  );
+  assert.deepEqual(r.log.failed, []);
+});
+
+/**
+ * Тот же разведчик, что и на автоматическом пути, но по пути расписания:
+ * список эндпоинтов снимается со скрипта, поэтому новый вызов API попадёт под
+ * проверку сам. Требование здесь одно — не падать. Требовать «issue всё равно»
+ * нельзя: отказ `repos.getCommit` отменяет его намеренно, см. тест выше.
+ */
+test('расписание: ни один отказ API не роняет сторожа', async () => {
+  const scout = await runWatchdog(BLIND_SPOT);
+  assert.equal(scout.threw, null, 'разведочный прогон упал — моки не соответствуют скрипту');
+
+  const touched = [...new Set(scout.calls.map((c) => c.name))];
+  assert.ok(
+    touched.includes('actions.listWorkflowRunsForRepo'),
+    'разведчик не задел запрос прогонов — путь расписания не тот, что проверяется'
+  );
+
+  for (const name of touched) {
+    const r = await runWatchdog({ ...BLIND_SPOT, fail: { [name]: REFUSAL } });
+    assert.equal(
+      r.threw,
+      null,
+      `отказ \`${name}\` уронил сторожа: ${r.threw?.message}. ` +
+        `Необработанная ошибка убивает job вместе со ВСЕМИ сигналами — обернуть в try/catch.`
+    );
+  }
+});
+
 // ─── 2. Права: вызов в скрипте обязан быть обеспечен permissions ─────────────
 
 /**
@@ -444,6 +604,12 @@ const REQUIRED = [
     scope: 'actions',
     level: 'read',
     why: 'ручной прогон достаёт CI по run_id',
+  },
+  {
+    call: 'listWorkflowRunsForRepo',
+    scope: 'actions',
+    level: 'read',
+    why: 'вход по расписанию считает прогоны CI на HEAD main (WATCH-2)',
   },
   {
     call: 'issues.create',
@@ -486,4 +652,45 @@ test('сторож слушает завершение CI на main', () => {
   assert.match(WORKFLOW, /workflow_run:/, 'сторож не подписан на прогоны CI');
   assert.match(WORKFLOW, /workflows:\s*\['CI'\]/, 'сторож слушает не CI');
   assert.match(WORKFLOW, /branches:\s*\[main\]/, 'сторож слушает не main');
+});
+
+test('сторож просыпается и без события от CI', () => {
+  assert.match(
+    WORKFLOW,
+    /^\s*schedule:/m,
+    'нет входа по расписанию — коммит, на котором CI не запускался вообще, снова невидим (WATCH-2)'
+  );
+  assert.match(WORKFLOW, /cron:\s*'[^']+'/, '`schedule:` без `cron:` не сработает ни разу');
+});
+
+/**
+ * Триггер `workflow_run` сцеплен с CI по ИМЕНИ, а отбор прогонов на расписании —
+ * по ПУТИ файла. Обе связи внешние по отношению к этому воркфлоу: переименуют
+ * `name:` в ci.yml или сам файл — сторож ослепнет молча, ровно как в 1.27.23.
+ * Здесь они и сверяются с реальностью, потому что больше негде.
+ */
+test('имя CI в триггере совпадает с именем самого ci.yml', () => {
+  const listens = WORKFLOW.match(/workflows:\s*\['([^']+)'\]/);
+  assert.ok(listens, 'сторож не подписан на прогоны по имени');
+
+  const ci = fs.readFileSync(path.join(REPO_ROOT, '.github/workflows/ci.yml'), 'utf8');
+  const name = ci.match(/^name:\s*(.+)$/m);
+  assert.ok(name, 'в ci.yml нет верхнеуровневого `name:`');
+  assert.equal(
+    name[1].trim(),
+    listens[1],
+    `сторож ждёт события от воркфлоу «${listens[1]}», а ci.yml зовётся «${name?.[1].trim()}» — ` +
+      `событие не придёт никогда, и сторож умрёт тихо`
+  );
+});
+
+test('путь ci.yml в отборе прогонов указывает на существующий файл', () => {
+  const m = SCRIPT.match(/const CI_PATH = '([^']+)'/);
+  assert.ok(m, 'в скрипте нет CI_PATH — чем тогда отбираются прогоны CI?');
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- путь добыт из самого скрипта, это и есть смысл сверки
+  assert.ok(
+    fs.existsSync(path.join(REPO_ROOT, m[1])),
+    `CI_PATH указывает на \`${m[1]}\`, которого нет — отбор всегда даст ноль прогонов ` +
+      `и сторож начнёт обвинять каждый коммит`
+  );
 });
