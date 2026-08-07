@@ -2,6 +2,16 @@
    BLOCK 5 CSS — ANALYTICS
    ════════════════════════════════════════════════ */
 
+/* SPACE-1 (заход №4): отступы в этом файле идут по шкале --sp-*, сырых
+   значений в padding/margin/gap не осталось — кроме микро-сдвигов 1–3px.
+   Те лежат ниже нижней ступени шкалы (--sp-0-5 = 4px) и служат оптическому
+   выравниванию строки, а не ритму блоков: единицы измерения рядом с числом
+   (`.sc-unit`, `.stat-chip-unit`, `.sh-stat small`), подпись под hero-числом
+   (`.sh-cap`, `.sh-score`), подписи осей (`.sc-axis`, `.sc-sub`), вертикаль
+   пилюль (`.sc-delta`, `.sc-scrub-tip`) и зазор внутри 33px-ячейки календаря
+   (`.cal-cell`). Поднять их до 4px значит разорвать «120» и «kg». Решение то
+   же, что заход №1 принял для `.pp-m-u` в css/profile.css. */
+
 /* ── Calendar ── */
 .cal-card {
   background: var(--c-bg-2);
@@ -13,8 +23,8 @@
 .cal-day-headers {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: var(--sp-0-5);
+  margin-bottom: var(--sp-1);
 }
 .cal-day-hdr {
   font-size: var(--fs-1);
@@ -27,7 +37,7 @@
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  gap: var(--sp-0-5);
 }
 .cal-cell {
   aspect-ratio: 1;
@@ -83,11 +93,11 @@
 .stats-segmented-ctrl {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: var(--sp-1);
   background: var(--c-bg-2);
   border: 1px solid var(--c-border);
   border-radius: var(--r-xl);
-  padding: 6px;
+  padding: var(--sp-0-5);
   margin: var(--sp-2) 0 var(--sp-1);
 }
 
@@ -124,7 +134,7 @@
 #s-stats .stat-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: var(--sp-1-5);
   margin-bottom: var(--sp-3);
 }
 /* border-radius здесь не объявляется намеренно — см. базовую группу AIR Tier 1
@@ -133,7 +143,7 @@
 #s-stats .stat-chip {
   background: var(--c-bg-2);
   border: 1px solid var(--c-border);
-  padding: 12px;
+  padding: var(--sp-1-5);
   text-align: center;
 }
 #s-stats .stat-chip-val {
@@ -149,7 +159,7 @@
   color: var(--c-text-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-top: 4px;
+  margin-top: var(--sp-0-5);
 }
 #s-stats .stat-chip-unit {
   font-size: var(--fs-1);
@@ -194,7 +204,7 @@
 .ppl-leg-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sp-1);
 }
 .ppl-leg-dot {
   width: 8px;
@@ -239,7 +249,7 @@
 }
 .cal-pick-grid {
   display: flex;
-  gap: 10px;
+  gap: var(--sp-1-5);
   margin-bottom: var(--sp-2);
 }
 .cal-pick-btn {
@@ -256,7 +266,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--sp-0-5);
   transition: transform var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
@@ -283,22 +293,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--sp-1);
   -webkit-tap-highlight-color: transparent;
 }
 
 /* ── Strength Index hero (premium overview) ── */
-.sh-hero { padding: 16px 18px 14px; }
-.sh-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; position: relative; z-index: 1; }
+.sh-hero { padding: var(--sp-2); }
+.sh-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-1-5); position: relative; z-index: 1; }
 .sh-label { font-size: var(--fs-1); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-3); }
 .sh-score { font-size: var(--fs-6); font-weight: var(--fw-black); color: var(--c-text-1); letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums; margin-top: 2px; }
-.sh-gain { font-size: var(--fs-2); font-weight: var(--fw-black); margin-left: 8px; vertical-align: middle; }
+.sh-gain { font-size: var(--fs-2); font-weight: var(--fw-black); margin-left: var(--sp-1); vertical-align: middle; }
 .sh-gain.up { color: var(--c-accent); }
 .sh-gain.down { color: var(--c-text-3); }
 .sh-cap { font-size: var(--fs-1); font-weight: var(--fw-md); color: var(--c-text-3); margin-top: 2px; }
-.sh-spark { width: 96px; height: 36px; flex-shrink: 0; margin-top: 14px; }
+.sh-spark { width: 96px; height: 36px; flex-shrink: 0; margin-top: var(--sp-2); }
 .sh-spark-stroke { filter: drop-shadow(0 0 3px var(--c-accent)); }
-.sh-stats { display: flex; justify-content: space-between; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--c-border); position: relative; z-index: 1; }
+.sh-stats { display: flex; justify-content: space-between; gap: var(--sp-1); margin-top: var(--sp-2); padding-top: var(--sp-1-5); border-top: 1px solid var(--c-border); position: relative; z-index: 1; }
 .sh-stat { display: flex; flex-direction: column; gap: 2px; }
 .sh-stat b { font-size: var(--fs-4); font-weight: var(--fw-black); color: var(--c-text-1); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 .sh-stat small { font-size: var(--fs-1); font-weight: var(--fw-bold); color: var(--c-text-3); margin-left: 1px; }
@@ -306,17 +316,17 @@
 
 /* ── Strength Progression curves (premium per-lift) ── */
 .sc-grid { display: flex; flex-direction: column; gap: var(--sp-2); }
-.sc-card { padding: 14px 16px 10px; }
-.sc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; position: relative; z-index: 1; }
+.sc-card { padding: var(--sp-2); }
+.sc-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-1-5); position: relative; z-index: 1; }
 .sc-name { font-size: var(--fs-3); font-weight: var(--fw-bold); color: var(--c-text-1); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-cur { font-size: var(--fs-5); font-weight: var(--fw-black); color: var(--c-text-1); font-variant-numeric: tabular-nums; flex-shrink: 0; letter-spacing: -0.02em; }
 .sc-unit { font-size: var(--fs-1); font-weight: var(--fw-bold); color: var(--c-text-3); margin-left: 2px; }
-.sc-sub { display: flex; align-items: center; gap: 10px; margin-top: 2px; position: relative; z-index: 1; }
-.sc-delta { font-size: var(--fs-1); font-weight: var(--fw-black); font-variant-numeric: tabular-nums; padding: 2px 7px; border-radius: var(--r-xs); }
+.sc-sub { display: flex; align-items: center; gap: var(--sp-1-5); margin-top: 2px; position: relative; z-index: 1; }
+.sc-delta { font-size: var(--fs-1); font-weight: var(--fw-black); font-variant-numeric: tabular-nums; padding: 2px var(--sp-1); border-radius: var(--r-xs); }
 .sc-delta.up { color: var(--c-accent); background: var(--c-accent-bg); }
 .sc-delta.down { color: var(--c-text-3); background: var(--c-surface-h); }
 .sc-peak { font-size: var(--fs-1); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-gold); }
-.sc-plot { position: relative; margin-top: 6px; z-index: 1; touch-action: pan-y; }
+.sc-plot { position: relative; margin-top: var(--sp-1); z-index: 1; touch-action: pan-y; }
 .sc-chart { width: 100%; height: 96px; display: block; position: relative; z-index: 1; }
 .sc-stroke { filter: drop-shadow(0 0 3px var(--sc)); }
 .sc-peak-dot { filter: drop-shadow(0 0 4px var(--c-gold)); }
@@ -328,7 +338,7 @@
 .sc-scrub.on { opacity: 1; }
 .sc-scrub-line { position: absolute; top: 0; left: 0; width: 1px; height: 100%; background: linear-gradient(var(--sc), transparent); opacity: 0.5; transition: transform 0.08s ease-out; will-change: transform; }
 .sc-scrub-dot { position: absolute; top: 0; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--sc); box-shadow: 0 0 6px var(--sc); transition: transform 0.08s ease-out; will-change: transform; }
-.sc-scrub-tip { position: absolute; top: -2px; left: 0; display: flex; align-items: baseline; gap: 5px; padding: 3px 8px; border-radius: var(--r-sm); background: var(--c-bg-3); border: 1px solid var(--c-border-h); white-space: nowrap; transition: transform 0.08s ease-out; will-change: transform; }
+.sc-scrub-tip { position: absolute; top: -2px; left: 0; display: flex; align-items: baseline; gap: var(--sp-0-5); padding: 3px var(--sp-1); border-radius: var(--r-sm); background: var(--c-bg-3); border: 1px solid var(--c-border-h); white-space: nowrap; transition: transform 0.08s ease-out; will-change: transform; }
 .sc-scrub-tip b { font-size: var(--fs-2); font-weight: var(--fw-black); color: var(--c-text-1); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .sc-scrub-tip span { font-size: var(--fs-1); font-weight: var(--fw-md); color: var(--c-text-3); }
 
@@ -343,20 +353,20 @@
   flex: none;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sp-0-5);
   margin-top: 2px;
 }
 .period-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--sp-1);
 }
 .period-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 12px 14px;
+  padding: var(--sp-1-5) var(--sp-2);
   background: var(--c-surface);
   border: 1.5px solid var(--c-border);
   border-radius: var(--r-m);
