@@ -70,7 +70,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Проверить, как код попал в main
-        uses: actions/github-script@v7
+        # v9 — первый мажор после node20 (v8 тоже node24, см. шапку ci.yml). Ломает
+        # `require('@actions/github')` и запрещает объявлять `getOctokit` через
+        # const/let: он стал аргументом обёртки. Скрипт ниже не делает ни того, ни
+        # другого — обходится инжектами github/context/core, потому апгрейд его не
+        # касается. Заводя новый вызов, не тащить сюда require.
+        uses: actions/github-script@v9
         with:
           script: |
             const { owner, repo } = context.repo;
