@@ -985,3 +985,92 @@ button.pref-row-icon:active,
   from { width: 0; }
   to   { width: var(--bar-w, 0%); }
 }
+
+/* ── BYOK: индикатор коннекта ключа ──────────────────────────────────────────
+   Строка под полем ключа: точка состояния + вердикт + перепроверка. Цвет несёт
+   смысл (SEMANTIC), не декор: зелёный — коннект подтверждён живым пингом,
+   красный — провайдер отказал, серый — проверки не было. Всё движение на
+   transform/opacity. */
+.key-conn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+  min-height: 20px;
+}
+
+.key-conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+  flex-shrink: 0;
+  background: var(--c-text-3);
+  transition: background var(--t-normal), box-shadow var(--t-normal);
+}
+
+.key-conn-label {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  transition: color var(--t-normal);
+}
+
+.key-conn.is-swap .key-conn-label {
+  animation: key-conn-swap 0.22s var(--ease-out) both;
+}
+
+.key-conn-recheck {
+  margin-left: auto;
+  padding: var(--sp-0-5);
+  background: none;
+  border: none;
+  color: var(--c-text-3);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: color var(--t-fast), transform var(--t-fast);
+}
+.key-conn-recheck:active { transform: scale(0.9); }
+
+/* Проверка — пульс: живое ожидание вместо замершей серой точки. */
+.key-conn[data-state="checking"] .key-conn-dot {
+  background: var(--c-blue);
+  animation: key-conn-pulse 1s var(--ease-std) infinite;
+}
+.key-conn[data-state="checking"] .key-conn-label { color: var(--c-blue); }
+
+.key-conn[data-state="ok"] .key-conn-dot {
+  background: var(--c-accent);
+  box-shadow: 0 0 8px var(--c-accent);
+  animation: key-conn-pop 0.4s var(--ease-spring) both;
+}
+.key-conn[data-state="ok"] .key-conn-label { color: var(--c-accent); }
+
+.key-conn[data-state="invalid"] .key-conn-dot { background: var(--c-red); }
+.key-conn[data-state="invalid"] .key-conn-label { color: var(--c-red); }
+.key-conn[data-state="invalid"].is-swap { animation: key-conn-shake 0.3s var(--ease-out) both; }
+
+.key-conn[data-state="offline"] .key-conn-dot,
+.key-conn[data-state="blocked"] .key-conn-dot { background: var(--c-amber); }
+.key-conn[data-state="offline"] .key-conn-label,
+.key-conn[data-state="blocked"] .key-conn-label { color: var(--c-amber); }
+
+@keyframes key-conn-swap {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes key-conn-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%      { transform: scale(1.5); opacity: 0.45; }
+}
+@keyframes key-conn-pop {
+  0%   { transform: scale(0.2); }
+  100% { transform: scale(1); }
+}
+@keyframes key-conn-shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-3px); }
+  75%      { transform: translateX(3px); }
+}
