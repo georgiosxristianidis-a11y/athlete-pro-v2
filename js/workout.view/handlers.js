@@ -5,7 +5,7 @@ import { Nav, Toast } from '../shell.js';
 import {
   State, SESSION_KEY, loadPlan, savePlan, buildSession, persistSession,
   getWeekMode, setWeekMode, getCustomWorkouts, saveCustomWorkout, deleteCustomWorkout,
-  loadCoreChecklist, saveCoreChecklist, getActivePlan, startPlan, advancePlan,
+  loadCoreChecklist, saveCoreChecklist,
   recordBlockTiming, getExerciseLibrary, isBodyweightExercise
 } from '../workout.store.js';
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
@@ -276,12 +276,17 @@ export function _toggleUnilateral(ei) {
 }
 
 /* ════════════════════════════════════════════════════════
-   SELECT TYPE & PROGRAMS
+   SELECT TYPE
    ════════════════════════════════════════════════════════ */
+/**
+ * @param {'push'|'pull'|'legs'} type — день PPL. Раньше сюда мог прийти ещё и
+ * 'active' (карточка активной программы), и State.type становился 'hybrid' /
+ * 'strength' — тип, которого не знают ни PPL-цвета, ни фильтры Журнала.
+ * Второй движок снесён; типов ровно три.
+ */
 export async function selectType(type) {
-  const activePlan = getActivePlan();
-  State.type = type === 'active' ? (activePlan?.type || 'push') : type;
-  
+  State.type = type;
+
   const [workouts, restDurRaw, keepAwake] = await Promise.all([
     DB.Workouts.getAll().catch(() => []),
     DB.Settings.get('rest-duration').catch(() => null),
@@ -305,24 +310,6 @@ export async function selectType(type) {
   if (keepAwake === 'on') acquireWakeLock();
 
   await renderActive();
-}
-
-export async function _startProgram(id) {
-  const ru = isRu();
-  const active = getActivePlan();
-  if (active && active.id !== id) {
-    const ok = await confirmDialog({
-      title: ru ? 'Сменить программу?' : 'Switch program?',
-      message: ru ? 'Смена программы сбросит текущий цикл.' : 'Switching programs will reset your current cycle.',
-      confirmLabel: ru ? 'Сменить' : 'Switch',
-      cancelLabel: ru ? 'Отмена' : 'Cancel',
-    });
-    if (!ok) return;
-  }
-  _haptic(20);
-  startPlan(id);
-  await selectType('active');
-  Toast.show(ru ? 'Цикл программы запущен' : 'Program Cycle Started', 'success');
 }
 
 /* ════════════════════════════════════════════════════════
@@ -457,10 +444,9 @@ async function _executeFinalSave(summaryData, duration) {
 }
 
 async function _persistFinalSession(summaryData, duration) {
-  const activePlan = getActivePlan();
   const session = {
     type: State.type,
-    planId: activePlan?.id || null,
+    planId: null,
     timestamp: State.startedAt || Date.now(),
     duration,
     tonnage: summaryData.totalTonnage,
@@ -502,11 +488,6 @@ async function _persistFinalSession(summaryData, duration) {
   if (window.DynamicIsland) window.DynamicIsland.hide();
   releaseWakeLock();
   Timer.reset();
-
-  if (activePlan) {
-    const { advancePlan } = await import('../workout.store.js');
-    advancePlan();
-  }
 
   Toast.show('Elite session saved', 'success');
   const { renderSelect } = await import('./render.js');

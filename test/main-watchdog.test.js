@@ -73,7 +73,7 @@ import { fileURLToPath } from 'node:url';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WORKFLOW_PATH =
   process.env.WATCHDOG_WORKFLOW || path.join(REPO_ROOT, '.github/workflows/main-watchdog.yml');
-// eslint-disable-next-line security/detect-non-literal-fs-filename -- путь из env, это и есть смысл baseline
+// Путь из env — это и есть смысл baseline.
 const WORKFLOW = fs.readFileSync(WORKFLOW_PATH, 'utf8');
 
 const indentOf = (line) => line.match(/^ */)[0].length;
@@ -687,7 +687,7 @@ test('имя CI в триггере совпадает с именем само�
 test('путь ci.yml в отборе прогонов указывает на существующий файл', () => {
   const m = SCRIPT.match(/const CI_PATH = '([^']+)'/);
   assert.ok(m, 'в скрипте нет CI_PATH — чем тогда отбираются прогоны CI?');
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- путь добыт из самого скрипта, это и есть смысл сверки
+  // Путь добыт из самого скрипта — это и есть смысл сверки.
   assert.ok(
     fs.existsSync(path.join(REPO_ROOT, m[1])),
     `CI_PATH указывает на \`${m[1]}\`, которого нет — отбор всегда даст ноль прогонов ` +

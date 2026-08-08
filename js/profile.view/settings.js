@@ -32,6 +32,21 @@ on('settings:togglePanda', () => P().togglePanda());
 on('settings:toggleFabVideo', () => P().toggleFabVideo());
 on('settings:togglePandaMoods', () => P().togglePandaMoods());
 on('settings:toggleKeyVis',() => P().toggleKeyVisibility());
+/* Тот же словарь движения, что у кнопки синка: крутится, пока летит запрос, и
+   доводит оборот пружиной на ответе — «дело сделано», а не «анимация оборвалась». */
+on('settings:keyRecheck', async () => {
+  const icon = document.getElementById('key-conn-icon');
+  icon?.classList.add('is-spinning');
+  try {
+    await P().recheckKey();
+  } finally {
+    if (icon) {
+      icon.classList.remove('is-spinning');
+      icon.classList.add('is-settled');
+      setTimeout(() => icon.classList.remove('is-settled'), 500);
+    }
+  }
+});
 on('settings:syncToggle', async (el) => {
   const icon = document.getElementById('sync-connect-icon');
   icon?.classList.add('is-spinning');
@@ -301,8 +316,20 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
           const placeholder = isGem
             ? (serverHas ? t('settings.gemini_placeholder_server') : t('settings.gemini_placeholder_opt'))
             : (serverHas ? (ru ? 'Серверный ключ активен' : 'Server key active') : (ru ? 'sk-ant-… (опционально)' : 'sk-ant-… (optional)'));
-          const setFn = isGem ? 'setGeminiKey' : 'setAnthropicKey';
-          const valFn = isGem ? 'validateGeminiKey' : 'validateAnthropicKey';
+          // Стартовое состояние индикатора — без сетевой проверки: открытие
+          // настроек не должно молча стучаться к провайдеру (приложение
+          // airgap-first). Сохранённый ключ показывается как «сохранён», а не
+          // как «подключён» — коннект подтверждает только живой пинг.
+          const trimmed = val.trim();
+          const initState = !trimmed
+            ? (serverHas ? 'server' : 'empty')
+            : (trimmed.startsWith(prefix) && trimmed.length > 30 ? 'saved' : 'partial');
+          const initLabel = {
+            server:  t('settings.key_server'),
+            empty:   t('settings.key_empty'),
+            saved:   t('settings.key_saved'),
+            partial: t('settings.key_partial'),
+          }[initState];
           return `
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-0-5);">
@@ -313,7 +340,7 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
             </a>
           </div>
           <div style="position: relative; display: flex; align-items: center;">
-            <input type="password" id="ai-key-input" class="pref-textarea" style="height: 38px; padding: 0 70px 0 var(--sp-1-5); margin: 0; font-family: monospace; border-radius: var(--r-m); width: 100%; box-sizing: border-box;"
+            <input type="password" id="ai-key-input" class="pref-textarea" style="height: 38px; padding: 0 44px 0 var(--sp-1-5); margin: 0; font-family: monospace; border-radius: var(--r-m); width: 100%; box-sizing: border-box;"
                    placeholder="${esc(placeholder)}"
                    value="${esc(val)}"
                    data-engine="${isGem ? 'gemini' : 'anthropic'}"
@@ -325,10 +352,20 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                 </svg>
               </button>
-              <svg id="key-valid-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" style="color: ${val.trim().startsWith(prefix) ? 'var(--c-accent)' : 'var(--c-text-3)'}; transition: color 0.3s;">
-                 <path d="M20 6L9 17l-5-5"/>
-              </svg>
             </div>
+          </div>
+          <!-- Индикатор коннекта. Галочка «похоже на ключ» стояла ВНУТРИ поля и
+               отвечала на вопрос про формат, а пользователь читал её как «ключ
+               работает». Статус вынесен строкой под поле: точка + вердикт +
+               ручная перепроверка. Состояние держит data-state, анимация — CSS. -->
+          <div class="key-conn" id="key-conn" data-state="${initState}" data-server="${serverHas ? '1' : '0'}">
+            <span class="key-conn-dot"></span>
+            <span class="key-conn-label">${esc(initLabel)}</span>
+            <button class="key-conn-recheck" data-action="settings:keyRecheck" aria-label="${esc(t('settings.key_recheck'))}">
+              <svg class="icon-rotate" id="key-conn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+            </button>
           </div>
         </div>`;
         })()}

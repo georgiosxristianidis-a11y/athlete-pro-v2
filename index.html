@@ -38,6 +38,14 @@
     <link rel="preload" as="font" type="font/woff2" href="fonts/manrope-cyrillic.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="fonts/instrument-sans-latin.woff2" crossorigin />
 
+    <!-- Знак автозагрузки. Preload, а не просто <img>: сплэш — первый кадр, и
+         без подсказки браузер узнаёт о картинке только разобрав <body>.
+         Тот же файл, что отдаёт манифест и статус-бар: знак на сплэше обязан
+         быть пиксель-в-пиксель тем, что пользователь видит на домашнем экране
+         (до 1.27.32 тут жил инлайновый SVG прошлого логотипа — сплэш показывал
+         одно поколение знака, шапка следом другое). -->
+    <link rel="preload" as="image" href="icons/icon-192.png" />
+
     <!-- LOAD-2: без бандлера браузер узнаёт о модуле только разобрав того, кто
          его импортирует — отсюда лестница из 12 волн на прогретом кеше
          (docs/handoff/HANDOFF_load_perf.md). Здесь — волны 5 и глубже (модули,
@@ -73,7 +81,6 @@
     <link rel="modulepreload" href="js/shared/lift-map.js" />
     <link rel="modulepreload" href="js/profile.view/lift-bars.js" />
     <link rel="modulepreload" href="js/profile.store.js" />
-    <link rel="modulepreload" href="js/workout-plans.js" />
     <link rel="modulepreload" href="js/shared/chamber-pill.js" />
     <link rel="modulepreload" href="js/shared/cryptoClient.js" />
     <link rel="modulepreload" href="js/ui/factory.js" />
@@ -301,7 +308,10 @@
       }
       #loading.hidden { opacity: 0; pointer-events: none; }
       @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-      /* Splash mark — inline SVG (нулевой запрос на первом кадре, чёткий на любом DPR).
+      /* Splash mark — тот же PNG, что отдаёт манифест (1.27.32). Своей плашки
+         и своего фона тут нет намеренно: подложка нарисована внутри самого
+         знака, и внешний бокс из --c-accent-bg подкладывал под чёрную плитку
+         зелёный квадрат.
          Entrance pop (spring) + мягкое дыхание вместо голого opacity-мигания.
          cubic-bezier литерал = --ease-spring из base.css: критический блок не
          может ссылаться на переменные, которых тут нет (в этом и был баг ниже). */
@@ -311,16 +321,24 @@
       }
       @keyframes splash-breathe {
         0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.65; transform: scale(0.95); }
+        50% { opacity: 0.8; transform: scale(0.96); }
       }
       .splash-mark {
-        width: 80px; height: 80px; border-radius: 24px;
-        background: var(--c-accent-bg);
-        display: flex; align-items: center; justify-content: center;
+        width: 96px; height: 96px;
+        display: block;
         animation: splash-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both,
                    splash-breathe 1.8s ease-in-out 0.4s infinite;
       }
-      .splash-mark svg { width: 48px; height: 48px; color: var(--c-secondary); }
+      /* Выход детерминирован. Дыхание бесконечное, а загрузка кончается когда
+         кончается: без этого правила знак срезало на произвольном кадре цикла —
+         то на 0.8 прозрачности, то на 0.96 масштаба. Здесь анимация снимается,
+         и уход всегда один и тот же — подъём и растворение. GPU-only. */
+      #loading.hidden .splash-mark {
+        animation: none;
+        opacity: 0;
+        transform: scale(1.08);
+        transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
 
       /* Avatar Btn */
       .athlete-avatar-btn {
@@ -347,11 +365,7 @@
 
   <body>
     <div id="loading">
-      <div class="splash-mark" role="img" aria-label="Athlete Pro">
-        <svg viewBox="0 0 32 32" fill="currentColor" fill-rule="evenodd" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M3 20v-4c0-5 6-8 10-5 3 2 4 4 5 6V9a4 4 0 0 1 8 0v11a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5z M18 19c-1 3-4 5-8 5h-3c5 0 9-2 10-5z" />
-        </svg>
-      </div>
+      <img src="icons/icon-192.png" class="splash-mark" width="96" height="96" alt="Athlete Pro" fetchpriority="high" decoding="sync" />
     </div>
 
     <div id="app">

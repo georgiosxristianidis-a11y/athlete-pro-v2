@@ -5,8 +5,8 @@
   "start_url": "/index.html",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
+  "background_color": "#050507",
+  "theme_color": "#050507",
   "lang": "en",
   "categories": [
     "health",

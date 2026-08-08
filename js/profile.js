@@ -421,17 +421,152 @@ async function setEngine(engine) {
     return _refreshSettings();
   }
 
-  /* Key handlers fire on BLUR, so they deliberately do NOT re-render the
-     settings block: swapping the markup between mousedown and click would eat
-     the tap that caused the blur. Only the indicators need updating, and
-     _patchAiStatus does that in place. */
-  async function setGeminiKey(key) {
-    await DB.Settings.set('gemini-key', key.trim());
-    const { Claude } = await import('./claude.view.js');
-    const fabContainer = document.getElementById('claude-fab-container');
-    if (fabContainer) fabContainer.remove();
-    Claude.renderFAB();
+  /* ── BYOK key: ввод → применение → индикатор коннекта ────────────────────
+     Раньше поле отвечало только на «похоже на ключ?» (префикс + длина) и
+     сохраняло значение на blur. Отозванный или опечатанный в середине ключ
+     проходил обе проверки и всплывал 401-м уже внутри диалога с коучем.
+
+     Теперь ввод сам доводит дело до конца: debounce → сохранение → живой
+     пинг провайдера через /api/verify-key → зелёный/серый/красный индикатор.
+     Blur остаётся, но только как «применить немедленно», не как единственный
+     момент сохранения.
+
+     Хендлеры НЕ перерисовывают блок настроек: подмена разметки между mousedown
+     и click съела бы тап, вызвавший blur. Индикаторы патчатся на месте. */
+  const KEY_DEBOUNCE_MS = 650;
+  const KEY_PREFIX = { gemini: 'AIza', anthropic: 'sk-ant-' };
+  const KEY_FIELD  = { gemini: 'gemini-key', anthropic: 'anthropic-key' };
+
+  let _keyTimer = null;
+  /* Гонка: пользователь дописывает ключ, пока летит проверка предыдущего.
+     Ответ старого запроса обязан быть выброшен, иначе индикатор мигнёт
+     вердиктом про уже несуществующее значение. */
+  let _keyCheckSeq = 0;
+
+  /** @param {string} engine */
+  function _keyLooksValid(engine, val) {
+    const v = val.trim();
+    return v.startsWith(KEY_PREFIX[engine] || '') && v.length > 30;
+  }
+
+  /**
+   * Отрисовать состояние индикатора коннекта. Единственная точка, которая
+   * трогает DOM индикатора — состояние живёт в data-state, вся анимация в CSS.
+   * @param {'empty'|'server'|'saved'|'partial'|'checking'|'ok'|'invalid'|'disabled'|'offline'|'blocked'} state
+   * @param {{ latencyMs?: number }} [extra]
+   */
+  function _setKeyConn(state, extra = {}) {
+    const box = document.getElementById('key-conn');
+    if (!box) return;
+    const label = box.querySelector('.key-conn-label');
+    if (!label) return;
+
+    // Пустое поле при живом серверном ключе — не «нет коннекта», а «works
+    // without your key». Серый в обоих случаях, но подпись честная.
+    if (state === 'empty' && box.dataset.server === '1') state = 'server';
+
+    const text = {
+      empty:    t('settings.key_empty'),
+      server:   t('settings.key_server'),
+      saved:    t('settings.key_saved'),
+      partial:  t('settings.key_partial'),
+      checking: t('settings.key_checking'),
+      ok:       t('settings.key_ok'),
+      invalid:  t('settings.key_invalid'),
+      disabled: t('settings.key_disabled'),
+      offline:  t('settings.key_offline'),
+      blocked:  t('settings.key_blocked'),
+    }[state] || '';
+
+    const ms = Number(extra.latencyMs) || 0;
+    label.textContent = (state === 'ok' && ms) ? `${text} · ${ms} ${t('settings.key_ms')}` : text;
+
+    if (box.dataset.state !== state) {
+      box.dataset.state = state;
+      // Рестарт входной анимации: без этого повторный тот же вердикт молчит.
+      box.classList.remove('is-swap');
+      void box.offsetWidth;
+      box.classList.add('is-swap');
+      if (state === 'ok') haptic(10);
+    }
+  }
+
+  /** Ввод: мгновенная реакция формой + отложенное применение и проверка. */
+  function onKeyInput(engine, raw) {
+    clearTimeout(_keyTimer);
+    const val = String(raw || '').trim();
+
+    if (!val) { _keyCheckSeq++; _setKeyConn('empty'); _keyTimer = setTimeout(() => commitKey(engine, ''), KEY_DEBOUNCE_MS); return; }
+    if (!_keyLooksValid(engine, val)) { _keyCheckSeq++; _setKeyConn('partial'); return; }
+
+    _setKeyConn('checking');
+    _keyTimer = setTimeout(() => commitKey(engine, val), KEY_DEBOUNCE_MS);
+  }
+
+  /**
+   * Применить ключ: сохранить, обновить зависимые узлы, проверить коннект.
+   * @param {'gemini'|'anthropic'} engine
+   */
+  async function commitKey(engine, raw) {
+    clearTimeout(_keyTimer);
+    const val = String(raw || '').trim();
+    const seq = ++_keyCheckSeq;
+
+    await DB.Settings.set(KEY_FIELD[engine], val);
+
+    if (engine === 'gemini') {
+      // FAB коуча читает ключ на построении — пересобрать, иначе кнопка врёт.
+      const { Claude } = await import('./claude.view.js');
+      document.getElementById('claude-fab-container')?.remove();
+      Claude.renderFAB();
+    }
     _patchAiStatus(await DB.Settings.getAll());
+
+    if (!val) { if (seq === _keyCheckSeq) _setKeyConn('empty'); return; }
+    if (!_keyLooksValid(engine, val)) { if (seq === _keyCheckSeq) _setKeyConn('partial'); return; }
+
+    if (seq === _keyCheckSeq) _setKeyConn('checking');
+    const verdict = await _verifyKey(engine, val);
+    if (seq !== _keyCheckSeq) return; // ключ уже переписан — вердикт протух
+    _setKeyConn(verdict.state, verdict);
+  }
+
+  /**
+   * Пинг провайдера через backend-прокси (ключ на фронте наружу не уходит).
+   * @returns {Promise<{state:'ok'|'invalid'|'offline'|'blocked', latencyMs?:number}>}
+   */
+  async function _verifyKey(engine, key) {
+    try {
+      const { safeFetch } = await import('./privacy.store.js');
+      const res = await safeFetch('/api/verify-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ engine, key }),
+      }, 'ai');
+      const data = await res.json();
+      if (data.ok) return { state: 'ok', latencyMs: data.latencyMs };
+      // «Ключ не принят» и «API не включён в проекте» чинятся по-разному:
+      // первое — заменой ключа, второе — тумблером в Google Cloud. Один общий
+      // «ошибка» отправлял бы человека искать не там.
+      return { state: { invalid_key: 'invalid', api_disabled: 'disabled' }[data.reason] || 'offline' };
+    } catch (err) {
+      // Airgap / AI выключен — это не «ключ плохой», а «сеть закрыта нарочно».
+      if (err && err.name === 'PrivacyBlockedError') return { state: 'blocked' };
+      return { state: 'offline' };
+    }
+  }
+
+  async function setGeminiKey(key) {
+    return commitKey('gemini', key);
+  }
+
+  /** Ручная перепроверка коннекта — ключ мог быть отозван уже после ввода. */
+  async function recheckKey() {
+    const inp = /** @type {HTMLInputElement|null} */ (document.getElementById('ai-key-input'));
+    if (!inp) return;
+    const engine = inp.dataset.engine === 'gemini' ? 'gemini' : 'anthropic';
+    haptic(10);
+    await commitKey(engine, inp.value);
   }
 
   function toggleKeyVisibility() {
@@ -448,25 +583,15 @@ async function setEngine(engine) {
   }
 
   function validateGeminiKey(val) {
-    const validIcon = document.getElementById('key-valid-icon');
-    if (!validIcon) return;
-    if (val.trim().startsWith('AIza') && val.trim().length > 30) {
-      validIcon.style.color = 'var(--c-accent)';
-    } else {
-      validIcon.style.color = 'var(--c-text-3)';
-    }
+    onKeyInput('gemini', val);
   }
 
   async function setAnthropicKey(key) {
-    await DB.Settings.set('anthropic-key', key.trim());
-    _patchAiStatus(await DB.Settings.getAll());
+    return commitKey('anthropic', key);
   }
 
   function validateAnthropicKey(val) {
-    const validIcon = document.getElementById('key-valid-icon');
-    if (!validIcon) return;
-    validIcon.style.color = (val.trim().startsWith('sk-ant-') && val.trim().length > 30)
-      ? 'var(--c-accent)' : 'var(--c-text-3)';
+    onKeyInput('anthropic', val);
   }
 
   async function setLang(lang) {
@@ -613,6 +738,7 @@ async function setEngine(engine) {
     load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
     togglePanda, toggleFabVideo, togglePandaMoods, setLang, setEngine, setGeminiKey,
     validateGeminiKey, setAnthropicKey, validateAnthropicKey, toggleKeyVisibility,
+    onKeyInput, commitKey, recheckKey,
     exportData, exportCsv, exportTxt, importData, setTheme, toggleNotify,
     _onImportFile, clearAllData,
     syncConnect, syncDisconnect, deduplicateDB

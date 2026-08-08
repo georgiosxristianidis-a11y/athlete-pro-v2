@@ -5,9 +5,8 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-e9226771';
+const CACHE_NAME = 'athlete-pro-v121-9bef9364';
 
-// eslint-disable-next-line no-unused-vars
 const ASSETS = [
   '/index.html',
   '/manifest.json',
@@ -99,7 +98,6 @@ const ASSETS = [
   '/js/version.js',
   '/js/workers/crypto.worker.js',
   '/js/workout-ai.view.js',
-  '/js/workout-plans.js',
   '/js/workout.store.js',
   '/js/workout.view/handlers.js',
   '/js/workout.view/modals.js',
@@ -123,9 +121,6 @@ const ASSETS = [
   '/icons/favicon.ico',
   '/icons/icon-192.png',
   '/icons/icon-64.png',
-  '/icons/legs.svg',
-  '/icons/pull.svg',
-  '/icons/push.svg',
   '/assets/panda-poster.jpg',
   '/fonts/instrument-sans-latin.woff2',
   '/fonts/manrope-cyrillic.woff2',
