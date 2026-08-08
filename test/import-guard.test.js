@@ -60,3 +60,33 @@ describe('static guard: dynamic import() targets in js/shared/', () => {
     }
   }
 });
+
+/**
+ * Тот же класс отказа, другой вход: `<link rel="modulepreload">` в index.html.
+ * Удалённый модуль (js/workout-plans.js, снос второго движка плана 2026-08-08)
+ * оставил за собой висячий preload — сервер отдал на него SPA-фолбэк 200
+ * text/html, и браузер писал в консоль ошибку MIME на КАЖДОЙ загрузке.
+ * Ни один гейт этого не ловил: файл «есть» (200), просто это не модуль.
+ */
+const ROOT = path.join(__dirname, '..');
+
+describe('static guard: modulepreload targets in index.html', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const re = /<link\b[^>]*\brel=["']modulepreload["'][^>]*\bhref=["']([^"']+)["']/g;
+  const hrefs = [];
+  let m;
+  while ((m = re.exec(html))) hrefs.push(m[1]);
+
+  test('sanity: index.html declares modulepreload hints', () => {
+    assert.ok(hrefs.length > 0, 'ожидались <link rel="modulepreload"> — регэксп протух?');
+  });
+
+  for (const href of hrefs) {
+    test(`modulepreload "${href}" resolves`, () => {
+      assert.ok(
+        fs.existsSync(path.join(ROOT, href)),
+        `index.html объявляет preload на '${href}', но файла нет — браузер получит SPA-фолбэк text/html`
+      );
+    });
+  }
+});

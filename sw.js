@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-ed4586d3';
+const CACHE_NAME = 'athlete-pro-v121-9bef9364';
 
 const ASSETS = [
   '/index.html',
@@ -98,7 +98,6 @@ const ASSETS = [
   '/js/version.js',
   '/js/workers/crypto.worker.js',
   '/js/workout-ai.view.js',
-  '/js/workout-plans.js',
   '/js/workout.store.js',
   '/js/workout.view/handlers.js',
   '/js/workout.view/modals.js',

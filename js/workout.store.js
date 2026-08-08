@@ -4,7 +4,6 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
-import { getProgram } from './workout-plans.js';
 import { BLOCK_NAMES_EN } from './shared/chamber-pill.js';
 
 export const SESSION_KEY = 'ap-active-session';
@@ -14,40 +13,31 @@ export const PLAN_KEY_B = 'ap-custom-plan-B';
 export const WEEK_MODE_KEY = 'ap-week-mode';     // 'A' | 'B'
 export const CORE_KEY = 'ap-core-checklist';     // { push:[{name}], pull:[...], legs:[...] }
 export const CUSTOM_WORKOUTS_KEY = 'ap-custom-workouts';
-export const ACTIVE_PLAN_KEY = 'ap-active-plan'; // { id: string, type: 'ppl'|'5x5'|'gzclp', startedAt: number, currentWeek: number, currentDay: number, config: {} }
+export const ACTIVE_PLAN_KEY = 'ap-active-plan'; // legacy — второй движок плана (карусель Structured Programs), снесён; ключ только вычищается
 
 /* ════════════════════════════════════════════════════════
-   ACTIVE PLAN MANAGEMENT
-   ════════════════════════════════════════════════════════ */
+   LEGACY PROGRAM ENGINE — REMOVED
+   ════════════════════════════════════════════════════════
+   До 2026-08-08 рядом с пресетами редактора (PPL | GIO / Hybrid) жил второй
+   движок плана: карусель «Structured Programs» + PROGRAMS из workout-plans.js.
+   Он ставил ACTIVE_PLAN_KEY, после чего buildSession перехватывал ЛЮБОЙ выбор
+   дня и собирал сессию по внутреннему счётчику программы — тап по PUSH отдавал
+   день с Deadlift. Кнопки выхода не существовало: resetActivePlan() не вызывался
+   ниоткуда, так что первый же тап по карточке программы навсегда отрезал
+   пользователя от его собственного плана. Плюс история искалась по planId,
+   которого у обычных тренировок нет → все веса с 0 кг.
+   Источник правды теперь один — план в PLAN_KEY_A/B (дефолт: PPL | GIO). */
 
 /**
- * Get currently active training program/cycle.
- * @returns {Object|null}
+ * Вычистить ключ мёртвого движка. Идемпотентно, вызывается один раз на загрузке
+ * стора: без этого пользователь, успевший тапнуть карточку программы, остаётся
+ * с залипшим ap-active-plan в localStorage (и с planId в новых тренировках).
+ * @returns {void}
  */
-export function getActivePlan() {
-  try {
-    const raw = localStorage.getItem(ACTIVE_PLAN_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
+function _purgeLegacyActivePlan() {
+  try { localStorage.removeItem(ACTIVE_PLAN_KEY); } catch { /* localStorage unavailable */ }
 }
-
-/**
- * Set a new active program/cycle.
- * @param {Object} plan
- */
-export function setActivePlan(plan) {
-  localStorage.setItem(ACTIVE_PLAN_KEY, JSON.stringify({
-    ...plan,
-    startedAt: plan.startedAt || Date.now()
-  }));
-}
-
-/**
- * Clear the active program and return to free training.
- */
-export function resetActivePlan() {
-  localStorage.removeItem(ACTIVE_PLAN_KEY);
-}
+_purgeLegacyActivePlan();
 
 /**
  * PPL | GIO preset — Week A/B variants. Block I + II identical; Block III (arms) swaps.
@@ -672,50 +662,15 @@ export function classifyChamber(ex) {
 }
 
 /**
- * Build an active workout session.
- * Switches between 'ActivePlan' cycle logic or fallback 'Free Training' PPL.
- * @param {string} [type] — 'push'|'pull'|'legs' for free training; ignored for ActivePlan
+ * Build an active workout session from the user's plan (default: PPL | GIO).
+ * @param {string} [type] — 'push'|'pull'|'legs'
  * @param {{ workouts?: Array, autoProgress?: boolean }} [opts]
  * @returns {Array<{name: string, sets: Array<{weight: number, reps: number, done: boolean}>}>}
  */
 export function buildSession(type, opts = {}) {
-  const activePlan = getActivePlan();
   const workouts = opts.workouts || [];
   const autoProgress = opts.autoProgress !== false;
 
-  // Case 1: Structured Active Plan (5x5, Cycle, etc.)
-  if (activePlan) {
-    const prog = getProgram(activePlan.id);
-    if (prog) {
-      const dayKey = prog.days[activePlan.currentDay % prog.days.length];
-      const template = prog.templates[dayKey];
-      
-      return template.map(ex => {
-        // Find last completion of this specific exercise IN THIS PROGRAM
-        const lastSession = [...workouts].reverse().find(w => 
-          w.planId === activePlan.id && (w.exercises || []).some(e => e.name === ex.name)
-        );
-        const lastEx = lastSession?.exercises?.find(e => e.name === ex.name);
-        
-        const progression = prog.getProgression(ex, lastEx);
-        return {
-          name: ex.name,
-          block: ex.block || classifyChamber(ex),
-          noDb: ex.noDb || false,
-          isBW: ex.isBW || false,
-          isUnilateral: ex.isUnilateral || false,
-          autoBumped: progression.autoBumped || false,
-          sets: Array.from({ length: progression.sets }, () => ({
-            weight: progression.weight,
-            reps: progression.reps,
-            done: false
-          }))
-        };
-      });
-    }
-  }
-
-  // Case 2: Fallback / Free Training (User's Default PPL)
   const plan = loadPlan();
   const t = type || 'push';
   return (plan[t] || []).map((ex) => {
@@ -753,56 +708,6 @@ export function buildSession(type, opts = {}) {
       })),
     };
   });
-}
-
-/**
- * Start a new training program.
- * @param {string} programId
- */
-export function startPlan(programId) {
-  const prog = getProgram(programId);
-  if (!prog) return;
-  setActivePlan({
-    id: programId,
-    type: prog.type,
-    startedAt: Date.now(),
-    currentWeek: 1,
-    currentDay: 0,
-    config: {}
-  });
-}
-
-/**
- * Advance active plan to next day/week.
- */
-export function advancePlan() {
-  const plan = getActivePlan();
-  if (!plan) return;
-  const prog = getProgram(plan.id);
-  if (!prog) return;
-
-  plan.currentDay++;
-  if (plan.currentDay >= prog.days.length) {
-    plan.currentDay = 0;
-    plan.currentWeek++;
-  }
-  setActivePlan(plan);
-}
-
-/**
- * Get display info for current plan progress.
- */
-export function getPlanStats() {
-  const plan = getActivePlan();
-  if (!plan) return null;
-  const prog = getProgram(plan.id);
-  return {
-    name: prog?.name || 'Unknown',
-    week: plan.currentWeek,
-    day: (plan.currentDay % (prog?.days.length || 1)) + 1,
-    totalDays: prog?.days.length || 0,
-    progress: Math.round((plan.currentWeek / (prog?.durationWeeks || 1)) * 100)
-  };
 }
 
 /**

@@ -9,16 +9,13 @@ import { DB } from '../db.js';
 import { Timer } from '../timer.js';
 import { Toast } from '../shell.js';
 import { esc } from '../shared/utils.js';
-import { Spring } from '../shared/spring.js';
 import {
   State,
   loadPlan, savePlan,
   buildSession, persistSession,
   getWeekMode, loadCoreChecklist,
   getExerciseLibrary,
-  getActivePlan, getPlanStats
 } from '../workout.store.js';
-import { PROGRAMS } from '../workout-plans.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
 import { initDrumPickers } from '../ui/drum-picker.js';
@@ -38,7 +35,6 @@ on('wo:addCore',       (el) => W()._addCoreItem(el.dataset.day));
 on('wo:toggleWeek',    () => W()._toggleWeek());
 on('wo:selectType',    (el) => W().selectType(el.dataset.type));
 on('wo:openPlanEditor',() => W().openPlanEditor());
-on('wo:startProgram',  (el) => W()._startProgram(el.dataset.pid));
 on('wo:addLiveEx',     () => W()._addLiveExercise());
 on('wo:complete',      () => W().completeSession());
 on('wo:cancel',        () => W().cancelSession());
@@ -213,8 +209,6 @@ export async function renderSelect() {
   State.phase = 'select';
   const plan = loadPlan();
   const weekMode = getWeekMode();
-  const activePlan = getActivePlan();
-  const stats = getPlanStats();
   const lang = await DB.Settings.get('lang', 'en');
   const ru = lang === 'ru';
 
@@ -234,26 +228,8 @@ export async function renderSelect() {
       </button>
     </div>
 
-    ${stats ? `
-    <div class="active-plan-card stagger-item" data-action="wo:selectType" data-type="active">
-      <div class="active-plan-info">
-        <div class="active-plan-title">${esc(stats.name)}</div>
-        <div class="active-plan-meta">${ru ? 'Неделя' : 'Week'} ${stats.week} · ${ru ? 'День' : 'Day'} ${stats.day} ${ru ? 'из' : 'of'} ${stats.totalDays}</div>
-      </div>
-      <div class="active-plan-progress">
-        <div class="active-plan-progress-fill" id="active-plan-bar" style="width:0%"></div>
-      </div>
-      <button class="btn-next-session">
-        ${ru ? 'Следующая тренировка' : 'Next Session'}
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
-      </button>
-    </div>
-    ` : ''}
-
     <div class="section-header stagger-item" style="margin-top:var(--sp-2)">
-      <span class="section-label">${activePlan ? (ru ? 'Свободная тренировка' : 'Free Training') : (ru ? 'Выбор типа' : 'Select Type')}</span>
+      <span class="section-label">${ru ? 'Выбор типа' : 'Select Type'}</span>
       <button class="btn-text" data-action="wo:openPlanEditor">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -287,21 +263,6 @@ export async function renderSelect() {
       <span class="section-label">${ru ? 'Прошлые сессии' : 'Last Sessions'}</span>
     </div>
     <div id="last-sessions-preview" class="stagger-item"></div>
-
-    <div class="section-header stagger-item" style="margin-top:var(--sp-3)">
-      <span class="section-label">${ru ? 'Программы' : 'Structured Programs'}</span>
-    </div>
-    <div class="programs-carousel stagger-item">
-      ${PROGRAMS.map(p => `
-        <div class="program-card ${activePlan?.id === p.id ? 'active' : ''}" 
-             data-action="wo:startProgram" data-pid="${p.id}">
-          <div class="program-type">${p.type.toUpperCase()}</div>
-          <div class="program-name">${p.name}</div>
-          <div class="program-dur">${p.durationWeeks} weeks · ${p.days.length} days/split</div>
-          ${activePlan?.id === p.id ? '<div class="program-status">Active Cycle</div>' : ''}
-        </div>
-      `).join('')}
-    </div>
   `;
 
   document.getElementById('train-date').textContent = new Date().toLocaleDateString(ru ? 'ru' : 'en', {
@@ -329,19 +290,6 @@ export async function renderSelect() {
       </div>`;
     }).join('');
   });
-
-  if (stats) {
-    requestAnimationFrame(() => {
-      const bar = document.getElementById('active-plan-bar');
-      if (bar) {
-        Spring.animate({
-          from: 0,
-          to: stats.progress,
-          onUpdate: (v) => { bar.style.transform = `scaleX(${v / 100})`; }
-        });
-      }
-    });
-  }
 }
 
 /* ════════════════════════════════════════════════════════
