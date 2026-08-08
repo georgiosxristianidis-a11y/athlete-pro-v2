@@ -4,8 +4,8 @@
 
 /* SPACE-1 (заход №3): отступы в этом файле идут по шкале --sp-*, сырых
    значений в padding/margin/gap не осталось — кроме микро-сдвигов 2–3px
-   (`.program-name` margin-bottom, вертикаль `.muscle-badge`, gap
-   `.live-rail` при высоте сегмента 4px). Они лежат ниже нижней ступени
+   (вертикаль `.muscle-badge`, gap `.live-rail` при высоте сегмента 4px).
+   Они лежат ниже нижней ступени
    шкалы (--sp-0-5 = 4px) и служат оптическому выравниванию, а не ритму
    блоков: поднять их до 4px значит растащить бейдж от имени упражнения
    и разорвать рельс на отдельные полоски. То же решение принято в PP-4
@@ -73,15 +73,6 @@
 }
 
 .type-icon { display: block; width: 64px; height: 64px; }
-
-.programs-carousel { display: flex; flex-direction: column; gap: var(--sp-2); padding-bottom: var(--sp-2); }
-.program-card {
-  transition: transform 0.2s ease, opacity 0.2s ease;
-  will-change: transform; width: 100%; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xxl); padding: var(--sp-3); cursor: pointer; }
-.program-card:active { transform: scale(var(--press-scale)); }
-.program-type { font-size: var(--fs-1); font-weight: var(--fw-black); color: var(--c-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: var(--sp-0-5); }
-.program-name { font-size: var(--fs-3); font-weight: var(--fw-black); color: var(--c-text-1); letter-spacing: -0.02em; margin-bottom: 2px; }
-.program-dur { font-size: var(--fs-1); font-weight: var(--fw-md); color: var(--c-text-3); }
 
 /* .btn-text base styles live in base.css (eager-loaded) — see note there. */
 
