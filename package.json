@@ -1,6 +1,6 @@
 {
   "name": "athlete-pro",
-  "version": "1.27.35",
+  "version": "1.27.36",
   "type": "module",
   "description": "PPL Workout Tracker with AI Coach",
   "main": "server.js",
@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.51.0",
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^2.16.0",
     "@supabase/supabase-js": "^2.102.1",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
