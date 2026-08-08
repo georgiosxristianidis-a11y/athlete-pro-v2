@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-cbc2c5cd';
+const CACHE_NAME = 'athlete-pro-v121-92891579';
 
 const ASSETS = [
   '/index.html',
@@ -122,9 +122,6 @@ const ASSETS = [
   '/icons/favicon.ico',
   '/icons/icon-192.png',
   '/icons/icon-64.png',
-  '/icons/legs.svg',
-  '/icons/pull.svg',
-  '/icons/push.svg',
   '/assets/panda-poster.jpg',
   '/fonts/instrument-sans-latin.woff2',
   '/fonts/manrope-cyrillic.woff2',
