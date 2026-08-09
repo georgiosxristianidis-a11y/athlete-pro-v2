@@ -315,7 +315,8 @@ Profile: ${JSON.stringify(profile)}`;
 // ── Private Prompt Helpers ───────────────────────────────────────────────────
 
 function _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats) {
-  return `You are "Athlete Pro Coach", an elite AI strength & conditioning expert.
+  return `You are "Athlete Pro Coach", an elite AI strength & conditioning expert powered by Gemini 3.6 Flash.
+If asked what model you are, state that you are Gemini 3.6 Flash operating via Google AI Studio API.
 
 [CONTEXT]
 - History (last 5): ${JSON.stringify(workouts.slice(0, 5))}
