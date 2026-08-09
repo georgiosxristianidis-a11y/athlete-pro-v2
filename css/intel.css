@@ -621,3 +621,99 @@
   0%, 100% { transform: translateY(0); opacity: 0.4; }
   50%      { transform: translateY(-4px); opacity: 1; box-shadow: 0 0 10px var(--c-intel); }
 }
+
+/* ── Air Markdown Typography & Hierarchy ── */
+.intel-md-body {
+  font-family: var(--font-main);
+  font-size: var(--fs-3);
+  line-height: 1.7;
+  color: var(--c-text-1);
+}
+
+.intel-md-h3 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-4);
+  font-weight: var(--fw-black);
+  color: var(--c-intel);
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-2);
+  letter-spacing: -0.01em;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--c-intel) 30%, transparent);
+}
+
+.intel-md-h2 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-5);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-2);
+}
+
+.intel-md-p {
+  margin-bottom: var(--sp-3);
+}
+
+.intel-md-li {
+  position: relative;
+  padding-left: var(--sp-4);
+  margin-bottom: var(--sp-2);
+  list-style: none;
+  color: color-mix(in srgb, var(--c-text-1) 90%, transparent);
+}
+.intel-md-li::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--c-intel);
+  box-shadow: 0 0 6px var(--c-intel);
+}
+
+.intel-md-num {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  background: color-mix(in srgb, var(--c-surface) 50%, transparent);
+  backdrop-filter: blur(12px);
+  padding: var(--sp-3);
+  border-radius: var(--r-m);
+  border: 1px solid color-mix(in srgb, var(--c-text-1) 8%, transparent);
+}
+
+.intel-num-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--c-intel) 18%, transparent);
+  color: var(--c-intel);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--c-intel) 35%, transparent);
+}
+
+/* ── Card Loading Spinner & Active Glow ── */
+.intel-module-card.loading {
+  pointer-events: none;
+  border-color: color-mix(in srgb, var(--c-intel) 50%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--c-intel) 25%, transparent);
+}
+
+.intel-module-card.loading .intel-module-icon {
+  animation: amicro-module-spin 0.9s linear infinite;
+  box-shadow: 0 0 16px var(--c-intel);
+}
+
+@keyframes amicro-module-spin {
+  0%   { transform: rotate(0deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1.1); }
+}

@@ -8,10 +8,10 @@ import { on, onChange, onKeydown } from './events.js';
 on('intel:close',         () => window.Nav.go('s-home'));
 on('intel:camera',        () => window.IntelView.handleCamera());
 on('intel:submit',        () => window.IntelView.submit());
-on('intel:weekly',        () => window.IntelView.generateWeekly());
-on('intel:createWorkout', () => window.IntelView.createWorkout());
-on('intel:analyzeStats',  () => window.IntelView.analyzeStats());
-on('intel:biometrics',    () => window.IntelView.checkBiometrics());
+on('intel:weekly',        (el) => window.IntelView.generateWeekly(el));
+on('intel:createWorkout', (el) => window.IntelView.createWorkout(el));
+on('intel:analyzeStats',  (el) => window.IntelView.analyzeStats(el));
+on('intel:biometrics',    (el) => window.IntelView.checkBiometrics(el));
 on('intel:clearImage',    () => { const w = document.getElementById('intel-vision-preview-wrap'); if (w) w.innerHTML = ''; window.IntelView._clearImage(); });
 on('intel:playAudio',     (el) => window.IntelView.playAudio(el));
 on('intel:closeReport',   (el) => el.closest('.intel-report-overlay')?.remove());
@@ -350,38 +350,9 @@ export const IntelView = (() => {
                   haptic(2);
                   fullText += parsed.text;
                   if (feedbackText) {
-                    let rawText = fullText;
-                    
-                    // 1. Hide <thinking> tags and anything inside them
-                    rawText = rawText.replace(/<thinking>[\s\S]*?(<\/thinking>|$)/g, '');
-                    
-                    // 2. Extract JSON widget before escaping
-                    let htmlWidget = '';
-                    const jsonMatch = rawText.match(/\{[\s\S]*"_widget"\s*:\s*"readiness"[\s\S]*\}/);
-                    if (jsonMatch) {
-                      try {
-                        const widgetData = JSON.parse(jsonMatch[0]);
-                        htmlWidget = _buildReadinessWidget(widgetData);
-                        rawText = rawText.replace(jsonMatch[0], '[[WIDGET_PLACEHOLDER]]');
-                      } catch (e) { }
-                    }
-                    
-                    // 3. Escape the raw text
-                    let safeText = esc(rawText);
-                    
-                    // 4. Basic markdown (bold)
-                    safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    
-                    // 5. Convert newlines to breaks
-                    safeText = safeText.replace(/\n/g, '<br>');
-                    
-                    // 6. Re-insert widget
-                    if (htmlWidget) {
-                      safeText = safeText.replace('[[WIDGET_PLACEHOLDER]]', htmlWidget);
-                    }
-                    
+                    const formattedHtml = _formatAirMarkdown(fullText);
                     feedbackText.className = 'intel-feedback-text intel-feedback-content-fade';
-                    feedbackText.innerHTML = safeText;
+                    feedbackText.innerHTML = formattedHtml;
                   }
                 }
               } catch (e) {}
@@ -393,6 +364,7 @@ export const IntelView = (() => {
       IntelStore.addLog('AI', 'Insight received.');
       IntelStore.setStatus('SYSTEM STANDBY');
       feedbackEl.classList.remove('streaming');
+      _clearModuleLoaders();
 
       // Auto-Speech
       const autoSpeech = await DB.Settings.get('ai-auto-speech', true);
@@ -405,6 +377,7 @@ export const IntelView = (() => {
       console.error(err);
       feedbackEl.classList.remove('streaming');
       feedbackEl.classList.add('error-state');
+      _clearModuleLoaders();
 
       // Расшифровка HTTP-ошибок для пользователя
       const errMsg = err?.message || '';
@@ -433,6 +406,59 @@ export const IntelView = (() => {
       IntelStore.setStatus('SYSTEM ERROR');
       if (feedbackText) feedbackText.textContent = friendlyMsg;
     }
+  }
+
+  function _clearModuleLoaders() {
+    document.querySelectorAll('.intel-module-card.loading').forEach(card => card.classList.remove('loading'));
+  }
+
+  /** Rich Air Markdown & Typography Formatter */
+  function _formatAirMarkdown(rawText) {
+    let text = rawText || '';
+
+    // 1. Hide <thinking> tags
+    text = text.replace(/<thinking>[\s\S]*?(<\/thinking>|$)/g, '');
+
+    // 2. Extract JSON widget before escaping
+    let htmlWidget = '';
+    const jsonMatch = text.match(/\{[\s\S]*"_widget"\s*:\s*"readiness"[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const widgetData = JSON.parse(jsonMatch[0]);
+        htmlWidget = _buildReadinessWidget(widgetData);
+        text = text.replace(jsonMatch[0], '[[WIDGET_PLACEHOLDER]]');
+      } catch (e) { }
+    }
+
+    // 3. Escape raw text
+    let safe = esc(text);
+
+    // 4. Headings (###, ##, #)
+    safe = safe.replace(/^###\s+(.*$)/gim, '<h3 class="intel-md-h3">$1</h3>');
+    safe = safe.replace(/^##\s+(.*$)/gim, '<h2 class="intel-md-h2">$1</h2>');
+    safe = safe.replace(/^#\s+(.*$)/gim, '<h2 class="intel-md-h2">$1</h2>');
+
+    // 5. Bold & Italic
+    safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    safe = safe.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // 6. Numbered items: 1. Item
+    safe = safe.replace(/^(\d+)\.\s+(.*$)/gim, '<div class="intel-md-num"><span class="intel-num-badge">$1</span><span>$2</span></div>');
+
+    // 7. Bullet items: * Item or - Item
+    safe = safe.replace(/^[\*\-]\s+(.*$)/gim, '<li class="intel-md-li">$1</li>');
+
+    // 8. Paragraphs
+    safe = safe.replace(/\n\n+/g, '</p><p class="intel-md-p">');
+    safe = safe.replace(/\n/g, '<br>');
+
+    // 9. Re-insert widget
+    if (htmlWidget) {
+      safe = safe.replace('[[WIDGET_PLACEHOLDER]]', htmlWidget);
+    }
+
+    return `<div class="intel-md-body"><p class="intel-md-p">${safe}</p></div>`;
+  }
   }
 
   function _clearImage() { _pendingImage = null; }
@@ -493,7 +519,9 @@ export const IntelView = (() => {
     return new Blob([wavBuffer], { type: 'audio/wav' });
   }
 
-  async function generateWeekly() {
+  async function generateWeekly(el) {
+     const card = el?.closest('.intel-module-card') || document.querySelector('.intel-module-card[data-action="intel:weekly"]');
+     if (card) card.classList.add('loading');
      IntelStore.addLog('SYS', 'Computing weekly intelligence...');
      IntelStore.setStatus('COMPUTING INTEL...');
      
@@ -522,11 +550,13 @@ export const IntelView = (() => {
        
        IntelStore.addLog('AI', `Weekly report generated. Performance Score: ${report.score}`);
        IntelStore.setStatus('SYSTEM STANDBY');
+       _clearModuleLoaders();
 
        _renderReportOverlay(report);
        speakText(`Твой прогресс за неделю: ${report.score} баллов. ${report.summary}`);
 
      } catch (err) {
+       _clearModuleLoaders();
        IntelStore.addLog('ERROR', 'Failed to generate weekly intel');
        IntelStore.setStatus('ERROR');
      }
@@ -572,8 +602,13 @@ export const IntelView = (() => {
   }
 
 
-  function createWorkout() {
+  function createWorkout(el) {
      haptic(10);
+     const card = el?.closest('.intel-module-card') || document.querySelector('.intel-module-card[data-action="intel:createWorkout"]');
+     if (card) {
+       card.classList.add('loading');
+       setTimeout(() => card.classList.remove('loading'), 1200);
+     }
      IntelStore.addLog('SYS', 'Ready to generate workout plan');
      IntelStore.setStatus('WAITING FOR PROMPT');
      const input = document.getElementById('intel-input');
@@ -585,8 +620,10 @@ export const IntelView = (() => {
      }
   }
 
-  function analyzeStats() {
+  function analyzeStats(el) {
      haptic(10);
+     const card = el?.closest('.intel-module-card') || document.querySelector('.intel-module-card[data-action="intel:analyzeStats"]');
+     if (card) card.classList.add('loading');
      IntelStore.addLog('SYS', 'Ready to analyze stats');
      const input = document.getElementById('intel-input');
      if (input) {
@@ -595,8 +632,10 @@ export const IntelView = (() => {
      }
   }
 
-  function checkBiometrics() {
+  function checkBiometrics(el) {
      haptic(10);
+     const card = el?.closest('.intel-module-card') || document.querySelector('.intel-module-card[data-action="intel:biometrics"]');
+     if (card) card.classList.add('loading');
      IntelStore.addLog('SYS', 'Requesting Biometrics scan');
      const input = document.getElementById('intel-input');
      if (input) {
