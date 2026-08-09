@@ -395,6 +395,52 @@ export async function getExerciseLibrary() {
 }
 
 /**
+ * Manual muscle-group overrides for plan display names that don't text-match
+ * exercises-library.json — the plan uses marketing/equipment-specific names
+ * ("Butterfly Machine", "Wide-Grip Upright Row") while the library uses its
+ * own canonical naming ("Pec Deck Fly", "Barbell Upright Row"). Checked before
+ * the fuzzy name search in resolveMuscleGroup; keeps the muscle-group badge
+ * accurate without renaming plan lifts (which would orphan weight history —
+ * alias:[] already carries that risk, see the 2026-07-08 case above).
+ * @type {Record<string, string>}
+ */
+const MUSCLE_GROUP_OVERRIDES = {
+  'incline db press': 'chest',
+  'butterfly machine': 'chest',
+  'dips (chest focus)': 'chest',
+  'hyperextensions': 'lower back',
+  'overhead tricep ext.': 'triceps',
+  'wide-grip upright row': 'shoulders',
+  'hip adductor machine': 'adductors',
+  'hip abductor machine': 'glutes',
+  'iso-lateral seated row': 'back',
+};
+
+/**
+ * Resolve an exercise's primary muscle group: manual override first, then
+ * exact/fuzzy (bidirectional) name match against the library. Pure — no DOM,
+ * no I/O — so it's unit-testable without mocking IDB/fetch.
+ * @param {string} exerciseName
+ * @param {Array<{name: string, muscleGroup: string}>} library
+ * @returns {string|null} lowercase muscle group, or null if unresolved
+ */
+export function resolveMuscleGroup(exerciseName, library) {
+  const clean = String(exerciseName || '').toLowerCase().trim();
+  if (!clean) return null;
+
+  const override = MUSCLE_GROUP_OVERRIDES[clean];
+  if (override) return override;
+
+  const lib = library || [];
+  const matched = lib.find(i => i.name.toLowerCase().trim() === clean)
+    || lib.find(i => {
+      const n = i.name.toLowerCase();
+      return n.includes(clean) || clean.includes(n);
+    });
+  return matched ? matched.muscleGroup.toLowerCase() : null;
+}
+
+/**
  * Filter exercises by category, muscle group, equipment.
  * @param {Object} filters — { category?, muscleGroup?, equipment?, query? }
  * @returns {Promise<ExerciseItem[]>}
