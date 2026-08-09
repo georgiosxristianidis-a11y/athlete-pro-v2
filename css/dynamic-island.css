@@ -701,3 +701,21 @@
 
 .island-progress-fill, .island-timer-progress { transform-origin: left; transform: scaleX(0); width: 100%; }
 
+
+/* ── PANDA-1 Voice Feedback ── */
+.island.panda-speaking .island-sublabel {
+  text-transform: none;
+  font-weight: var(--fw-bold);
+  color: var(--c-text-1);
+  opacity: 1;
+  font-size: calc(var(--fs-1) * 1.1);
+  letter-spacing: normal;
+  /* Add a soft glow behind the text to represent speaking */
+  text-shadow: 0 0 8px var(--c-accent-glow);
+  animation: panda-speak-pulse 1.5s infinite alternate;
+}
+
+@keyframes panda-speak-pulse {
+  from { opacity: 0.8; }
+  to { opacity: 1; text-shadow: 0 0 12px var(--c-accent); }
+}

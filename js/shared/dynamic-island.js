@@ -11,6 +11,7 @@ import { deriveDotState } from './sync-dot.js';
 import { on } from '../events.js';
 import { flag } from '../flags.js';
 import { getIslandProfile } from '../island-profile.store.js';
+import { hapticGate, speakInsight, cancelSpeech } from './panda-voice.js';
 
 /** Active island layout profile. Flag off → always the proven Apple path. */
 function activeProfile() {
@@ -62,6 +63,9 @@ export const DynamicIsland = (() => {
   // Finish double-confirm state
   let _finishArmed = false;
   let _finishTimer = null;
+
+  // Voice double-tap state
+  let _lastTapTime = 0;
 
   // DOM elements cache
   let _container = null;
@@ -209,11 +213,21 @@ export const DynamicIsland = (() => {
     _restNextEl = document.getElementById('di-rest-next');
 
     // Long-press events (no drag)
-    _island?.addEventListener('pointerdown', _onPointerDown);
+    _island?.addEventListener('pointerdown', (e) => {
+      hapticGate(); // Unlock iOS audio engine synchronously
+      _onPointerDown(e);
+    });
     window.addEventListener('pointerup', _onPointerUp);
     window.addEventListener('pointercancel', _onPointerUp);
     _island?.addEventListener('pointerleave', () => {
       clearTimeout(_longPressTimer);
+    });
+    
+    // Interrupt speech if tapped anywhere outside the island
+    document.body.addEventListener('pointerdown', (e) => {
+      if (_island && !_island.contains(e.target)) {
+        cancelSpeech();
+      }
     });
 
     // Single tap toggles the full card (Apple 2-state). Idle pill is not an
@@ -227,6 +241,16 @@ export const DynamicIsland = (() => {
       // Finish HUD owns the whole pill — its button handles the tap; never expand.
       if (_island?.classList.contains('finish-mode')) return;
       if (_isLongPress) return;
+      
+      const now = Date.now();
+      if (now - _lastTapTime < 300) {
+        // Double tap -> Speak insight
+        _lastTapTime = 0;
+        speakInsight(say);
+        return;
+      }
+      _lastTapTime = now;
+      
       toggleExpand();
     });
 
@@ -618,6 +642,7 @@ export const DynamicIsland = (() => {
   function say(text) {
     _sayText = text || null;
     if (_sublabelEl) _sublabelEl.textContent = _sayText || _statusText;
+    if (_island) _island.classList.toggle('panda-speaking', !!_sayText);
   }
 
   return { init, show, hide, update, setRestProgress, stopTimer, pulseSetComplete, toggleExpand, triggerPiP, showFinishReady, clearFinishReady, say, _tapFinish };
