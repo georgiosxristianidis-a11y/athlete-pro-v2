@@ -459,7 +459,6 @@ export const IntelView = (() => {
 
     return `<div class="intel-md-body"><p class="intel-md-p">${safe}</p></div>`;
   }
-  }
 
   function _clearImage() { _pendingImage = null; }
 
