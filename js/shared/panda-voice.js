@@ -69,8 +69,10 @@ export async function speakInsight(onTextReady) {
   const u = new SpeechSynthesisUtterance(text);
   
   const voices = synth.getVoices();
-  const ruVoice = voices.find(v => v.lang.startsWith('ru'));
-  if (ruVoice) u.voice = ruVoice;
+  const isRuText = /[а-яА-Я]/i.test(text);
+  const targetLang = isRuText ? 'ru' : 'en';
+  const targetVoice = voices.find(v => v.lang.startsWith(targetLang));
+  if (targetVoice) u.voice = targetVoice;
 
   u.onstart = () => {
     emitMood('cheer'); 

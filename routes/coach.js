@@ -24,7 +24,8 @@ const generatePlanSchema = z.object({
   oneRMs: z.array(z.any()).optional().default([]),
   goals: z.string().optional().default('strength'),
   experience: z.string().optional().default('intermediate'),
-  engine: z.string().optional().default('anthropic')
+  engine: z.string().optional().default('anthropic'),
+  customKey: z.string().nullable().optional()
 });
 
 /* ── POST /generate-plan ── */
@@ -76,7 +77,8 @@ const recommendationsSchema = z.object({
   fatigue: z.any().optional().default({}),
   topLifts: z.array(z.any()).optional().default([]),
   nextSessionPlan: z.array(z.any()).min(1, 'nextSessionPlan is required'),
-  engine: z.string().optional().default('anthropic')
+  engine: z.string().optional().default('anthropic'),
+  customKey: z.string().nullable().optional()
 });
 
 /* ── POST /recommendations ── */
@@ -135,7 +137,7 @@ export const coachSchema = z.object({
   profile: z.any().optional().default({}),
   longTermStats: z.any().optional().default({}),
   engine: z.string().optional().default('anthropic'),
-  customKey: z.string().optional()
+  customKey: z.string().nullable().optional()
 });
 
 /* ── POST / (Main Coach SSE) ── */
@@ -267,7 +269,7 @@ const weeklyReportSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
   engine: z.string().optional().default('anthropic'),
-  customKey: z.string().optional()
+  customKey: z.string().nullable().optional()
 });
 
 /* ── POST /weekly-report ── */
@@ -280,15 +282,16 @@ router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
   logInfo(req, 'weekly_report_started', `Generating weekly report`);
 
   const system = `You are "Athlete Pro Analyst", an elite sports data scientist.
-Analyze the user's past 7 days of workouts. 
+Analyze the user's past 7 days of workouts.
+LANGUAGE REQUIREMENT: ALL string values in the JSON (summary, pros, cons) MUST BE IN RUSSIAN.
 Return ONLY JSON with this exact schema:
 {
   "score": <number 0-100 representing overall performance and consistency>,
-  "summary": "<string, 2-3 sentences of harsh but motivating feedback>",
-  "pros": ["<string>", "<string>"],
-  "cons": ["<string>", "<string>"]
+  "summary": "<string, 2-3 sentences in RUSSIAN of harsh but motivating feedback>",
+  "pros": ["<string in RUSSIAN>", "<string in RUSSIAN>"],
+  "cons": ["<string in RUSSIAN>", "<string in RUSSIAN>"]
 }
-If no workouts exist, set score to 0 and encourage them to start.`;
+If no workouts exist, set score to 0 and encourage them to start in Russian.`;
 
   const prompt = `Workouts (Last 7 Days): ${JSON.stringify(workouts)}
 Profile: ${JSON.stringify(profile)}`;

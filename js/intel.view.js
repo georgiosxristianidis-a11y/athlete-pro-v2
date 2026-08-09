@@ -306,7 +306,7 @@ export const IntelView = (() => {
           profile,
           topLifts,
           engine: 'gemini',
-          customKey: await DB.Settings.get('gemini-key')
+          customKey: (await DB.Settings.get('gemini-key')) || undefined
         })
       });
 
@@ -498,7 +498,7 @@ export const IntelView = (() => {
            workouts: recentWorkouts, 
            profile, 
            engine: 'gemini',
-           customKey: await DB.Settings.get('gemini-key')
+           customKey: (await DB.Settings.get('gemini-key')) || undefined
          })
        });
 
