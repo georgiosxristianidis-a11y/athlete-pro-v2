@@ -289,19 +289,13 @@ export const IntelView = (() => {
         </button>
       </div>
       <div class="intel-feedback-text">
-        <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
-          <div class="symmetric-wave" aria-hidden="true">
-            <span class="wave-bar" style="--delay: 0s"></span>
-            <span class="wave-bar" style="--delay: 0.1s"></span>
-            <span class="wave-bar" style="--delay: 0.2s"></span>
-            <span class="wave-bar" style="--delay: 0.3s"></span>
-            <span class="wave-bar" style="--delay: 0.4s"></span>
-            <span class="wave-bar" style="--delay: 0.3s"></span>
-            <span class="wave-bar" style="--delay: 0.2s"></span>
-            <span class="wave-bar" style="--delay: 0.1s"></span>
-            <span class="wave-bar" style="--delay: 0s"></span>
+        <div class="intel-skeleton-wrap" aria-label="Loading AI Response...">
+          <div class="intel-skeleton-head">
+            <div class="intel-skeleton-avatar"></div>
+            <div class="intel-skeleton-line w-1-2"></div>
           </div>
-          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-intel); letter-spacing:0.15em;">Analysing Intel...</div>
+          <div class="intel-skeleton-line w-full"></div>
+          <div class="intel-skeleton-line w-4-5"></div>
         </div>
       </div>
     `;
@@ -386,6 +380,7 @@ export const IntelView = (() => {
                       safeText = safeText.replace('[[WIDGET_PLACEHOLDER]]', htmlWidget);
                     }
                     
+                    feedbackText.className = 'intel-feedback-text intel-feedback-content-fade';
                     feedbackText.innerHTML = safeText;
                   }
                 }
