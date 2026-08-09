@@ -280,9 +280,19 @@ export const IntelView = (() => {
         </button>
       </div>
       <div class="intel-feedback-text">
-        <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
-          <div style="width:12px; height:12px; border-radius:50%; background:var(--c-intel); box-shadow:0 0 10px var(--c-intel); animation: it-breathe 1.5s infinite ease-in-out;"></div>
-          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-intel); letter-spacing:0.15em; animation: it-breathe 1.5s infinite ease-in-out 0.2s;">Analysing Intel...</div>
+        <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
+          <div class="symmetric-wave" aria-hidden="true">
+            <span class="wave-bar" style="--delay: 0s"></span>
+            <span class="wave-bar" style="--delay: 0.1s"></span>
+            <span class="wave-bar" style="--delay: 0.2s"></span>
+            <span class="wave-bar" style="--delay: 0.3s"></span>
+            <span class="wave-bar" style="--delay: 0.4s"></span>
+            <span class="wave-bar" style="--delay: 0.3s"></span>
+            <span class="wave-bar" style="--delay: 0.2s"></span>
+            <span class="wave-bar" style="--delay: 0.1s"></span>
+            <span class="wave-bar" style="--delay: 0s"></span>
+          </div>
+          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-intel); letter-spacing:0.15em;">Analysing Intel...</div>
         </div>
       </div>
     `;
