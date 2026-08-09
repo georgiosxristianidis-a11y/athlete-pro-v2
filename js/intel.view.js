@@ -58,7 +58,7 @@ export const IntelView = (() => {
     screen.innerHTML = `
       <header class="intel-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
         <div>
-          <h1 class="intel-title">P.A.N.D.A. Core</h1>
+          <h1 class="intel-title" style="view-transition-name: panda-core-title;">P.A.N.D.A. Core</h1>
           <div class="intel-sub">
             <span class="ai-indicator ${_hasValidKey ? 'active' : 'missing'}" style="margin-right:4px;"></span>
             <span style="color: ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-text-3)'}; font-weight:var(--fw-bold); text-transform:lowercase; opacity:0.8;">${_hasValidKey ? 'system secure' : 'key missing'}</span>
@@ -90,22 +90,30 @@ export const IntelView = (() => {
         <input type="file" id="intel-file-input" accept="image/*" style="display:none" data-change="intel:fileSelected">
       </div>
 
-      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:var(--sp-4)">
-        <button class="card-action" data-action="intel:weekly" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
-          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">СВОДКА</div>
+      <div class="intel-modules-grid">
+        <button class="intel-module-card" data-action="intel:weekly">
+          <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-intel) 15%, transparent); color:var(--c-intel)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          </div>
+          <span class="intel-module-label">СВОДКА</span>
         </button>
-        <button class="card-action" data-action="intel:createWorkout" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">ГЕНЕРАЦИЯ</div>
+        <button class="intel-module-card" data-action="intel:createWorkout">
+          <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-accent) 15%, transparent); color:var(--c-accent)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <span class="intel-module-label">ГЕНЕРАЦИЯ</span>
         </button>
-        <button class="card-action" data-action="intel:analyzeStats" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
-          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">АНАЛИЗ</div>
+        <button class="intel-module-card" data-action="intel:analyzeStats">
+          <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-blue) 15%, transparent); color:var(--c-blue)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </div>
+          <span class="intel-module-label">АНАЛИЗ</span>
         </button>
-        <button class="card-action" data-action="intel:biometrics" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">БИОМЕТРИЯ</div>
+        <button class="intel-module-card" data-action="intel:biometrics">
+          <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-red) 12%, transparent); color:var(--c-red)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <span class="intel-module-label">БИОМЕТРИЯ</span>
         </button>
       </div>
 
@@ -114,12 +122,13 @@ export const IntelView = (() => {
           <h3 class="intel-logs-title">STREAMING_LOGS</h3>
           <span class="intel-logs-status" id="intel-logs-status-pill">ONLINE</span>
         </div>
-        <div id="intel-logs-container" style="max-height: 200px; overflow-y: auto;"></div>
+        <div id="intel-logs-container"></div>
       </div>
     `;
 
     renderLogs();
     _listen();
+    _initTilt();
   }
 
   function renderLogs() {
@@ -152,13 +161,58 @@ export const IntelView = (() => {
       const pill = document.getElementById('intel-logs-status-pill');
       if (pill) {
         pill.textContent = statusText;
-        let color = 'var(--c-intel)';
-        if (statusText.includes('ERROR')) color = 'var(--c-red)';
-        else if (statusText.includes('SCANNING')) color = 'var(--c-accent)';
-        else if (statusText.includes('COMPUTING')) color = 'var(--c-amber)';
-        else if (statusText.includes('STANDBY')) color = 'var(--c-text-3)';
-        pill.style.color = color;
-        pill.style.borderColor = color;
+        pill.className = 'intel-logs-status';
+        if (statusText.includes('ERROR')) {
+          pill.style.color = 'var(--c-red)';
+          pill.style.borderColor = 'var(--c-red)';
+          pill.style.background = 'color-mix(in srgb, var(--c-red) 12%, transparent)';
+        } else if (statusText.includes('SCANNING') || statusText.includes('AI')) {
+          pill.style.color = 'var(--c-intel)';
+          pill.style.borderColor = 'color-mix(in srgb, var(--c-intel) 40%, transparent)';
+          pill.style.background = 'color-mix(in srgb, var(--c-intel) 12%, transparent)';
+        } else {
+          pill.style.color = '';
+          pill.style.borderColor = '';
+          pill.style.background = '';
+        }
+      }
+    });
+  }
+
+  /** 3D Tilt + Glare effect on module cards */
+  function _initTilt() {
+    const cards = document.querySelectorAll('.intel-module-card');
+    cards.forEach(card => {
+      card.addEventListener('pointermove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = (e.clientX - cx) / (rect.width / 2);  // -1 to 1
+        const dy = (e.clientY - cy) / (rect.height / 2); // -1 to 1
+        const rotX = -dy * 8;  // max 8deg tilt
+        const rotY = dx * 8;
+        card.style.transform = `perspective(400px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(4px)`;
+        card.style.transition = 'transform 0.05s linear';
+        // Move glare
+        const glare = card.querySelector('.intel-card-glare');
+        if (glare) {
+          const px = ((e.clientX - rect.left) / rect.width) * 100;
+          const py = ((e.clientY - rect.top) / rect.height) * 100;
+          glare.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.12), transparent 60%)`;
+        }
+      });
+      card.addEventListener('pointerleave', () => {
+        card.style.transform = '';
+        card.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        const glare = card.querySelector('.intel-card-glare');
+        if (glare) glare.style.background = '';
+      });
+      // Inject glare layer if not present
+      if (!card.querySelector('.intel-card-glare')) {
+        const glare = document.createElement('div');
+        glare.className = 'intel-card-glare';
+        glare.setAttribute('aria-hidden', 'true');
+        card.appendChild(glare);
       }
     });
   }
@@ -234,6 +288,7 @@ export const IntelView = (() => {
     `;
     feedbackFeed?.prepend(feedbackEl);
     const feedbackText = feedbackEl.querySelector('.intel-feedback-text');
+    feedbackEl.classList.add('streaming');
 
     try {
       const { DB } = await import('./db.js');
@@ -323,6 +378,7 @@ export const IntelView = (() => {
 
       IntelStore.addLog('AI', 'Insight received.');
       IntelStore.setStatus('SYSTEM STANDBY');
+      feedbackEl.classList.remove('streaming');
 
       // Auto-Speech
       const autoSpeech = await DB.Settings.get('ai-auto-speech', true);
@@ -333,9 +389,35 @@ export const IntelView = (() => {
 
     } catch (err) {
       console.error(err);
-      IntelStore.addLog('SYS', 'Connection failed');
-      IntelStore.setStatus('ERROR');
-      if (feedbackText) feedbackText.textContent = toUserMessage(err);
+      feedbackEl.classList.remove('streaming');
+      feedbackEl.classList.add('error-state');
+
+      // Расшифровка HTTP-ошибок для пользователя
+      const errMsg = err?.message || '';
+      let friendlyMsg, logMsg;
+      if (errMsg.includes('401')) {
+        friendlyMsg = 'Ключ API недействителен. Проверьте настройки Gemini.';
+        logMsg = 'HTTP 401: Invalid API Key';
+      } else if (errMsg.includes('429')) {
+        friendlyMsg = 'Превышен лимит запросов. Подождите или проверьте квоту плана.';
+        logMsg = 'HTTP 429: Rate Limit Exceeded';
+      } else if (errMsg.includes('403')) {
+        friendlyMsg = 'Доступ запрещен. API ключ может не иметь нужных прав.';
+        logMsg = 'HTTP 403: Permission Denied';
+      } else if (errMsg.includes('500') || errMsg.includes('502') || errMsg.includes('503')) {
+        friendlyMsg = 'Сервер недоступен. Попробуйте позже.';
+        logMsg = `Server Error: ${errMsg}`;
+      } else if (!navigator.onLine) {
+        friendlyMsg = 'Нет сети. Проверьте подключение.';
+        logMsg = 'Network Offline';
+      } else {
+        friendlyMsg = `Ошибка: ${errMsg || 'Неизвестная'}`;
+        logMsg = errMsg || 'Unknown error';
+      }
+
+      IntelStore.addLog('SYS', logMsg);
+      IntelStore.setStatus('SYSTEM ERROR');
+      if (feedbackText) feedbackText.textContent = friendlyMsg;
     }
   }
 

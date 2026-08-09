@@ -1,11 +1,48 @@
 /* ════════════════════════════════════════════════════════
    intel.css — Athlete Pro  |  Neural Command Center Styles
+   Redesigned: Air & Glass v2 (Premium)
    ════════════════════════════════════════════════════════ */
 
 .intel-screen {
   background: var(--c-bg);
   padding: 72px var(--sp-2) 140px;
+  position: relative;
+  overflow: hidden;
 }
+
+/* ── Ambient Glow — живой фон AI ядра ── */
+.intel-screen::before,
+.intel-screen::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.intel-screen::before {
+  width: 360px;
+  height: 360px;
+  top: -80px;
+  left: -80px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c-intel) 12%, transparent), transparent 70%);
+  animation: intel-glow-drift 8s ease-in-out infinite alternate;
+}
+.intel-screen::after {
+  width: 280px;
+  height: 280px;
+  bottom: 80px;
+  right: -60px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c-accent) 8%, transparent), transparent 70%);
+  animation: intel-glow-drift 11s ease-in-out infinite alternate-reverse;
+}
+@keyframes intel-glow-drift {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.7; }
+  50%  { transform: translate(20px, 30px) scale(1.1); opacity: 1; }
+  100% { transform: translate(-10px, 15px) scale(0.95); opacity: 0.6; }
+}
+
+/* Все дочерние элементы поверх Ambient Glow */
+.intel-screen > * { position: relative; z-index: 1; }
 
 .intel-header {
   margin-bottom: var(--sp-4);
@@ -65,7 +102,7 @@
   line-height: 1.5;
 }
 
-/* ── Command Bar ── */
+/* ── Command Bar (Floating Pill) ── */
 .intel-cmd-wrap {
   position: relative;
   margin-bottom: var(--sp-3);
@@ -74,23 +111,27 @@
 .intel-cmd-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px;
-  background: var(--c-bg-2);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-xl);
-  transition: opacity var(--t-normal), transform var(--t-normal), background-color var(--t-normal), border-color var(--t-normal), color var(--t-normal);
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  background: color-mix(in srgb, var(--c-bg-2) 80%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in srgb, var(--c-text-1) 8%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 1px 0 color-mix(in srgb, var(--c-text-1) 6%, transparent) inset;
+  transition: border-color var(--t-normal), box-shadow var(--t-normal);
 }
 
 .intel-cmd-bar:focus-within {
-  border-color: color-mix(in srgb, var(--c-intel) 40%, transparent);
-  background: var(--c-bg-3);
+  border-color: color-mix(in srgb, var(--c-intel) 35%, transparent);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px color-mix(in srgb, var(--c-intel) 20%, transparent), 0 0 24px color-mix(in srgb, var(--c-intel) 10%, transparent);
 }
 
 .intel-cmd-input {
   flex: 1;
   background: none;
   border: none;
+  outline: none;
   padding: 8px 4px;
   color: var(--c-text-1);
   font-size: var(--fs-3);
@@ -99,12 +140,13 @@
 
 .intel-cmd-input::placeholder {
   color: var(--c-text-3);
+  opacity: 0.5;
 }
 
 .intel-btn-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--r-m);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -112,12 +154,14 @@
   border: none;
   color: var(--c-text-3);
   cursor: pointer;
-  transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+  flex-shrink: 0;
+  transition: color var(--t-fast), background-color var(--t-fast), transform var(--t-fast);
 }
 
 .intel-btn-icon:hover {
   color: var(--c-text-1);
-  background: var(--c-surface-h);
+  background: color-mix(in srgb, var(--c-text-1) 6%, transparent);
+  transform: scale(1.08);
 }
 
 .intel-btn-icon.active {
@@ -126,19 +170,22 @@
 }
 
 .intel-btn-send {
-  background: var(--c-text-1);
+  background: var(--c-intel);
   color: var(--c-bg);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c-intel) 40%, transparent);
 }
 
 .intel-btn-send:hover {
-  background: var(--c-intel);
-  color: var(--c-text-1);
+  background: color-mix(in srgb, var(--c-intel) 85%, white);
+  transform: scale(1.1);
 }
 
-/* ── Logs ── */
+/* ── Logs (Sci-Fi HUD) ── */
 .intel-logs {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
+  background: color-mix(in srgb, var(--c-surface) 60%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--c-text-1) 6%, transparent);
   border-radius: var(--r-l);
   padding: var(--sp-3) var(--sp-2);
 }
@@ -149,14 +196,15 @@
   align-items: center;
   margin-bottom: var(--sp-2);
   padding-bottom: var(--sp-1);
+  border-bottom: 1px solid color-mix(in srgb, var(--c-text-1) 5%, transparent);
 }
 
 .intel-logs-title {
-  font-family: var(--font-heading);
+  font-family: monospace;
   font-size: var(--fs-1);
   font-weight: var(--fw-md);
-  color: var(--c-text-3);
-  letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--c-intel) 60%, var(--c-text-3));
+  letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
@@ -164,33 +212,51 @@
   font-size: var(--fs-1);
   font-weight: var(--fw-black);
   text-transform: uppercase;
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: var(--r-xs);
-  background: var(--c-intel-bg);
+  background: color-mix(in srgb, var(--c-intel) 12%, transparent);
   color: var(--c-intel);
+  border: 1px solid color-mix(in srgb, var(--c-intel) 25%, transparent);
+  letter-spacing: 0.1em;
 }
+
+/* Sci-Fi HUD: бесконечная голографическая лента */
+#intel-logs-container {
+  max-height: 180px;
+  overflow-y: auto;
+  /* Маска: строки растворяются сверху и снизу */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+  padding: 8px 0;
+}
+
+/* Скрыть нативный скроллбар */
+#intel-logs-container::-webkit-scrollbar { display: none; }
+#intel-logs-container { scrollbar-width: none; -ms-overflow-style: none; }
 
 .intel-log-entry {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   font-family: monospace;
   font-size: var(--fs-1);
-  margin-bottom: 8px;
-  animation: intel-log-in 0.3s ease;
+  margin-bottom: 6px;
+  line-height: 1.4;
+  animation: intel-log-slide-up 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes intel-log-in {
-  from { opacity: 0; transform: translateY(4px); }
+@keyframes intel-log-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.intel-log-time { color: var(--c-text-3); }
-.intel-log-type { font-weight: var(--fw-black); text-transform: uppercase; min-width: 32px; }
-.intel-log-type.sys { color: var(--c-intel); }
+.intel-log-time { color: color-mix(in srgb, var(--c-text-3) 60%, transparent); flex-shrink: 0; }
+.intel-log-type { font-weight: var(--fw-black); text-transform: uppercase; min-width: 34px; flex-shrink: 0; }
+.intel-log-type.sys { color: var(--c-intel); text-shadow: 0 0 6px color-mix(in srgb, var(--c-intel) 50%, transparent); }
 .intel-log-type.db { color: var(--c-accent); }
-.intel-log-type.ai { color: var(--c-secondary); }
+.intel-log-type.ai { color: var(--c-secondary); text-shadow: 0 0 6px color-mix(in srgb, var(--c-secondary) 40%, transparent); }
+.intel-log-type.user { color: var(--c-text-2); }
 .intel-log-type.error { color: var(--c-red); }
-.intel-log-msg { color: var(--c-text-2); }
+.intel-log-msg { color: color-mix(in srgb, var(--c-text-2) 80%, transparent); }
 
 /* ── Vision Preview ── */
 .intel-vision-preview {
@@ -226,3 +292,119 @@
   100% { top: 100%; }
 }
 
+
+/* ── Modules Grid 2x2 (Glass Cards) ── */
+.intel-modules-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: var(--sp-4);
+}
+
+.intel-module-card {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--c-surface) 40%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--c-text-1) 8%, transparent);
+  border-radius: var(--r-l);
+  padding: 18px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.intel-module-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--c-text-1) 4%, transparent), transparent 70%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.intel-module-card:hover {
+  border-color: color-mix(in srgb, var(--c-text-1) 15%, transparent);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  transform: translateY(-1px);
+}
+
+.intel-module-card:active {
+  transform: scale(0.96);
+  transition: transform 0.1s;
+}
+
+.intel-module-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* цвет задается через data-color или inline */
+}
+
+.intel-module-label {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  letter-spacing: 0.07em;
+}
+
+/* ── Streaming / Error States ── */
+.intel-feedback.streaming {
+  animation: intel-border-glow 1.5s ease-in-out infinite;
+}
+.intel-feedback.error-state {
+  animation: intel-error-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes intel-border-glow {
+  0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c-intel) 20%, transparent), 0 0 16px color-mix(in srgb, var(--c-intel) 10%, transparent); }
+  50%       { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c-intel) 50%, transparent), 0 0 28px color-mix(in srgb, var(--c-intel) 20%, transparent); }
+}
+@keyframes intel-error-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c-red) 25%, transparent), 0 0 12px color-mix(in srgb, var(--c-red) 10%, transparent); border-color: color-mix(in srgb, var(--c-red) 25%, transparent); }
+  50%       { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c-red) 55%, transparent), 0 0 24px color-mix(in srgb, var(--c-red) 20%, transparent); border-color: color-mix(in srgb, var(--c-red) 50%, transparent); }
+}
+
+/* ── Phase 3: View Transitions & 3D Tilt ── */
+
+/* Glare layer (injected by _initTilt) */
+.intel-card-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  transition: background 0.1s ease;
+}
+
+/* Staggered entrance animation for 2x2 grid */
+.intel-module-card:nth-child(1) { animation: intel-card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.intel-module-card:nth-child(2) { animation: intel-card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both; }
+.intel-module-card:nth-child(3) { animation: intel-card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both; }
+.intel-module-card:nth-child(4) { animation: intel-card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both; }
+
+@keyframes intel-card-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* View Transition: FAB -> title morph */
+::view-transition-old(panda-core-title) {
+  animation: 300ms cubic-bezier(0.4, 0, 1, 1) both fade-out;
+}
+::view-transition-new(panda-core-title) {
+  animation: 400ms cubic-bezier(0, 0, 0.2, 1) 100ms both fade-in;
+}
+
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes fade-in  { from { opacity: 0; } }
