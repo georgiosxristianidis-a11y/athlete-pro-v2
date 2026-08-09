@@ -5,8 +5,9 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-9bef9364';
+const CACHE_NAME = 'athlete-pro-v121-21a089c3';
 
+// eslint-disable-next-line no-unused-vars
 const ASSETS = [
   '/index.html',
   '/manifest.json',

@@ -14,7 +14,7 @@ import {
   loadPlan, savePlan,
   buildSession, persistSession,
   getWeekMode, loadCoreChecklist,
-  getExerciseLibrary,
+  getExerciseLibrary, resolveMuscleGroup,
 } from '../workout.store.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
@@ -399,10 +399,7 @@ export async function renderActive() {
 
 async function getMuscleBadge(exerciseName) {
   const lib = await getExerciseLibrary().catch(() => []);
-  const clean = exerciseName.toLowerCase().trim();
-  const matched = lib.find(i => i.name.toLowerCase().trim() === clean) || lib.find(i => i.name.toLowerCase().includes(clean));
-  
-  const muscle = (matched?.muscleGroup || 'unknown').toLowerCase();
+  const muscle = resolveMuscleGroup(exerciseName, lib) || 'unknown';
   let normalized = muscle;
   if (normalized.includes('delt')) normalized = 'shoulders';
   if (['quads', 'calves', 'hamstrings', 'glutes'].includes(normalized)) normalized = 'legs';
