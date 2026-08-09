@@ -433,3 +433,88 @@
   0%, 100% { height: 6px; opacity: 0.5; }
   50%      { height: 22px; opacity: 1; box-shadow: 0 0 14px var(--c-intel); }
 }
+
+/* ════════════════════════════════════════════════════════
+   Amicro Micro-transitions System (Native Vanilla CSS)
+   - Spotlight Border Glow
+   - Morphing Pill + Shimmer Beam
+   - Haptic Spring Touch Press
+   ════════════════════════════════════════════════════════ */
+
+/* 1. Spotlight Border Glow */
+.intel-module-card,
+.intel-cmd-bar,
+.intel-logs {
+  --spot-x: 50%;
+  --spot-y: 50%;
+  --spot-color: color-mix(in srgb, var(--c-intel) 30%, transparent);
+}
+
+.intel-module-card::after,
+.intel-cmd-bar::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(200px circle at var(--spot-x) var(--spot-y), var(--spot-color), transparent 75%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 3;
+}
+
+.intel-module-card:hover::after,
+.intel-cmd-bar:focus-within::after,
+.intel-module-card.spotlight-active::after {
+  opacity: 1;
+}
+
+/* 2. Morphing Pill + Shimmer Beam */
+.intel-logs-status,
+.island-status-line,
+.ai-status-wrap {
+  transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.shimmer-active {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--c-intel) 40%, white), transparent);
+  transform: skewX(-20deg);
+  animation: amicro-shimmer-pass 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 4;
+}
+
+@keyframes amicro-shimmer-pass {
+  0%   { left: -100%; opacity: 0; }
+  30%  { opacity: 1; }
+  100% { left: 200%; opacity: 0; }
+}
+
+/* 3. Amicro Haptic Spring Press */
+.intel-module-card:active,
+.intel-btn-icon:active,
+.intel-btn-send:active {
+  animation: amicro-spring-press 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes amicro-spring-press {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(0.93); }
+  75%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}

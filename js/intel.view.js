@@ -161,7 +161,8 @@ export const IntelView = (() => {
       const pill = document.getElementById('intel-logs-status-pill');
       if (pill) {
         pill.textContent = statusText;
-        pill.className = 'intel-logs-status';
+        pill.className = 'intel-logs-status shimmer-active';
+        setTimeout(() => pill.classList.remove('shimmer-active'), 850);
         if (statusText.includes('ERROR')) {
           pill.style.color = 'var(--c-red)';
           pill.style.borderColor = 'var(--c-red)';
@@ -179,36 +180,44 @@ export const IntelView = (() => {
     });
   }
 
-  /** 3D Tilt + Glare effect on module cards */
+  /** 3D Tilt + Amicro Spotlight Border Glow effect on module cards & command bar */
   function _initTilt() {
-    const cards = document.querySelectorAll('.intel-module-card');
+    const cards = document.querySelectorAll('.intel-module-card, .intel-cmd-bar');
     cards.forEach(card => {
       card.addEventListener('pointermove', (e) => {
         const rect = card.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        const dx = (e.clientX - cx) / (rect.width / 2);  // -1 to 1
-        const dy = (e.clientY - cy) / (rect.height / 2); // -1 to 1
-        const rotX = -dy * 8;  // max 8deg tilt
-        const rotY = dx * 8;
-        card.style.transform = `perspective(400px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(4px)`;
-        card.style.transition = 'transform 0.05s linear';
+        const px = ((e.clientX - rect.left) / rect.width) * 100;
+        const py = ((e.clientY - rect.top) / rect.height) * 100;
+        card.style.setProperty('--spot-x', `${px}%`);
+        card.style.setProperty('--spot-y', `${py}%`);
+
+        if (card.classList.contains('intel-module-card')) {
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          const dx = (e.clientX - cx) / (rect.width / 2);  // -1 to 1
+          const dy = (e.clientY - cy) / (rect.height / 2); // -1 to 1
+          const rotX = -dy * 8;  // max 8deg tilt
+          const rotY = dx * 8;
+          card.style.transform = `perspective(400px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(4px)`;
+          card.style.transition = 'transform 0.05s linear';
+        }
+
         // Move glare
         const glare = card.querySelector('.intel-card-glare');
         if (glare) {
-          const px = ((e.clientX - rect.left) / rect.width) * 100;
-          const py = ((e.clientY - rect.top) / rect.height) * 100;
           glare.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.12), transparent 60%)`;
         }
       });
       card.addEventListener('pointerleave', () => {
-        card.style.transform = '';
-        card.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        if (card.classList.contains('intel-module-card')) {
+          card.style.transform = '';
+          card.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        }
         const glare = card.querySelector('.intel-card-glare');
         if (glare) glare.style.background = '';
       });
       // Inject glare layer if not present
-      if (!card.querySelector('.intel-card-glare')) {
+      if (card.classList.contains('intel-module-card') && !card.querySelector('.intel-card-glare')) {
         const glare = document.createElement('div');
         glare.className = 'intel-card-glare';
         glare.setAttribute('aria-hidden', 'true');
