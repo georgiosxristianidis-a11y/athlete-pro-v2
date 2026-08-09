@@ -74,7 +74,7 @@ export const Claude = (() => {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </div>
         ${videoMode ? `<button type="button" class="fab-sound-btn" data-action="claude:toggleSound" title="Sound" aria-label="Toggle sound" aria-pressed="false" style="top:-10px; left:-10px">${ICON_SND_OFF}</button>` : ''}
-        <button id="claude-fab" class="claude-fab ${isGemini ? 'gemini-mode' : ''} ${glowClass} ${videoMode ? 'video-mode' : ''}" aria-label="AI Assistant" style="margin:0">
+        <button id="claude-fab" class="claude-fab ${isGemini ? 'gemini-mode' : ''} ${glowClass} ${videoMode ? 'video-mode' : ''}" aria-label="AI Assistant" style="margin:0; view-transition-name: panda-core-title;">
           <div class="ai-status-wrap">
             <span class="ai-indicator ${hasKey ? 'active' : 'missing'}"></span>
           </div>
