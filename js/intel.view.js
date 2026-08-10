@@ -23,6 +23,24 @@ on('intel:closeReport',   (el) => {
   }
 });
 on('intel:openSettings',  () => window.IntelView.openSettings());
+on('intel:saveActionCard', async (el) => {
+  const dataRaw = el.dataset.workout;
+  if (!dataRaw) return;
+  const { DB, newId } = await import('./db.js');
+  try {
+    const workout = JSON.parse(decodeURIComponent(dataRaw));
+    await DB.PlannedWorkouts.put({
+      id: newId(),
+      type: workout.type || 'push',
+      date: new Date().toISOString().split('T')[0],
+      exercises: workout.exercises || []
+    });
+    el.innerHTML = '<span style="color:var(--c-accent)">SAVED ✓</span>';
+    el.style.borderColor = 'var(--c-accent)';
+  } catch(err) {
+    console.error(err);
+  }
+});
 on('intel:exportPlan',    async (el) => {
   const plan = window.IntelView.currentPlan;
   if (plan) {
@@ -505,7 +523,45 @@ export const IntelView = (() => {
                   haptic(2);
                   fullText += parsed.text;
                   if (feedbackText) {
-                    const formattedHtml = _formatAirMarkdown(fullText);
+                    let renderText = fullText;
+                    
+                    const cardRegex = /\[WORKOUT_CARD\]([\s\S]*?)\[\/WORKOUT_CARD\]/;
+                    const match = renderText.match(cardRegex);
+                    
+                    if (match) {
+                      renderText = renderText.replace(cardRegex, '');
+                      try {
+                        const cardData = JSON.parse(match[1].trim());
+                        if (!feedbackEl.querySelector('.intel-workout-card')) {
+                          const cardHtml = `
+                            <div class="intel-workout-card" style="margin-top:16px; background:color-mix(in srgb, var(--c-surface) 40%, transparent); border:1px solid color-mix(in srgb, var(--c-accent) 40%, transparent); border-radius:16px; padding:16px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);">
+                              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <h4 style="color:var(--c-text-1); font-weight:var(--fw-black); font-size:var(--fs-2); text-transform:uppercase;">${cardData.title || 'Workout'}</h4>
+                                <span style="background:var(--c-accent); color:#000; font-size:10px; font-weight:var(--fw-black); padding:2px 6px; border-radius:4px; text-transform:uppercase;">${cardData.type || 'Custom'}</span>
+                              </div>
+                              <ul style="list-style:none; padding:0; margin:0 0 16px 0;">
+                                ${cardData.exercises.map(ex => `
+                                  <li style="display:flex; justify-content:space-between; border-bottom:1px solid color-mix(in srgb, var(--c-border) 20%, transparent); padding:6px 0; font-size:var(--fs-1);">
+                                    <span style="color:var(--c-text-2);">${ex.name}</span>
+                                    <span style="color:var(--c-accent); font-weight:var(--fw-bold);">${ex.sets}x${ex.reps}</span>
+                                  </li>
+                                `).join('')}
+                              </ul>
+                              <button data-action="intel:saveActionCard" data-workout="${encodeURIComponent(JSON.stringify(cardData))}" style="width:100%; padding:12px; background:transparent; border:1px solid var(--c-accent); color:var(--c-accent); border-radius:8px; font-weight:var(--fw-bold); cursor:pointer; text-transform:uppercase; transition:all 0.2s;">
+                                Save to Calendar
+                              </button>
+                            </div>
+                          `;
+                          const div = document.createElement('div');
+                          div.innerHTML = cardHtml;
+                          feedbackEl.appendChild(div.firstElementChild);
+                        }
+                      } catch (e) {
+                        // Wait for full JSON
+                      }
+                    }
+
+                    const formattedHtml = _formatAirMarkdown(renderText);
                     feedbackText.className = 'intel-feedback-text intel-feedback-content-fade';
                     feedbackText.innerHTML = formattedHtml;
                   }
@@ -915,16 +971,109 @@ export const IntelView = (() => {
      }
   }
 
-  function checkBiometrics(el) {
+  async function checkBiometrics(el) {
      haptic(10);
      const card = el?.closest('.intel-module-card') || document.querySelector('.intel-module-card[data-action="intel:biometrics"]');
      if (card) card.classList.add('loading');
-     IntelStore.addLog('SYS', 'Requesting Biometrics scan');
-     const input = document.getElementById('intel-input');
-     if (input) {
-         input.value = "Проанализируй мою тепловую карту мышц (Heatmap) и историю нагрузок. Выведи отчет о биометрии: какие мышцы устали, какие готовы к взрывной работе. Дай оценку ЦНС.";
-         submit();
+     IntelStore.addLog('SYS', 'Init Cypher Radar...');
+
+     const overlay = document.createElement('div');
+     overlay.style.cssText = `position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; flex-direction:column; font-family:monospace; color:var(--c-intel); overflow:hidden;`;
+     
+     overlay.innerHTML = `
+       <div id="radar-container" style="position:relative; width:200px; height:200px; border-radius:50%; border:2px solid var(--c-intel); box-shadow: 0 0 40px color-mix(in srgb, var(--c-intel) 40%, transparent); display:flex; align-items:center; justify-content:center; margin-bottom:32px;">
+         <div style="position:absolute; inset:0; border-radius:50%; border:1px dashed var(--c-intel); opacity:0.5; animation: spin 4s linear infinite;"></div>
+         <div style="position:absolute; width:100%; height:2px; background:var(--c-intel); box-shadow: 0 0 10px var(--c-intel); top:50%; transform-origin:center; animation: spin 2s linear infinite;"></div>
+         <div style="font-size:24px; font-weight:bold; z-index:10; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:4px;">SCANNING</div>
+       </div>
+       <div id="cypher-log" style="width:80%; max-width:400px; height:100px; overflow:hidden; font-size:12px; opacity:0.8; text-align:left;"></div>
+     `;
+     document.body.appendChild(overlay);
+
+     let logs = ["INIT CNS SCAN...", "GATHERING VOLUMETRIC DATA...", "ANALYZING SLEEP METRICS...", "MEASURING RPE FATIGUE...", "CALCULATING ACWR..."];
+     let logIndex = 0;
+     const logEl = overlay.querySelector('#cypher-log');
+     const logInterval = setInterval(() => {
+       if (logIndex < logs.length) {
+         logEl.innerHTML += `<div>> ${logs[logIndex]}</div>`;
+         logIndex++;
+       } else {
+         logEl.innerHTML += `<div>> [${Math.random().toString(36).substring(2, 10).toUpperCase()}] PROCESSING...</div>`;
+       }
+       logEl.scrollTop = logEl.scrollHeight;
+     }, 400);
+
+     try {
+       const { DB } = await import('./db.js');
+       const workouts = await DB.Workouts.getLast(10);
+       const profile = await DB.Settings.getAll();
+       
+       const response = await fetch('/api/coach/biometrics-scan', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           workouts,
+           profile,
+           engine: await _getEngine(),
+           customKey: (await DB.Settings.get(`${await _getEngine()}-key`)) || undefined,
+           language: await _getLang()
+         })
+       });
+
+       clearInterval(logInterval);
+       
+       if (!response.ok) throw new Error('Biometrics failed');
+       const { report } = await response.json();
+
+       overlay.innerHTML = `
+         <div style="background:var(--c-bg-1); width:90%; max-width:400px; border-radius:24px; border:1px solid var(--c-intel); padding:32px; position:relative; box-shadow: 0 0 60px color-mix(in srgb, var(--c-intel) 20%, transparent);">
+           <button onclick="this.closest('div').parentElement.remove()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:var(--c-text-3); font-size:var(--fs-5); cursor:pointer;">&times;</button>
+           <h2 style="color:var(--c-intel); font-family:var(--font-heading); margin-bottom:24px; text-transform:uppercase; letter-spacing:2px; font-size:var(--fs-3); text-align:center;">BIOMETRIC HUD</h2>
+           
+           <div style="display:flex; flex-direction:column; gap:16px;">
+             <div style="background:color-mix(in srgb, var(--c-surface) 50%, transparent); padding:16px; border-radius:12px;">
+               <div style="font-size:10px; color:var(--c-text-3); text-transform:uppercase; margin-bottom:4px;">CNS FATIGUE</div>
+               <div style="display:flex; align-items:center; gap:12px;">
+                 <div style="font-size:var(--fs-4); font-weight:var(--fw-black); color:${report.cnsFatigue > 70 ? 'var(--c-red)' : 'var(--c-text-1)'};">${report.cnsFatigue}%</div>
+                 <div style="flex:1; height:4px; background:var(--c-bg-2); border-radius:2px; overflow:hidden;">
+                   <div style="height:100%; width:${report.cnsFatigue}%; background:${report.cnsFatigue > 70 ? 'var(--c-red)' : 'var(--c-intel)'};"></div>
+                 </div>
+               </div>
+             </div>
+             
+             <div style="background:color-mix(in srgb, var(--c-surface) 50%, transparent); padding:16px; border-radius:12px;">
+               <div style="font-size:10px; color:var(--c-text-3); text-transform:uppercase; margin-bottom:4px;">MUSCLE DAMAGE</div>
+               <div style="display:flex; align-items:center; gap:12px;">
+                 <div style="font-size:var(--fs-4); font-weight:var(--fw-black); color:${report.muscleDamage > 70 ? 'var(--c-red)' : 'var(--c-text-1)'};">${report.muscleDamage}%</div>
+                 <div style="flex:1; height:4px; background:var(--c-bg-2); border-radius:2px; overflow:hidden;">
+                   <div style="height:100%; width:${report.muscleDamage}%; background:${report.muscleDamage > 70 ? 'var(--c-red)' : 'var(--c-intel)'};"></div>
+                 </div>
+               </div>
+             </div>
+             
+             <div style="background:color-mix(in srgb, var(--c-surface) 50%, transparent); padding:16px; border-radius:12px;">
+               <div style="font-size:10px; color:var(--c-text-3); text-transform:uppercase; margin-bottom:4px;">READINESS</div>
+               <div style="display:flex; align-items:center; gap:12px;">
+                 <div style="font-size:var(--fs-4); font-weight:var(--fw-black); color:${report.readinessScore < 50 ? 'var(--c-red)' : 'var(--c-accent)'};">${report.readinessScore}%</div>
+                 <div style="flex:1; height:4px; background:var(--c-bg-2); border-radius:2px; overflow:hidden;">
+                   <div style="height:100%; width:${report.readinessScore}%; background:${report.readinessScore < 50 ? 'var(--c-red)' : 'var(--c-accent)'};"></div>
+                 </div>
+               </div>
+             </div>
+           </div>
+           
+           <div style="margin-top:24px; padding-top:16px; border-top:1px solid color-mix(in srgb, var(--c-border) 50%, transparent); font-size:var(--fs-1); color:var(--c-text-2); line-height:1.5;">
+             ${report.recommendation}
+           </div>
+         </div>
+       `;
+       haptic(50);
+     } catch (err) {
+       clearInterval(logInterval);
+       overlay.innerHTML = `<div style="color:var(--c-red); font-weight:bold;">SCAN FAILED: ${err.message}</div><button onclick="this.parentElement.remove()" style="margin-top:16px; padding:8px 16px;">CLOSE</button>`;
      }
+     
+     if (card) card.classList.remove('loading');
   }
 
   function _buildReadinessWidget(data) {

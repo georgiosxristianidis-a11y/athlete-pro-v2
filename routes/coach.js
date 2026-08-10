@@ -141,7 +141,7 @@ export const coachSchema = z.object({
   engine: z.string().optional().default('anthropic'),
   customKey: z.string().nullable().optional(),
   language: z.string().optional().default('en'),
-  tone: z.number().min(0).max(100).optional().default(50)
+  tone: z.coerce.number().min(0).max(100).optional().default(50)
 });
 
 /* ── POST / (Main Coach SSE) ── */
@@ -428,7 +428,18 @@ ${toneInstruction}
 JSON FORMAT MUST BE EXACTLY:
 {"_widget": "readiness", "index": 82, "recovery": 77, "acwr": 88, "sleep": 64, "monotony": 95, "density": 93, "cns": 48, "goal": "${language === 'ru' ? 'Лёгкая / техническая' : 'Light / Technical'}"}
 (Calculate these values from 0-100 based on fatigue, history, and rest days. Goal must be a short string in ${language === 'ru' ? 'Russian' : 'English'}).
-6. ULTRA-TRUTH: You must explicitly ask yourself and include in your answer: "${language === 'ru' ? 'Что я не учёл. Какие нестандартные риски и идеи я не заметил, но которые могут перевернуть стратегию?' : 'What did I miss? What non-standard risks and ideas did I overlook that could flip the strategy?'}"
+7. SMART CARDS: If the user explicitly asks you to create or generate a workout plan, you MUST output the exact workout structure wrapped exactly like this:
+[WORKOUT_CARD]
+{
+  "title": "Workout Title",
+  "type": "push",
+  "exercises": [
+    {"name": "Exercise Name", "sets": 3, "reps": 10, "weight": 50}
+  ]
+}
+[/WORKOUT_CARD]
+DO NOT output the workout in markdown format. ALWAYS use the [WORKOUT_CARD] block if a plan is requested.
+8. ULTRA-TRUTH: You must explicitly ask yourself and include in your answer: "${language === 'ru' ? 'Что я не учёл. Какие нестандартные риски и идеи я не заметил, но которые могут перевернуть стратегию?' : 'What did I miss? What non-standard risks and ideas did I overlook that could flip the strategy?'}"
 
 [WORKFLOW]
 Before answering, use <thinking> tags to calculate the metrics. If #gym is requested, output the JSON block, then output your surgical advice.`;
