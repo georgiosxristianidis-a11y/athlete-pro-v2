@@ -28,6 +28,7 @@ const TIER2_WHITELIST = {
   'base.css': [/\.modal-overlay\b/, /\.modal-sheet\b/, /\.claude-sheet\b/, /\.toast\b/],
   'dynamic-island.css': [/./],            // whole file is the island (Tier 2 HUD)
   'athlete-room.css': [/\.ar-crop-modal\b/], // a modal, not a card
+  'intel.css': [/./],                     // P.A.N.D.A. Core is a full-screen glass HUD (Tier 2)
 };
 
 /** Strips comments, preserving newlines so line numbers stay honest. */

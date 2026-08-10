@@ -246,10 +246,18 @@ openDB()
   })
   .then(async () => {
     const hasSession = localStorage.getItem('ap-active-session');
+    const restoredScreen = history.state?.screen || window.Nav.current(); // Explicitly read history.state directly
+
+    if (restoredScreen === 's-intel') {
+      await Nav.go('s-intel', { force: true });
+      return;
+    }
+    if (restoredScreen === 's-island-settings') {
+      await Nav.go('s-island-settings', { force: true });
+      return;
+    }
+
     if (hasSession) {
-      // Nav.on('s-train') already loads the Workout module and calls
-      // Workout.load() — don't call it here too, it double-runs setInterval/
-      // event listeners and fires two overlapping view transitions on boot.
       await Nav.go('s-train');
       return;
     }

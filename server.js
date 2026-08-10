@@ -25,13 +25,14 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+      scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://vercel.live"],
       scriptSrcAttr: ["'none'"], // CSP Phase 2: all inline on* migrated to event-delegation (js/events.js)
       styleSrc: ["'self'", "'unsafe-inline'"], // fonts self-hosted in /fonts — no Google origins
       imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
       connectSrc: [
         "'self'",
         "https://cdn.jsdelivr.net",
+        "https://vercel.live",
         "https://api.anthropic.com",
         "https://*.supabase.co",
         "https://*.firebaseio.com",
@@ -82,7 +83,7 @@ app.use(cors({
 }));
 
 app.use(correlationMiddleware);
-app.use(express.json({ limit: '100kb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use('/api/', globalApiLimiter);
 
 // ── API Routes (Prioritized)

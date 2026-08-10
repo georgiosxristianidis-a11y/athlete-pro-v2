@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-9bef9364';
+const CACHE_NAME = 'athlete-pro-v121-160f31da';
 
 const ASSETS = [
   '/index.html',
@@ -74,6 +74,7 @@ const ASSETS = [
   '/js/shared/lww.js',
   '/js/shared/panda-mood.js',
   '/js/shared/panda-video.js',
+  '/js/shared/panda-voice.js',
   '/js/shared/ppl-gauge.js',
   '/js/shared/sparkline.js',
   '/js/shared/spring.js',

@@ -5,7 +5,7 @@ import { toUserMessage } from './shared/errors-ui.js';
 import { DB } from './db.js';
 import { on, onChange, onKeydown } from './events.js';
 
-on('intel:close',         () => window.Nav.go('s-home'));
+on('intel:close',         () => { window.IntelView.abortRequest(); window.Nav.go('s-home'); });
 on('intel:camera',        () => window.IntelView.handleCamera());
 on('intel:submit',        () => window.IntelView.submit());
 on('intel:weekly',        (el) => window.IntelView.generateWeekly(el));
@@ -14,7 +14,32 @@ on('intel:analyzeStats',  (el) => window.IntelView.analyzeStats(el));
 on('intel:biometrics',    (el) => window.IntelView.checkBiometrics(el));
 on('intel:clearImage',    () => { const w = document.getElementById('intel-vision-preview-wrap'); if (w) w.innerHTML = ''; window.IntelView._clearImage(); });
 on('intel:playAudio',     (el) => window.IntelView.playAudio(el));
-on('intel:closeReport',   (el) => el.closest('.intel-report-overlay')?.remove());
+on('intel:stopAudio',     () => window.IntelView.stopAudio());
+on('intel:closeReport',   (el) => {
+  const target = el.closest('.intel-report-overlay, .intel-overlay');
+  if (target) {
+    if (document.startViewTransition) document.startViewTransition(() => target.remove());
+    else target.remove();
+  }
+});
+on('intel:openSettings',  () => window.IntelView.openSettings());
+on('intel:exportPlan',    async (el) => {
+  const plan = window.IntelView.currentPlan;
+  if (plan) {
+    const { DB } = await import('./db.js');
+    await DB.PlannedWorkouts.add({ date: new Date().toISOString(), plan, name: 'AI Generated Plan' });
+    const btn = el;
+    btn.textContent = 'Экспортировано!';
+    btn.style.background = 'var(--c-accent)';
+    setTimeout(() => {
+      const target = el.closest('.intel-overlay');
+      if (target) {
+        if (document.startViewTransition) document.startViewTransition(() => target.remove());
+        else target.remove();
+      }
+    }, 1000);
+  }
+});
 onChange('intel:fileSelected', (el, e) => window.IntelView.onFileSelected(e));
 onKeydown('intel:submitEnter', (el, e) => { if (e.key === 'Enter') window.IntelView.submit(); });
 
@@ -25,6 +50,77 @@ onKeydown('intel:submitEnter', (el, e) => { if (e.key === 'Enter') window.IntelV
 export const IntelView = (() => {
   let _initialized = false;
   let _hasValidKey = false;
+  let _currentAbort = null;
+  let currentPlan = null;
+
+  let _globalAudio = new Audio();
+  let _audioContext = null;
+  let _analyser = null;
+  let _audioSource = null;
+  let _audioRaf = null;
+  let _isSpeaking = false;
+  let _isMuted = false;
+
+
+  function _initAudioContext() {
+    if (!_audioContext) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) {
+        _audioContext = new Ctx();
+        _analyser = _audioContext.createAnalyser();
+        _analyser.fftSize = 64; 
+        _audioSource = _audioContext.createMediaElementSource(_globalAudio);
+        _audioSource.connect(_analyser);
+        _analyser.connect(_audioContext.destination);
+      }
+    }
+    if (_audioContext && _audioContext.state === 'suspended') {
+      _audioContext.resume();
+    }
+  }
+
+  function stopAudio() {
+    if (_isSpeaking) {
+      _globalAudio.pause();
+      _globalAudio.currentTime = 0;
+      _isSpeaking = false;
+      document.body.classList.remove('intel-is-speaking');
+      IntelStore.setStatus('SYSTEM STANDBY');
+      document.body.style.setProperty('--audio-pulse', '0');
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (_audioRaf) cancelAnimationFrame(_audioRaf);
+    }
+  }
+
+  async function _getEngine() {
+    const { DB } = await import('./db.js');
+    return (await DB.Settings.get('ai-engine')) || 'gemini';
+  }
+
+  function abortRequest() {
+    if (_currentAbort) {
+      _currentAbort.abort();
+      _currentAbort = null;
+      IntelStore.addLog('SYS', 'Request aborted by user.');
+      IntelStore.setStatus('SYSTEM STANDBY');
+      _clearModuleLoaders();
+    }
+  }
+
+  const DICT = {
+    en: { summary: 'SUMMARY', generate: 'GENERATE', analyze: 'ANALYZE', biometrics: 'BIOMETRICS', input: 'Command query...', sys: 'SYSTEM STANDBY' },
+    ru: { summary: 'СВОДКА', generate: 'ГЕНЕРАЦИЯ', analyze: 'АНАЛИЗ', biometrics: 'БИОМЕТРИЯ', input: 'Ожидаю команду...', sys: 'ОЖИДАНИЕ' }
+  };
+
+  async function _getVoice() {
+    const { DB } = await import('./db.js');
+    return (await DB.Settings.get('intel-voice')) || 'Puck';
+  }
+
+  async function _getLang() {
+    const { DB } = await import('./db.js');
+    return (await DB.Settings.get('intel-lang')) || 'en';
+  }
 
   async function _checkApiKey() {
     const { DB } = await import('./db.js');
@@ -54,6 +150,8 @@ export const IntelView = (() => {
     }
 
     await _checkApiKey();
+    const lang = await _getLang();
+    const d = DICT[lang] || DICT['en'];
 
     screen.innerHTML = `
       <header class="intel-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -66,69 +164,98 @@ export const IntelView = (() => {
             <span id="intel-status-text" style="color: var(--c-text-2); font-weight:var(--fw-black); text-transform:lowercase;">${IntelStore.getStatus()}</span>
           </div>
         </div>
-        <button data-action="intel:close" style="background:none; border:none; color:var(--c-text-3); font-size:var(--fs-6); font-weight:var(--fw-md); cursor:pointer; padding:0 8px;">&times;</button>
-      </header>
-
-      <div id="intel-feedback-feed"></div>
-
-      <div id="intel-vision-preview-wrap"></div>
-
-      <div class="intel-cmd-wrap">
-        <div class="intel-cmd-bar">
-          <button class="intel-btn-icon" id="intel-btn-camera" data-action="intel:camera">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+        <div style="display:flex; align-items:center;">
+          <button id="intel-mute-btn" style="background:none; border:none; color:var(--c-text-3); font-size:var(--fs-5); cursor:pointer; padding:4px 8px; margin-right:4px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="vertical-align:middle;">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path id="intel-mute-waves" d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" style="display:${_isMuted ? 'none' : 'block'};"></path>
+              <line id="intel-mute-cross" x1="23" y1="1" x2="1" y2="23" stroke="var(--c-red)" stroke-width="2" style="display:${_isMuted ? 'block' : 'none'};"></line>
             </svg>
           </button>
-          <input type="text" id="intel-input" class="intel-cmd-input" placeholder="Command or vision query..." data-keydown="intel:submitEnter">
-          <button class="intel-btn-icon intel-btn-send" id="intel-btn-send" data-action="intel:submit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
-              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
+          <button data-action="intel:openSettings" style="background:none; border:none; color:var(--c-text-3); font-size:var(--fs-5); cursor:pointer; padding:4px 8px;">⋮</button>
+          <button data-action="intel:close" style="background:none; border:none; color:var(--c-text-3); font-size:var(--fs-6); font-weight:var(--fw-md); cursor:pointer; padding:0 8px;">&times;</button>
+        </div>
+      </header>
+
+      <div class="intel-body">
+        <div id="intel-feedback-feed"></div>
+
+        <div id="intel-vision-preview-wrap"></div>
+
+        <div class="intel-logs">
+          <div class="intel-logs-header">
+            <h3 class="intel-logs-title">STREAMING_LOGS</h3>
+            <span class="intel-logs-status" id="intel-logs-status-pill" data-action="intel:stopAudio" style="cursor:pointer;" title="Click to Stop Audio">${d.sys}</span>
+          </div>
+          <div id="intel-logs-container"></div>
+        </div>
+
+        <div class="intel-modules-grid">
+          <button class="intel-module-card" data-action="intel:weekly">
+            <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-intel) 15%, transparent); color:var(--c-intel)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            </div>
+            <span class="intel-module-label">${d.summary}</span>
+          </button>
+          <button class="intel-module-card" data-action="intel:createWorkout">
+            <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-accent) 15%, transparent); color:var(--c-accent)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+            <span class="intel-module-label">${d.generate}</span>
+          </button>
+          <button class="intel-module-card" data-action="intel:analyzeStats">
+            <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-blue) 15%, transparent); color:var(--c-blue)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            </div>
+            <span class="intel-module-label">${d.analyze}</span>
+          </button>
+          <button class="intel-module-card" data-action="intel:biometrics">
+            <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-red) 12%, transparent); color:var(--c-red)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <span class="intel-module-label">${d.biometrics}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="intel-cmd-wrap">
+        <div class="intel-eq-board" id="intel-eq-board">
+          <div class="intel-eq-bar" style="--eq-val: 0.1"></div>
+          <div class="intel-eq-bar" style="--eq-val: 0.3"></div>
+          <div class="intel-eq-bar" style="--eq-val: 0.5"></div>
+          <div class="intel-eq-bar" style="--eq-val: 0.3"></div>
+          <div class="intel-eq-bar" style="--eq-val: 0.1"></div>
+        </div>
+        <div class="intel-cmd-bar">
+          <button class="intel-btn-icon" data-action="intel:camera">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          </button>
+          <input type="text" id="intel-input" class="intel-cmd-input" placeholder="${d.input}" data-keydown="intel:submitEnter" autocomplete="off" spellcheck="false">
+          <button class="intel-btn-icon intel-btn-send" data-action="intel:submit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
           </button>
         </div>
         <input type="file" id="intel-file-input" accept="image/*" style="display:none" data-change="intel:fileSelected">
-      </div>
-
-      <div class="intel-modules-grid">
-        <button class="intel-module-card" data-action="intel:weekly">
-          <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-intel) 15%, transparent); color:var(--c-intel)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-          </div>
-          <span class="intel-module-label">СВОДКА</span>
-        </button>
-        <button class="intel-module-card" data-action="intel:createWorkout">
-          <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-accent) 15%, transparent); color:var(--c-accent)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          </div>
-          <span class="intel-module-label">ГЕНЕРАЦИЯ</span>
-        </button>
-        <button class="intel-module-card" data-action="intel:analyzeStats">
-          <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-blue) 15%, transparent); color:var(--c-blue)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-          </div>
-          <span class="intel-module-label">АНАЛИЗ</span>
-        </button>
-        <button class="intel-module-card" data-action="intel:biometrics">
-          <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-red) 12%, transparent); color:var(--c-red)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          </div>
-          <span class="intel-module-label">БИОМЕТРИЯ</span>
-        </button>
-      </div>
-
-      <div class="intel-logs">
-        <div class="intel-logs-header">
-          <h3 class="intel-logs-title">STREAMING_LOGS</h3>
-          <span class="intel-logs-status" id="intel-logs-status-pill">ONLINE</span>
-        </div>
-        <div id="intel-logs-container"></div>
       </div>
     `;
 
     renderLogs();
     _listen();
     _initTilt();
+
+    const muteBtn = document.getElementById('intel-mute-btn');
+    if (muteBtn) {
+      muteBtn.addEventListener('click', () => {
+        _isMuted = !_isMuted;
+        document.getElementById('intel-mute-waves').style.display = _isMuted ? 'none' : 'block';
+        document.getElementById('intel-mute-cross').style.display = _isMuted ? 'block' : 'none';
+        if (_isMuted) stopAudio();
+      });
+    }
+
+    document.body.addEventListener('pointerdown', _initAudioContext, { once: true });
+
+    IntelStore.setStatus(d.sys);
   }
 
   function renderLogs() {
@@ -182,9 +309,11 @@ export const IntelView = (() => {
 
   /** 3D Tilt + Amicro Spotlight Border Glow effect on module cards & command bar */
   function _initTilt() {
+    const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     const cards = document.querySelectorAll('.intel-module-card, .intel-cmd-bar');
     cards.forEach(card => {
       card.addEventListener('pointermove', (e) => {
+        if (!isFinePointer) return;
         const rect = card.getBoundingClientRect();
         const px = ((e.clientX - rect.left) / rect.width) * 100;
         const py = ((e.clientY - rect.top) / rect.height) * 100;
@@ -446,7 +575,7 @@ export const IntelView = (() => {
     safe = safe.replace(/^(\d+)\.\s+(.*$)/gim, '<div class="intel-md-num"><span class="intel-num-badge">$1</span><span>$2</span></div>');
 
     // 7. Bullet items: * Item or - Item
-    safe = safe.replace(/^[\*\-]\s+(.*$)/gim, '<li class="intel-md-li">$1</li>');
+    safe = safe.replace(/^[*\-]\s+(.*$)/gim, '<li class="intel-md-li">$1</li>');
 
     // 8. Paragraphs
     safe = safe.replace(/\n\n+/g, '</p><p class="intel-md-p">');
@@ -462,10 +591,58 @@ export const IntelView = (() => {
 
   function _clearImage() { _pendingImage = null; }
 
-  let _isSpeaking = false;
+  let _currentPulse = 0; // Stateful pulse for lerp
+  let _eqVals = [0, 0, 0, 0, 0]; // 5 EQ bars
 
-  async function speakText(textToSpeak) {
-    if (!textToSpeak || _isSpeaking) return;
+  function _visualizeAudio() {
+    if (!_analyser || !_isSpeaking) return;
+    const dataArray = new Uint8Array(_analyser.frequencyBinCount);
+    _analyser.getByteFrequencyData(dataArray);
+    
+    let sum = 0;
+    const voiceBins = 5; 
+    
+    const eqBoard = document.getElementById('intel-eq-board');
+    const eqBars = eqBoard ? eqBoard.children : [];
+
+    for (let i = 0; i < voiceBins; i++) {
+      const raw = dataArray[i];
+      sum += raw;
+      
+      const target = Math.min(1, raw / 180); 
+      _eqVals[i] += (target - _eqVals[i]) * 0.25;
+      
+      if (eqBars[i]) {
+        eqBars[i].style.setProperty('--eq-val', _eqVals[i].toFixed(3));
+      }
+    }
+    
+    const targetPulse = Math.min(1, (sum / voiceBins) / 160);
+    _currentPulse += (targetPulse - _currentPulse) * 0.2;
+    document.body.style.setProperty('--audio-pulse', _currentPulse.toFixed(3));
+    
+    if (_isSpeaking) _audioRaf = requestAnimationFrame(_visualizeAudio);
+    else {
+      _currentPulse = 0;
+      document.body.style.setProperty('--audio-pulse', '0');
+      for (let i = 0; i < 5; i++) {
+        _eqVals[i] = 0;
+        if (eqBars[i]) eqBars[i].style.setProperty('--eq-val', '0');
+      }
+    }
+  }
+
+  async function speakText(rawText) {
+    if (!rawText || _isSpeaking || _isMuted) return;
+    
+    // Strip markdown formatting (asterisks, hashes, backticks, slashes) for cleaner TTS
+    const textToSpeak = rawText
+      .replace(/[*_#`[\]()]/g, '')
+      .replace(/\//g, ' ')
+      .trim();
+      
+    if (!textToSpeak) return;
+
     _isSpeaking = true;
     IntelStore.addLog('SYS', 'Synthesizing coach voice...');
 
@@ -475,24 +652,68 @@ export const IntelView = (() => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           text: textToSpeak,
-          customKey: await (await import('./db.js')).DB.Settings.get('gemini-key')
+          customKey: await (await import('./db.js')).DB.Settings.get('gemini-key'),
+          language: await _getLang(),
+          voice: await _getVoice()
         })
       });
 
-      if (!response.ok) throw new Error('Voice sync failed');
-
       const result = await response.json();
+      if (!response.ok || result.fallback) {
+        throw new Error(result.error || 'Voice sync failed, falling back to native');
+      }
+
       const pcmData = result.audioBase64;
       if (!pcmData) throw new Error("Audio data not found");
 
       const audioBlob = pcmToWav(pcmData, 24000); 
       const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audio.onended = () => { _isSpeaking = false; URL.revokeObjectURL(audioUrl); };
-      await audio.play();
+      _globalAudio.src = audioUrl;
+      
+      document.body.classList.add('intel-is-speaking');
+      const statusPill = document.getElementById('intel-logs-status-pill');
+      if (statusPill) { statusPill.textContent = 'VOICE ACTIVE'; statusPill.style.color = 'var(--c-intel)'; }
+
+      _globalAudio.onended = () => { 
+        _isSpeaking = false; 
+        URL.revokeObjectURL(audioUrl); 
+        document.body.classList.remove('intel-is-speaking');
+        IntelStore.setStatus('SYSTEM STANDBY');
+        document.body.style.setProperty('--audio-pulse', '0');
+      };
+      
+      await _globalAudio.play();
+      if (_audioContext) _visualizeAudio();
+      
     } catch (err) { 
-      IntelStore.addLog('ERROR', 'Voice synthesis failed'); 
-      _isSpeaking = false; 
+      IntelStore.addLog('SYS', err.message); 
+      
+      // Native Speech Synthesis Fallback
+      if (window.speechSynthesis) {
+        IntelStore.addLog('SYS', 'Using native speech fallback');
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        const lang = await _getLang();
+        utterance.lang = lang === 'ru' ? 'ru-RU' : 'en-US';
+        
+        document.body.classList.add('intel-is-speaking');
+        const statusPill = document.getElementById('intel-logs-status-pill');
+        if (statusPill) { statusPill.textContent = 'VOICE ACTIVE'; statusPill.style.color = 'var(--c-intel)'; }
+        
+        utterance.onend = () => {
+          _isSpeaking = false;
+          document.body.classList.remove('intel-is-speaking');
+          IntelStore.setStatus('SYSTEM STANDBY');
+        };
+        utterance.onerror = () => {
+          _isSpeaking = false;
+          document.body.classList.remove('intel-is-speaking');
+          IntelStore.setStatus('SYSTEM STANDBY');
+        };
+        window.speechSynthesis.speak(utterance);
+      } else {
+        _isSpeaking = false; 
+        document.body.classList.remove('intel-is-speaking');
+      }
     }
   }
 
@@ -597,7 +818,8 @@ export const IntelView = (() => {
         </div>
       </div>
     `;
-    document.body.appendChild(overlay);
+    if (document.startViewTransition) document.startViewTransition(() => document.body.appendChild(overlay));
+    else document.body.appendChild(overlay);
   }
 
 
@@ -724,7 +946,79 @@ export const IntelView = (() => {
     }
   }
 
-  return { load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats, checkBiometrics, playAudio, _clearImage };
+  async function openSettings() {
+    const lang = await _getLang();
+    const voice = await _getVoice();
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'intel-overlay animate-in fade-in duration-500';
+    overlay.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(5,5,7,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:20px;';
+    
+    let selectedLang = lang;
+    let selectedVoice = voice;
+
+    overlay.innerHTML = `
+      <div style="background:var(--c-bg-1); width:100%; max-width:400px; border-radius:32px; padding:32px; position:relative; box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.1) inset;">
+        <button data-action="intel:closeReport" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:var(--fs-5); cursor:pointer;">&times;</button>
+        <h2 style="color:var(--c-text-1); margin-bottom:24px; font-family:var(--font-heading); font-size:var(--fs-4);">AI Settings</h2>
+        
+        <div style="margin-bottom:24px;">
+          <label style="display:block; color:var(--c-text-3); font-size:var(--fs-1); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px; font-weight:var(--fw-bold);">Language</label>
+          <div style="display:flex; gap:8px; background:color-mix(in srgb, var(--c-surface) 40%, transparent); padding:6px; border-radius:16px; border:1px solid color-mix(in srgb, var(--c-border) 40%, transparent);" id="intel-lang-group">
+            <button class="intel-set-btn-lang" data-val="en" style="flex:1; padding:12px; border-radius:12px; border:none; background:${lang === 'en' ? 'var(--c-bg-2)' : 'transparent'}; color:${lang === 'en' ? 'var(--c-text-1)' : 'var(--c-text-2)'}; cursor:pointer; font-weight:var(--fw-bold); transition:all 0.2s;">English</button>
+            <button class="intel-set-btn-lang" data-val="ru" style="flex:1; padding:12px; border-radius:12px; border:none; background:${lang === 'ru' ? 'var(--c-bg-2)' : 'transparent'}; color:${lang === 'ru' ? 'var(--c-text-1)' : 'var(--c-text-2)'}; cursor:pointer; font-weight:var(--fw-bold); transition:all 0.2s;">Русский</button>
+          </div>
+        </div>
+        
+        <div style="margin-bottom:32px;">
+          <label style="display:block; color:var(--c-text-3); font-size:var(--fs-1); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px; font-weight:var(--fw-bold);">Voice Persona (TTS)</label>
+          <div style="display:flex; flex-direction:column; gap:10px;" id="intel-voice-group">
+            <button class="intel-set-btn-voice" data-val="Puck" style="padding:16px; border-radius:16px; border:1px solid ${voice === 'Puck' ? 'var(--c-intel)' : 'color-mix(in srgb, var(--c-border) 40%, transparent)'}; background:${voice === 'Puck' ? 'color-mix(in srgb, var(--c-intel) 12%, transparent)' : 'color-mix(in srgb, var(--c-surface) 40%, transparent)'}; color:var(--c-text-1); cursor:pointer; text-align:left; font-weight:var(--fw-md); transition:all 0.2s;">Puck <span style="opacity:0.5; font-size:var(--fs-1); float:right; line-height:1.5;">Normal / Обычный</span></button>
+            <button class="intel-set-btn-voice" data-val="Fenrir" style="padding:16px; border-radius:16px; border:1px solid ${voice === 'Fenrir' ? 'var(--c-intel)' : 'color-mix(in srgb, var(--c-border) 40%, transparent)'}; background:${voice === 'Fenrir' ? 'color-mix(in srgb, var(--c-intel) 12%, transparent)' : 'color-mix(in srgb, var(--c-surface) 40%, transparent)'}; color:var(--c-text-1); cursor:pointer; text-align:left; font-weight:var(--fw-md); transition:all 0.2s;">Fenrir <span style="opacity:0.5; font-size:var(--fs-1); float:right; line-height:1.5;">Stern / Грубый</span></button>
+            <button class="intel-set-btn-voice" data-val="Aoede" style="padding:16px; border-radius:16px; border:1px solid ${voice === 'Aoede' ? 'var(--c-intel)' : 'color-mix(in srgb, var(--c-border) 40%, transparent)'}; background:${voice === 'Aoede' ? 'color-mix(in srgb, var(--c-intel) 12%, transparent)' : 'color-mix(in srgb, var(--c-surface) 40%, transparent)'}; color:var(--c-text-1); cursor:pointer; text-align:left; font-weight:var(--fw-md); transition:all 0.2s;">Aoede <span style="opacity:0.5; font-size:var(--fs-1); float:right; line-height:1.5;">Soft / Мягкий</span></button>
+          </div>
+        </div>
+        
+        <button id="intel-save-settings" style="width:100%; padding:16px; border-radius:16px; background:var(--c-intel); border:none; color:black; font-weight:var(--fw-black); font-size:var(--fs-3); cursor:pointer;">SAVE & RELOAD</button>
+      </div>
+    `;
+    
+    if (document.startViewTransition) document.startViewTransition(() => document.body.appendChild(overlay));
+    else document.body.appendChild(overlay);
+
+    // Language selection
+    overlay.querySelectorAll('.intel-set-btn-lang').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        selectedLang = btn.dataset.val;
+        overlay.querySelectorAll('.intel-set-btn-lang').forEach(b => {
+          b.style.background = b.dataset.val === selectedLang ? 'var(--c-bg-2)' : 'transparent';
+          b.style.color = b.dataset.val === selectedLang ? 'var(--c-text-1)' : 'var(--c-text-2)';
+        });
+      });
+    });
+
+    // Voice selection
+    overlay.querySelectorAll('.intel-set-btn-voice').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        selectedVoice = btn.dataset.val;
+        overlay.querySelectorAll('.intel-set-btn-voice').forEach(b => {
+          b.style.border = b.dataset.val === selectedVoice ? '1px solid var(--c-intel)' : '1px solid color-mix(in srgb, var(--c-border) 40%, transparent)';
+          b.style.background = b.dataset.val === selectedVoice ? 'color-mix(in srgb, var(--c-intel) 12%, transparent)' : 'color-mix(in srgb, var(--c-surface) 40%, transparent)';
+        });
+      });
+    });
+    
+    overlay.querySelector('#intel-save-settings').addEventListener('click', async () => {
+      const { DB } = await import('./db.js');
+      await DB.Settings.set('intel-lang', selectedLang);
+      await DB.Settings.set('intel-voice', selectedVoice);
+      if (document.startViewTransition) document.startViewTransition(() => overlay.remove());
+      else overlay.remove();
+      load(); // Reload UI to apply language
+    });
+  }
+
+  return { load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats, checkBiometrics, playAudio, _clearImage, abortRequest, openSettings, stopAudio, get currentPlan() { return currentPlan; } };
 })();
 
 // Expose to window for onclick
