@@ -251,13 +251,18 @@ export const IntelView = (() => {
           <div class="intel-eq-bar-wrap"><div class="intel-eq-peak"></div><div class="intel-eq-bar"></div></div>
           <div class="intel-eq-bar-wrap"><div class="intel-eq-peak"></div><div class="intel-eq-bar"></div></div>
         </div>
-        <div class="intel-cmd-bar">
-          <button class="intel-btn-icon" data-action="intel:camera">
+        <div class="intel-cmd-bar composer" id="intel-composer">
+          <div class="composer-halo"></div>
+          <button class="intel-btn-icon" data-action="intel:voiceInput" id="intel-mic-btn" style="transition:all 0.2s; touch-action:none; z-index:2;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+          </button>
+          <button class="intel-btn-icon" data-action="intel:camera" style="z-index:2;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
           </button>
-          <input type="text" id="intel-input" class="intel-cmd-input" placeholder="${d.input}" data-keydown="intel:submitEnter" autocomplete="off" spellcheck="false">
-          <button class="intel-btn-icon intel-btn-send" data-action="intel:submit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          <input type="text" id="intel-input" class="intel-cmd-input composer-field" placeholder="${d.input}" data-keydown="intel:submitEnter" autocomplete="off" spellcheck="false" style="z-index:2;">
+          <button class="intel-btn-icon intel-btn-send composer-send" data-action="intel:submit" style="z-index:2;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" class="icon-arrow"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            <div class="icon-stop" style="display:none; width:12px; height:12px; background:currentColor; border-radius:2px;"></div>
           </button>
         </div>
         <div class="intel-heat-bar-wrap">
@@ -317,6 +322,74 @@ export const IntelView = (() => {
     if (window._intelListenersActive) return;
     // @ts-ignore
     window._intelListenersActive = true;
+
+    // Web Speech API Logic
+    let recognition = null;
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRec) {
+      recognition = new SpeechRec();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      
+      const micBtn = document.getElementById('intel-mic-btn');
+      const inputEl = document.getElementById('intel-input');
+      
+      if (micBtn && inputEl) {
+        let isRecording = false;
+        
+        const startVoice = async (e) => {
+          e.preventDefault();
+          if (isRecording) return;
+          isRecording = true;
+          haptic(20);
+          micBtn.classList.add('intel-mic-active');
+          const lang = await _getLang();
+          recognition.lang = lang === 'ru' ? 'ru-RU' : 'en-US';
+          inputEl.value = '';
+          inputEl.placeholder = 'Listening...';
+          try { recognition.start(); } catch(e){}
+        };
+
+        const stopVoice = (e) => {
+          e.preventDefault();
+          if (!isRecording) return;
+          isRecording = false;
+          haptic(10);
+          micBtn.classList.remove('intel-mic-active');
+          try { recognition.stop(); } catch(e){}
+          setTimeout(() => {
+            if (inputEl.value.trim().length > 0) submit();
+          }, 300);
+        };
+
+        recognition.onresult = (event) => {
+          let finalTranscript = '';
+          let interimTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+            else interimTranscript += event.results[i][0].transcript;
+          }
+          inputEl.value = finalTranscript || interimTranscript;
+        };
+
+        micBtn.addEventListener('pointerdown', startVoice);
+        micBtn.addEventListener('pointerup', stopVoice);
+        micBtn.addEventListener('pointercancel', stopVoice);
+        micBtn.addEventListener('pointerleave', stopVoice);
+      }
+    }
+
+    // Composer UI Listeners
+    const composer = document.getElementById('intel-composer');
+    const inputEl = document.getElementById('intel-input');
+    if (composer && inputEl) {
+      inputEl.addEventListener('focus', () => composer.classList.add('focused'));
+      inputEl.addEventListener('blur', () => composer.classList.remove('focused'));
+      inputEl.addEventListener('input', () => {
+        if (inputEl.value.trim().length > 0) composer.classList.add('ready');
+        else composer.classList.remove('ready');
+      });
+    }
 
     window.addEventListener('ap-intel-log', renderLogs);
     window.addEventListener('ap-intel-status', () => {
@@ -437,6 +510,12 @@ export const IntelView = (() => {
     IntelStore.addLog('USER', text);
     if (image) IntelStore.addLog('SYS', 'Attaching vision packet...');
     
+    const composer = document.getElementById('intel-composer');
+    if (composer) {
+      composer.classList.add('sending');
+      composer.classList.remove('ready');
+    }
+
     input.value = '';
     _pendingImage = null;
     const previewWrap = document.getElementById('intel-vision-preview-wrap');
@@ -574,8 +653,15 @@ export const IntelView = (() => {
 
       IntelStore.addLog('AI', 'Insight received.');
       IntelStore.setStatus('SYSTEM STANDBY');
-      feedbackEl.classList.remove('streaming');
+      _pendingImage = null;
+      _abortController = null;
       _clearModuleLoaders();
+
+      const composer = document.getElementById('intel-composer');
+      if (composer) composer.classList.remove('sending');
+
+      // Clear Heat Decay smoothly
+      if (window._heatInterval) clearInterval(window._heatInterval);
 
       // Auto-Speech
       const autoSpeech = await DB.Settings.get('ai-auto-speech', true);
@@ -813,6 +899,11 @@ export const IntelView = (() => {
         const lang = await _getLang();
         utterance.lang = lang === 'ru' ? 'ru-RU' : 'en-US';
         
+        // Try to find a male voice to avoid the robotic female default
+        const voices = window.speechSynthesis.getVoices();
+        const preferred = voices.find(v => v.lang.includes(lang === 'ru' ? 'ru' : 'en') && (v.name.includes('Male') || v.name.includes('David') || v.name.includes('Pavel') || v.name.includes('Yuri')));
+        if (preferred) utterance.voice = preferred;
+        
         document.body.classList.add('intel-is-speaking');
         const statusPill = document.getElementById('intel-logs-status-pill');
         if (statusPill) { statusPill.textContent = 'VOICE ACTIVE'; statusPill.style.color = 'var(--c-intel)'; }
@@ -1024,10 +1115,11 @@ export const IntelView = (() => {
        
        if (!response.ok) throw new Error('Biometrics failed');
        const { report } = await response.json();
+       const readiness = Math.max(0, 100 - Math.round((report.cnsFatigue + report.muscleDamage) / 2));
 
        overlay.innerHTML = `
          <div style="background:var(--c-bg-1); width:90%; max-width:400px; border-radius:24px; border:1px solid var(--c-intel); padding:32px; position:relative; box-shadow: 0 0 60px color-mix(in srgb, var(--c-intel) 20%, transparent);">
-           <button onclick="this.closest('div').parentElement.remove()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:var(--c-text-3); font-size:var(--fs-5); cursor:pointer;">&times;</button>
+           <button id="biometric-close-btn" style="position:absolute; top:20px; right:20px; background:none; border:none; color:var(--c-text-3); font-size:var(--fs-5); cursor:pointer;">&times;</button>
            <h2 style="color:var(--c-intel); font-family:var(--font-heading); margin-bottom:24px; text-transform:uppercase; letter-spacing:2px; font-size:var(--fs-3); text-align:center;">BIOMETRIC HUD</h2>
            
            <div style="display:flex; flex-direction:column; gap:16px;">
@@ -1054,23 +1146,29 @@ export const IntelView = (() => {
              <div style="background:color-mix(in srgb, var(--c-surface) 50%, transparent); padding:16px; border-radius:12px;">
                <div style="font-size:10px; color:var(--c-text-3); text-transform:uppercase; margin-bottom:4px;">READINESS</div>
                <div style="display:flex; align-items:center; gap:12px;">
-                 <div style="font-size:var(--fs-4); font-weight:var(--fw-black); color:${report.readinessScore < 50 ? 'var(--c-red)' : 'var(--c-accent)'};">${report.readinessScore}%</div>
+                 <div style="font-size:var(--fs-4); font-weight:var(--fw-black); color:${readiness < 50 ? 'var(--c-red)' : 'var(--c-accent)'};">${readiness}%</div>
                  <div style="flex:1; height:4px; background:var(--c-bg-2); border-radius:2px; overflow:hidden;">
-                   <div style="height:100%; width:${report.readinessScore}%; background:${report.readinessScore < 50 ? 'var(--c-red)' : 'var(--c-accent)'};"></div>
+                   <div style="height:100%; width:${readiness}%; background:${readiness < 50 ? 'var(--c-red)' : 'var(--c-accent)'};"></div>
                  </div>
                </div>
              </div>
            </div>
            
            <div style="margin-top:24px; padding-top:16px; border-top:1px solid color-mix(in srgb, var(--c-border) 50%, transparent); font-size:var(--fs-1); color:var(--c-text-2); line-height:1.5;">
-             ${report.recommendation}
+             ${report.summary}
            </div>
          </div>
        `;
+       
+       const closeBtn = overlay.querySelector('#biometric-close-btn');
+       if (closeBtn) closeBtn.addEventListener('click', () => overlay.remove());
+
        haptic(50);
      } catch (err) {
        clearInterval(logInterval);
-       overlay.innerHTML = `<div style="color:var(--c-red); font-weight:bold;">SCAN FAILED: ${err.message}</div><button onclick="this.parentElement.remove()" style="margin-top:16px; padding:8px 16px;">CLOSE</button>`;
+       overlay.innerHTML = `<div style="color:var(--c-red); font-weight:bold;">SCAN FAILED: ${err.message}</div><button id="error-close-btn" style="margin-top:16px; padding:8px 16px;">CLOSE</button>`;
+       const errBtn = overlay.querySelector('#error-close-btn');
+       if (errBtn) errBtn.addEventListener('click', () => overlay.remove());
      }
      
      if (card) card.classList.remove('loading');
