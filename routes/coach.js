@@ -140,7 +140,8 @@ export const coachSchema = z.object({
   longTermStats: z.any().optional().default({}),
   engine: z.string().optional().default('anthropic'),
   customKey: z.string().nullable().optional(),
-  language: z.string().optional().default('en')
+  language: z.string().optional().default('en'),
+  tone: z.number().min(0).max(100).optional().default(50)
 });
 
 /* ── POST / (Main Coach SSE) ── */
@@ -158,7 +159,8 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
     longTermStats, 
     engine, 
     customKey,
-    language
+    language,
+    tone
   } = parseResult.data;
 
   // Final sanitization to prevent Gemini 400 errors
@@ -176,7 +178,7 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering so chunks flush immediately
 
-  const system = _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats, language);
+  const system = _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats, language, tone);
 
   // Track client disconnect so we never write to a dead socket.
   let clientGone = false;
@@ -223,7 +225,7 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
 
 const ttsSchema = z.object({
   text: z.string().min(1, 'text is required'),
-  customKey: z.string().optional(),
+  customKey: z.string().nullable().optional(),
   language: z.string().optional().default('en'),
   voice: z.string().optional().default('Fenrir')
 });
@@ -244,12 +246,17 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
   }
 
   try {
+    const ttsPrompt = language === 'ru' 
+      ? `Прочитай этот текст выразительно и естественно: ${text}`
+      : `Speak this exactly, with natural tone: ${text}`;
+
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: `Speak this exactly, with natural tone: ${text}` }] }],
+      contents: [{ parts: [{ text: ttsPrompt }] }],
       generationConfig: { 
+        responseModalities: ["AUDIO"],
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } 
       },
       model: "gemini-2.5-flash-preview-tts"
@@ -393,9 +400,16 @@ Return ONLY JSON with this exact schema:
 
 // ── Private Prompt Helpers ───────────────────────────────────────────────────
 
-function _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats, language) {
-  return `You are "Athlete Pro Coach", an elite AI strength & conditioning expert powered by Gemini 3.6 Flash.
-If asked what model you are, state that you are Gemini 3.6 Flash operating via Google AI Studio API.
+function _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats, language, tone) {
+  let toneInstruction = "Adopt a neutral, professional, and balanced coaching tone.";
+  if (tone < 30) toneInstruction = "Adopt an empathetic, supportive, and restorative tone like a caring physical therapist. Focus on recovery and positive reinforcement.";
+  if (tone > 70) toneInstruction = "Adopt a hardcore, ruthless, David Goggins-style drill sergeant tone with zero excuses and absolute discipline. Use harsh truths.";
+
+  return `You are "Athlete Pro Coach", an elite AI strength & conditioning expert powered by Gemini.
+If asked what model you are, state that you are Gemini operating via Google AI Studio API.
+
+[PERSONA / TONE]
+${toneInstruction}
 
 [CONTEXT]
 - History (last 5): ${JSON.stringify(workouts.slice(0, 5))}
@@ -409,7 +423,8 @@ If asked what model you are, state that you are Gemini 3.6 Flash operating via G
 2. SLEEP: Assume the user sleeps 7 hours on average. You may ask if needed.
 3. GREETINGS: If the user simply says "hi" or "привет", respond exactly with: "${language === 'ru' ? 'Привет, нужен план?' : 'Hi, need a plan?'}".
 4. LANGUAGE: You MUST automatically detect the language of the user's prompt (Russian or English) and reply in the EXACT SAME LANGUAGE. All JSON string values (like 'goal') and all textual advice MUST be in that detected language.
-5. MACRO #gym: If the user types EXACTLY or contains "#gym", you MUST output a raw JSON widget block ANYWHERE in your response, followed by a short textual advice.
+5. HUMAN DELIVERY: Write your responses as if you are speaking them aloud. Use natural conversational fillers (e.g. "Hmm...", "Let's see...", "Хм...", "Так...") and use ellipses (...) to create dramatic pauses before important numbers or advice.
+6. MACRO #gym: If the user types EXACTLY or contains "#gym", you MUST output a raw JSON widget block ANYWHERE in your response, followed by a short textual advice.
 JSON FORMAT MUST BE EXACTLY:
 {"_widget": "readiness", "index": 82, "recovery": 77, "acwr": 88, "sleep": 64, "monotony": 95, "density": 93, "cns": 48, "goal": "${language === 'ru' ? 'Лёгкая / техническая' : 'Light / Technical'}"}
 (Calculate these values from 0-100 based on fatigue, history, and rest days. Goal must be a short string in ${language === 'ru' ? 'Russian' : 'English'}).

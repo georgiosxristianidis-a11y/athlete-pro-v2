@@ -218,8 +218,8 @@
 .set-num { font-size: var(--fs-1); font-weight: var(--fw-black); color: var(--c-text-3); text-align: center; opacity: 0.35; }
 .set-row.set-active { background: linear-gradient(180deg, color-mix(in srgb, var(--c-text-1) 2%, transparent) 0%, transparent 100%); border-radius: var(--r-s); margin: 0 calc(-1 * var(--sp-1)); padding: var(--sp-1-5) var(--sp-1); }
 
-.stepper-val { font-size: var(--fs-5) !important; font-weight: var(--fw-black) !important; letter-spacing: -0.04em !important; color: color-mix(in srgb, var(--c-text-1) 60%, transparent) !important; }
-.set-row.set-active .stepper-val { color: var(--c-text-1) !important; }
+.live-session .set-row .stepper-val { font-size: var(--fs-5); font-weight: var(--fw-black); letter-spacing: -0.04em; color: color-mix(in srgb, var(--c-text-1) 60%, transparent); }
+.live-session .set-row.set-active .stepper-val { color: var(--c-text-1); }
 .set-row.set-done { opacity: 0.45; padding: var(--sp-0-5) 0; }
 .set-row.set-done .drum-wrap { display: none; }
 .set-done-summary { display: none; grid-column: 2 / 4; font-size: var(--fs-2); font-weight: var(--fw-bold); letter-spacing: 0.02em; color: var(--c-text-2); text-align: center; }

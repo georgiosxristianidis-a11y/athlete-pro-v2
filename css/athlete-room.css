@@ -9,11 +9,11 @@
    `@media (min-width: 481px) and (hover: hover)`, а здесь лежит раскладка
    содержимого. Добавляя сюда свойство, сверься с теми двумя. */
 #status-bar {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  padding-right: 12px !important;
-  transition: filter var(--t-enter), opacity var(--t-enter) !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 12px;
+  transition: filter var(--t-enter), opacity var(--t-enter);
 }
 
 /* Workout active → let the Dynamic Island lead. The island is the live HUD,
@@ -86,7 +86,7 @@
   line-height: 1;
   position: relative;
   z-index: 1;
-  font-family: var(--font);
+
   pointer-events: none;
 }
 
@@ -208,7 +208,7 @@
   font-weight: var(--fw-black);
   color: var(--c-text-inverse);
   letter-spacing: -1px;
-  font-family: var(--font);
+
   position: relative;
   z-index: 2;
   pointer-events: none;
@@ -299,7 +299,7 @@
 }
 .ar-stat:active { transform: scale(var(--press-scale)); background: var(--c-surface-h); }
 .ar-stat-val {
-  font-family: var(--font-heading);
+
   font-size: var(--fs-4);
   font-weight: var(--fw-black);
   color: var(--c-text-1);
@@ -356,7 +356,7 @@
   color: var(--c-text-1);
   font-size: var(--fs-3);
   font-weight: var(--fw-md);
-  font-family: var(--font);
+
   padding: 10px 14px;
   outline: none;
   transition: border-color 0.18s;
@@ -406,7 +406,7 @@
   font-size: var(--fs-3);
   font-weight: var(--fw-md);
   cursor: pointer;
-  font-family: var(--font);
+
   transition: opacity 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
@@ -421,7 +421,7 @@
   font-size: var(--fs-3);
   font-weight: var(--fw-md);
   cursor: pointer;
-  font-family: var(--font);
+
   -webkit-tap-highlight-color: transparent;
 }
 .ar-btn-cancel:active { background: var(--c-border-h); }
@@ -549,7 +549,7 @@
 .ar-ach-icon {
   font-size: var(--fs-1);
   font-weight: var(--fw-black);
-  font-family: var(--font);
+
   letter-spacing: 0.5px;
   color: var(--c-text-2);
   background: var(--c-surface-h);
@@ -733,7 +733,7 @@
   font-weight: var(--fw-md);
   color: var(--c-text-1);
   cursor: pointer;
-  font-family: var(--font);
+
   transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.1s;
   -webkit-tap-highlight-color: transparent;
 }
@@ -894,8 +894,8 @@
   z-index: 2;
   user-select: none;
   -webkit-user-drag: none;
-  max-width: none !important;
-  max-height: none !important;
+  max-width: none;
+  max-height: none;
 }
 .ar-crop-img:active {
   cursor: grabbing;
@@ -953,7 +953,7 @@
   padding: var(--sp-2) 0 var(--sp-3);
 }
 .ar-sc-score {
-  font-family: var(--font-heading);
+
   font-size: var(--fs-6);
   font-weight: var(--fw-black);
   letter-spacing: -0.04em;

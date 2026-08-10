@@ -60,6 +60,7 @@ export const IntelView = (() => {
   let _audioRaf = null;
   let _isSpeaking = false;
   let _isMuted = false;
+  let _heat = 0;
 
 
   function _initAudioContext() {
@@ -115,6 +116,12 @@ export const IntelView = (() => {
   async function _getVoice() {
     const { DB } = await import('./db.js');
     return (await DB.Settings.get('intel-voice')) || 'Puck';
+  }
+
+  async function _getTone() {
+    const { DB } = await import('./db.js');
+    const t = await DB.Settings.get('intel-tone');
+    return t !== undefined ? t : 50;
   }
 
   async function _getLang() {
@@ -220,11 +227,11 @@ export const IntelView = (() => {
 
       <div class="intel-cmd-wrap">
         <div class="intel-eq-board" id="intel-eq-board">
-          <div class="intel-eq-bar" style="--eq-val: 0.1"></div>
-          <div class="intel-eq-bar" style="--eq-val: 0.3"></div>
-          <div class="intel-eq-bar" style="--eq-val: 0.5"></div>
-          <div class="intel-eq-bar" style="--eq-val: 0.3"></div>
-          <div class="intel-eq-bar" style="--eq-val: 0.1"></div>
+          <div class="intel-eq-bar-wrap"><div class="intel-eq-peak"></div><div class="intel-eq-bar"></div></div>
+          <div class="intel-eq-bar-wrap"><div class="intel-eq-peak"></div><div class="intel-eq-bar"></div></div>
+          <div class="intel-eq-bar-wrap"><div class="intel-eq-peak"></div><div class="intel-eq-bar"></div></div>
+          <div class="intel-eq-bar-wrap"><div class="intel-eq-peak"></div><div class="intel-eq-bar"></div></div>
+          <div class="intel-eq-bar-wrap"><div class="intel-eq-peak"></div><div class="intel-eq-bar"></div></div>
         </div>
         <div class="intel-cmd-bar">
           <button class="intel-btn-icon" data-action="intel:camera">
@@ -234,6 +241,9 @@ export const IntelView = (() => {
           <button class="intel-btn-icon intel-btn-send" data-action="intel:submit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
           </button>
+        </div>
+        <div class="intel-heat-bar-wrap">
+          <div class="intel-heat-bar"></div>
         </div>
         <input type="file" id="intel-file-input" accept="image/*" style="display:none" data-change="intel:fileSelected">
       </div>
@@ -253,9 +263,20 @@ export const IntelView = (() => {
       });
     }
 
-    document.body.addEventListener('pointerdown', _initAudioContext, { once: true });
+    document.body.addEventListener('click', _initAudioContext, { once: true });
+    document.body.addEventListener('keydown', _initAudioContext, { once: true });
 
     IntelStore.setStatus(d.sys);
+    
+    // Heat Decay Loop
+    function decayHeat() {
+      if (_heat > 0) {
+        _heat = Math.max(0, _heat - 0.05);
+        document.body.style.setProperty('--heat-val', _heat / 100);
+      }
+      requestAnimationFrame(decayHeat);
+    }
+    requestAnimationFrame(decayHeat);
   }
 
   function renderLogs() {
@@ -432,6 +453,9 @@ export const IntelView = (() => {
     const feedbackText = feedbackEl.querySelector('.intel-feedback-text');
     feedbackEl.classList.add('streaming');
 
+    _heat = Math.min(100, _heat + 25);
+    document.body.style.setProperty('--heat-val', _heat / 100);
+
     try {
       const { DB } = await import('./db.js');
       const workouts = await DB.Workouts.getLast(5);
@@ -447,8 +471,10 @@ export const IntelView = (() => {
           workouts,
           profile,
           topLifts,
-          engine: 'gemini',
-          customKey: (await DB.Settings.get('gemini-key')) || undefined
+          engine: await _getEngine(),
+          customKey: (await DB.Settings.get(`${await _getEngine()}-key`)) || undefined,
+          language: await _getLang(),
+          tone: await _getTone()
         })
       });
 
@@ -591,8 +617,10 @@ export const IntelView = (() => {
 
   function _clearImage() { _pendingImage = null; }
 
-  let _currentPulse = 0; // Stateful pulse for lerp
-  let _eqVals = [0, 0, 0, 0, 0]; // 5 EQ bars
+  let _currentPulse = 0;
+  let _eqVals = [0, 0, 0, 0, 0];
+  let _peakVals = [0, 0, 0, 0, 0];
+  let _peakVels = [0, 0, 0, 0, 0];
 
   function _visualizeAudio() {
     if (!_analyser || !_isSpeaking) return;
@@ -603,21 +631,40 @@ export const IntelView = (() => {
     const voiceBins = 5; 
     
     const eqBoard = document.getElementById('intel-eq-board');
-    const eqBars = eqBoard ? eqBoard.children : [];
+    const eqWraps = eqBoard ? eqBoard.children : [];
+    
+    const GRAVITY = 0.008;
+    const IDLE_BASELINE = 0.08; // Smart Idle
 
     for (let i = 0; i < voiceBins; i++) {
       const raw = dataArray[i];
       sum += raw;
       
-      const target = Math.min(1, raw / 180); 
+      // Volume Bar (with Smart Idle baseline)
+      let target = Math.min(1, raw / 180);
+      target = Math.max(IDLE_BASELINE, target); 
       _eqVals[i] += (target - _eqVals[i]) * 0.25;
       
-      if (eqBars[i]) {
-        eqBars[i].style.setProperty('--eq-val', _eqVals[i].toFixed(3));
+      // Ghost Peak Physics
+      if (target >= _peakVals[i]) {
+        _peakVals[i] = target;
+        _peakVels[i] = 0; // Reset velocity when pushed up
+      } else {
+        _peakVels[i] += GRAVITY;
+        _peakVals[i] -= _peakVels[i];
+        if (_peakVals[i] < _eqVals[i]) {
+          _peakVals[i] = _eqVals[i];
+          _peakVels[i] = 0;
+        }
+      }
+      
+      if (eqWraps[i]) {
+        eqWraps[i].style.setProperty('--eq-val', _eqVals[i].toFixed(3));
+        eqWraps[i].style.setProperty('--eq-peak', _peakVals[i].toFixed(3));
       }
     }
     
-    const targetPulse = Math.min(1, (sum / voiceBins) / 160);
+    const targetPulse = Math.max(IDLE_BASELINE, Math.min(1, (sum / voiceBins) / 160));
     _currentPulse += (targetPulse - _currentPulse) * 0.2;
     document.body.style.setProperty('--audio-pulse', _currentPulse.toFixed(3));
     
@@ -627,7 +674,12 @@ export const IntelView = (() => {
       document.body.style.setProperty('--audio-pulse', '0');
       for (let i = 0; i < 5; i++) {
         _eqVals[i] = 0;
-        if (eqBars[i]) eqBars[i].style.setProperty('--eq-val', '0');
+        _peakVals[i] = 0;
+        _peakVels[i] = 0;
+        if (eqWraps[i]) {
+          eqWraps[i].style.setProperty('--eq-val', '0');
+          eqWraps[i].style.setProperty('--eq-peak', '0');
+        }
       }
     }
   }
@@ -647,20 +699,30 @@ export const IntelView = (() => {
     IntelStore.addLog('SYS', 'Synthesizing coach voice...');
 
     try {
-      const response = await fetch('/api/coach/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          text: textToSpeak,
-          customKey: await (await import('./db.js')).DB.Settings.get('gemini-key'),
-          language: await _getLang(),
-          voice: await _getVoice()
-        })
-      });
-
-      const result = await response.json();
-      if (!response.ok || result.fallback) {
-        throw new Error(result.error || 'Voice sync failed, falling back to native');
+      const cacheKey = `https://p.a.n.d.a/tts?hash=${btoa(encodeURIComponent(textToSpeak + (await _getVoice()) + (await _getLang())))}`;
+      const cache = await caches.open('panda-tts-v1');
+      const cachedRes = await cache.match(cacheKey);
+      
+      let result;
+      if (cachedRes) {
+        result = await cachedRes.json();
+      } else {
+        const response = await fetch('/api/coach/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            text: textToSpeak,
+            customKey: await (await import('./db.js')).DB.Settings.get('gemini-key'),
+            language: await _getLang(),
+            voice: await _getVoice()
+          })
+        });
+        result = await response.json();
+        if (response.ok && !result.fallback) {
+          await cache.put(cacheKey, new Response(JSON.stringify(result)));
+        } else if (!response.ok || result.fallback) {
+          throw new Error(result.error || 'Voice sync failed, falling back to native');
+        }
       }
 
       const pcmData = result.audioBase64;
@@ -759,8 +821,8 @@ export const IntelView = (() => {
          body: JSON.stringify({ 
            workouts: recentWorkouts, 
            profile, 
-           engine: 'gemini',
-           customKey: (await DB.Settings.get('gemini-key')) || undefined
+           engine: await _getEngine(),
+           customKey: (await DB.Settings.get(`${await _getEngine()}-key`)) || undefined
          })
        });
 
@@ -949,6 +1011,7 @@ export const IntelView = (() => {
   async function openSettings() {
     const lang = await _getLang();
     const voice = await _getVoice();
+    const tone = await _getTone();
     
     const overlay = document.createElement('div');
     overlay.className = 'intel-overlay animate-in fade-in duration-500';
@@ -976,6 +1039,19 @@ export const IntelView = (() => {
             <button class="intel-set-btn-voice" data-val="Puck" style="padding:16px; border-radius:16px; border:1px solid ${voice === 'Puck' ? 'var(--c-intel)' : 'color-mix(in srgb, var(--c-border) 40%, transparent)'}; background:${voice === 'Puck' ? 'color-mix(in srgb, var(--c-intel) 12%, transparent)' : 'color-mix(in srgb, var(--c-surface) 40%, transparent)'}; color:var(--c-text-1); cursor:pointer; text-align:left; font-weight:var(--fw-md); transition:all 0.2s;">Puck <span style="opacity:0.5; font-size:var(--fs-1); float:right; line-height:1.5;">Normal / Обычный</span></button>
             <button class="intel-set-btn-voice" data-val="Fenrir" style="padding:16px; border-radius:16px; border:1px solid ${voice === 'Fenrir' ? 'var(--c-intel)' : 'color-mix(in srgb, var(--c-border) 40%, transparent)'}; background:${voice === 'Fenrir' ? 'color-mix(in srgb, var(--c-intel) 12%, transparent)' : 'color-mix(in srgb, var(--c-surface) 40%, transparent)'}; color:var(--c-text-1); cursor:pointer; text-align:left; font-weight:var(--fw-md); transition:all 0.2s;">Fenrir <span style="opacity:0.5; font-size:var(--fs-1); float:right; line-height:1.5;">Stern / Грубый</span></button>
             <button class="intel-set-btn-voice" data-val="Aoede" style="padding:16px; border-radius:16px; border:1px solid ${voice === 'Aoede' ? 'var(--c-intel)' : 'color-mix(in srgb, var(--c-border) 40%, transparent)'}; background:${voice === 'Aoede' ? 'color-mix(in srgb, var(--c-intel) 12%, transparent)' : 'color-mix(in srgb, var(--c-surface) 40%, transparent)'}; color:var(--c-text-1); cursor:pointer; text-align:left; font-weight:var(--fw-md); transition:all 0.2s;">Aoede <span style="opacity:0.5; font-size:var(--fs-1); float:right; line-height:1.5;">Soft / Мягкий</span></button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:32px;">
+          <label style="display:flex; justify-content:space-between; color:var(--c-text-3); font-size:var(--fs-1); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px; font-weight:var(--fw-bold);">
+            <span>Coach Persona (Tone)</span>
+            <span id="intel-tone-val" style="color:var(--c-intel)">${tone}</span>
+          </label>
+          <input type="range" id="intel-tone-slider" min="0" max="100" value="${tone}" style="width:100%; cursor:pointer; accent-color:var(--c-intel);">
+          <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:10px; color:var(--c-text-3); text-transform:uppercase; font-weight:var(--fw-bold);">
+            <span>Therapist</span>
+            <span>Neutral</span>
+            <span>Goggins</span>
           </div>
         </div>
         
@@ -1008,10 +1084,18 @@ export const IntelView = (() => {
       });
     });
     
+    let selectedTone = tone;
+    
+    overlay.querySelector('#intel-tone-slider').addEventListener('input', (e) => {
+      selectedTone = parseInt(e.target.value, 10);
+      overlay.querySelector('#intel-tone-val').textContent = selectedTone;
+    });
+
     overlay.querySelector('#intel-save-settings').addEventListener('click', async () => {
       const { DB } = await import('./db.js');
       await DB.Settings.set('intel-lang', selectedLang);
       await DB.Settings.set('intel-voice', selectedVoice);
+      await DB.Settings.set('intel-tone', selectedTone);
       if (document.startViewTransition) document.startViewTransition(() => overlay.remove());
       else overlay.remove();
       load(); // Reload UI to apply language
