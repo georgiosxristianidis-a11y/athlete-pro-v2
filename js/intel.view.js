@@ -207,14 +207,6 @@ export const IntelView = (() => {
 
         <div id="intel-vision-preview-wrap"></div>
 
-        <div class="intel-logs">
-          <div class="intel-logs-header">
-            <h3 class="intel-logs-title">STREAMING_LOGS</h3>
-            <span class="intel-logs-status" id="intel-logs-status-pill" data-action="intel:stopAudio" style="cursor:pointer;" title="Click to Stop Audio">${d.sys}</span>
-          </div>
-          <div id="intel-logs-container"></div>
-        </div>
-
         <div class="intel-modules-grid">
           <button class="intel-module-card" data-action="intel:weekly">
             <div class="intel-module-icon" style="background:color-mix(in srgb, var(--c-intel) 15%, transparent); color:var(--c-intel)">
@@ -241,6 +233,14 @@ export const IntelView = (() => {
             <span class="intel-module-label">${d.biometrics}</span>
           </button>
         </div>
+      </div>
+
+      <div class="intel-logs" onclick="this.classList.toggle('expanded')">
+        <div class="intel-logs-header">
+          <h3 class="intel-logs-title">STREAMING_LOGS</h3>
+          <span class="intel-logs-status" id="intel-logs-status-pill" data-action="intel:stopAudio" style="cursor:pointer;" title="Click to Stop Audio">${d.sys}</span>
+        </div>
+        <div id="intel-logs-container"></div>
       </div>
 
       <div class="intel-cmd-wrap">
