@@ -144,6 +144,7 @@ export const DB = {
   Workouts, OneRM, Metrics, Settings, Events, NutritionLogs, PlannedWorkouts, Backup,
   clearAll, openDB, newId, getDeviceId, withMeta,
   _getRaw: (store, id) => tx(store).then(s => req2p(s.get(id))),
+  _getAllRaw: (store) => tx(store).then(s => req2p(s.getAll())),
   // Raw writes for the sync pull path — plain put/delete with NO _triggerSync, so
   // applying a remote-won record locally never re-queues an upstream push (no echo).
   _putRaw: (store, row) => tx(store, 'readwrite').then(s => req2pSafe(s.put(row), s.transaction)),

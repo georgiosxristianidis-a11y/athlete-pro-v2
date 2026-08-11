@@ -18,6 +18,7 @@ import { Integrity } from './shared/integrity.js';
 import { initLocale } from './locale.store.js';
 import { haptic } from './shared/utils.js';
 import { State } from './workout.store.js';
+import { runSync } from './sync.js';
 import { VERSION } from './version.js';
 import { forceUpdate } from './shared/sw-update.js';
 import { applyTheme, watchSystemTheme } from './shared/theme.js';
@@ -503,3 +504,8 @@ window.addEventListener('scroll', () => {
     document.body.classList.remove('is-scrolling');
   }, 150);
 }, { passive: true, capture: true });
+
+/* ── P.A.N.D.A Sync Init ── */
+setTimeout(() => {
+  runSync().catch(e => console.error('Initial sync failed', e));
+}, 2000);

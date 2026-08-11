@@ -11,6 +11,7 @@ import { correlationMiddleware, logWarn } from './lib/logger.js';
 
 import coachRouter from './routes/coach.js';
 import integrationsRouter from './routes/integrations.js';
+import syncRouter from './routes/sync.js';
 import { errorMiddleware } from './lib/errors.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -89,6 +90,7 @@ app.use('/api/', globalApiLimiter);
 // ── API Routes (Prioritized)
 app.use('/api/coach', coachRouter);
 app.use('/api', integrationsRouter);
+app.use('/api/sync', syncRouter);
 
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
