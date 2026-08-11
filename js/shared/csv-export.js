@@ -7,7 +7,7 @@ import { downloadText } from './download.js';
  * @returns {string}
  */
 export function workoutsToCsv(workouts) {
-  const header = ['Date', 'Type', 'Duration (min)', 'Tonnage (kg)', 'Exercise', 'Set', 'Weight (kg)', 'Reps', 'RPE'].join(',');
+  const header = ['Date', 'Type', 'Duration (min)', 'Tonnage (kg)', 'Exercise', 'Tag', 'Set', 'Weight (kg)', 'Reps', 'RPE'].join(',');
   const rows = [];
 
   workouts.forEach(w => {
@@ -20,6 +20,7 @@ export function workoutsToCsv(workouts) {
           Math.round((w.duration || 0) / 60000),
           w.tonnage,
           `"${ex.name.replace(/"/g, '""')}"`,
+          ex.tag ? `"${ex.tag.replace(/"/g, '""')}"` : '',
           idx + 1,
           set.weight,
           set.reps,

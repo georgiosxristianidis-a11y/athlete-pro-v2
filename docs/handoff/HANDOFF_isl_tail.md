@@ -1,12 +1,12 @@
 # HANDOFF — остров: хвосты + Sonnet-задачи
 
-> Обновлено 2026-08-09 (ABBR-1 закрыта целиком, 1.27.42). Формат карточек: ЦЕЛЬ / ГДЕ СТОП / НЕ ТРОГАТЬ. 1 карточка = 1 сессия.
+> Обновлено 2026-08-09 (ABBR-1 + допрасширение на TXT/CSV-экспорт, 1.27.43). Формат карточек: ЦЕЛЬ / ГДЕ СТОП / НЕ ТРОГАТЬ. 1 карточка = 1 сессия.
 > **Островная программа L1-L4 закрыта целиком и НА ПРОДЕ (релиз 1.24.2, SW v108):** L1 хвост влит (1.23.0) · L2 GESTURE-MERGE (профили Minimal-DHL/Apple, long-press → `s-island-settings`) · L3 airgap-точка нейтральная через `deriveDotState` · L4 GESTURE-UNIFY (PrivacyRapid выпилен, long-press 450мс → настройки во всех режимах). Баг A (0kg-сид) закрыт гардом `canCompleteSet`; ISL-CHROME-LAW — трекер хром в обоих профилях.
 > Стейл-дубли выпилены 2026-07-17: S2 (тест add-set уже в `test/drum-picker.test.js`, BUG-7) · S3 (Q2 PII закрыта `45d20ad`) · S4 (= карточка 4d/BACKUP, забирает LEAD).
 
 ---
 
-## ✅ ABBR-1 · Сокращения имён в Island — ЗАКРЫТА ЦЕЛИКОМ (1.27.42)
+## ✅ ABBR-1 · Сокращения имён в Island — ЗАКРЫТА ЦЕЛИКОМ (1.27.43, вкл. допрасширение на экспорт)
 
 **Контекст:** `js/shared/exercise-shorthand.js` (DOM-free, паттерн `sync-dot.js`) — два независимых механизма отображения, оба Island-only, оба не трогают `ex.name`/`alias`/историю весов:
 - `shortenExerciseName(name)` + `SHORT_WORDS` — автословарь (`dumbbell→DB`, `barbell→BB`, ...), пословный regex.
@@ -19,7 +19,16 @@ Gio решил: `barbell` остаётся `BB`, `BR` не добавляем. `
 Gio решил: только Island, поле прямо в объекте упражнения плана.
 **Что внутри:** `ex.tag` — новое опциональное поле в `plan[type][i]` (localStorage `ap-custom-plan-A/B`). Edit Plan: инпут `.plan-tag-input` в каждой строке (`js/workout.view/modals.js`), `_updatePlanTag(type, i, val)` — пустая строка удаляет ключ, а не пишет `''`. Прокинуто через все 3 места ручной прошивки фасада `window.Workout` (см. `reference-workout-facade-manual-wiring.md`). `buildSession()` (`js/workout.store.js`) переносит `tag` из определения плана в live-сессию условным спредом (`...(ex.tag ? {tag: ex.tag} : {})`) — без этого шага Island тег никогда бы не увидел, т.к. читает `State.plan`, не сырой план.
 **Проверено живьём** (preview, DOM-инспекция): тег сохраняется в `localStorage` без искажения `name`/`alias`; Train-карточка и `muscle-badge` показывают полное имя (тег их не касается); Island (`di-name`/`di-name-collapsed`/`di-min-label`/`di-sublabel`) переключается на тег для текущего и следующего упражнения.
-**Тесты:** `test/plan-tag.test.js` (проброс/очистка тега через `buildSession`, `name`/`alias` не трогаются) + `islandLabel` в `test/exercise-shorthand.test.js`. `npm test` 658/658.
+**Тесты:** `test/plan-tag.test.js` (проброс/очистка тега через `buildSession`, `name`/`alias` не трогаются) + `islandLabel` в `test/exercise-shorthand.test.js`.
+
+### Допрасширение · тег в TXT/CSV-экспорте ✅ (влито 1.27.43)
+Gio захотел тег и в экспорте истории — PDF в проекте не существует (нет такого формата вообще), реализовано для TXT и CSV.
+**Что внутри:** `_persistFinalSession` (`js/workout.view/handlers.js`) — та же ловушка, что `buildSession()`: пишет в `DB.Workouts` по явному вайтлисту полей, `tag` туда не попадал бы без прямой правки (условный спред `...(ex.tag ? {tag: ex.tag} : {})`). Без этого шага исправление в `txt-export.js`/`csv-export.js` было бы мертворождённым — экспорт читает `DB.Workouts`, не `State.plan`.
+- **TXT** (`js/shared/txt-export.js`): тег сопровождает имя, не заменяет его — `Incline DB Press · DBI  (3 sets)`. Читатель TXT — потенциально тренер, ему нужно полное имя; тег — просто пометка рядом (в отличие от Island, где тег ЗАМЕНЯЕТ имя из-за нехватки места).
+- **CSV** (`js/shared/csv-export.js`): отдельная колонка `Tag` после `Exercise`, а не склейка в одну ячейку — структурированный формат, колонку можно фильтровать/группировать отдельно.
+**Проверено живьём:** полный путь Edit Plan → live-сессия → Complete Session → Save Session → `DB.Workouts` → `workoutsToTxt`/`workoutsToCsv`, вызванные прямо в браузере на реальных сохранённых данных. `tag: "DBI"` доехал до IndexedDB, TXT дал `Incline DB Press · DBI  (3 sets)`, CSV — `"Incline DB Press","DBI",1,0,10,`.
+**Тесты:** `test/csv-export.test.js` (новый файл, экспорта раньше не тестировали) + 2 теста в `test/txt-export.test.js`.
+`npm test` 663/663.
 
 ## 🔵 SONNET (4.6/5) — scoped тесты · рефактор по спеку
 
