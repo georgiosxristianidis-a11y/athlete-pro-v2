@@ -55,6 +55,23 @@ describe('workoutsToTxt', () => {
     assert.match(txt, /\(2 подхода\)/, 'в счёт идут только выполненные');
   });
 
+  // ABBR-1 доп.: Edit Plan tag сопровождает имя, не заменяет его — в TXT
+  // читатель (тренер) не обязан знать личные сокращения атлета.
+  test('tag печатается рядом с именем, не вместо него', () => {
+    const tagged = [{
+      type: 'push', timestamp: Date.UTC(2026, 6, 30, 9, 0), duration: 60 * 60000, tonnage: 100,
+      exercises: [{ name: 'Incline DB Press', tag: 'DBI', sets: [{ weight: 20, reps: 10, done: true }] }],
+    }];
+    const txt = workoutsToTxt(tagged, { lang: 'en', now: NOW });
+    assert.match(txt, /Incline DB Press · DBI {2}\(1 set\)/);
+  });
+
+  test('без tag — имя печатается как раньше, без "· "', () => {
+    const txt = workoutsToTxt(W, { lang: 'ru', now: NOW });
+    assert.match(txt, /Жим лёжа {2}\(2 подхода\)/);
+    assert.ok(!txt.includes('Жим лёжа ·'));
+  });
+
   test('RPE печатается только когда он есть', () => {
     const txt = workoutsToTxt(W, { lang: 'ru', now: NOW });
     assert.match(txt, /80 кг × 8 {2}RPE 8/);

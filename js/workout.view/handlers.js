@@ -457,6 +457,10 @@ async function _persistFinalSession(summaryData, duration) {
         block: ex.block || null,
         isAdded: !!ex.isAdded,
         custom: !!ex.custom,
+        // ABBR-1 п.2 доп.: тег теперь виден и в TXT/CSV-экспорте, значит
+        // должен пережить сессию в истории — иначе экспорт (читает
+        // DB.Workouts, не State.plan) его никогда не увидит.
+        ...(ex.tag ? { tag: ex.tag } : {}),
         sets: ex.sets.map((s) => ({
           weight: s.weight,
           reps: s.reps,

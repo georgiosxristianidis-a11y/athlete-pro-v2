@@ -218,7 +218,8 @@ export function workoutsToTxt(workouts, { lang = 'en', now = new Date(), athlete
 
     for (const ex of performed) {
       const n = _doneCount(ex);
-      lines.push(`  ${ex?.name || '—'}  (${n} ${_plural(n, d.sets, lang)})`);
+      const label = ex?.tag ? `${ex?.name || '—'} · ${ex.tag}` : (ex?.name || '—');
+      lines.push(`  ${label}  (${n} ${_plural(n, d.sets, lang)})`);
       _sets(ex).forEach((s, i) => {
         if (s?.done === false) {
           lines.push(`    ${i + 1}. — ${d.skipped}`);
