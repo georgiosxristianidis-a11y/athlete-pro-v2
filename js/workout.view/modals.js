@@ -12,6 +12,7 @@ import { on, onChange, onInput } from '../events.js';
 
 const W = () => window.Workout;
 onChange('wo:planName',  (el, e) => W()._updatePlanName(el.dataset.type, +el.dataset.pi, e.target.value));
+onChange('wo:planTag',   (el, e) => W()._updatePlanTag(el.dataset.type, +el.dataset.pi, e.target.value));
 on('wo:planAdjust',      (el) => W()._adjustPlan(el.dataset.type, +el.dataset.pi, el.dataset.field, +el.dataset.delta));
 on('wo:planDelete',      (el) => W()._deletePlanEx(el.dataset.type, +el.dataset.pi));
 on('wo:planAddEx',       (el) => W()._addPlanEx(el.dataset.type));
@@ -83,6 +84,10 @@ export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
       <input class="plan-input" value="${esc(ex.name)}"
         data-change="wo:planName" data-type="${type}" data-pi="${originalIndex}">
       <div class="plan-row-meta">
+        <span class="plan-meta-label">Tag</span>
+        <input class="plan-tag-input" value="${esc(ex.tag || '')}" placeholder="—" maxlength="8"
+          title="Island-only display override — name/history untouched"
+          data-change="wo:planTag" data-type="${type}" data-pi="${originalIndex}">
         <span class="plan-meta-label">Sets</span>
         <div class="mini-stepper">
           <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="sets" data-delta="-1" aria-label="Decrease sets">${svgArrow('minus')}</button>
@@ -315,6 +320,19 @@ export function _updatePlanName(type, i, val) {
   const w = _planEditorActiveWeek();
   const plan = loadPlan(w);
   plan[type][i].name = val.trim() || plan[type][i].name;
+  savePlan(plan, w);
+}
+
+/**
+ * ABBR-1 п.2 — user-set display override, Island-only (see islandLabel()).
+ * Never touches ex.name/alias, so it carries no history-lookup meaning.
+ */
+export function _updatePlanTag(type, i, val) {
+  const w = _planEditorActiveWeek();
+  const plan = loadPlan(w);
+  const trimmed = val.trim();
+  if (trimmed) plan[type][i].tag = trimmed;
+  else delete plan[type][i].tag;
   savePlan(plan, w);
 }
 

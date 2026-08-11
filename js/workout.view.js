@@ -16,7 +16,7 @@ import { initDragNumbers } from './ui/drag-number.js';
 
 import {
   openPlanEditor, _switchPlanTab, _switchPlanWeek, _setPlanSearch, _loadPreset,
-  _closePlanEditor, toggleChecklist, _savePlanAndClose, _updatePlanName, _adjustPlan,
+  _closePlanEditor, toggleChecklist, _savePlanAndClose, _updatePlanName, _updatePlanTag, _adjustPlan,
   _addPlanEx, _deletePlanEx, openExercisePickerModal, openReplaceExModal,
 } from './workout.view/modals.js';
 
@@ -87,6 +87,7 @@ export const Workout = {
   _switchPlanWeek,
   _setPlanSearch,
   _updatePlanName,
+  _updatePlanTag,
   _adjustPlan,
   _addPlanEx,
   _deletePlanEx,
@@ -137,7 +138,7 @@ export {
   renderSelect, renderActive, renderExerciseCard, renderSetRow, renderFocusMode,
   initDragNumbers,
   openPlanEditor, _switchPlanTab, _switchPlanWeek, _setPlanSearch, _loadPreset,
-  _closePlanEditor, toggleChecklist, _savePlanAndClose, _updatePlanName, _adjustPlan,
+  _closePlanEditor, toggleChecklist, _savePlanAndClose, _updatePlanName, _updatePlanTag, _adjustPlan,
   _addPlanEx, _deletePlanEx, openExercisePickerModal, openReplaceExModal,
   selectType, stepWeight, stepReps, editVal, commitVal, setRPE, toggleSet, toggleCard,
   openCustomWorkoutModal, showExerciseMenu, _createNewCustomWorkout, _editCustomWorkout, _deleteCustomWorkout,

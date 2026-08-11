@@ -1135,6 +1135,22 @@ button:focus-visible {
   transition: border-color var(--t-fast);
 }
 .plan-input:focus { outline: none; border-color: var(--c-border-h); }
+.plan-tag-input {
+  width: 52px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-s);
+  padding: 6px 8px;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  color: var(--c-text-1);
+  font-family: inherit;
+  box-sizing: border-box;
+  text-align: center;
+  transition: border-color var(--t-fast);
+}
+.plan-tag-input:focus { outline: none; border-color: var(--c-border-h); }
 .plan-row-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .plan-meta-label {
   font-size: var(--fs-1);

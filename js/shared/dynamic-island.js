@@ -11,7 +11,7 @@ import { deriveDotState } from './sync-dot.js';
 import { on } from '../events.js';
 import { flag } from '../flags.js';
 import { getIslandProfile } from '../island-profile.store.js';
-import { shortenExerciseName } from './exercise-shorthand.js';
+import { islandLabel } from './exercise-shorthand.js';
 
 /** Active island layout profile. Flag off → always the proven Apple path. */
 function activeProfile() {
@@ -313,7 +313,7 @@ export const DynamicIsland = (() => {
     let activeIdx = State.plan.findIndex(ex => ex.sets.some(s => !s.done));
     if (activeIdx === -1) activeIdx = State.plan.length - 1;
     const currentEx = State.plan[activeIdx];
-    if (_nameEl) _nameEl.textContent = currentEx ? currentEx.name : '';
+    if (_nameEl) _nameEl.textContent = islandLabel(currentEx);
 
     // Per-exercise set progress — what the lifter tracks (e.g. 3/3), not the
     // whole-session count. The overall session % stays on the bottom progress bar.
@@ -330,7 +330,7 @@ export const DynamicIsland = (() => {
     // Exercise name (clean — sets are NOT appended here; the badge owns them,
     // avoids the old "Bench - 2/3 … 2/3" double print).
     if (_nameCollapsedEl) {
-      _nameCollapsedEl.textContent = currentEx ? currentEx.name : '';
+      _nameCollapsedEl.textContent = islandLabel(currentEx);
     }
     if (_setsEl) {
       _setsEl.textContent = setsLabel;
@@ -346,7 +346,7 @@ export const DynamicIsland = (() => {
     // header underneath (field feedback 2026-07-08: info overload in the
     // expanded island); the screen owns context, the island owns "what's next".
     const nextEx = State.plan[activeIdx + 1];
-    const status = nextEx ? `${ru ? 'далее' : 'next'}: ${nextEx.name}` : (ru ? 'готово!' : 'complete!');
+    const status = nextEx ? `${ru ? 'далее' : 'next'}: ${islandLabel(nextEx)}` : (ru ? 'готово!' : 'complete!');
     _statusText = status;
     if (_sublabelEl) {
       // say() временно перебивает «далее: X» — иначе любой update() затирал бы
@@ -391,7 +391,7 @@ export const DynamicIsland = (() => {
         // (abbreviated — field feedback 2026-07-31: chamber phase alone
         // wasn't actionable, "what am I doing right now" is). Sets badge
         // mirrors the dot on the opposite side of the strip.
-        _minLabelEl.textContent = currentEx ? shortenExerciseName(currentEx.name) : '';
+        _minLabelEl.textContent = islandLabel(currentEx, { compact: true });
         if (_minSetsEl) {
           _minSetsEl.textContent = setsLabel;
           _minSetsEl.style.color = _getSetsColor(exDone, exTotal);
@@ -423,9 +423,9 @@ export const DynamicIsland = (() => {
     if (!_timerActive) {
       PiP.drawFrame({
         time: Timer.fmt(Timer.seconds()),
-        name: currentEx ? currentEx.name : 'Workout',
+        name: currentEx ? islandLabel(currentEx) : 'Workout',
         sets: setsLabel,
-        nextName: nextEx ? nextEx.name : ''
+        nextName: islandLabel(nextEx)
       });
     }
   }
@@ -445,7 +445,7 @@ export const DynamicIsland = (() => {
     // mid-rest, and update() deliberately skips re-renders while _timerActive.
     if (starting && _restNextEl) {
       const nx = State.plan?.find(ex => ex.sets.some(s => !s.done));
-      _restNextEl.textContent = nx ? `${isRu() ? 'далее' : 'next'}: ${nx.name}` : '';
+      _restNextEl.textContent = nx ? `${isRu() ? 'далее' : 'next'}: ${islandLabel(nx)}` : '';
       // Only a pill that actually carries the caption gets the wide layout.
       _island?.classList.toggle('rest-has-next', !!nx);
     }
