@@ -654,7 +654,6 @@ export const IntelView = (() => {
       IntelStore.addLog('AI', 'Insight received.');
       IntelStore.setStatus('SYSTEM STANDBY');
       _pendingImage = null;
-      _abortController = null;
       _clearModuleLoaders();
 
       const composer = document.getElementById('intel-composer');
