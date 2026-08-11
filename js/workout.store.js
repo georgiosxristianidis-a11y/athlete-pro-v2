@@ -747,6 +747,10 @@ export function buildSession(type, opts = {}) {
       isBW: ex.isBW || false,
       isUnilateral: ex.isUnilateral || false,
       autoBumped: bumped,
+      // ABBR-1 п.2: display-only override для Island (Edit Plan → tag), не
+      // трогает name/alias/историю — тот же контракт, что и alias, но
+      // наоборот: alias только для поиска, tag только для показа.
+      ...(ex.tag ? { tag: ex.tag } : {}),
       sets: Array.from({ length: ex.sets }, () => ({
         weight: autoProgress ? weight : (workouts.length ? weight : ex.weight),
         reps: ex.reps,

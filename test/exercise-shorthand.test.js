@@ -4,7 +4,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SHORT_WORDS, shortenExerciseName } from '../js/shared/exercise-shorthand.js';
+import { SHORT_WORDS, shortenExerciseName, islandLabel } from '../js/shared/exercise-shorthand.js';
 
 test('shortens every configured equipment word, case-insensitively', () => {
   assert.equal(shortenExerciseName('Incline Dumbbell Press'), 'Incline DB Press');
@@ -49,4 +49,21 @@ test('every PPL_GIO_PLAN / PPL_HYBRID_PLAN exercise resolves to a stable, determ
 
 test('SHORT_WORDS keeps "barbell" mapped to BB (Gio decision 2026-08-09, ABBR-1: no BR)', () => {
   assert.equal(SHORT_WORDS.barbell, 'BB');
+});
+
+// ABBR-1 п.2 — manual per-exercise tag (Edit Plan), Island-only override.
+test('islandLabel: manual tag wins over name, compact or not', () => {
+  assert.equal(islandLabel({ name: 'Incline Dumbbell Press', tag: 'DB' }), 'DB');
+  assert.equal(islandLabel({ name: 'Incline Dumbbell Press', tag: 'DB' }, { compact: true }), 'DB');
+});
+
+test('islandLabel: no tag falls back to raw name (non-compact) or shortened name (compact)', () => {
+  assert.equal(islandLabel({ name: 'Incline Dumbbell Press' }), 'Incline Dumbbell Press');
+  assert.equal(islandLabel({ name: 'Incline Dumbbell Press' }, { compact: true }), 'Incline DB Press');
+});
+
+test('islandLabel: handles missing/undefined exercise without throwing', () => {
+  assert.equal(islandLabel(null), '');
+  assert.equal(islandLabel(undefined), '');
+  assert.equal(islandLabel({}), '');
 });

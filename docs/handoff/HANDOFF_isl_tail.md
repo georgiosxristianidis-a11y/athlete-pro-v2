@@ -1,24 +1,25 @@
 # HANDOFF — остров: хвосты + Sonnet-задачи
 
-> Обновлено 2026-08-09 (ABBR-1 пункт 1 закрыт, 1.27.41). Формат карточек: ЦЕЛЬ / ГДЕ СТОП / НЕ ТРОГАТЬ. 1 карточка = 1 сессия.
+> Обновлено 2026-08-09 (ABBR-1 закрыта целиком, 1.27.42). Формат карточек: ЦЕЛЬ / ГДЕ СТОП / НЕ ТРОГАТЬ. 1 карточка = 1 сессия.
 > **Островная программа L1-L4 закрыта целиком и НА ПРОДЕ (релиз 1.24.2, SW v108):** L1 хвост влит (1.23.0) · L2 GESTURE-MERGE (профили Minimal-DHL/Apple, long-press → `s-island-settings`) · L3 airgap-точка нейтральная через `deriveDotState` · L4 GESTURE-UNIFY (PrivacyRapid выпилен, long-press 450мс → настройки во всех режимах). Баг A (0kg-сид) закрыт гардом `canCompleteSet`; ISL-CHROME-LAW — трекер хром в обоих профилях.
 > Стейл-дубли выпилены 2026-07-17: S2 (тест add-set уже в `test/drum-picker.test.js`, BUG-7) · S3 (Q2 PII закрыта `45d20ad`) · S4 (= карточка 4d/BACKUP, забирает LEAD).
 
 ---
 
-## 🟡 ABBR-1 · Сокращения имён в Island
+## ✅ ABBR-1 · Сокращения имён в Island — ЗАКРЫТА ЦЕЛИКОМ (1.27.42)
 
-**Контекст (не переоткрывать):** словарь `SHORT_WORDS` + `shortenExerciseName(name)` — чистый regex-transform на рендере (`\b(dumbbell|barbell|machine|kettlebell|overhead)\b`), не трогает `ex.name`/`alias`/историю весов. Применяется в компакт-полоске minimal-профиля (`di-min-label`), не в развёрнутой карточке и не в Train-карточках.
+**Контекст:** `js/shared/exercise-shorthand.js` (DOM-free, паттерн `sync-dot.js`) — два независимых механизма отображения, оба Island-only, оба не трогают `ex.name`/`alias`/историю весов:
+- `shortenExerciseName(name)` + `SHORT_WORDS` — автословарь (`dumbbell→DB`, `barbell→BB`, ...), пословный regex.
+- `islandLabel(ex, {compact})` — единая точка выбора лейбла: ручной `ex.tag` > (compact: автословарь) > сырое имя. Используется во ВСЕХ текстовых местах `dynamic-island.js` (expanded/collapsed name, compact-полоска, sublabel «далее: X», rest-HUD «далее: X», PiP canvas).
 
-### Пункт 1 · Автословарь ✅ ЗАКРЫТ (1.27.41)
-Gio решил: `barbell` остаётся `'BB'`, `BR` не добавляем — конфликт снят простым отказом от второго значения.
-**Что внутри:** `shortenExerciseName`/`SHORT_WORDS` вынесены из `js/shared/dynamic-island.js` в новый DOM-free `js/shared/exercise-shorthand.js` (тот же паттерн, что `sync-dot.js` — "остров тянет canvas/PiP/store, что не грузится под node --test"), `dynamic-island.js` импортирует оттуда. Регресс-гард `test/exercise-shorthand.test.js`: пословный матч по всем `SHORT_WORDS`, регистронезависимость, границы слова (не режет подстроки), идемпотентность на каждом имени из `PPL_GIO_PLAN`/`PPL_HYBRID_PLAN`, плюс явный тест-заморозка `barbell → BB` (чтобы будущая правка на `BR` не проехала молча). `npm test` 651/651, `npm run build:sw` пустой на повторном прогоне.
+### Пункт 1 · Автословарь ✅ (влито 1.27.41, PR#180)
+Gio решил: `barbell` остаётся `BB`, `BR` не добавляем. `test/exercise-shorthand.test.js` — словарь, границы слов, идемпотентность по всем именам обоих планов.
 
-### Пункт 2 · Ручной тег per-exercise 🟡 НЕ взята — открытые вопросы за Gio
-В Edit Plan — поле кастомного лейбла на упражнение, отдельное от `name`, не ломающее историю (по духу как `alias`, но `alias` для истории, а это поле только для отображения). Нужны решения ДО кода:
-(а) где хранить — новое поле в объекте упражнения плана (`ap-custom-plan-A/B`, через `savePlan`)?
-(б) где показывать — только Island или везде (Train-карточки, PDF/TXT-экспорт, коуч)?
-**НЕ ТРОГАТЬ:** `ex.name`, `alias`, `resolveMuscleGroup`/`MUSCLE_GROUP_OVERRIDES` (workout.store.js) — соседний, недавно закрытый механизм для группы мышц, сюда отношения не имеет.
+### Пункт 2 · Ручной тег per-exercise ✅ (влито 1.27.42)
+Gio решил: только Island, поле прямо в объекте упражнения плана.
+**Что внутри:** `ex.tag` — новое опциональное поле в `plan[type][i]` (localStorage `ap-custom-plan-A/B`). Edit Plan: инпут `.plan-tag-input` в каждой строке (`js/workout.view/modals.js`), `_updatePlanTag(type, i, val)` — пустая строка удаляет ключ, а не пишет `''`. Прокинуто через все 3 места ручной прошивки фасада `window.Workout` (см. `reference-workout-facade-manual-wiring.md`). `buildSession()` (`js/workout.store.js`) переносит `tag` из определения плана в live-сессию условным спредом (`...(ex.tag ? {tag: ex.tag} : {})`) — без этого шага Island тег никогда бы не увидел, т.к. читает `State.plan`, не сырой план.
+**Проверено живьём** (preview, DOM-инспекция): тег сохраняется в `localStorage` без искажения `name`/`alias`; Train-карточка и `muscle-badge` показывают полное имя (тег их не касается); Island (`di-name`/`di-name-collapsed`/`di-min-label`/`di-sublabel`) переключается на тег для текущего и следующего упражнения.
+**Тесты:** `test/plan-tag.test.js` (проброс/очистка тега через `buildSession`, `name`/`alias` не трогаются) + `islandLabel` в `test/exercise-shorthand.test.js`. `npm test` 658/658.
 
 ## 🔵 SONNET (4.6/5) — scoped тесты · рефактор по спеку
 
