@@ -599,7 +599,6 @@ export const IntelView = (() => {
               try {
                 const parsed = JSON.parse(data);
                 if (parsed.text) {
-                  haptic(2);
                   fullText += parsed.text;
                   if (feedbackText) {
                     let renderText = fullText;

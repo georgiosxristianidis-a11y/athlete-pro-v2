@@ -7,6 +7,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { S, newId, getDeviceId, withMeta, openDB, tx, req2p, req2pSafe, _triggerSync } from './db/core.js';
+import { hlcNow, hlcReceive, hlcCompare } from './shared/hlc.js';
 import { Settings } from './db/settings.js';
 import { OneRM } from './db/onerm.js';
 import { Metrics } from './db/metrics.js';
@@ -16,7 +17,7 @@ import { PlannedWorkouts } from './db/planned.js';
 import { Workouts } from './db/workouts.js';
 import { Backup } from './db/backup.js';
 
-export { newId, getDeviceId, withMeta, openDB };
+export { newId, getDeviceId, withMeta, openDB, hlcNow, hlcReceive, hlcCompare };
 
 /* ── Type definitions ── */
 /**
@@ -142,7 +143,7 @@ async function clearAll() {
 /* ── Public API ── */
 export const DB = {
   Workouts, OneRM, Metrics, Settings, Events, NutritionLogs, PlannedWorkouts, Backup,
-  clearAll, openDB, newId, getDeviceId, withMeta,
+  clearAll, openDB, newId, getDeviceId, withMeta, hlcNow, hlcReceive, hlcCompare,
   _getRaw: (store, id) => tx(store).then(s => req2p(s.get(id))),
   _getAllRaw: (store) => tx(store).then(s => req2p(s.getAll())),
   // Raw writes for the sync pull path — plain put/delete with NO _triggerSync, so
@@ -150,6 +151,8 @@ export const DB = {
   _putRaw: (store, row) => tx(store, 'readwrite').then(s => req2pSafe(s.put(row), s.transaction)),
   _delRaw: (store, id) => tx(store, 'readwrite').then(s => {
     const keyField = (store === 'settings') ? 'key' : 'id';
-    return req2pSafe(s.put({ [keyField]: id, _deleted: true, updatedAt: Date.now(), deviceId: getDeviceId() }), s.transaction);
+    const deviceId = getDeviceId();
+    const hlc = hlcNow(deviceId);
+    return req2pSafe(s.put({ [keyField]: id, _deleted: true, hlc, updatedAt: hlc.l, deviceId }), s.transaction);
   }),
 };

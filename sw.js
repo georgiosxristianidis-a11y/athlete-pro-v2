@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-a6a09b84';
+const CACHE_NAME = 'athlete-pro-v121-f87a21f8';
 
 const ASSETS = [
   '/index.html',
@@ -67,6 +67,7 @@ const ASSETS = [
   '/js/shared/dynamic-island.js',
   '/js/shared/errors-ui.js',
   '/js/shared/format.js',
+  '/js/shared/hlc.js',
   '/js/shared/integrity.js',
   '/js/shared/island-tracker.js',
   '/js/shared/lazy-css.js',

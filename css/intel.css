@@ -208,11 +208,14 @@
 
 .intel-heat-bar {
   height: 100%;
-  width: calc(var(--heat-val, 0) * 100%);
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(var(--heat-val, 0));
   background: linear-gradient(90deg, #5b8def, #ff4d88);
   box-shadow: 0 0 8px currentColor;
   border-radius: 2px;
-  transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s linear;
+  will-change: transform;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s linear;
 }
 
 .intel-cmd-bar {

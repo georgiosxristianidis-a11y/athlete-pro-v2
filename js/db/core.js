@@ -7,6 +7,8 @@
    existing public API (DB.*) — no caller changes.
    ════════════════════════════════════════════════════════ */
 
+import { hlcNow } from '../shared/hlc.js';
+
 const DB_NAME = 'athlete-pro';
 const DB_VERSION = 4;
 
@@ -45,11 +47,13 @@ export function getDeviceId() {
 }
 
 /** Stamp a record with CRDT metadata before writing.
-    Keeps an existing id (legacy integer or UUID); always refreshes updatedAt. */
+    Keeps an existing id (legacy integer or UUID); updates HLC timestamp and updatedAt. */
 export function withMeta(record) {
   if (record.id === undefined || record.id === null) record.id = newId();
-  record.updatedAt = Date.now();
-  record.deviceId = getDeviceId();
+  const deviceId = getDeviceId();
+  record.deviceId = deviceId;
+  record.hlc = hlcNow(deviceId);
+  record.updatedAt = record.hlc.l;
   return record;
 }
 
