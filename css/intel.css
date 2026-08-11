@@ -260,11 +260,11 @@
   border-radius: inherit; pointer-events: none;
   opacity: 0; transition: opacity .45s ease; 
 }
-.composer.focused .composer-halo { opacity: 1; animation: halo-spin 4s linear infinite; }
-@keyframes halo-spin {
-  0% { transform: scale(0.9) rotate(0deg); }
-  50% { transform: scale(1.1) rotate(180deg); }
-  100% { transform: scale(0.9) rotate(360deg); }
+.composer.focused .composer-halo { opacity: 1; animation: halo-pulse 4s ease-in-out infinite; }
+@keyframes halo-pulse {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.03); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
 }
 
 .composer-send { transition: all 0.3s var(--spring); transform: scale(.7); opacity: .35; }
@@ -383,8 +383,8 @@
   gap: 12px;
   font-family: monospace;
   font-size: var(--fs-1);
-  margin-bottom: 12px;
-  line-height: 1.6;
+  margin-bottom: 24px;
+  line-height: 1.8;
   animation: intel-log-slide-up 0.6s var(--spring-bouncy);
 }
 
@@ -762,7 +762,7 @@
 .intel-md-body {
   font-family: var(--font-main);
   font-size: var(--fs-3);
-  line-height: 1.7;
+  line-height: 1.8;
   color: var(--c-text-1);
 }
 
@@ -787,13 +787,13 @@
 }
 
 .intel-md-p {
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--sp-4);
 }
 
 .intel-md-li {
   position: relative;
   padding-left: var(--sp-4);
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--sp-3);
   list-style: none;
   color: color-mix(in srgb, var(--c-text-1) 90%, transparent);
 }
