@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-21a089c3';
+const CACHE_NAME = 'athlete-pro-v121-b8a64d95';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -67,6 +67,7 @@ const ASSETS = [
   '/js/shared/download.js',
   '/js/shared/dynamic-island.js',
   '/js/shared/errors-ui.js',
+  '/js/shared/exercise-shorthand.js',
   '/js/shared/format.js',
   '/js/shared/integrity.js',
   '/js/shared/island-tracker.js',

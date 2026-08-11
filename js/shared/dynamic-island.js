@@ -11,19 +11,11 @@ import { deriveDotState } from './sync-dot.js';
 import { on } from '../events.js';
 import { flag } from '../flags.js';
 import { getIslandProfile } from '../island-profile.store.js';
+import { shortenExerciseName } from './exercise-shorthand.js';
 
 /** Active island layout profile. Flag off → always the proven Apple path. */
 function activeProfile() {
   return flag('island-profiles') ? getIslandProfile() : 'apple';
-}
-
-// Long equipment words that eat the compact strip's width budget — swapped
-// for their gym-standard short forms. CSS ellipsis (island-min-label) is the
-// safety net for whatever's still too long after this.
-const SHORT_WORDS = { dumbbell: 'DB', barbell: 'BB', machine: 'Mach', kettlebell: 'KB', overhead: 'OH' };
-function shortenExerciseName(name) {
-  if (!name) return '';
-  return name.replace(/\b(dumbbell|barbell|machine|kettlebell|overhead)\b/gi, (w) => SHORT_WORDS[w.toLowerCase()] || w);
 }
 
 // Event-delegation handlers (CSP: replaced inline onclick). stopPropagation so a
