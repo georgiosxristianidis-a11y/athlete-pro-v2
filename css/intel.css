@@ -1,14 +1,80 @@
 /* ════════════════════════════════════════════════════════
-   intel.css — Athlete Pro  |  Neural Command Center Styles
+   intel.css — Athlete Pro  |  P.A.N.D.A. Core (экран s-intel)
+   Air & Glass. Три уровня высоты, как велит .claude/rules/design.md:
+     Tier 0 — страница: near-black --c-bg + мягкое ambient-свечение;
+     Tier 1 — поток: плоские поверхности + hairline, БЕЗ blur;
+     Tier 2 — две плавающие пилюли (композер и лог) — только они несут blur
+              и только они внесены в TIER2_WHITELIST в test/air-guard.test.js.
    ════════════════════════════════════════════════════════ */
 
+/* ── Tier 0: экран как колонка «шапка / поток / пилюли» ──
+   .screen уже position:absolute + inset:0, поэтому высоту не назначаем:
+   100dvh здесь вылезло бы за #screens, который живёт под шапкой шелла. */
 .intel-screen {
   background: var(--c-bg);
-  padding: 72px var(--sp-2) 140px;
+  box-sizing: border-box;
+  padding: 72px var(--sp-2) calc(var(--nav-h) + var(--safe-bottom) + var(--sp-2));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
+/* Ambient glow — живой фон ядра. position:absolute, а не fixed: инвариант AIR
+   №5 (десктоп — колонка 412px, привязка к окну увела бы пятна за её край). */
+.intel-screen::before,
+.intel-screen::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.intel-screen::before {
+  width: 360px;
+  height: 360px;
+  top: -80px;
+  left: -80px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c-intel) 12%, transparent), transparent 70%);
+  animation: intel-glow-drift 8s ease-in-out infinite alternate;
+}
+
+.intel-screen::after {
+  width: 280px;
+  height: 280px;
+  bottom: 80px;
+  right: -60px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c-accent) 8%, transparent), transparent 70%);
+  animation: intel-glow-drift 11s ease-in-out infinite alternate-reverse;
+}
+
+/* Экраны не выгружаются из DOM — они просто прозрачны. Без этой паузы две
+   бесконечные анимации крутились бы всё время работы приложения. */
+.intel-screen:not(.active)::before,
+.intel-screen:not(.active)::after {
+  animation-play-state: paused;
+}
+
+@keyframes intel-glow-drift {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.7; }
+  50%  { transform: translate(20px, 30px) scale(1.1); opacity: 1; }
+  100% { transform: translate(-10px, 15px) scale(0.95); opacity: 0.6; }
+}
+
+/* Контент — поверх свечения. */
+.intel-screen > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Шапка ── */
 .intel-header {
-  margin-bottom: var(--sp-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  flex-shrink: 0;
 }
 
 .intel-title {
@@ -27,26 +93,84 @@
   color: var(--c-text-3);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin-top: 4px;
+  margin-top: 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-/* ── Feedback Feed ── */
+.intel-key-state {
+  font-weight: var(--fw-bold);
+  text-transform: lowercase;
+}
+.intel-key-state.is-ok { color: var(--c-accent); }
+.intel-key-state.is-missing { color: var(--c-text-3); }
+
+.intel-sub-sep {
+  color: var(--c-border-h);
+}
+
+.intel-status-text {
+  color: var(--c-text-2);
+  font-weight: var(--fw-black);
+  text-transform: lowercase;
+}
+
+.intel-btn-close {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: var(--c-text-3);
+  font-size: var(--fs-5);
+  font-weight: var(--fw-md);
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--t-fast), background-color var(--t-fast);
+}
+
+.intel-btn-close:hover {
+  color: var(--c-text-1);
+  background: var(--c-surface-h);
+}
+
+/* ── Tier 1: поток. Скроллится он, а не экран ── */
+.intel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.intel-body::-webkit-scrollbar { display: none; }
+
+/* ── Ответ ИИ ── */
 .intel-feedback {
   margin-bottom: var(--sp-3);
-  padding: var(--sp-2);
+  padding: var(--sp-3);
   border-radius: var(--r-l);
-  background: var(--c-surface);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c-intel) 7%, transparent), var(--c-surface));
   border: 1px solid var(--c-border);
-  border-left: 3px solid var(--c-intel);
-  animation: intel-slide-in 0.4s var(--ease-out);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-intel) 60%, transparent);
+  animation: intel-slide-in 0.5s var(--spring-bounce);
 }
 
 @keyframes intel-slide-in {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.intel-feedback-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-1);
 }
 
 .intel-feedback-label {
@@ -55,7 +179,6 @@
   text-transform: uppercase;
   color: var(--c-intel);
   letter-spacing: 0.1em;
-  margin-bottom: 6px;
 }
 
 .intel-feedback-text {
@@ -65,32 +188,261 @@
   line-height: 1.5;
 }
 
-/* ── Command Bar ── */
+.intel-feedback-speak {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  opacity: 0.5;
+}
+
+/* Ожидание ответа: один пульсирующий маркер вместо трёх инлайновых блоков. */
+.intel-feedback-wait {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--c-intel);
+  animation: intel-breathe 1.5s ease-in-out infinite;
+}
+
+.intel-feedback-wait::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c-intel);
+  box-shadow: 0 0 10px var(--c-intel);
+  flex-shrink: 0;
+}
+
+@keyframes intel-breathe {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+/* ── Error UI ── */
+.intel-feedback.is-error {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c-red) 7%, transparent), var(--c-surface));
+  border-color: color-mix(in srgb, var(--c-red) 25%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-red) 60%, transparent);
+  animation: intel-slide-in 0.5s var(--spring-bounce), intel-error-pulse 2s ease-in-out 0.5s infinite;
+}
+
+.intel-feedback.is-error .intel-feedback-label {
+  color: var(--c-red);
+}
+
+.intel-feedback.is-error .intel-feedback-text {
+  color: var(--c-text-2);
+}
+
+@keyframes intel-error-pulse {
+  0%, 100% { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-red) 60%, transparent), 0 0 12px color-mix(in srgb, var(--c-red) 8%, transparent); }
+  50%      { box-shadow: inset 3px 0 0 var(--c-red), 0 0 24px color-mix(in srgb, var(--c-red) 18%, transparent); }
+}
+
+/* ── Модули: 2×2 вместо четырёх узких колонок ── */
+.intel-modules-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0;
+}
+
+.intel-module-card {
+  background: transparent;
+  border: none;
+  border-radius: var(--r-l);
+  padding: var(--sp-3) var(--sp-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-fast);
+  animation: intel-card-in 0.6s var(--spring-bounce) both;
+}
+
+.intel-module-card:nth-child(2) { animation-delay: 0.06s; }
+.intel-module-card:nth-child(3) { animation-delay: 0.12s; }
+.intel-module-card:nth-child(4) { animation-delay: 0.18s; }
+
+@keyframes intel-card-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.intel-module-card:hover { transform: translateY(-2px); }
+.intel-module-card:active { transform: scale(0.96); }
+
+.intel-module-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.intel-module-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.intel-module-icon--intel  { color: var(--c-intel);  background: color-mix(in srgb, var(--c-intel) 14%, transparent); }
+.intel-module-icon--accent { color: var(--c-accent); background: color-mix(in srgb, var(--c-accent) 14%, transparent); }
+.intel-module-icon--blue   { color: var(--c-blue);   background: color-mix(in srgb, var(--c-blue) 14%, transparent); }
+.intel-module-icon--red    { color: var(--c-red);    background: color-mix(in srgb, var(--c-red) 12%, transparent); }
+
+.intel-module-label {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  color: var(--c-text-2);
+  letter-spacing: 0.07em;
+}
+
+/* ── Tier 2 · пилюля лога ──
+   Свёрнута до статуса; раскрывается тапом (data-action="intel:toggleLogs").
+   Blur здесь легален: элемент плавает над потоком. */
+.intel-logs {
+  flex-shrink: 0;
+  align-self: center;
+  max-width: max-content;
+  margin: 0 auto var(--sp-2);
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--c-bg-2) 70%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--c-border);
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  transition: border-radius var(--t-normal), padding var(--t-normal), max-width var(--t-normal);
+}
+
+.intel-logs.expanded {
+  align-self: stretch;
+  max-width: 100%;
+  padding: var(--sp-2);
+  border-radius: var(--r-l);
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.intel-logs:not(.expanded) .intel-logs-title,
+.intel-logs:not(.expanded) #intel-logs-container {
+  display: none;
+}
+
+.intel-logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+.intel-logs.expanded .intel-logs-header {
+  margin-bottom: var(--sp-2);
+}
+
+.intel-logs-title {
+  font-family: monospace;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.intel-logs-status {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: var(--r-xs);
+  background: var(--c-intel-bg);
+  color: var(--c-intel);
+  border: 1px solid color-mix(in srgb, var(--c-intel) 25%, transparent);
+  white-space: nowrap;
+  transition: color var(--t-normal), border-color var(--t-normal);
+}
+
+/* Строки растворяются сверху и снизу — лента без видимых обрезов. */
+#intel-logs-container {
+  max-height: 160px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+}
+#intel-logs-container::-webkit-scrollbar { display: none; }
+
+.intel-log-entry {
+  display: flex;
+  gap: 12px;
+  font-family: monospace;
+  font-size: var(--fs-1);
+  line-height: 1.8;
+  margin-bottom: var(--sp-1);
+  animation: intel-log-in 0.4s var(--ease-out);
+}
+
+@keyframes intel-log-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.intel-log-time { color: var(--c-text-3); flex-shrink: 0; }
+.intel-log-type { font-weight: var(--fw-black); text-transform: uppercase; min-width: 34px; flex-shrink: 0; }
+.intel-log-type.sys { color: var(--c-intel); }
+.intel-log-type.db { color: var(--c-accent); }
+.intel-log-type.ai { color: var(--c-secondary); }
+.intel-log-type.user { color: var(--c-text-2); }
+.intel-log-type.error { color: var(--c-red); }
+.intel-log-msg { color: var(--c-text-2); }
+
+/* ── Tier 2 · плавающий композер ── */
 .intel-cmd-wrap {
   position: relative;
-  margin-bottom: var(--sp-3);
+  flex-shrink: 0;
 }
 
 .intel-cmd-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px;
-  background: var(--c-bg-2);
+  gap: var(--sp-1);
+  padding: 6px 6px 6px 10px;
+  background: color-mix(in srgb, var(--c-bg-2) 80%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-xl);
-  transition: opacity var(--t-normal), transform var(--t-normal), background-color var(--t-normal), border-color var(--t-normal), color var(--t-normal);
+  border-radius: var(--r-xxl);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: border-color var(--t-normal), box-shadow var(--t-normal);
 }
 
 .intel-cmd-bar:focus-within {
-  border-color: color-mix(in srgb, var(--c-intel) 40%, transparent);
-  background: var(--c-bg-3);
+  border-color: color-mix(in srgb, var(--c-intel) 35%, transparent);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 24px color-mix(in srgb, var(--c-intel) 12%, transparent);
 }
 
 .intel-cmd-input {
   flex: 1;
+  min-width: 0;
   background: none;
   border: none;
+  outline: none;
   padding: 8px 4px;
   color: var(--c-text-1);
   font-size: var(--fs-3);
@@ -99,12 +451,14 @@
 
 .intel-cmd-input::placeholder {
   color: var(--c-text-3);
+  opacity: 0.6;
 }
 
 .intel-btn-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--r-m);
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -112,12 +466,16 @@
   border: none;
   color: var(--c-text-3);
   cursor: pointer;
-  transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+  transition: color var(--t-fast), background-color var(--t-fast), transform var(--t-fast);
 }
 
 .intel-btn-icon:hover {
   color: var(--c-text-1);
   background: var(--c-surface-h);
+}
+
+.intel-btn-icon:active {
+  transform: scale(0.92);
 }
 
 .intel-btn-icon.active {
@@ -126,71 +484,16 @@
 }
 
 .intel-btn-send {
-  background: var(--c-text-1);
+  background: var(--c-intel);
   color: var(--c-bg);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c-intel) 40%, transparent);
 }
 
 .intel-btn-send:hover {
   background: var(--c-intel);
-  color: var(--c-text-1);
+  color: var(--c-bg);
+  transform: scale(1.06);
 }
-
-/* ── Logs ── */
-.intel-logs {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-l);
-  padding: var(--sp-3) var(--sp-2);
-}
-
-.intel-logs-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--sp-2);
-  padding-bottom: var(--sp-1);
-}
-
-.intel-logs-title {
-  font-family: var(--font-heading);
-  font-size: var(--fs-1);
-  font-weight: var(--fw-md);
-  color: var(--c-text-3);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.intel-logs-status {
-  font-size: var(--fs-1);
-  font-weight: var(--fw-black);
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: var(--r-xs);
-  background: var(--c-intel-bg);
-  color: var(--c-intel);
-}
-
-.intel-log-entry {
-  display: flex;
-  gap: 12px;
-  font-family: monospace;
-  font-size: var(--fs-1);
-  margin-bottom: 8px;
-  animation: intel-log-in 0.3s ease;
-}
-
-@keyframes intel-log-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.intel-log-time { color: var(--c-text-3); }
-.intel-log-type { font-weight: var(--fw-black); text-transform: uppercase; min-width: 32px; }
-.intel-log-type.sys { color: var(--c-intel); }
-.intel-log-type.db { color: var(--c-accent); }
-.intel-log-type.ai { color: var(--c-secondary); }
-.intel-log-type.error { color: var(--c-red); }
-.intel-log-msg { color: var(--c-text-2); }
 
 /* ── Vision Preview ── */
 .intel-vision-preview {
@@ -210,6 +513,24 @@
   object-fit: cover;
 }
 
+.intel-vision-clear {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: color-mix(in srgb, var(--c-bg) 60%, transparent);
+  color: var(--c-text-1);
+  font-size: var(--fs-3);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
 .intel-scanner-bar {
   position: absolute;
   top: 0;
@@ -225,4 +546,3 @@
   0% { top: 0; }
   100% { top: 100%; }
 }
-

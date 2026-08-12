@@ -2,10 +2,17 @@
 import { IntelStore } from './intel.store.js';
 import { esc, haptic } from './shared/utils.js';
 import { toUserMessage } from './shared/errors-ui.js';
+import { isRu } from './locale.store.js';
 import { DB } from './db.js';
 import { on, onChange, onKeydown } from './events.js';
 
 on('intel:close',         () => window.Nav.go('s-home'));
+on('intel:toggleLogs',    (el) => {
+  const box = el.closest('.intel-logs');
+  if (!box) return;
+  const open = box.classList.toggle('expanded');
+  box.setAttribute('aria-expanded', String(open));
+});
 on('intel:camera',        () => window.IntelView.handleCamera());
 on('intel:submit',        () => window.IntelView.submit());
 on('intel:weekly',        () => window.IntelView.generateWeekly());
@@ -17,6 +24,15 @@ on('intel:playAudio',     (el) => window.IntelView.playAudio(el));
 on('intel:closeReport',   (el) => el.closest('.intel-report-overlay')?.remove());
 onChange('intel:fileSelected', (el, e) => window.IntelView.onFileSelected(e));
 onKeydown('intel:submitEnter', (el, e) => { if (e.key === 'Enter') window.IntelView.submit(); });
+// Пилюля лога — не <button> (внутри неё заголовок и лента), поэтому клавиатуру
+// ей приходится выдавать руками: role="button" без Enter/Space — ловушка для скринридера.
+onKeydown('intel:toggleLogs', (el, e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  const box = el.closest('.intel-logs');
+  if (!box) return;
+  box.setAttribute('aria-expanded', String(box.classList.toggle('expanded')));
+});
 
 /**
  * IntelView — Athlete Pro
@@ -25,6 +41,30 @@ onKeydown('intel:submitEnter', (el, e) => { if (e.key === 'Enter') window.IntelV
 export const IntelView = (() => {
   let _initialized = false;
   let _hasValidKey = false;
+
+  /**
+   * Строки экрана. Язык — только через isRu() (правило i18n проекта):
+   * до этого подписи модулей были прошиты по-русски, а плейсхолдер — по-английски.
+   */
+  function _copy() {
+    return isRu()
+      ? {
+          keyOk: 'система защищена', keyMissing: 'нет ключа',
+          summary: 'СВОДКА', generate: 'ГЕНЕРАЦИЯ', analyze: 'АНАЛИЗ', biometrics: 'БИОМЕТРИЯ',
+          input: 'Команда или запрос по фото…',
+          close: 'Закрыть', camera: 'Прикрепить фото', send: 'Отправить',
+          logs: 'Журнал потока', speak: 'Озвучить', clearImage: 'Убрать фото',
+          feedback: 'Ответ ИИ', waiting: 'Анализирую…', failed: 'Сбой',
+        }
+      : {
+          keyOk: 'system secure', keyMissing: 'key missing',
+          summary: 'SUMMARY', generate: 'GENERATE', analyze: 'ANALYZE', biometrics: 'BIOMETRICS',
+          input: 'Command or vision query…',
+          close: 'Close', camera: 'Attach photo', send: 'Send',
+          logs: 'Streaming logs', speak: 'Speak', clearImage: 'Clear photo',
+          feedback: 'AI Feedback', waiting: 'Analysing…', failed: 'Failed',
+        };
+  }
 
   async function _checkApiKey() {
     const { DB } = await import('./db.js');
@@ -54,67 +94,78 @@ export const IntelView = (() => {
     }
 
     await _checkApiKey();
+    const L = _copy();
 
     screen.innerHTML = `
-      <header class="intel-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <header class="intel-header">
         <div>
           <h1 class="intel-title">P.A.N.D.A. Core</h1>
           <div class="intel-sub">
-            <span class="ai-indicator ${_hasValidKey ? 'active' : 'missing'}" style="margin-right:4px;"></span>
-            <span style="color: ${_hasValidKey ? 'var(--c-accent)' : 'var(--c-text-3)'}; font-weight:var(--fw-bold); text-transform:lowercase; opacity:0.8;">${_hasValidKey ? 'system secure' : 'key missing'}</span>
-            <span style="opacity:0.2; margin: 0 6px;">|</span>
-            <span id="intel-status-text" style="color: var(--c-text-2); font-weight:var(--fw-black); text-transform:lowercase;">${IntelStore.getStatus()}</span>
+            <span class="ai-indicator ${_hasValidKey ? 'active' : 'missing'}"></span>
+            <span class="intel-key-state ${_hasValidKey ? 'is-ok' : 'is-missing'}">${_hasValidKey ? L.keyOk : L.keyMissing}</span>
+            <span class="intel-sub-sep">·</span>
+            <span id="intel-status-text" class="intel-status-text">${esc(IntelStore.getStatus())}</span>
           </div>
         </div>
-        <button data-action="intel:close" style="background:none; border:none; color:var(--c-text-3); font-size:var(--fs-6); font-weight:var(--fw-md); cursor:pointer; padding:0 8px;">&times;</button>
+        <button class="intel-btn-close" data-action="intel:close" aria-label="${L.close}">&times;</button>
       </header>
 
-      <div id="intel-feedback-feed"></div>
+      <div class="intel-body">
+        <div id="intel-feedback-feed"></div>
 
-      <div id="intel-vision-preview-wrap"></div>
+        <div id="intel-vision-preview-wrap"></div>
+
+        <div class="intel-modules-grid">
+          <button class="intel-module-card" data-action="intel:weekly">
+            <span class="intel-module-icon intel-module-icon--intel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            </span>
+            <span class="intel-module-label">${L.summary}</span>
+          </button>
+          <button class="intel-module-card" data-action="intel:createWorkout">
+            <span class="intel-module-icon intel-module-icon--accent">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </span>
+            <span class="intel-module-label">${L.generate}</span>
+          </button>
+          <button class="intel-module-card" data-action="intel:analyzeStats">
+            <span class="intel-module-icon intel-module-icon--blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            </span>
+            <span class="intel-module-label">${L.analyze}</span>
+          </button>
+          <button class="intel-module-card" data-action="intel:biometrics">
+            <span class="intel-module-icon intel-module-icon--red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </span>
+            <span class="intel-module-label">${L.biometrics}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="intel-logs" data-action="intel:toggleLogs" data-keydown="intel:toggleLogs" role="button" tabindex="0" aria-expanded="false" aria-label="${L.logs}">
+        <div class="intel-logs-header">
+          <h3 class="intel-logs-title">STREAMING_LOGS</h3>
+          <span class="intel-logs-status" id="intel-logs-status-pill">${esc(IntelStore.getStatus())}</span>
+        </div>
+        <div id="intel-logs-container"></div>
+      </div>
 
       <div class="intel-cmd-wrap">
         <div class="intel-cmd-bar">
-          <button class="intel-btn-icon" id="intel-btn-camera" data-action="intel:camera">
+          <button class="intel-btn-icon" id="intel-btn-camera" data-action="intel:camera" aria-label="${L.camera}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
             </svg>
           </button>
-          <input type="text" id="intel-input" class="intel-cmd-input" placeholder="Command or vision query..." data-keydown="intel:submitEnter">
-          <button class="intel-btn-icon intel-btn-send" id="intel-btn-send" data-action="intel:submit">
+          <input type="text" id="intel-input" class="intel-cmd-input" placeholder="${L.input}" data-keydown="intel:submitEnter" autocomplete="off" spellcheck="false">
+          <button class="intel-btn-icon intel-btn-send" id="intel-btn-send" data-action="intel:submit" aria-label="${L.send}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
           </button>
         </div>
         <input type="file" id="intel-file-input" accept="image/*" style="display:none" data-change="intel:fileSelected">
-      </div>
-
-      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:var(--sp-4)">
-        <button class="card-action" data-action="intel:weekly" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-intel)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
-          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">СВОДКА</div>
-        </button>
-        <button class="card-action" data-action="intel:createWorkout" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">ГЕНЕРАЦИЯ</div>
-        </button>
-        <button class="card-action" data-action="intel:analyzeStats" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>
-          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">АНАЛИЗ</div>
-        </button>
-        <button class="card-action" data-action="intel:biometrics" style="background:var(--c-surface); border:1px solid var(--c-border); border-radius:20px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;">
-          <div style="color:var(--c-red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-text-3); letter-spacing:0.05em;">БИОМЕТРИЯ</div>
-        </button>
-      </div>
-
-      <div class="intel-logs">
-        <div class="intel-logs-header">
-          <h3 class="intel-logs-title">STREAMING_LOGS</h3>
-          <span class="intel-logs-status" id="intel-logs-status-pill">ONLINE</span>
-        </div>
-        <div id="intel-logs-container" style="max-height: 200px; overflow-y: auto;"></div>
       </div>
     `;
 
@@ -186,11 +237,12 @@ export const IntelView = (() => {
   function _showVisionPreview(base64) {
     const wrap = document.getElementById('intel-vision-preview-wrap');
     if (!wrap) return;
+    const L = _copy();
     wrap.innerHTML = `
       <div class="intel-vision-preview animate-in zoom-in">
         <img src="${base64}" class="intel-vision-img" alt="Vision Input">
         <div class="intel-scanner-bar"></div>
-        <button data-action="intel:clearImage" style="position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.5); border:none; color:white; display:flex; align-items:center; justify-content:center; font-size:var(--fs-3); cursor:pointer;">&times;</button>
+        <button class="intel-vision-clear" data-action="intel:clearImage" aria-label="${L.clearImage}">&times;</button>
       </div>
     `;
     IntelStore.setStatus('VISION READY');
@@ -213,23 +265,21 @@ export const IntelView = (() => {
 
     IntelStore.setStatus('AI SCANNING...');
     
+    const L = _copy();
     const feedbackFeed = document.getElementById('intel-feedback-feed');
     const feedbackEl = document.createElement('div');
     feedbackEl.className = 'intel-feedback';
     feedbackEl.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <div class="intel-feedback-label" style="margin-bottom:0;">AI Feedback</div>
-        <button class="intel-btn-icon" style="opacity:0.5; width:24px; height:24px; padding:0;" title="Озвучить" data-action="intel:playAudio">
+      <div class="intel-feedback-head">
+        <div class="intel-feedback-label">${L.feedback}</div>
+        <button class="intel-btn-icon intel-feedback-speak" title="${L.speak}" aria-label="${L.speak}" data-action="intel:playAudio">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
           </svg>
         </button>
       </div>
       <div class="intel-feedback-text">
-        <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
-          <div style="width:12px; height:12px; border-radius:50%; background:var(--c-intel); box-shadow:0 0 10px var(--c-intel); animation: it-breathe 1.5s infinite ease-in-out;"></div>
-          <div style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-intel); letter-spacing:0.15em; animation: it-breathe 1.5s infinite ease-in-out 0.2s;">Analysing Intel...</div>
-        </div>
+        <div class="intel-feedback-wait">${L.waiting}</div>
       </div>
     `;
     feedbackFeed?.prepend(feedbackEl);
@@ -333,8 +383,14 @@ export const IntelView = (() => {
 
     } catch (err) {
       console.error(err);
-      IntelStore.addLog('SYS', 'Connection failed');
+      IntelStore.addLog('ERROR', err?.message || 'Connection failed');
       IntelStore.setStatus('ERROR');
+      // Классификацию (401/429/500/офлайн) и локализацию уже делает toUserMessage —
+      // второй набор строк рядом с ним разошёлся бы с ним на первой же правке.
+      feedbackEl.classList.add('is-error');
+      const label = feedbackEl.querySelector('.intel-feedback-label');
+      if (label) label.textContent = L.failed;
+      feedbackEl.querySelector('.intel-feedback-speak')?.remove();
       if (feedbackText) feedbackText.textContent = toUserMessage(err);
     }
   }
