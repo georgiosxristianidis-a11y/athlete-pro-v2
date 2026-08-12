@@ -28,6 +28,11 @@ const TIER2_WHITELIST = {
   'base.css': [/\.modal-overlay\b/, /\.modal-sheet\b/, /\.claude-sheet\b/, /\.toast\b/],
   'dynamic-island.css': [/./],            // whole file is the island (Tier 2 HUD)
   'athlete-room.css': [/\.ar-crop-modal\b/], // a modal, not a card
+  // s-intel (HUD-1): экран — колонка «шапка / поток / пилюли». Плавают ровно две
+  // поверхности — композер и свёрнутый лог; поток под ними остаётся Tier 1, плоским.
+  // Именно селекторами, не файлом: `'intel.css': [/./]` — та строка, которой
+  // отвергнутая линия сняла проверку с девяти backdrop-filter разом.
+  'intel.css': [/\.intel-cmd-bar\b/, /\.intel-logs\b/],
 };
 
 /** Strips comments, preserving newlines so line numbers stay honest. */
@@ -115,6 +120,8 @@ const TIER2_REQUIRED = [
   ['base.css', '.toast'],
   ['dynamic-island.css', '.island'],
   ['athlete-room.css', '.ar-crop-modal'],
+  ['intel.css', '.intel-cmd-bar'],
+  ['intel.css', '.intel-logs'],
 ];
 
 for (const [file, selector] of TIER2_REQUIRED) {
