@@ -23,12 +23,23 @@ push_refs=$(cat)
 # такой пуш насквозь — мимо единственного барьера, который у репо есть.
 # Пустой stdin = хук вызван не гитом (ручной прогон): рефспека нет, остаётся
 # прежняя эвристика по имени HEAD.
+#
+# Тем же проходом считаем удаления: у них `local sha` — одни нули (сорок для
+# sha1, шестьдесят четыре для sha256), а `local ref` — литерал `(delete)`.
 pushes_to_main=0
+refs_seen=0
+deletes_seen=0
 if [ -n "$push_refs" ]; then
   while read -r local_ref local_sha remote_ref remote_sha; do
+    [ -z "$remote_ref" ] && continue
+    refs_seen=$((refs_seen + 1))
     if [ "$remote_ref" = "refs/heads/main" ]; then
       pushes_to_main=1
     fi
+    case "$local_sha" in
+      '' | *[!0]*) ;;
+      *) deletes_seen=$((deletes_seen + 1)) ;;
+    esac
   done <<PUSH_REFS
 $push_refs
 PUSH_REFS
@@ -41,6 +52,21 @@ if [ "$pushes_to_main" = "1" ] && [ "$MAIN_PUSH_OK" != "1" ]; then
   echo "   git checkout -b <ветка> && git push -u origin <ветка> && gh pr create --base main"
   echo "   Осознанный обход: MAIN_PUSH_OK=1 git push"
   exit 1
+fi
+
+# 0a. Пуш из одних удалений. Кода на origin такой пуш не отправляет, поэтому
+# проверять в нём нечего: дрейф разбирает ветку, которая к удаляемому ref-у
+# отношения не имеет, SCA и SAST — рабочее дерево, которого пуш не касается.
+# Baseline O-9 (2026-08-12): удаление уже влитой ветки было заблокировано и
+# Drift Block, и SAST Block — обе жалобы про ЧУЖУЮ линию в чекауте ворктри,
+# а удалялся ref, не несущий ни строки кода. `DRIFT_OK=1` снял только первый
+# гард. Цена ложного блока — не минута, а привычка тянуться к `--no-verify`,
+# который глушит уже и настоящие проверки.
+# Удаление `main` сюда не доходит: Main Block выше судит по `remote ref` и
+# ловит его раньше, независимо от того, чем этот ref обновляют.
+if [ "$refs_seen" -gt 0 ] && [ "$refs_seen" -eq "$deletes_seen" ]; then
+  echo "[Delete] Пуш только удаляет рефы — кода не уезжает, гарды пропущены."
+  exit 0
 fi
 
 # 0. Дрейф базы. Идёт ПЕРВЫМ и намеренно раньше SCA/SAST: те проверяют уязвимости
