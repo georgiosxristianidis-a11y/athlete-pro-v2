@@ -18,6 +18,26 @@ certs/
 .claude/worktrees/
 .gemini/
 
+# ===== Агентские артефакты (Antigravity, планировщики, Lighthouse CI) =====
+# Заход Antigravity принёс 89 таких файлов в ветку elite-hud-wow — к продукту
+# отношения не имеют, живут у агента на машине.
+.agents/
+.lighthouseci/
+# ВНИМАНИЕ: .planning/ уже отслеживается в main (легаси-дерево; счёт добывать
+# командой `git ls-files .planning/`, число в комментарии протухнет).
+# Правило закрывает только НОВЫЕ файлы; расчистка отслеживаемого — отдельным решением.
+.planning/
+
+# ===== Посторонние файлы с машины =====
+# config.json / dictionary.txt / log.txt — конфиг переключателя раскладки ParanoidSwitcher,
+# попал в чекаут случайно. Пути якорём от корня: одноимённые файлы в подпапках legit.
+/config.json
+/dictionary.txt
+/log.txt
+/icon-64.png
+/ORIGINAL_REQUEST.md
+/PROJECT.md
+
 # ===== Node =====
 node_modules/
 dist/
