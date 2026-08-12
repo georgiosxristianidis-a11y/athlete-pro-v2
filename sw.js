@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-0bbf9744';
+const CACHE_NAME = 'athlete-pro-v121-9354a9be';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -82,6 +82,7 @@ const ASSETS = [
   '/js/shared/sw-update.js',
   '/js/shared/sync-dot.js',
   '/js/shared/sync-merge.js',
+  '/js/shared/sync-secrets.js',
   '/js/shared/theme.js',
   '/js/shared/txt-export.js',
   '/js/shared/utils.js',
