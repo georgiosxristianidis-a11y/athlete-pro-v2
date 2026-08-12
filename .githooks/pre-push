@@ -3,12 +3,40 @@
 # Elite SCA Protocol (Solid 9)
 # pre-push hook: Runs npm audit only when pushing, blocking vulnerable code.
 
+# -2. Что именно уезжает на origin. git подаёт в stdin по строке на каждый
+# обновляемый ref: "<local ref> <local sha> <remote ref> <remote sha>". Это
+# единственный источник правды о рефспеке — рабочее дерево и имя HEAD про него
+# не знают ничего.
+# stdin у хука одноразовый: вычитали — держим в переменной, второй раз не
+# прочитать. Потребителей ниже по цепочке нет: scripts/check-branch-drift.mjs
+# не обращается ни к stdin, ни к argv, он добывает всё сам из git.
+push_refs=$(cat)
+
 # -1. Прямой пуш в main запрещён (CLAUDE.md § Rules) — вливание только через
 # PR после гейта. GitHub branch protection недоступна на приватном репо
 # бесплатного плана (403 на branches/main/protection), так что единственный
 # реальный барьер — этот хук. Осознанный обход: MAIN_PUSH_OK=1 git push.
-current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
-if [ "$current_branch" = "main" ] && [ "$MAIN_PUSH_OK" != "1" ]; then
+#
+# Судим по ЦЕЛЕВОЙ стороне рефспека, а не по имени текущей ветки (O-9,
+# 2026-08-12): форма `git push origin HEAD:main` уезжает в main с любой
+# фича-ветки, HEAD при этом называется не main, и проверка по имени пропускала
+# такой пуш насквозь — мимо единственного барьера, который у репо есть.
+# Пустой stdin = хук вызван не гитом (ручной прогон): рефспека нет, остаётся
+# прежняя эвристика по имени HEAD.
+pushes_to_main=0
+if [ -n "$push_refs" ]; then
+  while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$remote_ref" = "refs/heads/main" ]; then
+      pushes_to_main=1
+    fi
+  done <<PUSH_REFS
+$push_refs
+PUSH_REFS
+else
+  [ "$(git symbolic-ref --short HEAD 2>/dev/null)" = "main" ] && pushes_to_main=1
+fi
+
+if [ "$pushes_to_main" = "1" ] && [ "$MAIN_PUSH_OK" != "1" ]; then
   echo "❌ [Main Block] Прямой пуш в main запрещён — только через PR."
   echo "   git checkout -b <ветка> && git push -u origin <ветка> && gh pr create --base main"
   echo "   Осознанный обход: MAIN_PUSH_OK=1 git push"
