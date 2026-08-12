@@ -195,32 +195,99 @@
   opacity: 0.5;
 }
 
-/* Ожидание ответа: один пульсирующий маркер вместо трёх инлайновых блоков. */
-.intel-feedback-wait {
+/* ── Ожидание ответа: стеклянный скелетон (HUD-2) ──
+   Пришёл на смену одиночному маркеру: он держит высоту карточки заранее,
+   поэтому первый токен не дёргает ленту прыжком layout'а.
+   Tier 1 — плоско, без blur: мерцание даётся градиентом на transform. */
+.intel-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.intel-skeleton-head {
   display: flex;
   align-items: center;
-  gap: var(--sp-1);
-  font-size: var(--fs-1);
-  font-weight: var(--fw-black);
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--c-intel);
-  animation: intel-breathe 1.5s ease-in-out infinite;
+  gap: 10px;
 }
 
-.intel-feedback-wait::before {
+.intel-skeleton-avatar,
+.intel-skeleton-line {
+  position: relative;
+  overflow: hidden;
+  background: var(--c-surface);
+  border: 1px solid color-mix(in srgb, var(--c-intel) 12%, transparent);
+  animation: intel-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.intel-skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border-color: color-mix(in srgb, var(--c-intel) 20%, transparent);
+}
+
+.intel-skeleton-line {
+  height: 10px;
+  border-radius: var(--r-pill);
+}
+
+.intel-skeleton-line.is-full { width: 100%; }
+.intel-skeleton-line.is-wide { width: 80%; }
+.intel-skeleton-line.is-half { width: 50%; }
+
+.intel-skeleton-head .intel-skeleton-line { animation-delay: 0.15s; }
+.intel-skeleton > .intel-skeleton-line:nth-of-type(1) { animation-delay: 0.3s; }
+.intel-skeleton > .intel-skeleton-line:nth-of-type(2) { animation-delay: 0.45s; }
+
+.intel-skeleton-avatar::before,
+.intel-skeleton-line::before {
   content: '';
-  width: 8px;
-  height: 8px;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--c-intel) 30%, transparent), transparent);
+  transform: translateX(-100%);
+  animation: intel-skeleton-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes intel-skeleton-pulse {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 0.85; }
+}
+
+@keyframes intel-skeleton-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ── Хвост потока: три точки в конце последнего блока ──
+   Показывают, что текст ещё растёт. Внутри Tier 1 — blur здесь был бы
+   третьим стеклом на экране, где плавают ровно две поверхности. */
+.intel-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  vertical-align: baseline;
+}
+
+.intel-typing-dot {
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--c-intel);
-  box-shadow: 0 0 10px var(--c-intel);
-  flex-shrink: 0;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--c-intel) 60%, transparent);
+  animation: intel-typing-bounce 0.6s ease-in-out infinite;
 }
 
-@keyframes intel-breathe {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 1; }
+.intel-typing-dot:nth-child(2) { animation-delay: 0.12s; }
+.intel-typing-dot:nth-child(3) { animation-delay: 0.24s; }
+
+@keyframes intel-typing-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50%      { transform: translateY(-4px); opacity: 1; }
 }
 
 /* ── Error UI ── */
@@ -495,6 +562,44 @@
   transform: scale(1.06);
 }
 
+/* ── Волна в кнопке отправки: «канал занят» (HUD-2) ──
+   Пока запрос в полёте, самолётик уступает место эквалайзеру, а кнопка
+   становится disabled — второй запрос поверх первого больше не уходит.
+   Столбики растут scaleY, а не height: height анимировался в исходной
+   версии и пересчитывал layout каждый кадр (закон GPU-only анимаций). */
+.intel-wave {
+  display: none;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+}
+
+.intel-btn-send.is-busy svg { display: none; }
+.intel-btn-send.is-busy .intel-wave { display: inline-flex; }
+
+.intel-btn-send:disabled {
+  cursor: default;
+  transform: none;
+}
+
+.intel-wave-bar {
+  width: 3px;
+  height: 16px;
+  border-radius: var(--r-pill);
+  background: currentColor;
+  transform: scaleY(0.25);
+  animation: intel-wave-bounce 1.2s ease-in-out infinite;
+}
+
+.intel-wave-bar:nth-child(2) { animation-delay: 0.15s; }
+.intel-wave-bar:nth-child(3) { animation-delay: 0.3s; }
+.intel-wave-bar:nth-child(4) { animation-delay: 0.45s; }
+
+@keyframes intel-wave-bounce {
+  0%, 100% { transform: scaleY(0.25); opacity: 0.5; }
+  50%      { transform: scaleY(1);    opacity: 1; }
+}
+
 /* ── Vision Preview ── */
 .intel-vision-preview {
   position: relative;
@@ -546,3 +651,94 @@
   0% { top: 0; }
   100% { top: 100%; }
 }
+
+/* ════════════════════════════════════════════════════════
+   Air Markdown — иерархия ответа ИИ (HUD-2)
+   Разметку собирает js/shared/air-markdown.js: сперва esc(), потом теги.
+   Здесь только типографика, и только через токены шкалы.
+   ════════════════════════════════════════════════════════ */
+.intel-md-body {
+  line-height: 1.7;
+}
+
+.intel-md-h2,
+.intel-md-h3 {
+  font-family: var(--font-heading);
+  font-weight: var(--fw-black);
+  letter-spacing: -0.01em;
+  margin: var(--sp-3) 0 var(--sp-1);
+}
+
+.intel-md-h2 {
+  font-size: var(--fs-4);
+  color: var(--c-text-1);
+}
+
+.intel-md-h3 {
+  font-size: var(--fs-3);
+  color: var(--c-intel);
+}
+
+.intel-md-body > *:first-child { margin-top: 0; }
+.intel-md-body > *:last-child  { margin-bottom: 0; }
+
+.intel-md-p {
+  margin-bottom: var(--sp-2);
+}
+
+.intel-md-list {
+  list-style: none;
+  margin: 0 0 var(--sp-2);
+  padding: 0;
+}
+
+/* Маркер — точка ядра, а не bullet шрифта: список читается частью экрана. */
+.intel-md-li {
+  position: relative;
+  padding-left: var(--sp-2);
+  margin-bottom: var(--sp-1);
+  color: var(--c-text-2);
+}
+
+.intel-md-li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.65em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--c-intel);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--c-intel) 60%, transparent);
+}
+
+/* Нумерованный пункт — плоская поверхность Tier 1: blur исходника здесь был
+   бы третьим стеклом на экране (см. TIER2_WHITELIST в test/air-guard.test.js). */
+.intel-md-num {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-1);
+  padding: var(--sp-2);
+  border-radius: var(--r-m);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+}
+
+.intel-num-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--c-intel) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-intel) 35%, transparent);
+  color: var(--c-intel);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+}
+
+.intel-md-body strong { font-weight: var(--fw-black); color: var(--c-text-1); }
+.intel-md-body em     { font-style: italic; color: var(--c-text-2); }
