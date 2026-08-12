@@ -4,6 +4,7 @@ import { DB } from './db.js';
 import { lwwWins } from './shared/lww.js';
 import { mergeWorkoutExercises, pickWinner } from './shared/sync-merge.js';
 import { getPrivacyMode } from './privacy.store.js';
+import { isSecretKey } from './shared/sync-secrets.js';
 
 /**
  * #GIO: Elite Sync Engine V2.1 — LWW Conflict Resolution
@@ -50,6 +51,9 @@ export const SyncManager = (() => {
    */
   async function push(store, data) {
     if (!data) return;
+    // Секреты не уезжают с устройства. Барьер стоит и в DB.Settings.set, здесь —
+    // второй: очередь принимает записи и от прямых вызовов, мимо того барьера.
+    if (store === 'settings' && isSecretKey(data.key)) return;
 
     const tasks = _loadQueue();
     const key = _recordKey(store, data);
@@ -284,6 +288,9 @@ export const SyncManager = (() => {
           const remote = _fromServerRow(servRow);
           const key = _localKey(store, remote);
           if (key == null) continue;
+          // Симметрия к push: секрет, лежащий на сервере с прошлых версий,
+          // не втягивается обратно в локальную базу.
+          if (store === 'settings' && isSecretKey(key)) continue;
 
           const local = await DB._getRaw(store, key);
           // Remote must beat local to be applied (deviceId breaks ties deterministically).

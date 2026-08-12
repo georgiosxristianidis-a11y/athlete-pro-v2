@@ -4,6 +4,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { S, tx, req2p, req2pSafe, getDeviceId, _triggerSync, getAll } from './core.js';
+import { isSecretKey } from '../shared/sync-secrets.js';
 
 export const Settings = {
   /**
@@ -15,8 +16,9 @@ export const Settings = {
     const record = { key, value, updatedAt: Date.now(), deviceId: getDeviceId() };
     await tx(S.SETTINGS, 'readwrite').then((s) => req2pSafe(s.put(record), s.transaction));
 
-    // Don't sync internal/temporary settings
-    if (!key.startsWith('privacy.audit') && !key.startsWith('ap-')) {
+    // Don't sync internal/temporary settings, and never sync secrets:
+    // BYOK-ключи живут в этом же store, а он синкается целиком (js/shared/sync-secrets.js).
+    if (!key.startsWith('privacy.audit') && !key.startsWith('ap-') && !isSecretKey(key)) {
       _triggerSync(S.SETTINGS, record);
     }
   },
