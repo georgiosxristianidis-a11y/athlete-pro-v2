@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-35d89efe';
+const CACHE_NAME = 'athlete-pro-v121-e1c1d78d';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -58,6 +58,7 @@ const ASSETS = [
   '/js/profile.view.js',
   '/js/progressive-overload.js',
   '/js/rest-timer.js',
+  '/js/shared/air-markdown.js',
   '/js/shared/athlete-room.js',
   '/js/shared/block-ticks.js',
   '/js/shared/chamber-pill.js',

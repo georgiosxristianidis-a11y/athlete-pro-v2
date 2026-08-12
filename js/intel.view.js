@@ -1,6 +1,7 @@
 // @ts-check
 import { IntelStore } from './intel.store.js';
 import { esc, haptic } from './shared/utils.js';
+import { formatAirMarkdown } from './shared/air-markdown.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { isRu } from './locale.store.js';
 import { DB } from './db.js';
@@ -55,6 +56,7 @@ export const IntelView = (() => {
           close: 'Закрыть', camera: 'Прикрепить фото', send: 'Отправить',
           logs: 'Журнал потока', speak: 'Озвучить', clearImage: 'Убрать фото',
           feedback: 'Ответ ИИ', waiting: 'Анализирую…', failed: 'Сбой',
+          streaming: 'Ответ печатается', empty: 'Ответ пришёл пустым',
         }
       : {
           keyOk: 'system secure', keyMissing: 'key missing',
@@ -63,6 +65,7 @@ export const IntelView = (() => {
           close: 'Close', camera: 'Attach photo', send: 'Send',
           logs: 'Streaming logs', speak: 'Speak', clearImage: 'Clear photo',
           feedback: 'AI Feedback', waiting: 'Analysing…', failed: 'Failed',
+          streaming: 'Response is typing', empty: 'The response came back empty',
         };
   }
 
@@ -163,6 +166,7 @@ export const IntelView = (() => {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
+            ${_waveHtml()}
           </button>
         </div>
         <input type="file" id="intel-file-input" accept="image/*" style="display:none" data-change="intel:fileSelected">
@@ -171,6 +175,10 @@ export const IntelView = (() => {
 
     renderLogs();
     _listen();
+    // Разметку экрана load() пересобирает целиком, а запрос мог остаться в
+    // полёте (ушёл с экрана и вернулся) — иначе кнопка выглядит свободной,
+    // но submit() молча выходит по флагу.
+    _setBusy(_streaming);
   }
 
   function renderLogs() {
@@ -248,10 +256,70 @@ export const IntelView = (() => {
     IntelStore.setStatus('VISION READY');
   }
 
+  /* ── Стриминг: три состояния, три разных места экрана (HUD-2) ──
+     Скелетон — в ленте, пока не пришёл первый токен;
+     точки — хвостом текста, пока он растёт;
+     волна — в кнопке отправки, пока запрос в полёте.
+     Один индикатор на зону: два «занято» в одной карточке читаются как шум. */
+
+  /** Стеклянный скелетон ответа — держит высоту карточки до первого токена. */
+  function _skeletonHtml(L) {
+    return `
+      <div class="intel-skeleton" role="status" aria-label="${L.waiting}">
+        <div class="intel-skeleton-head">
+          <span class="intel-skeleton-avatar"></span>
+          <span class="intel-skeleton-line is-half"></span>
+        </div>
+        <span class="intel-skeleton-line is-full"></span>
+        <span class="intel-skeleton-line is-wide"></span>
+      </div>`;
+  }
+
+  /** Хвостовые точки — «текст ещё идёт». Вставляются в конец последнего блока. */
+  function _typingHtml(L) {
+    return `<span class="intel-typing" role="status" aria-label="${L.streaming}">`
+      + '<span class="intel-typing-dot"></span><span class="intel-typing-dot"></span><span class="intel-typing-dot"></span>'
+      + '</span>';
+  }
+
+  /** Волна в кнопке отправки. Живёт в разметке всегда, показывается классом is-busy. */
+  function _waveHtml() {
+    return '<span class="intel-wave" aria-hidden="true">'
+      + '<span class="intel-wave-bar"></span>'.repeat(4)
+      + '</span>';
+  }
+
+  /**
+   * Запрос в полёте. Второй запрос поверх первого плодил параллельные карточки
+   * и гонку за одну и ту же ленту — теперь кнопка занята, submit() выходит сразу.
+   */
+  let _streaming = false;
+
+  function _setBusy(on) {
+    _streaming = on;
+    const btn = /** @type {HTMLButtonElement|null} */ (document.getElementById('intel-btn-send'));
+    if (!btn) return;
+    btn.classList.toggle('is-busy', on);
+    btn.disabled = on;
+    btn.setAttribute('aria-busy', String(on));
+  }
+
+  /** Перерисовка ответа целиком: форматтер чистый, дешевле держать одну ветку кода. */
+  function _renderStream(feedbackText, fullText, L, withTail) {
+    feedbackText.innerHTML = formatAirMarkdown(fullText, _buildReadinessWidget);
+    if (!withTail) return;
+    const body = feedbackText.querySelector('.intel-md-body');
+    let anchor = body?.lastElementChild || body || feedbackText;
+    // В <ul> может лежать только <li> — точки уезжают внутрь последнего пункта.
+    if (anchor.tagName === 'UL') anchor = anchor.lastElementChild || anchor;
+    anchor.insertAdjacentHTML('beforeend', _typingHtml(L));
+  }
+
   async function submit() {
+    if (_streaming) return;
     const input = /** @type {HTMLInputElement} */ (document.getElementById('intel-input'));
     if (!input || (!input.value.trim() && !_pendingImage)) return;
-    
+
     const text = input.value.trim() || "Analyze this photo";
     const image = _pendingImage;
     
@@ -279,11 +347,12 @@ export const IntelView = (() => {
         </button>
       </div>
       <div class="intel-feedback-text">
-        <div class="intel-feedback-wait">${L.waiting}</div>
+        ${_skeletonHtml(L)}
       </div>
     `;
     feedbackFeed?.prepend(feedbackEl);
     const feedbackText = feedbackEl.querySelector('.intel-feedback-text');
+    _setBusy(true);
 
     try {
       const { DB } = await import('./db.js');
@@ -329,46 +398,25 @@ export const IntelView = (() => {
               try {
                 const parsed = JSON.parse(data);
                 if (parsed.text) {
-                  haptic(2);
+                  // Тычок — один, на первом токене. Вибрация на КАЖДЫЙ чанк
+                  // (так было раньше) — это сотни вызовов navigator.vibrate
+                  // за ответ, и каждый из них синхронный.
+                  if (!fullText) haptic(2);
                   fullText += parsed.text;
-                  if (feedbackText) {
-                    let rawText = fullText;
-                    
-                    // 1. Hide <thinking> tags and anything inside them
-                    rawText = rawText.replace(/<thinking>[\s\S]*?(<\/thinking>|$)/g, '');
-                    
-                    // 2. Extract JSON widget before escaping
-                    let htmlWidget = '';
-                    const jsonMatch = rawText.match(/\{[\s\S]*"_widget"\s*:\s*"readiness"[\s\S]*\}/);
-                    if (jsonMatch) {
-                      try {
-                        const widgetData = JSON.parse(jsonMatch[0]);
-                        htmlWidget = _buildReadinessWidget(widgetData);
-                        rawText = rawText.replace(jsonMatch[0], '[[WIDGET_PLACEHOLDER]]');
-                      } catch (e) { }
-                    }
-                    
-                    // 3. Escape the raw text
-                    let safeText = esc(rawText);
-                    
-                    // 4. Basic markdown (bold)
-                    safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    
-                    // 5. Convert newlines to breaks
-                    safeText = safeText.replace(/\n/g, '<br>');
-                    
-                    // 6. Re-insert widget
-                    if (htmlWidget) {
-                      safeText = safeText.replace('[[WIDGET_PLACEHOLDER]]', htmlWidget);
-                    }
-                    
-                    feedbackText.innerHTML = safeText;
-                  }
+                  if (feedbackText) _renderStream(feedbackText, fullText, L, true);
                 }
               } catch (e) {}
             }
           }
         }
+      }
+
+      // Хвостовые точки снимаем вместе с последней перерисовкой.
+      if (feedbackText) {
+        if (fullText.trim()) _renderStream(feedbackText, fullText, L, false);
+        // Пустой поток оставлял скелетон крутиться вечно — до HUD-2 это был
+        // единственный сценарий, где экран не выходил из ожидания.
+        else feedbackText.textContent = L.empty;
       }
 
       IntelStore.addLog('AI', 'Insight received.');
@@ -392,6 +440,8 @@ export const IntelView = (() => {
       if (label) label.textContent = L.failed;
       feedbackEl.querySelector('.intel-feedback-speak')?.remove();
       if (feedbackText) feedbackText.textContent = toUserMessage(err);
+    } finally {
+      _setBusy(false);
     }
   }
 
