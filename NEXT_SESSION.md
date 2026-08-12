@@ -29,7 +29,9 @@ npm run smoke:prod                                       # доехал ли р�
 бэкап линии — тег `backup-trunk-6b4f80b`. **Branch-protection на main НЕТ** — проверено
 2026-08-04: `gh api repos/.../branches/main` отдаёт `protected: false` (`.../protection`
 даёт 403, приватный репо на бесплатном плане её не поддерживает). Единственный барьер —
-`.githooks/pre-push` (блокирует push на ветку `main`, обход `MAIN_PUSH_OK=1`) плюс
+`.githooks/pre-push` (блокирует любой пуш, чья ЦЕЛЬ — `refs/heads/main`, включая форму
+`HEAD:main` с фича-ветки: судит по `remote ref` из stdin, а не по имени HEAD, O-9;
+обход `MAIN_PUSH_OK=1`) плюс
 дисциплина: `gh pr create --base main` → зелёные чеки → `gh pr merge --rebase`. Хук живёт
 в корневом чекауте (`core.hooksPath` абсолютный) — протухший корень его молча выключает
 у всех worktree разом, см. CLAUDE.md § Multi-Agent Protocol.
