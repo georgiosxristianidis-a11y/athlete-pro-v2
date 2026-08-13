@@ -21,7 +21,7 @@
     "security:audit": "npm audit --audit-level=high",
     "security:sast": "npm run lint",
     "security:check": "npm run security:audit && npm run security:sast",
-    "postinstall": "git config core.hooksPath .githooks",
+    "postinstall": "node scripts/fix-hooks-path.mjs",
     "build:sw": "node scripts/build-sw.mjs",
     "build": "npm run build:sw"
   },
