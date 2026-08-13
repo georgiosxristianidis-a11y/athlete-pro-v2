@@ -1,303 +1,76 @@
-# Fit Elite — Production Deployment Guide
+# DEPLOYMENT — Athlete Pro
 
-**Version:** 1.0.0
-**Milestone:** Elite Foundation ✅ Complete
-**Verification:** 21/21 tests passed (100%)
+> Как проект попадает на прод и как убедиться, что он туда доехал.
+> Версии, числа тестов и SHA здесь не хранятся — протухают от собственного мёржа.
+> Актуальная версия — `js/version.js`, история — `CHANGELOG.md`.
 
----
+## Прод
 
-## 📋 Pre-Deployment Checklist
+Единственная площадка — **Vercel**, проект `gio-g7/athlete-pro-v7`,
+адрес `https://athlete-pro-v7.vercel.app`.
 
-### Environment Setup
+Деплой автоматический: мёрж в `main` → Vercel собирает и выкатывает сам.
+Ручных шагов нет, CLI не нужен.
 
-```bash
-# 1. Verify Node.js version (v18+ recommended)
-node --version
+Конфигурация — `vercel.json`. Устроена нестандартно, и это осознанно: **весь трафик,
+включая статику, идёт через `server.js`** (`routes: [{ src: "/(.*)", dest: "/server.js" }]`),
+а фронтовые файлы едут в лямбду списком `includeFiles`. Причина — заголовки кеша:
+`index.html` и `js/version.js` обязаны отдаваться без валидаторов, иначе клиенты
+морозятся на 304 (разбор — `docs/_archive/HANDOFF_releases_1.25.x.md`).
 
-# 2. Install dependencies
-npm install
+Фронтового билд-степа нет вообще: vanilla ESM едет как есть. `npm run build` — это
+только `build:sw` (генерация списка прекеша в `sw.js`), и его гоняют **до** коммита,
+а не на Vercel.
 
-# 3. Create environment file
-cp .env.example .env
+Других площадок нет. Render не используется (манифест удалён карточкой WEED-1),
+Railway и self-hosted никогда не заводились.
 
-# 4. Set ANTHROPIC_API_KEY in .env (required for AI features)
-ANTHROPIC_API_KEY=your_api_key_here
-PORT=3000
-```
+## Переменные окружения
 
-### Build Verification
+Задаются в дашборде Vercel, в репозитории не хранятся. Полный список с комментариями —
+`.env.example`; он же источник правды, здесь не дублируется.
 
-```bash
-# Run all tests
-npm test
+Минимум для боевого режима: `ANTHROPIC_API_KEY` **или** `GOOGLE_GENERATIVE_AI_API_KEY` —
+приложение работает и без них, просто без AI-коуча. `NODE_ENV=production` Vercel
+проставляет сам.
 
-# Lint check
-npm run lint
+**Ключи в код не попадают никогда** — фронт ходит только в свой бэкенд-прокси
+(`routes/coach.js`), BYOK-ключ пользователя живёт в его браузере и не синкается
+(`js/shared/sync-secrets.js`).
 
-# Format check
-npm run format:check
-
-# Phase 4 verification tests
-node test/phase4-verification.js
-```
-
-**Expected output:**
-```
-✅ All Phase 4 verification tests passed!
-RESULTS: 21 passed, 0 failed
-SUCCESS RATE: 100%
-```
-
----
-
-## 🚀 Deployment Options
-
-### Option 1: Vercel (Recommended for Frontend + Serverless)
-
-1. **Install Vercel CLI:**
-   ```bash
-   npm install -g vercel
-   ```
-
-2. **Deploy:**
-   ```bash
-   vercel login
-   vercel --prod
-   ```
-
-3. **Configure environment variables in Vercel dashboard:**
-   - `ANTHROPIC_API_KEY`
-   - `PORT` (auto-set by Vercel)
-
-**Notes:**
-- Vercel auto-detects Node.js server
-- Serverless functions handle `/api/*` routes
-- Static files served from root
-
----
-
-### Option 2: Railway
-
-1. **Connect GitHub repo to Railway**
-
-2. **Add environment variables:**
-   - `ANTHROPIC_API_KEY`
-   - `PORT` (auto-set)
-
-3. **Deploy automatically on push**
-
-**Notes:**
-- Railway auto-detects `package.json` start script
-- Persistent server (not serverless)
-- Free tier available
-
----
-
-### Option 3: Render
-
-1. **Create new Web Service on Render**
-
-2. **Connect repository:**
-   - Repository: `your-username/athlete-pro`
-   - Root directory: `/`
-   - Build command: `npm install`
-   - Start command: `npm start`
-
-3. **Add environment variables:**
-   - `ANTHROPIC_API_KEY`
-   - `PORT=3000`
-
-**Notes:**
-- Free tier: 750 hours/month
-- Auto-deploy on git push
-- Automatic HTTPS
-
----
-
-### Option 4: Self-Hosted (VPS/Dedicated)
+## Перед мёржем
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/your-username/athlete-pro.git
-cd athlete-pro
-
-# 2. Install dependencies
-npm install --production
-
-# 3. Setup environment
-cp .env.example .env
-# Edit .env with your API keys
-
-# 4. Install PM2 (process manager)
-npm install -g pm2
-
-# 5. Start with PM2
-pm2 start server.js --name fit-elite
-
-# 6. Setup PM2 startup
-pm2 startup
-pm2 save
+npm run preflight    # git-email, node_modules, свежесть базы, свои невлитые ветки
+npm test             # unit + integration
+npm run lint         # eslint + stylelint, 0 errors
+npx playwright test  # e2e, отдельно — не через node --test
 ```
 
-**Nginx reverse proxy configuration:**
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
+Бамп версии при стабильном мёрже: `js/version.js` + `package.json` + `package-lock.json`
+синхронно (проще всего `npm install` — перепишет lock сам), затем **обязательно**
+`npm run build:sw`. Сторожат `test/version-sync.test.js` и гард `sw.js`.
 
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
+Вливать только через PR в `main` — прямой пуш блокирует `.githooks/pre-push`.
 
----
-
-## 🔧 Post-Deployment Verification
-
-### 1. Health Check
+## После мёржа — доехало ли
 
 ```bash
-curl https://your-domain.com/
-# Should return index.html
-
-curl https://your-domain.com/api/supabase-status
-# Should return JSON status (if Supabase configured)
+npm run smoke:prod                 # exit != 0 = не доехал
+npm run smoke:prod -- --wait 180   # поллить, пока Vercel докатывает
 ```
 
-### 2. PWA Verification
+Проверяет пять вещей: `VERSION` на проде совпал с репом · `js/version.js` отдаётся
+без ETag/Last-Modified · `/` без валидаторов · `/assets/*` наоборот кешируются и дают
+304 · `CACHE_NAME` в `sw.js` совпал.
 
-1. Open DevTools → Application
-2. Check Manifest: Should show app name, icons
-3. Check Service Worker: Should be active
-4. Test offline mode: Should work without network
+**Гнать только из ветки с бампом.** Скрипт сравнивает прод с **локальным** `js/version.js`,
+а не с `main`: из старого чекаута даст ложное «не доехал», из непобампленного — ложное
+«доехал». Смотреть строку `local:` в выводе.
 
-### 3. AI Features Test
+Другой адрес — первым аргументом: `node scripts/smoke-prod.mjs https://staging.example.app`.
 
-1. **Program Generation (AI-1):**
-   - Clear localStorage: `localStorage.removeItem('ap-custom-plan')`
-   - Reload app
-   - Should see plan preview modal within 5s
+## Откат
 
-2. **In-Workout AI (AI-3):**
-   - Start a Push workout
-   - Complete first set
-   - AI bubble (✨) should appear in top-right
-   - Click bubble → chat overlay opens
-
-3. **Progressive Overload (AI-4):**
-   - Navigate to workout screen
-   - Set cards should show inline suggestions
-   - Look for 🟢/🔵/⚪ indicators
-
-4. **Weekly Summary:**
-   - Complete 2+ workouts
-   - Navigate to Dashboard
-   - Click "📈 This Week" chip
-   - Modal should show PRs and plateau alerts
-
----
-
-## 📊 Monitoring & Logging
-
-### Production Logs
-
-```bash
-# Vercel
-vercel logs
-
-# Railway
-# Dashboard → Deployments → Logs
-
-# Render
-# Dashboard → Logs
-
-# PM2 (self-hosted)
-pm2 logs fit-elite
-```
-
-### Error Tracking
-
-Recommended integrations:
-- **Sentry** — Frontend error tracking
-- **LogRocket** — Session replay + errors
-- **Better Uptime** — Monitoring + alerts
-
----
-
-## 🔐 Security Checklist
-
-- [ ] `ANTHROPIC_API_KEY` stored in environment variables (NOT in code)
-- [ ] `.env` file in `.gitignore`
-- [ ] HTTPS enabled (auto on Vercel/Railway/Render)
-- [ ] CORS configured for production domain
-- [ ] Rate limiting on `/api/*` endpoints (optional)
-
----
-
-## 📈 Performance Targets
-
-**Lighthouse Scores (mobile):**
-- Performance: ≥ 90
-- Accessibility: ≥ 90
-- Best Practices: ≥ 90
-- SEO: ≥ 90
-- PWA: ✅ Pass
-
-**Current:** 97/100 (verified Phase 2)
-
----
-
-## 🔄 Rollback Procedure
-
-```bash
-# Vercel
-vercel rollback
-
-# Railway
-# Dashboard → Deployments → Rollback to previous
-
-# Render
-# Dashboard → Manual Deploy → Select previous commit
-
-# PM2
-pm2 reload fit-elite --update-env
-```
-
----
-
-## 📞 Support
-
-**Documentation:**
-- `.planning/STATE.md` — Project state
-- `CLAUDE.md` — Development guide
-- `CHANGELOG.md` — Version history
-
-**Issues:**
-- GitHub Issues: https://github.com/your-username/athlete-pro/issues
-
----
-
-## ✅ Deployment Sign-Off
-
-**Pre-deployment:**
-- [ ] All tests passing (21/21)
-- [ ] Lint check passing
-- [ ] Environment variables configured
-- [ ] `.env` in `.gitignore`
-
-**Post-deployment:**
-- [ ] Health check passed
-- [ ] PWA verified
-- [ ] AI features tested
-- [ ] No console errors
-
-**Deployed by:** ________________
-**Date:** ________________
-**Version:** 1.0.0
-**Status:** ✅ Production Ready
+Vercel → Deployments → выбрать предыдущий → Promote to Production.
+Через git — revert-коммит и обычный PR; прямой force-push в `main` запрещён.
