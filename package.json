@@ -21,7 +21,7 @@
     "security:audit": "npm audit --audit-level=high",
     "security:sast": "npm run lint",
     "security:check": "npm run security:audit && npm run security:sast",
-    "postinstall": "node scripts/fix-hooks-path.mjs",
+    "postinstall": "node scripts/fix-hooks-path.mjs || exit 0",
     "build:sw": "node scripts/build-sw.mjs",
     "build": "npm run build:sw"
   },
