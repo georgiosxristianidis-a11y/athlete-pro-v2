@@ -582,35 +582,47 @@ export const IntelView = (() => {
   }
 
 
-  function createWorkout() {
+  async function createWorkout() {
      haptic(10);
      IntelStore.addLog('SYS', 'Ready to generate workout plan');
-     IntelStore.setStatus('WAITING FOR PROMPT');
+     
+     // 1. Get Fatigue Map
+     const { DB } = await import('./db.js');
+     const fatigue = await DB.Settings.get('fatigue') || {};
+     
      const input = document.getElementById('intel-input');
      if (input) {
-         input.value = "";
-         input.focus();
-         // @ts-ignore
-         input.placeholder = "Какую группу мышц тренируем сегодня?";
-     }
-  }
-
-  function analyzeStats() {
-     haptic(10);
-     IntelStore.addLog('SYS', 'Ready to analyze stats');
-     const input = document.getElementById('intel-input');
-     if (input) {
-         input.value = "Проведи глубокий разбор последней тренировки. Сгенерируй readiness-виджет (_widget: readiness) с оценкой 0-100. Напиши пару строк о главном успехе и слабом месте.";
+         input.value = `Сгенерируй тренировку на сегодня. Текущая мышечная усталость: ${JSON.stringify(fatigue)}. Исключи мышцы с усталостью > 60%.`;
          submit();
      }
   }
 
-  function checkBiometrics() {
+  async function analyzeStats() {
      haptic(10);
-     IntelStore.addLog('SYS', 'Requesting Biometrics scan');
+     IntelStore.addLog('SYS', 'Ready to analyze stats');
+     
+     const { DB } = await import('./db.js');
+     const history = await DB.Workouts.getAll();
+     const sorted = history.sort((a,b) => new Date(b.date) - new Date(a.date));
+     const lastWorkout = sorted[0] ? JSON.stringify(sorted[0]) : "Нет данных";
+     
      const input = document.getElementById('intel-input');
      if (input) {
-         input.value = "Проанализируй мою тепловую карту мышц (Heatmap) и историю нагрузок. Выведи отчет о биометрии: какие мышцы устали, какие готовы к взрывной работе. Дай оценку ЦНС.";
+         input.value = `Проведи суровый разбор только последней тренировки: ${lastWorkout}. Проанализируй RPE и объём. Дай 1 строку главного успеха и 1 строку ошибки. Не выдумывай виджет.`;
+         submit();
+     }
+  }
+
+  async function checkBiometrics() {
+     haptic(10);
+     IntelStore.addLog('SYS', 'Computing deterministic readiness...');
+     
+     const { calculateReadiness } = await import('./readiness.engine.js');
+     const { acwr, cns, recovery } = await calculateReadiness();
+     
+     const input = document.getElementById('intel-input');
+     if (input) {
+         input.value = `Выведи #gym виджет, используя эти СТРОГИЕ детерминированные данные с устройства: ACWR: ${acwr}, CNS: ${cns}%, Recovery: ${recovery}%. Выдай 1 суровую строчку рекомендаций по нагрузке на сегодня на основе этих цифр.`;
          submit();
      }
   }

@@ -26,6 +26,7 @@
     "build": "npm run build:sw"
   },
   "dependencies": {
+    "@andresaya/edge-tts": "^1.8.0",
     "@anthropic-ai/sdk": "^0.51.0",
     "@google/genai": "^2.16.0",
     "@supabase/supabase-js": "^2.102.1",
