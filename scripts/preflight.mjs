@@ -80,6 +80,32 @@ if (!fs.existsSync('node_modules')) {
   }
 }
 
+// --- 2b. hooksPath принадлежит этому чекауту --------------------------------
+// extensions.worktreeConfig=true даёт каждому worktree свой config.worktree.
+// До HYG-4 (2026-08-13) там оседал АБСОЛЮТНЫЙ core.hooksPath на корневой
+// чекаут — протухший корень (чужая ветка) молча выключал хуки сразу у всех
+// worktree разом. Простой относительный `git config core.hooksPath .githooks`
+// в postinstall дыру не чинит: если ключ уже сидит в config.worktree, запись
+// без --worktree правит только .git/config, а оверрайд остаётся первым в
+// приоритете. Ловим здесь, не дожидаясь пока протухнет ещё раз.
+const hooksPathRaw = tryGit(['config', 'core.hooksPath']);
+const toplevel = tryGit(['rev-parse', '--show-toplevel']);
+if (!hooksPathRaw) {
+  add('FAIL', 'hooksPath', 'core.hooksPath не задан — хуки не подключены', 'npm install');
+} else {
+  const hooksDir = path.resolve(toplevel || '.', hooksPathRaw);
+  if (toplevel && path.resolve(toplevel) !== path.resolve(hooksDir, '..')) {
+    add(
+      'FAIL',
+      'hooksPath',
+      `core.hooksPath указывает за пределы этого чекаута: ${hooksDir}`,
+      'node scripts/fix-hooks-path.mjs — снимает protухший worktree-оверрайд',
+    );
+  } else {
+    add('OK', 'hooksPath', 'указывает в свой чекаут');
+  }
+}
+
 // --- 3. Свежесть базы -------------------------------------------------------
 const branch = tryGit(['branch', '--show-current']) || '(detached)';
 const fetched = gitOk(['fetch', '--quiet', 'origin', 'main'], { timeout: 20000 });

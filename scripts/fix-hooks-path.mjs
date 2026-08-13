@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+// Ставит core.hooksPath относительным и чистит унаследованный worktree-level
+// оверрайд (карточка HYG-4).
+//
+// extensions.worktreeConfig=true даёт каждому `git worktree` свой config.worktree.
+// До этой карточки core.hooksPath туда прописывался АБСОЛЮТНЫМ путём на корневой
+// чекаут — протухший корень (чужая ветка, старый main) молча выключал хуки сразу
+// у всех worktree. Простой `git config core.hooksPath .githooks` в postinstall
+// эту дыру не чинил: если ключ уже существует в config.worktree, plain-запись
+// без --worktree правит только .git/config, а worktree-оверрайд остаётся первым
+// в приоритете и продолжает побеждать. Нужно сначала снять его явно.
+import { execFileSync } from 'node:child_process';
+
+function git(args) {
+  return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+}
+
+function tryGit(args) {
+  try {
+    return git(args);
+  } catch {
+    return null;
+  }
+}
+
+if (tryGit(['config', '--worktree', '--get', 'core.hooksPath']) !== null) {
+  tryGit(['config', '--worktree', '--unset-all', 'core.hooksPath']);
+}
+
+git(['config', 'core.hooksPath', '.githooks']);
