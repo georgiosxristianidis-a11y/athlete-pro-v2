@@ -9,6 +9,13 @@
 // эту дыру не чинил: если ключ уже существует в config.worktree, plain-запись
 // без --worktree правит только .git/config, а worktree-оверрайд остаётся первым
 // в приоритете и продолжает побеждать. Нужно сначала снять его явно.
+//
+// В package.json вызов идёт через `|| exit 0` — осознанно. Развязка хуков это
+// удобство разработчика, и она НЕ должна ронять продакшн-сборку. `scripts/`
+// лежит в `.vercelignore`, поэтому в билд-контейнере Vercel этого файла просто
+// нет: строгий вызов валил `npm install`, а с ним весь деплой (ff9ceed, PR#196).
+// Тот же путь закрывает сборку вообще без git. Реальный гард — не postinstall,
+// а проверка hooksPath в `npm run preflight` плюс `test/postinstall-guard.test.js`.
 import { execFileSync } from 'node:child_process';
 
 function git(args) {

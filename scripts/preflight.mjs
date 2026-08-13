@@ -94,15 +94,20 @@ if (!hooksPathRaw) {
   add('FAIL', 'hooksPath', 'core.hooksPath не задан — хуки не подключены', 'npm install');
 } else {
   const hooksDir = path.resolve(toplevel || '.', hooksPathRaw);
-  if (toplevel && path.resolve(toplevel) !== path.resolve(hooksDir, '..')) {
+  // Судим по вложенности, а не по точному совпадению родителя: вложенный путь
+  // вроде tools/hooks законен, и ложный FAIL тут дороже отсутствия проверки —
+  // красный, который «всегда такой», перестают читать целиком.
+  const rel = toplevel ? path.relative(toplevel, hooksDir) : '';
+  const outside = toplevel && (rel.startsWith('..') || path.isAbsolute(rel));
+  if (outside) {
     add(
       'FAIL',
       'hooksPath',
       `core.hooksPath указывает за пределы этого чекаута: ${hooksDir}`,
-      'node scripts/fix-hooks-path.mjs — снимает protухший worktree-оверрайд',
+      'node scripts/fix-hooks-path.mjs — снимает протухший worktree-оверрайд',
     );
   } else {
-    add('OK', 'hooksPath', 'указывает в свой чекаут');
+    add('OK', 'hooksPath', `указывает в свой чекаут (${rel || '.'})`);
   }
 }
 
