@@ -23,8 +23,17 @@
 //
 // Оффлайн — не блокирует (WARN на последнем известном origin/main).
 // Осознанный обход: DRIFT_OK=1 git push.
+//
+// Здесь же живёт вторая, независимая проверка — ОТВЕРГНУТЫЕ ЛИНИИ (BASE-1):
+// база не должна содержать код линии, по которой вынесен вердикт «не вливать».
+// Она попала в этот файл не по смыслу, а по слоям: скрипт уже вызывается и из
+// pre-push, и из job `drift` в CI, то есть одной правкой закрывает и раннюю
+// локальную ловлю, и слой, которому протухший чекаут не страшен. У неё свой
+// блок, свой обход (DONOR_OK) и свой выход — см. комментарий у самой проверки.
 
 import { execFileSync } from 'node:child_process';
+
+import { scanBase } from './rejected-lines.mjs';
 
 const MAIN = 'origin/main';
 
@@ -47,6 +56,36 @@ const red = (s) => `\x1b[31m${s}\x1b[0m`;
 const yellow = (s) => `\x1b[33m${s}\x1b[0m`;
 const green = (s) => `\x1b[32m${s}\x1b[0m`;
 const bold = (s) => `\x1b[1m${s}\x1b[0m`;
+
+/* Отвергнутые линии (BASE-1). Идёт ПЕРВОЙ — раньше DRIFT_OK, раньше выхода на
+   main и раньше сетевых шагов. Причины по порядку важности:
+
+   1. Обход у неё свой, DONOR_OK. Рутинный DRIFT_OK=1 («знаю, что отстал»)
+      набирается на автомате, и разделить его с «под тобой лежит отвергнутый код
+      с утечкой ключа» — не педантизм: инцидент O-9 куплен ровно тем, что один
+      обход снял один гард, а второй остался стоять.
+   2. Проверка чисто локальная (merge-base по объектам), сети не требует —
+      значит не должна зависеть от шагов, которые её требуют.
+   3. Ветка `main` в локальном чекауте с донорской линией внутри — не «нечего
+      проверять», а худший из возможных случаев.
+
+   Молчит, когда линия влита в origin/main, и когда объекта нет в хранилище:
+   см. `scripts/rejected-lines.mjs`, там разобрано почему. */
+const donor = scanBase({ mainRef: MAIN });
+if (donor.hits.length && process.env.DONOR_OK === '1') {
+  console.log(yellow('⚠️  [Donor] Проверка отвергнутых линий отключена через DONOR_OK=1.'));
+} else if (donor.hits.length) {
+  console.log(red(bold('\n❌ [Donor Block] База содержит отвергнутую линию.\n')));
+  for (const { sha, name, why } of donor.hits) {
+    console.log(`   ${sha.slice(0, 7)} (${name}) — ${why}`);
+  }
+  if (!donor.mainKnown) console.log(yellow('   origin/main недоступен — влитость линии не проверена.'));
+  console.log('\n   Ветку резать от свежего origin/main, а не от этой базы:');
+  console.log('   git fetch origin && git rebase --onto origin/main <линия> <ветка>');
+  console.log('\n   Осознанный обход (например, пуш самой донорской ветки в архив):');
+  console.log('   DONOR_OK=1 git push\n');
+  process.exit(1);
+}
 
 if (process.env.DRIFT_OK === '1') {
   console.log(yellow('⚠️  [Drift] Проверка дрейфа отключена через DRIFT_OK=1.'));

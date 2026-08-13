@@ -23,6 +23,8 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { scanBase } from './rejected-lines.mjs';
+
 const STALE_MS = 24 * 60 * 60 * 1000;
 const MAX_LISTED = 10;
 
@@ -147,38 +149,21 @@ if (!mainRef) {
 // конфликт, а утечка BYOK-ключа в неаутентифицированный эндпоинт, уехавшая в
 // main под видом безобидной карточки.
 //
-// Судим по метке, а не по «HEAD не потомок origin/main»: метка в базе — это
-// факт («код отвергнутой линии у тебя под ногами»), а отставание — совпадение.
-// Обратная сторона того же чтения: если линия когда-нибудь легально приедет в
-// main, метка станет её предком, и гард замолчит сам, без правки списка.
-const REJECTED_LINES = [
-  { ref: 'checkpoint-elite-hud-wow', why: 'линия feature/elite-hud-wow, вердикт 2026-08-11 «не вливать»' },
-];
-
-// Метка живёт в стороне от main, поэтому `fetch origin main` её не притащит.
-// Отсутствие объекта локально — само по себе ответ: недостижимое из HEAD не
-// может быть его предком. Гадать по ls-remote незачем.
-const tainted = REJECTED_LINES.filter(
-  ({ ref }) => gitOk(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]) && gitOk(['merge-base', '--is-ancestor', ref, 'HEAD']),
-);
-
-if (!mainRef) {
-  add('WARN', 'донорские линии', 'origin/main недоступен — проверка пропущена');
+// Список и сама проверка — в `scripts/rejected-lines.mjs`: тот же модуль зовёт
+// гард дрейфа, то есть pre-push и CI. Две копии списка разъехались бы на второй
+// отвергнутой линии, и гард был бы зелёным ровно там, где смотрят.
+const { mainKnown, hits } = scanBase();
+if (!hits.length) {
+  add('OK', 'донорские линии', 'база чистая — отвергнутого кода под ногами нет');
 } else {
-  // Уже влитое в main отвергнутым больше не считается — иначе гард начнёт
-  // краснеть у всех и сразу, а такой красный перестают читать.
-  const live = tainted.filter(({ ref }) => !gitOk(['merge-base', '--is-ancestor', ref, mainRef]));
-  if (!live.length) {
-    add('OK', 'донорские линии', 'база чистая — отвергнутого кода под ногами нет');
-  } else {
-    for (const { ref, why } of live) {
-      add(
-        'FAIL',
-        'донорские линии',
-        `база чекаута содержит ${ref} — ${why}`,
-        `git rebase --onto origin/main ${ref} ${branch} (или нарезать ворктри заново от origin/main) — иначе код отвергнутой линии уедет в main вместе с карточкой`,
-      );
-    }
+  for (const { sha, name, why } of hits) {
+    add(
+      'FAIL',
+      'донорские линии',
+      `база чекаута содержит ${sha.slice(0, 7)} (${name}) — ${why}` +
+        (mainKnown ? '' : '; сверить с origin/main не удалось (оффлайн)'),
+      `git rebase --onto origin/main ${sha} ${branch} (или нарезать ворктри заново от origin/main) — иначе код отвергнутой линии уедет в main вместе с карточкой`,
+    );
   }
 }
 
