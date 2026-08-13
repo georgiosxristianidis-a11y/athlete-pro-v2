@@ -11,8 +11,8 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  WEIGHTS, CNS, WINDOWS,
-  sessionLoad, loadInWindow, dailyLoads,
+  WEIGHTS, CNS, WINDOWS, MIN_DATA,
+  sessionLoad, loadInWindow, dailyLoads, countSessions,
   acwr, acwrScore,
   bestE1RM, isCnsHeavy, recovery, cnsLoad,
   monotony, monotonyScore, strain,
@@ -216,13 +216,22 @@ describe('монотонность (Foster)', () => {
 });
 
 describe('тренд', () => {
-  test('без прошлой недели — null', () => {
+  test('без базы за три предыдущие недели — null', () => {
     assert.equal(trend([w(0, 1000)], NOW), null);
   });
 
-  test('+5% к прошлой неделе', () => {
-    const t = trend([w(1, 1050), w(8, 1000)], NOW);
+  test('+5% к среднему за три предыдущие недели', () => {
+    // база: по 1000 в каждой из трёх недель → среднее 1000
+    const t = trend([w(1, 1050), w(8, 1000), w(15, 1000), w(22, 1000)], NOW);
     assert.ok(Math.abs(t - 0.05) < 1e-9, `trend=${t}`);
+  });
+
+  test('одна пустая неделя внутри базы не выдаёт скачок (INTEL-2b)', () => {
+    // На реальной истории Gio сравнение с ОДНОЙ прошлой неделей давало
+    // +6983% там, где человек ровно ходил три раза в неделю.
+    const list = [w(1, 1000), w(3, 1000), w(15, 1500), w(17, 1500), w(22, 1500), w(24, 1500)];
+    const t = trend(list, NOW);
+    assert.ok(Math.abs(t) < 1.0, `тренд не должен улетать в разы: ${t}`);
   });
 
   test('умеренный рост — 100, обвал и скачок — плохо', () => {
@@ -320,5 +329,63 @@ describe('индекс готовности', () => {
   test('окна ACWR — 7 и 28 дней', () => {
     assert.equal(WINDOWS.acuteDays, 7);
     assert.equal(WINDOWS.chronicDays, 28);
+  });
+});
+
+/**
+ * INTEL-2b — гарды достаточности данных. Все три случая взяты из калибровки
+ * на реальной выгрузке Gio (2026-08-13, 112 сессий), а не придуманы.
+ */
+describe('INTEL-2b: движок не притворяется, что измерил', () => {
+  test('одиннадцать месяцев без зала: index null, а не 100', () => {
+    // Настоящий кейс: последняя тренировка год назад. Живо одно слагаемое —
+    // восстановление («полностью отдохнул») — и до гарда оно в одиночку
+    // перенормировалось в «отлично».
+    const r = readiness([w(330, 9000), w(333, 9000), w(336, 9000)], { now: NOW });
+    assert.equal(r.parts.recovery, 100, 'восстановление живо и равно 100');
+    assert.equal(r.parts.acwr, null);
+    assert.equal(r.parts.monotony, null);
+    assert.equal(r.parts.trend, null);
+    assert.equal(r.index, null, 'одного слагаемого мало для числа');
+    assert.equal(r.confidence, 'none');
+  });
+
+  test('вернулся после паузы: ACWR не считается вместо того, чтобы дать 0', () => {
+    // Все 28 дней нагрузки лежат в последних 7 → отношение упирается в 4.0
+    // при любом поведении. Это артефакт пустой базы, а не перегруз.
+    const list = [w(0, 7000), w(1, 6000), w(3, 6500), w(5, 7500), w(300, 9000)];
+    assert.equal(acwr(list, NOW), null, 'хронической базы отдельно от острого окна нет');
+    const r = readiness(list, { now: NOW });
+    assert.equal(r.parts.acwr, null);
+    assert.notEqual(r.index, null, 'остальные слагаемые живы — число есть');
+    assert.equal(r.confidence, 'low');
+  });
+
+  test('база есть — ACWR считается как раньше', () => {
+    const list = [];
+    for (let d = 0; d < 28; d += 7) list.push(w(d, 1000));
+    assert.equal(acwr(list, NOW), 1);
+  });
+
+  test('меньше четырёх сессий в хроническом окне — ACWR молчит', () => {
+    const list = [w(1, 1000), w(10, 1000), w(20, 1000)];
+    assert.equal(countSessions(list, NOW, WINDOWS.chronicDays), 3);
+    assert.equal(acwr(list, NOW), null);
+    assert.equal(acwr([...list, w(15, 1000)], NOW) !== null, true, 'четвёртая сессия открывает счёт');
+  });
+
+  test('запись с нулевым тоннажем — не сессия', () => {
+    // В выгрузке такая есть: 116 минут, пять упражнений, ни одного подхода.
+    const empty = { id: 9, type: 'push', timestamp: NOW - 2 * HOUR, duration: 116 * 60000, tonnage: 0, exercises: [] };
+    const list = [empty, w(3, 1000), w(5, 1000), w(9, 1000), w(12, 1000)];
+    const r = readiness(list, { now: NOW });
+    assert.equal(r.raw.sessions28d, 4, 'пустая запись не попала в счётчик');
+    assert.ok(r.raw.hoursSinceLast >= 72, 'и не сбросила восстановление в ноль');
+  });
+
+  test('пороги достаточности объявлены явно', () => {
+    assert.equal(MIN_DATA.chronicSessions, 4);
+    assert.equal(MIN_DATA.parts, 2);
+    assert.equal(WINDOWS.trendBaseDays, 21);
   });
 });

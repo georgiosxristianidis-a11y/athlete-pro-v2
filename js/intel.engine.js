@@ -56,8 +56,29 @@ export const CNS = Object.freeze({
   baseHours: 48,
 });
 
-/** Окна ACWR: острое 7 дней, хроническое 28 (4 недели). */
-export const WINDOWS = Object.freeze({ acuteDays: 7, chronicDays: 28 });
+/**
+ * Окна: острое 7 дней, хроническое 28 (4 недели), база тренда — 21 день
+ * перед острым окном (три недели), чтобы сравнивать неделю со средним, а не
+ * с одной соседней (INTEL-2b).
+ */
+export const WINDOWS = Object.freeze({ acuteDays: 7, chronicDays: 28, trendBaseDays: 21 });
+
+/**
+ * Пороги достаточности данных (INTEL-2b, куплены калибровкой на реальной
+ * выгрузке 2026-08-13).
+ *
+ * `chronicSessions` — сколько сессий должно лежать в хроническом окне, чтобы
+ * ACWR вообще считался. Без этого гарда у вернувшегося после паузы отношение
+ * упирается в потолок (все 28 дней нагрузки лежат в последних 7 → ACWR = 4.0)
+ * и выдаёт 0 баллов при любом поведении: величина не измеряется, а является
+ * артефактом пустой базы.
+ *
+ * `parts` — сколько слагаемых должно быть живо, чтобы индекс имел смысл.
+ * На той же выгрузке движок показывал 100 после одиннадцати месяцев без зала:
+ * жило одно слагаемое (восстановление — «полностью отдохнул»), веса
+ * перенормировались на него одного, и «данных мало» читалось как «отлично».
+ */
+export const MIN_DATA = Object.freeze({ chronicSessions: 4, parts: 2 });
 
 /* ════════════════════════════════════════════════════════
    БАЗОВЫЕ ПОМОЩНИКИ
@@ -141,11 +162,36 @@ export function dailyLoads(workouts, now, days) {
    ════════════════════════════════════════════════════════ */
 
 /**
+ * Число сессий с ненулевой нагрузкой в окне (пустая запись — не сессия).
+ * @returns {number}
+ */
+export function countSessions(workouts, now, days, offsetDays = 0) {
+  const to = now - offsetDays * DAY;
+  const from = to - days * DAY;
+  let n = 0;
+  for (const w of workouts) {
+    const t = w?.timestamp;
+    if (!Number.isFinite(t) || t <= from || t > to) continue;
+    if (sessionLoad(w) > 0) n++;
+  }
+  return n;
+}
+
+/**
  * Acute:Chronic Workload Ratio. Хроническая приведена к недельному
  * эквиваленту (28 дней / 4), иначе отношение всегда было бы около 0.25.
+ *
+ * Гард достаточности данных (INTEL-2b): отношение считается только если
+ * хроническая база существует ОТДЕЛЬНО от острого окна — то есть в днях
+ * 8–28 есть нагрузка и во всём окне набралось `MIN_DATA.chronicSessions`
+ * сессий. Иначе ACWR — не измерение, а деление свежей недели на саму себя.
+ *
  * @returns {number|null} null, если хронической базы ещё нет
  */
 export function acwr(workouts, now) {
+  const baseLoad = loadInWindow(workouts, now, WINDOWS.chronicDays - WINDOWS.acuteDays, WINDOWS.acuteDays);
+  if (baseLoad <= 0) return null;
+  if (countSessions(workouts, now, WINDOWS.chronicDays) < MIN_DATA.chronicSessions) return null;
   const acute = loadInWindow(workouts, now, WINDOWS.acuteDays);
   const chronic = loadInWindow(workouts, now, WINDOWS.chronicDays) / (WINDOWS.chronicDays / WINDOWS.acuteDays);
   if (chronic <= 0) return null;
@@ -299,14 +345,21 @@ export function strain(workouts, now) {
    ════════════════════════════════════════════════════════ */
 
 /**
- * Недельный прирост нагрузки: эта неделя против предыдущей.
- * @returns {number|null} доля (+0.05 = +5%); null, если прошлой недели нет
+ * Прирост нагрузки: эта неделя против СРЕДНЕЙ за три предыдущие.
+ *
+ * Сравнение с одной соседней неделей (как было до INTEL-2b) меряло не
+ * динамику, а границу окна: на реальной истории Gio при ровных трёх
+ * тренировках в неделю оно давало −100% · +228% · +6983% просто оттого,
+ * в какой день недели попала сессия. Трёхнедельная база это гасит.
+ *
+ * @returns {number|null} доля (+0.05 = +5%); null, если базы ещё нет
  */
 export function trend(workouts, now) {
-  const prev = loadInWindow(workouts, now, 7, 7);
-  if (prev <= 0) return null;
-  const cur = loadInWindow(workouts, now, 7);
-  return cur / prev - 1;
+  const weeks = WINDOWS.trendBaseDays / WINDOWS.acuteDays;
+  const base = loadInWindow(workouts, now, WINDOWS.trendBaseDays, WINDOWS.acuteDays) / weeks;
+  if (base <= 0) return null;
+  const cur = loadInWindow(workouts, now, WINDOWS.acuteDays);
+  return cur / base - 1;
 }
 
 /**
@@ -346,10 +399,14 @@ export function trendScore(t) {
 /**
  * Индекс готовности 0–100 и его разбор.
  *
- * Слагаемое без данных выпадает из суммы вместе со своим весом
- * (веса оставшихся перенормируются). Если данных нет вообще —
- * `index: null` и `confidence: 'none'`: пустой экран честнее нуля,
- * который читается как «ты в яме».
+ * Слагаемое без данных выпадает из суммы вместе со своим весом (веса
+ * оставшихся перенормируются), но только пока живых слагаемых хотя бы
+ * `MIN_DATA.parts`. Меньше — `index: null` и `confidence: 'none'`: пустое
+ * место честнее и нуля («ты в яме»), и ста («ты свеж») — оба читаются как
+ * измерение там, где измерения нет.
+ *
+ * Записи с нулевой нагрузкой отбрасываются: сессией считается только та,
+ * в которой что-то поднято.
  *
  * @param {Array<Object>} workouts список записей тренировок (порядок не важен)
  * @param {{ now?: number }} [opts]
@@ -357,7 +414,12 @@ export function trendScore(t) {
  */
 export function readiness(workouts, opts = {}) {
   const now = Number.isFinite(opts.now) ? Number(opts.now) : Date.now();
-  const list = Array.isArray(workouts) ? workouts.filter(w => Number.isFinite(w?.timestamp)) : [];
+  // Запись с нулевой нагрузкой — не тренировка, а след открытого и брошенного
+  // экрана (в выгрузке Gio такая есть: 116 минут, пять упражнений, тоннаж 0).
+  // Считать её сессией — значит врать и счётчику, и восстановлению.
+  const list = Array.isArray(workouts)
+    ? workouts.filter(w => Number.isFinite(w?.timestamp) && sessionLoad(w) > 0)
+    : [];
 
   const rawAcwr = acwr(list, now);
   const rawMono = monotony(list, now);
@@ -373,17 +435,23 @@ export function readiness(workouts, opts = {}) {
 
   let sum = 0;
   let weightSum = 0;
+  let live = 0;
   for (const key of Object.keys(WEIGHTS)) {
     if (parts[key] === null) continue;
     sum += parts[key] * WEIGHTS[key];
     weightSum += WEIGHTS[key];
+    live++;
   }
 
-  const sessions28d = list.filter(w => w.timestamp > now - WINDOWS.chronicDays * DAY && w.timestamp <= now).length;
-  const confidence = weightSum === 0 ? 'none' : (sessions28d < 6 ? 'low' : 'ok');
+  // Перенормировка честна, пока слагаемых несколько, и врёт, когда оно одно:
+  // «отдохнул» в одиночку давало 100 после одиннадцати месяцев без зала.
+  // Меньше порога — числа нет вообще (INTEL-2b).
+  const enough = live >= MIN_DATA.parts;
+  const sessions28d = countSessions(list, now, WINDOWS.chronicDays);
+  const confidence = !enough ? 'none' : (live < 4 || sessions28d < 6 ? 'low' : 'ok');
 
   return {
-    index: weightSum === 0 ? null : Math.round(sum / weightSum),
+    index: enough ? Math.round(sum / weightSum) : null,
     parts,
     cns: cnsLoad(list, now),
     raw: {
