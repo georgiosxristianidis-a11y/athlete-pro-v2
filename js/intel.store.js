@@ -1,5 +1,21 @@
 // @ts-check
 
+import { DB } from './db.js';
+import { readiness } from './intel.engine.js';
+
+/**
+ * Индекс готовности по локальной истории (INTEL-2).
+ * Тонкий адаптер: единственное место, где движок встречается с IndexedDB —
+ * сам движок остаётся чистым и тестируется без базы.
+ * Отказ базы — не повод падать экрану: возвращаем честный пустой индекс.
+ * @param {{ now?: number }} [opts]
+ * @returns {Promise<import('./intel.engine.js').Readiness>}
+ */
+export async function fetchReadiness(opts = {}) {
+  const workouts = await DB.Workouts.getAll().catch(() => []);
+  return readiness(workouts, opts);
+}
+
 /**
  * IntelStore — Athlete Pro
  * State management for the Neural Command Center.
