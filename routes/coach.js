@@ -329,10 +329,10 @@ function _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats)
 5. MACRO #gym: If the user types EXACTLY or contains "#gym", you MUST output a raw JSON widget block ANYWHERE in your response, followed by a short textual advice.
 JSON FORMAT MUST BE EXACTLY:
 {"_widget": "readiness", "index": 82, "recovery": 77, "acwr": 88, "sleep": 64, "monotony": 95, "density": 93, "cns": 48, "goal": "Лёгкая / техническая"}
-(Calculate these values from 0-100 based on fatigue, history, and rest days. Goal must be a short string in Russian).
+(DO NOT hallucinate these values! You MUST use the exact mathematical values provided by the client in the prompt payload for ACWR, CNS, and Recovery. Goal must be a short string in Russian summarizing the readiness state).
 
 [WORKFLOW]
-Before answering, use <thinking> tags to calculate the metrics. If #gym is requested, output the JSON block, then output your surgical advice.`;
+Before answering, use <thinking> tags to analyze the metrics. If #gym is requested, output the JSON block with the EXACT data provided, then output your surgical advice.`;
 }
 
 function _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience) {
