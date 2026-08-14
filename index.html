@@ -38,14 +38,6 @@
     <link rel="preload" as="font" type="font/woff2" href="fonts/manrope-cyrillic.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="fonts/instrument-sans-latin.woff2" crossorigin />
 
-    <!-- Знак автозагрузки. Preload, а не просто <img>: сплэш — первый кадр, и
-         без подсказки браузер узнаёт о картинке только разобрав <body>.
-         Тот же файл, что отдаёт манифест и статус-бар: знак на сплэше обязан
-         быть пиксель-в-пиксель тем, что пользователь видит на домашнем экране
-         (до 1.27.32 тут жил инлайновый SVG прошлого логотипа — сплэш показывал
-         одно поколение знака, шапка следом другое). -->
-    <link rel="preload" as="image" href="icons/icon-192.png" />
-
     <!-- LOAD-2: без бандлера браузер узнаёт о модуле только разобрав того, кто
          его импортирует — отсюда лестница из 12 волн на прогретом кеше
          (docs/handoff/HANDOFF_load_perf.md). Здесь — волны 5 и глубже (модули,
@@ -177,10 +169,6 @@
         box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.04);
         border-top: 1px solid rgba(0, 0, 0, 0.08);
       }
-      :root[data-theme='light'] #loading {
-        background: #f4f4f7;
-      }
-
       /* SHELL */
       #app {
         display: flex;
@@ -300,46 +288,6 @@
       .nav-btn.active { color: var(--c-accent); }
       .nav-btn:active { transform: scale(var(--press-scale)); }
 
-      /* LOADING */
-      #loading {
-        position: fixed; inset: 0; background: #050507;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        z-index: 9000; transition: opacity 0.5s ease;
-      }
-      #loading.hidden { opacity: 0; pointer-events: none; }
-      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-      /* Splash mark — тот же PNG, что отдаёт манифест (1.27.32). Своей плашки
-         и своего фона тут нет намеренно: подложка нарисована внутри самого
-         знака, и внешний бокс из --c-accent-bg подкладывал под чёрную плитку
-         зелёный квадрат.
-         Entrance pop (spring) + мягкое дыхание вместо голого opacity-мигания.
-         cubic-bezier литерал = --ease-spring из base.css: критический блок не
-         может ссылаться на переменные, которых тут нет (в этом и был баг ниже). */
-      @keyframes splash-in {
-        0% { opacity: 0; transform: scale(0.7); filter: blur(6px); }
-        100% { opacity: 1; transform: scale(1); filter: blur(0); }
-      }
-      @keyframes splash-breathe {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.8; transform: scale(0.96); }
-      }
-      .splash-mark {
-        width: 96px; height: 96px;
-        display: block;
-        animation: splash-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both,
-                   splash-breathe 1.8s ease-in-out 0.4s infinite;
-      }
-      /* Выход детерминирован. Дыхание бесконечное, а загрузка кончается когда
-         кончается: без этого правила знак срезало на произвольном кадре цикла —
-         то на 0.8 прозрачности, то на 0.96 масштаба. Здесь анимация снимается,
-         и уход всегда один и тот же — подъём и растворение. GPU-only. */
-      #loading.hidden .splash-mark {
-        animation: none;
-        opacity: 0;
-        transform: scale(1.08);
-        transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
       /* Avatar Btn */
       .athlete-avatar-btn {
         width: 32px; height: 32px; border-radius: 10px;
@@ -364,10 +312,6 @@
   </head>
 
   <body>
-    <div id="loading">
-      <img src="icons/icon-192.png" class="splash-mark" width="96" height="96" alt="Athlete Pro" fetchpriority="high" decoding="sync" />
-    </div>
-
     <div id="app">
       <div id="status-bar">
         <div class="status-logo">

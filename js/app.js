@@ -98,19 +98,6 @@ window.addEventListener('online', () => document.getElementById('di-dot')?.class
 window.addEventListener('offline', () => document.getElementById('di-dot')?.classList.replace('online', 'offline'));
 
 
-/* ── Boot — always hides loading screen within 5s ── */
-let booted = false;
-function hideLoading() {
-  if (booted) return;
-  booted = true;
-  setTimeout(() => {
-    document.getElementById('loading')?.classList.add('hidden');
-  }, 350);
-}
-
-// Force-hide loading after 5s no matter what
-const bootTimeout = setTimeout(hideLoading, 5000);
-
 /* ── Privacy indicator wiring ── */
 // Island Settings is reachable by long-pressing the Island; the status-bar
 // indicator answers to the same gesture with the same timing/haptic, so the
@@ -258,10 +245,6 @@ openDB()
   .catch((err) => {
     console.error('[boot] DB failed', err);
     Toast.show('Storage unavailable', 'error');
-  })
-  .finally(() => {
-    clearTimeout(bootTimeout);
-    hideLoading();
   });
 
 /* ── Navigation Handlers ── */
