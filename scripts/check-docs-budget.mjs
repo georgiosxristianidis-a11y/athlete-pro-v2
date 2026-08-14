@@ -28,16 +28,33 @@ export const BUDGETS = {
 
 export const HOT_FILES = ['CLAUDE.md', 'NEXT_SESSION.md'];
 
+// Перевод строки нормализуется ДО счёта, и это не косметика (DOCS-4).
+//
+// Мерили файл с диска, а при `core.autocrlf=true` он на каждой строке толще
+// индекса: CLAUDE.md давал 11636 байт против 11542 — лишние 94 CR, ~27 токенов.
+// Этого хватало, чтобы гейт был КРАСНЫМ на любом Windows-чекауте и ЗЕЛЁНЫМ в
+// Linux-CI при побайтово одинаковом содержимом. То есть гард отвечал на вопрос
+// «какая у тебя ОС», притворяясь ответом про цену доков — а красный, который
+// «всегда такой», перестают читать целиком, и следующее настоящее превышение
+// проехало бы незамеченным.
+//
+// Нормализация живёт здесь, в самом измерителе, а не в вызывающих: иначе она
+// протухнет ровно в тот момент, когда появится второй вызывающий.
+const normalize = (text) => String(text).replace(/\r\n/g, '\n');
+
 // Кириллица ≈ 2 симв/токен, латиница с разметкой ≈ 3.5. Формула детерминирована
 // и не требует токенизатора; её задача — не точность до токена, а сопоставимость
 // прогонов и честная цена русского текста (он вдвое дороже английского).
 export function estimateTokens(text) {
-  const cyr = (text.match(/[Ѐ-ӿ]/g) || []).length;
-  return Math.round(cyr / 2 + (text.length - cyr) / 3.5);
+  const src = normalize(text);
+  const cyr = (src.match(/[Ѐ-ӿ]/g) || []).length;
+  return Math.round(cyr / 2 + (src.length - cyr) / 3.5);
 }
 
 export function measureFile(absPath) {
-  const text = fs.readFileSync(absPath, 'utf8');
+  // Нормализуем и здесь: `chars` и `lines` печатаются в отчёте и разъезжались
+  // между ОС ровно так же, как токены.
+  const text = normalize(fs.readFileSync(absPath, 'utf8'));
   const cyr = (text.match(/[Ѐ-ӿ]/g) || []).length;
   return {
     chars: text.length,
