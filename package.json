@@ -1,6 +1,6 @@
 {
   "name": "athlete-pro",
-  "version": "1.27.51",
+  "version": "1.27.52",
   "type": "module",
   "description": "PPL Workout Tracker with AI Coach",
   "main": "server.js",
@@ -17,6 +17,7 @@
     "lhci": "node scripts/lighthouse.js",
     "preflight": "node scripts/preflight.mjs",
     "inventory": "node scripts/branch-inventory.mjs",
+    "docs:budget": "node scripts/check-docs-budget.mjs",
     "smoke:prod": "node scripts/smoke-prod.mjs",
     "security:audit": "npm audit --audit-level=high",
     "security:sast": "npm run lint",
