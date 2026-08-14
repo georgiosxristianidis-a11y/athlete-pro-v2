@@ -135,7 +135,8 @@ export const coachSchema = z.object({
   profile: z.any().optional().default({}),
   longTermStats: z.any().optional().default({}),
   engine: z.string().optional().default('anthropic'),
-  customKey: z.string().optional()
+  customKey: z.string().optional(),
+  tone: z.coerce.number().min(0).max(100).optional().default(50)
 });
 
 /* ── POST / (Main Coach SSE) ── */
@@ -149,10 +150,11 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
     topLifts, 
     messages, 
     images, 
-    profile, 
-    longTermStats, 
-    engine, 
-    customKey 
+    profile,
+    longTermStats,
+    engine,
+    customKey,
+    tone
   } = parseResult.data;
 
   // Final sanitization to prevent Gemini 400 errors
@@ -170,7 +172,7 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering so chunks flush immediately
 
-  const system = _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats);
+  const system = _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats, tone);
 
   // Track client disconnect so we never write to a dead socket.
   let clientGone = false;
@@ -309,10 +311,84 @@ Profile: ${JSON.stringify(profile)}`;
   }
 }));
 
+const biometricsScanSchema = z.object({
+  workouts: z.array(z.any()).optional().default([]),
+  profile: z.any().optional().default({}),
+  engine: z.string().optional().default('anthropic'),
+  customKey: z.string().optional()
+});
+
+/* ── POST /biometrics-scan ──
+ * Отчёт для радара HUD-3: cnsFatigue / muscleDamage / summary из истории и профиля.
+ * Fallback вместо 500: сеть/ключ мертвы → нули + пометка, чтобы UI не показывал пустой оверлей. */
+router.post('/biometrics-scan', coachLimiter, asyncHandler(async (req, res) => {
+  const parseResult = biometricsScanSchema.safeParse(req.body);
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
+
+  const { workouts, profile, engine, customKey } = parseResult.data;
+
+  const system = `You are "Athlete Pro Medical AI".
+Оцени биометрическое состояние по последней истории и профилю.
+Ответ — ТОЛЬКО JSON строго по схеме, без markdown и без комментариев:
+{
+  "cnsFatigue": <0-100, усталость ЦНС>,
+  "muscleDamage": <0-100, структурное повреждение мышц>,
+  "injuryRisk": "<Low|Medium|High>",
+  "summary": "<2 предложения по-русски, разбор состояния>"
+}`;
+
+  const prompt = `Workouts (last 10): ${JSON.stringify(workouts)}
+Profile: ${JSON.stringify(profile)}`;
+
+  let content;
+  try {
+    content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req);
+  } catch (err) {
+    logWarn(req, 'biometrics_scan_fallback', err.message, { code: err.code });
+    return res.json({
+      success: true,
+      report: { cnsFatigue: 0, muscleDamage: 0, injuryRisk: 'Low', summary: '' },
+      warning: 'AI biometrics unavailable'
+    });
+  }
+
+  const report = _parseBiometricsReport(content);
+  res.json({ success: true, report });
+}));
+
+function _parseBiometricsReport(content) {
+  const fallback = { cnsFatigue: 0, muscleDamage: 0, injuryRisk: 'Low', summary: '' };
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return fallback;
+    const raw = JSON.parse(jsonMatch[0]);
+    const clamp = (n) => Math.max(0, Math.min(100, Number.isFinite(+n) ? Math.round(+n) : 0));
+    const risk = ['Low', 'Medium', 'High'].includes(raw.injuryRisk) ? raw.injuryRisk : 'Low';
+    return {
+      cnsFatigue: clamp(raw.cnsFatigue),
+      muscleDamage: clamp(raw.muscleDamage),
+      injuryRisk: risk,
+      summary: typeof raw.summary === 'string' ? raw.summary.slice(0, 500) : ''
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 // ── Private Prompt Helpers ───────────────────────────────────────────────────
 
-function _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats) {
+function _toneInstruction(tone) {
+  // Слайдер настроек HUD-3: 0 = Психолог, 50 = Нейтрально, 100 = Гоггинс.
+  if (tone < 30) return 'Тон: эмпатичный, поддерживающий, восстановительный. Как заботливый физиотерапевт — упор на восстановление и позитивное подкрепление.';
+  if (tone > 70) return 'Тон: жёсткий, бескомпромиссный, в духе Дэвида Гоггинса. Ноль оправданий, абсолютная дисциплина, суровая правда.';
+  return 'Тон: нейтральный, профессиональный, сбалансированный — как опытный тренер.';
+}
+
+function _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats, tone) {
   return `You are "Athlete Pro Coach", an elite AI strength & conditioning expert.
+
+[PERSONA / TONE]
+${_toneInstruction(tone)}
 
 [CONTEXT]
 - History (last 5): ${JSON.stringify(workouts.slice(0, 5))}

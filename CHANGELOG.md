@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.27.56] — 2026-08-15
+
+### HUD-4 — бэкенд `routes/coach.js`: `/biometrics-scan` и `tone` в системном промпте
+- **`POST /api/coach/biometrics-scan`** — отдельная схема `biometricsScanSchema` (workouts/profile/engine/customKey), rate-limit тот же, что и у основного коуча (10/мин). Ответ строго `{ report: { cnsFatigue, muscleDamage, injuryRisk, summary } }`; парсер клампит числа в 0–100, `injuryRisk` — в whitelist `Low|Medium|High`, `summary` режется по 500 символам. Ошибка AI — graceful `{ warning }` с нулями вместо 500, чтобы UI не оставался с пустым оверлеем.
+- **`tone` (0–100) добавлен в `coachSchema`** через `z.coerce.number()` (совместимо со строковыми значениями из старых билдов) и уходит в `_buildSystemPrompt` секцией `[PERSONA / TONE]`: <30 — эмпатичный физиотерапевт, >70 — жёсткий в духе Гоггинса, иначе нейтральный. Промпт остаётся русскоязычным (язык живёт в `isRu()`, не в бэкенде).
+- **Не переносилось из отвергнутой линии:** `WORKOUT_CARD`-макрос (карточка HUD-3 уже парсит поток без него), автопереключение языка (спорит с проектным `isRu()`), `ULTRA-TRUTH`-инструкция (не в задании HUD-4).
+
 ## [1.27.54] — 2026-08-15
 
 ### HUD-3 — интерактив `s-intel`: карточка тренировки, биометрический радар, тон коуча
