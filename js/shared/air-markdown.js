@@ -22,6 +22,8 @@ import { esc } from './utils.js';
 
 /** Метка-заглушка виджета. Спецсимволов нет — esc() её не трогает. */
 const WIDGET_MARK = '[[AP_WIDGET]]';
+/** Метка-заглушка карточки тренировки — тот же приём, что и у виджета готовности. */
+const WORKOUT_MARK = '[[AP_WORKOUT]]';
 
 /**
  * Инлайн-разметка внутри уже экранированной строки.
@@ -37,9 +39,10 @@ function inline(s) {
 /**
  * @param {string} rawText — сырой текст от модели
  * @param {(data: any) => string} [buildWidget] — сборщик виджета готовности
+ * @param {(data: any) => string} [buildWorkoutCard] — сборщик карточки тренировки (HUD-3)
  * @returns {string} HTML
  */
-export function formatAirMarkdown(rawText, buildWidget) {
+export function formatAirMarkdown(rawText, buildWidget, buildWorkoutCard) {
   let text = String(rawText ?? '');
 
   // 1. <thinking> — модель думает вслух, пользователю это не показываем.
@@ -55,6 +58,20 @@ export function formatAirMarkdown(rawText, buildWidget) {
       text = text.replace(jsonMatch[0], `\n\n${WIDGET_MARK}\n\n`);
     } catch (e) {
       // JSON ещё не дотёк целиком — оставляем текстом, следующий чанк починит.
+    }
+  }
+
+  // 2b. Карточка тренировки — тот же приём: JSON достаём и собираем ДО esc().
+  //     В отвергнутой линии этот кусок собирался из потока БЕЗ esc() —
+  //     сборщик обязан экранировать title/название упражнения сам.
+  let workoutHtml = '';
+  const cardMatch = text.match(/\[WORKOUT_CARD\]([\s\S]*?)\[\/WORKOUT_CARD\]/);
+  if (cardMatch && typeof buildWorkoutCard === 'function') {
+    try {
+      workoutHtml = buildWorkoutCard(JSON.parse(cardMatch[1].trim()));
+      text = text.replace(cardMatch[0], `\n\n${WORKOUT_MARK}\n\n`);
+    } catch (e) {
+      // JSON карточки ещё не дотёк целиком — оставляем текстом, следующий чанк починит.
     }
   }
 
@@ -82,6 +99,7 @@ export function formatAirMarkdown(rawText, buildWidget) {
     if (!t) { flush(); continue; }
 
     if (t === WIDGET_MARK) { flush(); out.push(widgetHtml); continue; }
+    if (t === WORKOUT_MARK) { flush(); out.push(workoutHtml); continue; }
 
     let m;
     if ((m = t.match(/^###\s+(.*)$/))) {

@@ -36,7 +36,7 @@ npm run docs:budget    # цена системных доков в токена�
 | Хендофф | Следующая карточка |
 |---|---|
 | `docs/handoff/HANDOFF_boot_brand.md` → **SPLASH-1** | Активная фаза: запуск и знак. Дальше MOTION-1, порядок утверждён Gio. Не параллелить — три карточки из четырёх трогают `index.html` |
-| `docs/handoff/HANDOFF_panda_core.md` → **HUD-3** | Активная очередь: извлечение UI `s-intel` из отвергнутой линии `elite-hud-wow`. HUD-1..4 строго последовательны, общий `js/intel.view.js` |
+| `docs/handoff/HANDOFF_panda_core.md` → **HUD-4** | Бэкенд `routes/coach.js` (LEAD): HUD-1..3 закрыты, FE ждёт `/api/coach/biometrics-scan` и `tone` в промпте |
 | `docs/handoff/HANDOFF_intel_readiness.md` → **INTEL-1** | Session RPE. Порядок INTEL-1 → INTEL-3 → INTEL-4 не переставлять. Вход в следующую калибровку весов — в хендоффе |
 | `docs/handoff/HANDOFF_gemini_audit_triage.md` → **PERF-1** | Разведка: сколько дадут бандл и 725 мс Style & Layout. Следом LEAK-1, SCAF-1, NOISE-1, PII-1. 🔴 За Gio: снести сервис на Render и отозвать `ANTHROPIC_API_KEY` |
 | `docs/handoff/HANDOFF_light_theme.md` → **THEME-6** | 🟡 P2. Единственная контраст-проба слепа к теме по построению — нужна считающая фактический контраст в обеих темах |

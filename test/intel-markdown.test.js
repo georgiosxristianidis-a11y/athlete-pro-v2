@@ -41,6 +41,24 @@ describe('Air Markdown — XSS', () => {
     assert.ok(html.includes('<div class="w">72</div>'), 'виджет не собран');
     assert.ok(!html.includes('"_widget"'), 'JSON остался в тексте');
   });
+
+  test('карточка тренировки собирается сборщиком, а не потоком (HUD-3)', () => {
+    const raw = 'План:\n[WORKOUT_CARD]{"title":"Push Day","exercises":[]}[/WORKOUT_CARD]';
+    const html = formatAirMarkdown(raw, undefined, (d) => `<div class="c">${d.title}</div>`);
+    assert.ok(html.includes('<div class="c">Push Day</div>'), 'карточка не собрана');
+    assert.ok(!html.includes('WORKOUT_CARD'), 'маркер остался в тексте');
+  });
+
+  test('сборщик карточки сам отвечает за esc() — форматтер не защищает его данные', () => {
+    // Регресс отвергнутой линии: там cardData.title и ex.name уходили в
+    // innerHTML сырыми. Здесь сборщик — ответственность вызывающей стороны
+    // (intel.view.js), тест фиксирует контракт: JSON карточки не экранируется
+    // форматтером повторно, значит его обязан экранировать сам сборщик.
+    const raw = '[WORKOUT_CARD]{"title":"<img src=x onerror=alert(1)>"}[/WORKOUT_CARD]';
+    let received = null;
+    formatAirMarkdown(raw, undefined, (d) => { received = d; return ''; });
+    assert.equal(received.title, '<img src=x onerror=alert(1)>', 'сборщик должен получить сырые данные и сам их экранировать');
+  });
 });
 
 describe('Air Markdown — блоки', () => {
@@ -95,6 +113,8 @@ describe('Air Markdown — обрывки стрима', () => {
     '- ',
     '{"_widget":"readiness","ind',
     'Текст\n{"_widget":"readiness"',
+    '[WORKOUT_CARD]{"title":"Push',
+    'План:\n[WORKOUT_CARD]{"title":"Push Day","exercises":[',
   ];
 
   for (const chunk of partials) {
