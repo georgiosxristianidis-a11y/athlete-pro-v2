@@ -116,6 +116,13 @@
   text-transform: lowercase;
 }
 
+.intel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .intel-btn-close {
   width: 36px;
   height: 36px;
@@ -742,3 +749,304 @@
 
 .intel-md-body strong { font-weight: var(--fw-black); color: var(--c-text-1); }
 .intel-md-body em     { font-style: italic; color: var(--c-text-2); }
+
+/* ════════════════════════════════════════════════════════
+   Карточка тренировки в потоке (HUD-3)
+   Данные приходят из [WORKOUT_CARD] JSON — сборщик в js/intel.view.js
+   экранирует title/название упражнения сам (formatAirMarkdown их не трогает).
+   Tier 1 — плоская поверхность, живёт внутри .intel-feedback-text.
+   ════════════════════════════════════════════════════════ */
+.intel-workout-card {
+  margin-top: var(--sp-2);
+  padding: var(--sp-3);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  border: 1px solid color-mix(in srgb, var(--c-accent) 30%, var(--c-border));
+}
+
+.intel-workout-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.intel-workout-title {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+  text-transform: uppercase;
+}
+
+.intel-workout-type {
+  flex-shrink: 0;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  color: var(--c-bg);
+  background: var(--c-accent);
+  padding: 2px 8px;
+  border-radius: var(--r-xs);
+}
+
+.intel-workout-list {
+  list-style: none;
+  margin: 0 0 var(--sp-2);
+  padding: 0;
+}
+
+.intel-workout-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: var(--fs-2);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.intel-workout-item:last-child { border-bottom: none; }
+
+.intel-workout-ex-name { color: var(--c-text-2); }
+.intel-workout-ex-sets { color: var(--c-accent); font-weight: var(--fw-bold); }
+
+.intel-workout-save {
+  width: 100%;
+}
+
+/* ════════════════════════════════════════════════════════
+   Настройки: тон коуча (HUD-3)
+   Оверлей — общий `.modal-overlay`/`.modal-sheet` (base.css), здесь только
+   геометрия слайдера.
+   ════════════════════════════════════════════════════════ */
+.intel-tone-row {
+  margin: var(--sp-2) 0 var(--sp-3);
+}
+
+.intel-tone-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.intel-tone-label {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-3);
+}
+
+.intel-tone-val {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  color: var(--c-intel);
+}
+
+.intel-tone-slider {
+  width: 100%;
+  accent-color: var(--c-intel);
+  cursor: pointer;
+}
+
+.intel-tone-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+.intel-settings-save {
+  width: 100%;
+  margin-top: var(--sp-2);
+}
+
+/* ════════════════════════════════════════════════════════
+   Биометрический радар (HUD-3)
+   Полноэкранный, плоский чёрный фон — НЕ blur: Tier-2 whitelist intel.css
+   несёт только `.intel-cmd-bar`/`.intel-logs` (test/air-guard.test.js),
+   а третье стекло на экране AIR не разрешает.
+   ════════════════════════════════════════════════════════ */
+.intel-radar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: color-mix(in srgb, black 94%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-3);
+  animation: overlay-in var(--t-enter) forwards;
+}
+
+.intel-radar-ring {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 2px solid var(--c-intel);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--c-intel) 40%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--sp-4);
+  flex-shrink: 0;
+}
+
+.intel-radar-ring-dash {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--c-intel) 50%, transparent);
+  animation: intel-radar-spin 4s linear infinite;
+}
+
+.intel-radar-ring-sweep {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  top: 50%;
+  background: var(--c-intel);
+  box-shadow: 0 0 10px var(--c-intel);
+  animation: intel-radar-spin 2s linear infinite;
+}
+
+.intel-radar-ring-text {
+  position: relative;
+  z-index: 1;
+  font-family: monospace;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.1em;
+  color: var(--c-intel);
+  background: color-mix(in srgb, black 50%, transparent);
+  padding: 4px 10px;
+  border-radius: var(--r-xs);
+}
+
+@keyframes intel-radar-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.intel-radar-log {
+  width: 100%;
+  max-width: 400px;
+  height: 100px;
+  overflow: hidden;
+  font-family: monospace;
+  font-size: var(--fs-1);
+  color: var(--c-intel);
+  opacity: 0.8;
+}
+
+.intel-radar-log-row {
+  animation: intel-log-in 0.3s var(--ease-out);
+}
+
+.intel-radar-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  text-align: center;
+}
+
+.intel-radar-error-text {
+  color: var(--c-red);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-2);
+}
+
+.intel-radar-report {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  background: var(--c-bg-1);
+  border: 1px solid var(--c-intel);
+  border-radius: var(--r-xxl);
+  padding: var(--sp-4);
+  box-shadow: 0 0 60px color-mix(in srgb, var(--c-intel) 20%, transparent);
+}
+
+.intel-radar-report-close {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+}
+
+.intel-radar-report-title {
+  font-family: var(--font-heading);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-intel);
+  text-align: center;
+  margin-bottom: var(--sp-3);
+}
+
+.intel-radar-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.intel-radar-metric {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  padding: var(--sp-2);
+}
+
+.intel-radar-metric-label {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  margin-bottom: 4px;
+}
+
+.intel-radar-metric-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.intel-radar-metric-val {
+  font-size: var(--fs-4);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+  flex-shrink: 0;
+}
+
+.intel-radar-metric-val.is-high { color: var(--c-red); }
+
+.intel-radar-metric-track {
+  flex: 1;
+  height: 4px;
+  background: var(--c-bg-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.intel-radar-metric-fill {
+  height: 100%;
+  background: var(--c-intel);
+  border-radius: 2px;
+}
+
+.intel-radar-metric-fill.is-high { background: var(--c-red); }
+
+.intel-radar-report-summary {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--c-border);
+  font-size: var(--fs-2);
+  color: var(--c-text-2);
+  line-height: 1.5;
+}

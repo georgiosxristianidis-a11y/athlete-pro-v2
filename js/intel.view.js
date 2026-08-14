@@ -5,7 +5,7 @@ import { formatAirMarkdown } from './shared/air-markdown.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { isRu } from './locale.store.js';
 import { DB } from './db.js';
-import { on, onChange, onKeydown } from './events.js';
+import { on, onChange, onKeydown, onInput } from './events.js';
 
 on('intel:close',         () => window.Nav.go('s-home'));
 on('intel:toggleLogs',    (el) => {
@@ -23,8 +23,16 @@ on('intel:biometrics',    () => window.IntelView.checkBiometrics());
 on('intel:clearImage',    () => { const w = document.getElementById('intel-vision-preview-wrap'); if (w) w.innerHTML = ''; window.IntelView._clearImage(); });
 on('intel:playAudio',     (el) => window.IntelView.playAudio(el));
 on('intel:closeReport',   (el) => el.closest('.intel-report-overlay')?.remove());
+on('intel:openSettings',  () => window.IntelView.openSettings());
+on('intel:saveSettings',  () => window.IntelView.saveSettings());
+on('intel:saveActionCard', (el) => window.IntelView.saveActionCard(el));
+on('intel:closeOverlay',  (el) => { const o = document.getElementById(el.dataset.overlay); if (o) o.remove(); });
 onChange('intel:fileSelected', (el, e) => window.IntelView.onFileSelected(e));
 onKeydown('intel:submitEnter', (el, e) => { if (e.key === 'Enter') window.IntelView.submit(); });
+onInput('intel:toneInput', (el) => {
+  const val = document.getElementById('intel-tone-val');
+  if (val) val.textContent = el.value;
+});
 // Пилюля лога — не <button> (внутри неё заголовок и лента), поэтому клавиатуру
 // ей приходится выдавать руками: role="button" без Enter/Space — ловушка для скринридера.
 onKeydown('intel:toggleLogs', (el, e) => {
@@ -57,6 +65,13 @@ export const IntelView = (() => {
           logs: 'Журнал потока', speak: 'Озвучить', clearImage: 'Убрать фото',
           feedback: 'Ответ ИИ', waiting: 'Анализирую…', failed: 'Сбой',
           streaming: 'Ответ печатается', empty: 'Ответ пришёл пустым',
+          settings: 'Настройки ИИ', settingsTitle: 'Настройки ИИ', save: 'Сохранить',
+          toneLabel: 'Тон тренера', toneTherapist: 'Психолог', toneNeutral: 'Нейтрально', toneGoggins: 'Гоггинс',
+          saveWorkout: 'Сохранить в план', saved: 'Сохранено',
+          scanning: 'СКАНИРОВАНИЕ', scanFailed: 'Сбой сканирования',
+          scanCns: 'СКАН ЦНС…', scanVolume: 'СБОР ДАННЫХ О НАГРУЗКЕ…', scanSleep: 'АНАЛИЗ СНА…',
+          scanRpe: 'РАСЧЁТ RPE-УТОМЛЕНИЯ…', scanAcwr: 'РАСЧЁТ ACWR…',
+          cnsFatigue: 'УТОМЛЕНИЕ ЦНС', muscleDamage: 'МЫШЕЧНЫЕ ПОВРЕЖДЕНИЯ', readiness: 'ГОТОВНОСТЬ',
         }
       : {
           keyOk: 'system secure', keyMissing: 'key missing',
@@ -66,7 +81,19 @@ export const IntelView = (() => {
           logs: 'Streaming logs', speak: 'Speak', clearImage: 'Clear photo',
           feedback: 'AI Feedback', waiting: 'Analysing…', failed: 'Failed',
           streaming: 'Response is typing', empty: 'The response came back empty',
+          settings: 'AI Settings', settingsTitle: 'AI Settings', save: 'Save',
+          toneLabel: 'Coach tone', toneTherapist: 'Therapist', toneNeutral: 'Neutral', toneGoggins: 'Goggins',
+          saveWorkout: 'Save to plan', saved: 'Saved',
+          scanning: 'SCANNING', scanFailed: 'Scan failed',
+          scanCns: 'CNS SCAN…', scanVolume: 'GATHERING VOLUME DATA…', scanSleep: 'ANALYSING SLEEP…',
+          scanRpe: 'COMPUTING RPE FATIGUE…', scanAcwr: 'COMPUTING ACWR…',
+          cnsFatigue: 'CNS FATIGUE', muscleDamage: 'MUSCLE DAMAGE', readiness: 'READINESS',
         };
+  }
+
+  /** Тон коуча, 0 (терапевт) .. 100 (Гоггинс). Дефолт — нейтрально. */
+  async function _getTone() {
+    return DB.Settings.get('intel-tone', 50);
   }
 
   async function _checkApiKey() {
@@ -110,7 +137,14 @@ export const IntelView = (() => {
             <span id="intel-status-text" class="intel-status-text">${esc(IntelStore.getStatus())}</span>
           </div>
         </div>
-        <button class="intel-btn-close" data-action="intel:close" aria-label="${L.close}">&times;</button>
+        <div class="intel-header-actions">
+          <button class="intel-btn-close" data-action="intel:openSettings" aria-label="${L.settings}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+          <button class="intel-btn-close" data-action="intel:close" aria-label="${L.close}">&times;</button>
+        </div>
       </header>
 
       <div class="intel-body">
@@ -306,7 +340,7 @@ export const IntelView = (() => {
 
   /** Перерисовка ответа целиком: форматтер чистый, дешевле держать одну ветку кода. */
   function _renderStream(feedbackText, fullText, L, withTail) {
-    feedbackText.innerHTML = formatAirMarkdown(fullText, _buildReadinessWidget);
+    feedbackText.innerHTML = formatAirMarkdown(fullText, _buildReadinessWidget, _buildWorkoutCard);
     if (!withTail) return;
     const body = feedbackText.querySelector('.intel-md-body');
     let anchor = body?.lastElementChild || body || feedbackText;
@@ -370,7 +404,8 @@ export const IntelView = (() => {
           profile,
           topLifts,
           engine: 'gemini',
-          customKey: await DB.Settings.get('gemini-key')
+          customKey: await DB.Settings.get('gemini-key'),
+          tone: await _getTone()
         })
       });
 
@@ -605,14 +640,146 @@ export const IntelView = (() => {
      }
   }
 
-  function checkBiometrics() {
-     haptic(10);
-     IntelStore.addLog('SYS', 'Requesting Biometrics scan');
-     const input = document.getElementById('intel-input');
-     if (input) {
-         input.value = "Проанализируй мою тепловую карту мышц (Heatmap) и историю нагрузок. Выведи отчет о биометрии: какие мышцы устали, какие готовы к взрывной работе. Дай оценку ЦНС.";
-         submit();
-     }
+  /** Биометрический радар (HUD-3): полноэкранный скан → отчёт ЦНС/готовности. */
+  async function checkBiometrics() {
+    haptic(10);
+    const L = _copy();
+    IntelStore.addLog('SYS', 'Init biometric scan...');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'intel-radar-overlay';
+    overlay.id = 'intel-radar-overlay';
+    overlay.innerHTML = `
+      <div class="intel-radar-ring" role="status" aria-label="${L.scanning}">
+        <span class="intel-radar-ring-dash"></span>
+        <span class="intel-radar-ring-sweep"></span>
+        <span class="intel-radar-ring-text">${L.scanning}</span>
+      </div>
+      <div class="intel-radar-log" id="intel-radar-log"></div>
+    `;
+    document.body.appendChild(overlay);
+
+    const logLines = [L.scanCns, L.scanVolume, L.scanSleep, L.scanRpe, L.scanAcwr];
+    let logIndex = 0;
+    const logEl = overlay.querySelector('#intel-radar-log');
+    const logInterval = setInterval(() => {
+      const line = logIndex < logLines.length
+        ? logLines[logIndex++]
+        : Math.random().toString(36).slice(2, 10).toUpperCase();
+      const row = document.createElement('div');
+      row.className = 'intel-radar-log-row';
+      row.textContent = `> ${line}`;
+      logEl?.appendChild(row);
+      if (logEl) logEl.scrollTop = logEl.scrollHeight;
+    }, 400);
+
+    try {
+      const workouts = await DB.Workouts.getLast(10);
+      const profile = await DB.Settings.getAll();
+
+      const response = await fetch('/api/coach/biometrics-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workouts,
+          profile,
+          engine: 'gemini',
+          customKey: await DB.Settings.get('gemini-key')
+        })
+      });
+
+      clearInterval(logInterval);
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${response.status}`);
+      }
+
+      const { report } = await response.json();
+      const readiness = Math.max(0, 100 - Math.round((report.cnsFatigue + report.muscleDamage) / 2));
+
+      overlay.innerHTML = _buildBiometricReport(report, readiness, L);
+      haptic(50);
+    } catch (err) {
+      clearInterval(logInterval);
+      // Урок отвергнутой линии: ошибка сети шла в innerHTML сырой строкой
+      // (`SCAN FAILED: ${err.message}` без esc()) — здесь err.message с сервера
+      // могло быть значением из чужого ключа BYOK.
+      overlay.innerHTML = `
+        <div class="intel-radar-error">
+          <p class="intel-radar-error-text">${esc(toUserMessage(err))}</p>
+          <button class="btn btn-ghost" data-action="intel:closeOverlay" data-overlay="intel-radar-overlay">${L.close}</button>
+        </div>
+      `;
+    }
+  }
+
+  function _buildBiometricReport(report, readiness, L) {
+    const bar = (label, val) => `
+      <div class="intel-radar-metric">
+        <div class="intel-radar-metric-label">${esc(label)}</div>
+        <div class="intel-radar-metric-row">
+          <div class="intel-radar-metric-val ${val > 70 ? 'is-high' : ''}">${esc(String(val))}%</div>
+          <div class="intel-radar-metric-track">
+            <div class="intel-radar-metric-fill ${val > 70 ? 'is-high' : ''}" style="width:${Math.max(0, Math.min(100, val))}%"></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    return `
+      <div class="intel-radar-report">
+        <button class="intel-btn-close intel-radar-report-close" data-action="intel:closeOverlay" data-overlay="intel-radar-overlay" aria-label="${L.close}">&times;</button>
+        <h2 class="intel-radar-report-title">BIOMETRIC HUD</h2>
+        <div class="intel-radar-metrics">
+          ${bar(L.cnsFatigue, report.cnsFatigue)}
+          ${bar(L.muscleDamage, report.muscleDamage)}
+          ${bar(L.readiness, readiness)}
+        </div>
+        <div class="intel-radar-report-summary">${esc(report.summary || '')}</div>
+      </div>
+    `;
+  }
+
+  /* ── Настройки: тон коуча (HUD-3). Язык/голос сюда не входят —
+     язык живёт в isRu(), голос маскота отдельной картой PANDA-C. ── */
+  async function openSettings() {
+    const L = _copy();
+    const tone = await _getTone();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'intel-settings-overlay';
+    overlay.innerHTML = `
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">${L.settingsTitle}</div>
+          <button class="btn-icon-sm" data-action="intel:closeOverlay" data-overlay="intel-settings-overlay" aria-label="${L.close}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="intel-tone-row">
+          <div class="intel-tone-head">
+            <span class="intel-tone-label">${L.toneLabel}</span>
+            <span id="intel-tone-val" class="intel-tone-val">${tone}</span>
+          </div>
+          <input type="range" id="intel-tone-slider" class="intel-tone-slider" min="0" max="100" value="${tone}" data-input="intel:toneInput">
+          <div class="intel-tone-scale">
+            <span>${L.toneTherapist}</span><span>${L.toneNeutral}</span><span>${L.toneGoggins}</span>
+          </div>
+        </div>
+        <button class="btn btn-primary intel-settings-save" data-action="intel:saveSettings">${L.save}</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('visible'));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  }
+
+  async function saveSettings() {
+    const slider = /** @type {HTMLInputElement|null} */ (document.getElementById('intel-tone-slider'));
+    if (slider) await DB.Settings.set('intel-tone', parseInt(slider.value, 10));
+    document.getElementById('intel-settings-overlay')?.remove();
   }
 
   function _buildReadinessWidget(data) {
@@ -688,7 +855,7 @@ export const IntelView = (() => {
     if (!container) return;
     const textEl = container.querySelector('.intel-feedback-text');
     if (!textEl) return;
-    
+
     // We only want the text, ignoring HTML structure like the readiness widget
     const textToSpeak = textEl.innerText.trim();
     if (textToSpeak) {
@@ -696,7 +863,59 @@ export const IntelView = (() => {
     }
   }
 
-  return { load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats, checkBiometrics, playAudio, _clearImage };
+  /* ── Карточка тренировки в потоке (HUD-3) ──
+     Данные держим в Map по своему id, а НЕ в data-атрибуте JSON-блобом —
+     events.js прямо предупреждает: JSON пользовательских строк в атрибуте —
+     вектор атрибутной инъекции. id — наш собственный примитив. */
+  const _workoutCards = new Map();
+
+  function _cardId(rawJson) {
+    let h = 0;
+    for (let i = 0; i < rawJson.length; i++) h = (h * 31 + rawJson.charCodeAt(i)) | 0;
+    return 'wc' + (h >>> 0);
+  }
+
+  /** Сборщик карточки для formatAirMarkdown — esc() тут на нас, форматтер не защищает. */
+  function _buildWorkoutCard(data) {
+    const L = _copy();
+    const id = _cardId(JSON.stringify(data));
+    _workoutCards.set(id, data);
+    const exercises = Array.isArray(data.exercises) ? data.exercises : [];
+
+    return `
+      <div class="intel-workout-card">
+        <div class="intel-workout-head">
+          <h4 class="intel-workout-title">${esc(data.title || 'Workout')}</h4>
+          <span class="intel-workout-type">${esc(data.type || 'Custom')}</span>
+        </div>
+        <ul class="intel-workout-list">
+          ${exercises.map(ex => `
+            <li class="intel-workout-item">
+              <span class="intel-workout-ex-name">${esc(ex?.name || '')}</span>
+              <span class="intel-workout-ex-sets">${esc(String(ex?.sets ?? ''))}×${esc(String(ex?.reps ?? ''))}</span>
+            </li>
+          `).join('')}
+        </ul>
+        <button class="btn btn-ghost intel-workout-save" data-action="intel:saveActionCard" data-workout-id="${id}">${L.saveWorkout}</button>
+      </div>
+    `;
+  }
+
+  async function saveActionCard(btn) {
+    const id = btn.dataset.workoutId;
+    const data = id && _workoutCards.get(id);
+    if (!data) return;
+    haptic(10);
+    await DB.PlannedWorkouts.save(data.title || 'Workout', data);
+    IntelStore.addLog('SYS', `Workout saved: ${data.title || 'Workout'}`);
+    btn.disabled = true;
+    btn.textContent = _copy().saved;
+  }
+
+  return {
+    load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats,
+    checkBiometrics, playAudio, _clearImage, openSettings, saveSettings, saveActionCard,
+  };
 })();
 
 // Expose to window for onclick
