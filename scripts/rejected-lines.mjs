@@ -40,6 +40,19 @@ export const REJECTED_LINES = [
     name: 'checkpoint-elite-hud-wow',
     why: 'линия feature/elite-hud-wow, вердикт 2026-08-11 «не вливать» (утечка BYOK-ключа)',
   },
+  // Линия «phase 8» — ДВЕ строки на одну работу. Копии не родственники: b366e5b нарезана
+  // от efc04a1 (1.27.51), ae22df6 — от 7cef9a6 (1.27.50), patch-id разные. Гард ходит по
+  // ancestry, поэтому одна запись вторую копию не поймает. Ровно случай из решения 1.
+  {
+    sha: 'b366e5bf80745b30fcaa4d88b9bc9048b2e1b64b',
+    name: 'claude/token-expense-patterns-83b478',
+    why: 'линия phase-8, вердикт 2026-08-14 «не вливать» (второй движок готовности, читает несуществующее поле w.date)',
+  },
+  {
+    sha: 'ae22df6edc1b417b242342541ac4ce28436d5176',
+    name: 'claude/gifted-poitras-0a27c7',
+    why: 'та же линия phase-8 на базе 1.27.50 — вторая копия, не потомок b366e5b',
+  },
 ];
 
 function gitOk(args, cwd) {
