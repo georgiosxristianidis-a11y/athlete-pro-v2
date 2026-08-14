@@ -24,6 +24,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { scanBase } from './rejected-lines.mjs';
+import { BUDGETS, findMemoryIndex, measureFile, measureHotPath, violations } from './check-docs-budget.mjs';
 
 const STALE_MS = 24 * 60 * 60 * 1000;
 const MAX_LISTED = 10;
@@ -323,6 +324,25 @@ if (!repoSlug || !fetched) {
   } else {
     add('FAIL', 'прод-деплой', `последний Production ${depSha.slice(0, 7)} НЕ из main`,
       'Vercel деплоит не ту ветку — проверить Vercel → Settings → Git (проект athlete-pro-v7)');
+  }
+}
+
+// --- 8. Бюджет доков --------------------------------------------------------
+// Репозиторные файлы гейтит `test/docs-budget.test.js` в npm test и CI — здесь только
+// показываем число. MEMORY.md лежит вне репо: ни один PR его не починит, поэтому WARN,
+// а не FAIL. Жёсткий гард на рутинном пути, который нельзя удовлетворить, учит обходу.
+{
+  const { total } = measureHotPath();
+  const memPath = findMemoryIndex();
+  const mem = memPath ? measureFile(memPath).tokens : 0;
+  const over = violations();
+  const startup = `стартовая нагрузка ~${total + mem} ток (репо ${total}/${BUDGETS.TOTAL}${mem ? `, память ${mem}` : ''})`;
+  if (over.length) {
+    add('WARN', 'бюджет доков', `${startup} — превышение: ${over.join('; ')}`, 'npm run docs:budget — резать, а не поднимать потолок');
+  } else if (mem > 3000) {
+    add('WARN', 'бюджет доков', `${startup} — индекс памяти разросся`, 'DOCS-2: закрытое из индекса вон, хук ≤80 символов');
+  } else {
+    add('OK', 'бюджет доков', startup);
   }
 }
 
