@@ -276,7 +276,12 @@ export function renderSummaryModal(data, onSave, ru = false) {
 
   // PANDA-1, сценарий 4: рекорд — единственный момент, когда панда перестаёт
   // жевать. Держим ликование 4с и отпускаем обратно к базовой мимике.
-  if (flag('panda-moods') && (data.prs || []).length > 0) emitMood('cheer', { hold: 4000 });
+  // Волна идёт под вердикт бамбукового счёта — ту самую строку, что читают
+  // в сводке. Реплики нет (счёт не показан) → волны тоже нет.
+  if (flag('panda-moods') && (data.prs || []).length > 0) {
+    const verdict = (data.setsDone || 0) > 0 ? t(ledgerVerdictKey(data.prs.length)) : '';
+    emitMood('cheer', { hold: 4000, say: verdict });
+  }
 
   /* ── Event listeners ── */
   overlay.querySelector('#btn-summ-save')?.addEventListener('click', async () => {

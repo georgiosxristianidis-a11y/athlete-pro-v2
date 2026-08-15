@@ -19,6 +19,11 @@
    Звук: в дорожке лежит озвучка целиком, и нарезка её рубит. Стартуем
    muted (autoplay policy всё равно требует), тумблер звука — осознанный
    выбор пользователя, не наш дефолт.
+
+   Волна реплики (.talk) — индикатор «панда говорит», а НЕ аудиометр:
+   озвучки на реплику нет и не будет до PANDA-C, поэтому мерить нечего.
+   Длительность считается по словам самой реплики (talkDurationMs), потолок
+   слов — тот же, что в законе персонажа. Осуждение молчит.
    ════════════════════════════════════════════════════════ */
 
 import { bindPandaLifecycle } from './panda-video.js';
@@ -107,16 +112,51 @@ export function ledgerVerdictKey(prCount) {
   return prCount > 0 ? 'mascot.you_won' : 'mascot.draw';
 }
 
+/* ── Волна реплики ────────────────────────────────────────────────
+   Закон персонажа: максимум 5 слов, молчание сильнее реплики. Отсюда
+   и потолок длительности, и список молчащих мимик. */
+
+/** Потолок реплики из закона персонажа — длиннее панда не говорит. */
+export const TALK_MAX_WORDS = 5;
+/** Темп проговаривания: столько миллисекунд волна идёт на слово. */
+const TALK_MS_PER_WORD = 420;
+/** Короче — читается как сбой, а не как речь. */
+const TALK_MIN_MS = 700;
+
+/**
+ * Мимики, которые не разговаривают. Осуждение — деадпан: строка на экране
+ * есть, но рот не открывается, иначе укол превращается в болтовню.
+ * @type {readonly string[]}
+ */
+export const SILENT_MOODS = Object.freeze(['judge']);
+
+/**
+ * Сколько миллисекунд держать волну реплики. Чистая функция — вся
+ * драматургия проверяется юнит-тестом, в DOM уходит только результат.
+ * @param {string} mood ключ MOODS
+ * @param {string} [text] сама реплика (уже локализованная)
+ * @returns {number} 0 = молчать
+ */
+export function talkDurationMs(mood, text) {
+  if (!MOODS[mood] || SILENT_MOODS.includes(mood)) return 0;
+  if (typeof text !== 'string') return 0;
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return 0;
+  const n = Math.min(words.length, TALK_MAX_WORDS);
+  return Math.max(TALK_MIN_MS, n * TALK_MS_PER_WORD);
+}
+
 /**
  * Разослать мимику всем смонтированным пандам.
  * @param {string} mood ключ MOODS
- * @param {{hold?: number}} [opts] hold в мс — временная мимика с авто-возвратом
+ * @param {{hold?: number, say?: string}} [opts] hold в мс — временная мимика
+ *        с авто-возвратом; say — реплика, под которую идёт волна
  */
 export function emitMood(mood, opts = {}) {
   if (typeof window === 'undefined') return;
   if (!MOODS[mood]) return;
   window.dispatchEvent(new CustomEvent(MOOD_EVENT, {
-    detail: { mood, hold: opts.hold || 0 }
+    detail: { mood, hold: opts.hold || 0, say: opts.say || '' }
   }));
 }
 
@@ -145,6 +185,33 @@ export function attachMood(host, videoEl) {
   let raf = 0;
   let dead = false;
 
+  /* Волна реплики. Разметка статична (нет пользовательских данных — нет и
+     esc()), живёт в хосте панды, а не в круглом .fab-content/.empty-dash-mascot:
+     у обоих overflow:hidden под круглый клип, волна бы срезалась. */
+  const talkEl = document.createElement('div');
+  talkEl.className = 'talk';
+  talkEl.setAttribute('aria-hidden', 'true');   // реплику озвучивает Toast, не волна
+  talkEl.innerHTML = '<span class="talk-wave"><i></i><i></i><i></i><i></i><i></i></span>';
+  host.appendChild(talkEl);
+  let talkTimer = 0;
+
+  /**
+   * Пустить/погасить волну. Всегда снимает предыдущую: новая мимика
+   * перебивает недоговорённую реплику, а не накладывается на неё.
+   * @param {number} ms 0 = молчать
+   */
+  function talk(ms) {
+    clearTimeout(talkTimer);
+    talkTimer = 0;
+    talkEl.classList.remove('live');
+    if (!(ms > 0)) return;
+    // Рестарт анимации подряд идущих реплик: без reflow второй вызов
+    // ничего не проиграет — класс снят и поставлен в одном кадре.
+    void talkEl.offsetWidth;
+    talkEl.classList.add('live');
+    talkTimer = setTimeout(() => talkEl.classList.remove('live'), ms);
+  }
+
   /** Прыжок в начало сегмента, устойчивый к ещё не готовым метаданным. */
   function seek(t) {
     try { v.currentTime = t; } catch { /* readyState 0 — сработает на loadedmetadata */ }
@@ -157,6 +224,7 @@ export function attachMood(host, videoEl) {
     clearTimeout(holdTimer);
     holdTimer = 0;
     current = mood;
+    talk(talkDurationMs(mood, opts.say));
     seek(seg.in);
     if (reduced) {
       // Мимика остаётся, движения нет: замираем на середине сегмента.
@@ -173,7 +241,7 @@ export function attachMood(host, videoEl) {
   const onEvent = (e) => {
     const d = e && e.detail;
     if (!d || !d.mood) return;
-    set(d.mood, { hold: d.hold });
+    set(d.mood, { hold: d.hold, say: d.say });
   };
   window.addEventListener(MOOD_EVENT, onEvent);
 
@@ -203,6 +271,8 @@ export function attachMood(host, videoEl) {
     dead = true;
     cancelAnimationFrame(raf);
     clearTimeout(holdTimer);
+    clearTimeout(talkTimer);
+    talkEl.remove();
     window.removeEventListener(MOOD_EVENT, onEvent);
     v.removeEventListener('timeupdate', clamp);
     v.removeEventListener('ended', onEnded);

@@ -375,6 +375,16 @@
     0 8px 32px color-mix(in srgb, var(--c-black) 40%, transparent);
 }
 
+/* Волна реплики (компонент .talk в base.css) на большом маскоте: круг 150px
+   против 64px у FAB, поэтому только масштаб — геометрия и логика общие. */
+.empty-dash-mascot-wrap .talk {
+  --talk-bar-w: 3px;
+  --talk-bar-h: 18px;
+  --talk-gap: 3px;
+  bottom: -8px;
+  padding: 5px 9px;
+}
+
 .mascot-close-btn {
   position: absolute;
   top: -8px;
