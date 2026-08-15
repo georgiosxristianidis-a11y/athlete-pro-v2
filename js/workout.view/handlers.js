@@ -450,6 +450,7 @@ async function _persistFinalSession(summaryData, duration) {
     timestamp: State.startedAt || Date.now(),
     duration,
     tonnage: summaryData.totalTonnage,
+    sessionRpe: summaryData.sessionRpe ?? null,
     exercises: State.plan
       .filter(ex => !ex.noDb)
       .map((ex) => ({

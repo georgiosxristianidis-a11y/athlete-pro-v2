@@ -39,8 +39,8 @@ const HOUR = 3_600_000;
 export const WEIGHTS = Object.freeze({
   acwr: 0.35,
   recovery: 0.30,
-  monotony: 0.20,
-  trend: 0.15,
+  monotony: 0.10,
+  trend: 0.25,
 });
 
 /**
