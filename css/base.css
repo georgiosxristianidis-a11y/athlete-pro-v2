@@ -525,6 +525,71 @@
   transition: transform .5s var(--ease-spring), color var(--t-normal);
 }
 
+/* ── Talk wave: панда говорит (флаг 'panda-moods') ─────────────────────
+   Индикатор реплики, не аудиометр — озвучки на реплику нет (PANDA-C ждёт
+   ассеты), мерить нечего. Длительность считает talkDurationMs() по словам,
+   на 'judge' волна не запускается вовсе: молчание сильнее реплики.
+   Живёт в base.css, а не в claude/dashboard: хостов у волны два, а обе
+   таблицы экранные — общий компонент в лениво грузимом CSS менял бы вид
+   в зависимости от навигации. Размеры по умолчанию под FAB (64px),
+   большой маскот перекрывает три переменные в dashboard.css.
+   GPU-only: scaleY на полосках, opacity на пилюле — ни height, ни blur. */
+.talk {
+  --talk-bar-w: 2px;
+  --talk-bar-h: 10px;
+  --talk-gap: 2px;
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  z-index: 2;
+  display: flex;
+  padding: 3px 6px;
+  border-radius: var(--r-pill);
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-border);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) scale(0.7);
+  transition: opacity var(--t-fast), transform 0.3s var(--ease-spring);
+}
+.talk-wave {
+  display: flex;
+  align-items: center;
+  gap: var(--talk-gap);
+  height: var(--talk-bar-h);
+}
+.talk-wave i {
+  display: block;
+  width: var(--talk-bar-w);
+  height: var(--talk-bar-h);
+  border-radius: var(--r-pill);
+  background: var(--c-accent);
+  transform: scaleY(0.12);
+  transition: transform 0.4s var(--ease-spring);
+}
+.talk.live {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+/* Разный темп полосок — иначе пять штук ходят одним столбиком, как эквалайзер
+   на моно-сигнале. Средняя быстрее краёв: центр речи. */
+.talk.live .talk-wave i { animation: talk-bar 0.42s ease-in-out infinite alternate; }
+.talk.live .talk-wave i:nth-child(2) { animation-duration: 0.34s; }
+.talk.live .talk-wave i:nth-child(3) { animation-duration: 0.28s; }
+.talk.live .talk-wave i:nth-child(4) { animation-duration: 0.36s; }
+.talk.live .talk-wave i:nth-child(5) { animation-duration: 0.46s; }
+@keyframes talk-bar {
+  from { transform: scaleY(0.18); }
+  to   { transform: scaleY(1); }
+}
+/* Тот же приём, что у мимики: реплика остаётся видимой, движения нет. */
+@media (prefers-reduced-motion: reduce) {
+  .talk,
+  .talk.live { transform: translateX(-50%); }
+  .talk { transition: opacity var(--t-fast); }
+  .talk.live .talk-wave i { animation: none; transform: scaleY(0.6); }
+}
+
 .btn-icon-sm {
   width: 32px;
   height: 32px;

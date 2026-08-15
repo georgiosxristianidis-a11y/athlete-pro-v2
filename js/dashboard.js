@@ -340,8 +340,11 @@ export const Dashboard = (() => {
     if (seen === today) return;
     await DB.Settings.set('panda-greeted-on', today).catch(() => {});
 
-    emitMood(greeting.mood, { hold: 6000 });
-    Toast.show(t(greeting.key), 'info');
+    // say = ровно та строка, что уходит в Toast: волна идёт под реальную
+    // реплику, а не «пока не надоест». Осуждение молчит — talkDurationMs().
+    const line = t(greeting.key);
+    emitMood(greeting.mood, { hold: 6000, say: line });
+    Toast.show(line, 'info');
   }
 
   /**

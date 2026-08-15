@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import {
   MOODS, BASE_MOOD, OVERRUN_JUDGE_SEC, IDLE_GUILT_DAYS,
   restOverrunMood, ledgerVerdictKey, entryGreeting,
+  talkDurationMs, SILENT_MOODS, TALK_MAX_WORDS,
 } from '../js/shared/panda-mood.js';
 
 /** Длительность ролика, из которого нарезаны все мимики. */
@@ -65,6 +66,48 @@ test('ledgerVerdictKey: счёт всегда равный, обойти мож�
   assert.equal(ledgerVerdictKey(0), 'mascot.draw');
   assert.equal(ledgerVerdictKey(1), 'mascot.you_won');
   assert.equal(ledgerVerdictKey(4), 'mascot.you_won');
+});
+
+/* ── Волна реплики: длительность и молчание ─────────────────────────── */
+
+test('talkDurationMs: волна идёт под слова, а не «пока не надоест»', () => {
+  const two = talkDurationMs('cheer', 'Ты выиграл.');
+  const four = talkDurationMs('cheer', 'Ты уронил мой бамбук.');
+  assert.ok(two > 0 && four > two, 'длиннее реплика — дольше волна');
+});
+
+test('talkDurationMs: потолок реплики — закон персонажа, 5 слов', () => {
+  assert.equal(TALK_MAX_WORDS, 5, 'закон персонажа: максимум 5 слов на реплику');
+  const words = (n) => Array.from({ length: n }, (_, i) => `сл${i}`).join(' ');
+  const cap = talkDurationMs('cheer', words(TALK_MAX_WORDS));
+  assert.equal(talkDurationMs('cheer', words(TALK_MAX_WORDS + 7)), cap,
+    'слова сверх потолка волну не удлиняют');
+});
+
+test('talkDurationMs: осуждение молчит — молчание сильнее реплики', () => {
+  for (const mood of SILENT_MOODS) {
+    assert.ok(MOODS[mood], `${mood}: молчащая мимика должна существовать в MOODS`);
+    assert.equal(talkDurationMs(mood, 'Я съел твой прогресс.'), 0);
+  }
+});
+
+test('talkDurationMs: нет реплики — нет волны', () => {
+  assert.equal(talkDurationMs('cheer', ''), 0);
+  assert.equal(talkDurationMs('cheer', '   '), 0);
+  assert.equal(talkDurationMs('cheer', undefined), 0);
+  assert.equal(talkDurationMs('cheer', null), 0);
+  // @ts-ignore — намеренный мусор
+  assert.equal(talkDurationMs('cheer', 42), 0);
+});
+
+test('talkDurationMs: несуществующая мимика не разговаривает', () => {
+  assert.equal(talkDurationMs('nope', 'Привет.'), 0);
+  assert.equal(talkDurationMs(undefined, 'Привет.'), 0);
+});
+
+test('talkDurationMs: короткая реплика держится не меньше видимого порога', () => {
+  // Одно слово при 420мс/слово ушло бы в моргание — снизу стоит пол.
+  assert.ok(talkDurationMs('cheer', 'Ничья.') >= 700);
 });
 
 /* ── PANDA-3: приветствие на входе ──────────────────────────────────── */
