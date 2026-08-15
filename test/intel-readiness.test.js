@@ -389,3 +389,19 @@ describe('INTEL-2b: движок не притворяется, что изме�
     assert.equal(WINDOWS.trendBaseDays, 21);
   });
 });
+
+describe('INTEL-1: перекалибровка весов', () => {
+  test('monotony 0.10, trend 0.25 (тактический индекс)', () => {
+    assert.equal(WEIGHTS.monotony, 0.10);
+    assert.equal(WEIGHTS.trend, 0.25);
+  });
+
+  test('acwr и recovery не тронуты', () => {
+    assert.equal(WEIGHTS.acwr, 0.35);
+    assert.equal(WEIGHTS.recovery, 0.30);
+  });
+
+  test('тренд теперь весит больше монотонности', () => {
+    assert.ok(WEIGHTS.trend > WEIGHTS.monotony);
+  });
+});

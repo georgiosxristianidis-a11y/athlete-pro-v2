@@ -21,7 +21,7 @@ export { newId, getDeviceId, withMeta, openDB };
 /* ── Type definitions ── */
 /**
  * @typedef {{ id: number, type: 'push'|'pull'|'legs', timestamp: number,
- *   duration: number, tonnage: number,
+ *   duration: number, tonnage: number, sessionRpe: number|null,
  *   exercises: Array<ExerciseRecord> }} WorkoutRecord
  *
  * @typedef {{ name: string, sets: Array<SetRecord> }} ExerciseRecord

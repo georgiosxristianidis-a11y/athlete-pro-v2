@@ -1,5 +1,5 @@
-import { fmtVol } from '../shared/format.js';
 // @ts-check
+import { fmtVol } from '../shared/format.js';
 /* ════════════════════════════════════════════════════════
    workout.view/summary.js — Post-Workout Summary UI
    W-2-C: 4-chamber Glass Cluster report sheet.
@@ -194,6 +194,49 @@ function _ledgerSection(data) {
     </div>`;
 }
 
+/* ── INTEL-1: session RPE chips ────────────────────────────
+   Inline 1-10 strip, optional — no selection = null.
+   Mutates summaryData.sessionRpe on tap so the value travels
+   to _persistFinalSession without extra plumbing. */
+
+/**
+ * @param {object} data  summaryData — .sessionRpe will be set on tap
+ * @param {boolean} ru
+ * @returns {string}
+ */
+function _rpeSection(data, ru) {
+  const chips = [];
+  for (let i = 1; i <= 10; i++) chips.push(
+    `<button class="summ-rpe-chip" data-rpe="${i}" type="button">${i}</button>`
+  );
+  return `
+    <div class="summ-rpe-strip">
+      <div class="summ-rpe-label">${ru ? 'RPE' : 'RPE'}</div>
+      <div class="summ-rpe-chips">${chips.join('')}</div>
+    </div>`;
+}
+
+/**
+ * Wires tap handlers on RPE chip buttons.
+ * @param {HTMLElement} container
+ * @param {object} data  summaryData ref
+ */
+function _wireRpeChips(container, data) {
+  for (const btn of container.querySelectorAll('.summ-rpe-chip')) {
+    btn.addEventListener('click', () => {
+      const val = Number(btn.dataset.rpe);
+      const wasActive = btn.classList.contains('active');
+      for (const b of container.querySelectorAll('.summ-rpe-chip')) b.classList.remove('active');
+      if (wasActive) {
+        data.sessionRpe = null;
+      } else {
+        btn.classList.add('active');
+        data.sessionRpe = val;
+      }
+    });
+  }
+}
+
 /* ══════════════════════════════════════════════════════════
    PUBLIC API
    ══════════════════════════════════════════════════════════ */
@@ -233,6 +276,8 @@ export function renderSummaryModal(data, onSave, ru = false) {
 
   const prHTML = _prSection(data.prs);
   const ledgerHTML = _ledgerSection(data);
+  const rpeHTML = _rpeSection(data, ru);
+  data.sessionRpe = null;
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay animate-in';
@@ -262,6 +307,8 @@ export function renderSummaryModal(data, onSave, ru = false) {
         ${ledgerHTML}
       </div>
 
+      ${rpeHTML}
+
       <div class="summ-actions">
         <button class="btn btn-primary summ-save-btn" id="btn-summ-save" style="--btn-accent:${pplColor}">
           ${ru ? 'СОХРАНИТЬ' : 'SAVE SESSION'}
@@ -273,6 +320,7 @@ export function renderSummaryModal(data, onSave, ru = false) {
     </div>`;
 
   document.body.appendChild(overlay);
+  _wireRpeChips(overlay, data);
 
   // PANDA-1, сценарий 4: рекорд — единственный момент, когда панда перестаёт
   // жевать. Держим ликование 4с и отпускаем обратно к базовой мимике.
