@@ -33,24 +33,21 @@
 
 import { execFileSync } from 'node:child_process';
 
+// Вычисления живут в `drift-core.mjs` — тот же модуль зовёт PreToolUse-хук
+// (FLOW-2). Здесь остались только политика (что блокирует, что обходится) и
+// вывод: две копии формулы «что считать пересечением» разъехались бы на первой
+// же правке, и гард был бы зелёным ровно там, где смотрят.
+import {
+  MAIN,
+  commitsInMainFor,
+  currentBranch,
+  behindCount,
+  mainKnown,
+  mergeBase,
+  overlapFiles,
+  tryGit,
+} from './drift-core.mjs';
 import { scanBase } from './rejected-lines.mjs';
-
-const MAIN = 'origin/main';
-
-function git(args) {
-  return execFileSync('git', args, {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim();
-}
-
-function tryGit(args) {
-  try {
-    return git(args);
-  } catch {
-    return null;
-  }
-}
 
 const red = (s) => `\x1b[31m${s}\x1b[0m`;
 const yellow = (s) => `\x1b[33m${s}\x1b[0m`;
@@ -92,7 +89,7 @@ if (process.env.DRIFT_OK === '1') {
   process.exit(0);
 }
 
-const branch = tryGit(['rev-parse', '--abbrev-ref', 'HEAD']);
+const branch = currentBranch();
 
 /* Detached HEAD локально — это обычно середина rebase/bisect, там проверять
    нечего. В CI же detached — НОРМА: actions/checkout по ref даёт именно его.
@@ -119,44 +116,24 @@ try {
   offline = true;
 }
 
-if (!tryGit(['rev-parse', '--verify', `${MAIN}^{commit}`])) {
+if (!mainKnown()) {
   console.log(yellow('⚠️  [Drift] origin/main недоступен — проверка пропущена.'));
   process.exit(0);
 }
 
-const base = tryGit(['merge-base', 'HEAD', MAIN]);
+const base = mergeBase();
 if (!base) {
   console.log(yellow('⚠️  [Drift] Общий предок с origin/main не найден — проверка пропущена.'));
   process.exit(0);
 }
 
-const behind = Number(tryGit(['rev-list', '--count', `HEAD..${MAIN}`]) || 0);
+const behind = behindCount();
 if (behind === 0) {
   console.log(green('✅ [Drift] Ветка отросла от свежего origin/main.'));
   process.exit(0);
 }
 
-const list = (range) => {
-  const out = tryGit(['diff', '--name-only', range]);
-  return out ? out.split('\n').filter(Boolean) : [];
-};
-
-const mine = list(`${base}..HEAD`);
-const theirs = new Set(list(`${base}..${MAIN}`));
-
-// Пересечение считаем только там, где файл РЕАЛЬНО расходится с main.
-// Если твоя версия файла уже байт-в-байт равна main — терять нечего: так выглядит
-// уже влитая ветка (rebase-merge переписывает SHA, и ancestry врёт про выкаченное)
-// или та же правка, сделанная параллельно другим агентом.
-const stillDiffers = (f) => {
-  try {
-    git(['diff', '--quiet', MAIN, 'HEAD', '--', f]);
-    return false;
-  } catch {
-    return true;
-  }
-};
-const overlap = mine.filter((f) => theirs.has(f) && stillDiffers(f));
+const overlap = overlapFiles(base);
 
 if (overlap.length === 0) {
   console.log(
@@ -176,12 +153,9 @@ console.error(`   Отставание:  ${behind} коммит(ов) от origi
 console.error('');
 console.error(bold('   Эти файлы ты правил — и их же переписали в main:'));
 for (const f of overlap.slice(0, 15)) {
-  const commits = tryGit(['log', '--oneline', `${base}..${MAIN}`, '--', f]);
-  const n = commits ? commits.split('\n').length : 0;
-  console.error(`     ${red('•')} ${f}  ${yellow(`(${n} коммит(ов) в main)`)}`);
-  if (commits) {
-    for (const line of commits.split('\n').slice(0, 3)) console.error(`         ${line}`);
-  }
+  const commits = commitsInMainFor(base, f);
+  console.error(`     ${red('•')} ${f}  ${yellow(`(${commits.length} коммит(ов) в main)`)}`);
+  for (const line of commits.slice(0, 3)) console.error(`         ${line}`);
 }
 if (overlap.length > 15) console.error(`     … и ещё ${overlap.length - 15}`);
 
