@@ -5,6 +5,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
+import { estimate1RM } from './strength-engine.js';
 
 /* ══════════════════════════════════════════════
    CALENDAR STATE
@@ -195,3 +196,151 @@ export async function getTrainingSnapshot() {
   });
   return { weekWorkouts, monthWorkouts, mainLifts };
 }
+
+/**
+ * Extract full chronological history and progression metrics for a single exercise.
+ * @param {Array<import('./db.js').WorkoutRecord>} workouts
+ * @param {string} exerciseName
+ * @returns {{
+ *   name: string,
+ *   type: 'push'|'pull'|'legs',
+ *   sessionsCount: number,
+ *   totalSets: number,
+ *   totalVolume: number,
+ *   bestWeight: number,
+ *   firstWeight: number,
+ *   currentWeight: number,
+ *   delta: number,
+ *   best1RM: number,
+ *   current1RM: number,
+ *   sessions: Array<{
+ *     id: string|number,
+ *     timestamp: number,
+ *     type: string,
+ *     topWeight: number,
+ *     est1RM: number,
+ *     volume: number,
+ *     sets: Array<{ weight: number, reps: number, done?: boolean }>
+ *   }>,
+ *   pts: Array<{ t: number, v: number, est1RM: number, volume: number }>
+ * }}
+ */
+export function fetchExerciseHistory(workouts, exerciseName) {
+  const normTarget = (exerciseName || '').trim().toLowerCase();
+  if (!normTarget || !Array.isArray(workouts)) {
+    return {
+      name: exerciseName || '',
+      type: 'push',
+      sessionsCount: 0,
+      totalSets: 0,
+      totalVolume: 0,
+      bestWeight: 0,
+      firstWeight: 0,
+      currentWeight: 0,
+      delta: 0,
+      best1RM: 0,
+      current1RM: 0,
+      sessions: [],
+      pts: [],
+    };
+  }
+
+  const typeCounts = { push: 0, pull: 0, legs: 0 };
+  const rawSessions = [];
+
+  for (const w of workouts) {
+    if (!w || !Array.isArray(w.exercises)) continue;
+    for (const ex of w.exercises) {
+      if (!ex || !ex.name) continue;
+      const normName = ex.name.trim().toLowerCase();
+      const aliases = Array.isArray(ex.alias) ? ex.alias.map((a) => String(a).trim().toLowerCase()) : [];
+      if (normName !== normTarget && !aliases.includes(normTarget)) continue;
+
+      if (w.type && Object.prototype.hasOwnProperty.call(typeCounts, w.type)) {
+        typeCounts[w.type]++;
+      }
+
+      let topWeight = 0;
+      let top1RM = 0;
+      let sessionVolume = 0;
+      let validSetsCount = 0;
+
+      const sets = Array.isArray(ex.sets) ? ex.sets : [];
+      for (const s of sets) {
+        if (!s || s.done === false) continue;
+        const weight = Number(s.weight) || 0;
+        const reps = Number(s.reps) || 0;
+        if (weight > topWeight) topWeight = weight;
+        const e1rm = estimate1RM(weight, reps);
+        if (e1rm > top1RM) top1RM = e1rm;
+        if (weight > 0 && reps > 0) {
+          sessionVolume += weight * reps;
+          validSetsCount++;
+        } else if (reps > 0) {
+          validSetsCount++;
+        }
+      }
+
+      rawSessions.push({
+        id: w.id,
+        timestamp: w.timestamp || Date.now(),
+        type: w.type || 'push',
+        topWeight,
+        est1RM: top1RM,
+        volume: sessionVolume,
+        validSetsCount,
+        sets,
+      });
+      break;
+    }
+  }
+
+  rawSessions.sort((a, b) => a.timestamp - b.timestamp);
+
+  const dominantType = /** @type {'push'|'pull'|'legs'} */ (
+    Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'push'
+  );
+
+  let totalVolume = 0;
+  let totalSets = 0;
+  let bestWeight = 0;
+  let best1RM = 0;
+
+  for (const s of rawSessions) {
+    totalVolume += s.volume;
+    totalSets += s.validSetsCount;
+    if (s.topWeight > bestWeight) bestWeight = s.topWeight;
+    if (s.est1RM > best1RM) best1RM = s.est1RM;
+  }
+
+  const firstWeight = rawSessions.find((s) => s.topWeight > 0)?.topWeight || 0;
+  const currentWeight = [...rawSessions].reverse().find((s) => s.topWeight > 0)?.topWeight || 0;
+  const current1RM = [...rawSessions].reverse().find((s) => s.est1RM > 0)?.est1RM || 0;
+  const delta = firstWeight > 0 && currentWeight > 0 ? currentWeight - firstWeight : 0;
+
+  const pts = rawSessions
+    .filter((s) => s.topWeight > 0)
+    .map((s) => ({
+      t: s.timestamp,
+      v: s.topWeight,
+      est1RM: s.est1RM,
+      volume: s.volume,
+    }));
+
+  return {
+    name: exerciseName,
+    type: dominantType,
+    sessionsCount: rawSessions.length,
+    totalSets,
+    totalVolume,
+    bestWeight,
+    firstWeight,
+    currentWeight,
+    delta,
+    best1RM,
+    current1RM,
+    sessions: rawSessions,
+    pts,
+  };
+}
+
