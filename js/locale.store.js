@@ -1,4 +1,4 @@
-﻿// @ts-check
+// @ts-check
 import { DB } from './db.js';
 
 /**
@@ -147,6 +147,13 @@ const DICT = {
     'analytics.period_from': 'From',
     'analytics.period_to': 'To',
     'analytics.period_apply': 'Apply',
+    'analytics.ex_detail_title': 'Exercise History',
+    'analytics.ex_best_1rm': 'Est. 1RM',
+    'analytics.ex_max_weight': 'Max Weight',
+    'analytics.ex_total_vol': 'Total Volume',
+    'analytics.ex_sessions': 'Sessions',
+    'analytics.ex_sets_history': 'Session History',
+    'analytics.ex_no_history': 'No sets logged for this exercise',
     'journal.title': 'Journal',
     'journal.sub': 'Every session you logged',
     'journal.search': 'Search by exercise',
@@ -343,6 +350,13 @@ const DICT = {
     'analytics.period_from': 'С',
     'analytics.period_to': 'По',
     'analytics.period_apply': 'Применить',
+    'analytics.ex_detail_title': 'История упражнения',
+    'analytics.ex_best_1rm': 'Расч. 1ПМ',
+    'analytics.ex_max_weight': 'Макс. вес',
+    'analytics.ex_total_vol': 'Сумм. объём',
+    'analytics.ex_sessions': 'Сессий',
+    'analytics.ex_sets_history': 'История подходов',
+    'analytics.ex_no_history': 'Нет записанных подходов для этого упражнения',
     'journal.title': 'Журнал',
     'journal.sub': 'Все записанные тренировки',
     'journal.search': 'Поиск по упражнению',

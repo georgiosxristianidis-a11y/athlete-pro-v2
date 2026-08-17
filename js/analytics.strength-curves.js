@@ -91,7 +91,7 @@ function curveCard(s, idx) {
   const deltaTxt = (s.delta >= 0 ? '+' : '') + Math.round(s.delta);
 
   const html = `
-    <div class="sc-card chart-card" style="--sc:${color}">
+    <div class="sc-card chart-card" style="--sc:${color}" data-action="analytics:openExercise" data-exercise="${esc(s.name)}" role="button" tabindex="0" aria-label="${esc(s.name)}">
       <div class="sc-head">
         <div class="sc-name">${esc(s.name)}</div>
         <div class="sc-cur">${cur}<span class="sc-unit">kg</span></div>
@@ -273,3 +273,6 @@ export function renderStrengthCurves(workouts, mount) {
   mount.innerHTML = `<div class="sc-grid">${cards.map(c => c.html).join('')}</div>`;
   mount.querySelectorAll('.sc-card').forEach((card, i) => wireScrub(card, cards[i].pts));
 }
+
+export { smoothPath, fmtMon, wireScrub, TYPE_COLOR, GOLD };
+
