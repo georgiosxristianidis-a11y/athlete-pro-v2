@@ -19,18 +19,23 @@ import {
   loadPeriodPref,
   savePeriodPref,
   PERIOD_DAYS,
+  fetchExerciseHistory,
 } from './analytics.store.js';
 import { pplTonnageFrom } from './db.js';
-import { t } from './locale.store.js';
-import { isRu } from './locale.store.js';
-import { renderStrengthHero, renderStrengthCurves } from './analytics.strength-curves.js';
+import { t, isRu } from './locale.store.js';
+import { renderStrengthHero, renderStrengthCurves, smoothPath, wireScrub, fmtMon, GOLD } from './analytics.strength-curves.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { on } from './events.js';
+import { fmtDate, fmtWeight } from './shared/format.js';
 
 on('analytics:calPrev',    () => calPrev());
 on('analytics:calNext',    () => calNext());
 on('analytics:startFirst', () => window.Nav.go('s-train', { force: true }));
 on('analytics:periodMenu', () => _openPeriodSheet());
+on('analytics:openExercise', (el) => {
+  const name = el?.dataset?.exercise;
+  if (name) openExerciseHistoryModal(name);
+});
 
 // PPL law: push=green (--c-push) · pull=cyan (--c-pull) · legs=purple (--c-legs).
 // Kept as hex because callers append alpha (`${color}20`), which CSS vars can't do.
@@ -521,7 +526,7 @@ function _renderORMList(orms) {
   if (!el || !orms.length) return;
   const sorted = orms.sort((a, b) => b.value - a.value);
   el.innerHTML = sorted.map((o, i) => `
-    <div class="orm-row stagger-item" style="animation-delay: ${0.2 + i * 0.05}s">
+    <div class="orm-row stagger-item" style="animation-delay: ${0.2 + i * 0.05}s" data-action="analytics:openExercise" data-exercise="${esc(o.id)}" role="button" tabindex="0" aria-label="${esc(o.id)}">
       <div class="orm-name">${esc(o.id)}</div>
       <div class="orm-val">${o.value}<span class="orm-unit">kg</span></div>
       <div class="orm-bar-wrap"><div class="orm-bar-fill" id="an-orm-bar-${i}" style="background:linear-gradient(90deg, var(--c-legs), var(--c-legs))"></div></div>
@@ -544,7 +549,164 @@ function _renderORMList(orms) {
   }, 150);
 }
 
+/**
+ * Open the detailed history and progression modal for a single exercise (AN-2).
+ * @param {string} exerciseName
+ */
+export function openExerciseHistoryModal(exerciseName) {
+  if (!exerciseName) return;
+  const history = fetchExerciseHistory(_workoutsCache, exerciseName);
+  const color = TYPE_COLOR[history.type] || '#00e676';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay ex-history-overlay';
+  overlay.style.zIndex = '4000';
+
+  const typeName = history.type.charAt(0).toUpperCase() + history.type.slice(1);
+  const deltaTxt = (history.delta >= 0 ? '+' : '') + Math.round(history.delta);
+  const totalVolTxt = fmtVol(history.totalVolume);
+
+  // SVG Chart geometry
+  let chartHtml = '';
+  const W = 320, H = 110, padX = 8, padTop = 14, padBot = 22;
+  const ptsGeo = [];
+
+  if (history.pts.length >= 2) {
+    const t0 = history.pts[0].t, tN = history.pts[history.pts.length - 1].t, tr = (tN - t0) || 1;
+    const vs = history.pts.map((p) => p.v);
+    const vmin = Math.min(...vs), vmax = Math.max(...vs), vr = (vmax - vmin) || 1;
+    const X = (p) => padX + ((p.t - t0) / tr) * (W - 2 * padX);
+    const Y = (p) => padTop + (1 - (p.v - vmin) / vr) * (H - padTop - padBot);
+    history.pts.forEach((p) => ptsGeo.push({ x: X(p), y: Y(p), v: p.v, t: p.t }));
+
+    const line = smoothPath(ptsGeo);
+    const area = `${line} L ${ptsGeo[ptsGeo.length - 1].x.toFixed(1)},${H} L ${ptsGeo[0].x.toFixed(1)},${H} Z`;
+    const peakI = vs.indexOf(vmax);
+    const gid = `ex-chart-grad-${Date.now()}`;
+
+    chartHtml = `
+      <div class="sc-plot ex-chart-plot">
+        <svg class="sc-chart ex-svg-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(history.name)} progression curve">
+          <defs>
+            <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${color}" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="${area}" fill="url(#${gid})"/>
+          <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>
+          <circle cx="${ptsGeo[peakI].x.toFixed(1)}" cy="${ptsGeo[peakI].y.toFixed(1)}" r="3.5" fill="${GOLD}" class="sc-peak-dot"/>
+          <circle cx="${ptsGeo[ptsGeo.length - 1].x.toFixed(1)}" cy="${ptsGeo[ptsGeo.length - 1].y.toFixed(1)}" r="3.5" fill="${color}" class="sc-cur-dot"/>
+        </svg>
+        <div class="sc-scrub" aria-hidden="true">
+          <div class="sc-scrub-line"></div>
+          <div class="sc-scrub-dot"></div>
+          <div class="sc-scrub-tip"><b></b><span></span></div>
+        </div>
+      </div>
+      <div class="sc-axis">
+        <span>${fmtMon(t0)}</span>
+        <span>${history.sessionsCount} ${isRu() ? 'сессий' : 'sessions'}</span>
+        <span>${fmtMon(tN)}</span>
+      </div>`;
+  } else if (history.pts.length === 1) {
+    const p = history.pts[0];
+    chartHtml = `
+      <div class="ex-single-point-card">
+        <div class="ex-single-val">${p.v} <span class="ex-stat-unit">kg</span></div>
+        <div class="ex-single-date">${fmtMon(p.t)} (1 ${isRu() ? 'сессия' : 'session'})</div>
+      </div>`;
+  } else {
+    chartHtml = `<div class="ex-no-history">${t('analytics.ex_no_history')}</div>`;
+  }
+
+  // Sessions log
+  const sessionsLogHtml = [...history.sessions].reverse().map((s) => {
+    const dateStr = fmtDate(s.timestamp, { day: 'numeric', month: 'short', year: 'numeric' });
+    const setsChips = (s.sets || []).map((set, idx) => {
+      const skipped = set?.done === false ? ' skipped' : '';
+      const w = Number(set?.weight) || 0;
+      const reps = Number(set?.reps) || 0;
+      return `<span class="ex-set-chip${skipped}"><span class="ex-set-idx">${idx + 1}</span>${esc(fmtWeight(w))}<span class="ex-set-u">kg</span> × ${reps}</span>`;
+    }).join('');
+
+    return `
+      <div class="ex-session-row">
+        <div class="ex-session-meta">
+          <span class="ex-session-date">${esc(dateStr)}</span>
+          <span class="ex-session-vol">${esc(fmtVol(s.volume))}<span class="ex-stat-unit">kg</span></span>
+        </div>
+        <div class="ex-session-sets">${setsChips || `<span class="ex-nosets">${t('journal.no_sets')}</span>`}</div>
+      </div>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div class="modal-sheet ex-history-sheet" style="--sc:${color}">
+      <div class="modal-handle"></div>
+      <div class="ex-history-head">
+        <div class="ex-head-info">
+          <div class="ex-history-title">${esc(history.name)}</div>
+          <span class="ex-type-pill" style="color:${color};background:${color}18;border-color:${color}40">${esc(typeName)}</span>
+        </div>
+        <button class="btn-icon-sm" id="ex-history-close" aria-label="${t('journal.close')}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="18" height="18">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="ex-stats-grid">
+        <div class="ex-stat-cell">
+          <div class="ex-stat-val">${history.best1RM ? `${history.best1RM}<span class="ex-stat-unit">kg</span>` : '—'}</div>
+          <div class="ex-stat-lbl">${t('analytics.ex_best_1rm')}</div>
+        </div>
+        <div class="ex-stat-cell">
+          <div class="ex-stat-val">${history.bestWeight ? `${history.bestWeight}<span class="ex-stat-unit">kg</span>` : '—'}</div>
+          <div class="ex-stat-lbl">${t('analytics.ex_max_weight')}</div>
+          ${history.sessionsCount > 1 ? `<span class="ex-stat-sub ${history.delta >= 0 ? 'up' : 'down'}">${deltaTxt} kg</span>` : ''}
+        </div>
+        <div class="ex-stat-cell">
+          <div class="ex-stat-val">${totalVolTxt}<span class="ex-stat-unit">kg</span></div>
+          <div class="ex-stat-lbl">${t('analytics.ex_total_vol')}</div>
+        </div>
+        <div class="ex-stat-cell">
+          <div class="ex-stat-val">${history.sessionsCount}</div>
+          <div class="ex-stat-lbl">${t('analytics.ex_sessions')} · ${history.totalSets} ${isRu() ? 'сет' : 'sets'}</div>
+        </div>
+      </div>
+
+      <div class="ex-chart-card chart-card">
+        <div class="ex-chart-title">${isRu() ? 'Динамика веса' : 'Weight Progression'}</div>
+        ${chartHtml}
+      </div>
+
+      <div class="ex-history-section-title">${t('analytics.ex_sets_history')}</div>
+      <div class="ex-sessions-list">
+        ${sessionsLogHtml || `<div class="ex-no-history">${t('analytics.ex_no_history')}</div>`}
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('visible'));
+
+  const close = () => {
+    overlay.classList.remove('visible');
+    setTimeout(() => overlay.remove(), 300);
+  };
+
+  overlay.querySelector('#ex-history-close')?.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  const chartCard = overlay.querySelector('.ex-chart-card');
+  if (chartCard && ptsGeo.length >= 2) {
+    wireScrub(chartCard, ptsGeo);
+  }
+
+  haptic(10);
+}
+
 function _roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); }
 function _set(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = String(html); }
 
-export const Analytics = { load, calPrev, calNext, calDayClick };
+export const Analytics = { load, calPrev, calNext, calDayClick, openExerciseHistoryModal };
+
