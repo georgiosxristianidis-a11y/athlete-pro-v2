@@ -1362,3 +1362,125 @@
   background: rgba(255, 171, 0, 0.15);
   border: 1px solid rgba(255, 171, 0, 0.3);
 }
+
+/* ════════════════════════════════════════════════════════
+   Audio-Reactive Live Voice Waveform (Web Audio Visualizer)
+   ════════════════════════════════════════════════════════ */
+.intel-voice-wave {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 16px;
+  padding: 2px 6px;
+  background: color-mix(in srgb, var(--c-intel) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-intel) 25%, transparent);
+  border-radius: 100px;
+}
+
+.intel-wave-bar {
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background: var(--c-intel);
+  border-radius: 1.5px;
+  transform: scaleY(0.2);
+  transform-origin: center bottom;
+  opacity: 0.35;
+  transition: transform 0.08s ease-out, opacity 0.08s ease-out;
+  will-change: transform, opacity;
+}
+
+/* Settings Voice & Tempo Controls */
+.intel-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.intel-settings-label {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.intel-voice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.intel-voice-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.intel-voice-card:hover {
+  background: var(--c-surface-h);
+  border-color: var(--c-border-h);
+}
+
+.intel-voice-card.is-active {
+  background: color-mix(in srgb, var(--c-intel) 12%, var(--c-surface));
+  border-color: var(--c-intel);
+}
+
+.intel-voice-name {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+}
+
+.intel-voice-card.is-active .intel-voice-name {
+  color: var(--c-intel);
+}
+
+.intel-voice-desc {
+  font-size: var(--fs-1);
+  color: var(--c-text-3);
+}
+
+.intel-speed-chips {
+  display: flex;
+  gap: 8px;
+}
+
+.intel-speed-chip {
+  flex: 1;
+  text-align: center;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  padding: 8px 4px;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.intel-speed-chip:hover {
+  background: var(--c-surface-h);
+  border-color: var(--c-border-h);
+}
+
+.intel-speed-chip.is-active {
+  background: color-mix(in srgb, var(--c-intel) 12%, var(--c-surface));
+  border-color: var(--c-intel);
+  color: var(--c-intel);
+}
+
+.panda-sprite,
+.intel-hud-badge,
+.intel-radar-ring {
+  transition: transform 0.08s ease-out;
+  will-change: transform;
+}

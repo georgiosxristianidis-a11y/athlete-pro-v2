@@ -220,15 +220,18 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
 
 const ttsSchema = z.object({
   text: z.string().min(1, 'text is required'),
+  voice: z.enum(['Fenrir', 'Charon', 'Aoede', 'Puck']).optional().default('Fenrir'),
+  tone: z.enum(['tough', 'analytical', 'motivational', 'friendly']).optional().default('tough'),
+  speed: z.number().optional().default(1.0),
   customKey: z.string().optional()
 });
 
-/* ── POST /tts (Gemini 2.5 Flash Preview TTS) ── */
+/* ── POST /tts (Gemini 2.5 Flash Preview TTS с кастомизацией тембра и интонации) ── */
 router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
   const parseResult = ttsSchema.safeParse(req.body);
   if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { text, customKey } = parseResult.data;
+  const { text, voice, tone, customKey } = parseResult.data;
 
   const { gemini } = await import('../lib/geminiClient.js');
   const apiKey = customKey || gemini.apiKey;
@@ -237,14 +240,25 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
     return res.status(500).json({ error: 'GOOGLE_GENERATIVE_AI_API_KEY is not configured.' });
   }
 
+  let styleInstruction = 'Скажи уверенным голосом тренера:';
+  if (tone === 'tough') {
+    styleInstruction = 'Скажи строго, отрывисто, с командной интонацией сурового главного тренера:';
+  } else if (tone === 'analytical') {
+    styleInstruction = 'Скажи спокойно, структурированно, с интонацией спортивного ученого и врача:';
+  } else if (tone === 'motivational') {
+    styleInstruction = 'Скажи вдохновляюще, с нарастающей мощной энергетикой:';
+  } else if (tone === 'friendly') {
+    styleInstruction = 'Скажи тепло, поддерживающе и с дружеским настроем:';
+  }
+
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: `Скажи мотивирующим и суровым голосом тренера: ${text}` }] }],
+      contents: [{ parts: [{ text: `${styleInstruction} ${text}` }] }],
       generationConfig: { 
         responseModalities: ["AUDIO"], 
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Fenrir" } } } 
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } 
       },
       model: "gemini-2.5-flash-preview-tts"
     })
@@ -263,7 +277,7 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
     return res.status(500).json({ error: 'No audio data returned from Gemini' });
   }
 
-  res.json({ success: true, audioBase64: pcmData });
+  res.json({ success: true, audioBase64: pcmData, voice, tone });
 }));
 
 const weeklyReportSchema = z.object({

@@ -499,6 +499,104 @@ export const IntelView = (() => {
   function _clearImage() { _pendingImage = null; }
 
   let _isSpeaking = false;
+  let _audioCtx = null;
+  let _analyser = null;
+  let _animFrameId = null;
+
+  async function _getTone() {
+    const { DB } = await import('./db.js');
+    return (await DB.Settings.get('intel-tone')) ?? 50;
+  }
+  async function _getVoice() {
+    const { DB } = await import('./db.js');
+    return (await DB.Settings.get('intel-voice')) || 'Fenrir';
+  }
+  async function _getSpeed() {
+    const { DB } = await import('./db.js');
+    return (await DB.Settings.get('intel-speed')) || 1.0;
+  }
+
+  function _getAudioContext() {
+    if (!_audioCtx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        _audioCtx = new AudioCtx();
+        _analyser = _audioCtx.createAnalyser();
+        _analyser.fftSize = 64;
+        _analyser.smoothingTimeConstant = 0.8;
+      }
+    }
+    if (_audioCtx && _audioCtx.state === 'suspended') {
+      _audioCtx.resume();
+    }
+    return { ctx: _audioCtx, analyser: _analyser };
+  }
+
+  function _startVoiceVisualizer(audioEl) {
+    const { ctx, analyser } = _getAudioContext();
+    if (!ctx || !analyser) return;
+
+    try {
+      const source = ctx.createMediaElementSource(audioEl);
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
+    } catch (e) {
+      // Element might already be connected
+    }
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    function renderLoop() {
+      if (!_isSpeaking) {
+        _stopVoiceVisualizer();
+        return;
+      }
+
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        sum += dataArray[i];
+      }
+      const avg = sum / dataArray.length;
+      const norm = Math.min(1, avg / 128);
+
+      // 1. Анимация волн эквалайзера в HUD
+      const bars = document.querySelectorAll('.intel-wave-bar');
+      if (bars.length > 0) {
+        bars.forEach((bar, idx) => {
+          const freqVal = (dataArray[idx * 2] || avg) / 255;
+          bar.style.transform = `scaleY(${Math.max(0.15, freqVal * 1.6).toFixed(2)})`;
+          bar.style.opacity = String((0.35 + freqVal * 0.65).toFixed(2));
+        });
+      }
+
+      // 2. Анимация ореола и пульсации аватара/маскота
+      const animTargets = document.querySelectorAll('.panda-sprite, .intel-hud-badge, .intel-radar-ring');
+      animTargets.forEach(el => {
+        el.style.transform = `scale(${(1 + norm * 0.04).toFixed(3)})`;
+      });
+
+      _animFrameId = requestAnimationFrame(renderLoop);
+    }
+
+    _animFrameId = requestAnimationFrame(renderLoop);
+  }
+
+  function _stopVoiceVisualizer() {
+    if (_animFrameId) {
+      cancelAnimationFrame(_animFrameId);
+      _animFrameId = null;
+    }
+    const bars = document.querySelectorAll('.intel-wave-bar');
+    bars.forEach(bar => {
+      bar.style.transform = 'scaleY(0.2)';
+      bar.style.opacity = '0.3';
+    });
+    const animTargets = document.querySelectorAll('.panda-sprite, .intel-hud-badge, .intel-radar-ring');
+    animTargets.forEach(el => {
+      el.style.transform = '';
+    });
+  }
 
   async function speakText(textToSpeak) {
     if (!textToSpeak || _isSpeaking) return;
@@ -506,12 +604,25 @@ export const IntelView = (() => {
     IntelStore.addLog('SYS', 'Synthesizing coach voice...');
 
     try {
+      const { DB } = await import('./db.js');
+      const voice = await _getVoice();
+      const toneVal = await _getTone();
+      const speed = parseFloat(await _getSpeed()) || 1.0;
+
+      let tone = 'tough';
+      if (toneVal < 35) tone = 'friendly';
+      else if (toneVal <= 70) tone = 'analytical';
+      else tone = 'tough';
+
       const response = await fetch('/api/coach/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           text: textToSpeak,
-          customKey: await (await import('./db.js')).DB.Settings.get('gemini-key')
+          voice,
+          tone,
+          speed,
+          customKey: await DB.Settings.get('gemini-key')
         })
       });
 
@@ -524,11 +635,27 @@ export const IntelView = (() => {
       const audioBlob = pcmToWav(pcmData, 24000); 
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
-      audio.onended = () => { _isSpeaking = false; URL.revokeObjectURL(audioUrl); };
+      audio.playbackRate = speed;
+      audio.preservesPitch = true;
+      audio.crossOrigin = 'anonymous';
+
+      audio.onended = () => {
+        _isSpeaking = false;
+        _stopVoiceVisualizer();
+        URL.revokeObjectURL(audioUrl);
+      };
+      audio.onerror = () => {
+        _isSpeaking = false;
+        _stopVoiceVisualizer();
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      _startVoiceVisualizer(audio);
       await audio.play();
     } catch (err) { 
       IntelStore.addLog('ERROR', 'Voice synthesis failed'); 
       _isSpeaking = false; 
+      _stopVoiceVisualizer();
     }
   }
 
@@ -630,7 +757,16 @@ export const IntelView = (() => {
       <div class="intel-hud-modal">
         <button class="intel-hud-close" data-action="intel:closeReport" aria-label="Закрыть">&times;</button>
         <div class="intel-hud-header">
-           <span class="intel-hud-badge">Weekly Performance</span>
+           <div style="display:flex; justify-content:center; align-items:center; gap:8px;">
+             <span class="intel-hud-badge">Weekly Performance</span>
+             <div class="intel-voice-wave" aria-hidden="true">
+               <span class="intel-wave-bar"></span>
+               <span class="intel-wave-bar"></span>
+               <span class="intel-wave-bar"></span>
+               <span class="intel-wave-bar"></span>
+               <span class="intel-wave-bar"></span>
+             </div>
+           </div>
            <div class="intel-hud-score-row">
              <span class="intel-hud-score">${report.score}</span>
              <span class="intel-hud-score-label">Performance Score</span>
@@ -762,7 +898,16 @@ export const IntelView = (() => {
       <div class="intel-hud-modal">
         <button class="intel-hud-close" data-action="intel:closeReport" aria-label="Закрыть">&times;</button>
         <div class="intel-hud-header">
-           <span class="intel-hud-badge">Session Deep Dive</span>
+           <div style="display:flex; justify-content:center; align-items:center; gap:8px;">
+             <span class="intel-hud-badge">Session Deep Dive</span>
+             <div class="intel-voice-wave" aria-hidden="true">
+               <span class="intel-wave-bar"></span>
+               <span class="intel-wave-bar"></span>
+               <span class="intel-wave-bar"></span>
+               <span class="intel-wave-bar"></span>
+               <span class="intel-wave-bar"></span>
+             </div>
+           </div>
            <h2 class="intel-hud-title">${esc((workout.type || 'Workout').toUpperCase())}</h2>
         </div>
 
@@ -826,6 +971,7 @@ export const IntelView = (() => {
     btn.disabled = true;
     btn.textContent = 'Сохранено в план тренировок';
   }
+
   /** Биометрический радар (HUD-3): полноэкранный скан → отчёт ЦНС/готовности. */
   async function checkBiometrics() {
     haptic(10);
@@ -921,7 +1067,16 @@ export const IntelView = (() => {
       <div class="intel-radar-report">
         <button class="intel-btn-close intel-radar-report-close" data-action="intel:closeOverlay" data-overlay="intel-radar-overlay" aria-label="${L.close}">&times;</button>
         <div class="intel-hud-header">
-          <span class="intel-hud-badge">BIOMETRIC RADAR</span>
+          <div style="display:flex; justify-content:center; align-items:center; gap:8px;">
+            <span class="intel-hud-badge">BIOMETRIC RADAR</span>
+            <div class="intel-voice-wave" aria-hidden="true">
+              <span class="intel-wave-bar"></span>
+              <span class="intel-wave-bar"></span>
+              <span class="intel-wave-bar"></span>
+              <span class="intel-wave-bar"></span>
+              <span class="intel-wave-bar"></span>
+            </div>
+          </div>
           <div class="intel-hud-score-row">
             <span class="intel-hud-score" style="color:var(--c-accent)">${readiness}%</span>
             <span class="intel-hud-score-label">Readiness Index</span>
@@ -955,11 +1110,12 @@ export const IntelView = (() => {
     `;
   }
 
-  /* ── Настройки: тон коуча (HUD-3). Язык/голос сюда не входят —
-     язык живёт в isRu(), голос маскота отдельной картой PANDA-C. ── */
+  /* ── Настройки P.A.N.D.A. Core: тембр, скорость, характер тренера ── */
   async function openSettings() {
     const L = _copy();
     const tone = await _getTone();
+    const voice = await _getVoice();
+    const speed = await _getSpeed();
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -973,7 +1129,52 @@ export const IntelView = (() => {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
-        <div class="intel-tone-row">
+
+        <div class="intel-settings-section">
+          <div class="intel-settings-label">ГОЛОС ТРЕНЕРА (VOICE PRESET)</div>
+          <div class="intel-voice-grid">
+            <label class="intel-voice-card ${voice === 'Fenrir' ? 'is-active' : ''}">
+              <input type="radio" name="coach-voice" value="Fenrir" ${voice === 'Fenrir' ? 'checked' : ''} style="display:none;">
+              <span class="intel-voice-name">Fenrir</span>
+              <span class="intel-voice-desc">Суровый баритон</span>
+            </label>
+            <label class="intel-voice-card ${voice === 'Charon' ? 'is-active' : ''}">
+              <input type="radio" name="coach-voice" value="Charon" ${voice === 'Charon' ? 'checked' : ''} style="display:none;">
+              <span class="intel-voice-name">Charon</span>
+              <span class="intel-voice-desc">Аналитик-ученый</span>
+            </label>
+            <label class="intel-voice-card ${voice === 'Aoede' ? 'is-active' : ''}">
+              <input type="radio" name="coach-voice" value="Aoede" ${voice === 'Aoede' ? 'checked' : ''} style="display:none;">
+              <span class="intel-voice-name">Aoede</span>
+              <span class="intel-voice-desc">Энергичный</span>
+            </label>
+            <label class="intel-voice-card ${voice === 'Puck' ? 'is-active' : ''}">
+              <input type="radio" name="coach-voice" value="Puck" ${voice === 'Puck' ? 'checked' : ''} style="display:none;">
+              <span class="intel-voice-name">Puck</span>
+              <span class="intel-voice-desc">Спринтер-драйв</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="intel-settings-section" style="margin-top:14px;">
+          <div class="intel-settings-label">СКОРОСТЬ РЕЧИ (TEMPO)</div>
+          <div class="intel-speed-chips">
+            <label class="intel-speed-chip ${speed === 0.9 ? 'is-active' : ''}">
+              <input type="radio" name="coach-speed" value="0.9" ${speed === 0.9 ? 'checked' : ''} style="display:none;">
+              <span>0.9x Вдумчивый</span>
+            </label>
+            <label class="intel-speed-chip ${speed === 1.0 ? 'is-active' : ''}">
+              <input type="radio" name="coach-speed" value="1.0" ${speed === 1.0 ? 'checked' : ''} style="display:none;">
+              <span>1.0x Норма</span>
+            </label>
+            <label class="intel-speed-chip ${speed === 1.15 ? 'is-active' : ''}">
+              <input type="radio" name="coach-speed" value="1.15" ${speed === 1.15 ? 'checked' : ''} style="display:none;">
+              <span>1.15x Драйв</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="intel-tone-row" style="margin-top:16px;">
           <div class="intel-tone-head">
             <span class="intel-tone-label">${L.toneLabel}</span>
             <span id="intel-tone-val" class="intel-tone-val">${tone}</span>
@@ -983,17 +1184,42 @@ export const IntelView = (() => {
             <span>${L.toneTherapist}</span><span>${L.toneNeutral}</span><span>${L.toneGoggins}</span>
           </div>
         </div>
-        <button class="btn btn-primary intel-settings-save" data-action="intel:saveSettings">${L.save}</button>
+
+        <button class="btn btn-primary intel-settings-save" data-action="intel:saveSettings" style="margin-top:18px;">${L.save}</button>
       </div>
     `;
     document.body.appendChild(overlay);
+
+    overlay.querySelectorAll('.intel-voice-card').forEach(card => {
+      card.addEventListener('click', () => {
+        overlay.querySelectorAll('.intel-voice-card').forEach(c => c.classList.remove('is-active'));
+        card.classList.add('is-active');
+      });
+    });
+
+    overlay.querySelectorAll('.intel-speed-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        overlay.querySelectorAll('.intel-speed-chip').forEach(c => c.classList.remove('is-active'));
+        chip.classList.add('is-active');
+      });
+    });
+
     requestAnimationFrame(() => overlay.classList.add('visible'));
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   }
 
   async function saveSettings() {
+    const { DB } = await import('./db.js');
     const slider = /** @type {HTMLInputElement|null} */ (document.getElementById('intel-tone-slider'));
     if (slider) await DB.Settings.set('intel-tone', parseInt(slider.value, 10));
+
+    const checkedVoice = /** @type {HTMLInputElement|null} */ (document.querySelector('input[name="coach-voice"]:checked'));
+    if (checkedVoice) await DB.Settings.set('intel-voice', checkedVoice.value);
+
+    const checkedSpeed = /** @type {HTMLInputElement|null} */ (document.querySelector('input[name="coach-speed"]:checked'));
+    if (checkedSpeed) await DB.Settings.set('intel-speed', parseFloat(checkedSpeed.value));
+
+    IntelStore.addLog('SYS', 'Voice & Coach settings updated');
     document.getElementById('intel-settings-overlay')?.remove();
   }
 
