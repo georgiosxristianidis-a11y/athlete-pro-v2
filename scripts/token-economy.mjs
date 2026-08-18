@@ -182,7 +182,10 @@ function report(data) {
     if (!g.length) continue;
     const c = g.reduce((s, x) => s + x.cost, 0);
     const label = `${lo}-${hi === Infinity ? '∞' : hi}ч`;
-    const flag = lo >= 24 ? '  <- сессии-марафоны' : '';
+    // Часы здесь астрономические: сессия >24ч — это открытая вкладка, а не сутки работы
+    // (активной работы в них ~7%). Ярлык «марафон» приписывал времени то, что тянет
+    // число вызовов — см. HANDOFF_token_economy.md § Опровергнуто перепроверкой.
+    const flag = lo >= 24 ? '  <- открыто дольше суток (не «работал сутки»)' : '';
     console.log(`    ${label.padEnd(7)} ${String(g.length).padStart(4)} сес  $${c.toFixed(0).padStart(5)}  ${pct(c, tot.cost).padStart(6)}  ср.вызовов ${Math.round(g.reduce((s, x) => s + x.calls, 0) / g.length)}${flag}`);
   }
 
@@ -190,7 +193,9 @@ function report(data) {
   for (const s of ses) oneShot.set(s.dir, (oneShot.get(s.dir) || 0) + 1);
   const single = [...oneShot].filter(([, c]) => c === 1).map(([d]) => d);
   const singleCost = ses.filter((s) => single.includes(s.dir)).reduce((s, x) => s + x.cost, 0);
-  console.log(`\n  ворктри: ${oneShot.size} | одноразовых ${single.length} (${pct(single.length, oneShot.size)}) на $${singleCost.toFixed(0)} — цена холодного старта`);
+  // «Цена холодного старта» была объяснением, а не замером: причинность не доказана.
+  // Печатаем факт, гипотезу оставляем хендоффу.
+  console.log(`\n  ворктри: ${oneShot.size} | одноразовых ${single.length} (${pct(single.length, oneShot.size)}) на $${singleCost.toFixed(0)}`);
 
   console.log('\n=== МОДЕЛИ ===');
   for (const [m, e] of [...data.byModel].sort((a, b) => b[1].cost - a[1].cost)) {
