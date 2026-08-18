@@ -1678,3 +1678,117 @@
   font-family: monospace;
   font-size: 11px;
 }
+
+/* ════════════════════════════════════════════════════════
+   6. Amicro Mono Rounded Bullet Target Chart Visualizer
+   ════════════════════════════════════════════════════════ */
+.mono-bullet-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  padding: 10px 12px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.mono-bullet-wrap:hover {
+  background: var(--c-surface-h);
+  border-color: var(--c-border-h);
+}
+
+.mono-bullet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.mono-bullet-label-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mono-bullet-name {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mono-bullet-delta {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--c-intel) 12%, transparent);
+  color: var(--c-intel);
+  text-transform: uppercase;
+}
+
+.mono-bullet-delta.is-hit {
+  background: rgba(0, 230, 118, 0.12);
+  color: var(--c-accent);
+}
+
+.mono-bullet-values {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.mono-bullet-val {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+}
+
+.mono-bullet-target-label {
+  font-size: var(--fs-1);
+  color: var(--c-text-3);
+  text-transform: lowercase;
+}
+
+.mono-bullet-track {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: color-mix(in srgb, var(--c-text-1) 8%, transparent);
+  border-radius: 100px;
+  overflow: visible;
+}
+
+.mono-bullet-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--c-intel);
+  border-radius: 100px;
+  transition: width 0.8s cubic-bezier(.34,1.56,.64,1);
+  will-change: width;
+}
+
+.mono-bullet-fill.is-hit {
+  background: var(--c-accent);
+  box-shadow: 0 0 10px rgba(0, 230, 118, 0.4);
+}
+
+.mono-bullet-pin {
+  position: absolute;
+  top: -3px;
+  width: 2.5px;
+  height: 14px;
+  background: var(--c-text-1);
+  border-radius: 1px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 6px var(--c-text-1);
+  z-index: 2;
+  pointer-events: none;
+}

@@ -768,11 +768,41 @@ export const IntelView = (() => {
     }
   }
 
+  function _renderMonoBullet({ val, target, max, label, unit = 'кг', delta = '' }) {
+    const safeVal = Number(val) || 0;
+    const safeTarget = Number(target) || (safeVal > 0 ? safeVal : 100);
+    const maxValue = max || Math.max(safeVal * 1.2, safeTarget * 1.15, 10);
+    const fillPct = Math.min(100, Math.max(0, (safeVal / maxValue) * 100));
+    const targetPct = Math.min(100, Math.max(0, (safeTarget / maxValue) * 100));
+    const isHit = safeVal >= safeTarget;
+
+    return `
+      <div class="mono-bullet-wrap">
+        <div class="mono-bullet-header">
+          <div class="mono-bullet-label-group">
+            <span class="mono-bullet-name">${esc(label)}</span>
+            ${delta ? `<span class="mono-bullet-delta ${isHit ? 'is-hit' : ''}">${esc(delta)}</span>` : ''}
+          </div>
+          <div class="mono-bullet-values">
+            <span class="mono-bullet-val">${safeVal.toLocaleString()} ${unit}</span>
+            <span class="mono-bullet-target-label">таргет: ${safeTarget.toLocaleString()} ${unit}</span>
+          </div>
+        </div>
+        <div class="mono-bullet-track" role="progressbar" aria-valuenow="${safeVal}" aria-valuemin="0" aria-valuemax="${maxValue}">
+          <div class="mono-bullet-fill ${isHit ? 'is-hit' : ''}" style="--target-width: ${fillPct.toFixed(1)}%; width: 0%;"></div>
+          <div class="mono-bullet-pin" style="left: ${targetPct.toFixed(1)}%;" title="Target: ${safeTarget} ${unit}"></div>
+        </div>
+      </div>
+    `;
+  }
+
   function _renderWeeklyOverlay(report, stats) {
     const overlay = document.createElement('div');
     overlay.className = 'intel-report-overlay animate-in fade-in duration-500';
     overlay.id = 'intel-weekly-overlay';
     
+    const targetVolume = stats.prevVolume > 0 ? Math.round(stats.prevVolume * 1.05) : (stats.currentVolume || 1000);
+
     overlay.innerHTML = `
       <div class="intel-hud-modal">
         <button class="intel-hud-close" data-action="intel:closeReport" aria-label="Закрыть">&times;</button>
@@ -812,6 +842,16 @@ export const IntelView = (() => {
           </div>
         </div>
 
+        <div class="intel-hud-bullet-section" style="margin: 14px 0;">
+          ${_renderMonoBullet({
+            val: stats.currentVolume || 0,
+            target: targetVolume,
+            label: 'Тоннаж недели vs Таргет перегрузки (+5%)',
+            unit: 'кг',
+            delta: `${stats.delta >= 0 ? '+' : ''}${stats.delta.toFixed(1)}%`
+          })}
+        </div>
+
         <div class="intel-hud-body">
           <section class="intel-hud-summary">
             <p>"${esc(report.summary)}"</p>
@@ -842,6 +882,12 @@ export const IntelView = (() => {
       </div>
     `;
     document.body.appendChild(overlay);
+    requestAnimationFrame(() => {
+      overlay.querySelectorAll('.mono-bullet-fill').forEach(el => {
+        // @ts-ignore
+        el.style.width = el.style.getPropertyValue('--target-width');
+      });
+    });
   }
 
   function createWorkout() {
@@ -956,14 +1002,23 @@ export const IntelView = (() => {
           </section>
 
           <div class="intel-hud-progressions">
-            <span class="intel-hud-section-label">Прогрессия нагрузок:</span>
-            ${(analysis.progressions || []).map(p => `
-              <div class="intel-progression-row">
-                <span class="intel-progression-name">${esc(p.exercise)}</span>
-                <span class="intel-progression-weight">${p.weight} кг</span>
-                <span class="intel-progression-status status-${esc(String(p.status).toLowerCase())}">${esc(p.delta)} [${esc(p.status)}]</span>
-              </div>
-            `).join('')}
+            <span class="intel-hud-section-label">Прогрессия в упражнениях (Target vs Actual):</span>
+            <div class="intel-progressions-bullet-list" style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+              ${(analysis.progressions || []).map(p => {
+                const weight = Number(p.weight) || 0;
+                const deltaNum = parseFloat(String(p.delta).replace(/[^\d.-]/g, '')) || 0;
+                const prevWeight = weight - deltaNum;
+                const targetWeight = prevWeight > 0 ? Math.round((prevWeight * 1.025) * 2) / 2 : weight;
+
+                return _renderMonoBullet({
+                  val: weight,
+                  target: targetWeight,
+                  label: p.exercise,
+                  unit: 'кг',
+                  delta: `${p.delta} [${p.status}]`
+                });
+              }).join('')}
+            </div>
           </div>
 
           <div class="intel-hud-focus-card">
@@ -978,6 +1033,12 @@ export const IntelView = (() => {
       </div>
     `;
     document.body.appendChild(overlay);
+    requestAnimationFrame(() => {
+      overlay.querySelectorAll('.mono-bullet-fill').forEach(el => {
+        // @ts-ignore
+        el.style.width = el.style.getPropertyValue('--target-width');
+      });
+    });
   }
 
   async function applyAnalysisPlan(btn) {
