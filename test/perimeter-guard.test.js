@@ -28,7 +28,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { isSecretKey } from '../js/shared/sync-secrets.js';
+import { isSecretKey, stripSecrets } from '../js/shared/sync-secrets.js';
 import { startServer } from '../server.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -86,6 +86,74 @@ describe('Периметр: BYOK-ключи не попадают в синк', 
       if (hit) offenders.push(`${rel}: ${hit[0].slice(0, 12)}…`);
     }
     assert.deepEqual(offenders, [], 'ключ попал в исходник:\n' + offenders.join('\n'));
+  });
+});
+
+/* ════════════════════════════════════════════════════════
+   1b. Секреты не уезжают в промпт
+
+   Инварианты выше сторожат ОЧЕРЕДЬ СИНКА. Дверь наружу была не одна:
+   `DB.Settings.getAll()` отдаёт store `settings` целиком, включая `gemini-key`,
+   и этот объект уезжал в тело запроса полем `profile`, а роутер подставлял его
+   в текст промпта (`Profile: ${JSON.stringify(profile)}`). Путь идёт мимо
+   `push()`/`Settings.set()`, поэтому все четыре инварианта были зелёными,
+   пока ключ ехал в контекст стороннего движка открытым текстом.
+
+   Тот же класс бага, что купил карточку GUARD-1, — и прежний гард его не видел.
+   ════════════════════════════════════════════════════════ */
+describe('Периметр: BYOK-ключи не попадают в промпт', () => {
+  test('stripSecrets выкидывает секреты и не трогает остальной профиль', () => {
+    const safe = stripSecrets({
+      'athlete-name': 'Gio', 'weight-unit': 'kg', goal: 'strength',
+      'gemini-key': 'AIzaSyDUMMY_TEST_VALUE', 'anthropic-key': 'sk-ant-DUMMY', x_token: 't',
+    });
+    assert.deepEqual(Object.keys(safe).sort(), ['athlete-name', 'goal', 'weight-unit']);
+    assert.equal(JSON.stringify(safe).includes('DUMMY'), false,
+      'секрет пережил фильтр — он уедет в текст промпта');
+  });
+
+  test('stripSecrets не падает на мусоре и не отдаёт исходную ссылку', () => {
+    for (const junk of [null, undefined, 'str', 42]) {
+      assert.deepEqual(stripSecrets(/** @type {*} */ (junk)), {});
+    }
+    const src = { lang: 'ru' };
+    assert.notEqual(stripSecrets(src), src, 'вернулась та же ссылка — мутация профиля утечёт наружу');
+  });
+
+  test('ни один call-site не шлёт наружу сырой Settings.getAll()', () => {
+    const offenders = [];
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) { walk(full); continue; }
+        if (!entry.name.endsWith('.js')) continue;
+        const rel = path.relative(REPO_ROOT, full).replace(/\\/g, '/');
+        // Профиль, уезжающий на сервер, обязан быть отфильтрован в момент снятия.
+        // Локальные читатели настроек (profile.js, privacy.view.js, backup) — не в счёт:
+        // они рисуют UI и пишут файл на устройстве, наружу не ходят.
+        for (const line of fs.readFileSync(full, 'utf8').split('\n')) {
+          const m = line.match(/\bprofile\s*=\s*(?:await\s+)?(?:DB\.)?Settings\.getAll\(\)/);
+          if (m && !line.includes('stripSecrets')) offenders.push(`${rel}: ${line.trim()}`);
+        }
+      }
+    };
+    walk(path.join(REPO_ROOT, 'js'));
+    assert.deepEqual(offenders, [],
+      'снимок настроек уходит в `profile` без stripSecrets — вместе с BYOK-ключом:\n' +
+      offenders.join('\n'));
+  });
+
+  test('роутер не доверяет клиенту: profile фильтруется на сервере', () => {
+    const src = read('routes/coach.js');
+    assert.match(src, /import\s*\{[^}]*stripSecrets[^}]*\}\s*from\s*'\.\.\/js\/shared\/sync-secrets\.js'/,
+      'routes/coach.js не спрашивает stripSecrets — фильтр держится только на клиенте');
+
+    // Каждый маршрут, подставляющий profile в промпт, обязан взять его через фильтр.
+    const prompts = [...src.matchAll(/JSON\.stringify\(profile\)/g)].length;
+    const strips = [...src.matchAll(/stripSecrets\(\s*(?:raw)?[Pp]rofile\s*\)/g)].length;
+    assert.ok(strips >= prompts,
+      `profile уходит в промпт ${prompts} раз, а через stripSecrets проходит ${strips} — ` +
+      'значит есть маршрут, который печатает store настроек в контекст модели как есть');
   });
 });
 

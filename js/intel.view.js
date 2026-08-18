@@ -4,6 +4,7 @@ import { esc, haptic } from './shared/utils.js';
 import { formatAirMarkdown } from './shared/air-markdown.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { isRu } from './locale.store.js';
+import { stripSecrets } from './shared/sync-secrets.js';
 import { DB } from './db.js';
 import { on, onChange, onKeydown, onInput } from './events.js';
 
@@ -391,7 +392,7 @@ export const IntelView = (() => {
     try {
       const { DB } = await import('./db.js');
       const workouts = await DB.Workouts.getLast(5);
-      const profile = await DB.Settings.getAll();
+      const profile = stripSecrets(await DB.Settings.getAll());
       const topLifts = await DB.OneRM.getAll();
 
       const response = await fetch('/api/coach', {
@@ -548,7 +549,7 @@ export const IntelView = (() => {
        // Filter for last 7 days
        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
        const recentWorkouts = workouts.filter(w => new Date(w.date).getTime() > sevenDaysAgo);
-       const profile = await DB.Settings.getAll();
+       const profile = stripSecrets(await DB.Settings.getAll());
 
        const response = await fetch('/api/coach/weekly-report', {
          method: 'POST',
@@ -675,7 +676,7 @@ export const IntelView = (() => {
 
     try {
       const workouts = await DB.Workouts.getLast(10);
-      const profile = await DB.Settings.getAll();
+      const profile = stripSecrets(await DB.Settings.getAll());
 
       const response = await fetch('/api/coach/biometrics-scan', {
         method: 'POST',

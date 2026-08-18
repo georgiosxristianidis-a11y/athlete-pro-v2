@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.27.61] — 2026-08-18
+
+### PERIMETER-1 — BYOK-ключ перестал уезжать в промпт
+
+`DB.Settings.getAll()` отдаёт store `settings` целиком — вместе с `gemini-key`
+и `anthropic-key`. Три call-site в `js/intel.view.js` слали этот снимок на
+сервер полем `profile`, а `routes/coach.js` подставлял его в текст промпта
+(`Profile: ${JSON.stringify(profile)}`) на трёх маршрутах: `/api/coach`,
+`/weekly-report`, `/biometrics-scan`. Ключ доезжал до стороннего движка
+открытым текстом.
+
+Путь шёл мимо очереди синка, поэтому четыре инварианта GUARD-1 оставались
+зелёными: они сторожили `push()`/`pull()`/`Settings.set()`, а дверь была не
+одна. Тот же класс бага, что купил карточку GUARD-1 на линии elite-hud-wow.
+
+- `js/shared/sync-secrets.js` — `stripSecrets()` рядом с `isSecretKey()`:
+  один источник правды теперь и для исходящего снимка настроек.
+- `js/intel.view.js` — три call-site фильтруются в момент снятия профиля.
+- `routes/coach.js` — сервер не доверяет клиенту и фильтрует повторно:
+  забытый call-site не открывает дыру заново.
+- `test/perimeter-guard.test.js` — инвариант 5 (4 теста): чистая функция,
+  скан `js/` на сырой `Settings.getAll()` в `profile`, и проверка, что
+  каждый `JSON.stringify(profile)` в роутере прикрыт фильтром.
+
+Гард проверен на baseline: краснеет на откаченных call-site, зелёный после фикса.
+
 ## [1.27.60] — 2026-08-16
 
 ### FLOW-4 — TTL и неймспейсы для файлов памяти

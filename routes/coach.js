@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { AIOrchestrator } from '../lib/aiOrchestrator.js';
 import { logInfo, logWarn } from '../lib/logger.js';
 import { asyncHandler } from '../lib/errors.js';
+import { stripSecrets } from '../js/shared/sync-secrets.js';
 import { z } from 'zod';
 
 const router = express.Router();
@@ -157,6 +158,11 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
     tone
   } = parseResult.data;
 
+  // `profile` — снимок store `settings` целиком, и он уезжает в текст промпта.
+  // Клиент уже фильтрует (js/shared/sync-secrets.js), но дверь наружу закрывается
+  // с обеих сторон: забытый call-site не должен открывать её заново.
+  profile = stripSecrets(profile);
+
   // Final sanitization to prevent Gemini 400 errors
   if (!Array.isArray(workouts)) workouts = [];
   if (typeof fatigue !== 'object' || fatigue === null) fatigue = {};
@@ -277,7 +283,8 @@ router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = weeklyReportSchema.safeParse(req.body);
   if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { workouts, profile, engine, customKey } = parseResult.data;
+  const { workouts, profile: rawProfile, engine, customKey } = parseResult.data;
+  const profile = stripSecrets(rawProfile);
 
   logInfo(req, 'weekly_report_started', `Generating weekly report`);
 
@@ -325,7 +332,8 @@ router.post('/biometrics-scan', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = biometricsScanSchema.safeParse(req.body);
   if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { workouts, profile, engine, customKey } = parseResult.data;
+  const { workouts, profile: rawProfile, engine, customKey } = parseResult.data;
+  const profile = stripSecrets(rawProfile);
 
   const system = `You are "Athlete Pro Medical AI".
 Оцени биометрическое состояние по последней истории и профилю.
