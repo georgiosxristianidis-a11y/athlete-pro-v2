@@ -21,8 +21,14 @@ import { fileURLToPath } from 'node:url';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SW_SRC = fs.readFileSync(path.join(REPO_ROOT, 'sw.js'), 'utf8');
 
-/** Cellular budget: the whole precache must stay well under a megabyte and a half. */
-const PRECACHE_BUDGET_BYTES = 1.5 * 1024 * 1024;
+/**
+ * Cellular budget: the whole precache must stay well under a megabyte and a half.
+ * Raised 1.5→1.55 MB alongside AN-2 (exercise history modal, 2026-08-18): the
+ * margin before that feature was 10.3 KB, so the very next non-trivial JS/CSS
+ * addition was always going to trip this guard. Gio signed off on the bump
+ * (not on AN-2 quietly shrinking to fit) — see feat/an-2-exercise-history-salvage.
+ */
+const PRECACHE_BUDGET_BYTES = 1.55 * 1024 * 1024;
 
 const MEDIA_EXT = /\.(?:mp4|webm|m4a|mp3|ogg|mov)$/i;
 
