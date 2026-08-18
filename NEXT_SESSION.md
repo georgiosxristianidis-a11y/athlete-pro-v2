@@ -36,7 +36,7 @@ npm run docs:budget    # цена системных доков в токена�
 | Хендофф | Следующая карточка |
 |---|---|
 | `docs/handoff/HANDOFF_boot_brand.md` → **SPLASH-1** | Активная фаза: запуск и знак. Дальше MOTION-1, порядок утверждён Gio. Не параллелить — три карточки из четырёх трогают `index.html` |
-| `docs/handoff/HANDOFF_panda_core.md` | HUD-1..4 закрыты (1.27.56). Активных карточек нет — программа готова к полевому чеку Gio (радар и тон коуча на iPhone). |
+| `docs/handoff/HANDOFF_panda_core.md` | HUD-1..4 закрыты, активных карточек нет — программа готова к полевому чеку Gio (радар и тон коуча на iPhone). |
 | `docs/handoff/HANDOFF_intel_readiness.md` → **INTEL-1** | Session RPE. Порядок INTEL-1 → INTEL-3 → INTEL-4 не переставлять. Вход в следующую калибровку весов — в хендоффе |
 | `docs/handoff/HANDOFF_gemini_audit_triage.md` → **PERF-1** | Разведка: сколько дадут бандл и 725 мс Style & Layout. Следом LEAK-1, SCAF-1, NOISE-1, PII-1. 🔴 За Gio: снести сервис на Render и отозвать `ANTHROPIC_API_KEY` |
 | `docs/handoff/HANDOFF_light_theme.md` → **THEME-6** | 🟡 P2. Единственная контраст-проба слепа к теме по построению — нужна считающая фактический контраст в обеих темах |
@@ -48,13 +48,13 @@ npm run docs:budget    # цена системных доков в токена�
 | `docs/handoff/HANDOFF_isl_tail.md` | Островные хвосты, задачи Sonnet |
 | `docs/handoff/HANDOFF_orchestration.md` | Роли LEAD/worker/verifier, DoD-лестница, правило прополки веток |
 | `docs/handoff/HANDOFF_air_refactor.md` | AIR-хвост |
+| `docs/handoff/HANDOFF_token_economy.md` → **TOK-1** | Расход агентов: замер `npm run tokens`. Дальше TOK-6, TOK-2, TOK-4 |
 
 Вне хендоффов, заведено 2026-08-14 по программе DOCS:
 
-- **DOCS-2 закрыта 2026-08-14** (вне репо) — хуки ≤62 симв. Сирот по индексу 49, реальных (с `[[wiki]]`) 9 — решение за Gio.
 - **DOCS-3** — перевод горячего пути на английский. Условие: `docs/RULES.md` пересобрать человеческим договором (словарь, шаблон задачи, «Грабли»), а не зеркалом правил.
-- **WEED-2** — прополка 253 локальных веток, 121 remote и 31 ворктри по порогу 30 дней.
-- **FLOW-4** — TTL памяти, старт ≤7500 ток (сейчас 8955). FLOW-1/2/3 закрыты, гард — `docs/RULES.md`.
+- **WEED-2** — прополка веток и ворктри по порогу 30 дней; счёт добывать `npm run inventory`. Смежна с TOK-7.
+- **FLOW-4** — TTL памяти, старт ≤7500 ток. FLOW-1/2/3 закрыты, гард — `docs/RULES.md`. Смежна с TOK-5.
 
 ## Порядок взятия
 

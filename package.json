@@ -18,6 +18,7 @@
     "preflight": "node scripts/preflight.mjs",
     "inventory": "node scripts/branch-inventory.mjs",
     "docs:budget": "node scripts/check-docs-budget.mjs",
+    "tokens": "node scripts/token-economy.mjs",
     "memory:ttl": "node scripts/memory-ttl.mjs",
     "smoke:prod": "node scripts/smoke-prod.mjs",
     "security:audit": "npm audit --audit-level=high",
