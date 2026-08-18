@@ -1484,3 +1484,117 @@
   transition: transform 0.08s ease-out;
   will-change: transform;
 }
+
+/* ════════════════════════════════════════════════════════
+   1. Lidar Plane & Field Scanning Animations (Biometrics)
+   ════════════════════════════════════════════════════════ */
+.lidar-plane {
+  animation: lidar-plane 6s cubic-bezier(.65,0,.35,1) infinite;
+}
+
+.lidar-field {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  width: 100%;
+  max-width: 220px;
+  margin: 16px auto;
+}
+
+.lidar-field i {
+  display: block;
+  width: 100%;
+  height: 8px;
+  background: var(--c-intel);
+  border-radius: var(--r-xs);
+  animation: lidar-hit 6s cubic-bezier(.16,1,.3,1) infinite;
+}
+
+.lidar-field i:nth-child(n+6)  { animation-delay: .42s; }
+.lidar-field i:nth-child(n+11) { animation-delay: .84s; }
+
+@keyframes lidar-plane {
+  0% { transform: translateY(-40px) rotateX(45deg); opacity: 0; }
+  30%, 70% { transform: translateY(0) rotateX(0deg); opacity: 1; }
+  100% { transform: translateY(40px) rotateX(-45deg); opacity: 0; }
+}
+
+@keyframes lidar-hit {
+  0%, 12% { opacity: .18; transform: translateY(0) scale(.7); }
+  22%, 70%{ opacity: 1;   transform: translateY(var(--lift, -6px)) scale(1); }
+  88%,100%{ opacity: .18; transform: none; }
+}
+
+/* ════════════════════════════════════════════════════════
+   2. Typing / Stream Dots Indicator Animation
+   ════════════════════════════════════════════════════════ */
+.typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  vertical-align: middle;
+}
+
+.typing span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--c-intel);
+  border-radius: 50%;
+  animation: bounce 1.2s ease-in-out infinite;
+}
+
+.typing span:nth-child(2) { animation-delay: 0.16s; }
+.typing span:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0);    opacity: 0.4; }
+  30%           { transform: translateY(-7px); opacity: 1; }
+}
+
+/* ════════════════════════════════════════════════════════
+   3. Talk Wave Voice Live Animation
+   ════════════════════════════════════════════════════════ */
+.talk-wave {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+}
+
+.talk-wave i {
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: var(--c-intel);
+  border-radius: 2px;
+  transform: scaleY(0.12);
+  transform-origin: center bottom;
+  transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+}
+
+.talk.live .talk-wave i,
+.intel-voice-wave.live .intel-wave-bar {
+  animation: talk-bar .42s ease-in-out infinite alternate;
+}
+
+.talk.live .talk-wave i:nth-child(3),
+.intel-voice-wave.live .intel-wave-bar:nth-child(3) {
+  animation-duration: .28s;
+}
+
+.talk.live .talk-wave i:nth-child(2),
+.intel-voice-wave.live .intel-wave-bar:nth-child(2) {
+  animation-delay: .08s;
+}
+
+.talk.live .talk-wave i:nth-child(4),
+.intel-voice-wave.live .intel-wave-bar:nth-child(4) {
+  animation-delay: .14s;
+}
+
+@keyframes talk-bar {
+  from { transform: scaleY(0.18); }
+  to   { transform: scaleY(1); }
+}

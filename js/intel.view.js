@@ -325,10 +325,10 @@ export const IntelView = (() => {
       </div>`;
   }
 
-  /** Хвостовые точки — «текст ещё идёт». Вставляются в конец последнего блока. */
+  /** Хвостовые точки — «текст ещё идёт». Анимация typing bounce. */
   function _typingHtml(L) {
-    return `<span class="intel-typing" role="status" aria-label="${L.streaming}">`
-      + '<span class="intel-typing-dot"></span><span class="intel-typing-dot"></span><span class="intel-typing-dot"></span>'
+    return `<span class="typing" role="status" aria-label="${L.streaming}">`
+      + '<span></span><span></span><span></span>'
       + '</span>';
   }
 
@@ -533,6 +533,7 @@ export const IntelView = (() => {
   }
 
   function _startVoiceVisualizer(audioEl) {
+    document.querySelectorAll('.intel-voice-wave, .talk-wave, .talk').forEach(el => el.classList.add('live'));
     const { ctx, analyser } = _getAudioContext();
     if (!ctx || !analyser) return;
 
@@ -561,7 +562,7 @@ export const IntelView = (() => {
       const norm = Math.min(1, avg / 128);
 
       // 1. Анимация волн эквалайзера в HUD
-      const bars = document.querySelectorAll('.intel-wave-bar');
+      const bars = document.querySelectorAll('.intel-wave-bar, .talk-wave i');
       if (bars.length > 0) {
         bars.forEach((bar, idx) => {
           const freqVal = (dataArray[idx * 2] || avg) / 255;
@@ -583,11 +584,12 @@ export const IntelView = (() => {
   }
 
   function _stopVoiceVisualizer() {
+    document.querySelectorAll('.intel-voice-wave, .talk-wave, .talk').forEach(el => el.classList.remove('live'));
     if (_animFrameId) {
       cancelAnimationFrame(_animFrameId);
       _animFrameId = null;
     }
-    const bars = document.querySelectorAll('.intel-wave-bar');
+    const bars = document.querySelectorAll('.intel-wave-bar, .talk-wave i');
     bars.forEach(bar => {
       bar.style.transform = 'scaleY(0.2)';
       bar.style.opacity = '0.3';
@@ -982,10 +984,15 @@ export const IntelView = (() => {
     overlay.className = 'intel-radar-overlay';
     overlay.id = 'intel-radar-overlay';
     overlay.innerHTML = `
-      <div class="intel-radar-ring" role="status" aria-label="${L.scanning}">
+      <div class="intel-radar-ring lidar-plane" role="status" aria-label="${L.scanning}">
         <span class="intel-radar-ring-dash"></span>
         <span class="intel-radar-ring-sweep"></span>
         <span class="intel-radar-ring-text">${L.scanning}</span>
+      </div>
+      <div class="lidar-field" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i>
       </div>
       <div class="intel-radar-log" id="intel-radar-log"></div>
     `;
