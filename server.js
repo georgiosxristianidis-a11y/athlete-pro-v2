@@ -61,9 +61,10 @@ app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'icons',
 // ── Global API Rate Limiter
 const globalApiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1',
   handler: (req, res) => res.status(429).json({ error: 'Too many requests, please try again later.' })
 });
 
