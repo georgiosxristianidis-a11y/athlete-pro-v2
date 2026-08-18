@@ -6,6 +6,11 @@
  * до сих пор проверялись на глаз. Здесь они получают число. Карточка, которая
  * обещает сократить расход, обязана показать дельту этим скриптом — до и после.
  *
+ * Число вызовов инструмента ≠ объём его вывода: Bash частый и тихий, Read редкий
+ * и тяжёлый (см. HANDOFF_token_economy.md § «Труба — это Read, не Bash»). Поэтому
+ * инструменты считаются в двух осях — по числу вызовов и по байтам tool_result —
+ * и $/вызов печатается прямо в выводе, а не считается вручную по таблице.
+ *
  * Источник — транскрипты Claude Code: ~/.claude/projects/<slug>/*.jsonl.
  * Каждая строка-ответ ассистента несёт `message.usage` с четырьмя счётчиками,
  * и это единственная запись расхода, которая не зависит от нашей памяти о сессии.
@@ -61,6 +66,15 @@ function slot(map, key) {
   return map.get(key);
 }
 
+/** Размер результата инструмента в байтах UTF-8: строка целиком, либо сумма text-блоков. */
+function bytesOf(content) {
+  if (typeof content === 'string') return Buffer.byteLength(content, 'utf8');
+  if (Array.isArray(content)) {
+    return content.reduce((s, c) => s + Buffer.byteLength(typeof c.text === 'string' ? c.text : JSON.stringify(c), 'utf8'), 0);
+  }
+  return Buffer.byteLength(JSON.stringify(content ?? ''), 'utf8');
+}
+
 async function collect(root, slug) {
   let dirs;
   try {
@@ -72,6 +86,7 @@ async function collect(root, slug) {
   const bySession = new Map();
   const byModel = new Map();
   const tools = new Map();
+  const toolBytes = new Map(); // name -> { calls, bytes } — объём РЕЗУЛЬТАТОВ, не число вызовов
   let files = 0;
 
   for (const d of dirs) {
@@ -85,6 +100,7 @@ async function collect(root, slug) {
     for (const f of list) {
       files++;
       const sid = f.slice(0, -6);
+      const pendingToolUse = new Map(); // tool_use_id -> имя, живёт в пределах файла
       const rl = readline.createInterface({
         input: fs.createReadStream(path.join(dir, f)),
         crlfDelay: Infinity,
@@ -104,7 +120,17 @@ async function collect(root, slug) {
 
         if (Array.isArray(msg.content)) {
           for (const c of msg.content) {
-            if (c && c.type === 'tool_use' && c.name) tools.set(c.name, (tools.get(c.name) || 0) + 1);
+            if (c && c.type === 'tool_use' && c.name) {
+              tools.set(c.name, (tools.get(c.name) || 0) + 1);
+              if (c.id) pendingToolUse.set(c.id, c.name);
+            }
+            if (c && c.type === 'tool_result' && c.tool_use_id) {
+              const name = pendingToolUse.get(c.tool_use_id) || 'unknown';
+              if (!toolBytes.has(name)) toolBytes.set(name, { calls: 0, bytes: 0 });
+              const e = toolBytes.get(name);
+              e.calls++;
+              e.bytes += bytesOf(c.content);
+            }
           }
         }
         const u = msg.usage;
@@ -129,7 +155,7 @@ async function collect(root, slug) {
       }
     }
   }
-  return { dirs: dirs.length, files, byDay, bySession, byModel, tools };
+  return { dirs: dirs.length, files, byDay, bySession, byModel, tools, toolBytes };
 }
 
 const n = (x) => Math.round(x).toLocaleString('en-US');
@@ -154,6 +180,7 @@ function report(data) {
   console.log(`  токенов всего      ${n(tokens)}`);
   console.log(`  list-эквивалент    $${tot.cost.toFixed(0)}`);
   console.log(`  API-вызовов        ${n(tot.calls)}`);
+  console.log(`  $/вызов            $${(tot.cost / tot.calls).toFixed(4)}`);
   console.log(`  контекст на вызов  ${n(tokens / tot.calls)}   <- главный рычаг`);
   console.log(`  выход на вызов     ${n(tot.out / tot.calls)}`);
   console.log(`  вход:выход         ${(((tot.in + tot.cw + tot.cr) / (tot.out || 1))).toFixed(0)}:1`);
@@ -186,7 +213,8 @@ function report(data) {
     // (активной работы в них ~7%). Ярлык «марафон» приписывал времени то, что тянет
     // число вызовов — см. HANDOFF_token_economy.md § Опровергнуто перепроверкой.
     const flag = lo >= 24 ? '  <- открыто дольше суток (не «работал сутки»)' : '';
-    console.log(`    ${label.padEnd(7)} ${String(g.length).padStart(4)} сес  $${c.toFixed(0).padStart(5)}  ${pct(c, tot.cost).padStart(6)}  ср.вызовов ${Math.round(g.reduce((s, x) => s + x.calls, 0) / g.length)}${flag}`);
+    const calls = g.reduce((s, x) => s + x.calls, 0);
+    console.log(`    ${label.padEnd(7)} ${String(g.length).padStart(4)} сес  $${c.toFixed(0).padStart(5)}  ${pct(c, tot.cost).padStart(6)}  ср.вызовов ${Math.round(calls / g.length)}  $/вызов ${(c / calls).toFixed(4)}${flag}`);
   }
 
   const oneShot = new Map();
@@ -199,16 +227,25 @@ function report(data) {
 
   console.log('\n=== МОДЕЛИ ===');
   for (const [m, e] of [...data.byModel].sort((a, b) => b[1].cost - a[1].cost)) {
-    console.log(`  ${m.padEnd(24)} $${e.cost.toFixed(0).padStart(5)}  ${String(e.calls).padStart(6)} выз`);
+    console.log(`  ${m.padEnd(24)} $${e.cost.toFixed(0).padStart(5)}  ${String(e.calls).padStart(6)} выз  $/вызов ${(e.cost / e.calls).toFixed(4)}`);
   }
 
   const toolList = [...data.tools].sort((a, b) => b[1] - a[1]);
   const toolTotal = toolList.reduce((s, [, c]) => s + c, 0);
-  console.log('\n=== ИНСТРУМЕНТЫ (топ-8) ===');
+  console.log('\n=== ИНСТРУМЕНТЫ (топ-8 по числу вызовов) ===');
   for (const [name, c] of toolList.slice(0, 8)) {
     console.log(`  ${name.padEnd(26)} ${String(c).padStart(6)}  ${pct(c, toolTotal).padStart(6)}`);
   }
   console.log(`  всего ${n(toolTotal)} | на сессию ${Math.round(toolTotal / ses.length)}`);
+
+  // Число вызовов и объём результатов — разные оси: Bash частый и тихий, Read редкий и тяжёлый.
+  const byteList = [...data.toolBytes].sort((a, b) => b[1].bytes - a[1].bytes);
+  const byteTotal = byteList.reduce((s, [, e]) => s + e.bytes, 0);
+  console.log('\n=== ИНСТРУМЕНТЫ (топ-8 по байтам результата) ===');
+  for (const [name, e] of byteList.slice(0, 8)) {
+    console.log(`  ${name.padEnd(26)} ${(e.bytes / 1e6).toFixed(2).padStart(7)} МБ  ${pct(e.bytes, byteTotal).padStart(6)}  ${n(e.bytes / (e.calls || 1))} байт/выз`);
+  }
+  console.log(`  всего ${(byteTotal / 1e6).toFixed(1)} МБ`);
 
   const days = [...data.byDay.keys()].filter((d) => d !== 'unknown').length;
   if (days) console.log(`\nАктивных дней ${days} | средний день $${(tot.cost / days).toFixed(0)}\n`);
@@ -228,6 +265,7 @@ if (asJson) {
     slug, dirs: data.dirs, files: data.files,
     byDay: plain(data.byDay), bySession: plain(data.bySession),
     byModel: plain(data.byModel), tools: plain(data.tools),
+    toolBytes: plain(data.toolBytes),
   }));
 } else {
   console.log(`Проект: ${slug} | каталогов ${data.dirs} | транскриптов ${data.files}`);
