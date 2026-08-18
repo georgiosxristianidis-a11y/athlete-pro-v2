@@ -22,6 +22,7 @@ on('intel:analyzeStats',  () => window.IntelView.analyzeStats());
 on('intel:biometrics',    () => window.IntelView.checkBiometrics());
 on('intel:clearImage',    () => { const w = document.getElementById('intel-vision-preview-wrap'); if (w) w.innerHTML = ''; window.IntelView._clearImage(); });
 on('intel:playAudio',     (el) => window.IntelView.playAudio(el));
+on('intel:replayVoice',   () => window.IntelView.replayVoice());
 on('intel:closeReport',   (el) => el.closest('.intel-report-overlay')?.remove());
 on('intel:openSettings',  () => window.IntelView.openSettings());
 on('intel:saveSettings',  () => window.IntelView.saveSettings());
@@ -196,12 +197,13 @@ export const IntelView = (() => {
         </div>
       </div>
 
-      <div class="intel-logs" data-action="intel:toggleLogs" data-keydown="intel:toggleLogs" role="button" tabindex="0" aria-expanded="false" aria-label="${L.logs}">
-        <div class="intel-logs-header">
-          <h3 class="intel-logs-title">STREAMING_LOGS</h3>
-          <span class="intel-logs-status" id="intel-logs-status-pill">${esc(IntelStore.getStatus())}</span>
-        </div>
-        <div id="intel-logs-container"></div>
+      <div class="intel-voice-center-wrap">
+        <button class="intel-voice-hud talk" data-action="intel:replayVoice" aria-label="Воспроизвести вердикт коуча">
+          <div class="talk-wave" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <span class="intel-voice-hud-label" id="intel-voice-hud-label">COACH VOICE</span>
+        </button>
       </div>
 
       <div class="intel-cmd-wrap">
@@ -583,8 +585,21 @@ export const IntelView = (() => {
     _animFrameId = requestAnimationFrame(renderLoop);
   }
 
+  let _lastSpokenText = '';
+
+  function replayVoice() {
+    haptic(15);
+    if (_lastSpokenText) {
+      speakText(_lastSpokenText);
+    } else {
+      speakText('Голосовой модуль готов. Запустите анализ или тренировку.');
+    }
+  }
+
   function _stopVoiceVisualizer() {
     document.querySelectorAll('.intel-voice-wave, .talk-wave, .talk').forEach(el => el.classList.remove('live'));
+    const label = document.getElementById('intel-voice-hud-label');
+    if (label) label.textContent = 'COACH VOICE';
     if (_animFrameId) {
       cancelAnimationFrame(_animFrameId);
       _animFrameId = null;
@@ -602,8 +617,11 @@ export const IntelView = (() => {
 
   async function speakText(textToSpeak) {
     if (!textToSpeak || _isSpeaking) return;
+    _lastSpokenText = textToSpeak;
     _isSpeaking = true;
     IntelStore.addLog('SYS', 'Synthesizing coach voice...');
+    const label = document.getElementById('intel-voice-hud-label');
+    if (label) label.textContent = 'SPEAKING...';
 
     try {
       const { DB } = await import('./db.js');
@@ -1193,9 +1211,15 @@ export const IntelView = (() => {
         </div>
 
         <button class="btn btn-primary intel-settings-save" data-action="intel:saveSettings" style="margin-top:18px;">${L.save}</button>
+
+        <details class="intel-settings-debug" style="margin-top:16px;">
+          <summary class="intel-settings-debug-summary">Системные логи (Debug Logs)</summary>
+          <div id="intel-logs-container" class="intel-settings-logs"></div>
+        </details>
       </div>
     `;
     document.body.appendChild(overlay);
+    renderLogs();
 
     overlay.querySelectorAll('.intel-voice-card').forEach(card => {
       card.addEventListener('click', () => {
@@ -1362,7 +1386,7 @@ export const IntelView = (() => {
 
   return {
     load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats,
-    checkBiometrics, playAudio, _clearImage, openSettings, saveSettings, saveActionCard, applyAnalysisPlan,
+    checkBiometrics, playAudio, replayVoice, _clearImage, openSettings, saveSettings, saveActionCard, applyAnalysisPlan,
   };
 })();
 
