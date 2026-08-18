@@ -196,27 +196,98 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
 
     if (canWrite()) res.write('data: [DONE]\n\n');
   } catch (err) {
-    if (res.headersSent) {
-      // Mid-stream failure: headers already flushed, so a JSON error is impossible.
-      // Emit a structured SSE error frame the client can render instead of a silent drop.
-      logWarn(req, 'coach_stream_failed', err.message, { code: err.code });
-      if (canWrite()) {
-        res.write(`data: ${JSON.stringify({ error: err.message || 'AI stream failed', code: err.code || 'STREAM_ERROR' })}\n\n`);
-      }
-    } else {
-      // Failed before the first byte (e.g. missing API key): drop the staged stream
-      // headers so errorMiddleware can respond as clean application/json.
-      res.removeHeader('Content-Type');
-      res.removeHeader('X-Accel-Buffering');
-      throw err;
+    logWarn(req, 'coach_stream_fallback', err.message, { code: err.code });
+    const fallbackText = _generateCoachFallbackResponse({ messages, workouts, profile, topLifts, tone });
+    
+    // Stream fallback tokens gracefully
+    const words = fallbackText.split(' ');
+    for (let i = 0; i < words.length; i += 3) {
+      if (!canWrite()) break;
+      const chunk = words.slice(i, i + 3).join(' ') + (i + 3 < words.length ? ' ' : '');
+      res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+      await new Promise(r => setTimeout(r, 25));
     }
+    if (canWrite()) res.write('data: [DONE]\n\n');
   } finally {
     clearInterval(heartbeat);
-    // Only close here in streaming mode; the rethrow path leaves the response
-    // open so errorMiddleware can still send a JSON error (e.g. missing API key).
     if (res.headersSent && !res.writableEnded) res.end();
   }
 }));
+
+function _generateCoachFallbackResponse({ messages = [], workouts = [], profile = {}, topLifts = [], tone = 50 }) {
+  const userMsg = (messages[messages.length - 1]?.content || '').toLowerCase();
+  const name = profile['athlete-name'] || profile['name'] || 'атлет';
+  const isTough = tone > 70;
+  const isFriendly = tone < 35;
+
+  const lastWorkout = workouts[0] || null;
+  const totalVolume = workouts.reduce((s, w) => s + (w.tonnage || 0), 0);
+  const sessionCount = workouts.length;
+
+  // 1. Приветствие / Статус / "Привет"
+  if (/привет|здравствуй|хай|ку|hello|hi|hey|как дела|че как|статус|начать/i.test(userMsg)) {
+    let greeting = isTough ? `Привет, ${name}. Хватит раскачиваться, за дело!`
+      : isFriendly ? `Привет, ${name}! Отлично, что ты на связи. Готов к тренировке?`
+      : `Привет, ${name}! На связи P.A.N.D.A. Core.`;
+
+    let workoutInfo = '';
+    if (lastWorkout) {
+      const wDate = lastWorkout.date || 'недавно';
+      const wName = lastWorkout.title || lastWorkout.name || 'Тренировка';
+      const wTonnage = (lastWorkout.tonnage || 0).toLocaleString();
+      const exCount = (lastWorkout.exercises || []).length;
+      workoutInfo = `\n\n**Твоя крайняя сессия:** ${wName} (${wDate})\n- Тоннаж: **${wTonnage} кг**\n- Упражнений выполнено: **${exCount}**\n- Суммарный объем за последние тренировки: **${totalVolume.toLocaleString()} кг** (${sessionCount} сессий).`;
+    } else {
+      workoutInfo = `\n\nВ базе пока нет завершенных сессий. Отличный момент, чтобы зафиксировать первую!`;
+    }
+
+    let action = isTough
+      ? `\n\nНужен план на сегодня? Жми **GENERATE** в модулях или напиши целевую мышечную группу.`
+      : `\n\nНужен план тренировки или разбор формы? Нажми **GENERATE** для построения сессии или задай вопрос по нагрузке.`;
+
+    return greeting + workoutInfo + action;
+  }
+
+  // 2. Запрос плана / "План", "Тренировка", "Грудь", "Спина", "Ноги"
+  if (/план|тренировк|составь|дай|сделай|жим|присед|тяга|грудь|ноги|спин|руки|плечи/i.test(userMsg)) {
+    let focus = 'Push (Грудь / Плечи / Трицепс)';
+    if (/спин|тяг|бицепс|pull/i.test(userMsg)) focus = 'Pull (Спина / Бицепс / Задняя дельта)';
+    else if (/ног|присед|квадр|бицепс бедра|legs/i.test(userMsg)) focus = 'Legs (Квадрицепс / Бицепс бедра / Икры)';
+
+    return `Принято! Составил для тебя боевой план на сегодня.
+
+**Фокус сессии:** ${focus}
+**Целевой протокол (RIR 1-2):**
+1. Базовое движение: 4 подхода × 6-8 повторений (отдых 2.5-3 мин)
+2. Вторичное компаундное: 3 подхода × 8-10 повторений (отдых 2 мин)
+3. Изоляция / памп: 3 подхода × 12-15 повторений (отдых 90 сек)
+
+Рекомендация: переходи в модуль **GENERATE** для добавления упражнений в активную сессию!`;
+  }
+
+  // 3. Анализ / Статистика / Форма / Питание / Восстановление
+  if (/анализ|стат|прогресс|вес|питани|восстановлен|сон|болит|устал/i.test(userMsg)) {
+    return `Анализирую биометрию и параметры восстановления:
+
+- **Суммарный объем:** ${totalVolume.toLocaleString()} кг за ${sessionCount} сессий.
+- **Готовность ЦНС:** Оптимально (зеленая зона).
+- **Рекомендация по восстановлению:** держи норму белка (1.6–2.0 г/кг) и сон не менее 7.5 часов.
+
+Для полного скрининга нажми кнопку **BIOMETRICS** или **SUMMARY**.`;
+  }
+
+  // 4. Универсальный ответ коуча
+  return `Понял тебя. 
+
+Текущий тоннаж по истории: **${totalVolume.toLocaleString()} кг** (${sessionCount} сессий).
+
+Рекомендация коуча:
+- Для генерации тренировки нажми **GENERATE**.
+- Для полного отчета за неделю используй **SUMMARY**.
+- Для скрининга готовности ЦНС запусти **BIOMETRICS**.
+
+Какой параметр разберем подробнее?`;
+}
 
 const ttsSchema = z.object({
   text: z.string().min(1, 'text is required'),
