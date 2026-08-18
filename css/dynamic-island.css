@@ -321,46 +321,6 @@
   z-index: 5;
 }
 .island.timer-mode .island-rest { display: flex; }
-
-/* ── Analog ClockSpinner for Rest HUD ── */
-.island-clock-spinner {
-  position: relative;
-  width: 16px;
-  height: 16px;
-  border: 1.5px solid color-mix(in srgb, var(--c-text-1) 25%, transparent);
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.island-clock-hand {
-  position: absolute;
-  bottom: 50%;
-  width: 1.5px;
-  border-radius: 100px;
-  transform-origin: bottom center;
-  will-change: transform;
-}
-
-.island-clock-hand--fast {
-  height: 5.5px;
-  background: var(--c-accent);
-  animation: clock-spin 2s linear infinite;
-}
-
-.island-clock-hand--slow {
-  height: 4px;
-  background: var(--c-text-2);
-  animation: clock-spin 12s linear infinite;
-}
-
-@keyframes clock-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
 /* "далее: X" — the only text in the rest HUD; sublabel voice (chrome, not
    accent), ellipsis so long exercise names never push the buttons. */
 .island-rest-next {
