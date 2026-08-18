@@ -13,27 +13,8 @@ export const PLAN_KEY_B = 'ap-custom-plan-B';
 export const WEEK_MODE_KEY = 'ap-week-mode';     // 'A' | 'B'
 export const CORE_KEY = 'ap-core-checklist';     // { push:[{name}], pull:[...], legs:[...] }
 export const CUSTOM_WORKOUTS_KEY = 'ap-custom-workouts';
-export const ACTIVE_PLAN_KEY = 'ap-active-plan'; // legacy — второй движок плана (карусель Structured Programs), снесён; ключ только вычищается
+export const ACTIVE_PLAN_KEY = 'ap-active-plan';
 
-/* ════════════════════════════════════════════════════════
-   LEGACY PROGRAM ENGINE — REMOVED
-   ════════════════════════════════════════════════════════
-   До 2026-08-08 рядом с пресетами редактора (PPL | GIO / Hybrid) жил второй
-   движок плана: карусель «Structured Programs» + PROGRAMS из workout-plans.js.
-   Он ставил ACTIVE_PLAN_KEY, после чего buildSession перехватывал ЛЮБОЙ выбор
-   дня и собирал сессию по внутреннему счётчику программы — тап по PUSH отдавал
-   день с Deadlift. Кнопки выхода не существовало: resetActivePlan() не вызывался
-   ниоткуда, так что первый же тап по карточке программы навсегда отрезал
-   пользователя от его собственного плана. Плюс история искалась по planId,
-   которого у обычных тренировок нет → все веса с 0 кг.
-   Источник правды теперь один — план в PLAN_KEY_A/B (дефолт: PPL | GIO). */
-
-/**
- * Вычистить ключ мёртвого движка. Идемпотентно, вызывается один раз на загрузке
- * стора: без этого пользователь, успевший тапнуть карточку программы, остаётся
- * с залипшим ap-active-plan в localStorage (и с planId в новых тренировках).
- * @returns {void}
- */
 function _purgeLegacyActivePlan() {
   try { localStorage.removeItem(ACTIVE_PLAN_KEY); } catch { /* localStorage unavailable */ }
 }
@@ -258,44 +239,7 @@ export const CORE_PRESET = {
   legs: ['Dead Bug', 'Plank'],
 };
 
-/** @type {Object<string, Array<{name: string, sets: number, reps: number, weight: number}>>} */
-export const DEFAULT_PLAN = {
-  push: [
-    // Chest ×3
-    { name: 'Bench Press', sets: 4, reps: 8, weight: 80 },
-    { name: 'Incline DB Press', sets: 3, reps: 12, weight: 30 },
-    { name: 'Cable Fly', sets: 3, reps: 15, weight: 20 },
-    // Shoulders ×2
-    { name: 'Overhead Press', sets: 3, reps: 10, weight: 50 },
-    { name: 'Lateral Raise', sets: 3, reps: 15, weight: 12 },
-    // Arms / Triceps ×2
-    { name: 'Tricep Pushdown', sets: 3, reps: 12, weight: 25 },
-    { name: 'Overhead Tricep Ext.', sets: 3, reps: 12, weight: 20 },
-  ],
-  pull: [
-    // Back ×4
-    { name: 'Deadlift', sets: 4, reps: 5, weight: 120 },
-    { name: 'Pull-up', sets: 3, reps: 8, weight: 0 },
-    { name: 'Barbell Row', sets: 3, reps: 10, weight: 70 },
-    { name: 'Cable Row', sets: 3, reps: 12, weight: 55 },
-    { name: 'Face Pull', sets: 3, reps: 15, weight: 20 },
-    // Arms / Biceps ×2
-    { name: 'Bicep Curl', sets: 3, reps: 12, weight: 18 },
-    { name: 'Hammer Curl', sets: 3, reps: 12, weight: 16 },
-  ],
-  legs: [
-    // Legs ×6
-    { name: 'Squat', sets: 4, reps: 6, weight: 100 },
-    { name: 'Romanian Deadlift', sets: 3, reps: 10, weight: 80 },
-    { name: 'Leg Press', sets: 3, reps: 12, weight: 140 },
-    { name: 'Walking Lunge', sets: 3, reps: 12, weight: 20 },
-    { name: 'Leg Curl', sets: 3, reps: 12, weight: 40 },
-    { name: 'Calf Raise', sets: 4, reps: 15, weight: 60 },
-    // Core ×2
-    { name: 'Plank', sets: 3, reps: 60, weight: 0 },
-    { name: 'Hanging Leg Raise', sets: 3, reps: 12, weight: 0 },
-  ],
-};
+export const DEFAULT_PLAN = PPL_GIO_PLAN.weekA;
 
 /**
  * Exercise library item structure
@@ -945,6 +889,27 @@ export function isBodyweightExercise(name, library) {
 }
 
 /**
+ * Pure helper: estimate recommended Session RPE from per-set RPE values.
+ * Returns the rounded average RPE of completed sets, or 7 if no sets have RPE.
+ * @param {Array<{ sets?: Array<{ done?: boolean, rpe?: number|null }> }>} plan
+ * @returns {number} 1..10
+ */
+export function estimateSessionRpe(plan) {
+  let sum = 0;
+  let count = 0;
+  for (const ex of (plan || [])) {
+    for (const s of (ex?.sets || [])) {
+      if (s?.done && Number.isFinite(s?.rpe) && s.rpe >= 1 && s.rpe <= 10) {
+        sum += s.rpe;
+        count++;
+      }
+    }
+  }
+  if (count === 0) return 7;
+  return Math.max(1, Math.min(10, Math.round(sum / count)));
+}
+
+/**
  * Build the post-session summary data for the W-2-C report sheet.
  *
  * Engineering constraints honoured (from the PPL | GIO blueprint, locked in
@@ -960,6 +925,7 @@ export function isBodyweightExercise(name, library) {
  *     yet — first-ever lift).
  *   • Block timings (Phase W-2-A) read from `state.blockTimings`; absent
  *     entries leave `durationStr` null and the view renders a dash.
+ *   • Session RPE (INTEL-1): included in summaryData for display and IDB save.
  *
  * The oneRMLookup is injectable so unit tests can run without IDB; in
  * production it defaults to DB.OneRM.get via a lazy dynamic import (so
@@ -968,6 +934,7 @@ export function isBodyweightExercise(name, library) {
  * @param {object} state                            current workout State
  * @param {number} durationMs                       wall-clock session length
  * @param {object} [opts]
+ * @param {number} [opts.rpe]                       selected or estimated session RPE
  * @param {(name:string)=>Promise<{value:number}|undefined>} [opts.oneRMLookup]
  * @returns {Promise<object>} summaryData per the contract in workout.view/summary.js
  */
@@ -981,6 +948,11 @@ export async function buildSessionSummary(state, durationMs, opts = {}) {
   const mins = Math.max(0, Math.floor((durationMs || 0) / 60000));
   const hrs = Math.floor(mins / 60);
   const timeStr = hrs > 0 ? `${hrs}h ${String(mins % 60).padStart(2, '0')}m` : `${mins}m`;
+
+  // Session RPE: explicit option > computed from sets > default 7
+  const rpe = Number.isFinite(opts.rpe) && opts.rpe >= 1 && opts.rpe <= 10
+    ? opts.rpe
+    : estimateSessionRpe(state.plan);
 
   // Single pass over State.plan, preserving insertion order via blockOrder.
   const blockOrder = [];
@@ -1068,5 +1040,5 @@ export async function buildSessionSummary(state, durationMs, opts = {}) {
     };
   });
 
-  return { type: state.type, timeStr, totalTonnage, totalReps, setsDone, blocks, prs };
+  return { type: state.type, timeStr, totalTonnage, totalReps, setsDone, blocks, prs, rpe };
 }

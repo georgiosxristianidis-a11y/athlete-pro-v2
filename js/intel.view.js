@@ -26,6 +26,7 @@ on('intel:closeReport',   (el) => el.closest('.intel-report-overlay')?.remove())
 on('intel:openSettings',  () => window.IntelView.openSettings());
 on('intel:saveSettings',  () => window.IntelView.saveSettings());
 on('intel:saveActionCard', (el) => window.IntelView.saveActionCard(el));
+on('intel:applyAnalysisPlan', (el) => window.IntelView.applyAnalysisPlan(el));
 on('intel:closeOverlay',  (el) => { const o = document.getElementById(el.dataset.overlay); if (o) o.remove(); });
 onChange('intel:fileSelected', (el, e) => window.IntelView.onFileSelected(e));
 onKeydown('intel:submitEnter', (el, e) => { if (e.key === 'Enter') window.IntelView.submit(); });
@@ -94,6 +95,21 @@ export const IntelView = (() => {
   /** Тон коуча, 0 (терапевт) .. 100 (Гоггинс). Дефолт — нейтрально. */
   async function _getTone() {
     return DB.Settings.get('intel-tone', 50);
+  }
+
+  /** Санитизация тренировок для защиты от 413 Payload Too Large */
+  function _sanitizeWorkouts(workouts) {
+    return (workouts || []).map(w => ({
+      id: w.id,
+      type: w.type,
+      date: w.date || w.timestamp,
+      tonnage: w.tonnage,
+      duration: w.duration,
+      exercises: w.exercises ? w.exercises.map(e => ({
+        name: e.name,
+        sets: e.sets ? e.sets.map(s => ({ weight: s.weight, reps: s.reps, rpe: s.rpe, done: s.done })) : []
+      })) : []
+    }));
   }
 
   async function _checkApiKey() {
@@ -400,7 +416,7 @@ export const IntelView = (() => {
         body: JSON.stringify({
           messages: [{ role: 'user', content: text }],
           images: image ? [image] : [],
-          workouts,
+          workouts: _sanitizeWorkouts(workouts),
           profile,
           topLifts,
           engine: 'gemini',
@@ -539,107 +555,277 @@ export const IntelView = (() => {
   }
 
   async function generateWeekly() {
-     IntelStore.addLog('SYS', 'Computing weekly intelligence...');
-     IntelStore.setStatus('COMPUTING INTEL...');
-     
-     try {
-       const { DB } = await import('./db.js');
-       const workouts = await DB.Workouts.getAll();
-       // Filter for last 7 days
-       const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-       const recentWorkouts = workouts.filter(w => new Date(w.date).getTime() > sevenDaysAgo);
-       const profile = await DB.Settings.getAll();
+    haptic(10);
+    IntelStore.addLog('SYS', 'Computing weekly intelligence...');
+    IntelStore.setStatus('COMPUTING INTEL...');
+    
+    try {
+      const { DB, pplTonnageFrom } = await import('./db.js');
+      const workouts = await DB.Workouts.getAll();
+      const now = Date.now();
+      const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+      const fourteenDaysAgo = now - 14 * 24 * 60 * 60 * 1000;
 
-       const response = await fetch('/api/coach/weekly-report', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ 
-           workouts: recentWorkouts, 
-           profile, 
-           engine: 'gemini',
-           customKey: await DB.Settings.get('gemini-key')
-         })
-       });
+      const currentWorkouts = workouts.filter(w => (w.timestamp || new Date(w.date).getTime()) > sevenDaysAgo);
+      const prevWorkouts = workouts.filter(w => {
+        const t = w.timestamp || new Date(w.date).getTime();
+        return t > fourteenDaysAgo && t <= sevenDaysAgo;
+      });
 
-       if (!response.ok) throw new Error('Report generation failed');
+      const currentVolume = currentWorkouts.reduce((s, w) => s + (w.tonnage || 0), 0);
+      const prevVolume = prevWorkouts.reduce((s, w) => s + (w.tonnage || 0), 0);
+      const delta = prevVolume > 0 ? ((currentVolume - prevVolume) / prevVolume) * 100 : 0;
+      const pplRaw = pplTonnageFrom(currentWorkouts);
+      const totalPpl = (pplRaw.push + pplRaw.pull + pplRaw.legs) || 1;
+      const ppl = {
+        push: Math.round((pplRaw.push / totalPpl) * 100),
+        pull: Math.round((pplRaw.pull / totalPpl) * 100),
+        legs: Math.round((pplRaw.legs / totalPpl) * 100)
+      };
 
-       const { report } = await response.json();
-       
-       IntelStore.addLog('AI', `Weekly report generated. Performance Score: ${report.score}`);
-       IntelStore.setStatus('SYSTEM STANDBY');
+      const stats = {
+        currentVolume,
+        prevVolume,
+        delta,
+        sessionCount: currentWorkouts.length,
+        ppl
+      };
 
-       _renderReportOverlay(report);
-       speakText(`Твой прогресс за неделю: ${report.score} баллов. ${report.summary}`);
+      const profile = await DB.Settings.getAll();
 
-     } catch (err) {
-       IntelStore.addLog('ERROR', 'Failed to generate weekly intel');
-       IntelStore.setStatus('ERROR');
-     }
+      const response = await fetch('/api/coach/weekly-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          workouts: _sanitizeWorkouts(currentWorkouts), 
+          stats,
+          profile, 
+          engine: 'gemini',
+          customKey: await DB.Settings.get('gemini-key')
+        })
+      });
+
+      if (!response.ok) throw new Error('Report generation failed');
+
+      const { report } = await response.json();
+      
+      IntelStore.addLog('AI', `Weekly report generated. Performance Score: ${report.score}`);
+      IntelStore.setStatus('SYSTEM STANDBY');
+
+      _renderWeeklyOverlay(report, stats);
+      speakText(`Твой прогресс за неделю: ${report.score} баллов. ${report.summary}`);
+
+    } catch (err) {
+      IntelStore.addLog('ERROR', 'Failed to generate weekly intel');
+      IntelStore.setStatus('ERROR');
+    }
   }
 
-  function _renderReportOverlay(report) {
+  function _renderWeeklyOverlay(report, stats) {
     const overlay = document.createElement('div');
     overlay.className = 'intel-report-overlay animate-in fade-in duration-500';
-    overlay.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(5,5,7,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:20px;';
+    overlay.id = 'intel-weekly-overlay';
     
     overlay.innerHTML = `
-      <div style="background:var(--c-bg-1); width:100%; max-width:500px; border-radius:32px; border:1px solid var(--c-border-h); padding:40px; position:relative; max-height:90vh; overflow-y:auto;">
-        <button data-action="intel:closeReport" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:var(--fs-5); cursor:pointer;">&times;</button>
-        <div style="text-align:center; margin-bottom:32px;">
-           <h2 style="font-family:var(--font-intel); font-size:var(--fs-5); font-style:italic; color:var(--c-text-1); text-transform:uppercase; margin-bottom:16px;">Weekly Intel</h2>
-           <div style="display:flex; flex-direction:column; align-items:center;">
-             <span style="font-size:var(--fs-6); font-weight:var(--fw-black); color:var(--c-intel); text-shadow:0 0 20px rgba(0,209,255,0.4); line-height:1;">${report.score}</span>
-             <span style="font-size:var(--fs-1); font-weight:var(--fw-black); color:var(--c-text-3); text-transform:uppercase; letter-spacing:0.5em; margin-top:8px;">Performance Score</span>
+      <div class="intel-hud-modal">
+        <button class="intel-hud-close" data-action="intel:closeReport" aria-label="Закрыть">&times;</button>
+        <div class="intel-hud-header">
+           <span class="intel-hud-badge">Weekly Performance</span>
+           <div class="intel-hud-score-row">
+             <span class="intel-hud-score">${report.score}</span>
+             <span class="intel-hud-score-label">Performance Score</span>
            </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:24px;">
-          <section style="background:var(--c-surface-h); padding:24px; border-radius:24px; border:1px solid var(--c-border);">
-            <p style="font-size:var(--fs-3); font-style:italic; color:var(--c-text-2); line-height:1.6; font-weight:var(--fw-md);">"${esc(report.summary)}"</p>
+
+        <div class="intel-hud-stats-grid">
+          <div class="intel-hud-stat-card">
+            <span class="intel-hud-stat-label">Тоннаж недели</span>
+            <span class="intel-hud-stat-val">${(stats.currentVolume || 0).toLocaleString()} кг</span>
+          </div>
+          <div class="intel-hud-stat-card">
+            <span class="intel-hud-stat-label">Динамика объема</span>
+            <span class="intel-hud-stat-val ${stats.delta >= 0 ? 'is-up' : 'is-down'}">${stats.delta >= 0 ? '+' : ''}${stats.delta.toFixed(1)}%</span>
+          </div>
+          <div class="intel-hud-stat-card">
+            <span class="intel-hud-stat-label">Сессий в неделю</span>
+            <span class="intel-hud-stat-val">${stats.sessionCount || 0}</span>
+          </div>
+          <div class="intel-hud-stat-card">
+            <span class="intel-hud-stat-label">Сплит PPL</span>
+            <span class="intel-hud-stat-val font-sm">P:${stats.ppl.push}% P:${stats.ppl.pull}% L:${stats.ppl.legs}%</span>
+          </div>
+        </div>
+
+        <div class="intel-hud-body">
+          <section class="intel-hud-summary">
+            <p>"${esc(report.summary)}"</p>
           </section>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-            <div style="background:rgba(0,230,118,0.05); padding:20px; border-radius:24px; border:1px solid rgba(0,230,118,0.1);">
-               <h4 style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-accent); margin-bottom:12px; letter-spacing:0.2em;">Wins</h4>
-               <ul style="font-size:var(--fs-2); color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
-                 ${report.pros.map(p => `<li style="display:flex; gap:8px;"><span style="color:var(--c-accent)">+</span>${esc(p)}</li>`).join('')}
+
+          <div class="intel-hud-columns">
+            <div class="intel-hud-column is-wins">
+               <h4>Wins</h4>
+               <ul>
+                 ${(report.pros || []).map(p => `<li><span class="symbol-plus">+</span>${esc(p)}</li>`).join('')}
                </ul>
             </div>
-            <div style="background:rgba(255,77,136,0.05); padding:20px; border-radius:24px; border:1px solid rgba(255,77,136,0.1);">
-               <h4 style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-red); margin-bottom:12px; letter-spacing:0.2em;">Leaks</h4>
-               <ul style="font-size:var(--fs-2); color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
-                 ${report.cons.map(c => `<li style="display:flex; gap:8px;"><span style="color:var(--c-red)">-</span>${esc(c)}</li>`).join('')}
+            <div class="intel-hud-column is-leaks">
+               <h4>Leaks</h4>
+               <ul>
+                 ${(report.cons || []).map(c => `<li><span class="symbol-minus">-</span>${esc(c)}</li>`).join('')}
                </ul>
             </div>
           </div>
+
+          ${report.nextWeekAction ? `
+            <div class="intel-hud-focus-card">
+              <span class="intel-hud-focus-tag">ФОКУС СЛЕДУЮЩЕЙ НЕДЕЛИ</span>
+              <p>${esc(report.nextWeekAction)}</p>
+            </div>
+          ` : ''}
         </div>
       </div>
     `;
     document.body.appendChild(overlay);
   }
 
-
   function createWorkout() {
      haptic(10);
      IntelStore.addLog('SYS', 'Ready to generate workout plan');
      IntelStore.setStatus('WAITING FOR PROMPT');
-     const input = document.getElementById('intel-input');
+     const input = /** @type {HTMLInputElement|null} */ (document.getElementById('intel-input'));
      if (input) {
          input.value = "";
          input.focus();
-         // @ts-ignore
          input.placeholder = "Какую группу мышц тренируем сегодня?";
      }
   }
 
-  function analyzeStats() {
-     haptic(10);
-     IntelStore.addLog('SYS', 'Ready to analyze stats');
-     const input = document.getElementById('intel-input');
-     if (input) {
-         input.value = "Проведи глубокий разбор последней тренировки. Сгенерируй readiness-виджет (_widget: readiness) с оценкой 0-100. Напиши пару строк о главном успехе и слабом месте.";
-         submit();
-     }
+  const _pendingPlan = new Map();
+
+  async function analyzeStats() {
+    haptic(10);
+    IntelStore.addLog('SYS', 'Analyzing last session performance...');
+    IntelStore.setStatus('ANALYZING...');
+
+    try {
+      const { DB } = await import('./db.js');
+      const lastWorkouts = await DB.Workouts.getLast(10);
+      if (!lastWorkouts || !lastWorkouts.length) {
+        IntelStore.addLog('AI', 'Нет завершенных тренировок для анализа');
+        IntelStore.setStatus('STANDBY');
+        return;
+      }
+
+      const currentWorkout = lastWorkouts[0];
+      const previousWorkout = lastWorkouts.slice(1).find(w => w.type === currentWorkout.type) || null;
+      const profile = await DB.Settings.getAll();
+
+      const response = await fetch('/api/coach/analyze-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentWorkout: _sanitizeWorkouts([currentWorkout])[0],
+          previousWorkout: previousWorkout ? _sanitizeWorkouts([previousWorkout])[0] : null,
+          profile,
+          engine: 'gemini',
+          customKey: await DB.Settings.get('gemini-key')
+        })
+      });
+
+      if (!response.ok) throw new Error('Session analysis failed');
+
+      const { analysis } = await response.json();
+
+      IntelStore.addLog('AI', `Session analyzed: ${currentWorkout.type || 'Workout'} (${analysis.tonnage}kg)`);
+      IntelStore.setStatus('SYSTEM STANDBY');
+
+      _renderAnalyzeOverlay(analysis, currentWorkout);
+      speakText(`Разбор сессии: ${analysis.summary} ${analysis.recommendation}`);
+
+    } catch (err) {
+      IntelStore.addLog('ERROR', 'Failed to analyze session');
+      IntelStore.setStatus('ERROR');
+    }
   }
 
+  function _renderAnalyzeOverlay(analysis, workout) {
+    const overlay = document.createElement('div');
+    overlay.className = 'intel-report-overlay animate-in fade-in duration-500';
+    overlay.id = 'intel-analyze-overlay';
+    const planId = 'plan_' + Date.now();
+    _pendingPlan.set(planId, {
+      title: `${workout.type ? workout.type.toUpperCase() : 'Workout'} (AI Target)`,
+      exercises: analysis.targetPlan || []
+    });
+
+    overlay.innerHTML = `
+      <div class="intel-hud-modal">
+        <button class="intel-hud-close" data-action="intel:closeReport" aria-label="Закрыть">&times;</button>
+        <div class="intel-hud-header">
+           <span class="intel-hud-badge">Session Deep Dive</span>
+           <h2 class="intel-hud-title">${esc((workout.type || 'Workout').toUpperCase())}</h2>
+        </div>
+
+        <div class="intel-hud-stats-grid">
+          <div class="intel-hud-stat-card">
+            <span class="intel-hud-stat-label">Тоннаж сессии</span>
+            <span class="intel-hud-stat-val">${(analysis.tonnage || 0).toLocaleString()} кг</span>
+          </div>
+          <div class="intel-hud-stat-card">
+            <span class="intel-hud-stat-label">Эффективных сетов</span>
+            <span class="intel-hud-stat-val">${analysis.effectiveSets || 0}</span>
+          </div>
+          <div class="intel-hud-stat-card">
+            <span class="intel-hud-stat-label">Средний RPE</span>
+            <span class="intel-hud-stat-val">${analysis.avgRpe || 8.0}</span>
+          </div>
+          <div class="intel-hud-stat-card">
+            <span class="intel-hud-stat-label">Fatigue Drop</span>
+            <span class="intel-hud-stat-val font-sm">${analysis.fatigueDrop || 0}%</span>
+          </div>
+        </div>
+
+        <div class="intel-hud-body">
+          <section class="intel-hud-summary">
+            <p>"${esc(analysis.summary)}"</p>
+          </section>
+
+          <div class="intel-hud-progressions">
+            <span class="intel-hud-section-label">Прогрессия нагрузок:</span>
+            ${(analysis.progressions || []).map(p => `
+              <div class="intel-progression-row">
+                <span class="intel-progression-name">${esc(p.exercise)}</span>
+                <span class="intel-progression-weight">${p.weight} кг</span>
+                <span class="intel-progression-status status-${esc(String(p.status).toLowerCase())}">${esc(p.delta)} [${esc(p.status)}]</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="intel-hud-focus-card">
+            <span class="intel-hud-focus-tag">РЕКОМЕНДАЦИЯ К РОТАЦИИ</span>
+            <p>${esc(analysis.recommendation)}</p>
+          </div>
+
+          <button class="btn btn-primary intel-hud-apply-btn" data-action="intel:applyAnalysisPlan" data-plan-id="${planId}">
+            Применить рекомендации к плану
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  async function applyAnalysisPlan(btn) {
+    const planId = btn.dataset.planId;
+    const planData = planId && _pendingPlan.get(planId);
+    if (!planData) return;
+    haptic(20);
+    const { DB } = await import('./db.js');
+    await DB.PlannedWorkouts.save(planData.title, planData);
+    IntelStore.addLog('SYS', `Target plan saved: ${planData.title}`);
+    btn.disabled = true;
+    btn.textContent = 'Сохранено в план тренировок';
+  }
   /** Биометрический радар (HUD-3): полноэкранный скан → отчёт ЦНС/готовности. */
   async function checkBiometrics() {
     haptic(10);
@@ -674,6 +860,7 @@ export const IntelView = (() => {
     }, 400);
 
     try {
+      const { DB } = await import('./db.js');
       const workouts = await DB.Workouts.getLast(10);
       const profile = await DB.Settings.getAll();
 
@@ -681,7 +868,7 @@ export const IntelView = (() => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          workouts,
+          workouts: _sanitizeWorkouts(workouts),
           profile,
           engine: 'gemini',
           customKey: await DB.Settings.get('gemini-key')
@@ -695,15 +882,13 @@ export const IntelView = (() => {
       }
 
       const { report } = await response.json();
-      const readiness = Math.max(0, 100 - Math.round((report.cnsFatigue + report.muscleDamage) / 2));
+      const readiness = Math.max(0, 100 - Math.round((report.cnsFatigue * 0.6 + report.muscleDamage * 0.4)));
 
-      overlay.innerHTML = _buildBiometricReport(report, readiness, L);
+      overlay.innerHTML = _buildBiometricReport(report, readiness, report.acwr || 1.0, L);
       haptic(50);
+      speakText(`Биометрический статус: Готовность ${readiness}%. ${report.prescription}`);
     } catch (err) {
       clearInterval(logInterval);
-      // Урок отвергнутой линии: ошибка сети шла в innerHTML сырой строкой
-      // (`SCAN FAILED: ${err.message}` без esc()) — здесь err.message с сервера
-      // могло быть значением из чужого ключа BYOK.
       overlay.innerHTML = `
         <div class="intel-radar-error">
           <p class="intel-radar-error-text">${esc(toUserMessage(err))}</p>
@@ -713,28 +898,58 @@ export const IntelView = (() => {
     }
   }
 
-  function _buildBiometricReport(report, readiness, L) {
-    const bar = (label, val) => `
+  function _buildBiometricReport(report, readiness, acwr, L) {
+    const bar = (label, val, max = 100, unit = '%') => `
       <div class="intel-radar-metric">
         <div class="intel-radar-metric-label">${esc(label)}</div>
         <div class="intel-radar-metric-row">
-          <div class="intel-radar-metric-val ${val > 70 ? 'is-high' : ''}">${esc(String(val))}%</div>
+          <div class="intel-radar-metric-val ${val > 70 ? 'is-high' : ''}">${esc(String(val))}${unit}</div>
           <div class="intel-radar-metric-track">
-            <div class="intel-radar-metric-fill ${val > 70 ? 'is-high' : ''}" style="width:${Math.max(0, Math.min(100, val))}%"></div>
+            <div class="intel-radar-metric-fill ${val > 70 ? 'is-high' : ''}" style="width:${Math.max(0, Math.min(100, (val / max) * 100))}%"></div>
           </div>
         </div>
       </div>
     `;
 
+    const getAcwrTag = (v) => {
+      if (v >= 0.8 && v <= 1.3) return '<span class="acwr-badge opt">Оптимально</span>';
+      if (v > 1.5) return '<span class="acwr-badge danger">Опасно</span>';
+      return '<span class="acwr-badge warn">Внимание</span>';
+    };
+
     return `
       <div class="intel-radar-report">
         <button class="intel-btn-close intel-radar-report-close" data-action="intel:closeOverlay" data-overlay="intel-radar-overlay" aria-label="${L.close}">&times;</button>
-        <h2 class="intel-radar-report-title">BIOMETRIC HUD</h2>
+        <div class="intel-hud-header">
+          <span class="intel-hud-badge">BIOMETRIC RADAR</span>
+          <div class="intel-hud-score-row">
+            <span class="intel-hud-score" style="color:var(--c-accent)">${readiness}%</span>
+            <span class="intel-hud-score-label">Readiness Index</span>
+          </div>
+        </div>
+
         <div class="intel-radar-metrics">
+          <div class="intel-radar-metric">
+            <div class="intel-radar-metric-label" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>ACWR (Острая к Хронической)</span>
+              ${getAcwrTag(acwr)}
+            </div>
+            <div class="intel-radar-metric-row">
+              <div class="intel-radar-metric-val">${acwr.toFixed(2)}</div>
+              <div class="intel-radar-metric-track">
+                <div class="intel-radar-metric-fill" style="width:${Math.max(0, Math.min(100, (acwr / 2.0) * 100))}%; background: ${acwr > 1.5 ? 'var(--c-red)' : 'var(--c-accent)'}"></div>
+              </div>
+            </div>
+          </div>
           ${bar(L.cnsFatigue, report.cnsFatigue)}
           ${bar(L.muscleDamage, report.muscleDamage)}
-          ${bar(L.readiness, readiness)}
         </div>
+
+        <div class="intel-hud-focus-card" style="margin-top:16px;">
+          <span class="intel-hud-focus-tag">ДНЕВНОЙ РЕЦЕПТ (PRESCRIPTION)</span>
+          <p>${esc(report.prescription || 'Тренировка по плану')}</p>
+        </div>
+
         <div class="intel-radar-report-summary">${esc(report.summary || '')}</div>
       </div>
     `;
@@ -914,7 +1129,7 @@ export const IntelView = (() => {
 
   return {
     load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats,
-    checkBiometrics, playAudio, _clearImage, openSettings, saveSettings, saveActionCard,
+    checkBiometrics, playAudio, _clearImage, openSettings, saveSettings, saveActionCard, applyAnalysisPlan,
   };
 })();
 

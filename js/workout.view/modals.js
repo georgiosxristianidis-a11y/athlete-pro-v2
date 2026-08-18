@@ -799,3 +799,170 @@ export async function openReplaceExModal(ei) {
   });
   requestAnimationFrame(() => searchEl.focus());
 }
+
+/* ════════════════════════════════════════════════════════
+   SESSION RPE PICKER MODAL (INTEL-1)
+   Borg CR10 scale (1–10) subjective exertion selector.
+   ════════════════════════════════════════════════════════ */
+
+const RPE_DESCRIPTORS = {
+  1:  { en: ['Very Light', 'Active recovery, almost no effort'],       ru: ['Очень легко', 'Активное восстановление, без усилий'] },
+  2:  { en: ['Light', 'Warmup pace, easy breathing'],                  ru: ['Легко', 'Разминочный темп, ровное дыхание'] },
+  3:  { en: ['Moderate', 'Comfortable, sustainable pace'],             ru: ['Умеренно', 'Комфортная нагрузка, ровный темп'] },
+  4:  { en: ['Somewhat Heavy', 'Solid working pace, steady effort'],   ru: ['Средне', 'Рабочий темп, контролируемое усилие'] },
+  5:  { en: ['Hard', 'Noticeable exertion, solid work'],               ru: ['Тяжело', 'Ощутимая нагрузка, рабочий вес'] },
+  6:  { en: ['Hard+', 'Challenging, ~4–5 reps in reserve'],            ru: ['Довольно тяжело', 'Тяжёлая работа, 4–5 повторов в запасе'] },
+  7:  { en: ['Very Hard', 'Heavy effort, ~3 RIR'],                     ru: ['Очень тяжело', 'Тяжёлая сессия, ~3 повтора в запасе'] },
+  8:  { en: ['Extremely Hard', 'Very heavy, ~2 RIR'],                  ru: ['Предельно тяжело', 'Очень тяжело, ~2 повтора в запасе'] },
+  9:  { en: ['Near Maximum', 'Near limit, ~1 RIR'],                    ru: ['Почти максимум', 'Почти предел, ~1 повтор в запасе'] },
+  10: { en: ['Maximum Effort', 'Complete failure (0 RIR)'],            ru: ['Максимум', 'Абсолютный предел, отказ (0 RIR)'] },
+};
+
+/**
+ * Returns color token for RPE value.
+ * @param {number} val 1..10
+ * @returns {string} CSS variable expression
+ */
+function _rpeColor(val) {
+  if (val <= 3) return 'var(--c-push)';
+  if (val <= 5) return 'var(--c-pull)';
+  if (val <= 6) return 'var(--c-amber)';
+  if (val <= 8) return 'var(--c-secondary)';
+  return 'var(--c-red)';
+}
+
+/**
+ * Open Session RPE modal sheet (1–10 Borg CR10).
+ * Resolves with selected RPE (1..10).
+ *
+ * @param {object} [opts]
+ * @param {number} [opts.defaultRpe=7]
+ * @param {boolean} [opts.ru]
+ * @returns {Promise<number>}
+ */
+export function openSessionRpeModal(opts = {}) {
+  const ru = opts.ru !== undefined ? opts.ru : isRu();
+  let selected = Number.isFinite(opts.defaultRpe) && opts.defaultRpe >= 1 && opts.defaultRpe <= 10
+    ? Math.round(opts.defaultRpe)
+    : 7;
+
+  // Defensive cleanup of any preexisting overlay
+  document.getElementById('session-rpe-overlay')?.remove();
+
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay animate-in';
+    overlay.id = 'session-rpe-overlay';
+    overlay.style.cssText = 'z-index:6100; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px)';
+
+    function getDescHTML(val) {
+      const entry = RPE_DESCRIPTORS[val] || RPE_DESCRIPTORS[7];
+      const [title, desc] = ru ? entry.ru : entry.en;
+      const color = _rpeColor(val);
+      return `
+        <div class="rpe-active-preview" style="--rpe-accent:${color}">
+          <div class="rpe-active-badge">${val}</div>
+          <div class="rpe-active-info">
+            <div class="rpe-active-title" style="color:${color}">${esc(title)}</div>
+            <div class="rpe-active-sub">${esc(desc)}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderButtons() {
+      let btns = '';
+      for (let i = 1; i <= 10; i++) {
+        const active = i === selected;
+        const color = _rpeColor(i);
+        const [label] = ru ? RPE_DESCRIPTORS[i].ru : RPE_DESCRIPTORS[i].en;
+        btns += `
+          <button type="button" class="rpe-btn-chip${active ? ' active' : ''}"
+                  data-val="${i}"
+                  style="--chip-color:${color}"
+                  aria-label="RPE ${i}: ${esc(label)}">
+            <span class="rpe-chip-num">${i}</span>
+          </button>`;
+      }
+      return btns;
+    }
+
+    overlay.innerHTML = `
+      <div class="modal-sheet rpe-sheet" style="max-width:420px; margin:auto">
+        <div class="modal-handle"></div>
+        <div class="rpe-sheet-header">
+          <div class="rpe-sheet-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" width="28" height="28">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+              <line x1="6" y1="1" x2="6" y2="4"/>
+              <line x1="10" y1="1" x2="10" y2="4"/>
+              <line x1="14" y1="1" x2="14" y2="4"/>
+            </svg>
+          </div>
+          <div class="rpe-sheet-title">${ru ? 'Оценка нагрузки' : 'Session RPE'}</div>
+          <div class="rpe-sheet-subtitle">${ru ? 'Шкала интенсивности Borg CR10 (1–10)' : 'Subjective effort scale (1–10)'}</div>
+        </div>
+        <div class="rpe-preview-wrap" id="rpe-preview-wrap">
+          ${getDescHTML(selected)}
+        </div>
+        <div class="rpe-grid" id="rpe-chips-grid">
+          ${renderButtons()}
+        </div>
+        <div class="rpe-actions">
+          <button class="btn btn-primary" id="btn-rpe-confirm" style="width:100%">${ru ? 'Далее' : 'Continue'}</button>
+          <button class="btn btn-ghost" id="btn-rpe-skip" style="width:100%">${ru ? 'Пропустить' : 'Skip'}</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    const previewWrap = overlay.querySelector('#rpe-preview-wrap');
+    const grid = overlay.querySelector('#rpe-chips-grid');
+
+    function updateSelection(newVal) {
+      selected = newVal;
+      _haptic(10);
+      if (previewWrap) previewWrap.innerHTML = getDescHTML(selected);
+      grid?.querySelectorAll('.rpe-btn-chip').forEach((btn) => {
+        // @ts-ignore
+        const v = parseInt(btn.dataset.val, 10);
+        btn.classList.toggle('active', v === selected);
+      });
+    }
+
+    grid?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.rpe-btn-chip');
+      if (!btn) return;
+      // @ts-ignore
+      const val = parseInt(btn.dataset.val, 10);
+      if (Number.isFinite(val) && val >= 1 && val <= 10) {
+        updateSelection(val);
+      }
+    });
+
+    let closed = false;
+    function closeWith(val) {
+      if (closed) return;
+      closed = true;
+      document.removeEventListener('keydown', onKey);
+      overlay.classList.add('animate-out');
+      setTimeout(() => {
+        overlay.remove();
+        resolve(val);
+      }, 240);
+    }
+
+    function onKey(e) {
+      if (e.key === 'Escape') closeWith(selected);
+    }
+    document.addEventListener('keydown', onKey);
+
+    overlay.querySelector('#btn-rpe-confirm')?.addEventListener('click', () => closeWith(selected));
+    overlay.querySelector('#btn-rpe-skip')?.addEventListener('click', () => closeWith(selected));
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeWith(selected);
+    });
+  });
+}
+

@@ -37,7 +37,7 @@ npm run docs:budget    # цена системных доков в токена�
 |---|---|
 | `docs/handoff/HANDOFF_boot_brand.md` → **SPLASH-1** | Активная фаза: запуск и знак. Дальше MOTION-1, порядок утверждён Gio. Не параллелить — три карточки из четырёх трогают `index.html` |
 | `docs/handoff/HANDOFF_panda_core.md` | HUD-1..4 закрыты (1.27.56). Активных карточек нет — программа готова к полевому чеку Gio (радар и тон коуча на iPhone). |
-| `docs/handoff/HANDOFF_intel_readiness.md` → **INTEL-1** | Session RPE. Порядок INTEL-1 → INTEL-3 → INTEL-4 не переставлять. Вход в следующую калибровку весов — в хендоффе |
+| `docs/handoff/HANDOFF_intel_readiness.md` → **INTEL-3** | Виджет: `_buildReadinessWidget` на `fetchReadiness()`, confidence. Дальше INTEL-4 |
 | `docs/handoff/HANDOFF_gemini_audit_triage.md` → **PERF-1** | Разведка: сколько дадут бандл и 725 мс Style & Layout. Следом LEAK-1, SCAF-1, NOISE-1, PII-1. 🔴 За Gio: снести сервис на Render и отозвать `ANTHROPIC_API_KEY` |
 | `docs/handoff/HANDOFF_light_theme.md` → **THEME-6** | 🟡 P2. Единственная контраст-проба слепа к теме по построению — нужна считающая фактический контраст в обеих темах |
 | `docs/handoff/HANDOFF_design_system.md` → **SPACE-1 хвост → SCALE-1** | Хвост инлайнов в `js/`, затем гард шкал `--fs-*`/`--fw-*` в CI. Дальше NAV-BACK-1 + DEAD-1 |

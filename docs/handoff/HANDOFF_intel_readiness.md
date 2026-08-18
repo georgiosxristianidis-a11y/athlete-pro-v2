@@ -58,12 +58,15 @@
   Данных нет вообще → `index: null`, `confidence: 'none'`. Ноль читается как «ты в яме».
 - Нулевые дни входят в монотонность: без них три тренировки в неделю дают идеальную.
 
-## INTEL-1 — session RPE
+## INTEL-1 — session RPE [ЗАКРЫТА]
 
-Единственная точка расширения — функция `sessionLoad(w)` в движке: sRPE = длительность ×
-RPE сессии. Per-set `rpe` в данных уже есть (`SetRecord.rpe`, пишется в
-`js/workout.view/handlers.js`), сессионного нет. **Менять единицу нагрузки можно только
-для всей истории разом** — иначе ACWR и тренд ловят разрыв на дате внедрения.
+Точка расширения — функция `sessionLoad(w)` в движке переведена на sRPE = длительность (мин) × RPE сессии (1–10).
+- Добавлен `openSessionRpeModal({ defaultRpe, ru })` (Borg CR10 scale sheet) в `js/workout.view/modals.js`.
+- `estimateSessionRpe(plan)` вычисляет средний RPE по завершённым сетам (дефолт 7).
+- `completeSession()` запрашивает RPE сессии и сохраняет `session.rpe` в `DB.Workouts` и `DB.Events`.
+- В `js/intel.store.js` добавлен адаптер `fetchFatigueIndex(opts)`.
+- Карточка RPE добавлена в пост-тренировочный `summ-stats-grid` (`TIME`, `VOLUME`, `REPS`, `RPE`).
+- Все тесты покрыты в `test/intel-readiness.test.js` и `test/session-summary.test.js`.
 
 ## INTEL-3 — виджет
 

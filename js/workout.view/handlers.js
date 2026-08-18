@@ -386,29 +386,38 @@ export function _closeCustomWorkoutModal() {
 /* ════════════════════════════════════════════════════════
    COMPLETE / CANCEL
    ════════════════════════════════════════════════════════ */
+let _completing = false;
 export async function completeSession() {
-  const ru = isRu();
-  const doneSets = State.plan.reduce((sum, ex) => sum + ex.sets.filter(s => s.done).length, 0);
-  
-  if (doneSets === 0) {
-    const ok = await confirmDialog({
-      title: ru ? 'Завершить тренировку?' : 'Finish workout?',
-      message: ru ? 'Ни один подход не выполнен.' : 'No sets have been completed.',
-      confirmLabel: ru ? 'Завершить' : 'Finish',
-      cancelLabel: ru ? 'Отмена' : 'Cancel',
-    });
-    if (!ok) return;
-  }
+  if (_completing) return;
+  _completing = true;
+  try {
+    const ru = isRu();
+    const doneSets = State.plan.reduce((sum, ex) => sum + ex.sets.filter(s => s.done).length, 0);
+    
+    if (doneSets === 0) {
+      const ok = await confirmDialog({
+        title: ru ? 'Завершить тренировку?' : 'Finish workout?',
+        message: ru ? 'Ни один подход не выполнен.' : 'No sets have been completed.',
+        confirmLabel: ru ? 'Завершить' : 'Finish',
+        cancelLabel: ru ? 'Отмена' : 'Cancel',
+      });
+      if (!ok) return;
+    }
 
-  // Calculate metrics
-  // Phase W-2-B: store-layer builder owns the summary shape (incl. PR
-  // detection, isUnilateral×2 tonnage, Camera-4 noDb filter, block
-  // timings). The view just renders the shape — handlers do zero data.
-  const durationMs = Date.now() - (State.startedAt || Date.now());
-  const { buildSessionSummary } = await import('../workout.store.js');
-  const summaryData = await buildSessionSummary(State, durationMs);
-  const { renderSummaryModal } = await import('./summary.js');
-  renderSummaryModal(summaryData, () => _executeFinalSave(summaryData, durationMs), ru);
+    // Calculate metrics & prompt for Session RPE (INTEL-1)
+    const durationMs = Date.now() - (State.startedAt || Date.now());
+    const { buildSessionSummary, estimateSessionRpe } = await import('../workout.store.js');
+    const { openSessionRpeModal } = await import('./modals.js');
+
+    const defaultRpe = estimateSessionRpe(State.plan);
+    const selectedRpe = await openSessionRpeModal({ defaultRpe, ru });
+
+    const summaryData = await buildSessionSummary(State, durationMs, { rpe: selectedRpe });
+    const { renderSummaryModal } = await import('./summary.js');
+    renderSummaryModal(summaryData, () => _executeFinalSave(summaryData, durationMs), ru);
+  } finally {
+    _completing = false;
+  }
 }
 
 
@@ -417,7 +426,8 @@ export async function completeSession() {
  * saved row shares a single source of truth with the report shown to the
  * user — same tonnage, same PR list, no chance of UI/DB drift.
  *
- * Schema additions (W-2-D-1):
+ * Schema additions (W-2-D-1 & INTEL-1):
+ *   • session.rpe           — Session RPE 1–10 (Borg CR10) for readiness engine.
  *   • exercise.block        — chamber id ('power'|'shape'|… or 'custom' for
  *                             W-1 ad-hoc additions); enables future per-block
  *                             analytics on Dashboard / Stats.
@@ -449,6 +459,7 @@ async function _persistFinalSession(summaryData, duration) {
     planId: null,
     timestamp: State.startedAt || Date.now(),
     duration,
+    rpe: Number.isFinite(summaryData.rpe) ? summaryData.rpe : 7,
     tonnage: summaryData.totalTonnage,
     exercises: State.plan
       .filter(ex => !ex.noDb)
@@ -473,8 +484,8 @@ async function _persistFinalSession(summaryData, duration) {
 
   await DB.Workouts.save(session);
 
-  // Log event
-  await DB.Events.log('workout_complete', { type: State.type, tonnage: summaryData.totalTonnage });
+  // Log event with RPE
+  await DB.Events.log('workout_complete', { type: State.type, tonnage: summaryData.totalTonnage, rpe: session.rpe });
 
   // Update OneRMs (also covers W-1 live additions — new exercise names get a
   // fresh OneRM record from this point on; isAdded:true is preserved in
@@ -489,6 +500,10 @@ async function _persistFinalSession(summaryData, duration) {
 
   // Cleanup
   localStorage.removeItem(SESSION_KEY);
+  try {
+    localStorage.setItem('ap-has-workouts', '1');
+    if (State.type) localStorage.setItem('ap-last-workout-type', State.type);
+  } catch { /* localStorage unavailable */ }
   if (window.DynamicIsland) window.DynamicIsland.hide();
   releaseWakeLock();
   Timer.reset();

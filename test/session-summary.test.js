@@ -1,7 +1,7 @@
 // @ts-check
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSessionSummary, BLOCK_LABEL, recordBlockTiming } from '../js/workout.store.js';
+import { buildSessionSummary, estimateSessionRpe, BLOCK_LABEL, recordBlockTiming } from '../js/workout.store.js';
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -277,3 +277,48 @@ test('doneSets and totalSets report correctly', async () => {
   assert.equal(exo.doneSets, 2);
   assert.equal(exo.totalSets, 3);
 });
+
+// ── Session RPE (INTEL-1) ──────────────────────────────────────────────────
+
+test('estimateSessionRpe — default 7 when no sets have RPE', () => {
+  const plan = [ex({ sets: [set(100, 5), set(100, 5)] })];
+  assert.equal(estimateSessionRpe(plan), 7);
+  assert.equal(estimateSessionRpe([]), 7);
+});
+
+test('estimateSessionRpe — calculates rounded average of completed sets with RPE', () => {
+  const plan = [
+    ex({
+      sets: [
+        { weight: 100, reps: 5, done: true, rpe: 8 },
+        { weight: 100, reps: 5, done: true, rpe: 10 },
+        { weight: 100, reps: 5, done: false, rpe: 4 }, // undone set ignored
+      ],
+    }),
+  ];
+  // (8 + 10) / 2 = 9
+  assert.equal(estimateSessionRpe(plan), 9);
+});
+
+test('buildSessionSummary — includes explicit rpe in summaryData', async () => {
+  const state = baseState();
+  const s = await buildSessionSummary(state, 1_800_000, { rpe: 9, oneRMLookup: noOneRM });
+  assert.equal(s.rpe, 9);
+});
+
+test('buildSessionSummary — uses estimated RPE when no explicit rpe provided', async () => {
+  const state = {
+    ...baseState(),
+    plan: [
+      ex({
+        sets: [
+          { weight: 80, reps: 8, done: true, rpe: 6 },
+          { weight: 80, reps: 8, done: true, rpe: 8 },
+        ],
+      }),
+    ],
+  };
+  const s = await buildSessionSummary(state, 1_800_000, { oneRMLookup: noOneRM });
+  assert.equal(s.rpe, 7); // (6 + 8) / 2 = 7
+});
+

@@ -17,6 +17,19 @@ export async function fetchReadiness(opts = {}) {
 }
 
 /**
+ * Индекс утомления (Fatigue Index / Strain) и готовность (INTEL-1).
+ * @param {{ now?: number }} [opts]
+ * @returns {Promise<{ readiness: import('./intel.engine.js').Readiness, fatigueIndex: number|null }>}
+ */
+export async function fetchFatigueIndex(opts = {}) {
+  const r = await fetchReadiness(opts);
+  return {
+    readiness: r,
+    fatigueIndex: r.raw?.strain ?? null,
+  };
+}
+
+/**
  * IntelStore — Athlete Pro
  * State management for the Neural Command Center.
  */

@@ -17,7 +17,7 @@ import { t } from './locale.store.js';
 import { initPandaVideo, togglePandaSound, PANDA_VIDEO_SRC, PANDA_POSTER_SRC } from './shared/panda-video.js';
 import { attachMood, emitMood, entryGreeting } from './shared/panda-mood.js';
 
-on('dash:directLaunch',  (el) => window.Dashboard.directLaunch(el.dataset.type));
+on('dash:directLaunch',  (el) => Dashboard.directLaunch(el.dataset.type));
 on('dash:weeklySummary', () => showWeeklySummary());
 on('dash:navStats',      () => window.Nav.go('s-stats'));
 on('dash:closeMascot',   () => window.Dashboard.closeMascot());
@@ -53,6 +53,8 @@ on('dash:toggleList',    (el) => {
 });
 
 export const Dashboard = (() => {
+  let _hasAnimatedStats = false;
+
   const TYPE_COLOR = {
     push: 'var(--c-push)',
     pull: 'var(--c-pull)',
@@ -179,7 +181,7 @@ export const Dashboard = (() => {
           <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 var(--sp-2); padding-top: var(--sp-2);">
             <div>
               <div style="color:var(--c-text-2); font-size:var(--fs-1); font-weight:var(--fw-bold); letter-spacing:0.05em; text-transform:uppercase;">Volume Trend</div>
-              <div id="spark-total" style="color:var(--c-text-1); font-size:var(--fs-5); font-family:var(--font-heading); font-weight:var(--fw-black);">--</div>
+              <div id="spark-total" class="sk" style="color:var(--c-text-1); font-size:var(--fs-5); font-family:var(--font-heading); font-weight:var(--fw-black);">&nbsp;&nbsp;&nbsp;&nbsp;</div>
             </div>
             <div class="badge" style="background:var(--c-bg-3); color:var(--c-text-2); font-size:var(--fs-1); font-weight:var(--fw-bold); border:1px solid var(--c-border);">30 Days</div>
           </div>
@@ -197,7 +199,7 @@ export const Dashboard = (() => {
         </div>
         <div class="stat-chip-content">
           <div class="stat-chip-label">This Week</div>
-          <div class="stat-chip-val" id="weekly-summary-value">--</div>
+          <div class="stat-chip-val sk" id="weekly-summary-value">&nbsp;&nbsp;&nbsp;&nbsp;</div>
         </div>
       </div>
 
@@ -205,7 +207,7 @@ export const Dashboard = (() => {
       <div class="streak-card stagger-item" data-action="dash:navStats" style="cursor:pointer">
         <div class="streak-header">
           <span class="section-label">This Week</span>
-          <span class="streak-count" id="streak-count"></span>
+          <span class="streak-count sk" id="streak-count">&nbsp;&nbsp;&nbsp;&nbsp;</span>
         </div>
         <div class="streak-strip" id="streak-strip"></div>
       </div>
@@ -213,26 +215,26 @@ export const Dashboard = (() => {
       <!-- PPL split -->
       <div class="section-header stagger-item">
         <span class="section-label">PPL Split</span>
-        <span class="badge badge-accent" id="dash-total"></span>
+        <span class="badge badge-accent sk" id="dash-total">&nbsp;&nbsp;&nbsp;&nbsp;</span>
       </div>
       <div class="chart-card ppl-gauge-card stagger-item" id="ppl-gauge-home"></div>
 
       <!-- Top Lifts -->
-      <div class="section-header">
+      <div class="section-header stagger-item">
         <span class="section-label">Top Lifts</span>
         <span class="badge badge-purple">Estimated 1RM</span>
       </div>
-      <div id="dash-orm-list"></div>
+      <div id="dash-orm-list" class="stagger-item"></div>
 
       <!-- Recommendations -->
-      <div id="recommendations-section" style="display:none;margin-top:var(--sp-2)"></div>
+      <div id="recommendations-section" class="stagger-item" style="display:none;margin-top:var(--sp-2)"></div>
 
       <!-- Recent sessions -->
-      <div class="section-header dash-recent-header">
+      <div class="section-header dash-recent-header stagger-item">
         <span class="section-label">Recent</span>
         <button class="btn-text" data-action="dash:openJournal">${t('journal.see_all')}</button>
       </div>
-      <div id="recent-list"></div>
+      <div id="recent-list" class="stagger-item"></div>
     `;
   }
 
@@ -441,7 +443,20 @@ export const Dashboard = (() => {
       return;
     }
 
-    totalEl.innerHTML = `${fmtVol(total30d)} kg ${trendHtml}`;
+    totalEl.classList.remove('sk');
+    if (!_hasAnimatedStats) {
+      Spring.animate({
+        from: 0,
+        to: total30d,
+        stiffness: 160,
+        damping: 24,
+        onUpdate: (v) => {
+          totalEl.innerHTML = `${fmtVol(Math.round(v))} kg ${trendHtml}`;
+        }
+      });
+    } else {
+      totalEl.innerHTML = `${fmtVol(total30d)} kg ${trendHtml}`;
+    }
     container.innerHTML = generateSparklineMulti([
       { data: pushArr, color: 'var(--c-push)' },
       { data: pullArr, color: 'var(--c-pull)' },
@@ -486,7 +501,10 @@ export const Dashboard = (() => {
     }
 
     const el = document.getElementById('streak-count');
-    if (el) el.textContent = streak === 1 ? '1 day streak' : `${streak} day streak`;
+    if (el) {
+      el.classList.remove('sk');
+      el.textContent = streak === 1 ? '1 day streak' : `${streak} day streak`;
+    }
 
     strip.innerHTML = cells
       .map((d) => {
@@ -531,8 +549,19 @@ export const Dashboard = (() => {
 
     const total = document.getElementById('dash-total');
     if (total) {
+      total.classList.remove('sk');
       const sum = ppl.push + ppl.pull + ppl.legs;
-      total.textContent = fmtVol(sum) + ' kg';
+      if (!_hasAnimatedStats) {
+        Spring.animate({
+          from: 0,
+          to: sum,
+          stiffness: 160,
+          damping: 24,
+          onUpdate: (v) => { total.textContent = fmtVol(Math.round(v)) + ' kg'; }
+        });
+      } else {
+        total.textContent = fmtVol(sum) + ' kg';
+      }
     }
   }
 
@@ -572,7 +601,7 @@ export const Dashboard = (() => {
         ? `<span class="orm-delta ${delta >= 0 ? 'orm-delta-up' : 'orm-delta-down'}">${delta >= 0 ? '+' : ''}${delta}kg</span>`
         : '';
       return `
-      <div class="orm-row">
+      <div class="orm-row stagger-item" style="animation-delay: ${0.04 + i * 0.04}s">
         <div class="orm-name">
           <span style="font-size:var(--fs-1);font-weight:var(--fw-bold);color:var(--c-text-3);
             margin-right:6px;font-variant-numeric:tabular-nums">#${rank.get(o.id)}</span>${esc(o.id)}
@@ -645,7 +674,7 @@ export const Dashboard = (() => {
       return;
     }
 
-    const sessionHtml = (w) => {
+    const sessionHtml = (w, i = 0) => {
       const dot   = TYPE_COLOR[w.type] || 'var(--c-text-3)';
       const date  = fmtDate(w.timestamp);
       const dur   = w.duration ? fmtDuration(w.duration) : null;
@@ -675,7 +704,7 @@ export const Dashboard = (() => {
       const durChip = dur ? `<span class="rec-dur">${esc(dur)}</span>` : '';
 
       return `
-        <div class="session-item">
+        <div class="session-item stagger-item" style="animation-delay: ${0.04 + i * 0.04}s">
           <div class="session-dot" style="background:${dot}"></div>
           <div class="session-info">
             <div class="session-title-row">
@@ -693,9 +722,9 @@ export const Dashboard = (() => {
     const visible = list.slice(0, VISIBLE);
     const rest    = list.slice(VISIBLE);
     const collapseHtml = rest.length
-      ? `<div class="list-collapse" id="recent-more"><div class="list-collapse-inner">${rest.map(sessionHtml).join('')}</div></div>${_toggleButtonHtml('recent-more', rest.length)}`
+      ? `<div class="list-collapse" id="recent-more"><div class="list-collapse-inner">${rest.map((w, i) => sessionHtml(w, VISIBLE + i)).join('')}</div></div>${_toggleButtonHtml('recent-more', rest.length)}`
       : '';
-    el.innerHTML = visible.map(sessionHtml).join('') + collapseHtml;
+    el.innerHTML = visible.map((w, i) => sessionHtml(w, i)).join('') + collapseHtml;
   }
 
   /**
@@ -704,11 +733,14 @@ export const Dashboard = (() => {
    */
   async function directLaunch(type) {
     if (window.haptic) window.haptic(15);
-    window.Toast?.show(`Launching ${type.charAt(0).toUpperCase() + type.slice(1)} Session`, 'success');
+    const normalizedType = (type || 'push').toLowerCase().trim();
+    window.Toast?.show(`Launching ${normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1)} Session`, 'success');
     
-    // We need to ensure Workout logic is loaded
-    const { Workout } = await import('./workout.view.js');
-    await Workout.selectType(type);
+    // Ensure Workout and its helpers (RestTimer, PlateCalc) are fully loaded
+    const Workout = window._loadWorkout
+      ? await window._loadWorkout()
+      : (await import('./workout.view.js')).Workout;
+    await Workout.selectType(normalizedType);
     window.Nav.go('s-train', { force: true });
   }
 
@@ -721,6 +753,29 @@ export const Dashboard = (() => {
     const screen = document.getElementById('s-home');
     if (!screen) return;
 
+    // ── Structural Skeleton (First Frame before DB await) ──
+    const hasWorkoutsFlag = localStorage.getItem('ap-has-workouts');
+    const lastWorkoutType = localStorage.getItem('ap-last-workout-type');
+    const likelyHasWorkouts = hasWorkoutsFlag === '1' || (hasWorkoutsFlag === null && !!lastWorkoutType);
+
+    if (likelyHasWorkouts) {
+      const normLastType = (lastWorkoutType || '').toLowerCase().trim();
+      const nextType = { push: 'pull', pull: 'legs', legs: 'push' }[normLastType || 'legs'] || 'push';
+      if (!document.getElementById('dash-greeting-label')) {
+        screen.innerHTML = _buildTemplate(nextType);
+        const greet = document.getElementById('dash-greeting-label');
+        if (greet) greet.textContent = greeting();
+        const dateEl = document.getElementById('dash-date');
+        if (dateEl) {
+          dateEl.textContent = new Date().toLocaleDateString('en', {
+            weekday: 'long', month: 'long', day: 'numeric',
+          });
+        }
+      }
+    } else if (!screen.firstElementChild) {
+      screen.innerHTML = _buildEmptyState(true);
+    }
+
     // Fetch data in parallel — optimized native queries
     const [allWorkouts, orms, showMascotSetting] = await Promise.all([
       DB.Workouts.getAll(),
@@ -728,6 +783,14 @@ export const Dashboard = (() => {
       DB.Settings.get('show-mascot').catch(() => 'on'),
     ]);
     const showMascot = showMascotSetting !== 'off';
+
+    // Synchronize localStorage flags
+    try {
+      localStorage.setItem('ap-has-workouts', allWorkouts.length ? '1' : '0');
+      if (allWorkouts[0]?.type) {
+        localStorage.setItem('ap-last-workout-type', allWorkouts[0].type);
+      }
+    } catch { /* private mode */ }
 
     // Empty state — first-time user
     if (!allWorkouts.length) {
@@ -756,12 +819,24 @@ export const Dashboard = (() => {
 
     // Determine nextType based on last workout (DB already sorted)
     const lastWorkout = allWorkouts[0];
-    const lastType = lastWorkout?.type || 'legs';
+    const rawLastType = (lastWorkout?.type || '').toLowerCase().trim();
+    const lastType = rawLastType || 'legs';
     const nextType = { push: 'pull', pull: 'legs', legs: 'push' }[lastType] || 'push';
+    const nextLabel = nextType.charAt(0).toUpperCase() + nextType.slice(1);
 
     // Build full dashboard frame if needed
     if (!document.getElementById('dash-greeting-label')) {
       screen.innerHTML = _buildTemplate(nextType);
+    } else {
+      // Re-verify hero nextType in case DB differed from localStorage
+      const heroLabel = screen.querySelector('.dash-hero-label');
+      if (heroLabel && heroLabel.textContent !== `Today · ${nextLabel} Day`) {
+        heroLabel.textContent = `Today · ${nextLabel} Day`;
+      }
+      const ctaBtn = screen.querySelector('.dash-cta');
+      if (ctaBtn && ctaBtn.getAttribute('data-type') !== nextType) {
+        ctaBtn.setAttribute('data-type', nextType);
+      }
     }
 
     // Phase 1: Static / Fast data
@@ -782,15 +857,50 @@ export const Dashboard = (() => {
     const wv = document.getElementById('dash-vol-week');
     const mv = document.getElementById('dash-vol-month');
     const sc = document.getElementById('dash-sessions');
-    if (wv) { wv.classList.remove('sk'); wv.innerHTML = fmtVol(weekVol) + '<span class="stat-chip-unit">kg</span>'; }
-    if (mv) { mv.classList.remove('sk'); mv.innerHTML = fmtVol(monthVol) + '<span class="stat-chip-unit">kg</span>'; }
-    if (sc) { sc.classList.remove('sk'); sc.textContent = weekCount; }
+    if (wv) wv.classList.remove('sk');
+    if (mv) mv.classList.remove('sk');
+    if (sc) sc.classList.remove('sk');
+
+    if (!_hasAnimatedStats) {
+      if (wv) {
+        Spring.animate({
+          from: 0,
+          to: weekVol,
+          stiffness: 160,
+          damping: 24,
+          onUpdate: (v) => { wv.innerHTML = fmtVol(Math.round(v)) + '<span class="stat-chip-unit">kg</span>'; },
+        });
+      }
+      if (mv) {
+        Spring.animate({
+          from: 0,
+          to: monthVol,
+          stiffness: 160,
+          damping: 24,
+          onUpdate: (v) => { mv.innerHTML = fmtVol(Math.round(v)) + '<span class="stat-chip-unit">kg</span>'; },
+        });
+      }
+      if (sc) {
+        Spring.animate({
+          from: 0,
+          to: weekCount,
+          stiffness: 180,
+          damping: 22,
+          onUpdate: (v) => { sc.textContent = String(Math.round(v)); },
+        });
+      }
+    } else {
+      if (wv) wv.innerHTML = fmtVol(weekVol) + '<span class="stat-chip-unit">kg</span>';
+      if (mv) mv.innerHTML = fmtVol(monthVol) + '<span class="stat-chip-unit">kg</span>';
+      if (sc) sc.textContent = String(weekCount);
+    }
 
     // Phase 2: Deferred rendering to keep UI responsive
     requestAnimationFrame(() => {
       renderSparkline(allWorkouts);
       renderStreak(allWorkouts);
       renderPPL(ppl);
+      _hasAnimatedStats = true;
       
       requestAnimationFrame(() => {
         renderTopLifts(orms, allWorkouts);
@@ -879,6 +989,7 @@ async function loadWeeklySummary() {
   // Update chip
   const chipValue = document.getElementById('weekly-summary-value');
   if (chipValue) {
+    chipValue.classList.remove('sk');
     if (prs.length > 0) {
       chipValue.textContent = `${prs.length} PR${prs.length > 1 ? 's' : ''}`;
       chipValue.style.color = 'var(--c-gold)';

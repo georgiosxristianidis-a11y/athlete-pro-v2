@@ -224,6 +224,10 @@ export function renderSummaryModal(data, onSave, ru = false) {
         <div class="summ-stat-val">${data.totalReps ?? '—'}</div>
         <div class="summ-stat-lbl">${ru ? 'ПОВТОРЫ' : 'REPS'}</div>
       </div>
+      <div class="summ-stat">
+        <div class="summ-stat-val" style="color:${pplColor}">${Number.isFinite(data.rpe) ? data.rpe : '—'}</div>
+        <div class="summ-stat-lbl">RPE</div>
+      </div>
     </div>`;
 
   const blockList = data.blocks || [];

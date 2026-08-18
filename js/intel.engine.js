@@ -94,23 +94,67 @@ function ramp(x, x0, y0, x1, y1) {
 }
 
 /**
- * Нагрузка одной сессии. Точка расширения для INTEL-1: когда появится
- * session RPE, здесь встанет sRPE = длительность × RPE — но менять
- * единицу можно только для ВСЕЙ истории разом, не для новых записей.
- * @param {{ tonnage?: number, exercises?: Array<{ sets: Array<{weight:number,reps:number,done:boolean}> }> }} w
+ * Нагрузка одной сессии (sRPE, Foster Session-RPE method — INTEL-1).
+ * sRPE = длительность (минуты) × RPE сессии (1–10).
+ *
+ * Единая единица нагрузки на всю историю:
+ *   • Явный `w.rpe` (1–10) из Session RPE Picker.
+ *   • Fallback для исторических записей: среднее по `s.rpe` подходов, либо 7 (дефолт).
+ *   • Длительность: `w.duration` в минутах (минимум 1 мин).
+ *   • Запись с нулевым тоннажем и без закрытых подходов — 0 (не сессия).
+ *
+ * @param {{ duration?: number, rpe?: number, tonnage?: number, exercises?: Array<{ sets?: Array<{weight?:number,reps?:number,rpe?:number|null,done?:boolean}> }> }} w
  * @returns {number}
  */
 export function sessionLoad(w) {
-  if (Number.isFinite(w?.tonnage) && w.tonnage > 0) return w.tonnage;
-  // Записи до появления поля tonnage (и импорт из старых бэкапов) считаем руками.
-  let sum = 0;
-  for (const ex of w?.exercises || []) {
+  if (!w || typeof w !== 'object') return 0;
+
+  let hasDoneSets = false;
+  let doneSetCount = 0;
+  let setRpeSum = 0;
+  let setRpeCount = 0;
+  let fallbackTonnage = 0;
+
+  for (const ex of w.exercises || []) {
     for (const s of ex?.sets || []) {
       if (s?.done === false) continue;
-      sum += (Number(s?.weight) || 0) * (Number(s?.reps) || 0);
+      hasDoneSets = true;
+      doneSetCount++;
+      fallbackTonnage += (Number(s?.weight) || 0) * (Number(s?.reps) || 0);
+      if (Number.isFinite(s?.rpe) && s.rpe >= 1 && s.rpe <= 10) {
+        setRpeSum += s.rpe;
+        setRpeCount++;
+      }
     }
   }
-  return sum;
+
+  const tonnageVal = Number.isFinite(w.tonnage) ? w.tonnage : fallbackTonnage;
+  // Пустая тренировка без подходов и без тоннажа — нагрузка 0
+  if (!hasDoneSets && tonnageVal <= 0) return 0;
+
+  // 1. RPE сессии (с поддержкой числовых строк из JSON)
+  let rpe = 7;
+  const rawRpe = Number(w.rpe);
+  if (Number.isFinite(rawRpe) && rawRpe >= 1 && rawRpe <= 10) {
+    rpe = Math.round(rawRpe);
+  } else if (setRpeCount > 0) {
+    rpe = Math.max(1, Math.min(10, Math.round(setRpeSum / setRpeCount)));
+  }
+
+  // 2. Длительность в минутах (кламп 1..240 мин защищает от забытых суточных таймеров)
+  let mins = 0;
+  const rawDur = Number(w.duration);
+  if (Number.isFinite(rawDur) && rawDur > 0) {
+    mins = Math.max(1, Math.min(240, Math.round(rawDur / 60000)));
+  } else if (doneSetCount > 0) {
+    mins = Math.max(15, Math.min(240, doneSetCount * 3));
+  } else if (tonnageVal > 0) {
+    mins = Math.max(20, Math.min(90, Math.round(tonnageVal / 100)));
+  } else {
+    mins = 45;
+  }
+
+  return mins * rpe;
 }
 
 /**

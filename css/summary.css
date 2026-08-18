@@ -50,13 +50,13 @@
   opacity: 0.75;
 }
 
-/* ── Stats grid (3 micro-chips) ──────────────────────── */
+/* ── Stats grid (4 micro-chips) ──────────────────────── */
 .summ-stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-1);
   margin: 0 0 var(--sp-3);
-  padding: 14px 16px;
+  padding: 14px 12px;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-m);
@@ -122,55 +122,6 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
-}
-
-.summ-island-label-wrap {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-/* Coloured accent dot — replaces "Block 1" labelling */
-.summ-island-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--ppl-color, var(--c-accent));
-  flex-shrink: 0;
-  box-shadow: 0 0 6px var(--ppl-color, var(--c-accent));
-}
-
-.summ-island-label {
-  font-size: var(--fs-1);
-  font-weight: var(--fw-black);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--c-text-2);
-}
-
-/* Core / Align block — dimmer label (UI-only, noDb) */
-.summ-island-label--core {
-  color: var(--c-text-3);
-  letter-spacing: 0.2em;
-}
-
-.summ-island-chips {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Micro-sparkline chip (time / tonnage) */
-.summ-chip {
-  font-size: var(--fs-1);
-  font-weight: var(--fw-bold);
-  font-variant-numeric: tabular-nums;
-  color: var(--c-text-2);
-  padding: 2px 7px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-sm);
-  letter-spacing: 0.02em;
 }
 
 /* ── Exercise rows ───────────────────────────────────── */
@@ -486,3 +437,25 @@
   color: var(--c-accent);
   flex-shrink: 0;
 }
+
+/* ════════════════════════════════════════════════════════
+   SESSION RPE PICKER MODAL (INTEL-1)
+   ════════════════════════════════════════════════════════ */
+.rpe-sheet { padding: var(--sp-3); }
+.rpe-sheet-header { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: var(--sp-2); }
+.rpe-sheet-icon { color: var(--c-secondary); margin-bottom: var(--sp-1); }
+.rpe-sheet-title { font-family: var(--font-heading); font-size: var(--fs-4); font-weight: var(--fw-black); color: var(--c-text-1); letter-spacing: -0.01em; }
+.rpe-sheet-subtitle { font-size: var(--fs-2); font-weight: var(--fw-md); color: var(--c-text-3); margin-top: 2px; }
+.rpe-preview-wrap { margin-bottom: var(--sp-2); }
+.rpe-active-preview { display: flex; align-items: center; gap: var(--sp-1-5); padding: var(--sp-1-5) var(--sp-2); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-m); transition: border-color 0.2s ease; }
+.rpe-active-badge { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--rpe-accent, var(--c-accent)) 15%, transparent); color: var(--rpe-accent, var(--c-accent)); font-family: var(--font-heading); font-size: var(--fs-4); font-weight: var(--fw-black); flex-shrink: 0; }
+.rpe-active-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rpe-active-title { font-size: var(--fs-3); font-weight: var(--fw-bold); line-height: 1.2; }
+.rpe-active-sub { font-size: var(--fs-2); color: var(--c-text-2); line-height: 1.3; }
+.rpe-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-1); margin-bottom: var(--sp-3); }
+.rpe-btn-chip { display: flex; align-items: center; justify-content: center; height: 48px; border: 1px solid var(--c-border); border-radius: var(--r-sm); background: var(--c-surface); color: var(--c-text-2); cursor: pointer; touch-action: manipulation; transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease; user-select: none; -webkit-tap-highlight-color: transparent; }
+.rpe-btn-chip:active { transform: scale(0.94); }
+.rpe-btn-chip.active { background: color-mix(in srgb, var(--chip-color, var(--c-accent)) 20%, transparent); border-color: var(--chip-color, var(--c-accent)); color: var(--c-text-1); }
+.rpe-chip-num { font-family: var(--font-heading); font-size: var(--fs-3); font-weight: var(--fw-black); font-variant-numeric: tabular-nums; }
+.rpe-actions { display: flex; flex-direction: column; gap: var(--sp-1); }
+

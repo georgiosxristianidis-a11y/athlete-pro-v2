@@ -347,6 +347,12 @@ async function setEngine(engine) {
     try {
       const text = await file.text();
       await DB.Backup.import(text);
+      const workouts = await DB.Workouts.getAll().catch(() => []);
+      try {
+        localStorage.setItem('ap-has-workouts', workouts.length ? '1' : '0');
+        if (workouts[0]?.type) localStorage.setItem('ap-last-workout-type', workouts[0].type);
+        else localStorage.removeItem('ap-last-workout-type');
+      } catch { /* localStorage unavailable */ }
       Toast.show('Import success', 'success');
       // Import can rewrite everything — settings, workouts, language. This is
       // the one case where a full rebuild is the honest answer; it's rare and
@@ -364,6 +370,10 @@ async function setEngine(engine) {
       _deleteTapTimer = null;
       btn.classList.add('slide-out');
       setTimeout(async () => {
+        try {
+          localStorage.removeItem('ap-has-workouts');
+          localStorage.removeItem('ap-last-workout-type');
+        } catch { /* localStorage unavailable */ }
         await DB.clearAll();
         window.location.reload();
       }, 400);

@@ -22,7 +22,7 @@ export const Spring = (() => {
     let frameId = null;
 
     function loop(now) {
-      const dt = (now - lastTime) / 1000;
+      const dt = Math.min((now - lastTime) / 1000, 0.064);
       lastTime = now;
 
       // Spring force: F = -k * x

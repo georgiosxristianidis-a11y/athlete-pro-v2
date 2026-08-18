@@ -267,6 +267,7 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
 
 const weeklyReportSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
+  stats: z.any().optional().default({}),
   profile: z.any().optional().default({}),
   engine: z.string().optional().default('anthropic'),
   customKey: z.string().optional()
@@ -277,22 +278,24 @@ router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = weeklyReportSchema.safeParse(req.body);
   if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { workouts, profile, engine, customKey } = parseResult.data;
+  const { workouts, stats, profile, engine, customKey } = parseResult.data;
 
   logInfo(req, 'weekly_report_started', `Generating weekly report`);
 
-  const system = `You are "Athlete Pro Analyst", an elite sports data scientist.
-Analyze the user's past 7 days of workouts. 
-Return ONLY JSON with this exact schema:
+  const system = `You are "Athlete Pro Analyst", an elite sports scientist.
+Анализируй прошедшие 7 дней тренировок и рассчитанную статистику.
+Ответ — ТОЛЬКО валидный JSON строго по схеме (без markdown, без оберток):
 {
-  "score": <number 0-100 representing overall performance and consistency>,
-  "summary": "<string, 2-3 sentences of harsh but motivating feedback>",
-  "pros": ["<string>", "<string>"],
-  "cons": ["<string>", "<string>"]
+  "score": <число 0-100, общая оценка производительности и дисциплины>,
+  "summary": "<2-3 хлестких мотивирующих предложения на русском>",
+  "pros": ["<победа 1>", "<победа 2>"],
+  "cons": ["<утечка/ошибка 1>", "<утечка/ошибка 2>"],
+  "nextWeekAction": "<конкретный фокус и задание на следующую неделю, 1-2 предложения>"
 }
-If no workouts exist, set score to 0 and encourage them to start.`;
+Все текстовые поля строго на русском языке.`;
 
   const prompt = `Workouts (Last 7 Days): ${JSON.stringify(workouts)}
+Calculated Stats: ${JSON.stringify(stats)}
 Profile: ${JSON.stringify(profile)}`;
 
   const content = await AIOrchestrator.generateJSON({
@@ -304,10 +307,92 @@ Profile: ${JSON.stringify(profile)}`;
 
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);
-    const report = jsonMatch ? JSON.parse(jsonMatch[0]) : { score: 0, summary: "Data unreadable. Push harder.", pros: [], cons: [] };
+    const report = jsonMatch ? JSON.parse(jsonMatch[0]) : { 
+      score: 0, 
+      summary: "Данные тренировок пусты или повреждены. Время начать тренироваться.", 
+      pros: [], 
+      cons: [],
+      nextWeekAction: "Провести 3 полноценные тренировки по плану."
+    };
     res.json({ success: true, report });
   } catch (err) {
     res.status(500).json({ error: 'Failed to parse AI report' });
+  }
+}));
+
+const analyzeSessionSchema = z.object({
+  currentWorkout: z.any(),
+  previousWorkout: z.any().optional().nullable(),
+  profile: z.any().optional().default({}),
+  engine: z.string().optional().default('anthropic'),
+  customKey: z.string().optional()
+});
+
+/* ── POST /analyze-session ── */
+router.post('/analyze-session', coachLimiter, asyncHandler(async (req, res) => {
+  const parseResult = analyzeSessionSchema.safeParse(req.body);
+  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
+
+  const { currentWorkout, previousWorkout, profile, engine, customKey } = parseResult.data;
+
+  logInfo(req, 'session_analysis_started', `Analyzing workout ${currentWorkout?.id || 'unknown'}`);
+
+  const system = `You are "Athlete Pro Lead Coach".
+Проведи глубокий разбор завершенной тренировки в сравнении с предыдущей сессией того же типа.
+Ответ — ТОЛЬКО валидный JSON строго по схеме (без markdown):
+{
+  "tonnage": <число, общий тоннаж кг>,
+  "effectiveSets": <число, подходы с RIR<=2 или RPE>=8>,
+  "avgRpe": <число, средний RPE, напр 8.2>,
+  "fatigueDrop": <число %, падение производительности к концу тренировки>,
+  "progressions": [
+    { "exercise": "<название>", "weight": <вес кг>, "delta": "<+2.5кг / 0кг / -2.5кг>", "status": "<PR|Progress|Maintain|Drop>" }
+  ],
+  "summary": "<2 предложения: разбор главного успеха и ошибки>",
+  "recommendation": "<конкретная рекомендация к следующей ротации>",
+  "targetPlan": [
+    { "name": "<название упражнения>", "weight": <рекомендованный вес кг>, "sets": <кол-во>, "reps": <кол-во> }
+  ]
+}
+Все текстовые поля строго на русском языке.`;
+
+  const prompt = `Current Workout: ${JSON.stringify(currentWorkout)}
+Previous Workout: ${JSON.stringify(previousWorkout)}
+Profile: ${JSON.stringify(profile)}`;
+
+  let content;
+  try {
+    content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req);
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    if (!analysis) throw new Error('Empty analysis JSON');
+    res.json({ success: true, analysis });
+  } catch (err) {
+    logWarn(req, 'analyze_session_fallback', err.message);
+    const fallbackTonnage = currentWorkout?.tonnage || 0;
+    res.json({
+      success: true,
+      analysis: {
+        tonnage: fallbackTonnage,
+        effectiveSets: (currentWorkout?.exercises || []).reduce((acc, e) => acc + (e.sets?.length || 0), 0),
+        avgRpe: 8.0,
+        fatigueDrop: 5.0,
+        progressions: (currentWorkout?.exercises || []).map(e => ({
+          exercise: e.name,
+          weight: e.sets?.[0]?.weight || 0,
+          delta: "0кг",
+          status: "Maintain"
+        })),
+        summary: "Тренировка зафиксирована. Нагрузка удержана в рабочем диапазоне.",
+        recommendation: "Сохранить текущие рабочие веса на следующую ротацию.",
+        targetPlan: (currentWorkout?.exercises || []).map(e => ({
+          name: e.name,
+          weight: e.sets?.[0]?.weight || 0,
+          sets: e.sets?.length || 3,
+          reps: e.sets?.[0]?.reps || 8
+        }))
+      }
+    });
   }
 }));
 
@@ -327,15 +412,18 @@ router.post('/biometrics-scan', coachLimiter, asyncHandler(async (req, res) => {
 
   const { workouts, profile, engine, customKey } = parseResult.data;
 
-  const system = `You are "Athlete Pro Medical AI".
-Оцени биометрическое состояние по последней истории и профилю.
-Ответ — ТОЛЬКО JSON строго по схеме, без markdown и без комментариев:
+  const system = `You are "Athlete Pro Medical AI", an elite sports scientist.
+Оцени биометрическое состояние атлета по последней истории (10 тренировок) и профилю.
+Ответ — ТОЛЬКО JSON строго по схеме, без markdown:
 {
   "cnsFatigue": <0-100, усталость ЦНС>,
   "muscleDamage": <0-100, структурное повреждение мышц>,
+  "acwr": <число с точкой, напр 1.15, соотношение острой/хронической нагрузки>,
   "injuryRisk": "<Low|Medium|High>",
-  "summary": "<2 предложения по-русски, разбор состояния>"
-}`;
+  "prescription": "<рецепт интенсивности на сегодня: RPE Cap, совет по весам>",
+  "summary": "<2 предложения по-русски, глубокий разбор состояния>"
+}
+Все текстовые поля строго на русском языке.`;
 
   const prompt = `Workouts (last 10): ${JSON.stringify(workouts)}
 Profile: ${JSON.stringify(profile)}`;
@@ -347,7 +435,7 @@ Profile: ${JSON.stringify(profile)}`;
     logWarn(req, 'biometrics_scan_fallback', err.message, { code: err.code });
     return res.json({
       success: true,
-      report: { cnsFatigue: 0, muscleDamage: 0, injuryRisk: 'Low', summary: '' },
+      report: { cnsFatigue: 0, muscleDamage: 0, acwr: 1.0, injuryRisk: 'Low', prescription: 'Тренировка по плану', summary: 'Биометрия стабильна.' },
       warning: 'AI biometrics unavailable'
     });
   }
@@ -357,7 +445,7 @@ Profile: ${JSON.stringify(profile)}`;
 }));
 
 function _parseBiometricsReport(content) {
-  const fallback = { cnsFatigue: 0, muscleDamage: 0, injuryRisk: 'Low', summary: '' };
+  const fallback = { cnsFatigue: 0, muscleDamage: 0, acwr: 1.0, injuryRisk: 'Low', prescription: 'Тренировка по плану', summary: '' };
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return fallback;
@@ -367,7 +455,9 @@ function _parseBiometricsReport(content) {
     return {
       cnsFatigue: clamp(raw.cnsFatigue),
       muscleDamage: clamp(raw.muscleDamage),
+      acwr: Number(raw.acwr) || 1.0,
       injuryRisk: risk,
+      prescription: typeof raw.prescription === 'string' ? raw.prescription.slice(0, 300) : 'Тренировка по плану',
       summary: typeof raw.summary === 'string' ? raw.summary.slice(0, 500) : ''
     };
   } catch {

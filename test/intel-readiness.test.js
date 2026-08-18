@@ -24,9 +24,11 @@ const DAY = 86_400_000;
 const HOUR = 3_600_000;
 const NOW = Date.UTC(2026, 7, 13, 12, 0, 0);
 
-/** Тренировка с готовым тоннажем — обычный путь (поле пишет workout.store). */
-function w(daysAgo, tonnage, extra = {}) {
-  return { id: daysAgo, type: 'push', timestamp: NOW - daysAgo * DAY, duration: 3600000, tonnage, exercises: [], ...extra };
+/** Тренировка с готовой нагрузкой / sRPE (поле пишет workout.store). */
+function w(daysAgo, load, extra = {}) {
+  const rpe = 10;
+  const mins = Math.max(1, Math.min(240, Math.round(load / 10)));
+  return { id: daysAgo, type: 'push', timestamp: NOW - daysAgo * DAY, duration: mins * 60000, rpe, tonnage: load, exercises: [], ...extra };
 }
 
 /** Тренировка с подходами — путь ЦНС (нужны вес и повторы). */
@@ -36,28 +38,56 @@ function wSets(daysAgo, sets, name = 'Bench Press') {
     type: 'push',
     timestamp: NOW - daysAgo * DAY,
     duration: 3600000,
+    rpe: 1,
     tonnage: sets.reduce((s, x) => s + x.weight * x.reps, 0),
     exercises: [{ name, sets: sets.map(s => ({ done: true, ...s })) }],
   };
 }
 
-describe('sessionLoad', () => {
-  test('берёт готовый tonnage', () => {
-    assert.equal(sessionLoad(w(0, 5000)), 5000);
+describe('sessionLoad (INTEL-1 sRPE)', () => {
+  test('считает sRPE = длительность (мин) × RPE сессии', () => {
+    const rec = { duration: 60 * 60000, rpe: 8, tonnage: 5000 };
+    assert.equal(sessionLoad(rec), 480);
   });
 
-  test('считает по подходам, когда tonnage отсутствует (старый бэкап)', () => {
-    const rec = { exercises: [{ name: 'Squat', sets: [{ weight: 100, reps: 5, done: true }, { weight: 100, reps: 5, done: true }] }] };
-    assert.equal(sessionLoad(rec), 1000);
+  test('дефолтный RPE = 7 при отсутствии явного RPE', () => {
+    const rec = { duration: 60 * 60000, tonnage: 5000 };
+    assert.equal(sessionLoad(rec), 420);
   });
 
-  test('незакрытые подходы в нагрузку не идут', () => {
-    const rec = { exercises: [{ name: 'Squat', sets: [{ weight: 100, reps: 5, done: true }, { weight: 100, reps: 5, done: false }] }] };
-    assert.equal(sessionLoad(rec), 500);
+  test('усредняет per-set RPE, когда session.rpe не задан', () => {
+    const rec = {
+      duration: 60 * 60000,
+      exercises: [{
+        name: 'Squat',
+        sets: [
+          { weight: 100, reps: 5, rpe: 8, done: true },
+          { weight: 100, reps: 5, rpe: 10, done: true },
+        ],
+      }],
+    };
+    // средний RPE = (8 + 10) / 2 = 9; 60 * 9 = 540
+    assert.equal(sessionLoad(rec), 540);
   });
 
-  test('пустая запись даёт 0, а не NaN', () => {
+  test('незакрытые подходы в расчёт RPE и нагрузки не идут', () => {
+    const rec = {
+      duration: 60 * 60000,
+      exercises: [{
+        name: 'Squat',
+        sets: [
+          { weight: 100, reps: 5, rpe: 6, done: true },
+          { weight: 100, reps: 5, rpe: 10, done: false },
+        ],
+      }],
+    };
+    // Только первый сет done -> RPE = 6; 60 * 6 = 360
+    assert.equal(sessionLoad(rec), 360);
+  });
+
+  test('пустая запись (0 тоннажа, 0 сетов) даёт 0, а не NaN', () => {
     assert.equal(sessionLoad({}), 0);
+    assert.equal(sessionLoad({ duration: 116 * 60000, tonnage: 0, exercises: [] }), 0);
   });
 });
 
