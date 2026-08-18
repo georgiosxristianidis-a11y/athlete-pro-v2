@@ -615,6 +615,74 @@ export const IntelView = (() => {
     });
   }
 
+  function _simulateVoiceVisualizer() {
+    document.querySelectorAll('.intel-voice-wave, .talk-wave, .talk').forEach(el => el.classList.add('live'));
+    const label = document.getElementById('intel-voice-hud-label');
+    if (label) label.textContent = 'SPEAKING...';
+
+    const bars = document.querySelectorAll('.intel-wave-bar, .talk-wave i');
+    let angle = 0;
+
+    function anim() {
+      if (!_isSpeaking) return;
+      angle += 0.15;
+      bars.forEach((bar, i) => {
+        const val = Math.sin(angle + i * 0.8) * 0.45 + 0.55;
+        // @ts-ignore
+        bar.style.transform = `scaleY(${Math.max(0.2, val)})`;
+        // @ts-ignore
+        bar.style.opacity = `${0.4 + val * 0.6}`;
+      });
+      _animFrameId = requestAnimationFrame(anim);
+    }
+    _animFrameId = requestAnimationFrame(anim);
+  }
+
+  function _speakNativeSpeech(text, { speed = 1.0, tone = 'analytical' } = {}) {
+    if (!('speechSynthesis' in window)) {
+      _isSpeaking = false;
+      _stopVoiceVisualizer();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    // Strip markdown formatting from spoken text
+    const cleanText = text.replace(/[*_#`~[\]()]/g, '').trim();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'ru-RU';
+    
+    const voices = window.speechSynthesis.getVoices();
+    const ruVoice = voices.find(v => v.lang.startsWith('ru') || v.lang.includes('RU')) || null;
+    if (ruVoice) utterance.voice = ruVoice;
+
+    if (tone === 'tough') {
+      utterance.pitch = 0.85;
+      utterance.rate = Math.max(0.5, Math.min(2.0, speed * 1.05));
+    } else if (tone === 'friendly') {
+      utterance.pitch = 1.1;
+      utterance.rate = Math.max(0.5, Math.min(2.0, speed * 0.95));
+    } else {
+      utterance.pitch = 0.95;
+      utterance.rate = Math.max(0.5, Math.min(2.0, speed));
+    }
+
+    utterance.onstart = () => {
+      _simulateVoiceVisualizer();
+    };
+
+    utterance.onend = () => {
+      _isSpeaking = false;
+      _stopVoiceVisualizer();
+    };
+
+    utterance.onerror = () => {
+      _isSpeaking = false;
+      _stopVoiceVisualizer();
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
   async function speakText(textToSpeak) {
     if (!textToSpeak || _isSpeaking) return;
     _lastSpokenText = textToSpeak;
@@ -623,13 +691,15 @@ export const IntelView = (() => {
     const label = document.getElementById('intel-voice-hud-label');
     if (label) label.textContent = 'SPEAKING...';
 
+    let speed = 1.0;
+    let tone = 'tough';
+
     try {
       const { DB } = await import('./db.js');
       const voice = await _getVoice();
       const toneVal = await _getTone();
-      const speed = parseFloat(await _getSpeed()) || 1.0;
+      speed = parseFloat(await _getSpeed()) || 1.0;
 
-      let tone = 'tough';
       if (toneVal < 35) tone = 'friendly';
       else if (toneVal <= 70) tone = 'analytical';
       else tone = 'tough';
@@ -646,7 +716,7 @@ export const IntelView = (() => {
         })
       });
 
-      if (!response.ok) throw new Error('Voice sync failed');
+      if (!response.ok) throw new Error('Cloud TTS unavailable, switching to local voice');
 
       const result = await response.json();
       const pcmData = result.audioBase64;
@@ -673,9 +743,8 @@ export const IntelView = (() => {
       _startVoiceVisualizer(audio);
       await audio.play();
     } catch (err) { 
-      IntelStore.addLog('ERROR', 'Voice synthesis failed'); 
-      _isSpeaking = false; 
-      _stopVoiceVisualizer();
+      IntelStore.addLog('INFO', 'Local speech synthesis active'); 
+      _speakNativeSpeech(textToSpeak, { speed, tone });
     }
   }
 
