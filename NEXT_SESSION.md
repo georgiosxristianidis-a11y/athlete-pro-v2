@@ -1,7 +1,7 @@
 # NEXT SESSION — Athlete Pro
 
 > Читать первым. **Роутер, а не состояние:** здесь указатель на карточку, контекст — в самом хендоффе.
-> Обновлено 2026-08-14 (горячий путь доков урезан и загейчен, `npm run docs:budget`).
+> Обновлено 2026-08-19 (TOK-8: гейт доков откалиброван по /context).
 
 ## Правило файла
 
@@ -21,52 +21,41 @@ npm run docs:budget    # цена системных доков в токена�
 
 ## Барьеры репозитория
 
-- **Branch-protection на `main` нет** (приватный репо на free-плане). Держит `.githooks/pre-push`:
-  блокирует пуш с целью `refs/heads/main`, обход `MAIN_PUSH_OK=1`. Пуш из одних удалений
-  (`git push origin --delete`) выходит нулём до всех гардов — кода в нём нет.
-- **Решение 2026-08-06, переоткрывать не нужно:** GitHub Pro не берём, публичным репо не делаем.
-  Вместо запрета — видимость: `.github/workflows/main-watchdog.yml` заводит issue на коммит
-  в `main` без зелёного CI или без связанного PR.
-- **Зелёная галочка ≠ чеки прошли:** `combined status` бывает `success` от одного Vercel при нуле
-  check-runs. Считать: `gh api repos/:owner/:repo/commits/<sha>/check-runs`.
-- `delete_branch_on_merge` включён 2026-08-14 — мёржить `gh pr merge --rebase --delete-branch`.
+- **Branch-protection на `main` нет** (приватный репо, free-план). Держит `.githooks/pre-push`: блокирует пуш с целью `refs/heads/main`, обход `MAIN_PUSH_OK=1`. Пуш из одних удалений (`git push origin --delete`) выходит нулём до всех гардов — кода в нём нет.
+- **Решение 2026-08-06, переоткрывать не нужно:** GitHub Pro не берём, публичным не делаем. Видимость — `main-watchdog.yml` заводит issue на коммит в `main` без зелёного CI/PR.
+- **Зелёная галочка ≠ чеки прошли:** `combined status` бывает `success` от одного Vercel при нуле check-runs. Считать: `gh api repos/:owner/:repo/commits/<sha>/check-runs`.
+- `delete_branch_on_merge` включён — мёржить `gh pr merge --rebase --delete-branch`.
 
-## Куда идти за работой
+## Куда идти за работой (в `docs/handoff/`)
 
-| Хендофф | Следующая карточка |
-|---|---|
-| `docs/handoff/HANDOFF_boot_brand.md` → **SPLASH-1** | Активная фаза: запуск и знак. Дальше MOTION-1, порядок утверждён Gio. Не параллелить — три карточки из четырёх трогают `index.html` |
-| `docs/handoff/HANDOFF_panda_core.md` | HUD-1..4 закрыты, активных карточек нет — программа готова к полевому чеку Gio (радар и тон коуча на iPhone). |
-| `docs/handoff/HANDOFF_intel_readiness.md` → **INTEL-1** | Session RPE. Порядок INTEL-1 → INTEL-3 → INTEL-4 не переставлять. Вход в следующую калибровку весов — в хендоффе |
-| `docs/handoff/HANDOFF_gemini_audit_triage.md` → **PERF-1** | Разведка: сколько дадут бандл и 725 мс Style & Layout. Следом LEAK-1, SCAF-1, NOISE-1, PII-1. 🔴 За Gio: снести сервис на Render и отозвать `ANTHROPIC_API_KEY` |
-| `docs/handoff/HANDOFF_light_theme.md` → **THEME-6** | 🟡 P2. Единственная контраст-проба слепа к теме по построению — нужна считающая фактический контраст в обеих темах |
-| `docs/handoff/HANDOFF_design_system.md` → **SPACE-1 хвост → SCALE-1** | Хвост инлайнов в `js/`, затем гард шкал `--fs-*`/`--fw-*` в CI. Дальше NAV-BACK-1 + DEAD-1 |
-| `docs/handoff/HANDOFF_field_check.md` | **За Gio, один заход.** Код на проде ждёт подписи по DoD-5. Флаги `fab-video` и `drum-window` включить заранее |
-| `docs/handoff/HANDOFF_next_cards.md` → **DRUM-TOUCH-1** | **За Gio, один тап.** Барабан на iPhone: фикс на проде с 1.27.13, WebKit-половину закроет только телефон |
-| `docs/handoff/HANDOFF_next_cards.md` | Стек карточек, открытый бэклог, DATA-SAFETY, решения за Gio |
-| `docs/handoff/HANDOFF_gym_grade.md` | Программа GYM-GRADE, DoD из 5 пунктов |
-| `docs/handoff/HANDOFF_isl_tail.md` | Островные хвосты, задачи Sonnet |
-| `docs/handoff/HANDOFF_orchestration.md` | Роли LEAD/worker/verifier, DoD-лестница, правило прополки веток |
-| `docs/handoff/HANDOFF_air_refactor.md` | AIR-хвост |
-| `docs/handoff/HANDOFF_token_economy.md` → **TOK-1** | Расход агентов: замер `npm run tokens`. Дальше TOK-6, TOK-2, TOK-4 |
+- `HANDOFF_boot_brand.md` → **SPLASH-1**, дальше MOTION-1; не параллелить, трогает `index.html`
+- `HANDOFF_panda_core.md` — активных карточек нет, готова к полевому чеку Gio
+- `HANDOFF_intel_readiness.md` → **INTEL-1**; порядок 1→3→4 фиксирован
+- `HANDOFF_gemini_audit_triage.md` → **PERF-1**, следом LEAK-1/SCAF-1/NOISE-1/PII-1; за Gio — снести Render, отозвать `ANTHROPIC_API_KEY`
+- `HANDOFF_light_theme.md` → **THEME-6** (P2)
+- `HANDOFF_design_system.md` → **SPACE-1 хвост → SCALE-1**, дальше NAV-BACK-1 + DEAD-1
+- `HANDOFF_field_check.md` — за Gio, один заход (DoD-5), флаги `fab-video`/`drum-window` заранее
+- `HANDOFF_next_cards.md` → **DRUM-TOUCH-1** — за Gio, один тап
+- `HANDOFF_next_cards.md` — стек карточек, бэклог, DATA-SAFETY, решения за Gio
+- `HANDOFF_gym_grade.md` — DoD из 5 пунктов
+- `HANDOFF_isl_tail.md` — островные хвосты
+- `HANDOFF_orchestration.md` — роли LEAD/worker/verifier, DoD-лестница
+- `HANDOFF_air_refactor.md` — хвост
+- `HANDOFF_token_economy.md` → **TOK-1** (TOK-8 закрыта), дальше TOK-6, TOK-2, TOK-4; TOK-9 отдельно
 
-Вне хендоффов, заведено 2026-08-14 по программе DOCS:
-
-- **DOCS-3** — перевод горячего пути на английский. Условие: `docs/RULES.md` пересобрать человеческим договором (словарь, шаблон задачи, «Грабли»), а не зеркалом правил.
-- **WEED-2** — прополка веток и ворктри по порогу 30 дней; счёт добывать `npm run inventory`. Смежна с TOK-7.
-- **FLOW-4** — TTL памяти, старт ≤7500 ток. FLOW-1/2/3 закрыты, гард — `docs/RULES.md`. Смежна с TOK-5.
+Вне хендоффов, заведено 2026-08-14: **DOCS-3** (перевод горячего пути на английский, ждёт пересборки `docs/RULES.md`), **WEED-2** (прополка веток/ворктри, порог 30 дн, смежна с TOK-7), **FLOW-4** (TTL памяти ≤7500 ток, смежна с TOK-5).
 
 ## Порядок взятия
 
 - **Дизайн:** NAV-BACK-1 + DEAD-1 не параллелить со SPACE-1/SCALE-1 — общий `css/base.css`.
-- **Аналитика:** **AN-2** (разрез по упражнению) → AN-3 (время в зале, `periodRange()` уже есть) → OVW-1. После стека — роадмап CRDT foundation.
+- **Аналитика:** **AN-2** → AN-3 → OVW-1. После стека — роадмап CRDT foundation.
 - **Вне очереди:** NAV-1 (потеря тапа в быстрой серии), NAV-2 (`s-intel` мимо конвенции выхода).
 
 ## Технические заметки
 
-- **Запуск:** `npm run dev` → :3000 (порт 3000 = Gio, 3001 = Claude preview). Телеметрия — `scripts/telemetry-server.mjs --lan`; `server.js` отладочными стабами не подменять.
-- **Тесты:** `npm test` = unit+integration; `npx playwright test` — e2e отдельно и **на тёплом сервере** (холодный или зомби на :3000 → флаки goto-таймаутов).
-- **SW:** `ASSETS` и `CACHE_NAME` только через `npm run build:sw`, ручной `vNNN` не нужен. Хеш платформо-независим: повторный прогон на любой ОС обязан давать пустой дифф. Забыть пересборку молча нельзя — краснеет `test/sw-cache-name.test.js`.
+- **Запуск:** `npm run dev` → :3000 (3000 = Gio, 3001 = Claude preview). Телеметрия — `scripts/telemetry-server.mjs --lan`.
+- **Тесты:** `npm test` = unit+integration; `npx playwright test` — отдельно, на тёплом сервере.
+- **SW:** `ASSETS`/`CACHE_NAME` только через `npm run build:sw` — краснеет `test/sw-cache-name.test.js`, если забыть.
 - **lhci гонять ТОЛЬКО из worktree** — корневой чекаут даёт фейковые цифры.
-- **Прод:** Vercel-проект `gio-g7/athlete-pro-v7` (алиас athlete-pro-v7.vercel.app), git-репо athlete-pro-v2, деплой с `main`.
-- **Git в worktree:** после убитой по таймауту команды git может висеть (pager держит tty) — `GIT_PAGER=cat` и `</dev/null`.
+- **Прод:** Vercel `gio-g7/athlete-pro-v7`, git-репо athlete-pro-v2, деплой с `main`.
+- **Git в worktree:** висящая команда держит pager — `GIT_PAGER=cat` и `</dev/null`.
