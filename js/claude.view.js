@@ -1,7 +1,7 @@
 // @ts-check
 import { COMPUTE_REST_HOURS, Heatmap, MUSCLE_MAP } from './claude.store.js';
 import { DB } from './db.js';
-import { esc, haptic } from './shared/utils.js';
+import { esc, haptic, listenerGroup } from './shared/utils.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { State as WorkoutState } from './workout.store.js';
 import { Toast } from './shell.js';
@@ -40,6 +40,13 @@ export const Claude = (() => {
   /* ══════════════════════════════════════════════
      FLOATING ACTION BUTTON (FAB)
      ══════════════════════════════════════════════ */
+
+  /**
+   * Слушатели FAB на `window` (LEAK-1): живут ровно столько, сколько живёт
+   * контейнер, и снимаются вместе с ним.
+   * @type {ReturnType<typeof listenerGroup>|null}
+   */
+  let _fabOn = null;
 
   /**
    * Render the persistent AI Panda assistant button.
@@ -105,7 +112,16 @@ export const Claude = (() => {
 
     _initDraggable(container);
     _snapFAB(container);
-    window.addEventListener('resize', () => _snapFAB(container));
+
+    // Гард в шапке функции пропускает только тот случай, когда контейнер уже
+    // на месте; после dismissFAB() он удалён, и renderFAB() зовётся заново из
+    // четырёх мест profile.js. Слушатели ниже сидят на window и замыкают
+    // container — без снятия каждый цикл «скрыл / показал панду» оставлял
+    // +3 слушателя и один отсоединённый узел (LEAK-1).
+    _fabOn?.release();
+    _fabOn = listenerGroup();
+
+    _fabOn.add('resize', () => _snapFAB(container));
 
     // Скрыт на s-intel и на s-home, пока там живёт большой маскот-видео
     // (иначе две панды на экране); дашборд шлёт 'ap-mascot-video' при
@@ -129,12 +145,12 @@ export const Claude = (() => {
         || (screenId === 's-home' && mascotAlive);
       container.style.display = hide ? 'none' : '';
     };
-    window.addEventListener('ap-nav-change', (e) => {
+    _fabOn.add('ap-nav-change', (e) => {
       // @ts-ignore
       if (e.detail && e.detail.id) screenId = e.detail.id;
       applyVis();
     });
-    window.addEventListener('ap-mascot-video', applyVis);
+    _fabOn.add('ap-mascot-video', applyVis);
     applyVis();
   }
 
@@ -200,6 +216,11 @@ export const Claude = (() => {
 
   async function dismissFAB() {
     haptic(15);
+    // Контейнер уезжает — слушатели на window, которые его замыкают, уезжают
+    // вместе с ним. Иначе они доживают до следующего renderFAB(), держа
+    // отсоединённый узел (LEAK-1).
+    _fabOn?.release();
+    _fabOn = null;
     const el = document.getElementById('claude-fab-container');
     if (el) {
       el.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
