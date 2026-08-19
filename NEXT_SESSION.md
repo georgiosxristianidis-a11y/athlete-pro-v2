@@ -31,7 +31,7 @@ npm run docs:budget    # цена системных доков в токена�
 - `HANDOFF_boot_brand.md` → **SPLASH-1**, дальше MOTION-1; не параллелить, трогает `index.html`
 - `HANDOFF_panda_core.md` — активных карточек нет, готова к полевому чеку Gio
 - `HANDOFF_intel_readiness.md` → **INTEL-1**; порядок 1→3→4 фиксирован
-- `HANDOFF_gemini_audit_triage.md` → **PERF-1**, следом SCAF-1/NOISE-1/PII-1; за Gio — снести Render, отозвать `ANTHROPIC_API_KEY`
+- `HANDOFF_gemini_audit_triage.md` → **PERF-2** (вечная анимация, 3 строки), следом PERF-3/SCAF-1/NOISE-1/PII-1; PERF-1 закрыта разведкой — бандл не берём; за Gio — снести Render, отозвать `ANTHROPIC_API_KEY`
 - `HANDOFF_light_theme.md` → **THEME-6** (P2)
 - `HANDOFF_design_system.md` → **SPACE-1 хвост → SCALE-1**, дальше NAV-BACK-1 + DEAD-1
 - `HANDOFF_field_check.md` — за Gio, один заход (DoD-5), флаги `fab-video`/`drum-window` заранее
