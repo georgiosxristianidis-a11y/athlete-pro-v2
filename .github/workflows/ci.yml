@@ -10,8 +10,10 @@ name: CI
 
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   # Дрейф базы. Дублирует pre-push намеренно: локальный хук берётся из
@@ -91,8 +93,20 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-1.60.0
+
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: E2E tests
         run: npx playwright test --retries=2
