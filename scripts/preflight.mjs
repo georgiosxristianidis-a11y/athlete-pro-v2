@@ -14,6 +14,8 @@
 //   6. защита main снята/ослаблена  -> прямой push и красные мёржи снова возможны.
 //      Если план репо её вообще не даёт (приватный на free: 403 Upgrade to Pro),
 //      проверяем то, что реально держит main на этом плане, — .githooks/pre-push.
+//      Три состояния, а не два: снятый потолок enforce_admins — это WARN, а не FAIL,
+//      он оставлен как выход из аварии раннеров. Разбор — scripts/main-protection.mjs.
 //   7. Production-деплой не с main  -> прод живёт своей жизнью (кейс: смоук чист,
 //      а раскатка шла бы с чужой ветки)
 // Ненулевой exit = есть FAIL. WARN не блокирует.
@@ -23,6 +25,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { judgeProtection } from './main-protection.mjs';
 import { scanBase } from './rejected-lines.mjs';
 import { BUDGETS, findMemoryIndex, measureFile, measureHotPath, violations } from './check-docs-budget.mjs';
 
@@ -292,26 +295,11 @@ if (!repoSlug || !fetched) {
       add('FAIL', 'защита main', `server-side защиты нет (план репо), и локальный барьер тоже: ${hook.why}`,
         'npm install в этом чекауте (postinstall ставит core.hooksPath) либо освежить корневой чекаут');
     }
-  } else if (!protRaw) {
-    add('FAIL', 'защита main', 'branch protection ОТКЛЮЧЕНА (или нет прав её видеть)',
-      'Settings → Branches → main: required checks test+e2e + Include administrators');
   } else {
-    try {
-      const prot = JSON.parse(protRaw);
-      const checks = prot.required_status_checks?.contexts ?? [];
-      const missing = ['test', 'e2e'].filter((c) => !checks.includes(c));
-      if (missing.length || !prot.enforce_admins?.enabled) {
-        const what = [
-          ...(missing.length ? [`нет обязательных чеков: ${missing.join(', ')}`] : []),
-          ...(prot.enforce_admins?.enabled ? [] : ['enforce_admins выключен']),
-        ].join('; ');
-        add('FAIL', 'защита main', what, 'Settings → Branches → main — вернуть как было');
-      } else {
-        add('OK', 'защита main', `чеки [${checks.join(', ')}] + enforce_admins`);
-      }
-    } catch {
-      add('WARN', 'защита main', 'ответ GitHub не распарсился — проверить руками');
-    }
+    // Вердикт вынесен в модуль: без сети его не проверить процессом, а правило,
+    // которое нечем прогнать, умирает молча — как умирали хуки (BASE-1).
+    const verdict = judgeProtection(protRaw);
+    add(verdict.level, 'защита main', verdict.msg, verdict.hint);
   }
 
   // 7. Последний Production-деплой Vercel обязан быть коммитом из main.
