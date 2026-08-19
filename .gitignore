@@ -9,6 +9,9 @@
 *.pem
 *.key
 certs/
+data/
+*.sync.json
+sync.json
 
 # ===== Claude Code =====
 # settings.local.json = личные ключи/MCP → НЕ коммитить
