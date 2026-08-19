@@ -1489,22 +1489,34 @@ button:focus-visible {
 .stagger-item:nth-child(6) { animation-delay: 0.3s; }
 
 /* ── AI Status Indicators ── */
-@keyframes ai-blink-blue {
-  0%, 100% { background-color: var(--c-blue); box-shadow: 0 0 6px var(--c-blue); }
-  50% { background-color: rgba(0, 184, 212, 0.2); box-shadow: 0 0 0px transparent; }
-}
-@keyframes ai-blink-grey {
-  0%, 100% { background-color: var(--c-text-3); }
-  50% { background-color: var(--c-bg-3); }
+/* Пульс индикатора — на opacity, а не на background-color/box-shadow (PERF-2).
+   Подложка держит тусклый конец градации постоянным цветом, яркий конец вместе
+   со свечением заранее отрисован на ::after и гасится прозрачностью: слой
+   композитится на GPU, главный поток в простое не пересчитывает стиль. */
+@keyframes ai-blink-fade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 .ai-indicator {
+  position: relative;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   display: inline-block;
 }
-.ai-indicator.active { animation: ai-blink-blue 2s infinite; }
-.ai-indicator.missing { animation: ai-blink-grey 2s infinite; }
+.ai-indicator.active { background-color: rgba(0, 184, 212, 0.2); }
+.ai-indicator.missing { background-color: var(--c-bg-3); }
+.ai-indicator.active::after,
+.ai-indicator.missing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  will-change: opacity;
+  animation: ai-blink-fade 2s infinite;
+}
+.ai-indicator.active::after { background-color: var(--c-blue); box-shadow: 0 0 6px var(--c-blue); }
+.ai-indicator.missing::after { background-color: var(--c-text-3); }
 
 .ai-status-wrap {
   position: absolute;
