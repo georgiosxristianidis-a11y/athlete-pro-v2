@@ -87,6 +87,45 @@ export const haptic = (pattern = 10, elementToPulse = null) => {
 };
 
 /**
+ * Группа слушателей на долгоживущей цели (`window` / `document`) с одной точкой снятия.
+ *
+ * LEAK-1. Слушатель на узле оверлея уходит вместе с `node.remove()` — там снимать
+ * нечего. Утечка живёт ровно там, где слушатель садится на `window` внутри функции,
+ * которую зовут повторно: `_initMascotDrag()` на каждый рендер пустого Home,
+ * `renderFAB()` на каждый показ панды. Счётчик растёт линейно, а замыкание держит
+ * уже отсоединённый DOM-узел, и собрать его некому.
+ *
+ * Группа делает снятие таким же дешёвым, как навешивание: `release()` перед
+ * повторным навешиванием — и счётчик слушателей стоит на месте, сколько бы циклов
+ * ни прошло. Анонимную функцию при этом писать можно: ссылку на снятие держит группа.
+ *
+ * @param {EventTarget} [target] по умолчанию `window`; вне браузера группа пустая и молчит
+ */
+export const listenerGroup = (target = typeof window !== 'undefined' ? window : null) => {
+  /** @type {Array<() => void>} */
+  let off = [];
+  return {
+    /**
+     * @param {string} type
+     * @param {EventListenerOrEventListenerObject} handler
+     * @param {boolean|AddEventListenerOptions} [options]
+     */
+    add(type, handler, options) {
+      if (!target) return;
+      target.addEventListener(type, handler, options);
+      off.push(() => target.removeEventListener(type, handler, options));
+    },
+    /** Снимает все слушатели группы. Идемпотентен: повторный вызов — no-op. */
+    release() {
+      for (const fn of off) fn();
+      off = [];
+    },
+    /** Сколько слушателей группа держит прямо сейчас. */
+    get size() { return off.length; },
+  };
+};
+
+/**
  * Renders a design-system date-of-birth picker (year/month/day selects) in place of native `<input type="date">`,
  * whose Android UI renders in the system locale regardless of app language.
  * @param {string} dob YYYY-MM-DD or empty

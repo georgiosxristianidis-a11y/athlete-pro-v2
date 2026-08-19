@@ -7,7 +7,7 @@ import { DB, weeklyVolumeFrom, monthlyVolumeFrom, weeklyCountFrom, pplTonnageFro
 import { generateSparkline, generateSparklineMulti } from './shared/sparkline.js';
 import { getRecommendations } from './claude.store.js';
 import { Spring } from './shared/spring.js';
-import { esc } from './shared/utils.js';
+import { esc, listenerGroup } from './shared/utils.js';
 import { Toast } from './shell.js';
 import { fmtVol, fmtDuration, fmtDate } from './shared/format.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
@@ -270,9 +270,22 @@ export const Dashboard = (() => {
   }
 
   /**
+   * Слушатели драга маскота на `window` (LEAK-1).
+   * @type {ReturnType<typeof listenerGroup>|null}
+   */
+  let _mascotDragOn = null;
+
+  /**
    * Initialize dragging for the mascot.
    */
   function _initMascotDrag() {
+    // load() зовётся на каждый заход на s-home, а pointermove/pointerup ниже
+    // сидят на window и с перерисовкой маскота не уходят. Снимать прошлые надо
+    // ДО проверки на элемент: когда маскота на экране больше нет, старая пара
+    // как раз и остаётся держать отсоединённый узел (LEAK-1).
+    _mascotDragOn?.release();
+    _mascotDragOn = null;
+
     const el = document.getElementById('mascot-draggable');
     if (!el) return;
 
@@ -294,7 +307,9 @@ export const Dashboard = (() => {
       el.setPointerCapture(e.pointerId);
     });
 
-    window.addEventListener('pointermove', (e) => {
+    _mascotDragOn = listenerGroup();
+
+    _mascotDragOn.add('pointermove', (e) => {
       if (!isDragging) return;
       // 5px threshold: реальный драг не должен превращаться в тап по звуку
       if (!moved && (Math.abs(e.clientX - gestureX) > 5 || Math.abs(e.clientY - gestureY) > 5)) moved = true;
@@ -303,7 +318,7 @@ export const Dashboard = (() => {
       el.style.transform = `translate(${currentX}px, ${currentY}px)`;
     });
 
-    window.addEventListener('pointerup', () => {
+    _mascotDragOn.add('pointerup', () => {
       if (!isDragging) return;
       isDragging = false;
       el.style.transition = 'transform 0.4s var(--ease-std)';
