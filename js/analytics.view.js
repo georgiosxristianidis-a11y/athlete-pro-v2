@@ -27,6 +27,7 @@ import { renderStrengthHero, renderStrengthCurves, smoothPath, wireScrub, fmtMon
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { on } from './events.js';
 import { fmtDate, fmtWeight } from './shared/format.js';
+import { pplColor, pplColorAlpha, isPplType, PPL_TYPES } from './shared/ppl-color.js';
 
 on('analytics:calPrev',    () => calPrev());
 on('analytics:calNext',    () => calNext());
@@ -37,13 +38,7 @@ on('analytics:openExercise', (el) => {
   if (name) openExerciseHistoryModal(name);
 });
 
-// PPL law: push=green (--c-push) · pull=cyan (--c-pull) · legs=purple (--c-legs).
-// Kept as hex because callers append alpha (`${color}20`), which CSS vars can't do.
-const TYPE_COLOR = {
-  push: '#00e676',
-  pull: '#00b8d4',
-  legs: '#8b5cf6',
-};
+// PPL-цвет берётся из токенов темы — см. `js/shared/ppl-color.js` (DS-1).
 
 function svgArrow(dir) {
   const p = {
@@ -356,8 +351,8 @@ function _drawCalendar() {
   for (let i = 0; i < startOffset; i++) html += `<div class="cal-cell empty"></div>`;
   for (let d = 1; d <= daysInMonth; d++) {
     const entry = workedDays[d], type = entry?.type || '', isToday = (new Date().getDate() === d && new Date().getMonth() === CalState.month);
-    const color = TYPE_COLOR[type] || '', style = type ? `background:${color}20;border-color:${color}40` : '';
-    html += `<div class="cal-cell ${type ? 'has-workout' : ''} ${isToday ? 'cal-today' : ''}" style="${style}" data-day="${d}" data-type="${type}" data-wid="${entry?.id ?? ''}"><span class="cal-num">${d}</span>${type ? `<div class="cal-dot" style="background:${color}"></div>` : ''}</div>`;
+    const style = isPplType(type) ? `background:${pplColorAlpha(type, 0.125)};border-color:${pplColorAlpha(type, 0.25)}` : '';
+    html += `<div class="cal-cell ${type ? 'has-workout' : ''} ${isToday ? 'cal-today' : ''}" style="${style}" data-day="${d}" data-type="${type}" data-wid="${entry?.id ?? ''}"><span class="cal-num">${d}</span>${isPplType(type) ? `<div class="cal-dot" style="background:${pplColor(type)}"></div>` : ''}</div>`;
   }
   card.innerHTML = html + `</div>`;
   card.querySelector('.cal-grid')?.addEventListener('click', (e) => {
@@ -399,9 +394,9 @@ export function calDayClick(year, month, day, existingType, existingId) {
       </div>
       <div class="cal-pick-date">${dateLabel}</div>
       <div class="cal-pick-grid">
-        ${['push', 'pull', 'legs'].map((t) => `
-          <button class="cal-pick-btn ${existingType === t ? 'active' : ''}" data-type="${t}" style="--pick-color:${TYPE_COLOR[t]}">
-            <span class="cal-pick-dot" style="background:${TYPE_COLOR[t]}"></span>
+        ${PPL_TYPES.map((t) => `
+          <button class="cal-pick-btn ${existingType === t ? 'active' : ''}" data-type="${t}" style="--pick-color:${pplColor(t)}">
+            <span class="cal-pick-dot" style="background:${pplColor(t)}"></span>
             ${t.charAt(0).toUpperCase() + t.slice(1)}
           </button>`
         ).join('')}
@@ -457,13 +452,10 @@ function _renderVolumeChart(workouts, buckets) {
 
   // ── PPL dominant type per bucket (5-4) ────────────────────────────────────
   // For each bucket, sum tonnage by session type; winner drives the bar colour.
-  const PPL_HEX = { push: '#00e676', pull: '#00b8d4', legs: '#8b5cf6' };
-  const FALLBACK = '#00e676';
-
   const bucketType = buckets.map((b) => {
     const ppl = { push: 0, pull: 0, legs: 0 };
     workouts.forEach((w) => {
-      if (w.timestamp >= b.start && w.timestamp < b.end && PPL_HEX[w.type]) {
+      if (w.timestamp >= b.start && w.timestamp < b.end && isPplType(w.type)) {
         ppl[w.type] += w.tonnage || 0;
       }
     });
@@ -489,13 +481,12 @@ function _renderVolumeChart(workouts, buckets) {
     const y  = pad.t + chartH - bh;
 
     const isBest  = b.tonnage === best && best > 0;
-    const barHex  = PPL_HEX[bucketType[i]] || FALLBACK;
-    const alpha   = isBest ? 1 : 0.28;
+    const barHex  = pplColor(bucketType[i]);
 
     // Gradient bar: PPL color at top, fade to transparent at bottom
     const grad = ctx.createLinearGradient(x, y, x, y + bh);
-    grad.addColorStop(0, barHex + (isBest ? '' : '50'));   // hex+alpha (2-digit = ~31%)
-    grad.addColorStop(1, barHex + '0a');                    // near-transparent base
+    grad.addColorStop(0, isBest ? barHex : pplColorAlpha(bucketType[i], 0.314));
+    grad.addColorStop(1, pplColorAlpha(bucketType[i], 0.04)); // near-transparent base
     ctx.fillStyle = grad;
     _roundRect(ctx, x, y, bw, bh, 4);
     ctx.fill();
@@ -514,7 +505,7 @@ function _renderVolumeChart(workouts, buckets) {
 
     // Volume value on top
     if (b.tonnage > 0) {
-      ctx.fillStyle = isBest ? '#ffffff' : barHex + 'cc';
+      ctx.fillStyle = isBest ? '#ffffff' : pplColorAlpha(bucketType[i], 0.8);
       ctx.font = `800 10px 'Instrument Sans', sans-serif`;
       ctx.fillText(fmtVol(b.tonnage), x + bw / 2, y - 6);
     }
@@ -556,7 +547,7 @@ function _renderORMList(orms) {
 export function openExerciseHistoryModal(exerciseName) {
   if (!exerciseName) return;
   const history = fetchExerciseHistory(_workoutsCache, exerciseName);
-  const color = TYPE_COLOR[history.type] || '#00e676';
+  const color = pplColor(history.type);
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay ex-history-overlay';
