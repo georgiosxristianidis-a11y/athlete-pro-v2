@@ -43,9 +43,42 @@
          (docs/handoff/HANDOFF_load_perf.md). Здесь — волны 5 и глубже (модули,
          которые app.js и boot.js достают не напрямую, а через 2+ уровня
          import): browser качает их сразу параллельно, а не слой за слоем.
-         Волны 1-4 (entry-скрипты + их прямые импорты) уже видны HTML-сканеру
-         без подсказки. Список из замера resource-timing, не «на глазок» —
-         менять только вместе с ним. -->
+         Список из замера resource-timing, не «на глазок» — менять только
+         вместе с ним.
+
+         PERF-3 (2026-08-19): прежняя редакция считала, что «волны 1-4 уже
+         видны HTML-сканеру без подсказки». Это верно только для волны 1 —
+         двух entry-скриптов ниже. Прямые импорты app.js/boot.js сканер не
+         видит: о них браузер узнаёт, лишь разобрав сам entry. Отсюда второй
+         блок — прямое замыкание бута. -->
+
+    <!-- Волна 2 — прямые статические импорты entry: js/app.js:7-24 (17 шт)
+         + js/boot.js:5 (errors-ui). Порядок — как в app.js. -->
+    <link rel="modulepreload" href="js/events.js" />
+    <link rel="modulepreload" href="js/db.js" />
+    <link rel="modulepreload" href="js/timer.js" />
+    <link rel="modulepreload" href="js/shell.js" />
+    <link rel="modulepreload" href="js/dashboard.js" />
+    <link rel="modulepreload" href="js/privacy.store.js" />
+    <link rel="modulepreload" href="js/privacy.view.js" />
+    <link rel="modulepreload" href="js/shared/dynamic-island.js" />
+    <link rel="modulepreload" href="js/shared/athlete-room.js" />
+    <link rel="modulepreload" href="js/shared/integrity.js" />
+    <link rel="modulepreload" href="js/locale.store.js" />
+    <link rel="modulepreload" href="js/shared/utils.js" />
+    <link rel="modulepreload" href="js/workout.store.js" />
+    <link rel="modulepreload" href="js/version.js" />
+    <link rel="modulepreload" href="js/shared/sw-update.js" />
+    <link rel="modulepreload" href="js/shared/theme.js" />
+    <link rel="modulepreload" href="js/shared/lazy-css.js" />
+    <link rel="modulepreload" href="js/shared/errors-ui.js" />
+
+    <!-- Волна 3 — транзитивные, но в том же буте:
+         sync-secrets ← js/db/settings.js:7 · exercise-shorthand ← js/shared/dynamic-island.js:14 -->
+    <link rel="modulepreload" href="js/shared/sync-secrets.js" />
+    <link rel="modulepreload" href="js/shared/exercise-shorthand.js" />
+
+    <!-- Волны 5 и глубже (прежний блок). -->
     <link rel="modulepreload" href="js/db/core.js" />
     <link rel="modulepreload" href="js/db/settings.js" />
     <link rel="modulepreload" href="js/db/onerm.js" />
@@ -76,9 +109,10 @@
     <link rel="modulepreload" href="js/shared/chamber-pill.js" />
     <link rel="modulepreload" href="js/shared/cryptoClient.js" />
     <link rel="modulepreload" href="js/ui/factory.js" />
-    <link rel="modulepreload" href="js/onboarding.js" />
-    <link rel="modulepreload" href="js/claude.view.js" />
-    <link rel="modulepreload" href="js/shared/block-ticks.js" />
+    <!-- PERF-3: сняты onboarding.js · claude.view.js · shared/block-ticks.js —
+         все три вне бут-замыкания, приходят через import() (js/app.js:231,
+         js/app.js:222, и block-ticks ← workout.view/render.js за ленивым
+         _loadWorkout()). Прелоад тянул их в первый заход зря. -->
 
     <!-- ── BLOCK 0: Critical CSS (inline — zero flash) ──────────────── -->
     <style>
