@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.27.65] — 2026-08-19
+
+### PERF-3 — волны бут-замыкания 3 → 2
+
+Дописаны `modulepreload` для 20 модулей бут-замыкания (`js/events.js`, `js/db.js`,
+`js/timer.js`, `js/shell.js`, `js/dashboard.js` и ещё 15 — полный список в
+`docs/handoff/HANDOFF_gemini_audit_triage.md`), без которых они грузились отдельной
+волной. Сняты 3 тега, бившие мимо бут-замыкания (`js/onboarding.js`, `js/claude.view.js`,
+`js/shared/block-ticks.js`) — они уходят лениво через `import()`, прелоад тянул их зря.
+
+Проверено на холодном заходе (снос SW/caches/IndexedDB/localStorage): волн по
+`resource-timing` — 2, дублей запросов 0, 56 JS-запросов те же. Бандл не брали — решение
+закрыто в PERF-1.
+
 ## [1.27.64] — 2026-08-19
 
 ### PERF-2 — индикатор перестал жечь главный поток
