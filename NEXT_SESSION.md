@@ -41,7 +41,7 @@ npm run docs:budget    # цена системных доков в токена�
 - `HANDOFF_isl_tail.md` — островные хвосты
 - `HANDOFF_orchestration.md` — роли LEAD/worker/verifier, DoD-лестница
 - `HANDOFF_air_refactor.md` — хвост
-- `HANDOFF_token_economy.md` → **TOK-1** (TOK-8 закрыта), дальше TOK-6, TOK-2, TOK-4; TOK-9 и TOK-10 отдельно (TOK-10 нужна интерактивная сессия ради `/context`)
+- `HANDOFF_token_economy.md` → **TOK-1** (TOK-8 закрыта), дальше TOK-6, TOK-2, TOK-4; TOK-11 (сжатие закрытых карточек) — перед TOK-5; TOK-9/TOK-10 отдельно
 
 Вне хендоффов, заведено 2026-08-14: **DOCS-3** (перевод горячего пути на английский, ждёт пересборки `docs/RULES.md`), **WEED-2** (прополка веток/ворктри, порог 30 дн, смежна с TOK-7), **FLOW-4** (TTL памяти ≤7500 ток, смежна с TOK-5).
 
