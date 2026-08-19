@@ -8,9 +8,8 @@
 
 import { esc } from './shared/utils.js';
 import { isRu } from './locale.store.js';
+import { pplColor } from './shared/ppl-color.js';
 
-// PPL law colours (hex — markers/fills append alpha).
-const TYPE_COLOR = { push: '#00e676', pull: '#00b8d4', legs: '#8b5cf6' };
 const GOLD = '#D4AF37';
 
 /**
@@ -84,7 +83,7 @@ function curveCard(s, idx) {
   const line = smoothPath(pts);
   const area = `${line} L ${pts[pts.length - 1].x.toFixed(1)},${H} L ${pts[0].x.toFixed(1)},${H} Z`;
   const peakI = vs.indexOf(vmax);
-  const color = TYPE_COLOR[s.type] || '#00e676';
+  const color = pplColor(s.type);
   const gid = `scg-${idx}`;
   const cur = Math.round(s.pts[s.pts.length - 1].v);
   const peak = Math.round(vmax);
@@ -274,5 +273,5 @@ export function renderStrengthCurves(workouts, mount) {
   mount.querySelectorAll('.sc-card').forEach((card, i) => wireScrub(card, cards[i].pts));
 }
 
-export { smoothPath, fmtMon, wireScrub, TYPE_COLOR, GOLD };
+export { smoothPath, fmtMon, wireScrub, GOLD };
 

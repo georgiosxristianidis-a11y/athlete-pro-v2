@@ -23,6 +23,7 @@ import { fmtVol } from '../shared/format.js';
 import { blockTicks, blockOrder } from '../shared/block-ticks.js';
 import { blockLabel } from '../shared/chamber-pill.js';
 import { on } from '../events.js';
+import { pplColor, isPplType, PPL_TYPES } from '../shared/ppl-color.js';
 
 /** PPL-цвет сессии — семантика типа тренировки, не декор. */
 const PPL_VAR = { push: 'var(--c-push)', pull: 'var(--c-pull)', legs: 'var(--c-legs)' };
@@ -50,11 +51,6 @@ on('wo:focusStepR',    (el) => W()._focusStepR(+el.dataset.amt));
 on('wo:focusComplete', () => W()._focusCompleteSet());
 
 /* ── Render helpers ── */
-export const TYPE_COLOR = {
-  push: '#00e676', // Neon Green
-  pull: '#00e5ff', // Neon Cyan
-  legs: '#bc13fe', // Neon Purple
-};
 
 export function svgArrow(dir) {
   const p = {
@@ -242,9 +238,9 @@ export async function renderSelect() {
     </div>
 
     <div class="type-grid stagger-item">
-      ${['push', 'pull', 'legs']
+      ${PPL_TYPES
         .map((t) => {
-          const color = t === 'push' ? '#00e676' : t === 'pull' ? '#00e5ff' : '#bc13fe';
+          const color = pplColor(t);
           return `
         <button class="type-card" data-type="${t}" data-action="wo:selectType">
           <div class="type-card-icon" style="color: ${color}">
@@ -277,7 +273,7 @@ export async function renderSelect() {
       return;
     }
     el.innerHTML = list.map((w) => {
-      const dot = TYPE_COLOR[w.type] || 'var(--c-text-3)';
+      const dot = isPplType(w.type) ? pplColor(w.type) : 'var(--c-text-3)';
       const date = new Date(w.timestamp).toLocaleDateString(ru ? 'ru' : 'en', { weekday: 'short', month: 'short', day: 'numeric' });
       const dur = w.duration ? Timer.fmt(Math.round(w.duration / 1000)) : '--';
       return `<div class="session-item">

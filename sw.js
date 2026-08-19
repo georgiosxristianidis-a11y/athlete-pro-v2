@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-ba4bac25';
+const CACHE_NAME = 'athlete-pro-v121-6a682626';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -78,6 +78,7 @@ const ASSETS = [
   '/js/shared/lww.js',
   '/js/shared/panda-mood.js',
   '/js/shared/panda-video.js',
+  '/js/shared/ppl-color.js',
   '/js/shared/ppl-gauge.js',
   '/js/shared/sparkline.js',
   '/js/shared/spring.js',

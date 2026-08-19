@@ -33,10 +33,9 @@ npm run docs:budget    # цена системных доков в токена�
 - `HANDOFF_intel_readiness.md` → **INTEL-1**; порядок 1→3→4 фиксирован
 - `HANDOFF_gemini_audit_triage.md` → **SCAF-1**, следом NOISE-1/PII-1; PERF-1/2/3 закрыты, бандл не берём; за Gio — снести Render, отозвать `ANTHROPIC_API_KEY`
 - `HANDOFF_light_theme.md` → **THEME-6** (P2)
-- `HANDOFF_design_system.md` → **SPACE-1 хвост → SCALE-1**, дальше NAV-BACK-1 + DEAD-1
+- `HANDOFF_design_system.md` → **SPACE-1 хвост → SCALE-1**, дальше NAV-BACK-1 + DEAD-1; линия DS (течёт `js/`, не CSS) → **DS-2**, следом DS-3
 - `HANDOFF_field_check.md` — за Gio, один заход (DoD-5), флаги `fab-video`/`drum-window` заранее
-- `HANDOFF_next_cards.md` → **DRUM-TOUCH-1** — за Gio, один тап (CI-1 закрыта PR#229)
-- `HANDOFF_next_cards.md` — стек карточек, бэклог, DATA-SAFETY, решения за Gio
+- `HANDOFF_next_cards.md` → **DRUM-TOUCH-1** — за Gio, один тап; там же стек карточек, бэклог, DATA-SAFETY
 - `HANDOFF_gym_grade.md` — DoD из 5 пунктов
 - `HANDOFF_isl_tail.md` — островные хвосты
 - `HANDOFF_orchestration.md` — роли LEAD/worker/verifier, DoD-лестница
