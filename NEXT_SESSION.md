@@ -35,7 +35,7 @@ npm run docs:budget    # цена системных доков в токена�
 - `HANDOFF_light_theme.md` → **THEME-6** (P2)
 - `HANDOFF_design_system.md` → **SPACE-1 хвост → SCALE-1**, дальше NAV-BACK-1 + DEAD-1
 - `HANDOFF_field_check.md` — за Gio, один заход (DoD-5), флаги `fab-video`/`drum-window` заранее
-- `HANDOFF_next_cards.md` → **DRUM-TOUCH-1** — за Gio, один тап
+- `HANDOFF_next_cards.md` → **CI-1** (`workflow_dispatch`, одна строка; DoD ждёт минут Actions), **DRUM-TOUCH-1** — за Gio, один тап
 - `HANDOFF_next_cards.md` — стек карточек, бэклог, DATA-SAFETY, решения за Gio
 - `HANDOFF_gym_grade.md` — DoD из 5 пунктов
 - `HANDOFF_isl_tail.md` — островные хвосты
