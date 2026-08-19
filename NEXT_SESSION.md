@@ -21,8 +21,8 @@ npm run docs:budget    # цена системных доков в токена�
 
 ## Барьеры репозитория
 
-- **Branch-protection на `main` нет** (приватный репо, free-план). Держит `.githooks/pre-push`: блокирует пуш с целью `refs/heads/main`, обход `MAIN_PUSH_OK=1`. Пуш из одних удалений (`git push origin --delete`) выходит нулём до всех гардов — кода в нём нет.
-- **Решение 2026-08-06, переоткрывать не нужно:** GitHub Pro не берём, публичным не делаем. Видимость — `main-watchdog.yml` заводит issue на коммит в `main` без зелёного CI/PR.
+- **Branch-protection не включена, хотя доступна:** репо публичный с 2026-06-20, защита бесплатна — прежняя запись «приватный, free-план» неверна, решение 2026-08-06 переоткрыть (карточка **PROT-1**). Держит `.githooks/pre-push`: блокирует пуш в `refs/heads/main`, обход `MAIN_PUSH_OK=1`. Пуш из одних удалений выходит нулём до всех гардов — кода в нём нет.
+- **preflight знает три состояния защиты** (`scripts/main-protection.mjs`): нет защиты или чека — FAIL, снятый `enforce_admins` — WARN, всё на месте — OK. Сторож мёржа мимо ворот — `main-watchdog.yml`.
 - **Зелёная галочка ≠ чеки прошли:** `combined status` бывает `success` от одного Vercel при нуле check-runs. Считать: `gh api repos/:owner/:repo/commits/<sha>/check-runs`.
 - `delete_branch_on_merge` включён — мёржить `gh pr merge --rebase --delete-branch`.
 
