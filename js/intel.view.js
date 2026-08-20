@@ -581,33 +581,38 @@ export const IntelView = (() => {
   function _renderReportOverlay(report) {
     const overlay = document.createElement('div');
     overlay.className = 'intel-report-overlay animate-in fade-in duration-500';
-    overlay.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(5,5,7,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:20px;';
+    /* Гуттер до края экрана, а не ритм блока: --side-padding — узаконенное
+       off-grid исключение (base.css:128), снапить его к 16/24 нельзя. */
+    overlay.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(5,5,7,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:var(--side-padding);';
     
     overlay.innerHTML = `
-      <div style="background:var(--c-bg-1); width:100%; max-width:500px; border-radius:32px; border:1px solid var(--c-border-h); padding:40px; position:relative; max-height:90vh; overflow-y:auto;">
+      <div style="background:var(--c-bg-1); width:100%; max-width:500px; border-radius:32px; border:1px solid var(--c-border-h); padding:var(--sp-5); position:relative; max-height:90vh; overflow-y:auto;">
         <button data-action="intel:closeReport" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:var(--fs-5); cursor:pointer;">&times;</button>
-        <div style="text-align:center; margin-bottom:32px;">
-           <h2 style="font-family:var(--font-intel); font-size:var(--fs-5); font-style:italic; color:var(--c-text-1); text-transform:uppercase; margin-bottom:16px;">Weekly Intel</h2>
+        <div style="text-align:center; margin-bottom:var(--sp-4);">
+           <h2 style="font-family:var(--font-intel); font-size:var(--fs-5); font-style:italic; color:var(--c-text-1); text-transform:uppercase; margin-bottom:var(--sp-2);">Weekly Intel</h2>
            <div style="display:flex; flex-direction:column; align-items:center;">
              <span style="font-size:var(--fs-6); font-weight:var(--fw-black); color:var(--c-intel); text-shadow:0 0 20px rgba(0,209,255,0.4); line-height:1;">${report.score}</span>
-             <span style="font-size:var(--fs-1); font-weight:var(--fw-black); color:var(--c-text-3); text-transform:uppercase; letter-spacing:0.5em; margin-top:8px;">Performance Score</span>
+             <span style="font-size:var(--fs-1); font-weight:var(--fw-black); color:var(--c-text-3); text-transform:uppercase; letter-spacing:0.5em; margin-top:var(--sp-1);">Performance Score</span>
            </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:24px;">
-          <section style="background:var(--c-surface-h); padding:24px; border-radius:24px; border:1px solid var(--c-border);">
+        <div style="display:flex; flex-direction:column; gap:var(--sp-3);">
+          <section style="background:var(--c-surface-h); padding:var(--sp-3); border-radius:24px; border:1px solid var(--c-border);">
             <p style="font-size:var(--fs-3); font-style:italic; color:var(--c-text-2); line-height:1.6; font-weight:var(--fw-md);">"${esc(report.summary)}"</p>
           </section>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-            <div style="background:rgba(0,230,118,0.05); padding:20px; border-radius:24px; border:1px solid rgba(0,230,118,0.1);">
-               <h4 style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-accent); margin-bottom:12px; letter-spacing:0.2em;">Wins</h4>
-               <ul style="font-size:var(--fs-2); color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
-                 ${report.pros.map(p => `<li style="display:flex; gap:8px;"><span style="color:var(--c-accent)">+</span>${esc(p)}</li>`).join('')}
+          <!-- Инсет плиток ушёл вниз к --sp-2: в двухколоночной сетке он
+               отнимается у строки четырежды, и на --sp-3 карточка отчёта
+               начинала переполняться (348 против 334 доступных). -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-2);">
+            <div style="background:rgba(0,230,118,0.05); padding:var(--sp-2); border-radius:24px; border:1px solid rgba(0,230,118,0.1);">
+               <h4 style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-accent); margin-bottom:var(--sp-1-5); letter-spacing:0.2em;">Wins</h4>
+               <ul style="font-size:var(--fs-2); color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:var(--sp-1);">
+                 ${report.pros.map(p => `<li style="display:flex; gap:var(--sp-1);"><span style="color:var(--c-accent)">+</span>${esc(p)}</li>`).join('')}
                </ul>
             </div>
-            <div style="background:rgba(255,77,136,0.05); padding:20px; border-radius:24px; border:1px solid rgba(255,77,136,0.1);">
-               <h4 style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-red); margin-bottom:12px; letter-spacing:0.2em;">Leaks</h4>
-               <ul style="font-size:var(--fs-2); color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:8px;">
-                 ${report.cons.map(c => `<li style="display:flex; gap:8px;"><span style="color:var(--c-red)">-</span>${esc(c)}</li>`).join('')}
+            <div style="background:rgba(255,77,136,0.05); padding:var(--sp-2); border-radius:24px; border:1px solid rgba(255,77,136,0.1);">
+               <h4 style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-red); margin-bottom:var(--sp-1-5); letter-spacing:0.2em;">Leaks</h4>
+               <ul style="font-size:var(--fs-2); color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:var(--sp-1);">
+                 ${report.cons.map(c => `<li style="display:flex; gap:var(--sp-1);"><span style="color:var(--c-red)">-</span>${esc(c)}</li>`).join('')}
                </ul>
             </div>
           </div>
@@ -794,9 +799,9 @@ export const IntelView = (() => {
     const hbar = (val, label) => {
       const c = getColor(val);
       return `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-1-5);">
           <div style="font-size:var(--fs-2); font-weight:var(--fw-md); color:var(--c-text-2);">${label}</div>
-          <div style="display:flex; align-items:center; gap:8px; width:55%;">
+          <div style="display:flex; align-items:center; gap:var(--sp-1); width:55%;">
             <div style="flex:1; height:6px; background:var(--c-surface-h); border-radius:3px; overflow:hidden;">
               <div style="width:${val}%; height:100%; background:${c}; border-radius:3px; transition: width 1s ease-out;"></div>
             </div>
@@ -810,23 +815,23 @@ export const IntelView = (() => {
     const indexLabel = data.index >= 90 ? 'отлично' : data.index >= 70 ? 'хорошо' : data.index >= 50 ? 'удовл' : 'внимание';
 
     return `
-      <div class="intel-readiness-widget animate-in" style="background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.1); border-radius:24px; padding:20px; margin:16px 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+      <div class="intel-readiness-widget animate-in" style="background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.1); border-radius:24px; padding:var(--sp-3); margin:var(--sp-2) 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--sp-3);">
           <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1);">Индекс готовности</div>
           <div style="width:24px; height:24px; border-radius:50%; background:var(--c-border-h); display:flex; align-items:center; justify-content:center; font-size:var(--fs-2); color:var(--c-text-3);">?</div>
         </div>
         
-        <div style="display:flex; align-items:flex-end; gap:16px; margin-bottom:32px;">
+        <div style="display:flex; align-items:flex-end; gap:var(--sp-2); margin-bottom:var(--sp-4);">
           <div style="font-size:var(--fs-6); font-weight:var(--fw-black); color:${mainColor}; line-height:1; font-family:'Instrument Sans', sans-serif;">${data.index}</div>
-          <div style="flex:1; padding-bottom:8px;">
+          <div style="flex:1; padding-bottom:var(--sp-1);">
             <div style="height:6px; background:var(--c-border-h); border-radius:3px; overflow:hidden;">
               <div style="height:100%; width:${data.index}%; background:${mainColor}; border-radius:3px; transition: width 1s ease-out;"></div>
             </div>
-            <div style="font-size:var(--fs-2); color:var(--c-text-3); margin-top:8px; text-transform:uppercase; font-weight:var(--fw-bold);">${indexLabel}</div>
+            <div style="font-size:var(--fs-2); color:var(--c-text-3); margin-top:var(--sp-1); text-transform:uppercase; font-weight:var(--fw-bold);">${indexLabel}</div>
           </div>
         </div>
 
-        <div style="margin-bottom:32px;">
+        <div style="margin-bottom:var(--sp-4);">
           ${hbar(data.recovery, 'Восстановление')}
           ${hbar(data.acwr, 'Нагрузка ACWR')}
           ${hbar(data.sleep, 'Качество сна')}
@@ -835,17 +840,17 @@ export const IntelView = (() => {
           ${hbar(data.density, 'Плотность и ритм')}
         </div>
 
-        <div style="border-top:1px solid var(--c-border); padding-top:20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div style="border-top:1px solid var(--c-border); padding-top:var(--sp-3);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-2);">
             <div style="font-size:var(--fs-1); font-weight:var(--fw-black); letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">Цель на сегодня</div>
-            <div style="display:flex; align-items:center; gap:8px;">
+            <div style="display:flex; align-items:center; gap:var(--sp-1);">
               <span style="color:var(--c-red); font-size:var(--fs-2);">ЦНС</span>
               <div style="width:40px; height:4px; background:var(--c-border-h); border-radius:2px;"><div style="width:${data.cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
               <span style="font-size:var(--fs-2); font-weight:var(--fw-bold); color:var(--c-red);">${data.cns}%</span>
             </div>
           </div>
-          <div style="border-left:2px solid ${mainColor}; padding-left:12px;">
-            <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1); margin-bottom:4px;">${data.goal}</div>
+          <div style="border-left:2px solid ${mainColor}; padding-left:var(--sp-1-5);">
+            <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1); margin-bottom:var(--sp-0-5);">${data.goal}</div>
           </div>
         </div>
       </div>

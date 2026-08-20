@@ -66,7 +66,7 @@ export function showOnboarding() {
     _overlay.style.cssText = `
       position: fixed; inset: 0; background: var(--c-bg); z-index: 9000;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-      padding: env(safe-area-inset-top, 20px) var(--sp-2) 40px; overflow-y: auto;
+      padding: env(safe-area-inset-top, 20px) var(--sp-2) var(--sp-5); overflow-y: auto;
     `;
     _overlay._resolve = resolve;
     document.body.appendChild(_overlay);
@@ -77,7 +77,7 @@ export function showOnboarding() {
 function _render() {
   const ru = false; // Default to English for first-run
   _overlay.innerHTML = `
-    <div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:var(--sp-4); padding-top:20px; position:relative; z-index:1;">
+    <div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:var(--sp-4); padding-top:var(--sp-3); position:relative; z-index:1;">
       <!-- Progress Bar — общая шкала этапов (js/shared/block-ticks.js).
            Была набором inline-стилей; вынесена, чтобы свечение и заливка
            жили в одном месте с полосками блоков в логгере сетов. -->
@@ -105,11 +105,11 @@ function _buildStep(ru) {
 function _stepGoal(ru) {
   return `
     <div class="animate-in" style="display:flex; flex-direction:column; min-height: 70vh;">
-      <div style="margin-bottom: 40px; position: relative;">
+      <div style="margin-bottom: var(--sp-5); position: relative;">
         <!-- Premium Hero Background Glow -->
         <div style="position:absolute; top:-20px; left:-20px; right:-20px; bottom:-20px; background: radial-gradient(circle at top left, rgba(0,230,118,0.12), transparent 70%); filter:blur(30px); z-index:-1; pointer-events:none;"></div>
         
-        <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.05em; color:var(--c-text-1); margin-bottom:12px; line-height:1.1;">
+        <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.05em; color:var(--c-text-1); margin-bottom:var(--sp-1-5); line-height:1.1;">
           ${ru ? 'Твоя цель?' : "What's your goal?"}
         </h1>
         <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); line-height:1.5; max-width:90%;">
@@ -117,21 +117,21 @@ function _stepGoal(ru) {
         </p>
       </div>
       
-      <div style="display:flex; flex-direction:column; gap:12px; flex:1;">
+      <div style="display:flex; flex-direction:column; gap:var(--sp-1-5); flex:1;">
         ${_choiceCard('strength', SVG.strength, ru ? 'Сила' : 'Strength', ru ? 'Максимальные веса, 1-5 повторений.' : 'Maximal weight, 1–5 reps.', 'var(--c-accent)')}
         ${_choiceCard('hypertrophy', SVG.hypertrophy, ru ? 'Масса' : 'Hypertrophy', ru ? 'Объем и рост мышц, 6-12 повторений.' : 'Muscle size and volume, 6–12 reps.', 'var(--c-secondary)')}
         ${_choiceCard('endurance', SVG.endurance, ru ? 'Выносливость' : 'Endurance', ru ? 'Кондиции и тонус, 15+ повторений.' : 'Conditioning and stamina, 15+ reps.', 'var(--c-blue)')}
       </div>
       
       <!-- Elegant Fast Skip -->
-      <div style="margin-top:32px; text-align:center;">
+      <div style="margin-top:var(--sp-4); text-align:center;">
         <button data-action="ob:quickStart" class="ob-fast-skip-btn">
           <span>${isRu() ? 'Быстрый старт' : 'Fast Skip'}</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="opacity:0.6"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
         </button>
       </div>
     </div>
-    <div style="margin-top:24px;">
+    <div style="margin-top:var(--sp-3);">
       ${_navButtons(ru, !!_data.goal)}
     </div>
   `;
@@ -140,10 +140,10 @@ function _stepGoal(ru) {
 function _stepExp(ru) {
   return `
     <div class="animate-in">
-      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:8px">
+      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
         ${ru ? 'Опыт тренировок?' : 'Training experience?'}
       </h1>
-      <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:32px">
+      <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:var(--sp-4)">
         ${ru ? 'Помогает установить стартовые веса.' : 'Helps us set realistic starting weights.'}
       </p>
       <div style="display:grid; gap:var(--sp-1)">
@@ -166,36 +166,38 @@ function _stepBio(ru) {
 
   return `
     <div class="animate-in">
-      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:8px">
+      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
         ${ru ? 'Немного о тебе' : 'Tell us about you'}
       </h1>
-      <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:32px">
+      <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:var(--sp-4)">
         ${ru ? 'Для точного расчета уровня силы.' : 'For accurate strength tier comparisons.'}
       </p>
       <div style="display:grid; gap:var(--sp-3)">
         <div>
-          <label style="display:block; font-size:var(--fs-2); font-weight:var(--fw-bold); text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:12px">
+          <label style="display:block; font-size:var(--fs-2); font-weight:var(--fw-bold); text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:var(--sp-1-5)">
             ${ru ? 'Пол' : 'Sex'}
           </label>
-          <div style="display:flex; gap:12px">
+          <div style="display:flex; gap:var(--sp-1-5)">
             <button class="ob-btn-tab ${_data.sex === 'm' ? 'active' : ''}" data-action="ob:setData" data-key="sex" data-value="m" style="flex:1; height:52px; border-radius:16px;">${ru ? 'М' : 'Male'}</button>
             <button class="ob-btn-tab ${_data.sex === 'f' ? 'active' : ''}" data-action="ob:setData" data-key="sex" data-value="f" style="flex:1; height:52px; border-radius:16px;">${ru ? 'Ж' : 'Female'}</button>
           </div>
         </div>
         <div>
-          <label style="display:block; font-size:var(--fs-2); font-weight:var(--fw-bold); text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:12px">
+          <label style="display:block; font-size:var(--fs-2); font-weight:var(--fw-bold); text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:var(--sp-1-5)">
             ${ru ? 'Дата рождения' : 'Date of Birth'}
           </label>
-          <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr; gap:10px">
-            <select data-change="ob:setDob" data-part="y" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 12px; font-weight:var(--fw-bold);">
+          <!-- Зазор ушёл вниз к --sp-1: в трёхколоночной сетке он отнимается
+               у селектов дважды, меньший gap = более широкая колонка. -->
+          <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr; gap:var(--sp-1)">
+            <select data-change="ob:setDob" data-part="y" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 var(--sp-1-5); font-weight:var(--fw-bold);">
               <option value="">${ru ? 'Год' : 'Year'}</option>
               ${years.map(year => `<option value="${year}" ${y === String(year) ? 'selected' : ''}>${year}</option>`).join('')}
             </select>
-            <select data-change="ob:setDob" data-part="m" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 8px; font-weight:var(--fw-bold);">
+            <select data-change="ob:setDob" data-part="m" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 var(--sp-1-5); font-weight:var(--fw-bold);">
               <option value="">${ru ? 'Мес' : 'Month'}</option>
               ${months.map((name, i) => `<option value="${String(i + 1).padStart(2, '0')}" ${m === String(i + 1).padStart(2, '0') ? 'selected' : ''}>${name}</option>`).join('')}
             </select>
-            <select data-change="ob:setDob" data-part="d" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 12px; font-weight:var(--fw-bold);">
+            <select data-change="ob:setDob" data-part="d" style="height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:16px; color:var(--c-text-1); padding:0 var(--sp-1-5); font-weight:var(--fw-bold);">
               <option value="">${ru ? 'День' : 'Day'}</option>
               ${Array.from({ length: 31 }, (_, i) => {
                 const val = String(i + 1).padStart(2, '0');
@@ -213,26 +215,26 @@ function _stepBio(ru) {
 function _stepMetrics(ru) {
   return `
     <div class="animate-in">
-      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:8px">
+      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
         ${ru ? 'Рост и Вес' : 'Body Metrics'}
       </h1>
-      <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:32px">
+      <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:var(--sp-4)">
         ${ru ? 'Мы вычислим твой ИМТ и DOTS.' : 'We\'ll compute your BMI and DOTS score.'}
       </p>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-2)">
         <div>
-          <label style="display:block; font-size:var(--fs-2); font-weight:var(--fw-bold); text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:8px">
+          <label style="display:block; font-size:var(--fs-2); font-weight:var(--fw-bold); text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:var(--sp-1)">
             ${ru ? 'Рост (см)' : 'Height (cm)'}
           </label>
           <input type="number" value="${_data.height}" placeholder="180" data-input="ob:setField" data-key="height"
-                 style="width:100%; height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-1); font-family:inherit; font-size:var(--fs-4); font-weight:var(--fw-bold); padding:0 16px; box-sizing:border-box">
+                 style="width:100%; height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-1); font-family:inherit; font-size:var(--fs-4); font-weight:var(--fw-bold); padding:0 var(--sp-2); box-sizing:border-box">
         </div>
         <div>
-          <label style="display:block; font-size:var(--fs-2); font-weight:var(--fw-bold); text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:8px">
+          <label style="display:block; font-size:var(--fs-2); font-weight:var(--fw-bold); text-transform:uppercase; letter-spacing:0.1em; color:var(--c-text-3); margin-bottom:var(--sp-1)">
             ${ru ? 'Вес (кг)' : 'Weight (kg)'}
           </label>
           <input type="number" value="${_data.weight}" placeholder="80" data-input="ob:setField" data-key="weight"
-                 style="width:100%; height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-1); font-family:inherit; font-size:var(--fs-4); font-weight:var(--fw-bold); padding:0 16px; box-sizing:border-box">
+                 style="width:100%; height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-1); font-family:inherit; font-size:var(--fs-4); font-weight:var(--fw-bold); padding:0 var(--sp-2); box-sizing:border-box">
         </div>
       </div>
     </div>
@@ -243,10 +245,10 @@ function _stepMetrics(ru) {
 function _stepPrivacy(ru) {
   return `
     <div class="animate-in">
-      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:8px">
+      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
         ${ru ? 'Приватность' : 'Privacy First'}
       </h1>
-      <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:32px">
+      <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:var(--sp-4)">
         ${ru ? 'Где хранить твои данные?' : 'Where should we store your data?'}
       </p>
       <div style="display:grid; gap:var(--sp-1)">
@@ -261,13 +263,13 @@ function _stepPrivacy(ru) {
 function _stepReady(ru) {
   return `
     <div class="animate-in" style="text-align:center">
-      <div style="width:80px; height:80px; border-radius:50%; background:var(--c-accent-bg); color:var(--c-accent); display:flex; align-items:center; justify-content:center; margin:0 auto 24px">
+      <div style="width:80px; height:80px; border-radius:50%; background:var(--c-accent-bg); color:var(--c-accent); display:flex; align-items:center; justify-content:center; margin:0 auto var(--sp-3)">
         ${SVG.check}
       </div>
-      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.05em; color:var(--c-text-1); margin-bottom:12px">
+      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.05em; color:var(--c-text-1); margin-bottom:var(--sp-1-5)">
         ${ru ? 'Все готово.' : 'You\'re set.'}
       </h1>
-      <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); line-height:1.5; margin-bottom:40px">
+      <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); line-height:1.5; margin-bottom:var(--sp-5)">
         ${ru ? 'Твой профиль настроен. Начнем тренировку?' : 'Your athlete profile is ready. Let\'s start training.'}
       </p>
       <button data-action="ob:finish" style="width:100%; height:56px; background:var(--c-accent); color:#000; border:none; border-radius:var(--r-m); font-size:var(--fs-3); font-weight:var(--fw-black); cursor:pointer; box-shadow:0 12px 24px rgba(0,230,118,0.25)">
@@ -281,12 +283,14 @@ function _choiceCard(key, icon, label, sub, color) {
   const active = _step === 1 ? _data.goal === key : _step === 2 ? _data.exp === key : _data.privacy === key;
   return `
     <button class="ob-card ${active ? 'active' : ''}" data-key="${key}" data-action="ob:select"
-            style="--active-c:${color}; position:relative; display:flex; align-items:center; text-align:left; gap:20px; padding:20px 24px; background:var(--c-surface); border:1px solid ${active ? color : 'var(--c-border)'}; border-radius:var(--r-xl); cursor:pointer; width:100%; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow:hidden; z-index:1;">
+            style="--active-c:${color}; position:relative; display:flex; align-items:center; text-align:left; gap:var(--sp-2); padding:var(--sp-3); background:var(--c-surface); border:1px solid ${active ? color : 'var(--c-border)'}; border-radius:var(--r-xl); cursor:pointer; width:100%; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow:hidden; z-index:1;">
       ${active ? `<div style="position:absolute; inset:0; background:radial-gradient(circle at left, ${color}20 0%, transparent 80%); z-index:-1;"></div>` : ''}
       <div style="width:44px; height:44px; border-radius:14px; background:${color}15; color:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow: ${active ? `0 0 16px ${color}40` : 'none'}; transition:all 0.3s ease;">
         ${icon}
       </div>
       <div style="min-width:0; flex:1;">
+        <!-- 2px ниже нижней ступени шкалы (--sp-0-5 = 4px) осознанно: это
+             оптический лок-ап «заголовок + подпись», а не ритм блоков. -->
         <div style="font-size:var(--fs-3); font-weight:var(--fw-black); color:var(--c-text-1); letter-spacing:-0.01em; margin-bottom:2px;">${label}</div>
         <div style="font-size:var(--fs-2); font-weight:var(--fw-md); color:var(--c-text-2); line-height:1.3">${sub}</div>
       </div>
@@ -295,7 +299,7 @@ function _choiceCard(key, icon, label, sub, color) {
 
 function _navButtons(ru, canNext) {
   return `
-    <div style="display:flex; gap:12px; margin-top:auto; padding-top:32px">
+    <div style="display:flex; gap:var(--sp-1-5); margin-top:auto; padding-top:var(--sp-4)">
       ${_step > 1 ? `
         <button data-action="ob:prev" 
                 style="width:52px; height:52px; background:none; border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-2); display:flex; align-items:center; justify-content:center; cursor:pointer">
@@ -370,8 +374,8 @@ const style = document.createElement('style');
 style.textContent = `
   .animate-in { animation: ob-fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) both; }
   @keyframes ob-fade-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-  .ob-btn-tab { background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-3); padding:12px; font-size:var(--fs-3); font-weight:var(--fw-bold); cursor:pointer; font-family:inherit; transition:all 0.2s; }
+  .ob-btn-tab { background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-3); padding:var(--sp-1-5); font-size:var(--fs-3); font-weight:var(--fw-bold); cursor:pointer; font-family:inherit; transition:all 0.2s; }
   .ob-btn-tab.active { background:var(--c-accent-bg); border-color:var(--c-accent); color:var(--c-accent); }
-  .ob-fast-skip-btn { background:var(--c-surface); border:1px solid var(--c-border-h); color:var(--c-text-1); font-size:var(--fs-3); font-weight:var(--fw-md); cursor:pointer; min-height:44px; padding:12px 28px; border-radius:24px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:8px; font-family:inherit; }
+  .ob-fast-skip-btn { background:var(--c-surface); border:1px solid var(--c-border-h); color:var(--c-text-1); font-size:var(--fs-3); font-weight:var(--fw-md); cursor:pointer; min-height:44px; padding:var(--sp-1-5) var(--sp-3); border-radius:24px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:var(--sp-1); font-family:inherit; }
 `;
 document.head.appendChild(style);
