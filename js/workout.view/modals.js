@@ -476,7 +476,7 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       </div>
 
       <!-- Category filters -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 4px">
+      <div style="display:flex;gap:var(--sp-1);flex-wrap:wrap;padding:var(--sp-1-5) 0 var(--sp-0-5)">
         <button class="pill-filter ${filterCategory === 'all' || !filterCategory ? 'active' : ''}" data-cat="all">All</button>
         <button class="pill-filter ${filterCategory === 'push' ? 'active' : ''}" data-cat="push">Push</button>
         <button class="pill-filter ${filterCategory === 'pull' ? 'active' : ''}" data-cat="pull">Pull</button>
@@ -485,7 +485,7 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       </div>
 
       <!-- Results count -->
-      <div style="font-size:var(--fs-1);color:var(--c-text-3);padding:6px 0">
+      <div style="font-size:var(--fs-1);color:var(--c-text-3);padding:var(--sp-1) 0">
         <span id="add-ex-count">Loading…</span>
       </div>
 
@@ -493,10 +493,10 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       <div class="add-ex-list" id="add-ex-list" style="flex:1;overflow-y:auto"></div>
 
       <!-- Custom exercise -->
-      <div style="padding-top:12px;margin-top:4px">
+      <div style="padding-top:var(--sp-1-5);margin-top:var(--sp-0-5)">
         <input class="add-ex-search" id="add-ex-custom"
                type="text" placeholder="Or type custom exercise name…"
-               autocomplete="off" style="margin-bottom:8px">
+               autocomplete="off" style="margin-bottom:var(--sp-1)">
         <button class="btn btn-primary btn-sm" id="add-ex-add-custom" style="width:100%">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="16" height="16">
@@ -557,10 +557,10 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
     filtered.slice(0, 50).forEach((ex) => {
       const btn = document.createElement('button');
       btn.className = 'add-ex-item';
-      btn.style.cssText = 'text-align:left;padding:10px 12px;height:auto';
+      btn.style.cssText = 'text-align:left;padding:var(--sp-1-5);height:auto';
       btn.innerHTML = `
         <div style="font-weight:var(--fw-bold);font-size:var(--fs-2);color:var(--c-text-1)">${esc(ex.name)}</div>
-        <div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
+        <div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:var(--sp-0-5);display:flex;gap:var(--sp-1);flex-wrap:wrap">
           <span style="text-transform:capitalize">${esc(ex.muscleGroup)}</span>
           <span>·</span>
           <span style="text-transform:capitalize">${esc(ex.equipment)}</span>
@@ -650,7 +650,7 @@ export async function openReplaceExModal(ei) {
       </div>
 
       <!-- Category filters -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 4px">
+      <div style="display:flex;gap:var(--sp-1);flex-wrap:wrap;padding:var(--sp-1-5) 0 var(--sp-0-5)">
         <button class="pill-filter active" data-cat="all" style="border-color:var(--c-accent);color:var(--c-accent);background:rgba(0,200,110,0.08)">All</button>
         <button class="pill-filter" data-cat="push" style="border-color:var(--c-indigo);color:var(--c-indigo);background:rgba(99,102,241,0.08)">Push</button>
         <button class="pill-filter" data-cat="pull" style="border-color:var(--c-cyan);color:var(--c-cyan);background:rgba(6,182,212,0.08)">Pull</button>
@@ -659,7 +659,7 @@ export async function openReplaceExModal(ei) {
       </div>
 
       <!-- Results count -->
-      <div style="font-size:var(--fs-1);color:var(--c-text-3);padding:6px 0">
+      <div style="font-size:var(--fs-1);color:var(--c-text-3);padding:var(--sp-1) 0">
         <span id="replace-count">Loading…</span>
       </div>
 
@@ -667,10 +667,10 @@ export async function openReplaceExModal(ei) {
       <div class="add-ex-list" id="replace-ex-list" style="flex:1;overflow-y:auto"></div>
 
       <!-- Custom exercise -->
-      <div style="padding-top:12px;margin-top:4px">
+      <div style="padding-top:var(--sp-1-5);margin-top:var(--sp-0-5)">
         <input class="add-ex-search" id="replace-custom"
                type="text" placeholder="Or type custom exercise name…"
-               autocomplete="off" style="margin-bottom:8px">
+               autocomplete="off" style="margin-bottom:var(--sp-1)">
         <button class="btn btn-primary btn-sm" id="replace-add-custom" style="width:100%">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="16" height="16">
@@ -731,10 +731,10 @@ export async function openReplaceExModal(ei) {
     filtered.slice(0, 50).forEach((ex) => {
       const btn = document.createElement('button');
       btn.className = 'add-ex-item';
-      btn.style.cssText = 'text-align:left;padding:10px 12px;height:auto';
+      btn.style.cssText = 'text-align:left;padding:var(--sp-1-5);height:auto';
       btn.innerHTML = `
         <div style="font-weight:var(--fw-bold);font-size:var(--fs-2);color:var(--c-text-1)">${esc(ex.name)}</div>
-        <div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
+        <div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:var(--sp-0-5);display:flex;gap:var(--sp-1);flex-wrap:wrap">
           <span style="text-transform:capitalize">${esc(ex.muscleGroup)}</span>
           <span>·</span>
           <span style="text-transform:capitalize">${esc(ex.equipment)}</span>

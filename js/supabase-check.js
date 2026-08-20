@@ -127,7 +127,7 @@ export const SupabaseCheck = (() => {
 
     return `
       <div class="supabase-badge" title="${title}"
-           style="display:flex;align-items:center;gap:6px;padding:4px 10px;
+           style="display:flex;align-items:center;gap:var(--sp-0-5);padding:var(--sp-0-5) var(--sp-1);
                   border-radius:8px;border:1px solid ${c.text}22;
                   background:${c.bg};font-size:var(--fs-1);font-weight:var(--fw-bold);
                   color:${c.text};width:fit-content">
@@ -139,7 +139,7 @@ export const SupabaseCheck = (() => {
 
   function _cardLoadingHtml() {
     return `
-      <div style="display:flex;align-items:center;gap:8px;padding:var(--sp-1) 0">
+      <div style="display:flex;align-items:center;gap:var(--sp-1);padding:var(--sp-1) 0">
         <div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div>
         <span style="font-size:var(--fs-2);color:var(--c-text-3)">Checking Supabase…</span>
       </div>`;
@@ -157,8 +157,10 @@ export const SupabaseCheck = (() => {
           <span class="cloud-status-val" style="color:var(--c-amber)">Setup needed</span>
         </div>
         <div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:var(--sp-1);line-height:1.6">
-          Add <code style="background:var(--c-bg-3);padding:1px 4px;border-radius:4px">SUPABASE_URL</code>
-          and <code style="background:var(--c-bg-3);padding:1px 4px;border-radius:4px">SUPABASE_ANON_KEY</code>
+          <!-- padding:1px 4px у <code> — инлайновый чип внутри строки текста:
+               вертикаль ниже нижней ступени, рост разорвал бы line-height 1.6. -->
+          Add <code style="background:var(--c-bg-3);padding:1px var(--sp-0-5);border-radius:4px">SUPABASE_URL</code>
+          and <code style="background:var(--c-bg-3);padding:1px var(--sp-0-5);border-radius:4px">SUPABASE_ANON_KEY</code>
           to your <strong>.env</strong> file.
         </div>`;
     }

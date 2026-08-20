@@ -385,7 +385,7 @@ async function _streamMessage(message) {
     const aiDiv = document.createElement('div');
     aiDiv.className = 'chat-message ai';
     aiDiv.innerHTML = `
-      <div class="sk-lines" style="gap:5px;width:120px;padding:4px 0">
+      <div class="sk-lines" style="gap:var(--sp-0-5);width:120px;padding:var(--sp-0-5) 0">
         <div class="sk-line sk" style="height:10px;width:100%"></div>
         <div class="sk-line sk" style="height:10px;width:70%"></div>
       </div>`;

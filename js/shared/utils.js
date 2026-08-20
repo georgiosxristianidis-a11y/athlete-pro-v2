@@ -141,16 +141,19 @@ export const dobSelectsHtml = (dob, ru, idPrefix) => {
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const selStyle = 'height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-1); font-weight:var(--fw-bold);';
   return `
-    <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr; gap:10px">
-      <select id="${idPrefix}-y" style="${selStyle} padding:0 12px;">
+    <!-- Зазор ушёл вниз к --sp-1: в трёхколоночной сетке он отнимается у селектов
+         дважды, меньший gap = более широкая колонка. Инсет един у всех трёх —
+         разный (12/8/12) разъезжался при одинаковой ширине колонок. -->
+    <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr; gap:var(--sp-1)">
+      <select id="${idPrefix}-y" style="${selStyle} padding:0 var(--sp-1-5);">
         <option value="">${ru ? 'Год' : 'Year'}</option>
         ${years.map(year => `<option value="${year}" ${y === String(year) ? 'selected' : ''}>${year}</option>`).join('')}
       </select>
-      <select id="${idPrefix}-m" style="${selStyle} padding:0 8px;">
+      <select id="${idPrefix}-m" style="${selStyle} padding:0 var(--sp-1-5);">
         <option value="">${ru ? 'Мес' : 'Month'}</option>
         ${months.map((name, i) => `<option value="${String(i + 1).padStart(2, '0')}" ${m === String(i + 1).padStart(2, '0') ? 'selected' : ''}>${name}</option>`).join('')}
       </select>
-      <select id="${idPrefix}-d" style="${selStyle} padding:0 12px;">
+      <select id="${idPrefix}-d" style="${selStyle} padding:0 var(--sp-1-5);">
         <option value="">${ru ? 'День' : 'Day'}</option>
         ${Array.from({ length: 31 }, (_, i) => {
           const val = String(i + 1).padStart(2, '0');

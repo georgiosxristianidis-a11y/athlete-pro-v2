@@ -340,6 +340,8 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
             </a>
           </div>
           <div style="position: relative; display: flex; align-items: center;">
+            <!-- Правые 44px — не ритм, а клиренс под абсолютную кнопку показа ключа
+                 (тап-таргет 44×44). Вне шкалы --sp-* осознанно. -->
             <input type="password" id="ai-key-input" class="pref-textarea" style="height: 38px; padding: 0 44px 0 var(--sp-1-5); margin: 0; font-family: monospace; border-radius: var(--r-m); width: 100%; box-sizing: border-box;"
                    placeholder="${esc(placeholder)}"
                    value="${esc(val)}"

@@ -77,7 +77,8 @@ export const Profile = (() => {
       </button>
 
       <!-- ── Version (Subtle Elite) ── -->
-      <div id="app-build-stamp" style="margin-top: 48px; padding-bottom: 120px; text-align: center; opacity: 0.25; font-size: var(--fs-1); font-weight: var(--fw-black); letter-spacing: 0.15em; color: var(--c-text-2); text-transform: uppercase;">
+      <!-- padding-bottom: 120px — не ритм, а клиренс таб-бара, тот же, что у .screen. -->
+      <div id="app-build-stamp" style="margin-top: var(--sp-6); padding-bottom: 120px; text-align: center; opacity: 0.25; font-size: var(--fs-1); font-weight: var(--fw-black); letter-spacing: 0.15em; color: var(--c-text-2); text-transform: uppercase;">
         Athlete Pro v${VERSION} · Elite Edition
       </div>
       <input type="file" id="import-file-input" accept=".json" style="display:none" data-change="profile:importFile">
@@ -89,7 +90,7 @@ export const Profile = (() => {
       _patchAiStatus(settings);
     } catch (err) {
       console.error('Profile load error', err);
-      screen.innerHTML = '<div style="padding:20px;">Error loading profile</div>';
+      screen.innerHTML = '<div style="padding:var(--sp-3);">Error loading profile</div>';
     }
   }
 

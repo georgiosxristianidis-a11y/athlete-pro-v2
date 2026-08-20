@@ -200,7 +200,7 @@ export async function openDataPassport() {
         <span class="passport-row-val">${getPrivacyMode() === 'airgap' ? t('privacy.desc.airgap') : t('privacy.cloud_server')}</span>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:var(--sp-3)">
+      <div style="display:flex;flex-direction:column;gap:var(--sp-1);margin-top:var(--sp-3)">
         <button class="btn btn-primary" data-action="privacy:exportAndClose">
           ${t('privacy.export_all')}
         </button>

@@ -231,7 +231,7 @@
       .status-logo {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: var(--sp-1);
       }
       .status-logo-img {
         width: 32px;
@@ -244,7 +244,7 @@
         letter-spacing: 0.08em;
         text-transform: uppercase;
         display: inline-flex;
-        gap: 5px;
+        gap: var(--sp-0-5);
         align-items: baseline;
       }
       .logo-w1 { color: var(--c-text-1); font-weight: var(--fw-black); }
@@ -269,6 +269,8 @@
         inset: 0;
         overflow-y: auto;
         overflow-x: hidden;
+        /* 72px и 120px — не ритм, а клиренс: сверху статус-бар (55px + safe-area),
+           снизу таб-бар (--nav-h 68px + safe-area). Вне шкалы --sp-* осознанно. */
         padding: 72px var(--sp-2) 120px;
         opacity: 0;
         pointer-events: none;

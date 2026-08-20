@@ -212,7 +212,7 @@ export const AthleteRoom = (() => {
     _overlay.innerHTML = `
       <div class="ar-sheet">
         <div class="ar-header" style="flex-direction: column; align-items: flex-start; padding-bottom: 0;">
-          <div style="display: flex; align-items: center; width: 100%; justify-content: space-between; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; width: 100%; justify-content: space-between; margin-bottom: var(--sp-2);">
             <button class="ar-back-btn" data-action="ar:close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
@@ -227,7 +227,7 @@ export const AthleteRoom = (() => {
           </div>
         </div>
 
-        <div class="ar-content" id="ar-tab-content" style="padding: 16px; overflow-y: auto; flex: 1;">
+        <div class="ar-content" id="ar-tab-content" style="padding: var(--sp-2); overflow-y: auto; flex: 1;">
           <!-- Content injected by switchTab -->
         </div>
       </div>
@@ -298,14 +298,14 @@ export const AthleteRoom = (() => {
             </div>
           </div>
 
-          <div class="ar-stats" style="margin-bottom:12px">
+          <div class="ar-stats" style="margin-bottom:var(--sp-1-5)">
             <div class="ar-stat" data-action="ar:editStat" data-stat="weight" data-val="${metrics?.weight||80}" style="cursor:pointer">
               <div class="ar-stat-val">${metrics?.weight||'—'} <span style="font-size:var(--fs-1);opacity:0.6">kg</span></div>
-              <div class="ar-stat-lbl">${ru?'Вес':'Weight'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:4px; opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+              <div class="ar-stat-lbl">${ru?'Вес':'Weight'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:var(--sp-0-5); opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
             <div class="ar-stat" data-action="ar:editStat" data-stat="height" data-val="${metrics?.height||180}" style="cursor:pointer">
               <div class="ar-stat-val">${metrics?.height||'—'} <span style="font-size:var(--fs-1);opacity:0.6">cm</span></div>
-              <div class="ar-stat-lbl">${ru?'Рост':'Height'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:4px; opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+              <div class="ar-stat-lbl">${ru?'Рост':'Height'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:var(--sp-0-5); opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
             <div class="ar-stat" style="box-shadow: 0 4px 16px ${tierColor}20; border-color: ${tierColor}40">
               <div class="ar-stat-val" style="color: ${tierColor}; text-shadow: 0 0 12px ${tierColor}80">${Math.round(score)}</div>
@@ -340,31 +340,31 @@ export const AthleteRoom = (() => {
             }).join('')}
           </div>
 
-          <div class="ar-name-editor" id="ar-stat-editor" style="display:none; position:absolute; inset:0; background:var(--c-bg-1); z-index:10; padding:16px;">
+          <div class="ar-name-editor" id="ar-stat-editor" style="display:none; position:absolute; inset:0; background:var(--c-bg-1); z-index:10; padding:var(--sp-2);">
             <div class="ar-editor-card">
               <div class="ar-editor-label" id="ar-stat-label">Value</div>
               <input type="number" id="ar-stat-input" class="ar-name-input" value="0" step="0.1">
-              <div class="ar-editor-actions" style="margin-top:24px">
+              <div class="ar-editor-actions" style="margin-top:var(--sp-3)">
                 <button class="ar-btn-save" data-action="ar:saveStat">${ru ? 'Сохранить' : 'Save'}</button>
                 <button class="ar-btn-cancel" data-action="ar:cancelStatEdit">${ru ? 'Отмена' : 'Cancel'}</button>
               </div>
             </div>
           </div>
-          <div class="ar-name-editor" id="ar-name-editor" style="display:none; position:absolute; inset:0; background:var(--c-bg-1); z-index:10; padding:16px;">
+          <div class="ar-name-editor" id="ar-name-editor" style="display:none; position:absolute; inset:0; background:var(--c-bg-1); z-index:10; padding:var(--sp-2);">
             <div class="ar-editor-card">
               <div class="ar-editor-label">${ru ? 'Имя' : 'Name'}</div>
               <input type="text" id="ar-name-input" class="ar-name-input" value="${esc(name)}" maxlength="25">
               
-              <div class="ar-editor-label" style="margin-top:16px">${ru ? 'Дата рождения' : 'Date of Birth'}</div>
-              <div style="margin-top:8px">${dobSelectsHtml(ctx.profile?.dob || '', ru, 'ar-dob')}</div>
+              <div class="ar-editor-label" style="margin-top:var(--sp-2)">${ru ? 'Дата рождения' : 'Date of Birth'}</div>
+              <div style="margin-top:var(--sp-1)">${dobSelectsHtml(ctx.profile?.dob || '', ru, 'ar-dob')}</div>
 
-              <div class="ar-editor-label" style="margin-top:16px">${ru ? 'Пол' : 'Sex'}</div>
-              <select id="ar-sex-input" class="ar-name-input" style="background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); border-radius:12px; height:48px; padding:0 16px; width:100%; font-size:var(--fs-3); margin-top:8px;">
+              <div class="ar-editor-label" style="margin-top:var(--sp-2)">${ru ? 'Пол' : 'Sex'}</div>
+              <select id="ar-sex-input" class="ar-name-input" style="background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); border-radius:12px; height:48px; padding:0 var(--sp-2); width:100%; font-size:var(--fs-3); margin-top:var(--sp-1);">
                 <option value="m" ${ctx.profile?.sex !== 'f' ? 'selected' : ''}>${ru ? 'Мужской' : 'Male'}</option>
                 <option value="f" ${ctx.profile?.sex === 'f' ? 'selected' : ''}>${ru ? 'Женский' : 'Female'}</option>
               </select>
               
-              <div class="ar-editor-colors-label" style="margin-top:16px">${ru ? 'Цвет аватара' : 'Avatar Color'}</div>
+              <div class="ar-editor-colors-label" style="margin-top:var(--sp-2)">${ru ? 'Цвет аватара' : 'Avatar Color'}</div>
               <div class="ar-color-row">
                 ${AVATAR_COLORS.map(([e, t], i) => `
                   <div class="ar-color-swatch ${i === (parseInt(ctx.colorIdx) || 0) ? 'active' : ''}"
@@ -372,7 +372,7 @@ export const AthleteRoom = (() => {
                        data-action="ar:selectColor" data-i="${i}"></div>`).join('')}
               </div>
 
-              <div class="ar-editor-colors-label" style="margin-top:16px">${ru ? 'Цвет рамки' : 'Frame Color'}</div>
+              <div class="ar-editor-colors-label" style="margin-top:var(--sp-2)">${ru ? 'Цвет рамки' : 'Frame Color'}</div>
               <div class="ar-color-row">
                 ${FRAME_COLORS.map(([e, t], i) => `
                   <div class="ar-color-swatch ar-frame-swatch ${i === (parseInt(ctx.frameIdx) || 0) ? 'active' : ''}"
@@ -380,7 +380,7 @@ export const AthleteRoom = (() => {
                        data-action="ar:selectFrame" data-i="${i}"></div>`).join('')}
               </div>
 
-              <div class="ar-editor-actions" style="margin-top:24px">
+              <div class="ar-editor-actions" style="margin-top:var(--sp-3)">
                 <button class="ar-btn-save" data-action="ar:saveName">${ru ? 'Применить' : 'Apply'}</button>
                 <button class="ar-btn-cancel" data-action="ar:cancelEdit">${ru ? 'Отмена' : 'Cancel'}</button>
               </div>
@@ -519,7 +519,9 @@ export const AthleteRoom = (() => {
 
   function _renderMetricsTab(container, ctx) {
     const { ru } = ctx;
-    container.innerHTML = `<div id="ar-body-stats-root" style="margin-top: -16px;"></div>`;
+    // Пара с инсетом .ar-content (--sp-2): отрицательный margin гасит верхний
+    // отступ вкладки, поэтому переводится только вместе с ним.
+    container.innerHTML = `<div id="ar-body-stats-root" style="margin-top: calc(-1 * var(--sp-2));"></div>`;
     import('../body-stats.js').then(mod => {
       const root = document.getElementById('ar-body-stats-root');
       if(root) {

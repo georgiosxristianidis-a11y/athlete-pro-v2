@@ -119,7 +119,7 @@ export async function load() {
       <div class="section-header stagger-item" style="margin-top:var(--sp-3); animation-delay: 0.1s">
         <span class="section-label">${t('analytics.ppl_balance')}</span>
       </div>
-      <div class="chart-card stagger-item" id="ppl-gauge-analytics" style="padding:18px 16px 16px; animation-delay: 0.1s"></div>
+      <div class="chart-card stagger-item" id="ppl-gauge-analytics" style="padding:var(--sp-2); animation-delay: 0.1s"></div>
 
       <!-- ── Strength Progression (premium per-lift curves) ── -->
       <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.11s">
@@ -128,13 +128,14 @@ export async function load() {
       <div id="strength-curves" class="stagger-item" style="animation-delay: 0.11s"></div>
 
       <!-- ── Monthly Calendar ── -->
-      <div class="chart-card stagger-item" style="padding:16px; margin-top:var(--sp-4); animation-delay: 0.12s;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+      <div class="chart-card stagger-item" style="padding:var(--sp-2); margin-top:var(--sp-4); animation-delay: 0.12s;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: var(--sp-2);">
           <div>
             <div id="cal-month-label" style="font-size:var(--fs-3); font-weight:var(--fw-bold); color:var(--c-text-1);">Month Year</div>
+            <!-- 2px — лок-ап «заголовок + подпись», ниже нижней ступени --sp-0-5. -->
             <div style="font-size:var(--fs-1); color:var(--c-text-3); margin-top: 2px;">Workout Heatmap</div>
           </div>
-          <div style="display:flex; gap:8px;">
+          <div style="display:flex; gap:var(--sp-1);">
             <button class="btn-icon-nav" id="cal-prev" data-action="analytics:calPrev" style="background:var(--c-surface-h); border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; color:var(--c-text-2); border:none; cursor:pointer;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
@@ -382,7 +383,9 @@ export function calDayClick(year, month, day, existingType, existingId) {
     </button>` : '';
 
   overlay.innerHTML = `
-    <div class="modal-sheet" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+    <!-- Инлайн padding-bottom снят: base.css .modal-sheet уже даёт ровно
+         calc(var(--sp-3) + var(--safe-bottom)), инлайн повторял его сырым 20px. -->
+    <div class="modal-sheet">
       <div class="modal-handle"></div>
       <div class="modal-header">
         <div class="modal-title">Log Workout</div>
