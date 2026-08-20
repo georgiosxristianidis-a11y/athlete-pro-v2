@@ -1,7 +1,7 @@
 # NEXT SESSION — Athlete Pro
 
-> Читать первым. **Роутер, а не состояние:** здесь указатель на карточку, контекст — в самом хендоффе.
-> Обновлено 2026-08-19 (TOK-8: гейт доков откалиброван по /context).
+> Читать первым. **Роутер, а не состояние:** указатель на карточку, контекст — в хендоффе.
+> Обновлено 2026-08-20 (заведена линия TOOL — тулчейн агента, из `/doctor`).
 
 ## Правило файла
 
@@ -16,14 +16,14 @@ npm run docs:budget    # цена системных доков в токена�
 ```
 
 Версия — `js/version.js`. Done — `CHANGELOG.md`. Правила — `CLAUDE.md`, дизайн — `.claude/rules/design.md`;
-здесь они не дублируются: две копии = одна протухшая. **Строка роутера ≤200 символов** — разрослась
-в пересказ, значит её место в хендоффе.
+здесь не дублируются: две копии = одна протухшая. **Строка роутера ≤200 символов** — разрослась в пересказ,
+значит её место в хендоффе.
 
 ## Барьеры репозитория
 
-- **Branch-protection включена 2026-08-20** (PROT-1): обязательные `test`+`e2e`+`drift` (strict), PR обязателен, linear history, без force-push; `enforce_admins` стоит — обхода нет ни у кого, включая админа. Локально дублирует `.githooks/pre-push`: блокирует пуш в `refs/heads/main`, обход `MAIN_PUSH_OK=1`. Пуш из одних удалений выходит нулём до всех гардов — кода в нём нет.
+- **Branch-protection включена 2026-08-20** (PROT-1): `test`+`e2e`+`drift` (strict), PR обязателен, linear history, без force-push, `enforce_admins` — обхода нет ни у кого. Локально дублирует `.githooks/pre-push` (обход `MAIN_PUSH_OK=1`). Пуш из одних удалений выходит нулём до гардов.
 - **preflight знает три состояния защиты** (`scripts/main-protection.mjs`): нет защиты или чека — FAIL, снятый `enforce_admins` — WARN, всё на месте — OK. Сторож мёржа мимо ворот — `main-watchdog.yml`.
-- **Зелёная галочка ≠ чеки прошли:** `combined status` бывает `success` от одного Vercel при нуле check-runs. Считать: `gh api repos/:owner/:repo/commits/<sha>/check-runs`.
+- **Зелёная галочка ≠ чеки прошли:** `combined status` бывает `success` от Vercel при нуле check-runs. Считать: `gh api repos/:owner/:repo/commits/<sha>/check-runs`.
 - `delete_branch_on_merge` включён — мёржить `gh pr merge --rebase --delete-branch`.
 
 ## Куда идти за работой (в `docs/handoff/`)
@@ -41,8 +41,9 @@ npm run docs:budget    # цена системных доков в токена�
 - `HANDOFF_orchestration.md` — роли LEAD/worker/verifier, DoD-лестница
 - `HANDOFF_air_refactor.md` — хвост
 - `HANDOFF_token_economy.md` → **TOK-1** (TOK-8 закрыта), дальше TOK-6, TOK-2, TOK-4; TOK-11 (сжатие закрытых карточек) — перед TOK-5; TOK-9/TOK-10 отдельно
+- `HANDOFF_toolchain.md` → **TOOL-1** (CLI отстал, Gio), **TOOL-2** (figma: 1.5k резидента), дальше TOOL-3/4/5; правит `~/.claude/*`, не код
 
-Вне хендоффов, заведено 2026-08-14: **DOCS-3** (перевод горячего пути на английский, ждёт пересборки `docs/RULES.md`), **WEED-2** (прополка веток/ворктри, порог 30 дн, смежна с TOK-7), **FLOW-4** (TTL памяти ≤7500 ток, смежна с TOK-5).
+Вне хендоффов, с 2026-08-14: **DOCS-3** (горячий путь на английский, ждёт пересборки `docs/RULES.md`), **WEED-2** (прополка веток/ворктри, порог 30 дн, смежна с TOK-7), **FLOW-4** (TTL памяти ≤7500 ток, смежна с TOK-5).
 
 ## Порядок взятия
 
@@ -52,7 +53,7 @@ npm run docs:budget    # цена системных доков в токена�
 
 ## Технические заметки
 
-- **Запуск:** `npm run dev` → :3000 (3000 = Gio, 3001 = Claude preview). Телеметрия — `scripts/telemetry-server.mjs --lan`.
+- **Запуск:** `npm run dev` → :3000 (Gio), 3001 = Claude preview. Телеметрия — `scripts/telemetry-server.mjs --lan`.
 - **Тесты:** `npm test` = unit+integration; `npx playwright test` — отдельно, на тёплом сервере.
 - **SW:** `ASSETS`/`CACHE_NAME` только через `npm run build:sw` — краснеет `test/sw-cache-name.test.js`, если забыть.
 - **lhci гонять ТОЛЬКО из worktree** — корневой чекаут даёт фейковые цифры.
