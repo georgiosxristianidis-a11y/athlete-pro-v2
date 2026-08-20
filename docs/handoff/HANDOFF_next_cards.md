@@ -40,8 +40,10 @@
 Репо публичный с 2026-06-20 → protection бесплатна; посылка «приватный, free-план» была ложной.
 Включено через API: required checks `test`+`e2e`+`drift` (strict), PR обязателен (0 апрувов, соло-репо),
 linear history, без force-push и удаления веток, conversation resolution.
-`enforce_admins: false` — решение Gio: админский обход оставлен выходом из аварии раннеров, журнал
-обходов ведёт `main-watchdog.yml`. DoD выполнен: `npm run preflight` даёт WARN (не FAIL), exit 0.
+`enforce_admins: true` — решение Gio тем же днём: потолок поставлен, обхода нет ни у кого. Корень
+августовской аварии раннеров (`push: ['**']`) починен PR#229, ради чего оставляли обход — закрыто.
+Аварийный выход, если раннеров опять не будет: `gh api -X DELETE .../protection/enforce_admins`,
+вернуть POST-ом. DoD выполнен: `npm run preflight` даёт OK, exit 0.
 Ветка `planGated` в `scripts/preflight.mjs` на публичном репо по-прежнему недостижима.
 
 ---
