@@ -183,7 +183,7 @@ export const Dashboard = (() => {
             </div>
             <div class="badge" style="background:var(--c-bg-3); color:var(--c-text-2); font-size:var(--fs-1); font-weight:var(--fw-bold); border:1px solid var(--c-border);">30 Days</div>
           </div>
-          <div id="spark-container" style="height: 60px; width: calc(100% - 32px); margin: 16px auto 16px auto;"></div>
+          <div id="spark-container" style="height: 60px; width: calc(100% - 2 * var(--sp-2)); margin: var(--sp-2) auto;"></div>
         </div>
 
         <!-- Weekly Summary Chip -->
@@ -388,7 +388,7 @@ export const Dashboard = (() => {
     if (!container || !totalEl) return;
     
     if (!workouts || workouts.length === 0) {
-      container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--c-text-3); font-size: var(--fs-2);">No data</div>';
+      container.innerHTML = '<div style="padding: var(--sp-2); text-align: center; color: var(--c-text-3); font-size: var(--fs-2);">No data</div>';
       return;
     }
 
@@ -443,7 +443,10 @@ export const Dashboard = (() => {
       const color = isUp ? 'var(--c-accent)' : 'var(--c-red)';
       const bg = isUp ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 77, 136, 0.15)';
       const arrow = isUp ? '+' : '-';
-      trendHtml = `<span style="background:${bg}; color:${color}; font-size:var(--fs-1); font-weight:var(--fw-black); padding:2px 6px; border-radius:12px; margin-left:8px;">${arrow}${Math.abs(percent)}%</span>`;
+      // Вертикаль 2px — ниже нижней ступени (--sp-0-5 = 4px): пилюля стоит в
+      // лок-апе с hero-числом, 4px разорвали бы строку. Горизонталь ушла ВНИЗ
+      // к --sp-0-5 по тому же правилу лок-апа.
+      trendHtml = `<span style="background:${bg}; color:${color}; font-size:var(--fs-1); font-weight:var(--fw-black); padding:2px var(--sp-0-5); border-radius:12px; margin-left:var(--sp-1);">${arrow}${Math.abs(percent)}%</span>`;
     }
 
     const pushArr = Array.from(pplMaps.push.values());
@@ -590,7 +593,7 @@ export const Dashboard = (() => {
       <div class="orm-row">
         <div class="orm-name">
           <span style="font-size:var(--fs-1);font-weight:var(--fw-bold);color:var(--c-text-3);
-            margin-right:6px;font-variant-numeric:tabular-nums">#${rank.get(o.id)}</span>${esc(o.id)}
+            margin-right:var(--sp-0-5);font-variant-numeric:tabular-nums">#${rank.get(o.id)}</span>${esc(o.id)}
         </div>
         <div class="orm-val">${o.value}<span class="orm-unit">kg</span>${deltaHtml}</div>
         <div class="orm-bar-wrap">
@@ -939,23 +942,25 @@ async function showWeeklySummary() {
       <div class="weekly-summary-content" style="padding:var(--sp-3)">
         <div class="summary-section">
           <h3 style="font-size:var(--fs-3);color:var(--c-text-2);margin-bottom:var(--sp-2)">Overview</h3>
-          <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:var(--sp-3)">
+          <div style="display:flex; flex-direction:column; gap:var(--sp-1-5); margin-bottom:var(--sp-3)">
             ${data.workoutCount > 0 ? `
-              <div style="display:flex; align-items:center; gap:12px; color:var(--c-text-1); font-size:var(--fs-3);">
+              <div style="display:flex; align-items:center; gap:var(--sp-1-5); color:var(--c-text-1); font-size:var(--fs-3);">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
                 <span><strong>${data.workoutCount} workouts</strong> this week</span>
               </div>
             ` : `<div style="color:var(--c-text-3); font-size:var(--fs-3);">No workouts this week — rest is important too!</div>`}
             
             ${data.prs.length > 0 ? `
-              <div style="display:flex; align-items:flex-start; gap:12px; color:var(--c-text-1); font-size:var(--fs-3);">
+              <div style="display:flex; align-items:flex-start; gap:var(--sp-1-5); color:var(--c-text-1); font-size:var(--fs-3);">
+                <!-- margin-top: 2px — оптическая посадка иконки на первую строку,
+                     ниже нижней ступени шкалы (--sp-0-5 = 4px). -->
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                 <span><strong>${data.prs.length} PRs</strong>: ${data.prs.map(p => `${esc(p.exercise)} ${p.weight}kg`).join(', ')}</span>
               </div>
             ` : ''}
 
             ${data.plateauAlerts.length > 0 ? `
-              <div style="display:flex; align-items:center; gap:12px; color:var(--c-text-1); font-size:var(--fs-3);">
+              <div style="display:flex; align-items:center; gap:var(--sp-1-5); color:var(--c-text-1); font-size:var(--fs-3);">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                 <span><strong>${data.plateauAlerts.length} plateaus</strong> detected</span>
               </div>
@@ -966,7 +971,7 @@ async function showWeeklySummary() {
         ${data.prs.length > 0 ? `
           <div class="summary-section pr-section" style="margin-top:var(--sp-3)">
             <h3 style="font-size:var(--fs-3);color:var(--c-accent);margin-bottom:var(--sp-2)">Personal Records</h3>
-            <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; flex-direction:column; gap:var(--sp-1);">
               ${data.prs.map(pr => `
                 <div style="display:flex; justify-content:space-between; padding:var(--sp-2); background:var(--c-surface-h); border-radius:var(--r-s); border-left:2px solid var(--c-accent);">
                   <span style="color:var(--c-text-1); font-weight:var(--fw-bold);">${esc(pr.exercise)}</span>
@@ -980,11 +985,11 @@ async function showWeeklySummary() {
         ${data.plateauAlerts.length > 0 ? `
           <div class="summary-section plateau-section" style="margin-top:var(--sp-4)">
             <h3 style="font-size:var(--fs-3);color:var(--c-amber);margin-bottom:var(--sp-2)">Plateau Alerts</h3>
-            <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; flex-direction:column; gap:var(--sp-1);">
               ${data.plateauAlerts.map(alert => `
                 <div class="plateau-alert" style="padding:var(--sp-2); background:var(--c-surface-h); border-radius:var(--r-s); border-left:2px solid var(--c-amber);">
-                  <strong style="color:var(--c-text-1);display:block;margin-bottom:4px;font-size:var(--fs-3);">${esc(alert.exercise)}</strong>
-                  <p style="color:var(--c-text-2);font-size:var(--fs-2);margin-bottom:4px">${esc(alert.suggestion)}</p>
+                  <strong style="color:var(--c-text-1);display:block;margin-bottom:var(--sp-0-5);font-size:var(--fs-3);">${esc(alert.exercise)}</strong>
+                  <p style="color:var(--c-text-2);font-size:var(--fs-2);margin-bottom:var(--sp-0-5)">${esc(alert.suggestion)}</p>
                   <small style="color:var(--c-text-3);font-size:var(--fs-1)">${alert.weeks} weeks since last progress</small>
                 </div>
               `).join('')}

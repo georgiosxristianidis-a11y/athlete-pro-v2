@@ -257,7 +257,7 @@ export const Claude = (() => {
 
     const aiBubble = document.createElement('div');
     aiBubble.className = 'chat-msg ai-msg thinking';
-    aiBubble.innerHTML = `<div class="sk-lines" style="gap:5px"><div class="sk-line sk" style="height:10px;width:100%"></div><div class="sk-line sk" style="height:10px;width:70%"></div></div>`;
+    aiBubble.innerHTML = `<div class="sk-lines" style="gap:var(--sp-0-5)"><div class="sk-line sk" style="height:10px;width:100%"></div><div class="sk-line sk" style="height:10px;width:70%"></div></div>`;
     hist?.appendChild(aiBubble);
 
     try {
