@@ -200,18 +200,17 @@ function _ledgerSection(data) {
    to _persistFinalSession without extra plumbing. */
 
 /**
- * @param {object} data  summaryData — .sessionRpe will be set on tap
- * @param {boolean} ru
+ * Разметка полосы. Подпись «RPE» — аббревиатура, одна в обеих локалях.
  * @returns {string}
  */
-function _rpeSection(data, ru) {
+function _rpeSection() {
   const chips = [];
   for (let i = 1; i <= 10; i++) chips.push(
     `<button class="summ-rpe-chip" data-rpe="${i}" type="button">${i}</button>`
   );
   return `
     <div class="summ-rpe-strip">
-      <div class="summ-rpe-label">${ru ? 'RPE' : 'RPE'}</div>
+      <div class="summ-rpe-label">RPE</div>
       <div class="summ-rpe-chips">${chips.join('')}</div>
     </div>`;
 }
@@ -276,7 +275,7 @@ export function renderSummaryModal(data, onSave, ru = false) {
 
   const prHTML = _prSection(data.prs);
   const ledgerHTML = _ledgerSection(data);
-  const rpeHTML = _rpeSection(data, ru);
+  const rpeHTML = _rpeSection();
   data.sessionRpe = null;
 
   const overlay = document.createElement('div');
