@@ -21,16 +21,14 @@ npm run docs:budget    # цена системных доков в токена�
 
 ## Барьеры репозитория
 
-- **Branch-protection включена 2026-08-20** (PROT-1): `test`+`e2e`+`drift` (strict), PR обязателен, linear history, без force-push, `enforce_admins` — обхода нет ни у кого. Локально дублирует `.githooks/pre-push` (обход `MAIN_PUSH_OK=1`). Пуш из одних удалений выходит нулём до гардов.
-- **preflight знает три состояния защиты** (`scripts/main-protection.mjs`): нет защиты или чека — FAIL, снятый `enforce_admins` — WARN, всё на месте — OK. Сторож мёржа мимо ворот — `main-watchdog.yml`.
+- **Branch-protection с 2026-08-20** (PROT-1): `test`+`e2e`+`drift` (strict), PR обязателен, linear history, без force-push, `enforce_admins` — обхода нет ни у кого. Локально дублирует `.githooks/pre-push` (`MAIN_PUSH_OK=1`); пуш из одних удалений выходит нулём до гардов. Состояние защиты читает preflight (`scripts/main-protection.mjs`): нет защиты или чека — FAIL, снят `enforce_admins` — WARN. Сторож мёржа мимо ворот — `main-watchdog.yml`.
 - **Зелёная галочка ≠ чеки прошли:** `combined status` бывает `success` от Vercel при нуле check-runs. Считать: `gh api repos/:owner/:repo/commits/<sha>/check-runs`.
 - `delete_branch_on_merge` включён — мёржить `gh pr merge --rebase --delete-branch`.
 
 ## Куда идти за работой (в `docs/handoff/`)
 
 - `HANDOFF_boot_brand.md` → **SPLASH-1**, дальше MOTION-1; не параллелить, трогает `index.html`
-- `HANDOFF_panda_core.md` — активных карточек нет, готова к полевому чеку Gio
-- `HANDOFF_intel_readiness.md` → **INTEL-1**; порядок 1→3→4 фиксирован
+- `HANDOFF_intel_readiness.md` → **INTEL-3**, следом INTEL-4; порядок фиксирован
 - `HANDOFF_gemini_audit_triage.md` → **SCAF-1**, следом NOISE-1/PII-1; бандл не берём; за Gio — снести Render, отозвать `ANTHROPIC_API_KEY`
 - `HANDOFF_light_theme.md` → **THEME-6** (P2)
 - `HANDOFF_design_system.md` → **SCALE-1** (радиусы там же), дальше NAV-BACK-1 + DEAD-1; линия DS → **DS-2**, следом DS-3
@@ -40,6 +38,7 @@ npm run docs:budget    # цена системных доков в токена�
 - `HANDOFF_isl_tail.md` · `HANDOFF_air_refactor.md` — хвосты острова и AIR
 - `HANDOFF_usage_stats.md` → **USAGE-1** (Web Analytics в Vercel, за Gio), затем USAGE-2 — флип флага
 - `HANDOFF_token_economy.md` → **TOK-1**, дальше TOK-6, TOK-2, TOK-4; TOK-11 перед TOK-5; TOK-9/TOK-10 отдельно
+- `HANDOFF_seo_meta.md` → **SEO-2** — og:image 1200x630; прекеш у потолка, картинку вне `ASSETS`
 - `HANDOFF_toolchain.md` → **TOOL-1** (CLI отстал, Gio), **TOOL-2**, дальше TOOL-3/4/5; правит `~/.claude/*`, не код
 
 Вне хендоффов, с 2026-08-14: **DOCS-3** (горячий путь на английский, ждёт пересборки `docs/RULES.md`), **WEED-2** (прополка веток/ворктри, порог 30 дн, смежна с TOK-7), **FLOW-4** (TTL памяти ≤7500 ток, смежна с TOK-5).
