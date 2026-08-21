@@ -5,7 +5,10 @@
  * workout flow, Claude FAB, profile, analytics, service worker.
  */
 
-const BASE = 'http://localhost:3000';
+// Порт переопределяем из окружения: соседняя сессия часто держит свой сервер
+// на 3000, и reuseExistingServer молча прицепляет прогон к ЧУЖОМУ чекауту —
+// зелёные тесты тогда меряют не эту ветку. В CI переменной нет, порт прежний.
+const BASE = process.env.E2E_BASE || 'http://localhost:3000';
 import { test, expect } from '@playwright/test';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
@@ -300,11 +303,23 @@ test.describe('App with Onboarding Bypassed', () => {
       await page.goto(BASE);
       await waitForBoot(page);
       await skipOnboarding(page);
+      // С дефолтом 'fab-video' ON пустой дашборд рендерит большого маскота, и
+      // claude.view.js applyVis прячет FAB на s-home — две панды на экране не
+      // висят по замыслу. Уходим на s-stats: там контракт «FAB виден».
+      await page.locator('button[data-s="s-stats"]').click();
+      await expect(page.locator('#s-stats')).toHaveClass(/active/, { timeout: 3000 });
       await page.waitForSelector('#claude-fab', { timeout: 8000 });
     });
 
     test('Claude FAB is rendered and visible', async ({ page }) => {
       await expect(page.locator('#claude-fab')).toBeVisible();
+    });
+
+    test('FAB is hidden on empty home while the big mascot is alive', async ({ page }) => {
+      await page.locator('button[data-s="s-home"]').click();
+      await expect(page.locator('#s-home')).toHaveClass(/active/, { timeout: 3000 });
+      await expect(page.locator('.empty-dash-mascot video')).toHaveCount(1);
+      await expect(page.locator('#claude-fab-container')).toBeHidden();
     });
 
     /* The legacy #claude-overlay was replaced: FAB now routes to the Intel
