@@ -22,7 +22,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { collectAssets, digestFor, renderSw } from '../scripts/build-sw.mjs';
+import { splitAssets, digestFor, renderSw } from '../scripts/build-sw.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SW_PATH = path.join(REPO_ROOT, 'sw.js');
@@ -35,15 +35,19 @@ const SW_SRC = fs.readFileSync(SW_PATH, 'utf8');
  */
 const norm = (s) => s.replace(/\r\n/g, '\n');
 
-const assets = collectAssets(REPO_ROOT);
+const split = splitAssets(REPO_ROOT);
+const assets = split.assets;
 const digest = digestFor(assets, REPO_ROOT);
 
-/** The ASSETS manifest as sw.js currently declares it. */
-function declaredAssets() {
-  const block = /const ASSETS = \[([\s\S]*?)\];/.exec(SW_SRC);
-  assert.ok(block, 'sw.js has no ASSETS array');
+/** One generated manifest as sw.js currently declares it. */
+function declaredList(name) {
+  const block = new RegExp(String.raw`const ${name} = \[([\s\S]*?)\];`).exec(SW_SRC);
+  assert.ok(block, `sw.js has no ${name} array`);
   return [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
 }
+
+/** Both phases together — the full offline set (card PRECACHE-1). */
+const declaredAssets = () => [...declaredList('ASSETS'), ...declaredList('ASSETS_WARM')];
 
 const STALE = 'sw.js разошёлся с содержимым репозитория — прогони `npm run build:sw` ' +
   'и закоммить sw.js вместе с правкой ассетов';
@@ -67,7 +71,7 @@ test('CACHE_NAME carries the digest of the current manifest', () => {
 
 test('sw.js is byte-identical to what build:sw would write', () => {
   assert.equal(
-    norm(renderSw(SW_SRC, assets, digest)), norm(SW_SRC),
+    norm(renderSw(SW_SRC, split, digest)), norm(SW_SRC),
     `${STALE} (полное сравнение сгенерированной части)`
   );
 });
@@ -83,11 +87,19 @@ test('the guard fails on a stale CACHE_NAME and on a stale manifest', () => {
     /const CACHE_NAME = '([^']+)';/.exec(staleHash)[1].replace(/^.*-/, ''), digest,
     'подложенный протухший хеш обязан расходиться с пересчитанным'
   );
-  assert.notEqual(norm(renderSw(staleHash, assets, digest)), norm(staleHash));
+  assert.notEqual(norm(renderSw(staleHash, split, digest)), norm(staleHash));
 
   const staleAssets = SW_SRC.replace(/const ASSETS = \[[\s\S]*?\];/, "const ASSETS = [\n  '/index.html'\n];");
   assert.notEqual(
-    norm(renderSw(staleAssets, assets, digest)), norm(staleAssets),
+    norm(renderSw(staleAssets, split, digest)), norm(staleAssets),
     'потерянный из манифеста ассет обязан ловиться полным сравнением'
+  );
+
+  // Вторая фаза сторожится так же: файл, выпавший из ASSETS_WARM, онлайн
+  // незаметен и всплывает только офлайн, через несколько релизов.
+  const staleWarm = SW_SRC.replace(/const ASSETS_WARM = \[[\s\S]*?\];/, "const ASSETS_WARM = [\n  '/js/sync.js'\n];");
+  assert.notEqual(
+    norm(renderSw(staleWarm, split, digest)), norm(staleWarm),
+    'потеря из фазы прогрева обязана ловиться тем же сравнением'
   );
 });

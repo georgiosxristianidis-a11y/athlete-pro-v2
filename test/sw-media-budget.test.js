@@ -17,26 +17,54 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+import { collectAssets } from '../scripts/build-sw.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SW_SRC = fs.readFileSync(path.join(REPO_ROOT, 'sw.js'), 'utf8');
 
 /**
- * Cellular budget: the whole precache must stay well under a megabyte and a half.
- * Raised 1.5→1.55 MB alongside AN-2 (exercise history modal, 2026-08-18): the
- * margin before that feature was 10.3 KB, so the very next non-trivial JS/CSS
- * addition was always going to trip this guard. Gio signed off on the bump
- * (not on AN-2 quietly shrinking to fit) — see feat/an-2-exercise-history-salvage.
+ * Cellular budget for the INSTALL phase (card PRECACHE-1). Until 2026-08-21 this
+ * was one budget for the whole offline set — 1.55 MB with 2.4 KB of headroom,
+ * so three kilobytes of SEO meta in <head> went red for reasons unrelated to the
+ * question the gate asks. The precache is two-phase now: `install` takes only
+ * the boot closure, the rest warms after `activate`.
+ *
+ * The ceiling therefore went DOWN, not up: 1.55 → 0.75 MB against 0.65 MB in
+ * use. Headroom is ~100 KB and it belongs to boot-path growth alone — a new
+ * screen's CSS/JS lands in the warm phase and cannot spend it.
  */
-const PRECACHE_BUDGET_BYTES = 1.55 * 1024 * 1024;
+const INSTALL_BUDGET_BYTES = 0.75 * 1024 * 1024;
+
+/**
+ * The warm phase answers a different question — offline completeness, not the
+ * cost of installing over a cell — so its ceiling is deliberately loose. It
+ * exists so a multi-megabyte asset drop still meets a red test somewhere.
+ */
+const OFFLINE_BUDGET_BYTES = 2 * 1024 * 1024;
 
 const MEDIA_EXT = /\.(?:mp4|webm|m4a|mp3|ogg|mov)$/i;
 
-/** Parse the generated ASSETS manifest out of sw.js. */
-function readAssets() {
-  const block = /const ASSETS = \[([\s\S]*?)\];/.exec(SW_SRC);
-  assert.ok(block, 'sw.js has no ASSETS array');
+/** Parse one of the generated manifests out of sw.js. */
+function readList(name) {
+  const block = new RegExp(String.raw`const ${name} = \[([\s\S]*?)\];`).exec(SW_SRC);
+  assert.ok(block, `sw.js has no ${name} array`);
   return [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+}
+
+const readAssets = () => readList('ASSETS');
+const readWarm = () => readList('ASSETS_WARM');
+
+/** Total size on disk, asserting every listed path exists. */
+function sizeOf(paths) {
+  let total = 0;
+  const missing = [];
+  for (const webPath of paths) {
+    const abs = path.join(REPO_ROOT, webPath);
+    if (!fs.existsSync(abs)) { missing.push(webPath); continue; }
+    total += fs.statSync(abs).size;
+  }
+  assert.deepEqual(missing, [], 'manifest lists files that do not exist — run npm run build:sw');
+  return total;
 }
 
 /**
@@ -65,35 +93,85 @@ function loadSw() {
     },
   };
   vm.createContext(context);
-  vm.runInContext(`${SW_SRC}\n;globalThis.__sw = { cacheWholeMedia, mediaCacheFirst, MEDIA_RE };`, context);
+  vm.runInContext(`${SW_SRC}\n;globalThis.__sw = { cacheWholeMedia, mediaCacheFirst, MEDIA_RE, precache };`, context);
   return { api: context.__sw, puts, context };
 }
 
-test('precache stays under the cellular budget', () => {
-  const assets = readAssets();
-  let total = 0;
-  const missing = [];
-  for (const webPath of assets) {
-    const abs = path.join(REPO_ROOT, webPath);
-    if (!fs.existsSync(abs)) { missing.push(webPath); continue; }
-    total += fs.statSync(abs).size;
-  }
-  assert.deepEqual(missing, [], 'ASSETS lists files that do not exist — run npm run build:sw');
+test('the install phase stays under the cellular budget', () => {
+  const total = sizeOf(readAssets());
   assert.ok(
-    total <= PRECACHE_BUDGET_BYTES,
-    `precache is ${(total / 1024 / 1024).toFixed(2)} MB, budget is 1.50 MB ` +
-    '(card F-7 — heavy assets belong in the runtime cache, not in ASSETS)'
+    total <= INSTALL_BUDGET_BYTES,
+    `install phase is ${(total / 1024 / 1024).toFixed(2)} MB, budget is ` +
+    `${(INSTALL_BUDGET_BYTES / 1024 / 1024).toFixed(2)} MB (cards F-7 · PRECACHE-1 — ` +
+    'anything outside the boot closure belongs in ASSETS_WARM, not in ASSETS)'
   );
 });
 
-test('no media in the precache, poster still there', () => {
-  const assets = readAssets();
-  const media = assets.filter((f) => MEDIA_EXT.test(f));
+test('the whole offline set stays under its own ceiling', () => {
+  const total = sizeOf([...readAssets(), ...readWarm()]);
+  assert.ok(
+    total <= OFFLINE_BUDGET_BYTES,
+    `offline set is ${(total / 1024 / 1024).toFixed(2)} MB, ceiling is ` +
+    `${(OFFLINE_BUDGET_BYTES / 1024 / 1024).toFixed(2)} MB — heavy assets belong ` +
+    'in the runtime cache, not in either manifest (F-7)'
+  );
+});
+
+/**
+ * The split must be a partition, not a filter. A file that fell out of both
+ * lists is the silent failure mode of PRECACHE-1: everything works online and
+ * the screen is blank in the gym's basement.
+ */
+test('boot and warm partition the manifest — no overlap, nothing dropped', () => {
+  const boot = readAssets();
+  const warm = readWarm();
+  const overlap = boot.filter((f) => warm.includes(f));
+  assert.deepEqual(overlap, [], 'an asset in both phases would be fetched twice');
+
+  const declared = new Set([...boot, ...warm]);
+  const built = new Set(collectAssets(REPO_ROOT));
+  assert.deepEqual(
+    [...built].filter((f) => !declared.has(f)), [],
+    'asset on disk missing from BOTH phases — it would never be cached, and the ' +
+    'app would go blank offline. Run npm run build:sw'
+  );
+  assert.deepEqual([...declared].filter((f) => !built.has(f)), [], 'phantom asset in a manifest');
+});
+
+test('the boot closure actually boots — entry, styles, fonts', () => {
+  const boot = readAssets();
+  for (const must of [
+    '/index.html', '/js/boot.js', '/js/app.js', '/js/theme-boot.js',
+    '/css/base.css', '/css/dashboard.css', '/fonts/manrope-latin.woff2', '/icons/icon-64.png',
+  ]) {
+    assert.ok(boot.includes(must), `${must} must ride in the install phase — without it the cold offline start is broken`);
+  }
+});
+
+test('no media in either phase, poster still precached', () => {
+  const all = [...readAssets(), ...readWarm()];
+  const media = all.filter((f) => MEDIA_EXT.test(f));
   assert.deepEqual(media, [], 'video/audio must be runtime-cached, not precached (F-7)');
   assert.ok(
-    assets.includes('/assets/panda-poster.jpg'),
+    all.includes('/assets/panda-poster.jpg'),
     'the poster frame stays precached — it is what shows before the video loads'
   );
+});
+
+/**
+ * Wiring, not intent: the warm list is dead weight unless something fetches it,
+ * and holding `activate` open until it finishes would delay
+ * navigator.serviceWorker.ready (js/privacy.store.js posts the privacy mode
+ * through it). Both halves are asserted.
+ */
+test('the warm phase is wired and does not block activation', () => {
+  assert.match(SW_SRC, /precache\(cache, ASSETS_WARM/, 'ASSETS_WARM is never fetched');
+  assert.match(SW_SRC, /self\.clients\.claim\(\)[\s\S]*?warmCache\(\)/, 'warm phase must start after claim');
+  assert.doesNotMatch(
+    SW_SRC, /waitUntil\(\s*warmCache\(\)/,
+    'awaiting the warm phase in waitUntil would keep the worker in `activating`'
+  );
+  assert.match(SW_SRC, /const ASSETS_WARM = \[/, 'sw.js has no ASSETS_WARM manifest');
 });
 
 test('build-sw and sw.js agree on what counts as media', () => {
@@ -110,6 +188,28 @@ test('build-sw and sw.js agree on what counts as media', () => {
 
 test('media routing is wired into the fetch handler', () => {
   assert.match(SW_SRC, /mediaCacheFirst\(e\.request, cleanReq\)/);
+});
+
+/**
+ * The warm phase restarts from scratch whenever the browser kills an idle
+ * worker mid-warm. Without the skip it would re-download everything already in
+ * the cache — the exact cellular cost PRECACHE-1 set out to remove.
+ */
+test('the warm phase skips what is already cached, install does not', async () => {
+  const { api } = loadSw();
+  const cached = new Set(['/css/intel.css']);
+  const added = [];
+  const cache = {
+    match: async (url) => (cached.has(url) ? new Response('x') : undefined),
+    add: async (url) => { added.push(url); cached.add(url); },
+  };
+
+  await api.precache(cache, ['/css/intel.css', '/css/journal.css'], 2, true);
+  assert.deepEqual(added, ['/css/journal.css'], 'a cached entry must not be re-fetched');
+
+  added.length = 0;
+  await api.precache(cache, ['/css/intel.css'], 2);
+  assert.deepEqual(added, ['/css/intel.css'], 'install phase still refreshes unconditionally');
 });
 
 test('a whole-file 206 is stored as a replayable 200', async () => {
