@@ -19,6 +19,21 @@ export function backupSubLabel(lastExportAt) {
   return t('backup.save_sub_last', { d });
 }
 
+/**
+ * Короткая форма той же даты — для шапки карточки бэкапа (DATA-1). Кнопка
+ * стала однострочной, но дата обязана остаться на виду и на телефоне: она
+ * якорь напоминалки «две недели без бэкапа», а hover на тач-экране не
+ * существует. Длинная подпись при этом жива — она ушла в title кнопки.
+ * @param {number|string|undefined} lastExportAt
+ * @returns {string}
+ */
+export function backupMetaLabel(lastExportAt) {
+  const ts = Number(lastExportAt) || 0;
+  if (!ts) return t('backup.meta_never');
+  const d = new Date(ts).toLocaleDateString(getLang() === 'ru' ? 'ru' : 'en', { day: 'numeric', month: 'short' });
+  return t('backup.meta_last', { d });
+}
+
 const P = () => window.Profile;
 on('settings:adjustRest',  (el) => P().adjustRest(+el.dataset.amt));
 on('settings:toggleHaptic',(el) => P().toggleHaptic());
@@ -374,80 +389,104 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
     </div>
 
     <!-- ── DATA & CLOUD SYNC ── -->
-    <div class="section-label-alt">${t('settings.data')}</div>
-    <div class="profile-card" style="padding:var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-2);">
-      
-      <!-- Sync -->
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: var(--sp-1-5);">
-          <div style="width: 32px; height: 32px; border-radius: var(--r-s); background: var(--c-accent-bg); color: var(--c-accent); display: flex; align-items: center; justify-content: center;">
-             <svg id="sync-connect-icon" class="icon-rotate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          </div>
-          <div>
-            <div style="font-size: var(--fs-3); font-weight: var(--fw-md);">${t('sync.connect')}</div>
-            <div style="font-size: var(--fs-1); color: ${syncStatusColor}; font-weight: var(--fw-bold);">${syncStatusLabel}</div>
-          </div>
+    ${_renderData(settings, syncStatus, syncStatusLabel, syncStatusColor)}
+  `;
+}
+
+/**
+ * DATA-1 — секция данных, разложенная на четыре карточки по смыслу.
+ *
+ * До этого всё жило в одной карточке: синк, бэкап, выгрузка наружу и починка
+ * базы шли подряд через `.pref-divider`, а кнопок было четыре разных типа
+ * подряд — глазу не за что зацепиться, какое действие здесь главное. Границы
+ * между кусками настоящие (облако ≠ файл на диск ≠ файл наружу ≠ ремонт базы),
+ * поэтому они и стали карточками — ровно тем же приёмом, каким уже разделены
+ * GENERAL / TRAINING / AI выше по экрану. Один тип кнопки на карточку:
+ * primary — только «Экспорт JSON», soft — вторичные действия, ghost — ремонт.
+ *
+ * Флага здесь нет намеренно. Первая версия правки держала прежнюю разметку
+ * рядом под `data-block-v2` как аварийный откат — и эта копия увела прекеш за
+ * бюджет карточки F-7 (1.5547 против 1.55 MB). Правка чисто презентационная,
+ * логика экспорта/импорта не тронута, так что цена килобайтов на сотовой
+ * установке выше цены тумблера: откат здесь — `git revert`.
+ *
+ * @param {Object} settings @param {string} syncStatus
+ * @param {string} syncStatusLabel @param {string} syncStatusColor
+ * @returns {string}
+ */
+function _renderData(settings, syncStatus, syncStatusLabel, syncStatusColor) {
+  return `
+    <div class="section-label-alt">${t('settings.cloud')}</div>
+    <div class="profile-card" style="padding:0">
+      <div class="pref-row-icon">
+        <div class="pref-icon-box" style="background:var(--c-accent-bg); color:var(--c-accent)">
+          <svg id="sync-connect-icon" class="icon-rotate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </div>
+        <div class="pref-info">
+          <div class="pref-title">${t('sync.connect')}</div>
+          <div class="pref-sub" style="color:${syncStatusColor}; font-weight: var(--fw-bold);">${syncStatusLabel}</div>
         </div>
         <button class="btn-text"
                 data-action="settings:syncToggle" data-sync="${syncStatus}"
                 style="color: var(--c-accent); font-size: var(--fs-2); font-weight: var(--fw-bold);">
-          ${syncStatus === 'offline' ? 'CONNECT' : 'DISCONNECT'}
+          ${syncStatus === 'offline' ? t('sync.connect_cta') : t('sync.disconnect')}
         </button>
       </div>
+    </div>
 
-      <div class="pref-divider"></div>
+    <!-- Резервная копия. Единственная primary-кнопка всей секции: это то
+         действие, ради которого сюда заходят.
 
-      <div class="pref-divider"></div>
-
-      <!-- Два блока по формату, а не один список из четырёх кнопок (заявка Gio
-           2026-08-03). Граница между ними — не «важное/неважное», а наличие
-           обратной дороги: JSON уезжает и умеет вернуться импортом, поэтому
-           экспорт и импорт стоят парой; TXT и CSV уходят наружу насовсем и
-           живут отдельным блоком.
-
-           Отдельной кнопки «Export JSON» рядом с зелёной НЕТ намеренно: это
-           было бы одно действие в двух местах одного экрана — ровно тот дубль,
-           который убрали в 1.26.0. Вместо этого зелёная кнопка и называется
-           «Экспорт JSON», а дата последнего бэкапа осталась её подписью
-           (GYM-GRADE DoD-5: напоминалка про бэкап должна иметь якорь). -->
-      <div style="display: flex; flex-direction: column; gap: var(--sp-1-5);">
-        <div style="display: flex; align-items: center; gap: var(--sp-1-5);">
-          <div style="width: 32px; height: 32px; border-radius: var(--r-s); background: var(--c-surface-h); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
-          <div style="font-size: var(--fs-3); font-weight: var(--fw-md);">${t('data.backup')}</div>
-        </div>
-        <button class="btn btn-primary" data-action="settings:exportData"
-                style="width: 100%; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-0-5);">
-          <span id="backup-cta-title" style="font-size: var(--fs-2); font-weight: var(--fw-black);">${t('backup.save')}</span>
-          <span id="backup-cta-sub" style="font-size: var(--fs-1); font-weight: var(--fw-md); opacity: 0.75;">${esc(backupSubLabel(settings[K_LAST_EXPORT]))}</span>
-        </button>
-        <button class="btn btn-soft" data-action="settings:importData" style="width: 100%;">${t('data.import')}</button>
-      </div>
-
-      <div class="pref-divider"></div>
-
-      <!-- Выгрузка наружу. Обе кнопки равны по весу — это не «главная и
-           запасная», а два разных адресата: TXT = журнал человеку (тренеру, в
-           заметки, на печать), CSV = таблица в Excel/Sheets. -->
-      <div style="display: flex; flex-direction: column; gap: var(--sp-1-5);">
-        <div style="display: flex; align-items: center; gap: var(--sp-1-5);">
-          <div style="width: 32px; height: 32px; border-radius: var(--r-s); background: var(--c-surface-h); display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
-          <div style="font-size: var(--fs-3); font-weight: var(--fw-md);">${t('data.share_out')}</div>
-        </div>
-        <div style="display: flex; gap: var(--sp-1-5);">
-          <button class="btn btn-soft" data-action="settings:exportTxt" style="flex: 1 1 50%;">${t('data.export_txt')}</button>
-          <button class="btn btn-soft" data-action="settings:exportCsv" style="flex: 1 1 50%;">${t('data.export_csv')}</button>
-        </div>
-      </div>
-
-      <div class="pref-divider"></div>
-
-      <!-- Обслуживание — не бэкап: чинит саму базу, а не спасает данные наружу. -->
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--sp-1-5);">
+         Кнопка однострочная (заявка Gio 2026-08-21). Вторая строка с датой
+         последнего бэкапа стояла ВНУТРИ кнопки и делала её двухэтажной — но
+         сама дата нужна: без неё напоминалка «две недели без бэкапа» теряет
+         якорь (GYM-GRADE DoD-5). Дата ушла в шапку карточки, а длинная подпись
+         осталась в title — на десктопе она всплывает по наведению, тач её
+         игнорирует и ничего не теряет, потому что дата и так на виду. -->
+    <div class="section-label-alt">${t('data.backup')}</div>
+    <div class="profile-card" style="padding:var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-1-5);">
+      <div style="display: flex; align-items: center; gap: var(--sp-1-5);">
+        <div class="pref-icon-box" style="background:var(--c-surface-h)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
         <div class="pref-info">
-          <div class="pref-title" style="font-size: var(--fs-2);">${t('data.maintenance')}</div>
+          <div class="pref-title">${t('data.backup')}</div>
+        </div>
+        <span id="backup-meta" style="font-size: var(--fs-1); font-weight: var(--fw-bold); color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.06em;">${esc(backupMetaLabel(settings[K_LAST_EXPORT]))}</span>
+      </div>
+      <button class="btn btn-primary" data-action="settings:exportData"
+              title="${esc(backupSubLabel(settings[K_LAST_EXPORT]))}"
+              style="width: 100%;">${t('backup.save')}</button>
+      <button class="btn btn-soft" data-action="settings:importData" style="width: 100%;">${t('data.import')}</button>
+    </div>
+
+    <!-- Выгрузка наружу. Обе кнопки равны по весу — это не «главная и
+         запасная», а два разных адресата: TXT = журнал человеку (тренеру, в
+         заметки, на печать), CSV = таблица в Excel/Sheets. -->
+    <div class="section-label-alt">${t('data.share_out')}</div>
+    <div class="profile-card" style="padding:var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-1-5);">
+      <div style="display: flex; align-items: center; gap: var(--sp-1-5);">
+        <div class="pref-icon-box" style="background:var(--c-surface-h)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+        <div class="pref-info">
+          <div class="pref-title">${t('data.share_out')}</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: var(--sp-1-5);">
+        <button class="btn btn-soft" data-action="settings:exportTxt" style="flex: 1 1 50%;">${t('data.export_txt')}</button>
+        <button class="btn btn-soft" data-action="settings:exportCsv" style="flex: 1 1 50%;">${t('data.export_csv')}</button>
+      </div>
+    </div>
+
+    <!-- Обслуживание — не бэкап: чинит саму базу, а не спасает данные наружу.
+         Отдельной карточкой именно поэтому: стоя внутри блока бэкапов, оно
+         читалось как ещё один способ сохранить данные. -->
+    <div class="section-label-alt">${t('data.maintenance')}</div>
+    <div class="profile-card" style="padding:0">
+      <div class="pref-row-icon">
+        <div class="pref-icon-box" style="background:var(--c-surface-h)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+        <div class="pref-info">
+          <div class="pref-title">${t('data.dedup')}</div>
           <div class="pref-sub">${t('data.dedup_sub')}</div>
         </div>
-        <button class="btn btn-ghost" data-action="settings:dedup" style="min-width: 110px; height: 36px; font-size: var(--fs-2); color: var(--c-text-3);">${t('data.dedup')}</button>
+        <button class="btn btn-ghost" data-action="settings:dedup" style="min-width: 92px; height: 36px; font-size: var(--fs-2); color: var(--c-text-3);">${t('data.dedup_run')}</button>
       </div>
     </div>
   `;
