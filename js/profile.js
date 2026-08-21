@@ -7,7 +7,7 @@ import { DB } from './db.js';
 import { K_LAST_EXPORT } from './db/backup.js';
 import { t, getLang } from './locale.store.js';
 import { renderProfile } from './profile.view.js';
-import { renderSettings, backupSubLabel } from './profile.view/settings.js';
+import { renderSettings, backupSubLabel, backupMetaLabel } from './profile.view/settings.js';
 import { VERSION } from './version.js';
 import { Toast } from './shell.js';
 import { on, onChange } from './events.js';
@@ -332,10 +332,14 @@ async function setEngine(engine) {
     const now = Date.now();
     await DB.Settings.set(K_LAST_EXPORT, now);
     Toast.show(t('backup.done'), 'success');
-    // Refresh the CTA sub-line in place — no full re-render (export can be
-    // triggered from the reminder toast while another screen is active).
-    const sub = document.getElementById('backup-cta-sub');
-    if (sub) sub.textContent = backupSubLabel(now);
+    // Refresh the date in place — no full re-render (export can be triggered
+    // from the reminder toast while another screen is active). Дата живёт в
+    // двух узлах сразу: видимая мета в шапке карточки и длинная подпись в
+    // title кнопки (hover на десктопе) — патчим оба, иначе тултип соврёт.
+    const meta = document.getElementById('backup-meta');
+    if (meta) meta.textContent = backupMetaLabel(now);
+    const cta = document.querySelector('[data-action="settings:exportData"]');
+    if (cta) cta.setAttribute('title', backupSubLabel(now));
   }
 
   function importData() {

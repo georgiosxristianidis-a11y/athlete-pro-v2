@@ -36,11 +36,17 @@ export async function renderProfile(container, lang) {
   // PP-3: ячейка «DOTS» из бенто убрана — DOTS и скор висели рядом как два
   // независимых показателя, хотя второй производен от первого. Полный разбор
   // теперь на вкладке «Сила» в Athlete Room, вход — пилюля скора в hero.
+  //
+  // DATA-1: туда же ушли и полосы по подъёмам (renderLiftBars). Один и тот же
+  // блок «Силовые показатели» рендерился дважды — здесь и на вкладке «Сила»
+  // (athlete-room.js), — причём во второй раз рядом с разбором, который эти
+  // цифры объясняет. Здесь остаётся радар: обзор, а не таблица. Тупика нет —
+  // вход в детали держит пилюля скора (pp:openScore сразу открывает нужную
+  // вкладку, см. profile.view/passport-hero.js).
   container.innerHTML =
     renderPassportHero(profile, metrics, oneRMs, resolvedLang) +
     renderBento(workouts, resolvedLang) +
-    renderHexagonRadar(oneRMs, bw, profile.sex, age, workouts, resolvedLang) +
-    renderLiftBars(oneRMs, bw, profile.sex, age, resolvedLang);
+    renderHexagonRadar(oneRMs, bw, profile.sex, age, workouts, resolvedLang);
 
   // Post-render: Apply AthleteRoom photo and colors
   _syncAvatar(container);
