@@ -44,9 +44,11 @@ const DEFAULTS = {
   // of the SVG icon. Audio lives inside the mp4 track (one <video> = picture
   // and voice always in sync); the zoom is driven by video.currentTime, not
   // timers. Starts muted (autoplay policy), sound toggled by the mini button.
-  // Default OFF until Gio's field check.
+  // ON by default since SKIN-0 (2026-08-21): behind OFF nobody met the mascot
+  // except the few who found the toggle in Profile, and the PANDA-SKINS
+  // cosmetics line is built on top of a face that has to be on screen first.
   // Kill switch on device: Flags.setFlag('fab-video', false)
-  'fab-video': false,
+  'fab-video': true,
 
   // PANDA-1 «Бамбуковый счёт»: маскот перестаёт быть обоями и реагирует на
   // тренировку — мимика лупится внутри сегмента assets/panda-voice.mp4
@@ -56,8 +58,10 @@ const DEFAULTS = {
   // flag('panda-moods') && flag('fab-video'). Тумблер в профиле жмёт оба.
   // Режим отказа: нарезка по currentTime даёт видимый рывок на стыке или
   // грызёт батарею на слабом телефоне → выключить и вернуться к ровному лупу.
+  // ON по умолчанию с SKIN-0 (2026-08-21) вместе с 'fab-video': тумблер в
+  // Профиле и так жал оба сразу, дефолт просто перестал это прятать.
   // Kill switch on device: Flags.setFlag('panda-moods', false)
-  'panda-moods': false,
+  'panda-moods': true,
 
   // USAGE-STATS: счётчик живых установок (js/usage.js). ON поднимает
   // /_vercel/insights/script.js и шлёт ровно три события — app_open,
