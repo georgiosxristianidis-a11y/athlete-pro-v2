@@ -153,7 +153,13 @@ export function talkDurationMs(mood, text) {
  *        с авто-возвратом; say — реплика, под которую идёт волна
  */
 export function emitMood(mood, opts = {}) {
-  if (typeof window === 'undefined') return;
+  // Проверять надо возможность, а не существование: `window` бывает урезанным
+  // стабом без шины событий, и тогда `typeof window === 'undefined'` пропускает
+  // вызов прямо в TypeError. Соседний код в этом же модуле уже написан так
+  // (`window.DynamicIsland?.say?.()`) — здесь была единственная строка,
+  // выбивавшаяся из конвенции. Всплыло на SKIN-0: пока флаг стоял OFF,
+  // до этой ветки просто не доходили.
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return;
   if (!MOODS[mood]) return;
   window.dispatchEvent(new CustomEvent(MOOD_EVENT, {
     detail: { mood, hold: opts.hold || 0, say: opts.say || '' }
