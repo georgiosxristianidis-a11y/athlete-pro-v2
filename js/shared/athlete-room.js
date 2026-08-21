@@ -652,16 +652,19 @@ export const AthleteRoom = (() => {
     const name = customName || profile?.name || 'Athlete';
     const initials = name.split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'A';
 
+    // Кнопка — только хит-бокс 48x48 (a11y tap target); красится кружок внутри.
+    const face = document.getElementById('athlete-avatar-face') || btn;
+
     if (photo) {
       btn.classList.add('has-photo');
-      btn.style.setProperty('--avatar-img', `url(${photo})`);
-      btn.style.background = '';
+      face.style.setProperty('--avatar-img', `url(${photo})`);
+      face.style.background = '';
       const ini = document.getElementById('athlete-avatar-initials');
       if (ini) ini.style.display = 'none';
     } else {
       btn.classList.remove('has-photo');
-      btn.style.removeProperty('--avatar-img');
-      btn.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+      face.style.removeProperty('--avatar-img');
+      face.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
       const ini = document.getElementById('athlete-avatar-initials');
       if (ini) {
         ini.style.display = 'block';
