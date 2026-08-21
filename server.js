@@ -141,6 +141,11 @@ app.use(express.static(__dirname, {
 // every request is routed to this function, so this also serves the app shell.
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
+  // /_vercel/* принадлежит платформе (Web Analytics для js/usage.js). Если
+  // запрос дошёл сюда — эндпоинта нет: локальный запуск или Web Analytics не
+  // включена в проекте. Отдать шелл нельзя: <script src> получил бы 200
+  // text/html и упал синтаксической ошибкой вместо тихого script.onerror.
+  if (req.path.startsWith('/_vercel/')) return res.sendStatus(404);
   // Same anti-stale rules as the static route: the app shell must never be
   // cached (no-store) and must not carry Vercel's lying mtime validator.
   res.sendFile(path.join(__dirname, 'index.html'), {

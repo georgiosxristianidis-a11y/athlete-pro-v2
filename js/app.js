@@ -225,6 +225,13 @@ openDB()
       });
 
       _checkBackupReminder();
+
+      // Счётчик установок (флаг 'usage-stats', OFF) — последним в defer:
+      // приватность и локаль уже инициализированы, до первого кадра он не
+      // касается ни сети, ни DOM. Ошибки глотает сам, catch — от импорта.
+      import('./usage.js')
+        .then(({ initUsage, trackAppOpen }) => initUsage().then(trackAppOpen))
+        .catch(() => {});
     });
   })
   .then(async () => {

@@ -1,7 +1,7 @@
 # NEXT SESSION — Athlete Pro
 
 > Читать первым. **Роутер, а не состояние:** указатель на карточку, контекст — в хендоффе.
-> Обновлено 2026-08-20 (заведена линия TOOL — тулчейн агента, из `/doctor`).
+> Обновлено 2026-08-21 (заведена линия USAGE — счётчик установок за флагом).
 
 ## Правило файла
 
@@ -31,17 +31,16 @@ npm run docs:budget    # цена системных доков в токена�
 - `HANDOFF_boot_brand.md` → **SPLASH-1**, дальше MOTION-1; не параллелить, трогает `index.html`
 - `HANDOFF_panda_core.md` — активных карточек нет, готова к полевому чеку Gio
 - `HANDOFF_intel_readiness.md` → **INTEL-1**; порядок 1→3→4 фиксирован
-- `HANDOFF_gemini_audit_triage.md` → **SCAF-1**, следом NOISE-1/PII-1; PERF-1/2/3 закрыты, бандл не берём; за Gio — снести Render, отозвать `ANTHROPIC_API_KEY`
+- `HANDOFF_gemini_audit_triage.md` → **SCAF-1**, следом NOISE-1/PII-1; бандл не берём; за Gio — снести Render, отозвать `ANTHROPIC_API_KEY`
 - `HANDOFF_light_theme.md` → **THEME-6** (P2)
-- `HANDOFF_design_system.md` → **SCALE-1** (SPACE-1 закрыта, радиусы там же), дальше NAV-BACK-1 + DEAD-1; линия DS → **DS-2**, следом DS-3
+- `HANDOFF_design_system.md` → **SCALE-1** (радиусы там же), дальше NAV-BACK-1 + DEAD-1; линия DS → **DS-2**, следом DS-3
 - `HANDOFF_field_check.md` — за Gio, один заход (DoD-5), флаги `fab-video`/`drum-window` заранее
 - `HANDOFF_next_cards.md` → **DRUM-TOUCH-1** — за Gio, один тап; там же стек карточек, бэклог, DATA-SAFETY
-- `HANDOFF_gym_grade.md` — DoD из 5 пунктов
-- `HANDOFF_isl_tail.md` — островные хвосты
-- `HANDOFF_orchestration.md` — роли LEAD/worker/verifier, DoD-лестница
-- `HANDOFF_air_refactor.md` — хвост
-- `HANDOFF_token_economy.md` → **TOK-1** (TOK-8 закрыта), дальше TOK-6, TOK-2, TOK-4; TOK-11 (сжатие закрытых карточек) — перед TOK-5; TOK-9/TOK-10 отдельно
-- `HANDOFF_toolchain.md` → **TOOL-1** (CLI отстал, Gio), **TOOL-2** (figma: 1.5k резидента), дальше TOOL-3/4/5; правит `~/.claude/*`, не код
+- `HANDOFF_orchestration.md` — роли LEAD/worker/verifier, DoD-лестница; `HANDOFF_gym_grade.md` — DoD из 5 пунктов
+- `HANDOFF_isl_tail.md` · `HANDOFF_air_refactor.md` — хвосты острова и AIR
+- `HANDOFF_usage_stats.md` → **USAGE-1** (Web Analytics в Vercel, за Gio), затем USAGE-2 — флип флага
+- `HANDOFF_token_economy.md` → **TOK-1**, дальше TOK-6, TOK-2, TOK-4; TOK-11 перед TOK-5; TOK-9/TOK-10 отдельно
+- `HANDOFF_toolchain.md` → **TOOL-1** (CLI отстал, Gio), **TOOL-2**, дальше TOOL-3/4/5; правит `~/.claude/*`, не код
 
 Вне хендоффов, с 2026-08-14: **DOCS-3** (горячий путь на английский, ждёт пересборки `docs/RULES.md`), **WEED-2** (прополка веток/ворктри, порог 30 дн, смежна с TOK-7), **FLOW-4** (TTL памяти ≤7500 ток, смежна с TOK-5).
 

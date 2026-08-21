@@ -12,6 +12,7 @@ import {
   getPrivacyMode, getAiEnabled, setPrivacyMode, setAiEnabled,
   getAuditLog, clearAuditLog,
 } from './privacy.store.js';
+import { isUsageEnabled, setUsageEnabled, getUsageState } from './usage.js';
 import { t, isRu } from './locale.store.js';
 import { esc } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
@@ -25,6 +26,7 @@ on('privacy:closeOverlay',   (el) => _closeOverlay(el.dataset.overlay));
 on('privacy:exportAndClose', () => { window.Profile?.exportData(); _closeOverlay('data-passport-overlay'); });
 on('privacy:confirmDelete',  () => _confirmDelete());
 on('privacy:clearAudit',     () => _clearAudit());
+on('privacy:toggleUsage',    () => _toggleUsage());
 
 const MODES = [
   { id: 'cloud',  label: 'Cloud',     desc: 'AI Coach + cloud sync available.' },
@@ -80,7 +82,8 @@ export function renderPrivacyCard() {
         </div>
       </div>
 
-      
+      ${_renderUsageRow(mode)}
+
       <button class="data-btn" data-action="privacy:passport">
         <div class="data-btn-icon" style="background:var(--c-secondary-bg)">
           ${_iconPassport()}
@@ -105,6 +108,37 @@ export function renderPrivacyCard() {
       </button>
     </div>
   `;
+}
+
+/* ── Строка счётчика установок (js/usage.js) ──
+   Флаг 'usage-stats' OFF → строки нет вовсе. ON → строка есть всегда, даже
+   когда счётчик заперт снаружи (DNT, самоисключение): молчаливый тумблер
+   без объяснения — ровно тот тип UI, который заставляет искать подвох.
+   В режиме airgap строка честно говорит, что уходит только агрегат. */
+function _renderUsageRow(mode) {
+  const state = getUsageState();
+  if (state === 'flag') return '';
+
+  const locked = state === 'dnt' || state === 'excluded';
+  const on = !locked && isUsageEnabled();
+  const sub = locked
+    ? t(`privacy.usage_${state}`)
+    : (mode === 'airgap' ? t('privacy.usage_desc_airgap') : t('privacy.usage_desc'));
+
+  return `
+      <div class="pref-row">
+        <div class="pref-info">
+          <div class="pref-title">${t('privacy.usage')}</div>
+          <div class="pref-sub">${sub}</div>
+        </div>
+        <div class="switch-wrap ${locked ? 'switch-disabled' : ''}"
+             ${locked ? '' : 'data-action="privacy:toggleUsage"'}>
+          <div class="switch ${on ? 'on' : ''}" id="sw-privacy-usage">
+            <div class="switch-thumb"></div>
+          </div>
+        </div>
+      </div>
+`;
 }
 
 /* ════════════════════════════════════════════════════════
@@ -135,6 +169,14 @@ async function _toggleAi() {
   const cur = getAiEnabled();
   await setAiEnabled(!cur);
   const sw = document.getElementById('sw-privacy-ai');
+  if (sw) sw.classList.toggle('on', !cur);
+  navigator.vibrate?.(8);
+}
+
+async function _toggleUsage() {
+  const cur = isUsageEnabled();
+  await setUsageEnabled(!cur);
+  const sw = document.getElementById('sw-privacy-usage');
   if (sw) sw.classList.toggle('on', !cur);
   navigator.vibrate?.(8);
 }

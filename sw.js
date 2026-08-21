@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-04bab82e';
+const CACHE_NAME = 'athlete-pro-v121-ce4aadc7';
 
 // eslint-disable-next-line no-unused-vars
 const ASSETS = [
@@ -101,6 +101,7 @@ const ASSETS = [
   '/js/ui/factory.js',
   '/js/ui/gravity-submit.js',
   '/js/ui/receipt.js',
+  '/js/usage.js',
   '/js/version.js',
   '/js/workers/crypto.worker.js',
   '/js/workout-ai.view.js',
@@ -190,6 +191,11 @@ self.addEventListener('fetch', (e) => {
   if (e.request.url.startsWith('chrome-extension')) return;
 
   const url = new URL(e.request.url);
+
+  // /_vercel/* — платформенные эндпоинты (Web Analytics, js/usage.js). Мимо
+  // воркера целиком: путь networkFirst закешировал бы script.js и после
+  // отключения счётчика оффлайн-копия продолжила бы подниматься из кеша.
+  if (url.pathname.startsWith('/_vercel/')) return;
 
   // Cross-origin (Google Fonts, jsDelivr CDN) → don't intercept; let the browser
   // fetch it directly. Routing opaque cross-origin responses through our
