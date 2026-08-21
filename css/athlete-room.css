@@ -42,27 +42,41 @@
 #status-time { margin-left: auto; }
 
 
-/* ── Avatar button in status bar ── */
+/* ── Avatar button in status bar ──
+   Кнопка — прозрачный хит-бокс 48x48 (минимум для пальца), кружок 30x30 живёт
+   в .athlete-avatar-face. Отрицательные поля возвращают шапке прежнюю
+   геометрию: занимаемая ширина остаётся 30px, растёт только зона попадания. */
 .athlete-avatar-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  margin-left: -9px;
+  margin-right: -9px;
   border: none;
-  background: linear-gradient(135deg, var(--c-accent), var(--c-blue));
+  background: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
   flex-shrink: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
+}
+.athlete-avatar-face {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--c-accent), var(--c-blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  pointer-events: none;
   transition: transform 0.18s ease;
   box-shadow: 0 0 0 2px var(--c-surface-h), 0 2px 8px color-mix(in srgb, var(--c-bg) 35%, transparent);
   position: relative;
   overflow: hidden;
 }
-.athlete-avatar-btn::before {
+.athlete-avatar-face::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -70,10 +84,10 @@
   border-radius: 50%;
   transition: background 0.18s ease;
 }
-.athlete-avatar-btn:active::before { background: color-mix(in srgb, var(--c-text-1) 15%, transparent); }
-.athlete-avatar-btn:active { transform: scale(var(--press-scale)); }
+.athlete-avatar-btn:active .athlete-avatar-face::before { background: color-mix(in srgb, var(--c-text-1) 15%, transparent); }
+.athlete-avatar-btn:active .athlete-avatar-face { transform: scale(var(--press-scale)); }
 @media (hover: hover) {
-  .athlete-avatar-btn:hover {
+  .athlete-avatar-btn:hover .athlete-avatar-face {
     transform: scale(1.1);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--c-text-1) 18%, transparent), 0 0 14px color-mix(in srgb, var(--c-accent) 40%, transparent), 0 3px 10px color-mix(in srgb, var(--c-bg) 40%, transparent);
   }
@@ -627,7 +641,7 @@
 }
 
 /* ── Photo Upload and Neon Glowing Ring ── */
-.athlete-avatar-btn.has-photo {
+.athlete-avatar-btn.has-photo .athlete-avatar-face {
   background-image: var(--avatar-img);
   background-size: cover;
   background-position: center;

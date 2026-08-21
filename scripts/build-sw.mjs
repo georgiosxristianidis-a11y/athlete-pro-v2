@@ -34,7 +34,11 @@ const MEDIA_RE = /\.(?:mp4|webm|m4a|mp3|ogg|mov)$/i;
 // UI живёт icon-64 (статус-бар) и icon-192 (favicon/og:image). Три штуки (384 · 512 · maskable-512)
 // весят 564 КБ — прекеш с ними прыгал 1.46 → 2.02 МБ, мимо потолка 1.5 МБ,
 // и каждый установивший тянул их дважды: один раз для ОС, второй в кеш.
-const INSTALL_ICON_RE = /\/icons\/(?:icon-384|icon-512|icon-maskable-512)\.png$/i;
+// apple-touch-icon (7.5 КБ) — та же порода: его читает iOS в момент «на
+// экран Домой», в рантайме приложение его не рисует. Выселен, когда SEO-мета
+// (title/og/JSON-LD) добила прекеш до потолка 1.55 МБ: платить лишним
+// килобайтом установки за иконку, которую никто не запрашивает из UI, дороже.
+const INSTALL_ICON_RE = /\/icons\/(?:icon-384|icon-512|icon-maskable-512|apple-touch-icon)\.png$/i;
 
 // Font subsets the UI never renders (LOAD-7). UI is RU/EN only — the browser
 // already skips these via @font-face unicode-range, but the SW precached them
