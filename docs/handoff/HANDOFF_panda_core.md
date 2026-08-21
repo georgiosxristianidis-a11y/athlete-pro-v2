@@ -101,6 +101,233 @@
 - **Не сделано осознанно:** привязки к реальной дорожке `panda-voice.mp4` при включённом звуке нет. В mood-режиме озвучка всё равно нарезана в обрубок — это чинит PANDA-C, и тогда же волну можно будет вести по аудио.
 - **Остаток — полевой чек Gio:** волна на 375px под большим пальцем, вход/выход пилюли на FAB у края экрана.
 
+---
+
+# Линия PANDA-SKINS — косметика маскота (заведена 2026-08-21)
+
+> Шесть развилок закрыты решениями Gio на грилеже, **не переоткрывать**. Порядок жёсткий:
+> SKIN-0 блокирует всё. SKIN-2 и SKIN-4 обе правят `js/shared/panda-mood.js` —
+> строго последовательно, не параллелить.
+>
+> **Происхождение.** Gio принёс туториал со «следящей за курсором» головой персонажа.
+> Разобрано покадрово: это **не CSS**. Между кадрами меняется силуэт черепа, окклюзия уха
+> и блики на шерсти — плоская картинка под `transform: rotate()` так не умеет. Ассет там —
+> ролик реального поворота, а курсор гоняет `video.currentTime`. То есть **тот же приём,
+> которым уже работает `attachMood`**, только драйвер непрерывный вместо дискретного.
+> Прямой перенос эффекта невозможен: на телефоне курсора нет (тот же урок, что закрыл
+> четыре framer-motion компонента в PANDA-D).
+
+## Закрытые решения Gio
+
+1. **Носитель — видео**, один mp4 на скин. Не SVG: платят за привязанность к фотореалистичному
+   зверю, перекраска токенов её не даёт.
+2. **Сначала база ON, потом скины.** Косметика поверх выключенного лица не продаётся.
+3. **Скин меняет голову и реквизит**, шерсть и зверь канон. Одежда на теле исключена физически:
+   обе поверхности маскота — круглые клипы с кадром на морду (FAB 64px `css/claude.css:9`,
+   пустой дашборд 150px `css/dashboard.css:333`). Тела не видно нигде.
+4. **Ролик собирается монтажом** из коротких клипов на фиксированную сетку. AI-видео не держит
+   заданную хореографию на 10с; одна эмоция на клип генерится стабильно.
+5. **Развёртка поворота снимается в тот же заход**, отдельным файлом. Драйвер — позже (SKIN-5).
+   Вернуться за ассетом потом = перегенерить всё с риском потерять схожесть персонажа.
+6. **Открывается прогрессом, не деньгами.** Платёжного контура в проекте нет ни в каком виде.
+7. **`sleep` в v1 не входит** (решение Gio, взят `choke`). Мимика «спит» остаётся дырой, которую
+   код признаёт вслух в `js/shared/panda-mood.js:96`: в два ночи показывается `chew`.
+
+## Сетка ролика — константа, одна на все скины
+
+| Мимика | in | out |
+|---|---|---|
+| `chew` | 0.0 | 2.0 |
+| `cheer` | 2.0 | 4.0 |
+| `squint` | 4.0 | 6.0 |
+| `watch` | 6.0 | 8.0 |
+| `judge` | 8.0 | 10.0 |
+| `choke` | 10.0 | **11.9** |
+
+Последний сегмент обрезан намеренно: на точной длительности браузер заворачивает луп в ноль
+и на кадр показывает чужую мимику — ловушка уже описана в `js/shared/panda-mood.js:41`.
+Ровно по 2с не из эстетики: сетка считается в уме, проверяется тестом и генерится одинаково
+для любого скина, поэтому `MOODS` остаётся одной константой, а не картой на скин.
+
+## Достижения — сверено с базой 2026-08-21, не по памяти
+
+| Скин | Замок | Статус |
+|---|---|---|
+| **Канон** | — | всегда |
+| **Тренер** | `streak_7` | **ЕСТЬ**, `js/shared/athlete-room.js:72`. Ноль кода |
+| **Ветеран** | `fifty_workouts` | **ЕСТЬ**, там же. Порог **50, не 100** — перевешен на существующее достижение, чтобы не плодить новое |
+| **Рекордсмен** | первый PR | достижения нет, **данные есть**: `prs` персистится в записи (`js/workout.view/handlers.js:471`). +1 строка в `ACHIEVEMENTS` |
+| **Ночная смена** | старт после 23:00 | достижения нет, **данные есть**: `timestamp` = `State.startedAt` (`js/workout.view/handlers.js:449`), то есть час **старта**, не финиша. Окно брать готовое из `entryGreeting`: `hour >= 23 \|\| hour < 5` |
+
+«Тренер» закон персонажа не нарушает, а усиливает: тренер — тот, кто судит и не тренируется.
+Он оделся по форме и всё равно жуёт.
+
+**Резерв, не в v1:** Зимний (снег на шерсти, пар изо рта), Ранняя пташка (взъерошен, одно ухо
+примято), Мокрый (шерсть слиплась).
+
+## SKIN-0 · База ON · Gio + LEAD 🔴 БЛОКИРУЕТ ЛИНИЮ
+
+- **ЦЕЛЬ:** `fab-video` и `panda-moods` выведены в ON по дефолту (`js/flags.js:49`, `:60`),
+  три висящих полевых чека закрыты.
+- **Остатки:** PANDA-A (сводка), PANDA-G (волна на 375px), HUD-1 (экран на iPhone).
+- **Почему первой:** маскот выключен по дефолту, то есть у пользователя лица нет вообще,
+  и ни один из трёх чеков ни разу не проходил на живом телефоне. Строить платную витрину
+  на непроверенной базе — купить одну дурную первую встречу.
+- **ГДЕ СТОП:** `js/flags.js` + вердикт Gio по полевому чеку.
+
+## SKIN-1 · Ассеты канона и первого скина · Gio (генерация) + агент (монтаж) 🟠
+
+- **ЦЕЛЬ:** канон и «Тренер» лежат в `assets/` беззвучными роликами, точно на сетке.
+- **Референс НЕ генерится** — достаётся из уже выкаченного ролика и правится:
+  `ffmpeg -ss 1.2 -i assets/panda-voice.mp4 -frames:v 1 -q:v 1 ref-canon.png`.
+  Все скины — правки **этого файла**. Единственная защита от «уплывания» персонажа:
+  два независимых text-to-video дают двух разных панд, а платят за одну.
+- **Канон генерится заново, не перемонтируется из `panda-voice.mp4`.** Старые сегменты
+  на сетку не ложатся (пересекаются: `cheer` 2.0–3.2 и `squint` 2.8–3.6; `squint` длится
+  0.8с при ячейке 2.0), а `choke` в исходнике отсутствует вовсе. Подгонка лупами даст
+  рваный канон рядом с ровными скинами.
+- **ГДЕ СТОП:** `assets/` + скрипт монтажа. Кода приложения не трогает.
+- **НЕ ТРОГАТЬ:** `assets/panda-voice.mp4` — остаётся для линейного режима `fab-video`
+  со звуком. Новые файлы ложатся рядом.
+- **Бюджет:** ролик мимик 12с/480×480 без звука ≈300 КБ, развёртка ≈150–250 КБ. Прекеш
+  не трогается: медиа исключено гардом F-7 (`test/sw-media-budget.test.js`), потолок 1.5 МБ
+  остаётся нетронутым. После добавления — `npm run build:sw`.
+
+### Промпт 1 · скин-референс (картинка → картинка)
+
+Железное правило: **одна правка на промпт**. Две правки — модель начинает перерисовывать морду.
+
+```
+Edit this image. Keep the character 100% identical: same red panda, same fur color and
+texture, same face geometry, same eyes, same nose, same ear shape and position, same pose,
+same lighting, same pure black background, same camera framing and head size.
+
+Change ONLY: <ОДНА ПРАВКА>
+
+Do not restyle. Do not resize or reposition the head. Do not change the expression.
+Do not add text, logos or extra objects. Photoreal 3D render, same render quality as source.
+```
+
+| Скин | `<ОДНА ПРАВКА>` |
+|---|---|
+| Тренер | `add a white terrycloth sweatband around the forehead, just above the brows` |
+| Рекордсмен | `make the bamboo stalk polished gold metal, keeping its exact shape and position` |
+| Ночная смена | `add a small headlamp on a strap around the forehead, its cold white beam lighting the muzzle from below` |
+| Ветеран | `add grey grizzled fur on the muzzle and brows, and a small notch in the left ear` |
+
+### Промпт 2 · клип мимики (картинка → видео)
+
+```
+Animate this exact image.
+
+LOCKED, unchanged in every single frame: camera position, framing, head size, pure black
+background, character identity, fur colour and texture, lighting, and <PROP>.
+
+MOTION: <ОДНО ДВИЖЕНИЕ>
+
+The clip must start and end on the same pose so it loops seamlessly.
+No cuts. No zoom. No camera movement. No new objects entering frame. No text.
+Duration: 2 seconds.
+```
+
+| Сегмент | `<ОДНО ДВИЖЕНИЕ>` |
+|---|---|
+| `chew` | `The panda chews slowly with eyes closed in contentment. Jaw moves, cheeks flex, ears twitch once. The head does not move.` |
+| `cheer` | `The panda's eyes snap wide open and its mouth opens in a short surprised gasp, then holds. Head lifts about 5 degrees. Surprise, not joy — no smile.` |
+| `squint` | `The panda narrows its eyes and glances sideways to its own left, one brow lowering. Head turns about 10 degrees. Slow, deliberate, suspicious.` |
+| `watch` | `The panda raises its head and looks straight into the camera, neutral and unblinking. One slow blink at the very end.` |
+| `judge` | `The panda's eyelids lower to half-closed and stay there. Completely deadpan. No other motion at all. One very slow blink.` |
+| `choke` | `The panda chokes on its mouthful: eyes go wide, head jerks forward once, cheeks puff, then it recovers and swallows hard. Startled, not distressed.` |
+
+### Промпт 3 · клип развёртки — здесь весь секрет
+
+```
+Animate this exact image.
+
+LOCKED, unchanged in every single frame: camera position, framing, head size, pure black
+background, character identity, fur colour and texture, lighting, and <PROP>.
+
+MOTION: the panda's head turns smoothly from fully facing its own left to fully facing its
+own right. The eyes track in the same direction. ONE single continuous motion at CONSTANT
+angular speed — no acceleration, no deceleration, no ease-in, no ease-out, no pause at
+either end. The head must NOT return to centre. The expression stays neutral throughout.
+
+No cuts. No zoom. No camera movement. No blinking. No text.
+Duration: 2 seconds.
+```
+
+Три требования несут всю нагрузку: **constant angular speed**, **no ease**, **must NOT return
+to centre**. Любое ускорение делает скраб нелинейным — палец едет ровно, голова дёргается,
+и никакой демпфер этого не спасает. На этом ломается большинство попыток.
+
+### Монтаж
+
+```bash
+# 1) нормализация: 480x480, 24 fps, ровно 2.000 с, без звука
+for m in chew cheer squint watch judge choke; do
+  ffmpeg -y -i raw-$m.mp4 \
+    -vf "scale=480:480:force_original_aspect_ratio=increase,crop=480:480,fps=24" \
+    -an -t 2 -c:v libx264 -crf 20 -preset slow -pix_fmt yuv420p seg-$m.mp4
+done
+
+# 2) склейка на сетку
+printf "file 'seg-chew.mp4'\nfile 'seg-cheer.mp4'\nfile 'seg-squint.mp4'\nfile 'seg-watch.mp4'\nfile 'seg-judge.mp4'\nfile 'seg-choke.mp4'\n" > list.txt
+ffmpeg -y -f concat -safe 0 -i list.txt -c copy assets/panda-<skin>.mp4
+
+# 3) развёртка ОТДЕЛЬНЫМ файлом: all-intra, 12 fps = 24 ракурса, скрабу хватает
+ffmpeg -y -i raw-sweep.mp4 \
+  -vf "scale=480:480:force_original_aspect_ratio=increase,crop=480:480,fps=12" \
+  -an -t 2 -c:v libx264 -g 1 -bf 0 -crf 20 -pix_fmt yuv420p assets/panda-<skin>-sweep.mp4
+```
+
+**Почему развёртка отдельным файлом.** Скрабу нужен ключевой кадр на каждом кадре (`-g 1`),
+иначе `currentTime` прыгает на ближайший I-frame и голова дёргается. All-intra утяжеляет видео
+втрое, и платить эту цену за мимики, которые играют линейно, незачем. Разделив, тяжёлый файл
+качаем только когда доворот включат.
+
+## SKIN-2 · Реестр скинов и переключатель · агент 🟠
+
+- **ЦЕЛЬ:** `js/shared/panda-skins.js` — реестр (`id`, файл, замок), активный скин в настройках,
+  переключатель в Профиле рядом с существующим тумблером маскота.
+- **`MOODS` остаётся константой** — сетка одна, `attachMood` получает только путь к файлу.
+  Правка `panda-mood.js` минимальна: параметр `src`, не вторая карта тайм-кодов.
+- **ГДЕ СТОП:** новый модуль + параметр в `panda-mood.js` + профиль + ключи в обе локали.
+- **НЕ ТРОГАТЬ:** `bindPandaLifecycle` — обвес автоплея и батареи проверен, вторую копию
+  не заводить (то же правило, что в PANDA-C).
+
+## SKIN-3 · Разблокировка по достижениям · агент 🟠
+
+- **ЦЕЛЬ:** два новых достижения (`first_pr`, `night_owl`) + связка достижение → скин.
+- **ГДЕ СТОП:** `ACHIEVEMENTS` в `js/shared/athlete-room.js` + реестр из SKIN-2.
+- **Ловушка, стоящая захода:** `_calcStreak` реализован **трижды** с расходящимся кодом —
+  `js/shared/athlete-room.js:84`, `js/insights.engine.js:175`, `js/dashboard.js:497`.
+  Новую метрику четвёртой копией не плодить; та же болезнь, что «две несвязанные лесенки
+  входа» из PANDA-A.
+
+## SKIN-4 · Мимика `choke` · агент 🟠
+
+- **ЦЕЛЬ:** рекорд получает свою мимику, а сессия без рекорда — свою.
+- **Найдено при разборе:** `cheer` шлётся **только** на PR (`js/workout.view/summary.js:328`,
+  гейт `prs.length > 0`), то есть закрытая без рекорда сессия не получает реакции вовсе.
+- **Развод:** `choke` → рекорд, `cheer` → сессия закрыта без рекорда. Он не радуется за тебя,
+  он давится, потому что не ожидал — это и есть «ты потеешь, он ест», только громче.
+- **Открытый вопрос за Gio:** говорит ли `choke`. Сейчас на рекорд идёт `mascot.you_won`
+  («Ты выиграл. Впервые.»); если `choke` уходит в `SILENT_MOODS`, строка теряет волну.
+- **ГДЕ СТОП:** `panda-mood.js` (`MOODS` + `SILENT_MOODS`) + одна врезка в `summary.js`.
+
+## SKIN-5 · Доворот головы · ЗАБЛОКИРОВАНА до полевого чека 🟡
+
+- **ЦЕЛЬ:** скраб развёртки живым драйвером.
+- **Драйверы-кандидаты:** гироскоп (iOS требует `DeviceOrientationEvent.requestPermission`
+  через жест; работает ли он в standalone-PWA — **непроверенный факт**, проверять до выбора);
+  позиция пальца при скролле; перебор отдыха — драйвер не ввод, а данные, и попадает
+  в характер («я видел»).
+- **Демпфер обязателен:** `cur += (target - cur) * 0.12` в rAF либо `js/shared/spring.js`.
+  Сырой ввод даёт нервную голову.
+- **НЕ ТРОГАТЬ:** `MOODS` — развёртка живёт в своём файле и в сетку мимик не входит.
+
+---
+
 # Линия `feature/elite-hud-wow` — разбор и план извлечения (2026-08-11)
 
 > Диагностика ветки `claude/nav4-panda-core-diagnostics-bad789` (= `feature/elite-hud-wow`,
