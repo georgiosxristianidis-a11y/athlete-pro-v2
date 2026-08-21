@@ -72,18 +72,75 @@ export function collectAssets(root = process.cwd()) {
     .filter(f => !FONT_SUBSET_RE.test(f));
 }
 
+/**
+ * Boot closure: what index.html itself asks the browser for on a cold first
+ * load — entry scripts, every `modulepreload`, the render-blocking stylesheets,
+ * preloaded fonts, the manifest and the favicons.
+ *
+ * Derived from the HTML instead of a hand-kept list on purpose (card PRECACHE-1):
+ * a second copy of "what boots the app" would drift away from the file that
+ * actually decides it, and drift would show up as a blank screen offline, not
+ * as a red test. Anything declared with `data-lazy` (print-media stylesheets
+ * swapped in by shared/lazy-css.js) is not boot — it is warm.
+ *
+ * Only paths that are already in the precache manifest survive: an asset the
+ * OS reads but the UI never renders (apple-touch-icon, INSTALL_ICON_RE) stays
+ * out of both phases.
+ */
+export function collectBootAssets(root = process.cwd(), assets = collectAssets(root)) {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const inManifest = new Set(assets);
+  // index.html — сам источник списка; icon-64 рисует JS статус-бара с первого
+  // кадра, но в разметке его нет, так что вывести из HTML его нельзя.
+  const boot = new Set(['/index.html', '/icons/icon-64.png']);
+
+  const add = (href) => {
+    // Только свои относительные пути: внешний и data: URL в прекеше не живут.
+    if (!href || href.startsWith('//') || href.startsWith('data:')) return;
+    if (/^https?:/.test(href)) return;
+    const web = '/' + href.replace(/^\//, '');
+    if (inManifest.has(web)) boot.add(web);
+  };
+
+  for (const m of html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)) add(m[1]);
+  for (const m of html.matchAll(/<link\b[^>]*>/g)) {
+    const tag = m[0];
+    if (/\bdata-lazy\b/.test(tag)) continue;
+    if (!/\brel="(?:stylesheet|modulepreload|manifest|icon|preload)"/.test(tag)) continue;
+    add(/\bhref="([^"]+)"/.exec(tag)?.[1]);
+  }
+
+  // Manifest order, not insertion order — the two lists stay diff-friendly.
+  return assets.filter((f) => boot.has(f));
+}
+
+/** Everything else: full offline coverage, fetched after activate, not during install. */
+export function splitAssets(root = process.cwd()) {
+  const assets = collectAssets(root);
+  const boot = collectBootAssets(root, assets);
+  const bootSet = new Set(boot);
+  return { assets, boot, warm: assets.filter((f) => !bootSet.has(f)) };
+}
+
 /** sha1 of the manifest, platform-independent — rules in scripts/sw-digest.mjs. */
 export function digestFor(assetsArray, root = process.cwd()) {
   return computeDigest(assetsArray, (p) => fs.readFileSync(path.join(root, p)));
 }
 
+const listBlock = (name, arr) =>
+  `const ${name} = [\n  ` + arr.map(f => `'${f}'`).join(',\n  ') + '\n];';
+
 /**
- * sw.js with ASSETS and CACHE_NAME replaced. Pure: takes the current source,
- * returns the new one. The guard compares its output with the file on disk.
+ * sw.js with ASSETS, ASSETS_WARM and CACHE_NAME replaced. Pure: takes the
+ * current source, returns the new one. The guard compares its output with the
+ * file on disk.
+ *
+ * `split` is `{ boot, warm }` from splitAssets(): ASSETS is the install phase,
+ * ASSETS_WARM the post-activate one (card PRECACHE-1).
  */
-export function renderSw(swSource, assetsArray, digest) {
-  const newAssetsString = 'const ASSETS = [\n  ' + assetsArray.map(f => `'${f}'`).join(',\n  ') + '\n];';
-  let out = swSource.replace(/const ASSETS = \[[\s\S]*?\];/, newAssetsString);
+export function renderSw(swSource, split, digest) {
+  let out = swSource.replace(/const ASSETS = \[[\s\S]*?\];/, listBlock('ASSETS', split.boot));
+  out = out.replace(/const ASSETS_WARM = \[[\s\S]*?\];/, listBlock('ASSETS_WARM', split.warm));
 
   // Auto-bump CACHE_NAME from a content hash of the precache manifest.
   // Guarantees the cache invalidates whenever any precached file changes —
@@ -98,19 +155,26 @@ export function renderSw(swSource, assetsArray, digest) {
 /** Everything the CLI does, minus the write — so the guard can ask "is this what's on disk?". */
 export function buildSw(root = process.cwd()) {
   const swPath = path.join(root, 'sw.js');
-  const assets = collectAssets(root);
-  const digest = digestFor(assets, root);
+  const split = splitAssets(root);
+  // Digest covers the whole offline set, not just the install phase: moving a
+  // file between the phases must invalidate the cache too.
+  const digest = digestFor(split.assets, root);
   return {
-    assets,
+    assets: split.assets,
+    boot: split.boot,
+    warm: split.warm,
     digest,
     swPath,
     current: fs.readFileSync(swPath, 'utf8'),
-    get expected() { return renderSw(this.current, assets, digest); },
+    get expected() { return renderSw(this.current, split, digest); },
   };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const built = buildSw();
   fs.writeFileSync(built.swPath, built.expected);
-  console.log(`[SW Build] Injected ${built.assets.length} assets; CACHE_NAME digest ${built.digest}.`);
+  console.log(
+    `[SW Build] Injected ${built.boot.length} boot assets + ${built.warm.length} warm; ` +
+    `CACHE_NAME digest ${built.digest}.`
+  );
 }

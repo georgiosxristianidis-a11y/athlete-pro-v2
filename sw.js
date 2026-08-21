@@ -5,22 +5,26 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-f3c8a17b';
+const CACHE_NAME = 'athlete-pro-v121-4a8ec60c';
 
-// eslint-disable-next-line no-unused-vars
+/* ── Two-phase precache (card PRECACHE-1) ──
+   ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
+   (entry-скрипты, modulepreload, нелениво подключённые стили, шрифты, иконки).
+   Только оно едет в `install`, то есть цена установки по сотовой = цена первого
+   открытия, а не всего офлайн-набора.
+
+   ASSETS_WARM — остальной офлайн: экраны, до которых пользователь может не
+   дойти ни разу. Прогревается после `activate`, в фоне, не блокируя ни
+   установку, ни навигацию. Офлайн полный — набор тот же, сдвинут во времени.
+
+   Оба списка генерит `npm run build:sw` (scripts/build-sw.mjs), руками не
+   трогать: сторожит test/sw-cache-name.test.js. */
 const ASSETS = [
   '/index.html',
   '/manifest.json',
-  '/exercises-library.json',
-  '/js/analytics.store.js',
-  '/js/analytics.strength-curves.js',
-  '/js/analytics.view.js',
   '/js/app.js',
-  '/js/body-stats.core.js',
-  '/js/body-stats.js',
   '/js/boot.js',
   '/js/claude.store.js',
-  '/js/claude.view.js',
   '/js/dashboard.js',
   '/js/db/backup.js',
   '/js/db/core.js',
@@ -34,39 +38,18 @@ const ASSETS = [
   '/js/db.js',
   '/js/events.js',
   '/js/features/pip.js',
-  '/js/features/wake-lock.js',
   '/js/flags.js',
-  '/js/insights.engine.js',
-  '/js/intel.engine.js',
-  '/js/intel.store.js',
-  '/js/intel.view.js',
   '/js/island-profile.store.js',
-  '/js/island-settings.view.js',
-  '/js/journal.store.js',
-  '/js/journal.view.js',
   '/js/locale.store.js',
-  '/js/onboarding.js',
-  '/js/plate-calc.js',
   '/js/privacy.store.js',
   '/js/privacy.view.js',
-  '/js/profile.js',
   '/js/profile.store.js',
-  '/js/profile.view/bento.js',
-  '/js/profile.view/hexagon-radar.js',
   '/js/profile.view/lift-bars.js',
-  '/js/profile.view/passport-hero.js',
-  '/js/profile.view/settings.js',
-  '/js/profile.view.js',
-  '/js/progressive-overload.js',
   '/js/rest-timer.js',
-  '/js/shared/air-markdown.js',
   '/js/shared/athlete-room.js',
-  '/js/shared/block-ticks.js',
   '/js/shared/chamber-pill.js',
   '/js/shared/confirm.js',
   '/js/shared/cryptoClient.js',
-  '/js/shared/csv-export.js',
-  '/js/shared/download.js',
   '/js/shared/dynamic-island.js',
   '/js/shared/errors-ui.js',
   '/js/shared/exercise-shorthand.js',
@@ -75,37 +58,76 @@ const ASSETS = [
   '/js/shared/island-tracker.js',
   '/js/shared/lazy-css.js',
   '/js/shared/lift-map.js',
-  '/js/shared/lww.js',
   '/js/shared/panda-mood.js',
   '/js/shared/panda-video.js',
-  '/js/shared/ppl-color.js',
   '/js/shared/ppl-gauge.js',
   '/js/shared/sparkline.js',
   '/js/shared/spring.js',
   '/js/shared/sw-update.js',
   '/js/shared/sync-dot.js',
-  '/js/shared/sync-merge.js',
   '/js/shared/sync-secrets.js',
   '/js/shared/theme.js',
-  '/js/shared/txt-export.js',
   '/js/shared/utils.js',
   '/js/shell.js',
   '/js/strength-engine.js',
+  '/js/theme-boot.js',
+  '/js/timer.js',
+  '/js/ui/factory.js',
+  '/js/version.js',
+  '/js/workout.store.js',
+  '/css/base.css',
+  '/css/dashboard.css',
+  '/icons/favicon.ico',
+  '/icons/icon-192.png',
+  '/icons/icon-64.png',
+  '/fonts/instrument-sans-latin.woff2',
+  '/fonts/manrope-cyrillic.woff2',
+  '/fonts/manrope-latin.woff2'
+];
+
+const ASSETS_WARM = [
+  '/exercises-library.json',
+  '/js/analytics.store.js',
+  '/js/analytics.strength-curves.js',
+  '/js/analytics.view.js',
+  '/js/body-stats.core.js',
+  '/js/body-stats.js',
+  '/js/claude.view.js',
+  '/js/features/wake-lock.js',
+  '/js/insights.engine.js',
+  '/js/intel.engine.js',
+  '/js/intel.store.js',
+  '/js/intel.view.js',
+  '/js/island-settings.view.js',
+  '/js/journal.store.js',
+  '/js/journal.view.js',
+  '/js/onboarding.js',
+  '/js/plate-calc.js',
+  '/js/profile.js',
+  '/js/profile.view/bento.js',
+  '/js/profile.view/hexagon-radar.js',
+  '/js/profile.view/passport-hero.js',
+  '/js/profile.view/settings.js',
+  '/js/profile.view.js',
+  '/js/progressive-overload.js',
+  '/js/shared/air-markdown.js',
+  '/js/shared/block-ticks.js',
+  '/js/shared/csv-export.js',
+  '/js/shared/download.js',
+  '/js/shared/lww.js',
+  '/js/shared/ppl-color.js',
+  '/js/shared/sync-merge.js',
+  '/js/shared/txt-export.js',
   '/js/supabase-check.js',
   '/js/supabase.js',
   '/js/sync.js',
-  '/js/theme-boot.js',
-  '/js/timer.js',
   '/js/ui/drag-number.js',
   '/js/ui/drum-picker.js',
-  '/js/ui/factory.js',
   '/js/ui/gravity-submit.js',
   '/js/ui/receipt.js',
   '/js/usage.js',
-  '/js/version.js',
   '/js/workers/crypto.worker.js',
   '/js/workout-ai.view.js',
-  '/js/workout.store.js',
   '/js/workout.view/handlers.js',
   '/js/workout.view/modals.js',
   '/js/workout.view/render.js',
@@ -113,10 +135,8 @@ const ASSETS = [
   '/js/workout.view.js',
   '/css/analytics.css',
   '/css/athlete-room.css',
-  '/css/base.css',
   '/css/body-stats.css',
   '/css/claude.css',
-  '/css/dashboard.css',
   '/css/dynamic-island.css',
   '/css/intel.css',
   '/css/journal.css',
@@ -124,13 +144,7 @@ const ASSETS = [
   '/css/profile.css',
   '/css/summary.css',
   '/css/workout.css',
-  '/icons/favicon.ico',
-  '/icons/icon-192.png',
-  '/icons/icon-64.png',
   '/assets/panda-poster.jpg',
-  '/fonts/instrument-sans-latin.woff2',
-  '/fonts/manrope-cyrillic.woff2',
-  '/fonts/manrope-latin.woff2',
   '/fonts/orbitron-latin.woff2'
 ];
 
@@ -154,25 +168,56 @@ self.addEventListener('message', (e) => {
    Adding ~90 assets with one fetch each, all at once, used to swamp the dev
    server right as the page made its own dynamic imports → aborted requests →
    failed module loads. Cap concurrency so install never starves page traffic. */
-async function precache(cache, urls, concurrency = 6) {
+async function precache(cache, urls, concurrency = 6, skipCached = false) {
   const queue = urls.slice();
   async function worker() {
     while (queue.length) {
       const url = queue.shift();
-      try { await cache.add(url); }
+      try {
+        // Прогрев может стартовать заново после сна воркера (PRECACHE-1) —
+        // без этой проверки он качал бы уже лежащее в кеше по второму разу.
+        if (skipCached && await cache.match(url)) continue;
+        await cache.add(url);
+      }
       catch (err) { console.warn('SW cache add failed:', url, err); }
     }
   }
   await Promise.all(Array.from({ length: concurrency }, worker));
 }
 
-/* ── Install: Precache all assets and skip waiting ── */
+/* ── Warm phase (PRECACHE-1) ──
+   Второй список качается ПОСЛЕ активации и намеренно не висит в waitUntil:
+   иначе воркер остаётся в состоянии `activating`, пока не докачает всё, а на
+   это ждёт `navigator.serviceWorker.ready` — приватность (js/privacy.store.js)
+   постит режим именно через него. Прогрев в фоне ничего не блокирует.
+
+   Идемпотентно и самолечится: воркер могут усыпить посреди прогрева, поэтому
+   первый же fetch добирает недокачанное, а неудача сбрасывает флаг — следующий
+   запрос попробует снова. Что не успело лечь в кеш, всё равно ляжет туда через
+   runtime-кеширование в fetch-обработчике. */
+let warming = null;
+
+function warmCache() {
+  if (warming) return warming;
+  warming = caches
+    .open(CACHE_NAME)
+    // Concurrency 2, не 6: прогрев идёт параллельно с живой навигацией, и его
+    // задача — не мешать ей, а доехать.
+    .then((cache) => precache(cache, ASSETS_WARM, 2, true))
+    .catch((err) => {
+      console.warn('SW warm precache failed:', err);
+      warming = null;
+    });
+  return warming;
+}
+
+/* ── Install: precache the boot closure only, skip waiting ── */
 self.addEventListener('install', (e) => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_NAME).then((cache) => precache(cache, ASSETS)));
 });
 
-/* ── Activate: prune old caches ── */
+/* ── Activate: prune old caches, then warm the rest in the background ── */
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches
@@ -181,6 +226,7 @@ self.addEventListener('activate', (e) => {
         Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
       )
       .then(() => self.clients.claim())
+      .then(() => { warmCache(); })
   );
 });
 
@@ -188,6 +234,10 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   if (e.request.url.startsWith('chrome-extension')) return;
+
+  // Воркер, разбуженный запросом после сна, продолжает прогрев с того места,
+  // где его прервали (PRECACHE-1). Проверка — булев флаг, не работа.
+  if (!warming) warmCache();
 
   const url = new URL(e.request.url);
 

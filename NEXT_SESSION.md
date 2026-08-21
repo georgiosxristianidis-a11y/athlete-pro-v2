@@ -33,12 +33,12 @@ npm run docs:budget    # цена системных доков в токена�
 - `HANDOFF_light_theme.md` → **THEME-6** (P2)
 - `HANDOFF_design_system.md` → **SCALE-1** (радиусы там же), дальше NAV-BACK-1 + DEAD-1; линия DS → **DS-2**, следом DS-3
 - `HANDOFF_field_check.md` — за Gio, один заход (DoD-5), флаги `fab-video`/`drum-window` заранее
-- `HANDOFF_next_cards.md` → **PRECACHE-1** (F-7 краснеет от чужих правок, развилка A/B/C), **DRUM-TOUCH-1** — за Gio; там же бэклог, DATA-SAFETY
+- `HANDOFF_next_cards.md` → **DRUM-TOUCH-1** — за Gio, один тап; там же стек карточек, бэклог, DATA-SAFETY
 - `HANDOFF_orchestration.md` — роли LEAD/worker/verifier, DoD-лестница; `HANDOFF_gym_grade.md` — DoD из 5 пунктов
 - `HANDOFF_isl_tail.md` · `HANDOFF_air_refactor.md` — хвосты острова и AIR
 - `HANDOFF_usage_stats.md` → **USAGE-1** (Web Analytics в Vercel, за Gio), затем USAGE-2 — флип флага
 - `HANDOFF_token_economy.md` → **TOK-1**, дальше TOK-6, TOK-2, TOK-4; TOK-11 перед TOK-5; TOK-9/TOK-10 отдельно
-- `HANDOFF_seo_meta.md` → **SEO-2** — og:image 1200x630; прекеш у потолка, картинку вне `ASSETS`
+- `HANDOFF_seo_meta.md` → **SEO-2** — og:image 1200x630; после PRECACHE-1 картинка уезжает в `ASSETS_WARM` сама, install-бюджет не трогает
 - `HANDOFF_toolchain.md` → **TOOL-1** (CLI отстал, Gio), **TOOL-2**, дальше TOOL-3/4/5; правит `~/.claude/*`, не код
 
 Вне хендоффов, с 2026-08-14: **DOCS-3** (горячий путь на английский, ждёт пересборки `docs/RULES.md`), **WEED-2** (прополка веток/ворктри, порог 30 дн, смежна с TOK-7), **FLOW-4** (TTL памяти ≤7500 ток, смежна с TOK-5).
