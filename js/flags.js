@@ -59,6 +59,16 @@ const DEFAULTS = {
   // Kill switch on device: Flags.setFlag('panda-moods', false)
   'panda-moods': false,
 
+  // USAGE-STATS: счётчик живых установок (js/usage.js). ON поднимает
+  // /_vercel/insights/script.js и шлёт ровно три события — app_open,
+  // workout_completed, coach_message — без содержимого сообщений, весов и
+  // идентификаторов (белый список полей в SCHEMA). Поверх флага стоят ещё
+  // четверо ворот: DNT/GPC браузера, самоисключение автора, тумблер в
+  // «Приватности» и прод-хост. Дефолт OFF — включать после того, как Web
+  // Analytics включена в проекте Vercel, иначе скрипт отдаст 404.
+  // Kill switch on device: Flags.setFlag('usage-stats', false)
+  'usage-stats': false,
+
   // ISL-PROFILE: Dynamic Island layout profiles. ON exposes the profile
   // system (Minimal-DHL default + Apple legacy), chosen in Island Settings
   // and persisted in island-profile.store.js. Kill switch → island reverts

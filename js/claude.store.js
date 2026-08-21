@@ -404,6 +404,14 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
   if (_streaming) return;
   _streaming = true;
 
+  // Счётчик установок (флаг 'usage-stats', OFF) — факт вопроса, без единого
+  // байта самого вопроса. Выше приватного гейта: локальный ответ Insights
+  // для пользователя тоже «спросил коуча». message===null — это автозагрузка
+  // первой карточки, не вопрос, и в счёт не идёт.
+  if (message) {
+    import('./usage.js').then(({ trackUsage }) => trackUsage('coach_message')).catch(() => {});
+  }
+
   // Privacy gate: short-circuit to local Insights if AI is blocked
   try {
     const { getPrivacyMode, getAiEnabled } = await import('./privacy.store.js');
