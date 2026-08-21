@@ -32,6 +32,7 @@
     "@anthropic-ai/sdk": "^0.51.0",
     "@google/genai": "^2.16.0",
     "@supabase/supabase-js": "^2.102.1",
+    "@vercel/analytics": "^2.0.1",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^16.4.5",

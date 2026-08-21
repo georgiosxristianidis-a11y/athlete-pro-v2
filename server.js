@@ -25,7 +25,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+      scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://va.vercel-scripts.com"],
       scriptSrcAttr: ["'none'"], // CSP Phase 2: all inline on* migrated to event-delegation (js/events.js)
       styleSrc: ["'self'", "'unsafe-inline'"], // fonts self-hosted in /fonts — no Google origins
       imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
@@ -36,7 +36,8 @@ app.use(helmet({
         "https://*.supabase.co",
         "https://*.firebaseio.com",
         "https://*.googleapis.com",
-        "https://generativelanguage.googleapis.com"
+        "https://generativelanguage.googleapis.com",
+        "https://va.vercel-scripts.com"
       ],
       fontSrc: ["'self'"],
       workerSrc: ["'self'"],

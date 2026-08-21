@@ -25,6 +25,11 @@
          курс на выпил 'unsafe-inline' из CSP. -->
     <script src="js/theme-boot.js"></script>
 
+    <!-- Vercel Web Analytics: автоматический трекинг просмотров страниц.
+         Работает параллельно с js/usage.js (privacy-aware события) — тот
+         отвечает за opt-in трекинг кастомных событий, этот за базовую аналитику. -->
+    <script defer src="https://va.vercel-scripts.com/v1/script.js"></script>
+
     <!-- PWA -->
     <link rel="manifest" href="manifest.json" />
     <!-- .ico первым и с sizes="any": его берут закладки и старые браузеры,
