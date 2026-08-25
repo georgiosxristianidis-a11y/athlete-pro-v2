@@ -321,6 +321,10 @@
   z-index: 5;
 }
 .island.timer-mode .island-rest { display: flex; }
+/* Rest HUD owns the pill — hide the session card underneath so #di-name /
+   #di-live can't stack over #di-rest-next (ISL-REST-EXPAND; ISL-DUP-NEXT hid
+   sublabel only). timer-mode.expanded still widens the rest HUD via rules above. */
+.island.timer-mode .island-expanded-content { display: none; }
 /* "далее: X" — the only text in the rest HUD; sublabel voice (chrome, not
    accent), ellipsis so long exercise names never push the buttons. */
 .island-rest-next {

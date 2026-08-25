@@ -219,9 +219,6 @@ export const DynamicIsland = (() => {
       // Finish HUD owns the whole pill — its button handles the tap; never expand.
       if (_island?.classList.contains('finish-mode')) return;
       if (_isLongPress) return;
-      // Rest HUD owns the pill — expand stacks #di-rest-next over stale #di-name
-      // (ISL-REST-EXPAND; tail of ISL-DUP-NEXT hid sublabel only).
-      if (_timerActive) return;
       toggleExpand();
     });
 
@@ -252,6 +249,7 @@ export const DynamicIsland = (() => {
   function hide() {
     if (!_island) return;
     _expanded = false;
+    _timerActive = false;
     _disarmFinish();
     _island?.classList.remove('expanded');
     _island?.classList.remove('timer-mode', 'rest-has-next');
@@ -558,7 +556,6 @@ export const DynamicIsland = (() => {
   }
 
   function toggleExpand() {
-    if (_timerActive) return;
     haptic(5);
     _expanded = !_expanded;
     _island?.classList.toggle('expanded', _expanded);

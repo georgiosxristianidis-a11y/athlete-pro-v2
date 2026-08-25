@@ -1,5 +1,5 @@
 /**
- * ISL-REST-EXPAND — rest HUD must not share the pill with the expanded card.
+ * ISL-REST-EXPAND — rest HUD must not share the pill with stale session card.
  *
  * timer-mode + expanded stacked #di-rest-next ("NEXT: …") over #di-name and
  * the live dot — ISL-DUP-NEXT hid #di-sublabel only; the name line stayed.
@@ -14,25 +14,21 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = readFileSync(path.join(ROOT, 'js', 'shared', 'dynamic-island.js'), 'utf8');
+const CSS = readFileSync(path.join(ROOT, 'css', 'dynamic-island.css'), 'utf8');
 
-/** Body of a named function in dynamic-island.js (IIFE-scoped). */
-function fnBody(name) {
-  const re = new RegExp(`function ${name}\\(\\)\\s*\\{([\\s\\S]*?)\\n  \\}`);
-  const m = SRC.match(re);
-  assert.ok(m, `${name}() must exist in dynamic-island.js`);
-  return m[1];
-}
-
-test('tap expand is blocked while rest HUD is active', () => {
+test('tap expand is not blocked while rest HUD is active', () => {
   const clickBlock = SRC.match(
     /addEventListener\(\s*['"]click['"][\s\S]*?toggleExpand\(\)/,
   );
   assert.ok(clickBlock, 'island click handler must call toggleExpand');
-  assert.match(clickBlock[0], /if\s*\(\s*_timerActive\s*\)\s*return/);
+  assert.doesNotMatch(clickBlock[0], /if\s*\(\s*_timerActive\s*\)\s*return/);
 });
 
-test('toggleExpand refuses while rest HUD is active', () => {
-  assert.match(fnBody('toggleExpand'), /if\s*\(\s*_timerActive\s*\)\s*return/);
+test('timer-mode hides expanded session card (CSS)', () => {
+  assert.match(
+    CSS,
+    /\.island\.timer-mode\s+\.island-expanded-content\s*\{[^}]*display\s*:\s*none/,
+  );
 });
 
 test('rest start collapses expanded card before timer-mode', () => {
