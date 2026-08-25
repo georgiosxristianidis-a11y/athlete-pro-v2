@@ -284,7 +284,12 @@ export const DynamicIsland = (() => {
     // During an active rest, RestTimer owns the island HUD + PiP. The session
     // readouts sit hidden behind the rest HUD and sets don't change mid-rest,
     // so skip the whole re-render — keeps the rest path conflict-free and cheap.
-    if (_timerActive) { _updateNetworkStatus(); return; }
+    // Exception: expanded rest (tap 2) swaps to the full card — sync it here.
+    if (_timerActive) {
+      _updateNetworkStatus();
+      if (_expanded) _renderExpandedDuringRest();
+      return;
+    }
 
     // ACTIVE WORKOUT: leave idle. COMPACT-active hugs its content (dot · name ·
     // sets) via .island-readout; EXPANDED / rest HUD are class-driven. No size mode.
@@ -429,6 +434,46 @@ export const DynamicIsland = (() => {
         nextName: islandLabel(nextEx)
       });
     }
+  }
+
+  /** Expanded card during rest — tracker + sets; sublabel mirrors rest-HUD caption. */
+  function _renderExpandedDuringRest() {
+    if (!_island || !_expanded || !State.plan?.length) return;
+
+    let activeIdx = State.plan.findIndex(ex => ex.sets.some(s => !s.done));
+    if (activeIdx === -1) activeIdx = State.plan.length - 1;
+    const currentEx = State.plan[activeIdx];
+    const exDone = currentEx ? currentEx.sets.filter(s => s.done).length : 0;
+    const exTotal = currentEx ? currentEx.sets.length : 0;
+    const setsLabel = exTotal ? `${exDone}/${exTotal}` : '';
+
+    if (_sublabelEl && _restNextEl) {
+      _sublabelEl.textContent = _restNextEl.textContent || '';
+    }
+    if (_setsEl) {
+      _setsEl.textContent = setsLabel;
+      _setsEl.style.color = _getSetsColor(exDone, exTotal);
+    }
+
+    if (_trackerEl) {
+      const blocks = [];
+      for (const ex of State.plan) {
+        const b = ex.block || 'custom';
+        if (!blocks.includes(b)) blocks.push(b);
+      }
+      const curBlock = currentEx?.block || 'custom';
+      let curChamber = blocks.indexOf(curBlock);
+      if (curChamber < 0) curChamber = 0;
+      renderIslandTracker(_trackerEl, {
+        current: Math.min(curChamber, 3),
+        sessionType: State.type,
+        chrome: true,
+        expanded: true,
+      });
+    }
+
+    const live = { push: 'var(--c-push)', pull: 'var(--c-pull)', legs: 'var(--c-legs)' };
+    _island.style.setProperty('--isl-live', live[State.type] || 'var(--c-accent)');
   }
 
   function setRestProgress(secs, max) {
