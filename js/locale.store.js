@@ -25,8 +25,10 @@ const DICT = {
     'privacy.ai_desc_airgap': 'Disabled in Air-Gapped mode',
     'privacy.ai_desc_active': 'Sends workout context to AI when on',
     'privacy.usage': 'Anonymous usage count',
-    'privacy.usage_desc': 'Three counters only: app opened, workout finished, coach asked. No content, no identifiers.',
-    'privacy.usage_desc_airgap': 'Counted as an aggregate even here: the event name alone, with no payload at all.',
+    'privacy.usage_desc':
+      'Three counters only: app opened, workout finished, coach asked. No content, no identifiers.',
+    'privacy.usage_desc_airgap':
+      'Counted as an aggregate even here: the event name alone, with no payload at all.',
     'privacy.usage_dnt': 'Off — your browser sends Do Not Track',
     'privacy.usage_excluded': 'Off — this device is excluded from the count',
     'privacy.passport': 'Data Passport',
@@ -275,7 +277,7 @@ const DICT = {
     'mascot.dropped_bamboo': 'You made me drop it.',
     'mascot.night_shift': 'Late. Still eating.',
     'mascot.early_bird': 'Early. I never got up.',
-    'mascot.ate_progress': 'I ate your progress.'
+    'mascot.ate_progress': 'I ate your progress.',
   },
   ru: {
     'profile.title': 'Профиль',
@@ -295,8 +297,10 @@ const DICT = {
     'privacy.ai_desc_airgap': 'Отключен в режиме "Без сети"',
     'privacy.ai_desc_active': 'Отправляет контекст тренировки AI при включении',
     'privacy.usage': 'Анонимный счёт установок',
-    'privacy.usage_desc': 'Три счётчика и всё: запуск, завершённая тренировка, вопрос коучу. Ни содержимого, ни идентификаторов.',
-    'privacy.usage_desc_airgap': 'Считаетесь агрегатом даже здесь: наружу уходит одно имя события, без единого поля.',
+    'privacy.usage_desc':
+      'Три счётчика и всё: запуск, завершённая тренировка, вопрос коучу. Ни содержимого, ни идентификаторов.',
+    'privacy.usage_desc_airgap':
+      'Считаетесь агрегатом даже здесь: наружу уходит одно имя события, без единого поля.',
     'privacy.usage_dnt': 'Выключен — браузер шлёт Do Not Track',
     'privacy.usage_excluded': 'Выключен — это устройство исключено из счёта',
     'privacy.passport': 'Паспорт данных',
@@ -313,7 +317,8 @@ const DICT = {
     'privacy.delete_all': 'Удалить все данные',
     'privacy.audit_empty': 'Сетевая активность не зафиксирована.',
     'privacy.clear_log': 'Очистить лог',
-    'privacy.audit_summary': 'Последние {total} сетевых попыток · {sent} отправлено · {blocked} заблокировано',
+    'privacy.audit_summary':
+      'Последние {total} сетевых попыток · {sent} отправлено · {blocked} заблокировано',
     'privacy.status_sent': 'отправлено',
     'privacy.status_blocked': 'заблокировано',
     'privacy.delete_confirm': 'Удалить ВСЕ локальные данные? Это действие необратимо.',
@@ -344,7 +349,8 @@ const DICT = {
     'data.export_txt': 'Экспорт TXT',
     'data.export_txt_done': 'Журнал выгружен',
     'data.place_title': 'Где тренируешься?',
-    'data.place_msg': 'Попадёт в шапку журнала. Спрашиваем один раз — поменять можно в этом же окне.',
+    'data.place_msg':
+      'Попадёт в шапку журнала. Спрашиваем один раз — поменять можно в этом же окне.',
     'data.place_gym': 'Зал',
     'data.place_country': 'Страна',
     'data.place_save': 'Выгрузить',
@@ -541,7 +547,7 @@ const DICT = {
     'mascot.night_shift': 'Поздно. Я ужинаю.',
     'mascot.early_bird': 'Рано. Я не вставал.',
     'mascot.ate_progress': 'Я съел твой прогресс.',
-  }
+  },
 };
 
 let _lang = 'en';
@@ -571,7 +577,7 @@ export function isRu() {
 
 /**
  * Set language.
- * @param {'en'|'ru'} lang 
+ * @param {'en'|'ru'} lang
  */
 export async function setLang(lang) {
   _lang = lang;
@@ -581,8 +587,8 @@ export async function setLang(lang) {
 
 /**
  * Translate a key.
- * @param {string} key 
- * @param {Object} [params] 
+ * @param {string} key
+ * @param {Object} [params]
  * @returns {string}
  */
 export function t(key, params = {}) {
