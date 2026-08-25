@@ -14,7 +14,7 @@ paths:
   - **SEMANTIC (только по смыслу, не для декора):** PPL — `--c-push`(green)/`--c-pull`(cyan)/`--c-legs`(purple); статус — `--c-amber`(warning/PR)/`--c-red`(#ff4d88 error/danger/HR); achievement — `--c-gold` (PR/streak).
   - PPL-закон: Push=green · Pull=cyan · Legs=purple. В коде типа тренировки — `--c-push/--c-pull/--c-legs`, не сырые hue.
   - **В JS цвет PPL берётся только из `js/shared/ppl-color.js`** (DS-1): `pplColor()` резолвит токен текущей темы, `pplColorAlpha()` клеит альфу для canvas и inline-стилей. Сырой хекс рядом со словом push/pull/legs красит гейт (`test/ppl-color.test.js`). Где альфа и canvas не нужны — `var(--c-push)` прямо в inline-стиль, как в `js/dashboard.js`.
-- Типографика — шкала `--fs-*` / `--fw-*` в `css/base.css :root` (решение TYPE-1, 2026-07-28). Сырые px в `font-size` и цифры в `font-weight` запрещены.
+- Типографика — шкала `--fs-*` / `--fw-*` в `css/base.css :root` (решение TYPE-1, 2026-07-28). Сырые px в `font-size` и цифры в `font-weight` запрещены; вне `base.css` держится нулём в `test/design-tokens.test.js`.
   - **Размер (6 ступеней):** `--fs-1` 10px микро-капс (подписи, единицы, пилюли) · `--fs-2` 13px вторичный текст · `--fs-3` 16px база (тело, заголовки строк, поля) · `--fs-4` 19px заголовок секции/значение · `--fs-5` 23px дисплей (имя в hero) · `--fs-6` 30px hero-число.
   - **Насыщенность (3 варианта):** `--fw-md` 600 тело · `--fw-bold` 700 акцент · `--fw-black` 800 капс/числа/hero. 500 и 600 глазом не различимы, 900 у Manrope клэмпится к 800 — оба упразднены.
   - Промежуточных ступеней не заводить. Нужен другой вес в макете — меняй ступень, цвет или насыщенность, не размер на 1px.
@@ -29,7 +29,7 @@ paths:
 Переехало из `NEXT_SESSION.md` 2026-08-02: это дизайн-закон, а не состояние сессии.
 
 1. **Воздух вместо линий:** никаких `<hr>` и нижних бордеров — только padding/margin и сдвиг поверхности.
-2. **Hairlines только через токены** `var(--c-border)` / `var(--c-border-h)`; rgba не хардкодить (ловит stylelint). Цветные подсветки rgba ≤20% — точечно.
+2. **Hairlines только через токены** `var(--c-border)` / `var(--c-border-h)`; rgba не хардкодить. Цветные подсветки rgba ≤20% — точечно. Ловит `test/design-tokens.test.js`, не stylelint: правило в `.stylelintrc.json` объявлено `severity: warning` и якорено на начало значения, поэтому сырой цвет внутри `box-shadow`/`border` ему не виден (VIS-1, 2026-08-25).
 3. **Отступы карточек и модалок** 24/32px (`--sp-3` / `--sp-4`).
 4. **Safe-area всегда** (`--safe-top` / `--safe-bottom`).
 5. **Mobile-first**, брейк 600px; десктоп-колонка 412px, никаких `position:fixed` к окну.

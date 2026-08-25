@@ -28,7 +28,7 @@ npm run preflight && npm run inventory && npm run smoke:prod && npm run docs:bud
 - `HANDOFF_intel_readiness.md` → **INTEL-3** → INTEL-4
 - `HANDOFF_gemini_audit_triage.md` → **SCAF-1**, NOISE-1/PII-1; за Gio — снести Render, отозвать `ANTHROPIC_API_KEY`
 - `HANDOFF_light_theme.md` → **THEME-6** (P2)
-- `HANDOFF_design_system.md` → **SCALE-1**, NAV-BACK-1 + DEAD-1; DS → **DS-2** → DS-3
+- `HANDOFF_design_system.md` → **SCALE-1** (типографика закрыта VIS-1, остались отступы/радиусы), VIS-2, NAV-BACK-1 + DEAD-1; DS → **DS-2** → DS-3
 - `HANDOFF_field_check.md` — Gio, DoD-5; флаги `fab-video`/`drum-window` заранее
 - `HANDOFF_next_cards.md` → **DRUM-TOUCH-1** (поле); стек/бэклог/DATA-SAFETY
 - `HANDOFF_orchestration.md` · `HANDOFF_gym_grade.md` — роли + DoD-5
