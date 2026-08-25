@@ -14,14 +14,19 @@ import { renderPplGauge } from './shared/ppl-gauge.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
 import { t, getLang } from './locale.store.js';
-import { initPandaVideo, togglePandaSound, PANDA_VIDEO_SRC, PANDA_POSTER_SRC } from './shared/panda-video.js';
+import {
+  initPandaVideo,
+  togglePandaSound,
+  PANDA_VIDEO_SRC,
+  PANDA_POSTER_SRC,
+} from './shared/panda-video.js';
 import { attachMood, emitMood, entryGreeting } from './shared/panda-mood.js';
 
-on('dash:directLaunch',  (el) => window.Dashboard.directLaunch(el.dataset.type));
+on('dash:directLaunch', (el) => window.Dashboard.directLaunch(el.dataset.type));
 on('dash:weeklySummary', () => showWeeklySummary());
-on('dash:navStats',      () => window.Nav.go('s-stats'));
-on('dash:closeMascot',   () => window.Dashboard.closeMascot());
-on('dash:mascotSound',   (el, e) => {
+on('dash:navStats', () => window.Nav.go('s-stats'));
+on('dash:closeMascot', () => window.Dashboard.closeMascot());
+on('dash:mascotSound', (el, e) => {
   e.stopPropagation();
   const v = el.querySelector('video');
   if (!(v instanceof HTMLVideoElement)) return;
@@ -36,13 +41,14 @@ window.addEventListener('ap-nav-change', (e) => {
   const v = document.querySelector('.empty-dash-mascot video');
   if (!(v instanceof HTMLVideoElement)) return;
   // @ts-ignore
-  if (e.detail && e.detail.id === 's-home') { if (!document.hidden) v.play().catch(() => {}); }
-  else v.pause();
+  if (e.detail && e.detail.id === 's-home') {
+    if (!document.hidden) v.play().catch(() => {});
+  } else v.pause();
 });
-on('dash:askAI',         () => askAIAboutSummary());
-on('dash:closeModal',    (el) => el.closest('.modal-overlay')?.remove());
-on('dash:openJournal',   () => window.Nav.go('s-journal'));
-on('dash:toggleList',    (el) => {
+on('dash:askAI', () => askAIAboutSummary());
+on('dash:closeModal', (el) => el.closest('.modal-overlay')?.remove());
+on('dash:openJournal', () => window.Nav.go('s-journal'));
+on('dash:toggleList', (el) => {
   const target = document.getElementById(el.dataset.target);
   if (!target) return;
   const expanded = target.classList.toggle('expanded');
@@ -111,17 +117,17 @@ export const Dashboard = (() => {
    * @returns {Object<string, number>}
    */
   function computeLiftDeltas(allWorkouts, liftNames) {
-    const now  = Date.now();
-    const d30  = now - 30 * 86400000;
-    const d60  = now - 60 * 86400000;
-    const epley = (w, r) => r === 1 ? w : Math.round(w * (1 + r / 30));
+    const now = Date.now();
+    const d30 = now - 30 * 86400000;
+    const d60 = now - 60 * 86400000;
+    const epley = (w, r) => (r === 1 ? w : Math.round(w * (1 + r / 30)));
 
     function bestInPeriod(workouts) {
       const map = {};
       for (const workout of workouts) {
-        for (const ex of (workout.exercises || [])) {
+        for (const ex of workout.exercises || []) {
           if (!liftNames.has(ex.name)) continue;
-          for (const set of (ex.sets || [])) {
+          for (const set of ex.sets || []) {
             if (!set.done || !set.weight || !set.reps) continue;
             const orm = epley(set.weight, set.reps);
             if (map[ex.name] === undefined || orm > map[ex.name]) map[ex.name] = orm;
@@ -131,10 +137,10 @@ export const Dashboard = (() => {
       return map;
     }
 
-    const recent     = allWorkouts.filter(w => w.timestamp >= d30 && w.timestamp <= now); // 2-4: no future dates
-    const prior      = allWorkouts.filter(w => w.timestamp >= d60 && w.timestamp < d30);
+    const recent = allWorkouts.filter((w) => w.timestamp >= d30 && w.timestamp <= now); // 2-4: no future dates
+    const prior = allWorkouts.filter((w) => w.timestamp >= d60 && w.timestamp < d30);
     const recentBest = bestInPeriod(recent);
-    const priorBest  = bestInPeriod(prior);
+    const priorBest = bestInPeriod(prior);
 
     const deltas = {};
     for (const name of liftNames) {
@@ -256,7 +262,9 @@ export const Dashboard = (() => {
             </svg>`;
     return `
       <div class="empty-dashboard">
-        ${showMascot ? `
+        ${
+          showMascot
+            ? `
         <div class="empty-dash-mascot-wrap" id="mascot-draggable" ${videoMode ? `data-action="dash:mascotSound" title="${esc(t('dash.sound'))}"` : ''}>
           <button class="mascot-close-btn" data-action="dash:closeMascot" title="${esc(t('dash.close_mascot'))}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14">
@@ -266,7 +274,9 @@ export const Dashboard = (() => {
           <div class="empty-dash-mascot" style="display:flex;align-items:center;justify-content:center;height:100%;width:100%;">
             ${mascotInner}
           </div>
-        </div>` : ''}
+        </div>`
+            : ''
+        }
         <div class="empty-dash-title">${esc(t('dash.empty_title'))}</div>
         <div class="empty-dash-sub">${esc(t('dash.empty_sub'))}</div>
         <button class="btn-start-workout" type="button">
@@ -301,9 +311,12 @@ export const Dashboard = (() => {
     if (!el) return;
 
     let isDragging = false;
-    let startX = 0, startY = 0;
-    let currentX = 0, currentY = 0;
-    let gestureX = 0, gestureY = 0;
+    let startX = 0,
+      startY = 0;
+    let currentX = 0,
+      currentY = 0;
+    let gestureX = 0,
+      gestureY = 0;
     let moved = false;
 
     el.addEventListener('pointerdown', (e) => {
@@ -323,7 +336,8 @@ export const Dashboard = (() => {
     _mascotDragOn.add('pointermove', (e) => {
       if (!isDragging) return;
       // 5px threshold: реальный драг не должен превращаться в тап по звуку
-      if (!moved && (Math.abs(e.clientX - gestureX) > 5 || Math.abs(e.clientY - gestureY) > 5)) moved = true;
+      if (!moved && (Math.abs(e.clientX - gestureX) > 5 || Math.abs(e.clientY - gestureY) > 5))
+        moved = true;
       currentX = e.clientX - startX;
       currentY = e.clientY - startY;
       el.style.transform = `translate(${currentX}px, ${currentY}px)`;
@@ -335,13 +349,17 @@ export const Dashboard = (() => {
       el.style.transition = 'transform 0.4s var(--ease-std)';
     });
 
-    el.addEventListener('click', (e) => {
-      if (moved) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        moved = false;
-      }
-    }, true);
+    el.addEventListener(
+      'click',
+      (e) => {
+        if (moved) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          moved = false;
+        }
+      },
+      true
+    );
   }
 
   /* ── PANDA-3: сценарии 5 «Пока тебя не было» и 6 «Ночная смена» ──────
@@ -354,14 +372,13 @@ export const Dashboard = (() => {
     if (!flag('panda-moods')) return;
 
     const last = workouts && workouts[0];
-    const daysSinceLast = last && last.timestamp
-      ? Math.floor((Date.now() - last.timestamp) / 86400000)
-      : null;
+    const daysSinceLast =
+      last && last.timestamp ? Math.floor((Date.now() - last.timestamp) / 86400000) : null;
     const greeting = entryGreeting({ daysSinceLast, hour: new Date().getHours() });
     if (!greeting) return;
 
     // Один раз в календарные сутки, по локальной дате устройства.
-    const today = new Date().toLocaleDateString('sv');   // YYYY-MM-DD
+    const today = new Date().toLocaleDateString('sv'); // YYYY-MM-DD
     const seen = await DB.Settings.get('panda-greeted-on', '').catch(() => '');
     if (seen === today) return;
     await DB.Settings.set('panda-greeted-on', today).catch(() => {});
@@ -397,7 +414,7 @@ export const Dashboard = (() => {
     const container = document.getElementById('spark-container');
     const totalEl = document.getElementById('spark-total');
     if (!container || !totalEl) return;
-    
+
     if (!workouts || workouts.length === 0) {
       container.innerHTML = `<div style="padding: var(--sp-2); text-align: center; color: var(--c-text-3); font-size: var(--fs-2);">${esc(t('dash.no_data'))}</div>`;
       return;
@@ -406,7 +423,7 @@ export const Dashboard = (() => {
     // Group tonnage by day + PPL type for the last 30 days
     const days = 30;
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
     const dayMs = 24 * 60 * 60 * 1000;
 
     const dayKeys = [];
@@ -417,18 +434,18 @@ export const Dashboard = (() => {
     }
 
     const pplMaps = {
-      push: new Map(dayKeys.map(k => [k, 0])),
-      pull: new Map(dayKeys.map(k => [k, 0])),
-      legs: new Map(dayKeys.map(k => [k, 0])),
+      push: new Map(dayKeys.map((k) => [k, 0])),
+      pull: new Map(dayKeys.map((k) => [k, 0])),
+      legs: new Map(dayKeys.map((k) => [k, 0])),
     };
 
     let total30d = 0;
     let last7d = 0;
     let prev7d = 0;
 
-    workouts.forEach(w => {
+    workouts.forEach((w) => {
       const wDate = new Date(w.timestamp);
-      wDate.setHours(0,0,0,0);
+      wDate.setHours(0, 0, 0, 0);
       const ts = wDate.getTime();
       const diffDays = Math.floor((today.getTime() - ts) / dayMs);
 
@@ -466,16 +483,20 @@ export const Dashboard = (() => {
     const globalMax = Math.max(...pushArr, ...pullArr, ...legsArr);
 
     if (globalMax === 0) {
-      container.innerHTML = generateSparkline([0,0,0,0], 300, 80);
+      container.innerHTML = generateSparkline([0, 0, 0, 0], 300, 80);
       return;
     }
 
     totalEl.innerHTML = `${fmtVol(total30d)} kg ${trendHtml}`;
-    container.innerHTML = generateSparklineMulti([
-      { data: pushArr, color: 'var(--c-push)' },
-      { data: pullArr, color: 'var(--c-pull)' },
-      { data: legsArr, color: 'var(--c-legs)' },
-    ], 300, 80);
+    container.innerHTML = generateSparklineMulti(
+      [
+        { data: pushArr, color: 'var(--c-push)' },
+        { data: pullArr, color: 'var(--c-pull)' },
+        { data: legsArr, color: 'var(--c-legs)' },
+      ],
+      300,
+      80
+    );
   }
 
   /**
@@ -605,9 +626,10 @@ export const Dashboard = (() => {
 
     const row = (o, i) => {
       const delta = deltas[o.id];
-      const deltaHtml = delta != null
-        ? `<span class="orm-delta ${delta >= 0 ? 'orm-delta-up' : 'orm-delta-down'}">${delta >= 0 ? '+' : ''}${delta}kg</span>`
-        : '';
+      const deltaHtml =
+        delta != null
+          ? `<span class="orm-delta ${delta >= 0 ? 'orm-delta-up' : 'orm-delta-down'}">${delta >= 0 ? '+' : ''}${delta}kg</span>`
+          : '';
       return `
       <div class="orm-row">
         <div class="orm-name">
@@ -638,7 +660,9 @@ export const Dashboard = (() => {
             to: Math.round((o.value / max) * 100),
             stiffness: 100 + i * 10,
             damping: 15,
-            onUpdate: (v) => { bar.style.transform = `scaleX(${v / 100})`; }
+            onUpdate: (v) => {
+              bar.style.transform = `scaleX(${v / 100})`;
+            },
           });
         }
       });
@@ -683,30 +707,35 @@ export const Dashboard = (() => {
     }
 
     const sessionHtml = (w) => {
-      const dot   = TYPE_COLOR[w.type] || 'var(--c-text-3)';
-      const date  = fmtDate(w.timestamp);
-      const dur   = w.duration ? fmtDuration(w.duration) : null;
-      const type  = typeDay(w.type);
+      const dot = TYPE_COLOR[w.type] || 'var(--c-text-3)';
+      const date = fmtDate(w.timestamp);
+      const dur = w.duration ? fmtDuration(w.duration) : null;
+      const type = typeDay(w.type);
 
       // ── Block indicator strip (W-2-D-3) ──────────────────────────
       // session.blocks = [{ id, label, tonnage }] — written by Lead W-2-B
       // Falls back to empty string for legacy sessions.
       const blockStrip = (() => {
-        const blocks = Array.isArray(w.blocks) ? w.blocks.filter(b => b.id !== 'core' && b.id !== 'align') : [];
+        const blocks = Array.isArray(w.blocks)
+          ? w.blocks.filter((b) => b.id !== 'core' && b.id !== 'align')
+          : [];
         if (!blocks.length) return '';
         const total = blocks.reduce((s, b) => s + (b.tonnage || 0), 0) || 1;
-        const pills = blocks.map(b => {
-          const pct = Math.max(6, Math.round((b.tonnage || 0) / total * 100));
-          const color = dot; // all same PPL color — subtle differentiation via opacity
-          return `<span class="rec-block-pill" style="flex:${pct};background:${color};opacity:${b.id === 'power' ? '1' : '0.45'}" title="${esc(b.label || b.id)}"></span>`;
-        }).join('');
+        const pills = blocks
+          .map((b) => {
+            const pct = Math.max(6, Math.round(((b.tonnage || 0) / total) * 100));
+            const color = dot; // all same PPL color — subtle differentiation via opacity
+            return `<span class="rec-block-pill" style="flex:${pct};background:${color};opacity:${b.id === 'power' ? '1' : '0.45'}" title="${esc(b.label || b.id)}"></span>`;
+          })
+          .join('');
         return `<div class="rec-block-strip">${pills}</div>`;
       })();
 
       // ── PR badge ──────────────────────────────────────────────────
-      const prBadge = (w.prs && w.prs.length)
-        ? `<span class="rec-pr-badge">${esc(t('dash.pr_badge', { n: w.prs.length }))}</span>`
-        : '';
+      const prBadge =
+        w.prs && w.prs.length
+          ? `<span class="rec-pr-badge">${esc(t('dash.pr_badge', { n: w.prs.length }))}</span>`
+          : '';
 
       // ── Duration chip ─────────────────────────────────────────────
       const durChip = dur ? `<span class="rec-dur">${esc(dur)}</span>` : '';
@@ -728,7 +757,7 @@ export const Dashboard = (() => {
 
     const VISIBLE = 3;
     const visible = list.slice(0, VISIBLE);
-    const rest    = list.slice(VISIBLE);
+    const rest = list.slice(VISIBLE);
     const collapseHtml = rest.length
       ? `<div class="list-collapse" id="recent-more"><div class="list-collapse-inner">${rest.map(sessionHtml).join('')}</div></div>${_toggleButtonHtml('recent-more', rest.length)}`
       : '';
@@ -742,7 +771,7 @@ export const Dashboard = (() => {
   async function directLaunch(type) {
     if (window.haptic) window.haptic(15);
     window.Toast?.show(t('dash.launching', { type: typeLabel(type) }), 'success');
-    
+
     // We need to ensure Workout logic is loaded
     const { Workout } = await import('./workout.view.js');
     await Workout.selectType(type);
@@ -778,7 +807,7 @@ export const Dashboard = (() => {
         else initPandaVideo(mascotWrap, mascotWrap.querySelector('video'));
       }
       window.dispatchEvent(new CustomEvent('ap-mascot-video'));
-      _pandaGreet(allWorkouts);   // после монтирования маскота, иначе мимика уйдёт в пустоту
+      _pandaGreet(allWorkouts); // после монтирования маскота, иначе мимика уйдёт в пустоту
       screen.querySelector('.btn-start-workout')?.addEventListener('click', () => {
         if (window.haptic) window.haptic([15, 50, 15]);
         window.Toast.show(t('dash.lets_go'), 'success');
@@ -807,28 +836,39 @@ export const Dashboard = (() => {
     const dateEl = document.getElementById('dash-date');
     if (dateEl)
       dateEl.textContent = new Date().toLocaleDateString(getLang(), {
-        weekday: 'long', month: 'long', day: 'numeric',
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
       });
 
-    const weekVol    = weeklyVolumeFrom(allWorkouts);
-    const monthVol   = monthlyVolumeFrom(allWorkouts);
-    const weekCount  = weeklyCountFrom(allWorkouts);
-    const ppl        = pplTonnageFrom(allWorkouts);
+    const weekVol = weeklyVolumeFrom(allWorkouts);
+    const monthVol = monthlyVolumeFrom(allWorkouts);
+    const weekCount = weeklyCountFrom(allWorkouts);
+    const ppl = pplTonnageFrom(allWorkouts);
 
     // Stats — remove skeleton class before populating
     const wv = document.getElementById('dash-vol-week');
     const mv = document.getElementById('dash-vol-month');
     const sc = document.getElementById('dash-sessions');
-    if (wv) { wv.classList.remove('sk'); wv.innerHTML = fmtVol(weekVol) + '<span class="stat-chip-unit">kg</span>'; }
-    if (mv) { mv.classList.remove('sk'); mv.innerHTML = fmtVol(monthVol) + '<span class="stat-chip-unit">kg</span>'; }
-    if (sc) { sc.classList.remove('sk'); sc.textContent = weekCount; }
+    if (wv) {
+      wv.classList.remove('sk');
+      wv.innerHTML = fmtVol(weekVol) + '<span class="stat-chip-unit">kg</span>';
+    }
+    if (mv) {
+      mv.classList.remove('sk');
+      mv.innerHTML = fmtVol(monthVol) + '<span class="stat-chip-unit">kg</span>';
+    }
+    if (sc) {
+      sc.classList.remove('sk');
+      sc.textContent = weekCount;
+    }
 
     // Phase 2: Deferred rendering to keep UI responsive
     requestAnimationFrame(() => {
       renderSparkline(allWorkouts);
       renderStreak(allWorkouts);
       renderPPL(ppl);
-      
+
       requestAnimationFrame(() => {
         renderTopLifts(orms, allWorkouts);
         renderRecent(allWorkouts);
@@ -879,7 +919,10 @@ export const Dashboard = (() => {
         <span class="badge badge-green">${esc(t('dash.ai_powered'))}</span>
       </div>
       <div class="recommendations-card">
-        ${progressingExercises.slice(0, 4).map((ex) => `
+        ${progressingExercises
+          .slice(0, 4)
+          .map(
+            (ex) => `
           <div class="rec-item">
             <div class="rec-dot" style="background: var(--c-accent)"></div>
             <div class="rec-info">
@@ -892,13 +935,23 @@ export const Dashboard = (() => {
               <span class="rec-new">${ex.recommendedWeight}kg</span>
             </div>
           </div>
-        `).join('')}
+        `
+          )
+          .join('')}
         ${progressingExercises.length > 4 ? `<div class="rec-more">${esc(t('dash.more_n', { n: progressingExercises.length - 4 }))}</div>` : ''}
       </div>
     `;
   }
 
-  return { load, renderRecommendations, showWeeklySummary, loadWeeklySummary, closeMascot, _initMascotDrag, directLaunch };
+  return {
+    load,
+    renderRecommendations,
+    showWeeklySummary,
+    loadWeeklySummary,
+    closeMascot,
+    _initMascotDrag,
+    directLaunch,
+  };
 })();
 
 /* ══════════════════════════════════════════════
@@ -917,18 +970,22 @@ async function loadWeeklySummary() {
   const chipValue = document.getElementById('weekly-summary-value');
   if (chipValue) {
     if (prs.length > 0) {
-      chipValue.textContent = t(prs.length > 1 ? 'dash.chip_prs' : 'dash.chip_pr', { n: prs.length });
+      chipValue.textContent = t(prs.length > 1 ? 'dash.chip_prs' : 'dash.chip_pr', {
+        n: prs.length,
+      });
       chipValue.style.color = 'var(--c-gold)';
     } else if (plateauAlerts.length > 0) {
       chipValue.textContent = t(
         plateauAlerts.length > 1 ? 'dash.chip_plateaus' : 'dash.chip_plateau',
-        { n: plateauAlerts.length },
+        { n: plateauAlerts.length }
       );
       chipValue.style.color = 'var(--c-red)';
     } else {
       const since = Date.now() - 7 * 24 * 3600000;
-      const count = workouts.filter(w => w.timestamp >= since).length;
-      chipValue.textContent = t(count !== 1 ? 'dash.chip_workouts' : 'dash.chip_workout', { n: count });
+      const count = workouts.filter((w) => w.timestamp >= since).length;
+      chipValue.textContent = t(count !== 1 ? 'dash.chip_workouts' : 'dash.chip_workout', {
+        n: count,
+      });
       chipValue.style.color = 'var(--c-text-1)';
     }
   }
@@ -965,59 +1022,87 @@ async function showWeeklySummary() {
         <div class="summary-section">
           <h3 style="font-size:var(--fs-3);color:var(--c-text-2);margin-bottom:var(--sp-2)">${esc(t('dash.overview'))}</h3>
           <div style="display:flex; flex-direction:column; gap:var(--sp-1-5); margin-bottom:var(--sp-3)">
-            ${data.workoutCount > 0 ? `
+            ${
+              data.workoutCount > 0
+                ? `
               <div style="display:flex; align-items:center; gap:var(--sp-1-5); color:var(--c-text-1); font-size:var(--fs-3);">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
                 <span>${esc(t('dash.workouts_week', { n: data.workoutCount }))}</span>
               </div>
-            ` : `<div style="color:var(--c-text-3); font-size:var(--fs-3);">${esc(t('dash.rest_week'))}</div>`}
+            `
+                : `<div style="color:var(--c-text-3); font-size:var(--fs-3);">${esc(t('dash.rest_week'))}</div>`
+            }
             
-            ${data.prs.length > 0 ? `
+            ${
+              data.prs.length > 0
+                ? `
               <div style="display:flex; align-items:flex-start; gap:var(--sp-1-5); color:var(--c-text-1); font-size:var(--fs-3);">
                 <!-- margin-top: 2px — оптическая посадка иконки на первую строку,
                      ниже нижней ступени шкалы (--sp-0-5 = 4px). -->
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                <span><strong>${esc(t('dash.prs_n', { n: data.prs.length }))}</strong>: ${data.prs.map(p => `${esc(p.exercise)} ${p.weight}kg`).join(', ')}</span>
+                <span><strong>${esc(t('dash.prs_n', { n: data.prs.length }))}</strong>: ${data.prs.map((p) => `${esc(p.exercise)} ${p.weight}kg`).join(', ')}</span>
               </div>
-            ` : ''}
+            `
+                : ''
+            }
 
-            ${data.plateauAlerts.length > 0 ? `
+            ${
+              data.plateauAlerts.length > 0
+                ? `
               <div style="display:flex; align-items:center; gap:var(--sp-1-5); color:var(--c-text-1); font-size:var(--fs-3);">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                 <span>${esc(t('dash.plateaus_n', { n: data.plateauAlerts.length }))}</span>
               </div>
-            ` : ''}
+            `
+                : ''
+            }
           </div>
         </div>
 
-        ${data.prs.length > 0 ? `
+        ${
+          data.prs.length > 0
+            ? `
           <div class="summary-section pr-section" style="margin-top:var(--sp-3)">
             <h3 style="font-size:var(--fs-3);color:var(--c-accent);margin-bottom:var(--sp-2)">${esc(t('dash.personal_records'))}</h3>
             <div style="display:flex; flex-direction:column; gap:var(--sp-1);">
-              ${data.prs.map(pr => `
+              ${data.prs
+                .map(
+                  (pr) => `
                 <div style="display:flex; justify-content:space-between; padding:var(--sp-2); background:var(--c-surface-h); border-radius:var(--r-s); border-left:2px solid var(--c-accent);">
                   <span style="color:var(--c-text-1); font-weight:var(--fw-bold);">${esc(pr.exercise)}</span>
                   <span style="color:var(--c-accent); font-weight:var(--fw-black); font-variant-numeric:tabular-nums;">${pr.weight}kg</span>
                 </div>
-              `).join('')}
+              `
+                )
+                .join('')}
             </div>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
 
-        ${data.plateauAlerts.length > 0 ? `
+        ${
+          data.plateauAlerts.length > 0
+            ? `
           <div class="summary-section plateau-section" style="margin-top:var(--sp-4)">
             <h3 style="font-size:var(--fs-3);color:var(--c-amber);margin-bottom:var(--sp-2)">${esc(t('dash.plateau_alerts'))}</h3>
             <div style="display:flex; flex-direction:column; gap:var(--sp-1);">
-              ${data.plateauAlerts.map(alert => `
+              ${data.plateauAlerts
+                .map(
+                  (alert) => `
                 <div class="plateau-alert" style="padding:var(--sp-2); background:var(--c-surface-h); border-radius:var(--r-s); border-left:2px solid var(--c-amber);">
                   <strong style="color:var(--c-text-1);display:block;margin-bottom:var(--sp-0-5);font-size:var(--fs-3);">${esc(alert.exercise)}</strong>
                   <p style="color:var(--c-text-2);font-size:var(--fs-2);margin-bottom:var(--sp-0-5)">${esc(alert.suggestion)}</p>
                   <small style="color:var(--c-text-3);font-size:var(--fs-1)">${esc(t('dash.weeks_since', { n: alert.weeks }))}</small>
                 </div>
-              `).join('')}
+              `
+                )
+                .join('')}
             </div>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
 
       <div class="modal-footer" style="padding:var(--sp-2) var(--sp-3);display:flex;gap:var(--sp-2);justify-content:flex-end">
@@ -1037,7 +1122,7 @@ async function askAIAboutSummary() {
   const { summary, plateauAlerts, prs } = window._weeklySummary || {};
 
   // Open Claude panel with context
-  const message = `Analyze my week: ${summary}. ${plateauAlerts.length > 0 ? 'Plateaus: ' + plateauAlerts.map(a => a.exercise).join(', ') : ''} ${prs.length > 0 ? 'PRs: ' + prs.map(p => `${p.exercise} ${p.weight}kg`).join(', ') : ''}`;
+  const message = `Analyze my week: ${summary}. ${plateauAlerts.length > 0 ? 'Plateaus: ' + plateauAlerts.map((a) => a.exercise).join(', ') : ''} ${prs.length > 0 ? 'PRs: ' + prs.map((p) => `${p.exercise} ${p.weight}kg`).join(', ') : ''}`;
 
   // Send to AI via fetchCoach
   const { fetchCoach } = await import('./claude.store.js');
@@ -1050,7 +1135,7 @@ async function askAIAboutSummary() {
     await fetchCoach(message, {
       onText: () => {},
       onDone: () => {},
-      onError: (err) => Toast.show(t('dash.error', { err }), 'error')
+      onError: (err) => Toast.show(t('dash.error', { err }), 'error'),
     });
   }, 500);
 }

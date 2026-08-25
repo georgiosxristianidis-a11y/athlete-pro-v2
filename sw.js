@@ -82,7 +82,7 @@ const ASSETS = [
   '/icons/icon-64.png',
   '/fonts/instrument-sans-latin.woff2',
   '/fonts/manrope-cyrillic.woff2',
-  '/fonts/manrope-latin.woff2'
+  '/fonts/manrope-latin.woff2',
 ];
 
 const ASSETS_WARM = [
@@ -145,7 +145,7 @@ const ASSETS_WARM = [
   '/css/summary.css',
   '/css/workout.css',
   '/assets/panda-poster.jpg',
-  '/fonts/orbitron-latin.woff2'
+  '/fonts/orbitron-latin.woff2',
 ];
 
 /* Media lives outside ASSETS (card F-7) — see scripts/build-sw.mjs. Kept in
@@ -176,10 +176,11 @@ async function precache(cache, urls, concurrency = 6, skipCached = false) {
       try {
         // Прогрев может стартовать заново после сна воркера (PRECACHE-1) —
         // без этой проверки он качал бы уже лежащее в кеше по второму разу.
-        if (skipCached && await cache.match(url)) continue;
+        if (skipCached && (await cache.match(url))) continue;
         await cache.add(url);
+      } catch (err) {
+        console.warn('SW cache add failed:', url, err);
       }
-      catch (err) { console.warn('SW cache add failed:', url, err); }
     }
   }
   await Promise.all(Array.from({ length: concurrency }, worker));
@@ -226,7 +227,9 @@ self.addEventListener('activate', (e) => {
         Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
       )
       .then(() => self.clients.claim())
-      .then(() => { warmCache(); })
+      .then(() => {
+        warmCache();
+      })
   );
 });
 
@@ -258,19 +261,23 @@ self.addEventListener('fetch', (e) => {
     // Air-gapped mode: short-circuit /api/* with synthetic 503
     if (privacyMode === 'airgap') {
       e.respondWith(
-        new Response(
-          JSON.stringify({ error: 'air-gapped: network blocked', code: 'airgap' }),
-          { status: 503, headers: { 'Content-Type': 'application/json' } }
-        )
+        new Response(JSON.stringify({ error: 'air-gapped: network blocked', code: 'airgap' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        })
       );
       return;
     }
     // Otherwise: pass through, never cache
-    e.respondWith(fetch(e.request).catch(() =>
-      new Response(JSON.stringify({ error: 'network error' }), {
-        status: 503, headers: { 'Content-Type': 'application/json' }
-      })
-    ));
+    e.respondWith(
+      fetch(e.request).catch(
+        () =>
+          new Response(JSON.stringify({ error: 'network error' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          })
+      )
+    );
     return;
   }
 
@@ -282,7 +289,10 @@ self.addEventListener('fetch', (e) => {
   // Code (JS/CSS/HTML) → network-first so refactors appear immediately instead
   // of being masked by a stale cache. Everything else (json/img/media/font) →
   // cache-first for speed; it rarely changes.
-  const isCode = dest === 'script' || dest === 'style' || dest === 'document' ||
+  const isCode =
+    dest === 'script' ||
+    dest === 'style' ||
+    dest === 'document' ||
     /\.(?:js|mjs|css|html)$/.test(cleanPath);
 
   // Media is out of the precache (F-7) and gets its own cache-first path,
@@ -345,19 +355,29 @@ async function mediaCacheFirst(request, cleanReq) {
 
 function cacheWholeMedia(response, cleanReq) {
   if (!response || response.type === 'opaque') return;
-  if (response.status === 200) { maybeCache(response, cleanReq); return; }
+  if (response.status === 200) {
+    maybeCache(response, cleanReq);
+    return;
+  }
   if (response.status !== 206) return;
   const m = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('content-range') || '');
   if (!m || m[1] !== '0' || Number(m[2]) !== Number(m[3]) - 1) return;
   const clone = response.clone();
-  clone.blob().then((body) => {
-    const headers = new Headers(clone.headers);
-    headers.delete('content-range');
-    headers.set('content-length', String(body.size));
-    return caches.open(CACHE_NAME).then((cache) =>
-      cache.put(cleanReq, new Response(body, { status: 200, statusText: 'OK', headers }))
-    );
-  }).catch(() => { /* body already consumed or quota exceeded — stay uncached */ });
+  clone
+    .blob()
+    .then((body) => {
+      const headers = new Headers(clone.headers);
+      headers.delete('content-range');
+      headers.set('content-length', String(body.size));
+      return caches
+        .open(CACHE_NAME)
+        .then((cache) =>
+          cache.put(cleanReq, new Response(body, { status: 200, statusText: 'OK', headers }))
+        );
+    })
+    .catch(() => {
+      /* body already consumed or quota exceeded — stay uncached */
+    });
 }
 
 async function cacheFirst(request, cleanReq) {
