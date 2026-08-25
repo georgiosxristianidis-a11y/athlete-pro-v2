@@ -82,7 +82,7 @@ const ASSETS = [
   '/icons/icon-64.png',
   '/fonts/instrument-sans-latin.woff2',
   '/fonts/manrope-cyrillic.woff2',
-  '/fonts/manrope-latin.woff2',
+  '/fonts/manrope-latin.woff2'
 ];
 
 const ASSETS_WARM = [
@@ -145,7 +145,7 @@ const ASSETS_WARM = [
   '/css/summary.css',
   '/css/workout.css',
   '/assets/panda-poster.jpg',
-  '/fonts/orbitron-latin.woff2',
+  '/fonts/orbitron-latin.woff2'
 ];
 
 /* Media lives outside ASSETS (card F-7) — see scripts/build-sw.mjs. Kept in
@@ -226,10 +226,8 @@ self.addEventListener('activate', (e) => {
       .then((keys) =>
         Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
       )
-      .then(() => self.clients.claim())
-      .then(() => {
-        warmCache();
-      })
+          .then(() => self.clients.claim())
+          .then(() => { warmCache(); })
   );
 });
 
