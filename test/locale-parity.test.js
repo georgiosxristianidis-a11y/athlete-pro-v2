@@ -23,7 +23,7 @@ function dictKeys(lang) {
   assert.ok(end !== -1, `DICT.${lang} не закрыт`);
   const body = SRC.slice(from, end);
   const keys = [];
-  const re = /^\s+'([^']+)': /gm;
+  const re = /^\s+'([^']+)':/gm;
   let m;
   while ((m = re.exec(body))) keys.push(m[1]);
   assert.ok(keys.length > 0, `DICT.${lang} пуст — парсер сломался`);
