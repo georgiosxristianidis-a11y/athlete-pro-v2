@@ -133,16 +133,99 @@ export function computeVictims(entries, policy = DEFAULT_TTL_DAYS, nowMs = Date.
   const victims = [];
   for (const e of entries) {
     const age = ageDays(e.frontmatter, e.mtimeMs, nowMs);
-    if (
-      shouldArchive(
-        { type: e.frontmatter?.type, ageDays: age },
-        policy,
-      )
-    ) {
+    if (shouldArchive({ type: e.frontmatter?.type, ageDays: age }, policy)) {
       victims.push({ ...e, ageDays: age });
     }
   }
   return victims;
+}
+
+// --- Аудит индекса памяти (FLOW-4) -------------------------------------------
+//
+// Замер 2026-08-25 по живому индексу (113 строк, 6973 токена) снял две гипотезы
+// подряд, и обе стоит держать записанными — иначе их предложат заново.
+//
+// 1. TTL по типам горячий путь почти не трогает. 85 строк из 113 указывают на
+//    типы с бесконечным TTL (reference/feedback/user), а из 27 project-строк
+//    стейл-возраст был у трёх: остальные живы, потому что их `modified`
+//    обновляется при каждой правке — это и есть keep-alive, он работает как
+//    задумано. Прогон TTL освобождает 180 токенов из 6973.
+// 2. Длина хука — не утечка. Правило DOCS-2 «хук ≤80 символов» соблюдается
+//    ВСЕМИ строками: максимум 78, медиана 41. Состав строки: титул 3936 симв,
+//    имя файла 4659, хук 4717 — ни одна часть не раздута.
+//
+// Растит индекс ЧИСЛО ЗАПИСЕЙ. Строка стоит ~60 токенов и меньше не станет:
+// титул, имя файла и хук нужны все три. Значит потолок в токенах — это потолок
+// на количество строк, и говорить о запасе честно в записях, а не в процентах:
+// «осталось 11 записей» человек понимает, «запас 7%» — нет.
+//
+// Проверка длины хука при этом остаётся и стоит копейки: правило было
+// объявлено DOCS-2 и не сторожилось ничем. Сегодня она зелёная — это не повод
+// её не иметь, это ровно то состояние, в котором гард и должен жить.
+//
+// Длина считается ОТДЕЛЬНО от ссылки: имя файла — обязательная цена навигации
+// (33% индекса), а хук — та часть, которая растёт по желанию автора. Гейт на
+// полной длине строки наказывал бы за подробные имена файлов, то есть за
+// правильное именование.
+
+export const MAX_HOOK_CHARS = 80;
+
+// Средняя цена строки индекса в токенах. Не константа мироздания, а замер:
+// 6793 токена на 113 строк = 60. Нужна, чтобы переводить запас в записи.
+export const TOKENS_PER_ENTRY = 60;
+
+// Разбор одной строки индекса на части, которые тарифицируются по-разному.
+// Возвращает null для всего, что строкой-ссылкой не является (заголовки, пустые).
+//
+// Руками, а не одним регекспом: `^-\s*\[([^\]]*)\]\(([^)]+)\)\s*(?:—\s*(.*))?$`
+// отрабатывал верно, но eslint-plugin-security звал его unsafe-regex, и он прав
+// по форме — соседние квантификаторы у хвоста строки. Вход тут свой и доверенный,
+// то есть ReDoS не угроза, но предупреждение в SAST переживёт любое объяснение
+// в комментарии, а поиск скобок посимвольно и короче, и очевиднее.
+export function parseIndexLine(line) {
+  const src = String(line).trim();
+  if (!src.startsWith('- [')) return null;
+
+  const titleEnd = src.indexOf('](', 3);
+  if (titleEnd === -1) return null;
+
+  const targetEnd = src.indexOf(')', titleEnd + 2);
+  if (targetEnd === -1) return null;
+
+  const title = src.slice(3, titleEnd).trim();
+  const target = src.slice(titleEnd + 2, targetEnd).trim();
+  if (!target) return null;
+
+  // Хвост после ссылки: отделитель `—` необязателен, но если он есть — хук
+  // начинается после него. Иначе хуком считается весь остаток.
+  let tail = src.slice(targetEnd + 1).trim();
+  if (tail.startsWith('—')) tail = tail.slice(1).trim();
+
+  return {
+    title,
+    target,
+    hook: tail,
+    hookChars: [...tail].length,
+    chars: [...src].length,
+  };
+}
+
+// Строки, чей хук длиннее правила. `overBy` — на сколько символов резать, то
+// есть готовый объём работы, а не «индекс большой».
+export function auditIndex(text, maxHook = MAX_HOOK_CHARS) {
+  const lines = String(text).replace(/\r\n/g, '\n').split('\n');
+  const entries = [];
+  for (let i = 0; i < lines.length; i++) {
+    const parsed = parseIndexLine(lines[i]);
+    if (!parsed) continue;
+    entries.push({ line: i + 1, ...parsed, overBy: Math.max(0, parsed.hookChars - maxHook) });
+  }
+  const offenders = entries.filter((e) => e.overBy > 0);
+  return {
+    entries,
+    offenders,
+    excessChars: offenders.reduce((a, e) => a + e.overBy, 0),
+  };
 }
 
 export { DEFAULT_TTL_DAYS };
