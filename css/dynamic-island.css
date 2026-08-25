@@ -292,21 +292,16 @@
 
 /* Rest timer mode — in-frame HUD (replaces standalone rest modal). No numeric
    readout now, just the depleting bar + "далее: X" + two icon buttons. */
-.island.timer-mode {
+.island.timer-mode:not(.expanded) {
   width: 140px;
   height: 44px;
   border-radius: var(--r-xl);
 }
 /* The caption is what needs the width. On the last exercise there is no "next",
    the label is empty, and the pill stays the narrow two-button HUD instead of
-   holding 236px of emptiness. Declared before .expanded so that wins. */
-.island.timer-mode.rest-has-next {
+   holding 236px of emptiness. Compact rest only — expanded uses .island.expanded. */
+.island.timer-mode.rest-has-next:not(.expanded) {
   width: 236px;
-}
-.island.timer-mode.expanded {
-  width: 290px;
-  height: 62px;
-  border-radius: var(--r-xxl);
 }
 
 /* ── Rest HUD content — "далее: X" + two icon buttons, no numeric readout ── */
@@ -320,11 +315,13 @@
   padding: 0 var(--sp-3) 0 var(--sp-4);
   z-index: 5;
 }
-.island.timer-mode .island-rest { display: flex; }
-/* Rest HUD owns the pill — hide the session card underneath so #di-name /
-   #di-live can't stack over #di-rest-next (ISL-REST-EXPAND; ISL-DUP-NEXT hid
-   sublabel only). timer-mode.expanded still widens the rest HUD via rules above. */
-.island.timer-mode .island-expanded-content { display: none; }
+/* Compact rest: HUD only. Expanded rest: full session card (tap 2). */
+.island.timer-mode:not(.expanded) .island-rest { display: flex; }
+.island.timer-mode.expanded .island-rest { display: none; }
+.island.timer-mode:not(.expanded) .island-expanded-content { display: none; }
+/* #di-name duplicates #di-rest-next if both show — hide the status line in rest expand. */
+.island.timer-mode.expanded .island-status-line { display: none; }
+.island.profile-minimal.timer-mode.expanded .island-status-line { display: none; }
 /* "далее: X" — the only text in the rest HUD; sublabel voice (chrome, not
    accent), ellipsis so long exercise names never push the buttons. */
 .island-rest-next {
@@ -367,9 +364,11 @@
    Второй селектор не дубль: правило профиля minimal выше по файлу
    (`.island.profile-minimal.expanded .island-sublabel`) весит 0,4,0 и перебивало
    бы одиночный 0,3,0 — замер после первой попытки давал opacity 0.75, то есть
-   оба «далее» оставались на месте. Профилю apple хватает первого селектора. */
-.island.timer-mode .island-sublabel,
-.island.profile-minimal.expanded.timer-mode .island-sublabel { opacity: 0; }
+   оба «далее» оставались на месте. Профилю apple хватает первого селектора.
+   Compact rest only — expanded rest shows the HUD caption in #di-sublabel via
+   _renderExpandedDuringRest(), not the stale plan[i+1] line. */
+.island.timer-mode:not(.expanded) .island-sublabel,
+.island.profile-minimal.timer-mode:not(.expanded) .island-sublabel { opacity: 0; }
 .island-rest-actions {
   display: flex;
   align-items: center;

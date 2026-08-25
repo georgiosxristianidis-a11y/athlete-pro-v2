@@ -24,10 +24,26 @@ test('tap expand is not blocked while rest HUD is active', () => {
   assert.doesNotMatch(clickBlock[0], /if\s*\(\s*_timerActive\s*\)\s*return/);
 });
 
-test('timer-mode hides expanded session card (CSS)', () => {
+test('compact rest hides session card; expanded rest hides HUD overlay (CSS)', () => {
   assert.match(
     CSS,
-    /\.island\.timer-mode\s+\.island-expanded-content\s*\{[^}]*display\s*:\s*none/,
+    /\.island\.timer-mode:not\(\.expanded\)\s+\.island-expanded-content\s*\{[^}]*display\s*:\s*none/,
+  );
+  assert.match(
+    CSS,
+    /\.island\.timer-mode\.expanded\s+\.island-rest\s*\{[^}]*display\s*:\s*none/,
+  );
+  assert.match(
+    CSS,
+    /\.island\.profile-minimal\.timer-mode\.expanded\s+\.island-status-line\s*\{[^}]*display\s*:\s*none/,
+  );
+});
+
+test('expanded rest syncs via _renderExpandedDuringRest', () => {
+  assert.match(SRC, /function _renderExpandedDuringRest\(/);
+  assert.match(
+    SRC,
+    /if\s*\(\s*_timerActive\s*\)\s*\{[\s\S]*?if\s*\(\s*_expanded\s*\)\s*_renderExpandedDuringRest\(\)/,
   );
 });
 
