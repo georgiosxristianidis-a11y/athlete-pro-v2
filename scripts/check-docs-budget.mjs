@@ -24,6 +24,10 @@ export const BUDGETS = {
   'CLAUDE.md': 3000,
   'NEXT_SESSION.md': 2000,
   TOTAL: 5000,
+  // Индекс памяти живёт вне репо, поэтому его потолок стоит здесь как число, а
+  // не как тест: гейтит его preflight, локально, где его и можно починить
+  // (FLOW-4). Число выбрано ДО урезки — на 2026-08-25 индекс весил 6973.
+  MEMORY_INDEX: 7500,
 };
 
 export const HOT_FILES = ['CLAUDE.md', 'NEXT_SESSION.md'];
@@ -99,7 +103,8 @@ export function violations(root = ROOT) {
     const cap = BUDGETS[f.file];
     if (cap && f.tokens > cap) out.push(`${f.file}: ~${f.tokens} токенов при потолке ${cap}`);
   }
-  if (total > BUDGETS.TOTAL) out.push(`горячий путь: ~${total} токенов при потолке ${BUDGETS.TOTAL}`);
+  if (total > BUDGETS.TOTAL)
+    out.push(`горячий путь: ~${total} токенов при потолке ${BUDGETS.TOTAL}`);
   return out;
 }
 
@@ -116,7 +121,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const mem = findMemoryIndex();
   if (mem) {
     const m = measureFile(mem);
-    console.log(row('MEMORY.md (вне репо, не гейтится)', m, null));
+    console.log(row('MEMORY.md (вне репо, гейтит preflight)', m, BUDGETS.MEMORY_INDEX));
     console.log(`  ${String(total + m.tokens).padStart(6)} ток | ИТОГО стартовая нагрузка`);
   }
 
@@ -130,7 +135,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       .sort((a, b) => b.tokens - a.tokens);
     console.log('\nХендоффы (грузятся выборочно, гейта нет — только видимость):\n');
     for (const h of hs.slice(0, 5)) console.log(row(h.file, h, null));
-    console.log(`  ${String(hs.reduce((a, h) => a + h.tokens, 0)).padStart(6)} ток | всего в ${hs.length} хендоффах`);
+    console.log(
+      `  ${String(hs.reduce((a, h) => a + h.tokens, 0)).padStart(6)} ток | всего в ${hs.length} хендоффах`
+    );
   }
 
   const bad = violations();

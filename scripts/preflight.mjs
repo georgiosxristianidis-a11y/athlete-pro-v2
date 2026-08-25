@@ -27,7 +27,13 @@ import path from 'node:path';
 
 import { judgeProtection } from './main-protection.mjs';
 import { scanBase } from './rejected-lines.mjs';
-import { BUDGETS, findMemoryIndex, measureFile, measureHotPath, violations } from './check-docs-budget.mjs';
+import {
+  BUDGETS,
+  findMemoryIndex,
+  measureFile,
+  measureHotPath,
+  violations,
+} from './check-docs-budget.mjs';
 
 const STALE_MS = 24 * 60 * 60 * 1000;
 const MAX_LISTED = 10;
@@ -70,7 +76,7 @@ if (!email) {
     'FAIL',
     'git identity',
     `user.email битый: ${email}`,
-    'git config user.email <you@example.com> — иначе GitHub вернёт HTTP 500 на создании PR',
+    'git config user.email <you@example.com> — иначе GitHub вернёт HTTP 500 на создании PR'
   );
 } else {
   add('OK', 'git identity', `${author || '(без имени)'} <${email}>`);
@@ -79,7 +85,12 @@ if (!email) {
 // --- 2. node_modules --------------------------------------------------------
 const linters = ['node_modules/.bin/eslint', 'node_modules/.bin/stylelint'];
 if (!fs.existsSync('node_modules')) {
-  add('FAIL', 'node_modules', 'нет в этом рабочем дереве', 'npm install — иначе pre-push упадёт ложным SAST-блоком');
+  add(
+    'FAIL',
+    'node_modules',
+    'нет в этом рабочем дереве',
+    'npm install — иначе pre-push упадёт ложным SAST-блоком'
+  );
 } else {
   const missing = linters.filter((p) => !fs.existsSync(p) && !fs.existsSync(`${p}.cmd`));
   if (missing.length) {
@@ -113,7 +124,7 @@ if (!hooksPathRaw) {
       'FAIL',
       'hooksPath',
       `core.hooksPath указывает за пределы этого чекаута: ${hooksDir}`,
-      'node scripts/fix-hooks-path.mjs — снимает протухший worktree-оверрайд',
+      'node scripts/fix-hooks-path.mjs — снимает протухший worktree-оверрайд'
     );
   } else {
     add('OK', 'hooksPath', `указывает в свой чекаут (${rel || '.'})`);
@@ -140,7 +151,7 @@ if (!mainRef) {
     'WARN',
     'база ветки',
     `${branch} отстаёт от origin/main на ${behind} коммит(ов)`,
-    'git rebase origin/main — иначе мёрж не будет FF',
+    'git rebase origin/main — иначе мёрж не будет FF'
   );
 }
 
@@ -166,7 +177,7 @@ if (!hits.length) {
       'донорские линии',
       `база чекаута содержит ${sha.slice(0, 7)} (${name}) — ${why}` +
         (mainKnown ? '' : '; сверить с origin/main не удалось (оффлайн)'),
-      `git rebase --onto origin/main ${sha} ${branch} (или нарезать ворктри заново от origin/main) — иначе код отвергнутой линии уедет в main вместе с карточкой`,
+      `git rebase --onto origin/main ${sha} ${branch} (или нарезать ворктри заново от origin/main) — иначе код отвергнутой линии уедет в main вместе с карточкой`
     );
   }
 }
@@ -182,9 +193,12 @@ if (mainRef && (email || author)) {
     ]) || '';
   // Влитые — одним вызовом, а не merge-base на каждую ветку (веток под сотню).
   const merged = new Set(
-    (tryGit(['for-each-ref', '--format=%(refname:short)', '--merged', mainRef, 'refs/heads/']) || '')
+    (
+      tryGit(['for-each-ref', '--format=%(refname:short)', '--merged', mainRef, 'refs/heads/']) ||
+      ''
+    )
       .split('\n')
-      .filter(Boolean),
+      .filter(Boolean)
   );
   const now = Date.now();
   for (const line of raw.split('\n').filter(Boolean)) {
@@ -209,7 +223,9 @@ if (mainRef && (email || author)) {
 
 // --- 5. Дефолт-ветка на GitHub ----------------------------------------------
 // ls-remote --symref спрашивает сам GitHub; локальный origin/HEAD может врать.
-const symref = fetched ? tryGit(['ls-remote', '--symref', 'origin', 'HEAD'], { timeout: 20000 }) : null;
+const symref = fetched
+  ? tryGit(['ls-remote', '--symref', 'origin', 'HEAD'], { timeout: 20000 })
+  : null;
 if (!symref) {
   add('WARN', 'дефолт-ветка', 'origin недоступен — проверка пропущена');
 } else {
@@ -221,7 +237,7 @@ if (!symref) {
       'FAIL',
       'дефолт-ветка',
       `GitHub default = ${head ?? '(не распознана)'}`,
-      'Settings → General → Default branch → main — иначе клоны и Compare&PR целятся в мёртвую линию',
+      'Settings → General → Default branch → main — иначе клоны и Compare&PR целятся в мёртвую линию'
     );
   }
 }
@@ -259,7 +275,11 @@ function checkPrePushHook() {
   if (!hooksPath) {
     return { ok: false, why: 'core.hooksPath не задан — хуки не подключены' };
   }
-  const hookFile = path.resolve(tryGit(['rev-parse', '--show-toplevel']) || '.', hooksPath, 'pre-push');
+  const hookFile = path.resolve(
+    tryGit(['rev-parse', '--show-toplevel']) || '.',
+    hooksPath,
+    'pre-push'
+  );
   if (!fs.existsSync(hookFile)) {
     return { ok: false, why: `хука нет по пути core.hooksPath: ${hookFile}` };
   }
@@ -292,8 +312,12 @@ if (!repoSlug || !fetched) {
     if (hook.ok) {
       add('OK', 'защита main', `server-side защиты нет (план репо), барьер жив — ${hook.why}`);
     } else {
-      add('FAIL', 'защита main', `server-side защиты нет (план репо), и локальный барьер тоже: ${hook.why}`,
-        'npm install в этом чекауте (postinstall ставит core.hooksPath) либо освежить корневой чекаут');
+      add(
+        'FAIL',
+        'защита main',
+        `server-side защиты нет (план репо), и локальный барьер тоже: ${hook.why}`,
+        'npm install в этом чекауте (postinstall ставит core.hooksPath) либо освежить корневой чекаут'
+      );
     }
   } else {
     // Вердикт вынесен в модуль: без сети его не проверить процессом, а правило,
@@ -304,31 +328,67 @@ if (!repoSlug || !fetched) {
 
   // 7. Последний Production-деплой Vercel обязан быть коммитом из main.
   const depRaw = tryGh(['api', `repos/${repoSlug}/deployments?environment=Production&per_page=1`]);
-  const depSha = depRaw ? (() => { try { return JSON.parse(depRaw)[0]?.sha; } catch { return null; } })() : null;
+  const depSha = depRaw
+    ? (() => {
+        try {
+          return JSON.parse(depRaw)[0]?.sha;
+        } catch {
+          return null;
+        }
+      })()
+    : null;
   if (!depSha) {
     add('WARN', 'прод-деплой', 'Production-деплоев не видно — проверить руками');
   } else if (gitOk(['merge-base', '--is-ancestor', depSha, 'origin/main'])) {
     add('OK', 'прод-деплой', `последний Production = ${depSha.slice(0, 7)}, лежит в main`);
   } else {
-    add('FAIL', 'прод-деплой', `последний Production ${depSha.slice(0, 7)} НЕ из main`,
-      'Vercel деплоит не ту ветку — проверить Vercel → Settings → Git (проект athlete-pro-v7)');
+    add(
+      'FAIL',
+      'прод-деплой',
+      `последний Production ${depSha.slice(0, 7)} НЕ из main`,
+      'Vercel деплоит не ту ветку — проверить Vercel → Settings → Git (проект athlete-pro-v7)'
+    );
   }
 }
 
 // --- 8. Бюджет доков --------------------------------------------------------
 // Репозиторные файлы гейтит `test/docs-budget.test.js` в npm test и CI — здесь только
-// показываем число. MEMORY.md лежит вне репо: ни один PR его не починит, поэтому WARN,
-// а не FAIL. Жёсткий гард на рутинном пути, который нельзя удовлетворить, учит обходу.
+// показываем число. MEMORY.md лежит вне репо, поэтому его потолок гейтится ЗДЕСЬ и
+// только здесь: в CI файла нет, а в `npm test` красный на файле, который не чинится
+// ни одним PR, учит обходу. Preflight — единственное место, где он и виден, и починим.
+//
+// Порог был `mem > 3000` без потолка, то есть WARN горел каждую сессию с тех пор, как
+// индекс перевалил за 3000, и ровно поэтому его перестали читать: за девять дней память
+// выросла 4020 → 6973, а предупреждение всё это время было одним и тем же (FLOW-4).
+// Градация лечит именно это — молчит в норме, шумит на исходе запаса, падает за потолком.
 {
   const { total } = measureHotPath();
   const memPath = findMemoryIndex();
   const mem = memPath ? measureFile(memPath).tokens : 0;
   const over = violations();
-  const startup = `стартовая нагрузка ~${total + mem} ток (репо ${total}/${BUDGETS.TOTAL}${mem ? `, память ${mem}` : ''})`;
+  const cap = BUDGETS.MEMORY_INDEX;
+  const startup = `стартовая нагрузка ~${total + mem} ток (репо ${total}/${BUDGETS.TOTAL}${mem ? `, память ${mem}/${cap}` : ''})`;
   if (over.length) {
-    add('WARN', 'бюджет доков', `${startup} — превышение: ${over.join('; ')}`, 'npm run docs:budget — резать, а не поднимать потолок');
-  } else if (mem > 3000) {
-    add('WARN', 'бюджет доков', `${startup} — индекс памяти разросся`, 'DOCS-2: закрытое из индекса вон, хук ≤80 символов');
+    add(
+      'WARN',
+      'бюджет доков',
+      `${startup} — превышение: ${over.join('; ')}`,
+      'npm run docs:budget — резать, а не поднимать потолок'
+    );
+  } else if (mem > cap) {
+    add(
+      'FAIL',
+      'бюджет доков',
+      `${startup} — индекс памяти за потолком`,
+      'npm run memory:ttl — сколько записей лишние, разбирать с Gio'
+    );
+  } else if (mem > cap * 0.9) {
+    add(
+      'WARN',
+      'бюджет доков',
+      `${startup} — запас индекса памяти на исходе`,
+      'npm run memory:ttl — запас считается в записях, не в процентах'
+    );
   } else {
     add('OK', 'бюджет доков', startup);
   }

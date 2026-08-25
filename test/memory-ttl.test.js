@@ -10,8 +10,11 @@ import path from 'node:path';
 
 import {
   ageDays,
+  auditIndex,
   computeVictims,
+  MAX_HOOK_CHARS,
   parseFrontmatter,
+  parseIndexLine,
   rewriteIndex,
   shouldArchive,
 } from '../scripts/memory-core.mjs';
@@ -37,7 +40,7 @@ test('parseFrontmatter достаёт type и modified из вложенного
 test('ageDays: modified из frontmatter побеждает mtime — это и есть keep-alive', () => {
   const now = Date.parse('2026-08-16T00:00:00Z');
   const front = { modified: '2026-08-10T00:00:00Z' }; // 6 дней
-  const mtime = Date.parse('2026-01-01T00:00:00Z');   // 227 дней
+  const mtime = Date.parse('2026-01-01T00:00:00Z'); // 227 дней
   assert.equal(Math.round(ageDays(front, mtime, now)), 6);
 });
 
@@ -73,7 +76,14 @@ test('rewriteIndex удаляет строки-ссылки на архивир�
 });
 
 test('rewriteIndex схлопывает секцию, оставшуюся без единой ссылки', () => {
-  const idx = ['# Состояние', '', '- [Только один](only.md) — уйдёт', '', '# Живая', '- [Есть](k.md) — тут'].join('\n');
+  const idx = [
+    '# Состояние',
+    '',
+    '- [Только один](only.md) — уйдёт',
+    '',
+    '# Живая',
+    '- [Есть](k.md) — тут',
+  ].join('\n');
   const { text } = rewriteIndex(idx, ['only.md']);
   assert.ok(!text.includes('# Состояние'), 'заголовок опустевшей секции должен исчезнуть');
   assert.ok(text.includes('# Живая'));
@@ -90,20 +100,36 @@ test('rewriteIndex идемпотентен — повторный прогон 
 test('computeVictims классифицирует по frontmatter + сейчас', () => {
   const now = Date.parse('2026-08-16T00:00:00Z');
   const entries = [
-    { file: 'p-old.md', frontmatter: { type: 'project', modified: '2026-06-01T00:00:00Z' }, mtimeMs: 0 },
-    { file: 'p-new.md', frontmatter: { type: 'project', modified: '2026-08-01T00:00:00Z' }, mtimeMs: 0 },
-    { file: 'f-old.md', frontmatter: { type: 'feedback', modified: '2020-01-01T00:00:00Z' }, mtimeMs: 0 },
+    {
+      file: 'p-old.md',
+      frontmatter: { type: 'project', modified: '2026-06-01T00:00:00Z' },
+      mtimeMs: 0,
+    },
+    {
+      file: 'p-new.md',
+      frontmatter: { type: 'project', modified: '2026-08-01T00:00:00Z' },
+      mtimeMs: 0,
+    },
+    {
+      file: 'f-old.md',
+      frontmatter: { type: 'feedback', modified: '2020-01-01T00:00:00Z' },
+      mtimeMs: 0,
+    },
   ];
   const v = computeVictims(entries, undefined, now);
   assert.deepEqual(
     v.map((x) => x.file),
-    ['p-old.md'],
+    ['p-old.md']
   );
 });
 
 test('run --dry-run: ничего не двигает и печатает отчёт', () => {
   const dir = tmpDir();
-  write(dir, 'MEMORY.md', '# Состояние\n- [Стейл](p-old.md) — старое\n- [Свежее](p-new.md) — новое\n');
+  write(
+    dir,
+    'MEMORY.md',
+    '# Состояние\n- [Стейл](p-old.md) — старое\n- [Свежее](p-new.md) — новое\n'
+  );
   write(dir, 'p-old.md', fm('project', '2026-06-01T00:00:00Z'));
   write(dir, 'p-new.md', fm('project', '2026-08-10T00:00:00Z'));
 
@@ -120,7 +146,11 @@ test('run --dry-run: ничего не двигает и печатает отч
 
 test('run --commit: переезд в _archive/YYYY-MM и переписанный индекс', () => {
   const dir = tmpDir();
-  write(dir, 'MEMORY.md', '# Состояние\n- [Стейл](p-old.md) — старое\n- [Свежее](p-new.md) — новое\n');
+  write(
+    dir,
+    'MEMORY.md',
+    '# Состояние\n- [Стейл](p-old.md) — старое\n- [Свежее](p-new.md) — новое\n'
+  );
   write(dir, 'p-old.md', fm('project', '2026-06-01T00:00:00Z'));
   write(dir, 'p-new.md', fm('project', '2026-08-10T00:00:00Z'));
 
@@ -129,7 +159,10 @@ test('run --commit: переезд в _archive/YYYY-MM и переписанны
   run({ dir, commit: true, nowIso: '2026-08-16T00:00:00Z', stdout });
 
   assert.ok(!fs.existsSync(path.join(dir, 'p-old.md')), 'файл должен был уехать');
-  assert.ok(fs.existsSync(path.join(dir, '_archive', '2026-06', 'p-old.md')), 'адрес архива — по дате modified');
+  assert.ok(
+    fs.existsSync(path.join(dir, '_archive', '2026-06', 'p-old.md')),
+    'адрес архива — по дате modified'
+  );
   assert.ok(fs.existsSync(path.join(dir, 'p-new.md')), 'свежий не трогаем');
 
   const idx = fs.readFileSync(path.join(dir, 'MEMORY.md'), 'utf8');
@@ -148,4 +181,66 @@ test('run: файлы в _archive/ игнорируются на повторн�
   const stdout = { write: (s) => (buf += s) };
   const res = run({ dir, commit: false, nowIso: '2026-08-16T00:00:00Z', stdout });
   assert.equal(res.victims.length, 0, '_archive/ и feedback∞ не трогаем');
+});
+
+// --- Аудит длины хуков (FLOW-4) ---------------------------------------------
+
+test('parseIndexLine разделяет заголовок, ссылку и хук', () => {
+  const p = parseIndexLine('- [Заголовок](some-file.md) — хук из нескольких слов');
+  assert.equal(p.title, 'Заголовок');
+  assert.equal(p.target, 'some-file.md');
+  assert.equal(p.hook, 'хук из нескольких слов');
+  assert.equal(p.hookChars, 'хук из нескольких слов'.length);
+});
+
+test('parseIndexLine: строка без хука валидна, хук пустой', () => {
+  const p = parseIndexLine('- [Только заголовок](f.md)');
+  assert.equal(p.hook, '');
+  assert.equal(p.hookChars, 0);
+});
+
+test('parseIndexLine возвращает null для заголовков и мусора', () => {
+  assert.equal(parseIndexLine('# Секция'), null);
+  assert.equal(parseIndexLine(''), null);
+  assert.equal(parseIndexLine('- просто пункт без ссылки'), null);
+});
+
+test('auditIndex меряет ХУК, а не всю строку — длинное имя файла не нарушение', () => {
+  // Имя файла — обязательная цена навигации; гейт на полной длине строки
+  // наказывал бы за правильное подробное именование.
+  const longName = 'reference-' + 'x'.repeat(120) + '.md';
+  const text = `# Секция\n- [T](${longName}) — короткий хук\n`;
+  const audit = auditIndex(text);
+  assert.equal(audit.entries.length, 1);
+  assert.equal(audit.offenders.length, 0, 'длина имени файла не обязана краснеть');
+});
+
+test('auditIndex считает перебор в символах — это объём работы, а не «индекс большой»', () => {
+  const hook = 'я'.repeat(MAX_HOOK_CHARS + 25);
+  const text = `# Секция\n- [A](a.md) — ${hook}\n- [B](b.md) — коротко\n`;
+  const audit = auditIndex(text);
+  assert.equal(audit.entries.length, 2);
+  assert.equal(audit.offenders.length, 1);
+  assert.equal(audit.offenders[0].overBy, 25);
+  assert.equal(audit.excessChars, 25);
+  assert.equal(audit.offenders[0].line, 2, 'номер строки нужен, чтобы найти её глазами');
+});
+
+test('auditIndex: хук ровно в потолок не нарушение (границу не сдвигать)', () => {
+  const text = `- [A](a.md) — ${'я'.repeat(MAX_HOOK_CHARS)}\n`;
+  assert.equal(auditIndex(text).offenders.length, 0);
+
+  const over = `- [A](a.md) — ${'я'.repeat(MAX_HOOK_CHARS + 1)}\n`;
+  assert.equal(auditIndex(over).offenders.length, 1);
+});
+
+test('auditIndex не спотыкается о CRLF — тот же дефект, что ловил DOCS-4', () => {
+  const text = `- [A](a.md) — ${'я'.repeat(MAX_HOOK_CHARS + 5)}\n- [B](b.md) — ок\n`;
+  const lf = auditIndex(text);
+  const crlf = auditIndex(text.replace(/\n/g, '\r\n'));
+  assert.deepEqual(
+    crlf.offenders.map((o) => o.overBy),
+    lf.offenders.map((o) => o.overBy),
+    'CR не должен считаться символом хука'
+  );
 });

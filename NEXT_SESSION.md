@@ -42,7 +42,7 @@ npm run docs:budget    # цена системных доков в токена�
 - `HANDOFF_seo_meta.md` → **SEO-2** (og:image 1200x630); после PRECACHE-1 — в `ASSETS_WARM`
 - `HANDOFF_toolchain.md` → **TOOL-1** (CLI отстал, Gio), **TOOL-2**, дальше TOOL-3/4/5; правит `~/.claude/*`
 
-Вне хендоффов: **DOCS-3**, **WEED-2** (≥30 дн), **FLOW-4** (память ≤7500 ток).
+Вне хендоффов: **DOCS-3**, **WEED-2** (≥30 дн); FLOW-4 закрыта — потолок памяти сторожит preflight.
 
 ## Порядок взятия
 
