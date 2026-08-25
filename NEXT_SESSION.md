@@ -23,7 +23,7 @@ npm run preflight && npm run inventory && npm run smoke:prod && npm run docs:bud
 
 ## Куда идти за работой (в `docs/handoff/`)
 
-- `HANDOFF_launch_track.md` → **LAUNCH-1**, дальше LAUNCH-2..10; AGENT-1/2 закрыты, открыты AGENT-3 и AGENT-4
+- `HANDOFF_launch_track.md` → **LAUNCH-2**, дальше LAUNCH-3..10; LAUNCH-1 закрыта (находки + LAUNCH-9); AGENT-3/4 открыты
 - `HANDOFF_boot_brand.md` → **SPLASH-1**, дальше MOTION-1; не параллелить (`index.html`)
 - `HANDOFF_intel_readiness.md` → **INTEL-3** → INTEL-4
 - `HANDOFF_gemini_audit_triage.md` → **SCAF-1**, NOISE-1/PII-1; за Gio — снести Render, отозвать `ANTHROPIC_API_KEY`
