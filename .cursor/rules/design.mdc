@@ -1,0 +1,21 @@
+---
+description: Дизайн-спек — указатель на канон .claude/rules/design.md. Цвета и типографика только токенами.
+globs: css/**,js/**.view.js,js/**/*.view.js,index.html
+alwaysApply: false
+---
+
+# Дизайн — канон
+
+**Источник правды: `.claude/rules/design.md`.** Открыть перед правкой стилей.
+
+Железное, без исключений:
+
+- Цвет — только токены `css/base.css :root`. Сырой hex в CSS и в `js/` запрещён.
+- PPL-цвет в JS — только через `js/shared/ppl-color.js` (`pplColor()`), сторожит
+  `test/ppl-color.test.js`.
+- Типографика — шкала `--fs-*` / `--fw-*`. Сырые px в `font-size` и цифры в
+  `font-weight` запрещены.
+- Границы — только полупрозрачные `var(--c-border)` / `var(--c-border-h)`.
+- Иконки только SVG, эмодзи запрещены.
+
+Палитра, ступени шкалы и инварианты AIR — в каноне, здесь не дублируются.
