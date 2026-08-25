@@ -418,12 +418,6 @@ const DICT = {
     'metrics.empty_title': 'Замеров пока нет',
     'metrics.empty_sub': 'Нажмите "Добавить", чтобы записать первые данные тела',
     'metrics.delete_confirm_title': 'Удалить запись?',
-    'metrics.delete_confirm_body': 'Удалить замер за {date}? Это действие нельзя отменить.',
-    'metrics.save': 'Сохранить',
-    'metrics.sex': 'Пол',
-    'metrics.male': 'Муж',
-    'metrics.female': 'Жен',
-    'metrics.sex_hint': 'Используется для формулы ВМС США',
     // PANDA-1 — голос маскота. Тон: молчаливое осуждение, потолок 5 слов.
     'mascot.cold_bamboo': 'Бамбук остыл.',
     'mascot.ledger_title': 'Счёт',
