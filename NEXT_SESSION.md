@@ -27,6 +27,7 @@ npm run docs:budget    # цена системных доков в токена�
 
 ## Куда идти за работой (в `docs/handoff/`)
 
+- `HANDOFF_launch_track.md` → **LAUNCH-1**, дальше LAUNCH-2..10; AGENT-1/2 закрыты, открыты AGENT-3 и AGENT-4
 - `HANDOFF_boot_brand.md` → **SPLASH-1**, дальше MOTION-1; не параллелить, трогает `index.html`
 - `HANDOFF_intel_readiness.md` → **INTEL-3**, следом INTEL-4; порядок фиксирован
 - `HANDOFF_gemini_audit_triage.md` → **SCAF-1**, следом NOISE-1/PII-1; бандл не берём; за Gio — снести Render, отозвать `ANTHROPIC_API_KEY`
@@ -38,10 +39,10 @@ npm run docs:budget    # цена системных доков в токена�
 - `HANDOFF_isl_tail.md` · `HANDOFF_air_refactor.md` — хвосты острова и AIR
 - `HANDOFF_usage_stats.md` → **USAGE-1** (Web Analytics в Vercel, за Gio), затем USAGE-2 — флип флага
 - `HANDOFF_token_economy.md` → **TOK-1**, дальше TOK-6, TOK-2, TOK-4; TOK-11 перед TOK-5; TOK-9/TOK-10 отдельно
-- `HANDOFF_seo_meta.md` → **SEO-2** — og:image 1200x630; после PRECACHE-1 картинка уезжает в `ASSETS_WARM` сама, install-бюджет не трогает
-- `HANDOFF_toolchain.md` → **TOOL-1** (CLI отстал, Gio), **TOOL-2**, дальше TOOL-3/4/5; правит `~/.claude/*`, не код
+- `HANDOFF_seo_meta.md` → **SEO-2** (og:image 1200x630); после PRECACHE-1 — в `ASSETS_WARM`
+- `HANDOFF_toolchain.md` → **TOOL-1** (CLI отстал, Gio), **TOOL-2**, дальше TOOL-3/4/5; правит `~/.claude/*`
 
-Вне хендоффов, с 2026-08-14: **DOCS-3** (горячий путь на английский, ждёт пересборки `docs/RULES.md`), **WEED-2** (прополка веток/ворктри, порог 30 дн, смежна с TOK-7), **FLOW-4** (TTL памяти ≤7500 ток, смежна с TOK-5).
+Вне хендоффов: **DOCS-3**, **WEED-2** (≥30 дн), **FLOW-4** (память ≤7500 ток).
 
 ## Порядок взятия
 

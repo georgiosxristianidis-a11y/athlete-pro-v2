@@ -41,9 +41,16 @@ npm run format && npm run lint && npm test
 
 ```
 <type>(<scope>): <subject>
+
+Co-Authored-By: Cursor <noreply@cursor.com>
 ```
 
 Типы: `feat`, `fix`, `refactor`, `style`, `perf`, `test`, `docs`, `chore`.
+
+**Трейлер обязателен в каждом коммите.** Claude пишет свою строку, Cursor — эту.
+Автор коммита не меняется, значит branch protection и деплой ничего не заметят,
+а `rebase-merge` трейлер переживает — на нём и держится `npm run scorecard`.
+Без строки работа уезжает в графу `unsigned` и из замера выпадает.
 
 Ссылок на файлы вне репозитория здесь быть не должно — сторожит
 `test/agent-rules-parity.test.js`.
