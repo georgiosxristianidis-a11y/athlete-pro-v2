@@ -13,7 +13,7 @@ import { fmtVol, fmtDuration, fmtDate } from './shared/format.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
-import { t } from './locale.store.js';
+import { t, getLang } from './locale.store.js';
 import { initPandaVideo, togglePandaSound, PANDA_VIDEO_SRC, PANDA_POSTER_SRC } from './shared/panda-video.js';
 import { attachMood, emitMood, entryGreeting } from './shared/panda-mood.js';
 
@@ -62,6 +62,18 @@ export const Dashboard = (() => {
   // Всегда на виду — «большая тройка», остальные 1RM свёрнуты по умолчанию.
   const PINNED_LIFTS = ['Bench Press', 'Leg Press', 'Lat Pulldown'];
 
+  /** PPL label — journal keys, so Home and Journal stay in agreement. */
+  function typeLabel(type) {
+    if (type === 'push' || type === 'pull' || type === 'legs') {
+      return t(`journal.filter_${type}`);
+    }
+    return t('journal.training');
+  }
+
+  function typeDay(type) {
+    return t('dash.day', { type: typeLabel(type) });
+  }
+
   /**
    * Build a "Show N more" collapse toggle wired to dash:toggleList.
    * @param {string} targetId — id of the .list-collapse element it controls
@@ -86,9 +98,9 @@ export const Dashboard = (() => {
    */
   function greeting() {
     const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return t('dash.greet_morning');
+    if (h < 17) return t('dash.greet_afternoon');
+    return t('dash.greet_evening');
   }
 
   /**
@@ -139,13 +151,12 @@ export const Dashboard = (() => {
    * @returns {string} — HTML string
    */
   function _buildTemplate(nextType = 'push') {
-    const nextLabel = nextType.charAt(0).toUpperCase() + nextType.slice(1);
     return `
       <!-- Hero -->
       <div class="dash-hero stagger-item">
         <div>
-          <div class="dash-hero-label">Today · ${nextLabel} Day</div>
-          <div class="dash-hero-title" id="dash-greeting-label">${greeting()}</div>
+          <div class="dash-hero-label">${esc(t('dash.hero_today', { day: typeDay(nextType) }))}</div>
+          <div class="dash-hero-title" id="dash-greeting-label">${esc(greeting())}</div>
           <div class="dash-hero-date" id="dash-date"></div>
         </div>
         <button class="dash-cta" data-action="dash:directLaunch" data-type="${nextType}">
@@ -154,22 +165,22 @@ export const Dashboard = (() => {
             <polyline points="5 12 12 5 19 12"/>
             <path d="M12 5v14"/>
           </svg>
-          Go
+          ${esc(t('dash.go'))}
         </button>
       </div>
 
       <!-- Stat chips -->
       <div class="stat-row stagger-item">
         <div class="stat-chip">
-          <div class="stat-chip-label">Week</div>
+          <div class="stat-chip-label">${esc(t('analytics.period_week'))}</div>
           <div class="stat-chip-val sk" id="dash-vol-week">&nbsp;&nbsp;&nbsp;&nbsp;</div>
         </div>
         <div class="stat-chip stat-chip-purple">
-          <div class="stat-chip-label">Month</div>
+          <div class="stat-chip-label">${esc(t('analytics.period_month'))}</div>
           <div class="stat-chip-val sk" id="dash-vol-month">&nbsp;&nbsp;&nbsp;&nbsp;</div>
         </div>
         <div class="stat-chip stat-chip-blue">
-          <div class="stat-chip-label">Sess / wk</div>
+          <div class="stat-chip-label">${esc(t('dash.sess_wk'))}</div>
           <div class="stat-chip-val sk" id="dash-sessions">&nbsp;&nbsp;</div>
         </div>
       </div>
@@ -178,10 +189,10 @@ export const Dashboard = (() => {
         <div class="dash-card stagger-item" style="padding-bottom: 0; overflow: hidden; background: var(--c-spark-bg); border: 1px solid var(--c-border); margin-top: var(--sp-2); border-radius: var(--r-xl);">
           <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 var(--sp-2); padding-top: var(--sp-2);">
             <div>
-              <div style="color:var(--c-text-2); font-size:var(--fs-1); font-weight:var(--fw-bold); letter-spacing:0.05em; text-transform:uppercase;">Volume Trend</div>
+              <div style="color:var(--c-text-2); font-size:var(--fs-1); font-weight:var(--fw-bold); letter-spacing:0.05em; text-transform:uppercase;">${esc(t('dash.volume_trend'))}</div>
               <div id="spark-total" style="color:var(--c-text-1); font-size:var(--fs-5); font-family:var(--font-heading); font-weight:var(--fw-black);">--</div>
             </div>
-            <div class="badge" style="background:var(--c-bg-3); color:var(--c-text-2); font-size:var(--fs-1); font-weight:var(--fw-bold); border:1px solid var(--c-border);">30 Days</div>
+            <div class="badge" style="background:var(--c-bg-3); color:var(--c-text-2); font-size:var(--fs-1); font-weight:var(--fw-bold); border:1px solid var(--c-border);">${esc(t('dash.days_30'))}</div>
           </div>
           <div id="spark-container" style="height: 60px; width: calc(100% - 2 * var(--sp-2)); margin: var(--sp-2) auto;"></div>
         </div>
@@ -196,7 +207,7 @@ export const Dashboard = (() => {
           </svg>
         </div>
         <div class="stat-chip-content">
-          <div class="stat-chip-label">This Week</div>
+          <div class="stat-chip-label">${esc(t('dash.this_week'))}</div>
           <div class="stat-chip-val" id="weekly-summary-value">--</div>
         </div>
       </div>
@@ -204,7 +215,7 @@ export const Dashboard = (() => {
       <!-- Streak card -->
       <div class="streak-card stagger-item" data-action="dash:navStats" style="cursor:pointer">
         <div class="streak-header">
-          <span class="section-label">This Week</span>
+          <span class="section-label">${esc(t('dash.this_week'))}</span>
           <span class="streak-count" id="streak-count"></span>
         </div>
         <div class="streak-strip" id="streak-strip"></div>
@@ -212,15 +223,15 @@ export const Dashboard = (() => {
 
       <!-- PPL split -->
       <div class="section-header stagger-item">
-        <span class="section-label">PPL Split</span>
+        <span class="section-label">${esc(t('dash.ppl_split'))}</span>
         <span class="badge badge-accent" id="dash-total"></span>
       </div>
       <div class="chart-card ppl-gauge-card stagger-item" id="ppl-gauge-home"></div>
 
       <!-- Top Lifts -->
       <div class="section-header">
-        <span class="section-label">Top Lifts</span>
-        <span class="badge badge-purple">Estimated 1RM</span>
+        <span class="section-label">${esc(t('dash.top_lifts'))}</span>
+        <span class="badge badge-purple">${esc(t('dash.est_1rm'))}</span>
       </div>
       <div id="dash-orm-list"></div>
 
@@ -229,7 +240,7 @@ export const Dashboard = (() => {
 
       <!-- Recent sessions -->
       <div class="section-header dash-recent-header">
-        <span class="section-label">Recent</span>
+        <span class="section-label">${esc(t('dash.recent'))}</span>
         <button class="btn-text" data-action="dash:openJournal">${t('journal.see_all')}</button>
       </div>
       <div id="recent-list"></div>
@@ -246,8 +257,8 @@ export const Dashboard = (() => {
     return `
       <div class="empty-dashboard">
         ${showMascot ? `
-        <div class="empty-dash-mascot-wrap" id="mascot-draggable" ${videoMode ? 'data-action="dash:mascotSound" title="Sound"' : ''}>
-          <button class="mascot-close-btn" data-action="dash:closeMascot" title="Close mascot">
+        <div class="empty-dash-mascot-wrap" id="mascot-draggable" ${videoMode ? `data-action="dash:mascotSound" title="${esc(t('dash.sound'))}"` : ''}>
+          <button class="mascot-close-btn" data-action="dash:closeMascot" title="${esc(t('dash.close_mascot'))}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -256,15 +267,15 @@ export const Dashboard = (() => {
             ${mascotInner}
           </div>
         </div>` : ''}
-        <div class="empty-dash-title">Ready to crush it?</div>
-        <div class="empty-dash-sub">Your training log is empty. Time to fix that.</div>
+        <div class="empty-dash-title">${esc(t('dash.empty_title'))}</div>
+        <div class="empty-dash-sub">${esc(t('dash.empty_sub'))}</div>
         <button class="btn-start-workout" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Start First Workout
+          ${esc(t('dash.start_first'))}
         </button>
       </div>`;
   }
@@ -376,7 +387,7 @@ export const Dashboard = (() => {
       }, 400);
     }
     await DB.Settings.set('show-mascot', 'off');
-    window.Toast?.show('Mascot hidden', 'info');
+    window.Toast?.show(t('dash.mascot_hidden'), 'info');
   }
 
   /**
@@ -388,7 +399,7 @@ export const Dashboard = (() => {
     if (!container || !totalEl) return;
     
     if (!workouts || workouts.length === 0) {
-      container.innerHTML = '<div style="padding: var(--sp-2); text-align: center; color: var(--c-text-3); font-size: var(--fs-2);">No data</div>';
+      container.innerHTML = `<div style="padding: var(--sp-2); text-align: center; color: var(--c-text-3); font-size: var(--fs-2);">${esc(t('dash.no_data'))}</div>`;
       return;
     }
 
@@ -476,7 +487,15 @@ export const Dashboard = (() => {
     const strip = document.getElementById('streak-strip');
     if (!strip) return;
 
-    const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+    const days = [
+      t('dash.dow_mo'),
+      t('dash.dow_tu'),
+      t('dash.dow_we'),
+      t('dash.dow_th'),
+      t('dash.dow_fr'),
+      t('dash.dow_sa'),
+      t('dash.dow_su'),
+    ];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -504,7 +523,7 @@ export const Dashboard = (() => {
     }
 
     const el = document.getElementById('streak-count');
-    if (el) el.textContent = streak === 1 ? '1 day streak' : `${streak} day streak`;
+    if (el) el.textContent = t('dash.streak', { n: streak });
 
     strip.innerHTML = cells
       .map((d) => {
@@ -568,7 +587,7 @@ export const Dashboard = (() => {
     if (!el) return;
     if (!orms.length) {
       el.innerHTML = `<div style="text-align:center;padding:var(--sp-2);
-        color:var(--c-text-3);font-size:var(--fs-2)">Complete sets to see 1RM estimates</div>`;
+        color:var(--c-text-3);font-size:var(--fs-2)">${esc(t('dash.orm_empty'))}</div>`;
       return;
     }
     const sorted = [...orms].sort((a, b) => b.value - a.value);
@@ -657,8 +676,8 @@ export const Dashboard = (() => {
               <rect x="11" y="9" width="2" height="6" rx="0.8"/>
             </svg>
           </div>
-          <div class="empty-title">No sessions yet</div>
-          <div class="empty-desc">Complete your first workout<br>to see it here</div>
+          <div class="empty-title">${esc(t('dash.recent_empty_title'))}</div>
+          <div class="empty-desc">${t('dash.recent_empty_desc')}</div>
         </div>`;
       return;
     }
@@ -667,7 +686,7 @@ export const Dashboard = (() => {
       const dot   = TYPE_COLOR[w.type] || 'var(--c-text-3)';
       const date  = fmtDate(w.timestamp);
       const dur   = w.duration ? fmtDuration(w.duration) : null;
-      const type  = w.type ? (w.type.charAt(0).toUpperCase() + w.type.slice(1)) : 'Training';
+      const type  = typeDay(w.type);
 
       // ── Block indicator strip (W-2-D-3) ──────────────────────────
       // session.blocks = [{ id, label, tonnage }] — written by Lead W-2-B
@@ -686,7 +705,7 @@ export const Dashboard = (() => {
 
       // ── PR badge ──────────────────────────────────────────────────
       const prBadge = (w.prs && w.prs.length)
-        ? `<span class="rec-pr-badge">${w.prs.length} PR</span>`
+        ? `<span class="rec-pr-badge">${esc(t('dash.pr_badge', { n: w.prs.length }))}</span>`
         : '';
 
       // ── Duration chip ─────────────────────────────────────────────
@@ -697,7 +716,7 @@ export const Dashboard = (() => {
           <div class="session-dot" style="background:${dot}"></div>
           <div class="session-info">
             <div class="session-title-row">
-              <span class="session-title">${esc(type)} Day</span>
+              <span class="session-title">${esc(type)}</span>
               ${prBadge}
             </div>
             <div class="session-meta">${esc(date)}${durChip ? ' · ' + durChip : ''}</div>
@@ -722,7 +741,7 @@ export const Dashboard = (() => {
    */
   async function directLaunch(type) {
     if (window.haptic) window.haptic(15);
-    window.Toast?.show(`Launching ${type.charAt(0).toUpperCase() + type.slice(1)} Session`, 'success');
+    window.Toast?.show(t('dash.launching', { type: typeLabel(type) }), 'success');
     
     // We need to ensure Workout logic is loaded
     const { Workout } = await import('./workout.view.js');
@@ -762,7 +781,7 @@ export const Dashboard = (() => {
       _pandaGreet(allWorkouts);   // после монтирования маскота, иначе мимика уйдёт в пустоту
       screen.querySelector('.btn-start-workout')?.addEventListener('click', () => {
         if (window.haptic) window.haptic([15, 50, 15]);
-        window.Toast.show("Let's go!", 'success');
+        window.Toast.show(t('dash.lets_go'), 'success');
         window.Nav.go('s-train', { force: true });
       });
       return;
@@ -787,7 +806,7 @@ export const Dashboard = (() => {
     if (greet) greet.textContent = greeting();
     const dateEl = document.getElementById('dash-date');
     if (dateEl)
-      dateEl.textContent = new Date().toLocaleDateString('en', {
+      dateEl.textContent = new Date().toLocaleDateString(getLang(), {
         weekday: 'long', month: 'long', day: 'numeric',
       });
 
@@ -852,12 +871,12 @@ export const Dashboard = (() => {
       return;
     }
 
-    const nextTypeLabel = nextType.charAt(0).toUpperCase() + nextType.slice(1);
+    const nextTypeLabel = typeLabel(nextType);
 
     container.innerHTML = `
       <div class="section-header">
-        <span class="section-label">Next ${nextTypeLabel} Session</span>
-        <span class="badge badge-green">AI Powered</span>
+        <span class="section-label">${esc(t('dash.next_session', { type: nextTypeLabel }))}</span>
+        <span class="badge badge-green">${esc(t('dash.ai_powered'))}</span>
       </div>
       <div class="recommendations-card">
         ${progressingExercises.slice(0, 4).map((ex) => `
@@ -874,7 +893,7 @@ export const Dashboard = (() => {
             </div>
           </div>
         `).join('')}
-        ${progressingExercises.length > 4 ? `<div class="rec-more">+${progressingExercises.length - 4} more</div>` : ''}
+        ${progressingExercises.length > 4 ? `<div class="rec-more">${esc(t('dash.more_n', { n: progressingExercises.length - 4 }))}</div>` : ''}
       </div>
     `;
   }
@@ -898,15 +917,18 @@ async function loadWeeklySummary() {
   const chipValue = document.getElementById('weekly-summary-value');
   if (chipValue) {
     if (prs.length > 0) {
-      chipValue.textContent = `${prs.length} PR${prs.length > 1 ? 's' : ''}`;
+      chipValue.textContent = t(prs.length > 1 ? 'dash.chip_prs' : 'dash.chip_pr', { n: prs.length });
       chipValue.style.color = 'var(--c-gold)';
     } else if (plateauAlerts.length > 0) {
-      chipValue.textContent = `${plateauAlerts.length} plateau${plateauAlerts.length > 1 ? 's' : ''}`;
+      chipValue.textContent = t(
+        plateauAlerts.length > 1 ? 'dash.chip_plateaus' : 'dash.chip_plateau',
+        { n: plateauAlerts.length },
+      );
       chipValue.style.color = 'var(--c-red)';
     } else {
       const since = Date.now() - 7 * 24 * 3600000;
       const count = workouts.filter(w => w.timestamp >= since).length;
-      chipValue.textContent = `${count} workout${count !== 1 ? 's' : ''}`;
+      chipValue.textContent = t(count !== 1 ? 'dash.chip_workouts' : 'dash.chip_workout', { n: count });
       chipValue.style.color = 'var(--c-text-1)';
     }
   }
@@ -936,33 +958,33 @@ async function showWeeklySummary() {
       <div class="modal-handle"></div>
 
       <div class="section-header">
-        <span class="section-label">Weekly Summary</span>
+        <span class="section-label">${esc(t('dash.summary_title'))}</span>
       </div>
 
       <div class="weekly-summary-content" style="padding:var(--sp-3)">
         <div class="summary-section">
-          <h3 style="font-size:var(--fs-3);color:var(--c-text-2);margin-bottom:var(--sp-2)">Overview</h3>
+          <h3 style="font-size:var(--fs-3);color:var(--c-text-2);margin-bottom:var(--sp-2)">${esc(t('dash.overview'))}</h3>
           <div style="display:flex; flex-direction:column; gap:var(--sp-1-5); margin-bottom:var(--sp-3)">
             ${data.workoutCount > 0 ? `
               <div style="display:flex; align-items:center; gap:var(--sp-1-5); color:var(--c-text-1); font-size:var(--fs-3);">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
-                <span><strong>${data.workoutCount} workouts</strong> this week</span>
+                <span>${esc(t('dash.workouts_week', { n: data.workoutCount }))}</span>
               </div>
-            ` : `<div style="color:var(--c-text-3); font-size:var(--fs-3);">No workouts this week — rest is important too!</div>`}
+            ` : `<div style="color:var(--c-text-3); font-size:var(--fs-3);">${esc(t('dash.rest_week'))}</div>`}
             
             ${data.prs.length > 0 ? `
               <div style="display:flex; align-items:flex-start; gap:var(--sp-1-5); color:var(--c-text-1); font-size:var(--fs-3);">
                 <!-- margin-top: 2px — оптическая посадка иконки на первую строку,
                      ниже нижней ступени шкалы (--sp-0-5 = 4px). -->
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                <span><strong>${data.prs.length} PRs</strong>: ${data.prs.map(p => `${esc(p.exercise)} ${p.weight}kg`).join(', ')}</span>
+                <span><strong>${esc(t('dash.prs_n', { n: data.prs.length }))}</strong>: ${data.prs.map(p => `${esc(p.exercise)} ${p.weight}kg`).join(', ')}</span>
               </div>
             ` : ''}
 
             ${data.plateauAlerts.length > 0 ? `
               <div style="display:flex; align-items:center; gap:var(--sp-1-5); color:var(--c-text-1); font-size:var(--fs-3);">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--c-amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                <span><strong>${data.plateauAlerts.length} plateaus</strong> detected</span>
+                <span>${esc(t('dash.plateaus_n', { n: data.plateauAlerts.length }))}</span>
               </div>
             ` : ''}
           </div>
@@ -970,7 +992,7 @@ async function showWeeklySummary() {
 
         ${data.prs.length > 0 ? `
           <div class="summary-section pr-section" style="margin-top:var(--sp-3)">
-            <h3 style="font-size:var(--fs-3);color:var(--c-accent);margin-bottom:var(--sp-2)">Personal Records</h3>
+            <h3 style="font-size:var(--fs-3);color:var(--c-accent);margin-bottom:var(--sp-2)">${esc(t('dash.personal_records'))}</h3>
             <div style="display:flex; flex-direction:column; gap:var(--sp-1);">
               ${data.prs.map(pr => `
                 <div style="display:flex; justify-content:space-between; padding:var(--sp-2); background:var(--c-surface-h); border-radius:var(--r-s); border-left:2px solid var(--c-accent);">
@@ -984,13 +1006,13 @@ async function showWeeklySummary() {
 
         ${data.plateauAlerts.length > 0 ? `
           <div class="summary-section plateau-section" style="margin-top:var(--sp-4)">
-            <h3 style="font-size:var(--fs-3);color:var(--c-amber);margin-bottom:var(--sp-2)">Plateau Alerts</h3>
+            <h3 style="font-size:var(--fs-3);color:var(--c-amber);margin-bottom:var(--sp-2)">${esc(t('dash.plateau_alerts'))}</h3>
             <div style="display:flex; flex-direction:column; gap:var(--sp-1);">
               ${data.plateauAlerts.map(alert => `
                 <div class="plateau-alert" style="padding:var(--sp-2); background:var(--c-surface-h); border-radius:var(--r-s); border-left:2px solid var(--c-amber);">
                   <strong style="color:var(--c-text-1);display:block;margin-bottom:var(--sp-0-5);font-size:var(--fs-3);">${esc(alert.exercise)}</strong>
                   <p style="color:var(--c-text-2);font-size:var(--fs-2);margin-bottom:var(--sp-0-5)">${esc(alert.suggestion)}</p>
-                  <small style="color:var(--c-text-3);font-size:var(--fs-1)">${alert.weeks} weeks since last progress</small>
+                  <small style="color:var(--c-text-3);font-size:var(--fs-1)">${esc(t('dash.weeks_since', { n: alert.weeks }))}</small>
                 </div>
               `).join('')}
             </div>
@@ -999,8 +1021,8 @@ async function showWeeklySummary() {
       </div>
 
       <div class="modal-footer" style="padding:var(--sp-2) var(--sp-3);display:flex;gap:var(--sp-2);justify-content:flex-end">
-        <button class="btn-icon-nav" data-action="dash:askAI" style="align-self:center">Ask Coach</button>
-        <button class="btn-primary" data-action="dash:closeModal">Close</button>
+        <button class="btn-icon-nav" data-action="dash:askAI" style="align-self:center">${esc(t('dash.ask_coach'))}</button>
+        <button class="btn-primary" data-action="dash:closeModal">${esc(t('journal.close'))}</button>
       </div>
     </div>
   `;
@@ -1028,7 +1050,7 @@ async function askAIAboutSummary() {
     await fetchCoach(message, {
       onText: () => {},
       onDone: () => {},
-      onError: (err) => Toast.show(`Error: ${err}`, 'error')
+      onError: (err) => Toast.show(t('dash.error', { err }), 'error')
     });
   }, 500);
 }
