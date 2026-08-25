@@ -53,7 +53,7 @@
 
 ## Architecture · Design
 
-Оба спека — в `.claude/rules/`, грузятся по путям, здесь не пересказываются:
+Оба спека — в `.claude/rules/`, грузятся по путям (Cursor — указателем `.cursor/rules/*.mdc`):
 
 - **`architecture.md`** — Store/View, бэкенд-цепочка, навигация, ключевые файлы, конвенции кода.
 - **`design.md`** — палитра BRAND/SEMANTIC, PPL-закон, шкала `--fs-*`/`--fw-*`, glass-hairlines. Железное: цвета и типографика только через токены `css/base.css :root`, сырые hex/px/веса запрещены.

@@ -45,13 +45,16 @@ node scripts/telemetry-server.mjs --lan
 что действует в момент правки кода.
 
 - Vanilla JS only — no React/Vue/jQuery
+- **ES-модули везде** — и фронт, и бэкенд (`server.js`, `routes/`, `lib/` на `import`). CommonJS в проекте нет
+- Тяжёлые модули грузятся лениво через динамический `import()` из `js/app.js`; ядро (db, shell, dashboard, timer) — сразу
+- **IndexedDB:** менял схему — поднимай `DB_VERSION` в `js/db/core.js` и пиши миграцию в `onupgradeneeded`
 - **Нижняя навигация — ровно четыре вкладки** (Home · Train · Stats · Profile). Новый экран получает вход из того контента, который расширяет — паттерн «section-header + `.btn-text`». Экран вне таб-бара ОБЯЗАН нести `data-action="nav:back"`, иначе тупик. Сторожит `test/nav-law.test.js`
 - API keys через backend proxy, никогда на фронте
 - `esc()` из `js/shared/utils.js` для ВСЕХ innerHTML с данными
 - Эмодзи в UI/коде запрещены — только SVG (правило DESIGN_DNA)
 - Вибрация — только через Haptic Gate (`js/shared/utils.js`), не напрямую
 - Canvas: multiply by `devicePixelRatio`
-- Animations: GPU-only (`transform`/`opacity`), Spring Physics из `shared/spring.js`
+- Animations: GPU-only (`transform`/`opacity`), Spring Physics из `js/shared/spring.js`
 - Route files: suffix only (`/coach` not `/api/coach`)
 - `sw.js`: ASSETS генерить через `npm run build:sw` (НЕ руками) — сторожит `test/sw-cache-name.test.js`
 - `server.js` никогда не заменять отладочными стабами — для телеметрии есть `scripts/telemetry-server.mjs`
