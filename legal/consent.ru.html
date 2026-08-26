@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Согласие на обработку данных · Athlete Pro</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <style>
+      html {
+        background: var(--c-bg);
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: var(--c-bg);
+        color: var(--c-text-2);
+        font-family: var(--font-main);
+        font-size: var(--fs-3);
+        font-weight: var(--fw-md);
+        line-height: 1.55;
+      }
+      .wrap {
+        box-sizing: border-box;
+        max-width: 40rem;
+        margin: 0 auto;
+        padding-top: calc(var(--safe-top) + var(--sp-4));
+        padding-right: calc(var(--side-padding) + var(--safe-right));
+        padding-bottom: calc(var(--safe-bottom) + var(--sp-6));
+        padding-left: calc(var(--side-padding) + var(--safe-left));
+      }
+      .meta {
+        margin: 0 0 var(--sp-2);
+        color: var(--c-text-3);
+        font-size: var(--fs-1);
+        font-weight: var(--fw-black);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .nav,
+      .lang {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sp-1) var(--sp-2);
+        margin: 0 0 var(--sp-3);
+      }
+      .nav a,
+      .lang a {
+        color: var(--c-text-2);
+        text-decoration: none;
+        font-size: var(--fs-2);
+      }
+      .nav a[aria-current='page'],
+      .lang a[aria-current='true'] {
+        color: var(--c-accent);
+      }
+      h1 {
+        margin: 0 0 var(--sp-2);
+        color: var(--c-text-1);
+        font-family: var(--font-heading);
+        font-size: var(--fs-5);
+        font-weight: var(--fw-black);
+      }
+      h2 {
+        margin: var(--sp-4) 0 var(--sp-2);
+        color: var(--c-text-1);
+        font-family: var(--font-heading);
+        font-size: var(--fs-4);
+        font-weight: var(--fw-bold);
+      }
+      p,
+      li {
+        margin: 0 0 var(--sp-2);
+      }
+      ul {
+        margin: 0 0 var(--sp-2);
+        padding-left: var(--sp-3);
+      }
+      a {
+        color: var(--c-accent);
+      }
+      .updated {
+        margin-top: var(--sp-4);
+        color: var(--c-text-3);
+        font-size: var(--fs-2);
+      }
+    </style>
+  </head>
+  <body>
+    <article class="wrap">
+      <p class="meta">Athlete Pro</p>
+      <nav class="nav" aria-label="Документы">
+        <a href="/legal/privacy.ru.html">Конфиденциальность</a>
+        <a href="/legal/terms.ru.html">Условия</a>
+        <a href="/legal/consent.ru.html" aria-current="page">Согласие</a>
+      </nav>
+      <nav class="lang" aria-label="Язык">
+        <a href="/legal/consent.ru.html" aria-current="true">RU</a>
+        <a href="/legal/consent.en.html" lang="en" hreflang="en">EN</a>
+      </nav>
+
+      <h1>Согласие на обработку данных</h1>
+      <p>
+        Пользуясь Athlete Pro, вы соглашаетесь на обработку данных так, как это описано в
+        <a href="/legal/privacy.ru.html">политике конфиденциальности</a> и ниже. Это черновик для
+        связи документов; юридическую силу формулировок подтверждает издатель (<a
+          href="mailto:georgiosxristianidis@gmail.com"
+          >georgiosxristianidis@gmail.com</a
+        >).
+      </p>
+
+      <h2>1. Что происходит сразу, без отдельного тумблера</h2>
+      <p>
+        Чтобы журнал работал, приложение пишет на это устройство базу IndexedDB
+        <code>athlete-pro</code> (семь хранилищ) и служебные ключи в <code>localStorage</code>.
+        Новая установка по умолчанию в режиме airgap: тренировки, профиль и ключи никуда не
+        отправляются. Шрифты и оболочка грузятся с того же сайта, без Google Fonts.
+      </p>
+      <p>
+        Открытие любой страницы, включая эту, — обычный запрос к хостингу Vercel (адрес, IP,
+        User-Agent). Это следствие доставки сайта, не отдельная «аналитика».
+      </p>
+
+      <h2>2. На что нужно явное действие</h2>
+      <ul>
+        <li>
+          <strong>Облако.</strong> Режим Cloud или Anonymous при настроенном Supabase: анонимная
+          сессия и копия шести хранилищ (всё, кроме локального журнала <code>events</code>). Секреты
+          и ключи <code>ap-*</code> в копию не входят.
+        </li>
+        <li>
+          <strong>ИИ-тренер.</strong> Тумблер в «Приватности» (и он недоступен в airgap). Тогда на
+          наш сервер и дальше к Anthropic или Google уходит сжатый контекст тренировок, фрагмент
+          профиля (имя, возраст, пол, цель) и текст переписки. Свой API-ключ, если вы его вставили,
+          едет тем же запросом.
+        </li>
+        <li>
+          <strong>Счётчик установок.</strong> Сейчас флаг <code>usage-stats</code> выключен —
+          событий нет. Если его включат, три агрегата (открытие, сохранённая тренировка, вопрос
+          коучу) уйдут в Vercel Web Analytics только при открытых остальных воротах: нет DNT/GPC,
+          нет самоисключения, тумблер не выключен, хост — прод Vercel.
+        </li>
+      </ul>
+
+      <h2>3. Как отозвать</h2>
+      <p>
+        Поставьте режим airgap — сеть для синка и ИИ закроется, тумблер ИИ сбросится. Выключите
+        ИИ-тренер отдельно, если облако вам ещё нужно. Выгрузите JSON, затем удалите локальные
+        данные в «паспорте» или очистите данные сайта в браузере. Облачную копию кнопка в приложении
+        не стирает: для неё напишите издателю. Подробности и границы кнопки удаления — в политике.
+      </p>
+
+      <h2>4. Возраст</h2>
+      <p>
+        Согласие даёт человек 16 лет и старше. Если вам меньше — пользуйтесь только с согласия
+        законного представителя.
+      </p>
+      <p class="updated">
+        Обновлено 26 августа 2026. Язык этой страницы задан адресом
+        <a href="/legal/consent.ru.html">/legal/consent.ru.html</a>, не языком браузера.
+      </p>
+    </article>
+  </body>
+</html>

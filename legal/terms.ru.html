@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Условия использования · Athlete Pro</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <style>
+      html {
+        background: var(--c-bg);
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: var(--c-bg);
+        color: var(--c-text-2);
+        font-family: var(--font-main);
+        font-size: var(--fs-3);
+        font-weight: var(--fw-md);
+        line-height: 1.55;
+      }
+      .wrap {
+        box-sizing: border-box;
+        max-width: 40rem;
+        margin: 0 auto;
+        padding-top: calc(var(--safe-top) + var(--sp-4));
+        padding-right: calc(var(--side-padding) + var(--safe-right));
+        padding-bottom: calc(var(--safe-bottom) + var(--sp-6));
+        padding-left: calc(var(--side-padding) + var(--safe-left));
+      }
+      .meta {
+        margin: 0 0 var(--sp-2);
+        color: var(--c-text-3);
+        font-size: var(--fs-1);
+        font-weight: var(--fw-black);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .nav,
+      .lang {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sp-1) var(--sp-2);
+        margin: 0 0 var(--sp-3);
+      }
+      .nav a,
+      .lang a {
+        color: var(--c-text-2);
+        text-decoration: none;
+        font-size: var(--fs-2);
+      }
+      .nav a[aria-current='page'],
+      .lang a[aria-current='true'] {
+        color: var(--c-accent);
+      }
+      h1 {
+        margin: 0 0 var(--sp-2);
+        color: var(--c-text-1);
+        font-family: var(--font-heading);
+        font-size: var(--fs-5);
+        font-weight: var(--fw-black);
+      }
+      h2 {
+        margin: var(--sp-4) 0 var(--sp-2);
+        color: var(--c-text-1);
+        font-family: var(--font-heading);
+        font-size: var(--fs-4);
+        font-weight: var(--fw-bold);
+      }
+      p,
+      li {
+        margin: 0 0 var(--sp-2);
+      }
+      ul {
+        margin: 0 0 var(--sp-2);
+        padding-left: var(--sp-3);
+      }
+      a {
+        color: var(--c-accent);
+      }
+      .updated {
+        margin-top: var(--sp-4);
+        color: var(--c-text-3);
+        font-size: var(--fs-2);
+      }
+    </style>
+  </head>
+  <body>
+    <article class="wrap">
+      <p class="meta">Athlete Pro</p>
+      <nav class="nav" aria-label="Документы">
+        <a href="/legal/privacy.ru.html">Конфиденциальность</a>
+        <a href="/legal/terms.ru.html" aria-current="page">Условия</a>
+        <a href="/legal/consent.ru.html">Согласие</a>
+      </nav>
+      <nav class="lang" aria-label="Язык">
+        <a href="/legal/terms.ru.html" aria-current="true">RU</a>
+        <a href="/legal/terms.en.html" lang="en" hreflang="en">EN</a>
+      </nav>
+
+      <h1>Условия использования</h1>
+      <p>
+        Athlete Pro — журнал силовых тренировок (схема push / pull / legs) с необязательным
+        ИИ-тренером. Издатель: контакт
+        <a href="mailto:georgiosxristianidis@gmail.com">georgiosxristianidis@gmail.com</a>. Открывая
+        приложение или эти страницы, вы принимаете условия. Если не принимаете — не пользуйтесь
+        сервисом.
+      </p>
+
+      <h2>1. Что это не является</h2>
+      <p>
+        Это не медицинская услуга, не назначение врача и не индивидуальный тренировочный контракт.
+        Оценки 1RM, ИМТ, усталости мышц и тексты ИИ-тренера — расчёты и черновики по вашим же
+        записям. Они могут быть неполными или неверными. Перед нагрузкой, если есть сомнения в
+        здоровье, говорите с врачом, не с приложением.
+      </p>
+
+      <h2>2. Как пользоваться</h2>
+      <ul>
+        <li>
+          Журнал работает в браузере и как установленное PWA. В режиме airgap (так ставится новая
+          установка) тренировки не покидают устройство.
+        </li>
+        <li>
+          Облачная копия и ИИ-тренер — отдельные включения. ИИ на новой установке выключен. Свой
+          ключ Anthropic или Gemini (BYOK) вы вводите сами: он хранится в настройках устройства и в
+          облачную копию не синкается; при запросе к тренеру уходит на наш сервер и дальше к
+          выбранному движку.
+        </li>
+        <li>
+          Серверные ключи издателя, если они заданы, тоже могут обслужить запрос. Лимит на
+          <code>/api/coach</code> — 10 запросов в минуту с адреса; общий лимит API — 100 запросов за
+          15 минут. Превышение даёт отказ, не безлимитный чат.
+        </li>
+        <li>
+          Не пытайтесь обойти лимиты, ломать чужие данные, подсовывать вредоносные названия
+          упражнений или промпты, и не выдавайте ответы модели за профессиональный совет.
+        </li>
+      </ul>
+
+      <h2>3. Ваши записи</h2>
+      <p>
+        То, что вы залогировали, принадлежит вам как содержание журнала. Издатель не претендует на
+        собственность ваших подходов. Вы можете выгрузить JSON из «паспорта данных». Кнопка удаления
+        в приложении очищает не все семь хранилищ — подробности в
+        <a href="/legal/privacy.ru.html">политике конфиденциальности</a>.
+      </p>
+
+      <h2>4. Сервис «как есть»</h2>
+      <p>
+        Приложение развивается, бывают ошибки, офлайн-очередь, расхождения часов устройств при
+        синхронизации. Издатель не обещает бесперебойность, сохранность облачной копии и пригодность
+        ИИ-ответа для вашей программы. В пределах, которые допускает закон, ответственность
+        ограничивается повторным доступом к публичному веб-приложению; денежной компенсации за
+        потерянный подход или неудачный совет модели нет.
+      </p>
+
+      <h2>5. Возраст</h2>
+      <p>Сервисом можно пользоваться с 16 лет. Ниже — только с согласия законного представителя.</p>
+
+      <h2>6. Изменения и контакт</h2>
+      <p>
+        Актуальная редакция: <a href="/legal/terms.ru.html">/legal/terms.ru.html</a>. Английская:
+        <a href="/legal/terms.en.html">/legal/terms.en.html</a>. Язык — ссылкой в адресе, не языком
+        браузера. Претензии и запросы — на почту в начале документа.
+      </p>
+      <p class="updated">
+        Обновлено 26 августа 2026. Связанные тексты: конфиденциальность · согласие.
+      </p>
+    </article>
+  </body>
+</html>

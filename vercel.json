@@ -14,12 +14,11 @@
           "js/**",
           "icons/**",
           "fonts/**",
-          "assets/**"
+          "assets/**",
+          "legal/**"
         ]
       }
     }
   ],
-  "routes": [
-    { "src": "/(.*)", "dest": "/server.js" }
-  ]
+  "routes": [{ "src": "/(.*)", "dest": "/server.js" }]
 }
