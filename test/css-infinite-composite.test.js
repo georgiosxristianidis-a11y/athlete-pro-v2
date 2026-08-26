@@ -1,6 +1,6 @@
 // PERF-2 TEST-GUARD: вечная анимация обязана крутиться на композитных свойствах.
 //
-// Разведка PERF-1 (docs/handoff/HANDOFF_gemini_audit_triage.md): одна мигающая
+// Разведка PERF-1 (docs/_archive/HANDOFF_gemini_audit_triage.md): одна мигающая
 // точка 8 px — `.ai-indicator` на `background-color` + `box-shadow` — давала
 // 301 UpdateLayoutTree и 602 Paint за 5 с ПРОСТОЯ на Home под CPU x4. Не «часть»
 // Style & Layout, а весь его простойный остаток: снятие этой анимации дало ровно
