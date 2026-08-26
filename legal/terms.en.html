@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Terms of Use · Athlete Pro</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <style>
+      html {
+        background: var(--c-bg);
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: var(--c-bg);
+        color: var(--c-text-2);
+        font-family: var(--font-main);
+        font-size: var(--fs-3);
+        font-weight: var(--fw-md);
+        line-height: 1.55;
+      }
+      .wrap {
+        box-sizing: border-box;
+        max-width: 40rem;
+        margin: 0 auto;
+        padding-top: calc(var(--safe-top) + var(--sp-4));
+        padding-right: calc(var(--side-padding) + var(--safe-right));
+        padding-bottom: calc(var(--safe-bottom) + var(--sp-6));
+        padding-left: calc(var(--side-padding) + var(--safe-left));
+      }
+      .meta {
+        margin: 0 0 var(--sp-2);
+        color: var(--c-text-3);
+        font-size: var(--fs-1);
+        font-weight: var(--fw-black);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .nav,
+      .lang {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sp-1) var(--sp-2);
+        margin: 0 0 var(--sp-3);
+      }
+      .nav a,
+      .lang a {
+        color: var(--c-text-2);
+        text-decoration: none;
+        font-size: var(--fs-2);
+      }
+      .nav a[aria-current='page'],
+      .lang a[aria-current='true'] {
+        color: var(--c-accent);
+      }
+      h1 {
+        margin: 0 0 var(--sp-2);
+        color: var(--c-text-1);
+        font-family: var(--font-heading);
+        font-size: var(--fs-5);
+        font-weight: var(--fw-black);
+      }
+      h2 {
+        margin: var(--sp-4) 0 var(--sp-2);
+        color: var(--c-text-1);
+        font-family: var(--font-heading);
+        font-size: var(--fs-4);
+        font-weight: var(--fw-bold);
+      }
+      p,
+      li {
+        margin: 0 0 var(--sp-2);
+      }
+      ul {
+        margin: 0 0 var(--sp-2);
+        padding-left: var(--sp-3);
+      }
+      a {
+        color: var(--c-accent);
+      }
+      .updated {
+        margin-top: var(--sp-4);
+        color: var(--c-text-3);
+        font-size: var(--fs-2);
+      }
+    </style>
+  </head>
+  <body>
+    <article class="wrap">
+      <p class="meta">Athlete Pro</p>
+      <nav class="nav" aria-label="Documents">
+        <a href="/legal/privacy.en.html">Privacy</a>
+        <a href="/legal/terms.en.html" aria-current="page">Terms</a>
+        <a href="/legal/consent.en.html">Consent</a>
+      </nav>
+      <nav class="lang" aria-label="Language">
+        <a href="/legal/terms.ru.html" lang="ru" hreflang="ru">RU</a>
+        <a href="/legal/terms.en.html" aria-current="true">EN</a>
+      </nav>
+
+      <h1>Terms of Use</h1>
+      <p>
+        Athlete Pro is a push / pull / legs training log with an optional AI coach. Publisher
+        contact:
+        <a href="mailto:georgiosxristianidis@gmail.com">georgiosxristianidis@gmail.com</a>. By
+        opening the app or these pages you accept these terms. If you do not, do not use the
+        service.
+      </p>
+
+      <h2>1. What this is not</h2>
+      <p>
+        This is not medical care, a doctor’s prescription, or a personal-training contract.
+        Estimated 1RMs, BMI, muscle-fatigue scores and AI-coach text are calculations and drafts
+        from your own log. They can be incomplete or wrong. If you have health doubts before
+        loading, talk to a clinician, not to the app.
+      </p>
+
+      <h2>2. How you may use it</h2>
+      <ul>
+        <li>
+          The log runs in the browser and as an installed PWA. In airgap mode (the default for a new
+          install) workouts do not leave the device.
+        </li>
+        <li>
+          The cloud replica and the AI coach are separate opt-ins. AI is off on a new install. If
+          you paste your own Anthropic or Gemini key (BYOK), it stays in on-device settings and is
+          not synced to the cloud replica; a coach request sends it to our server and then to the
+          selected engine.
+        </li>
+        <li>
+          Publisher-side keys, when configured, may also serve a request. <code>/api/coach</code>
+          is limited to 10 requests per minute per address; the broader API limit is 100 requests
+          per 15 minutes. Hitting the cap is a refusal, not an unlimited chat.
+        </li>
+        <li>
+          Do not try to bypass those limits, interfere with other people’s data, plant hostile
+          exercise names or prompts, or pass a model reply off as professional advice.
+        </li>
+      </ul>
+
+      <h2>3. Your records</h2>
+      <p>
+        What you log is your training content. The publisher does not claim ownership of your sets.
+        You can export JSON from the data passport. The in-app delete button does not clear all
+        seven stores — details are in the
+        <a href="/legal/privacy.en.html">privacy policy</a>.
+      </p>
+
+      <h2>4. Provided as-is</h2>
+      <p>
+        The app changes, it has bugs, it has an offline queue, and device clocks can disagree during
+        sync. The publisher does not promise uninterrupted service, a durable cloud replica, or that
+        an AI reply fits your programme. To the extent the law allows, liability is limited to using
+        the public web app again; there is no money back for a lost set or a bad model suggestion.
+      </p>
+
+      <h2>5. Age</h2>
+      <p>
+        You may use the service from age 16. Younger than that — only with a guardian’s consent.
+      </p>
+
+      <h2>6. Changes and contact</h2>
+      <p>
+        Current text: <a href="/legal/terms.en.html">/legal/terms.en.html</a>. Russian:
+        <a href="/legal/terms.ru.html">/legal/terms.ru.html</a>. Language is chosen by the URL, not
+        by the browser language. Claims and requests go to the address at the top.
+      </p>
+      <p class="updated">Updated 26 August 2026. Related: privacy · consent.</p>
+    </article>
+  </body>
+</html>

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Consent to data processing · Athlete Pro</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <style>
+      html {
+        background: var(--c-bg);
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: var(--c-bg);
+        color: var(--c-text-2);
+        font-family: var(--font-main);
+        font-size: var(--fs-3);
+        font-weight: var(--fw-md);
+        line-height: 1.55;
+      }
+      .wrap {
+        box-sizing: border-box;
+        max-width: 40rem;
+        margin: 0 auto;
+        padding-top: calc(var(--safe-top) + var(--sp-4));
+        padding-right: calc(var(--side-padding) + var(--safe-right));
+        padding-bottom: calc(var(--safe-bottom) + var(--sp-6));
+        padding-left: calc(var(--side-padding) + var(--safe-left));
+      }
+      .meta {
+        margin: 0 0 var(--sp-2);
+        color: var(--c-text-3);
+        font-size: var(--fs-1);
+        font-weight: var(--fw-black);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .nav,
+      .lang {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sp-1) var(--sp-2);
+        margin: 0 0 var(--sp-3);
+      }
+      .nav a,
+      .lang a {
+        color: var(--c-text-2);
+        text-decoration: none;
+        font-size: var(--fs-2);
+      }
+      .nav a[aria-current='page'],
+      .lang a[aria-current='true'] {
+        color: var(--c-accent);
+      }
+      h1 {
+        margin: 0 0 var(--sp-2);
+        color: var(--c-text-1);
+        font-family: var(--font-heading);
+        font-size: var(--fs-5);
+        font-weight: var(--fw-black);
+      }
+      h2 {
+        margin: var(--sp-4) 0 var(--sp-2);
+        color: var(--c-text-1);
+        font-family: var(--font-heading);
+        font-size: var(--fs-4);
+        font-weight: var(--fw-bold);
+      }
+      p,
+      li {
+        margin: 0 0 var(--sp-2);
+      }
+      ul {
+        margin: 0 0 var(--sp-2);
+        padding-left: var(--sp-3);
+      }
+      a {
+        color: var(--c-accent);
+      }
+      .updated {
+        margin-top: var(--sp-4);
+        color: var(--c-text-3);
+        font-size: var(--fs-2);
+      }
+    </style>
+  </head>
+  <body>
+    <article class="wrap">
+      <p class="meta">Athlete Pro</p>
+      <nav class="nav" aria-label="Documents">
+        <a href="/legal/privacy.en.html">Privacy</a>
+        <a href="/legal/terms.en.html">Terms</a>
+        <a href="/legal/consent.en.html" aria-current="page">Consent</a>
+      </nav>
+      <nav class="lang" aria-label="Language">
+        <a href="/legal/consent.ru.html" lang="ru" hreflang="ru">RU</a>
+        <a href="/legal/consent.en.html" aria-current="true">EN</a>
+      </nav>
+
+      <h1>Consent to data processing</h1>
+      <p>
+        By using Athlete Pro you agree to processing as described in the
+        <a href="/legal/privacy.en.html">privacy policy</a> and below. This is a draft for the
+        document set; the publisher confirms whether the wording is legally fit (<a
+          href="mailto:georgiosxristianidis@gmail.com"
+          >georgiosxristianidis@gmail.com</a
+        >).
+      </p>
+
+      <h2>1. What happens with no extra toggle</h2>
+      <p>
+        For the log to work, the app writes the IndexedDB database <code>athlete-pro</code> (seven
+        stores) and service keys in <code>localStorage</code> on this device. A new install defaults
+        to airgap: workouts, profile and keys are not sent anywhere. Fonts and the shell load from
+        the same origin — no Google Fonts.
+      </p>
+      <p>
+        Opening any page, including this one, is an ordinary request to Vercel hosting (URL, IP,
+        User-Agent). That is how the site is delivered, not a separate analytics product.
+      </p>
+
+      <h2>2. What needs an explicit action</h2>
+      <ul>
+        <li>
+          <strong>Cloud.</strong> Cloud or Anonymous mode when Supabase is configured: an anonymous
+          session and a replica of six stores (everything except the local <code>events</code> log).
+          Secrets and <code>ap-*</code> keys are not in that replica.
+        </li>
+        <li>
+          <strong>AI coach.</strong> The toggle in Privacy (unavailable in airgap). Then a
+          compressed workout context, a profile slice (name, age, sex, goal) and the chat text go to
+          our server and on to Anthropic or Google. Your own API key, if you pasted one, rides on
+          the same request.
+        </li>
+        <li>
+          <strong>Usage counter.</strong> The <code>usage-stats</code> flag is off today — no
+          events. If it is turned on, three aggregates (app open, saved workout, coach question) go
+          to Vercel Web Analytics only when the other gates are open: no DNT/GPC, no self-exclusion,
+          the Privacy toggle not off, and a Vercel production host.
+        </li>
+      </ul>
+
+      <h2>3. How to withdraw</h2>
+      <p>
+        Switch to airgap — sync and AI network calls stop, and the AI toggle is cleared. Turn the AI
+        coach off on its own if you still want the cloud. Export JSON, then delete local data in the
+        passport or clear the site’s data in the browser. The in-app button does not erase the cloud
+        replica: write to the publisher for that. Limits of the delete button are in the privacy
+        policy.
+      </p>
+
+      <h2>4. Age</h2>
+      <p>
+        This consent is given by someone 16 or older. If you are younger, use the service only with
+        a guardian’s consent.
+      </p>
+      <p class="updated">
+        Updated 26 August 2026. This page’s language is the URL
+        <a href="/legal/consent.en.html">/legal/consent.en.html</a>, not the browser language.
+      </p>
+    </article>
+  </body>
+</html>

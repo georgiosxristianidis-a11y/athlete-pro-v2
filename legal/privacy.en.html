@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Privacy Policy · Athlete Pro</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <style>
+      html {
+        background: var(--c-bg);
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: var(--c-bg);
+        color: var(--c-text-2);
+        font-family: var(--font-main);
+        font-size: var(--fs-3);
+        font-weight: var(--fw-md);
+        line-height: 1.55;
+      }
+      .wrap {
+        box-sizing: border-box;
+        max-width: 40rem;
+        margin: 0 auto;
+        padding-top: calc(var(--safe-top) + var(--sp-4));
+        padding-right: calc(var(--side-padding) + var(--safe-right));
+        padding-bottom: calc(var(--safe-bottom) + var(--sp-6));
+        padding-left: calc(var(--side-padding) + var(--safe-left));
+      }
+      .meta {
+        margin: 0 0 var(--sp-2);
+        color: var(--c-text-3);
+        font-size: var(--fs-1);
+        font-weight: var(--fw-black);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .nav,
+      .lang {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sp-1) var(--sp-2);
+        margin: 0 0 var(--sp-3);
+      }
+      .nav a,
+      .lang a {
+        color: var(--c-text-2);
+        text-decoration: none;
+        font-size: var(--fs-2);
+      }
+      .nav a[aria-current='page'],
+      .lang a[aria-current='true'] {
+        color: var(--c-accent);
+      }
+      h1 {
+        margin: 0 0 var(--sp-2);
+        color: var(--c-text-1);
+        font-family: var(--font-heading);
+        font-size: var(--fs-5);
+        font-weight: var(--fw-black);
+      }
+      h2 {
+        margin: var(--sp-4) 0 var(--sp-2);
+        color: var(--c-text-1);
+        font-family: var(--font-heading);
+        font-size: var(--fs-4);
+        font-weight: var(--fw-bold);
+      }
+      p,
+      li {
+        margin: 0 0 var(--sp-2);
+      }
+      ul {
+        margin: 0 0 var(--sp-2);
+        padding-left: var(--sp-3);
+      }
+      a {
+        color: var(--c-accent);
+      }
+      .updated {
+        margin-top: var(--sp-4);
+        color: var(--c-text-3);
+        font-size: var(--fs-2);
+      }
+    </style>
+  </head>
+  <body>
+    <article class="wrap">
+      <p class="meta">Athlete Pro</p>
+      <nav class="nav" aria-label="Documents">
+        <a href="/legal/privacy.en.html" aria-current="page">Privacy</a>
+        <a href="/legal/terms.en.html">Terms</a>
+        <a href="/legal/consent.en.html">Consent</a>
+      </nav>
+      <nav class="lang" aria-label="Language">
+        <a href="/legal/privacy.ru.html" lang="ru" hreflang="ru">RU</a>
+        <a href="/legal/privacy.en.html" aria-current="true">EN</a>
+      </nav>
+
+      <h1>Privacy Policy</h1>
+      <p>
+        This page describes what Athlete Pro actually does with data, checked against the
+        application code rather than a generic template. The publisher confirms whether the wording
+        is legally fit. Contact:
+        <a href="mailto:georgiosxristianidis@gmail.com">georgiosxristianidis@gmail.com</a>.
+      </p>
+
+      <h2>1. Who processes data</h2>
+      <p>
+        The controller is the publisher of Athlete Pro. The service is an installable PWA at
+        <a href="https://athlete-pro-v7.vercel.app">athlete-pro-v7.vercel.app</a>. Pages and the API
+        are hosted on Vercel. This draft does not name a separate legal entity: for data requests,
+        use the address above.
+      </p>
+
+      <h2>2. What stays on the device</h2>
+      <p>
+        The training log lives on your device. The IndexedDB database is named
+        <code>athlete-pro</code>, schema version 4. There are seven object stores:
+      </p>
+      <ul>
+        <li>
+          <code>workouts</code> — completed sessions: type (push / pull / legs), date, duration,
+          tonnage, exercises and sets (weight, reps, RPE, whether the set was done).
+        </li>
+        <li><code>oneRM</code> — estimated one-rep max per exercise (Epley formula).</li>
+        <li>
+          <code>bodyMetrics</code> — weight, height, BMI. On HTTPS the record is encrypted on-device
+          (AES-256-GCM; the key lives in a separate database <code>ap-keys</code> and is not
+          extractable). On plain HTTP (for example a LAN URL) there is no encryption: values are
+          stored as base64 and are not sent to the cloud.
+        </li>
+        <li><code>events</code> — a local application event log. It is not synced to the cloud.</li>
+        <li>
+          <code>settings</code> — key–value preferences: language (<code>lang</code>), profile
+          (name, date of birth, sex, goal, experience, equipment, limitations, resting heart rate),
+          privacy mode, the AI-coach toggle, the usage-counter queue, BYOK keys.
+        </li>
+        <li><code>nutritionLogs</code> — meal entries, if you log them.</li>
+        <li><code>plannedWorkouts</code> — plans, including ones generated by the AI.</li>
+      </ul>
+      <p>
+        The same origin also keeps service keys in <code>localStorage</code>: install id
+        (<code>ap-device-id</code>), the sync queue, the pull cursor, flag overrides, usage
+        self-exclusion, seven-day recommendations, and the Dynamic Island layout profile. Coach chat
+        history lives in the tab’s memory and is gone on reload.
+      </p>
+
+      <h2>3. Three privacy modes and the AI toggle</h2>
+      <p>
+        A new install defaults to <strong>airgap</strong>: sync and AI are blocked, and the AI
+        toggle is off. If the device already had workouts when this system appeared, the mode stays
+        <strong>cloud</strong> with AI on — matching previous behaviour.
+      </p>
+      <ul>
+        <li>
+          <strong>Air-gapped.</strong> Nothing is queued for the cloud. AI requests are blocked. The
+          AI toggle cannot be turned on in this mode: the app answers with local rules over your own
+          data.
+        </li>
+        <li>
+          <strong>Anonymous.</strong> AI can be enabled. The <code>safeFetch</code> wrapper strips
+          Authorization, X-User-Id, X-Device-Id and Cookie headers, and top-level JSON fields
+          <code>userId</code>, <code>deviceId</code>, <code>email</code>, <code>name</code>. Cloud
+          sync uses the Supabase client, not that wrapper: when cloud is configured, records are
+          still written under the anonymous Supabase session id.
+        </li>
+        <li>
+          <strong>Cloud.</strong> The AI coach (if the toggle is on) and sync (if cloud is
+          configured) are available.
+        </li>
+      </ul>
+      <p>
+        The last 50 network attempts are stored in the <code>privacy.audit</code> setting (path
+        only, query string stripped). That log stays on the device and is not synced.
+      </p>
+
+      <h2>4. What leaves the device</h2>
+      <p>Only the paths that exist in the code. If a path is off, nothing is sent on it.</p>
+
+      <h2>4.1. Cloud replica (Supabase)</h2>
+      <p>
+        If the build has a Supabase URL and anon key, and the mode is not airgap, the client may
+        create an anonymous session and refresh it every ten minutes. Six stores go to the server:
+        workouts, 1RM, body metrics, settings, nutrition, plans. The <code>events</code> store is
+        not synced. Settings keys that start with <code>ap-*</code>, the audit log, and anything
+        whose name ends in key / token / secret / password (including Anthropic and Gemini BYOK
+        keys) never enter the sync queue.
+      </p>
+      <p>
+        When cloud is configured in the build, the Supabase client library is loaded from jsDelivr.
+        That is a script download, not an upload of training data.
+      </p>
+
+      <h2>4.2. AI coach (Anthropic Claude or Google Gemini)</h2>
+      <p>
+        The AI toggle is off by default on a new install. When it is on and the mode is not airgap,
+        the browser posts <code>POST /api/coach</code> to our server (10 requests per minute). The
+        server proxies the request to the selected engine. The body is a compressed context, not the
+        raw database:
+      </p>
+      <ul>
+        <li>
+          up to five recent workouts: type, hours ago, tonnage, duration, exercise names and
+          completed-set counts;
+        </li>
+        <li>muscle-fatigue scores and up to five top 1RMs;</li>
+        <li>from the profile: name, age (derived from date of birth), sex, goal;</li>
+        <li>the chat text (up to 40 messages, each up to 12,000 characters).</li>
+      </ul>
+      <p>
+        A separate recommendations call (<code>/api/coach/recommendations</code>) may send weights,
+        reps and RPE from the last session and the next-session plan. A BYOK API key is sent to our
+        server as <code>customKey</code> and then to the selected engine; it is not written into the
+        cloud settings replica. The server strips secret-shaped keys from the prompt snapshot again
+        if a caller forgot.
+      </p>
+      <p>
+        Server logs redact <code>weight</code>, <code>height</code>, <code>bmi</code>,
+        <code>password</code>, <code>token</code>, <code>authorization</code> and
+        <code>cookie</code>. That is not a claim that the model prompt omits training context: the
+        prompt does include the workout context listed above.
+      </p>
+
+      <h2>4.3. Usage counter (Vercel Web Analytics)</h2>
+      <p>
+        The counter sits behind the <code>usage-stats</code> flag, which is off by default: the
+        script is not loaded and no events are sent. If the flag is ever turned on, only three event
+        names leave the device: <code>app_open</code> (app version and privacy mode),
+        <code>workout_completed</code> (workout type), <code>coach_message</code> (empty payload —
+        the fact of a question, not the text). In airgap the payload is stripped entirely. Never
+        sent: coach message text, exercise names, weights, tonnage, device id, keys.
+      </p>
+      <p>
+        Even with the flag on, the counter stays silent if the browser sends Do Not Track or Global
+        Privacy Control, if the device is self-excluded, if the Privacy toggle is off, or if this is
+        not a Vercel production host. The offline queue holds at most 50 entries for 7 days, in the
+        <code>ap-usage-queue</code> setting, and is not synced.
+      </p>
+
+      <h2>4.4. Hosting</h2>
+      <p>
+        Any page view, including this document, is an ordinary HTTPS request to Vercel (IP, URL,
+        User-Agent). The legal pages themselves do not load an analytics script.
+      </p>
+
+      <h2>5. Why we process this</h2>
+      <ul>
+        <li>The local log and settings exist so the app works without a network.</li>
+        <li>The cloud replica exists to merge devices, and only when you are not in airgap.</li>
+        <li>Coach context exists so the answer can use your sets instead of an empty chat.</li>
+        <li>The three counters exist so the publisher can see whether the product is alive.</li>
+      </ul>
+
+      <h2>6. Access, export, deletion</h2>
+      <p>
+        In the app: Profile → Privacy → data passport (per-store counts) and privacy budget (recent
+        network attempts). The JSON export contains workouts, 1RMs, metrics and settings — not the
+        event log, nutrition, or plans.
+      </p>
+      <p>
+        “Delete all data” clears five local stores — workouts, 1RM, metrics, events and settings —
+        then reloads. Nutrition, plans, and the <code>ap-keys</code> database are not touched by
+        that button. Clearing the site’s data in the browser removes all seven stores,
+        <code>ap-keys</code>, and <code>localStorage</code>.
+      </p>
+      <p>
+        A local wipe does not delete an already-uploaded cloud replica: the app has no “erase my
+        server account” command. To delete cloud rows, write to the address at the top of this page.
+      </p>
+
+      <h2>7. Children</h2>
+      <p>
+        The service is not directed at anyone under 16. Date of birth in the profile exists so the
+        AI coach can receive an age, not as an age gate at sign-in. If you believe a child’s data is
+        in the service, write to us — we will delete what we can on our side.
+      </p>
+
+      <h2>8. Retention</h2>
+      <p>
+        On the device — until you delete records or site data. In the cloud — for as long as the
+        anonymous session and table rows exist; the code has no timed auto-delete. The usage queue
+        expires after 7 days. Recommendations in <code>localStorage</code> expire after 7 days.
+      </p>
+
+      <h2>9. Recipients</h2>
+      <p>
+        The publisher does not sell training data. Along the paths above, data may be seen by:
+        Vercel (hosting and, if the flag is on, Web Analytics), Supabase (cloud replica), Anthropic
+        and/or Google (AI coach), jsDelivr (the Supabase client file). Their own terms apply on
+        their infrastructure.
+      </p>
+
+      <h2>10. Changes</h2>
+      <p>
+        The current English text is at
+        <a href="/legal/privacy.en.html">/legal/privacy.en.html</a>. Russian is at
+        <a href="/legal/privacy.ru.html">/legal/privacy.ru.html</a>. Language is chosen by the URL,
+        not by the browser language and not by the in-app language setting.
+      </p>
+      <p class="updated">Updated 26 August 2026. Related: terms · consent.</p>
+    </article>
+  </body>
+</html>
