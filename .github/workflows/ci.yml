@@ -98,7 +98,11 @@ jobs:
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-1.60.0
+          # Ключ от локфайла, а не от вписанной руками версии: прибитый
+          # `playwright-1.60.0` пережил бамп до 1.62.1, кеш дал hit со старыми
+          # браузерами, установка пропустилась — и все 42 теста упали на
+          # «Executable doesn't exist … chromium_headless_shell-1234».
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
