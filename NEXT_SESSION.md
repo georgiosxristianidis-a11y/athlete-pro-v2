@@ -1,7 +1,21 @@
 # NEXT SESSION — Athlete Pro
 
 > Читать первым. **Роутер, а не состояние:** указатель на карточку, контекст — в хендоффе.
-> Обновлено 2026-08-25 (линия DEBUG — intake/протокол).
+> Обновлено 2026-08-26 (LAUNCH-2 — один трек вместо семнадцати линий).
+
+## Куда идти за работой
+
+**Работа только одна — `docs/handoff/HANDOFF_launch_track.md`.** Трек запуска: довести
+приложение до состояния, в котором ссылку можно дать чужому человеку. Карточки отсортированы
+по убыванию риска, порядок не переставлять без разбора.
+
+- **LAUNCH-3** — следующая (юридический минимум, сразу двуязычный); дальше LAUNCH-4..10
+- **LAUNCH-5A** выдана Cursor — не брать; LAUNCH-1/2 закрыты
+- **AGENT-3**, **AGENT-4** — координация двух инструментов, открыты
+
+Остальные семнадцать линий **заморожены в `docs/_archive/`** — это пауза, не отмена.
+Карточки живы, вернуться к ним можно после LAUNCH-10. Брать оттуда работу — только явным
+решением Gio, не «по дороге».
 
 ## Правило файла
 
@@ -21,33 +35,6 @@ npm run preflight && npm run inventory && npm run smoke:prod && npm run docs:bud
 - **Галочка ≠ чеки:** Vercel `combined status` врёт при нуле check-runs → `gh api repos/:owner/:repo/commits/<sha>/check-runs`.
 - Мёрж: `gh pr merge --rebase --delete-branch`.
 
-## Куда идти за работой (в `docs/handoff/`)
-
-- `HANDOFF_launch_track.md` → **LAUNCH-2**, дальше LAUNCH-3..10; LAUNCH-5A выдана Cursor — не брать; LAUNCH-1 закрыта; AGENT-3/4 открыты
-- `HANDOFF_boot_brand.md` → **SPLASH-1**, дальше MOTION-1; не параллелить (`index.html`)
-- `HANDOFF_intel_readiness.md` → **INTEL-3** → INTEL-4
-- `HANDOFF_gemini_audit_triage.md` → **SCAF-1**, NOISE-1/PII-1; за Gio — снести Render, отозвать `ANTHROPIC_API_KEY`
-- `HANDOFF_light_theme.md` → **THEME-6** (P2)
-- `HANDOFF_design_system.md` → **SCALE-1** (типографика закрыта VIS-1, остались отступы/радиусы), VIS-2, NAV-BACK-1 + DEAD-1; DS → **DS-2** → DS-3
-- `HANDOFF_field_check.md` — Gio, DoD-5; флаги `fab-video`/`drum-window` заранее
-- `HANDOFF_next_cards.md` → **DRUM-TOUCH-1** (поле); стек/бэклог/DATA-SAFETY
-- `HANDOFF_orchestration.md` · `HANDOFF_gym_grade.md` — роли + DoD-5
-- `HANDOFF_isl_tail.md` · `HANDOFF_air_refactor.md` — остров / AIR
-- `HANDOFF_usage_stats.md` → **USAGE-1**, затем USAGE-2
-- `HANDOFF_token_economy.md` → **TOK-1** → TOK-6/2/4; TOK-11 перед TOK-5
-- `HANDOFF_seo_meta.md` → **SEO-2** (og:image); после PRECACHE-1 — в `ASSETS_WARM`
-- `HANDOFF_toolchain.md` → **TOOL-1**…TOOL-5; правит `~/.claude/*`
-- `HANDOFF_debug_protocol.md` → **INTAKE-1**, DBG-0…4; WIP **TOOL-PW-1**
-- `HANDOFF_panda_core.md` → **SKIN-1** (за Gio), HUD-4 (LEAD)
-
-Вне хендоффов: **DOCS-3**, **WEED-2** (≥30 дн); FLOW-4 закрыта — потолок памяти сторожит preflight.
-
-## Порядок взятия
-
-- **Дизайн:** NAV-BACK-1 + DEAD-1 не параллелить со SPACE-1/SCALE-1 (`css/base.css`).
-- **Аналитика:** **AN-2** → AN-3 → OVW-1 → CRDT foundation.
-- **Вне очереди:** NAV-1 (потеря тапа), NAV-2 (`s-intel` выход).
-
 ## Технические заметки
 
 - **Запуск:** `npm run dev` → :3000 (Gio), 3001 = preview; телеметрия — `scripts/telemetry-server.mjs --lan`.
@@ -56,3 +43,4 @@ npm run preflight && npm run inventory && npm run smoke:prod && npm run docs:bud
 - **lhci** — только из worktree.
 - **Прод:** Vercel `gio-g7/athlete-pro-v7`, репо athlete-pro-v2, с `main`.
 - **Git worktree:** `GIT_PAGER=cat` и `</dev/null`.
+- **Корневой чекаут делится с живой сессией** — ветка меняется под руками; работать из своего worktree.

@@ -2,7 +2,7 @@
 /**
  * LEAK-1 — слушатели на долгоживущей цели не должны копиться.
  *
- * Куплено разбором аудита Gemini (`docs/handoff/HANDOFF_gemini_audit_triage.md`).
+ * Куплено разбором аудита Gemini (`docs/_archive/HANDOFF_gemini_audit_triage.md`).
  * Сырое соотношение «144 addEventListener против 13 removeEventListener» обманывает:
  * слушатель на узле оверлея уходит вместе с `node.remove()`. Утечка живёт ровно
  * там, где сходятся три условия — **долгоживущая цель** (`window`/`document`),
