@@ -22,6 +22,7 @@ description: Протокол security-auditor — уязвимости, сек�
 | Access (A01) | `routes/`, `lib/aiOrchestrator.js` — объект по id из запроса без проверки владельца |
 | Crypto (A02) | секреты в репо, слабый hash, `Math.random` для токенов, BYOK на фронте |
 | Injection (A03) | `child_process` / шаблон SQL в `scripts/`, `server.js`, `routes/` |
+| Design (A04) | дорогой маршрут без лимитера: `express-rate-limit` стоит в `server.js`, `routes/coach.js`, `routes/integrations.js` — новый ИИ- или verify-эндпоинт без него это находка. `trust proxy` = 1 обязателен, иначе лимитер считает IP балансировщика, а не клиента |
 | Misconfig (A05) | CSP/helmet в `server.js`, CORS `*`, debug в проде |
 | Deps (A06) | `npm audit --omit=dev` — блок только High/Critical production (как pre-push) |
 | Auth (A07) | ключи провайдеров, пароль в query, JWT `alg=none` |
@@ -31,7 +32,12 @@ description: Протокол security-auditor — уязвимости, сек�
 | GDPR | экспорт/`openDataPassport`, удаление/`DB.clearAll`, согласие, дефолт airgap в `js/privacy.store.js` |
 | SW cache | не кэшировать `set-cookie` / `no-store`; `legal/` не в прекеше |
 
-Секреты: AWS `AKIA…`, `sk-`, `ghp_`, PEM, JWT, mongodb/postgres URI с паролем.
+Секреты этого стека, а не из шаблона: `ANTHROPIC_API_KEY` (`sk-ant-…`),
+`GOOGLE_GENERATIVE_AI_API_KEY` и `FIREBASE_API_KEY` (`AIza…`), `SUPABASE_ANON_KEY` (JWT
+`eyJ…`), PEM. Читать их можно только на бэкенде — `lib/geminiClient.js`, `routes/coach.js`,
+`routes/integrations.js`; значение в `js/` или в тесте = находка. Исключение —
+`SUPABASE_ANON_KEY`: публичен по дизайну, критичен на его месте `service_role`.
+Сканера секретов в CI нет, поэтому по диффу смотреть глазами.
 
 ## Отчёт
 
