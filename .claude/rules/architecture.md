@@ -42,7 +42,8 @@ node scripts/telemetry-server.mjs --lan
 ## Конвенции кода
 
 Процессные правила (версия, флаги, PR, миграции) — в `CLAUDE.md` § Rules. Здесь только то,
-что действует в момент правки кода.
+что действует в момент правки кода. Протокол аудита безопасности — `.claude/rules/security.md`:
+по путям он не грузится, открывать по запросу.
 
 - Vanilla JS only — no React/Vue/jQuery
 - **ES-модули везде** — и фронт, и бэкенд (`server.js`, `routes/`, `lib/` на `import`). CommonJS в проекте нет

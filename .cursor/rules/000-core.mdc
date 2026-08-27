@@ -15,8 +15,7 @@ alwaysApply: true
 |---|---|
 | `CLAUDE.md` | закон процесса: ветки, PR, ancestry, версия, флаги, структура репо |
 | `NEXT_SESSION.md` | роутер по задачам — где взять карточку |
-| `.claude/rules/architecture.md` | Store/View, бэкенд, навигация, конвенции кода |
-| `.claude/rules/design.md` | палитра, типографика, границы — токены `css/base.css :root` |
+| `.claude/rules/` | `architecture.md` — Store/View, бэкенд, навигация, конвенции кода; `design.md` — палитра и типографика через токены `css/base.css :root`; `security.md` — аудит, по запросу |
 | `GEMINI.md` | Karpathy Guidelines — думать до кода, хирургические правки |
 
 ## Пять правил, которые роняют гейт чаще прочих
