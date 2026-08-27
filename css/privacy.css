@@ -129,6 +129,23 @@
   pointer-events: none;
 }
 
+/* ── Legal document links (static pages, new tab) ─────── */
+.privacy-legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+  margin-top: var(--sp-1);
+  padding: var(--sp-1) var(--sp-1) var(--sp-0-5);
+}
+.privacy-legal a {
+  color: var(--c-text-2);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.privacy-legal a:active { opacity: 0.7; }
+
 /* ── Data Passport modal ──────────────────────────────── */
 .passport-section-label {
   font-size: var(--fs-1);
