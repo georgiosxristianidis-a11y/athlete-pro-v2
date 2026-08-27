@@ -13,7 +13,7 @@ import {
   getAuditLog, clearAuditLog,
 } from './privacy.store.js';
 import { isUsageEnabled, setUsageEnabled, getUsageState } from './usage.js';
-import { t, isRu } from './locale.store.js';
+import { t, isRu, getLang } from './locale.store.js';
 import { esc } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
 import { on } from './events.js';
@@ -106,8 +106,25 @@ export function renderPrivacyCard() {
         </div>
         ${_iconChevron()}
       </button>
+
+      ${_renderLegalLinks()}
     </div>
   `;
+}
+
+/* ── Ссылки на статику legal/ — вне шелла, иначе уход из PWA рвёт сессию. ── */
+function _renderLegalLinks() {
+  const lang = getLang() === 'ru' ? 'ru' : 'en';
+  const docs = [
+    { id: 'privacy', key: 'privacy.legal_privacy' },
+    { id: 'terms',   key: 'privacy.legal_terms' },
+    { id: 'consent', key: 'privacy.legal_consent' },
+  ];
+  return `
+      <nav class="privacy-legal" aria-label="${t('privacy.title')}">
+        ${docs.map(d => `<a href="/legal/${d.id}.${lang}.html" target="_blank" rel="noopener">${t(d.key)}</a>`).join('')}
+      </nav>
+`;
 }
 
 /* ── Строка счётчика установок (js/usage.js) ──
