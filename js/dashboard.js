@@ -28,11 +28,15 @@ on('dash:navStats', () => window.Nav.go('s-stats'));
 on('dash:closeMascot', () => window.Dashboard.closeMascot());
 on('dash:mascotSound', (el, e) => {
   e.stopPropagation();
-  const v = el.querySelector('video');
+  const wrap = el.closest('.empty-dash-mascot-wrap') || el;
+  const v = wrap.querySelector('video');
   if (!(v instanceof HTMLVideoElement)) return;
   window.haptic?.(10);
   const muted = togglePandaSound(v);
-  el.querySelector('.empty-dash-mascot')?.classList.toggle('sound-on', !muted);
+  wrap.querySelector('.empty-dash-mascot')?.classList.toggle('sound-on', !muted);
+});
+on('dash:openCoach', () => {
+  window.Claude?.open();
 });
 
 // Экраны прячутся через opacity, не display — IntersectionObserver в
@@ -265,13 +269,23 @@ export const Dashboard = (() => {
         ${
           showMascot
             ? `
-        <div class="empty-dash-mascot-wrap" id="mascot-draggable" ${videoMode ? `data-action="dash:mascotSound" title="${esc(t('dash.sound'))}"` : ''}>
+        <div class="empty-dash-mascot-wrap" id="mascot-draggable" ${videoMode ? `title="${esc(t('dash.open_coach'))}"` : ''}>
           <button class="mascot-close-btn" data-action="dash:closeMascot" title="${esc(t('dash.close_mascot'))}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
-          <div class="empty-dash-mascot" style="display:flex;align-items:center;justify-content:center;height:100%;width:100%;">
+          ${
+            videoMode
+              ? `<button type="button" class="mascot-sound-btn" data-action="dash:mascotSound" title="${esc(t('dash.sound'))}" aria-label="${esc(t('dash.sound'))}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+            </svg>
+          </button>`
+              : ''
+          }
+          <div class="empty-dash-mascot" style="display:flex;align-items:center;justify-content:center;height:100%;width:100%;" data-action="dash:openCoach" role="button" aria-label="${esc(t('dash.open_coach'))}">
             ${mascotInner}
           </div>
         </div>`
@@ -320,7 +334,7 @@ export const Dashboard = (() => {
     let moved = false;
 
     el.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('.mascot-close-btn')) return;
+      if (e.target.closest('.mascot-close-btn, .mascot-sound-btn')) return;
       isDragging = true;
       moved = false;
       gestureX = e.clientX;
