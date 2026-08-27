@@ -35,3 +35,13 @@ if (tryGit(['config', '--worktree', '--get', 'core.hooksPath']) !== null) {
 }
 
 git(['config', 'core.hooksPath', '.githooks']);
+
+// Драйвер слияния для сгенерированного sw.js (карточка AGENT-5). Правило живёт
+// в .gitattributes (`sw.js merge=ours`), но само имя `ours` git не знает — его
+// объявляют конфигом, и конфиг в репозиторий не коммитится. Отсюда postinstall:
+// это единственный шаг, который делает каждый чекаут и каждый worktree.
+//
+// tryGit, а не git: старый git без merge.<driver>.driver или экзотическая
+// сборка не должны ронять установку — без драйвера конфликт по sw.js просто
+// снова становится ручным, как был.
+tryGit(['config', 'merge.ours.driver', 'true']);

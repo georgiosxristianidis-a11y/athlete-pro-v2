@@ -26,14 +26,18 @@ alwaysApply: true
 2. **Цвет и типографика — только токены** `css/base.css :root`. Сырой hex, сырые px в
    `font-size`, цифры в `font-weight` — запрещены (`.claude/rules/design.md`).
 3. **`esc()` из `js/shared/utils.js`** для любого `innerHTML` с данными.
-4. **`sw.js` руками не править** — `npm run build:sw`, сторожит `test/sw-cache-name.test.js`.
+4. **`sw.js` генерируется** — `npm run build:sw`, руками не править (сторожит
+   `test/sw-cache-name.test.js`). Конфликт по `CACHE_NAME` разрешает драйвер плюс пересборка,
+   а не рука: выбранная сторона стирает чужой прекеш.
 5. **Эмодзи в UI, коде и сообщениях запрещены** — иконки только SVG.
 
 ## Гейт перед коммитом
 
 ```bash
-npm run format && npm run lint && npm test
+npx prettier --write <свои файлы> && npm run lint && npm test
 ```
+
+Только свои: `npm run format` = `prettier --write .` — 226 чужих файлов, конфликт с каждой веткой.
 
 `npx playwright test` — e2e, гоняется отдельно на тёплом сервере.
 
@@ -47,10 +51,9 @@ Co-Authored-By: Cursor <noreply@cursor.com>
 
 Типы: `feat`, `fix`, `refactor`, `style`, `perf`, `test`, `docs`, `chore`.
 
-**Трейлер обязателен в каждом коммите.** Claude пишет свою строку, Cursor — эту.
-Автор коммита не меняется, значит branch protection и деплой ничего не заметят,
-а `rebase-merge` трейлер переживает — на нём и держится `npm run scorecard`.
-Без строки работа уезжает в графу `unsigned` и из замера выпадает.
+**Трейлер обязателен в каждом коммите.** Автор не меняется — branch protection и деплой
+ничего не заметят, а `rebase-merge` строку переживает: на ней держится `npm run scorecard`,
+без неё работа уезжает в графу `unsigned`.
 
 Ссылок на файлы вне репозитория здесь быть не должно — сторожит
 `test/agent-rules-parity.test.js`.
