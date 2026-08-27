@@ -412,6 +412,27 @@
   background: var(--c-red-bg);
   color: var(--c-red);
 }
+.mascot-sound-btn {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--c-bg-3);
+  border: 1.5px solid var(--c-border);
+  color: var(--c-text-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  opacity: 0.6;
+}
+.mascot-sound-btn:active {
+  opacity: 1;
+  transform: scale(var(--press-scale));
+}
 
 @keyframes emptyFloat {
   0%, 100% { transform: translateY(0); }

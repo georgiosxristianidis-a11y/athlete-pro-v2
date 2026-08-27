@@ -7,6 +7,7 @@ import { isRu } from './locale.store.js';
 import { stripSecrets } from './shared/sync-secrets.js';
 import { DB } from './db.js';
 import { on, onChange, onKeydown, onInput } from './events.js';
+import { probeAiStatus } from './shared/ai-status.js';
 
 on('intel:close',         () => window.Nav.go('s-home'));
 on('intel:toggleLogs',    (el) => {
@@ -51,6 +52,8 @@ onKeydown('intel:toggleLogs', (el, e) => {
 export const IntelView = (() => {
   let _initialized = false;
   let _hasValidKey = false;
+  /** @type {string} */
+  let _keySource = 'offline';
 
   /**
    * Строки экрана. Язык — только через isRu() (правило i18n проекта):
@@ -59,7 +62,7 @@ export const IntelView = (() => {
   function _copy() {
     return isRu()
       ? {
-          keyOk: 'система защищена', keyMissing: 'нет ключа',
+          keyOk: 'система защищена', keyMissing: 'нет ключа', keyAirgap: 'режим airgap',
           summary: 'СВОДКА', generate: 'ГЕНЕРАЦИЯ', analyze: 'АНАЛИЗ', biometrics: 'БИОМЕТРИЯ',
           input: 'Команда или запрос по фото…',
           close: 'Закрыть', camera: 'Прикрепить фото', send: 'Отправить',
@@ -75,7 +78,7 @@ export const IntelView = (() => {
           cnsFatigue: 'УТОМЛЕНИЕ ЦНС', muscleDamage: 'МЫШЕЧНЫЕ ПОВРЕЖДЕНИЯ', readiness: 'ГОТОВНОСТЬ',
         }
       : {
-          keyOk: 'system secure', keyMissing: 'key missing',
+          keyOk: 'system secure', keyMissing: 'key missing', keyAirgap: 'air-gapped',
           summary: 'SUMMARY', generate: 'GENERATE', analyze: 'ANALYZE', biometrics: 'BIOMETRICS',
           input: 'Command or vision query…',
           close: 'Close', camera: 'Attach photo', send: 'Send',
@@ -100,18 +103,15 @@ export const IntelView = (() => {
   async function _checkApiKey() {
     const { DB } = await import('./db.js');
     const localKey = await DB.Settings.get('gemini-key');
-    
-    // 1. Check local browser storage first
     _hasValidKey = !!localKey && localKey.trim().length > 10;
+    _keySource = 'local';
 
-    // 2. If no local key, ALWAYS check server status (for .env keys)
-    if (!_hasValidKey) {
-      try {
-        const serverStatus = await fetch('/api/ai-status').then(r => r.json());
-        _hasValidKey = serverStatus.gemini; // Specifically check for Gemini
-      } catch (e) {
-        console.warn('Failed to fetch /api/ai-status', e);
-      }
+    if (_hasValidKey) return;
+
+    const probed = await probeAiStatus();
+    _keySource = probed.source;
+    if (probed.source === 'server') {
+      _hasValidKey = probed.gemini || probed.anthropic;
     }
   }
 
@@ -133,7 +133,7 @@ export const IntelView = (() => {
           <h1 class="intel-title">P.A.N.D.A. Core</h1>
           <div class="intel-sub">
             <span class="ai-indicator ${_hasValidKey ? 'active' : 'missing'}"></span>
-            <span class="intel-key-state ${_hasValidKey ? 'is-ok' : 'is-missing'}">${_hasValidKey ? L.keyOk : L.keyMissing}</span>
+            <span class="intel-key-state ${_hasValidKey ? 'is-ok' : 'is-missing'}">${esc(_hasValidKey ? L.keyOk : (_keySource === 'airgap' ? L.keyAirgap : L.keyMissing))}</span>
             <span class="intel-sub-sep">·</span>
             <span id="intel-status-text" class="intel-status-text">${esc(IntelStore.getStatus())}</span>
           </div>

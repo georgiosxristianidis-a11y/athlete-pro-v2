@@ -13,6 +13,7 @@ import { Toast } from './shell.js';
 import { on, onChange } from './events.js';
 import { haptic } from './shared/utils.js';
 import { forceUpdate } from './shared/sw-update.js';
+import { probeAiStatus } from './shared/ai-status.js';
 
 on('profile:clearData',        () => window.Profile.clearAllData());
 onChange('profile:importFile', (el, e) => window.Profile._onImportFile(e));
@@ -755,10 +756,10 @@ function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
 /** Update AI engine indicators after shell render (non-blocking). */
 async function _patchAiStatus(settings) {
   try {
-    const serverStatus = await fetch('/api/ai-status').then(r => r.json());
+    const probed = await probeAiStatus();
     const currentEngine = settings['ai-engine'] || 'anthropic';
-    const geminiActive = serverStatus.gemini || !!settings['gemini-key'];
-    const anthropicActive = serverStatus.anthropic || !!settings['anthropic-key'];
+    const geminiActive = probed.gemini || !!settings['gemini-key'];
+    const anthropicActive = probed.anthropic || !!settings['anthropic-key'];
 
     const anthropicEl = document.getElementById('ai-status-anthropic');
     if (anthropicEl) {
@@ -768,8 +769,8 @@ async function _patchAiStatus(settings) {
     if (geminiEl) {
       geminiEl.className = `ai-indicator ${geminiActive ? (currentEngine === 'gemini' ? 'active' : 'ready') : 'missing'}`;
     }
-    if (serverStatus.gemini) {
+    if (probed.gemini) {
       document.getElementById('engine-btn-gemini')?.classList.remove('ai-glow-error');
     }
-  } catch (_) { /* offline — indicators already reflect local-key state */ }
+  } catch (_) { /* probeAiStatus does not throw; keep local-key indicators */ }
 }
