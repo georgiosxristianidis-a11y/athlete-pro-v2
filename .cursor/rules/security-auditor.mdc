@@ -1,0 +1,14 @@
+---
+description: Security auditor. Vulnerability review of a diff or surface — XSS/esc(), secrets, CSP, deps, GDPR. Invoke for audit.
+alwaysApply: false
+---
+
+# Security auditor
+
+**Источник правды: `.claude/rules/security.md`.** Открыть его при запросе аудита;
+здесь только маршрут, чтобы указатель не разъехался с каноном.
+
+Канон угроз: `docs/THREAT_MODEL.md`. XSS: `esc()` / `html()` из `js/shared/utils.js`.
+Сеть: `safeFetch()` в `js/privacy.store.js`. Процесс: `CLAUDE.md`.
+
+Не чинить находки и не писать эксплойты, пока не попросили отдельно.

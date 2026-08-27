@@ -29,9 +29,11 @@ const RULE_FILES = [
   'GEMINI.md',
   '.claude/rules/architecture.md',
   '.claude/rules/design.md',
+  '.claude/rules/security.md',
   '.cursor/rules/000-core.mdc',
   '.cursor/rules/architecture.mdc',
   '.cursor/rules/design.mdc',
+  '.cursor/rules/security-auditor.mdc',
 ];
 
 /** Extensions that make a backticked token a claim about a file in this repo. */
