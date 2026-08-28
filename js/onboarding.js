@@ -19,6 +19,7 @@ import { blockTicks } from './shared/block-ticks.js';
 import { esc } from './shared/utils.js';
 
 on('ob:quickStart', () => window._obQuickStart());
+on('ob:skipBack', () => window._obSkipBack());
 on('ob:prev', () => window._obPrev());
 on('ob:next', () => window._obNext());
 on('ob:finish', () => window._obFinish());
@@ -47,26 +48,112 @@ const SVG = {
 };
 
 const STEPS = 6;
-let _step = 1;
-let _data = {
-  goal: '',
-  exp: '',
+/** Local-only (`ap-` skips sync in db/settings.js). Incomplete PII stays on device. */
+export const ONBOARDING_DRAFT_KEY = 'ap-onboarding-draft';
+export const SKIP_PLACEHOLDERS = Object.freeze({
+  goal: 'hypertrophy',
+  exp: 'intermediate',
   sex: 'm',
-  dob: '',
-  height: '',
-  weight: '',
+  dob: '1995-01-01',
+  weight: '80',
+  height: '180',
   privacy: 'airgap',
-};
+});
+const DATA_KEYS = /** @type {const} */ ([
+  'goal',
+  'exp',
+  'sex',
+  'dob',
+  'height',
+  'weight',
+  'privacy',
+]);
+
+function blankOnboardingData() {
+  return {
+    goal: '',
+    exp: '',
+    sex: 'm',
+    dob: '',
+    height: '',
+    weight: '',
+    privacy: 'airgap',
+  };
+}
+
+let _step = 1;
+let _data = blankOnboardingData();
+let _skipConfirm = false;
 let _overlay = null;
+
+function isValidStep(n) {
+  return Number.isInteger(n) && n >= 1 && n <= STEPS;
+}
+
+function sanitizeData(raw) {
+  const out = blankOnboardingData();
+  if (!raw || typeof raw !== 'object') return out;
+  for (const k of DATA_KEYS) {
+    if (typeof raw[k] === 'string') out[k] = raw[k];
+  }
+  return out;
+}
+
+export function snapshotOnboarding() {
+  return { step: _step, data: { ..._data }, skipConfirm: _skipConfirm };
+}
+
+export async function persistOnboardingDraft() {
+  await DB.Settings.set(ONBOARDING_DRAFT_KEY, {
+    step: _step,
+    data: { ..._data },
+    skipConfirm: _skipConfirm,
+  });
+}
+
+export async function restoreOnboardingDraft() {
+  const draft = await DB.Settings.get(ONBOARDING_DRAFT_KEY, null);
+  if (!draft || typeof draft !== 'object' || !isValidStep(draft.step)) {
+    _step = 1;
+    _data = blankOnboardingData();
+    _skipConfirm = false;
+    return false;
+  }
+  _step = draft.step;
+  _data = sanitizeData(draft.data);
+  _skipConfirm = draft.skipConfirm === true;
+  return true;
+}
+
+export async function clearOnboardingDraft() {
+  await DB.Settings.set(ONBOARDING_DRAFT_KEY, null);
+}
+
+export async function commitOnboarding() {
+  await Promise.all([
+    DB.Settings.set('profile.goal', _data.goal),
+    DB.Settings.set(
+      'profile.experienceYears',
+      _data.exp === 'beginner' ? 0 : _data.exp === 'intermediate' ? 2 : 5
+    ),
+    DB.Settings.set('profile.sex', _data.sex),
+    DB.Settings.set('profile.dob', _data.dob),
+    DB.Metrics.save(Number(_data.weight), Number(_data.height)),
+    setPrivacyMode(_data.privacy),
+    setAiEnabled(_data.privacy !== 'airgap'),
+    DB.Settings.set('onboarding-complete', true),
+    clearOnboardingDraft(),
+  ]);
+}
 
 export async function needsOnboarding() {
   const done = await DB.Settings.get('onboarding-complete', false);
   return !done;
 }
 
-export function showOnboarding() {
+export async function showOnboarding() {
+  await restoreOnboardingDraft();
   return new Promise((resolve) => {
-    _step = 1;
     _overlay = document.createElement('div');
     _overlay.id = 'onboarding-overlay';
     _overlay.style.cssText = `
@@ -92,19 +179,24 @@ function _langToggle() {
 }
 
 function _render() {
+  if (!_overlay) return;
   _overlay.innerHTML = `
     <div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:var(--sp-4); padding-top:var(--sp-3); position:relative; z-index:1;">
       ${_langToggle()}
-      <!-- Progress Bar — общая шкала этапов (js/shared/block-ticks.js).
+      ${
+        _skipConfirm
+          ? ''
+          : `<!-- Progress Bar — общая шкала этапов (js/shared/block-ticks.js).
            Была набором inline-стилей; вынесена, чтобы свечение и заливка
            жили в одном месте с полосками блоков в логгере сетов. -->
       <div style="padding: 0 var(--sp-2);">
         ${blockTicks({ index: _step - 1, total: STEPS, variant: 'bar', label: t('ob.step') })}
-      </div>
+      </div>`
+      }
 
       <!-- Step Content -->
       <div style="padding: 0 var(--sp-2);">
-        ${_buildStep()}
+        ${_skipConfirm ? _stepSkipConfirm() : _buildStep()}
       </div>
     </div>
   `;
@@ -277,6 +369,52 @@ function _stepPrivacy() {
   `;
 }
 
+function _choiceLabel(prefix, key) {
+  if (!key) return '';
+  const translated = t(`${prefix}${key}`);
+  return translated === `${prefix}${key}` ? key : translated;
+}
+
+function _stepSkipConfirm() {
+  const privacyKey = _data.privacy === 'cloud' ? 'ob.privacy_cloud' : 'ob.privacy_airgap';
+  const rows = [
+    [t('ob.goal_title'), _choiceLabel('ob.', _data.goal)],
+    [t('ob.exp_title'), _choiceLabel('ob.', _data.exp)],
+    [t('ob.sex'), _data.sex === 'f' ? t('ob.female') : t('ob.male')],
+    [t('ob.dob'), _data.dob],
+    [t('ob.height'), _data.height],
+    [t('ob.weight'), _data.weight],
+    [t('ob.privacy_title'), t(privacyKey)],
+  ];
+  return `
+    <div class="animate-in">
+      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
+        ${esc(t('ob.skip_confirm_title'))}
+      </h1>
+      <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:var(--sp-4); line-height:1.5;">
+        ${esc(t('ob.skip_confirm_sub'))}
+      </p>
+      <div class="ob-skip-list">
+        ${rows
+          .map(
+            ([k, v]) => `
+          <div class="ob-skip-row">
+            <span class="ob-skip-k">${esc(k)}</span>
+            <span class="ob-skip-v">${esc(v)}</span>
+          </div>`
+          )
+          .join('')}
+      </div>
+      <button type="button" data-action="ob:finish" class="ob-skip-apply">
+        ${esc(t('ob.skip_confirm_apply'))}
+      </button>
+      <button type="button" data-action="ob:skipBack" class="ob-fast-skip-btn" style="width:100%; justify-content:center; margin-top:var(--sp-2);">
+        ${esc(t('ob.skip_confirm_back'))}
+      </button>
+    </div>
+  `;
+}
+
 function _stepReady() {
   return `
     <div class="animate-in" style="text-align:center">
@@ -345,17 +483,30 @@ window._obSetDob = (part, val) => {
   if (part === 'd') d = val;
   _data.dob = `${y}-${m}-${d}`;
   _render();
+  void persistOnboardingDraft();
 };
 
 window._obQuickStart = () => {
-  _data.goal = _data.goal || 'hypertrophy';
-  _data.exp = _data.exp || 'intermediate';
-  _data.sex = 'm';
-  _data.dob = '1995-01-01';
-  _data.weight = '80';
-  _data.height = '180';
-  _data.privacy = 'airgap';
-  window._obFinish();
+  _data = {
+    goal: _data.goal || SKIP_PLACEHOLDERS.goal,
+    exp: _data.exp || SKIP_PLACEHOLDERS.exp,
+    sex: SKIP_PLACEHOLDERS.sex,
+    dob: SKIP_PLACEHOLDERS.dob,
+    weight: SKIP_PLACEHOLDERS.weight,
+    height: SKIP_PLACEHOLDERS.height,
+    privacy: SKIP_PLACEHOLDERS.privacy,
+  };
+  _skipConfirm = true;
+  _render();
+  void persistOnboardingDraft();
+};
+
+window._obSkipBack = async () => {
+  _skipConfirm = false;
+  _data = blankOnboardingData();
+  _step = 1;
+  await clearOnboardingDraft();
+  _render();
 };
 
 window._obSelect = (key) => {
@@ -363,44 +514,38 @@ window._obSelect = (key) => {
   if (_step === 2) _data.exp = key;
   if (_step === 5 || _step === 99) _data.privacy = key;
   _render();
+  void persistOnboardingDraft();
 };
 
 window._obSetData = (patch) => {
   _data = { ..._data, ...patch };
   _render();
+  void persistOnboardingDraft();
 };
 
-window._obNext = () => {
+window._obNext = async () => {
   if (_step < STEPS) {
     _step++;
+    await persistOnboardingDraft();
     _render();
   }
 };
-window._obPrev = () => {
+window._obPrev = async () => {
   if (_step > 1) {
     _step--;
+    await persistOnboardingDraft();
     _render();
   }
 };
 
 window._obFinish = async () => {
-  await Promise.all([
-    DB.Settings.set('profile.goal', _data.goal),
-    DB.Settings.set(
-      'profile.experienceYears',
-      _data.exp === 'beginner' ? 0 : _data.exp === 'intermediate' ? 2 : 5
-    ),
-    DB.Settings.set('profile.sex', _data.sex),
-    DB.Settings.set('profile.dob', _data.dob),
-    DB.Metrics.save(Number(_data.weight), Number(_data.height)),
-    setPrivacyMode(_data.privacy),
-    setAiEnabled(_data.privacy !== 'airgap'),
-    DB.Settings.set('onboarding-complete', true),
-  ]);
+  await commitOnboarding();
+  if (!_overlay) return;
   _overlay.style.opacity = '0';
   setTimeout(() => {
     _overlay._resolve();
     _overlay.remove();
+    _overlay = null;
   }, 300);
 };
 
@@ -417,5 +562,10 @@ style.textContent = `
   .ob-lang-btn:first-child { border-radius: var(--r-s) 0 0 var(--r-s); }
   .ob-lang-btn:last-child { border-radius: 0 var(--r-s) var(--r-s) 0; margin-left: -1px; }
   .ob-lang-btn.active { background:var(--c-accent-bg); color:var(--c-accent); border-color:var(--c-accent); }
+  .ob-skip-list { display:flex; flex-direction:column; gap:var(--sp-1); margin:0 0 var(--sp-4); }
+  .ob-skip-row { display:flex; justify-content:space-between; align-items:baseline; gap:var(--sp-2); padding:var(--sp-2); background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-m); }
+  .ob-skip-k { font-size:var(--fs-2); font-weight:var(--fw-bold); color:var(--c-text-3); text-transform:uppercase; letter-spacing:0.1em; }
+  .ob-skip-v { font-size:var(--fs-3); font-weight:var(--fw-bold); color:var(--c-text-1); text-align:right; }
+  .ob-skip-apply { width:100%; height:56px; background:var(--c-accent); color:var(--c-text-inverse); border:none; border-radius:var(--r-m); font-size:var(--fs-3); font-weight:var(--fw-black); cursor:pointer; font-family:inherit; }
 `;
 document.head.appendChild(style);
