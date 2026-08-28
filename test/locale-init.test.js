@@ -104,5 +104,24 @@ describe('LAUNCH-5B tails leave the views', () => {
 
     const render = fs.readFileSync(path.join(ROOT, 'js', 'workout.view', 'render.js'), 'utf8');
     assert.equal(render.includes('No sessions yet'), false);
+    assert.equal(render.includes('Add Set'), false);
+    assert.equal(render.includes('Complete Session'), false);
+    assert.equal(render.includes('Swipe down to close'), false);
+
+    const profile = fs.readFileSync(path.join(ROOT, 'js', 'profile.js'), 'utf8');
+    assert.equal(profile.includes("t('profile.danger_zone')"), true);
+    assert.equal(profile.includes("t('profile.clear_all')"), true);
+    assert.equal(profile.includes("'Clear All Data'"), false);
+
+    const island = fs.readFileSync(path.join(ROOT, 'js', 'shared', 'dynamic-island.js'), 'utf8');
+    assert.equal(island.includes('title="Skip Exercise"'), false);
+    assert.equal(island.includes('title="Finish workout"'), false);
+    assert.equal(island.includes("t('island.skip_ex')"), true);
+
+    const onboarding = fs.readFileSync(path.join(ROOT, 'js', 'onboarding.js'), 'utf8');
+    assert.equal(/const ru = false/.test(onboarding), false);
+    assert.equal(onboarding.includes("What's your goal?"), false);
+    assert.equal(onboarding.includes('data-action="ob:setLang"'), true);
+    assert.equal(onboarding.includes('setLang'), true);
   });
 });

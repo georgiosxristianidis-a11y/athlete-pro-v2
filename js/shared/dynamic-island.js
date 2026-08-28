@@ -5,7 +5,7 @@ import { Timer } from '../timer.js';
 import { RestTimer } from '../rest-timer.js';
 import { PiP } from '../features/pip.js';
 import { haptic } from './utils.js';
-import { isRu } from '../locale.store.js';
+import { t } from '../locale.store.js';
 import { getPrivacyMode } from '../privacy.store.js';
 import { deriveDotState } from './sync-dot.js';
 import { on } from '../events.js';
@@ -24,11 +24,26 @@ function activeProfile() {
 // app column) — _focusNext() was its last live trigger, reproduced in the
 // field 2026-07-08 via this button. Scroll-jump to the next open exercise
 // instead: same intent, no overlay.
-on('island:skipExercise', (el, e) => { e.stopPropagation(); window.Workout?.jumpToNextExercise?.(); });
-on('island:addRest',      (el, e) => { e.stopPropagation(); RestTimer?.addTime(+el.dataset.amt); });
-on('island:pip',          (el, e) => { e.stopPropagation(); window.DynamicIsland?.triggerPiP(); });
-on('island:skipRest',     (el, e) => { e.stopPropagation(); RestTimer?.tapSkip(); });
-on('island:finish',        (el, e) => { e.stopPropagation(); DynamicIsland?._tapFinish(); });
+on('island:skipExercise', (el, e) => {
+  e.stopPropagation();
+  window.Workout?.jumpToNextExercise?.();
+});
+on('island:addRest', (el, e) => {
+  e.stopPropagation();
+  RestTimer?.addTime(+el.dataset.amt);
+});
+on('island:pip', (el, e) => {
+  e.stopPropagation();
+  window.DynamicIsland?.triggerPiP();
+});
+on('island:skipRest', (el, e) => {
+  e.stopPropagation();
+  RestTimer?.tapSkip();
+});
+on('island:finish', (el, e) => {
+  e.stopPropagation();
+  DynamicIsland?._tapFinish();
+});
 
 /**
  * dynamic-island.js — Interactive session overlay (PIP)
@@ -78,12 +93,38 @@ export const DynamicIsland = (() => {
   let _timerProg = null;
   let _restNextEl = null;
 
+  function _applyIslandLocale() {
+    const skip = _island?.querySelector('[data-action="island:skipExercise"]');
+    if (skip) skip.setAttribute('title', t('island.skip_ex'));
+    const plus30 = _island?.querySelector('.island-action-btn.plus');
+    if (plus30) plus30.setAttribute('title', t('island.add_rest_30'));
+    const pip = _island?.querySelector('[data-action="island:pip"]');
+    if (pip) pip.setAttribute('title', t('island.pip'));
+    const restPlus = document.getElementById('di-rest-plus');
+    if (restPlus) {
+      restPlus.setAttribute('title', t('island.add_rest_15'));
+      restPlus.setAttribute('aria-label', t('island.add_rest_15'));
+    }
+    const restSkip = document.getElementById('di-rest-skip');
+    if (restSkip) {
+      restSkip.setAttribute('title', t('island.skip_rest'));
+      restSkip.setAttribute('aria-label', t('island.skip_rest'));
+    }
+    const finish = document.getElementById('di-finish-btn');
+    if (finish) {
+      finish.setAttribute('title', t('island.finish'));
+      finish.setAttribute('aria-label', t('island.finish'));
+    }
+    const finishLbl = document.getElementById('di-finish-label');
+    if (finishLbl && !_finishArmed) finishLbl.textContent = t('island.finish_lbl');
+  }
+
   function init() {
     if (document.getElementById('dynamic-island')) return;
 
     _container = document.getElementById('status-island-container');
     if (!_container) return;
-    
+
     _container.innerHTML = `
       <div class="island" id="dynamic-island" role="status" aria-live="polite" style="pointer-events: auto;">
         <div class="island-dot" id="di-dot"></div>
@@ -114,22 +155,22 @@ export const DynamicIsland = (() => {
           <div class="island-status-line">
             <span class="island-sets-badge" id="di-sets">0/0</span>
             <span class="island-live" id="di-live" aria-hidden="true"></span>
-            <span class="island-ex-name" id="di-name">Exercise</span>
+            <span class="island-ex-name" id="di-name">${t('island.ex')}</span>
           </div>
           <!-- DHL 4-chamber journey tracker (Cool Steel) -->
           <div class="island-tracker" id="di-tracker"></div>
 
-          <div class="island-sublabel" id="di-sublabel">Week 1 · PUSH · next: Bench</div>
+          <div class="island-sublabel" id="di-sublabel"></div>
 
           <div class="island-actions">
-            <button class="island-action-btn skip" title="Skip Exercise" data-action="island:skipExercise">
+            <button class="island-action-btn skip" title="${t('island.skip_ex')}" data-action="island:skipExercise">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
             </button>
-            <button class="island-action-btn plus" title="+30s Rest" data-action="island:addRest" data-amt="30">
+            <button class="island-action-btn plus" title="${t('island.add_rest_30')}" data-action="island:addRest" data-amt="30">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>30s</span>
             </button>
-            <button class="island-action-btn" title="Picture in Picture" data-action="island:pip" style="margin-left:auto">
+            <button class="island-action-btn" title="${t('island.pip')}" data-action="island:pip" style="margin-left:auto">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1"/></svg>
               <span>PiP</span>
             </button>
@@ -142,10 +183,10 @@ export const DynamicIsland = (() => {
         <div class="island-rest" id="di-rest">
           <span class="island-rest-next" id="di-rest-next"></span>
           <div class="island-rest-actions">
-            <button class="island-rest-btn" id="di-rest-plus" title="+15s Rest" aria-label="Add 15 seconds" data-action="island:addRest" data-amt="15">
+            <button class="island-rest-btn" id="di-rest-plus" title="${t('island.add_rest_15')}" aria-label="${t('island.add_rest_15')}" data-action="island:addRest" data-amt="15">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
-            <button class="island-rest-btn primary" id="di-rest-skip" title="Skip rest" aria-label="Skip rest" data-action="island:skipRest">
+            <button class="island-rest-btn primary" id="di-rest-skip" title="${t('island.skip_rest')}" aria-label="${t('island.skip_rest')}" data-action="island:skipRest">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
             </button>
           </div>
@@ -156,9 +197,9 @@ export const DynamicIsland = (() => {
              Finish button replaces the meaningless rest controls. One tap arms
              (darkens + "Confirm?"); a second tap within 3s runs completeSession. -->
         <div class="island-finish" id="di-finish">
-          <button class="island-finish-btn" id="di-finish-btn" data-action="island:finish" title="Finish workout" aria-label="Finish workout">
+          <button class="island-finish-btn" id="di-finish-btn" data-action="island:finish" title="${t('island.finish')}" aria-label="${t('island.finish')}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
-            <span id="di-finish-label">Finish</span>
+            <span id="di-finish-label">${t('island.finish_lbl')}</span>
           </button>
         </div>
 
@@ -192,13 +233,15 @@ export const DynamicIsland = (() => {
       _trackerEl.addEventListener('chamber-jump', (e) => {
         const idx = e.detail?.idx;
         if (idx == null) return;
-        document.querySelectorAll('.workout-block-header')[idx]
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const headers = document.querySelectorAll('.workout-block-header');
+        headers[idx]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
     }
     _progressFill = document.getElementById('di-progress-fill');
     _timerProg = document.getElementById('di-timer-progress');
     _restNextEl = document.getElementById('di-rest-next');
+
+    _applyIslandLocale();
 
     // Long-press events (no drag)
     _island?.addEventListener('pointerdown', _onPointerDown);
@@ -230,13 +273,16 @@ export const DynamicIsland = (() => {
     // guard on the string so those are ignored.
     window.addEventListener('ap-sync-status', (e) => {
       const s = e && e.detail && e.detail.status;
-      if (typeof s === 'string') { _syncStatus = s; _updateNetworkStatus(); }
+      if (typeof s === 'string') {
+        _syncStatus = s;
+        _updateNetworkStatus();
+      }
     });
     window.addEventListener('ap-privacy-mode', _updateNetworkStatus);
 
     // Initialize PiP canvas
     PiP.init();
-    
+
     // Initial render (will show idle state if no workout)
     update();
   }
@@ -259,6 +305,7 @@ export const DynamicIsland = (() => {
 
   function update() {
     if (!_island) return;
+    _applyIslandLocale();
 
     // ISL-PROFILE: tag the pill with the active layout profile so CSS can swap
     // the collapsed content (Minimal-DHL strip ↔ Apple name·sets readout).
@@ -271,7 +318,7 @@ export const DynamicIsland = (() => {
       _expanded = false;
       _island?.classList.remove('timer-mode', 'expanded', 'rest-has-next');
       _island?.classList.add('mode-idle');
-      
+
       document.getElementById('status-bar')?.classList.remove('workout-active');
 
       // Idle dot reflects the real privacy/sync state (deriveDotState) — the old
@@ -296,12 +343,11 @@ export const DynamicIsland = (() => {
     _island?.classList.remove('mode-idle');
     document.getElementById('status-bar')?.classList.add('workout-active');
 
-    const ru = isRu();
-
     // Sets Progress
-    let done = 0, total = 0;
-    State.plan.forEach(ex => {
-      ex.sets.forEach(s => {
+    let done = 0,
+      total = 0;
+    State.plan.forEach((ex) => {
+      ex.sets.forEach((s) => {
         total++;
         if (s.done) done++;
       });
@@ -316,14 +362,14 @@ export const DynamicIsland = (() => {
 
     // Time
     // Current Exercise
-    let activeIdx = State.plan.findIndex(ex => ex.sets.some(s => !s.done));
+    let activeIdx = State.plan.findIndex((ex) => ex.sets.some((s) => !s.done));
     if (activeIdx === -1) activeIdx = State.plan.length - 1;
     const currentEx = State.plan[activeIdx];
     if (_nameEl) _nameEl.textContent = islandLabel(currentEx);
 
     // Per-exercise set progress — what the lifter tracks (e.g. 3/3), not the
     // whole-session count. The overall session % stays on the bottom progress bar.
-    const exDone = currentEx ? currentEx.sets.filter(s => s.done).length : 0;
+    const exDone = currentEx ? currentEx.sets.filter((s) => s.done).length : 0;
     const exTotal = currentEx ? currentEx.sets.length : 0;
     const setsLabel = exTotal ? `${exDone}/${exTotal}` : '';
 
@@ -352,7 +398,7 @@ export const DynamicIsland = (() => {
     // header underneath (field feedback 2026-07-08: info overload in the
     // expanded island); the screen owns context, the island owns "what's next".
     const nextEx = State.plan[activeIdx + 1];
-    const status = nextEx ? `${ru ? 'далее' : 'next'}: ${islandLabel(nextEx)}` : (ru ? 'готово!' : 'complete!');
+    const status = nextEx ? t('island.next', { name: islandLabel(nextEx) }) : t('island.complete');
     _statusText = status;
     if (_sublabelEl) {
       // say() временно перебивает «далее: X» — иначе любой update() затирал бы
@@ -431,7 +477,7 @@ export const DynamicIsland = (() => {
         time: Timer.fmt(Timer.seconds()),
         name: currentEx ? islandLabel(currentEx) : 'Workout',
         sets: setsLabel,
-        nextName: islandLabel(nextEx)
+        nextName: islandLabel(nextEx),
       });
     }
   }
@@ -440,10 +486,10 @@ export const DynamicIsland = (() => {
   function _renderExpandedDuringRest() {
     if (!_island || !_expanded || !State.plan?.length) return;
 
-    let activeIdx = State.plan.findIndex(ex => ex.sets.some(s => !s.done));
+    let activeIdx = State.plan.findIndex((ex) => ex.sets.some((s) => !s.done));
     if (activeIdx === -1) activeIdx = State.plan.length - 1;
     const currentEx = State.plan[activeIdx];
-    const exDone = currentEx ? currentEx.sets.filter(s => s.done).length : 0;
+    const exDone = currentEx ? currentEx.sets.filter((s) => s.done).length : 0;
     const exTotal = currentEx ? currentEx.sets.length : 0;
     const setsLabel = exTotal ? `${exDone}/${exTotal}` : '';
 
@@ -481,7 +527,7 @@ export const DynamicIsland = (() => {
     const starting = !_timerActive;
     // Re-arm the bar whenever the timeline isn't a clean 1s tick:
     // +time was pressed, or a background catch-up jump after the tab was hidden.
-    const jump = _timerActive && (_timerSecs - secs) !== 1;
+    const jump = _timerActive && _timerSecs - secs !== 1;
     _timerActive = true;
     if (starting) {
       _expanded = false;
@@ -494,8 +540,8 @@ export const DynamicIsland = (() => {
     // one after its last set). Computed once per rest: sets can't change
     // mid-rest, and update() deliberately skips re-renders while _timerActive.
     if (starting && _restNextEl) {
-      const nx = State.plan?.find(ex => ex.sets.some(s => !s.done));
-      _restNextEl.textContent = nx ? `${isRu() ? 'далее' : 'next'}: ${islandLabel(nx)}` : '';
+      const nx = State.plan?.find((ex) => ex.sets.some((s) => !s.done));
+      _restNextEl.textContent = nx ? t('island.next', { name: islandLabel(nx) }) : '';
       // Only a pill that actually carries the caption gets the wide layout.
       _island?.classList.toggle('rest-has-next', !!nx);
     }
@@ -523,7 +569,7 @@ export const DynamicIsland = (() => {
     const startFrac = max > 0 ? Math.min(1, remaining / max) : 0;
     _timerProg.style.transition = 'none';
     _timerProg.style.transform = `scaleX(${startFrac})`;
-    void _timerProg.offsetWidth;                          // commit the snap before animating
+    void _timerProg.offsetWidth; // commit the snap before animating
     _timerProg.style.transition = `transform ${Math.max(0.1, remaining)}s linear`;
     _timerProg.style.transform = 'scaleX(0)';
   }
@@ -536,7 +582,7 @@ export const DynamicIsland = (() => {
       _timerProg.style.transform = 'scaleX(0)';
       _timerProg.classList.remove('warning', 'done');
     }
-    update();   // refresh the session readouts now that the rest HUD is gone
+    update(); // refresh the session readouts now that the rest HUD is gone
   }
 
   function pulseSetComplete() {
@@ -581,7 +627,7 @@ export const DynamicIsland = (() => {
       haptic(20);
       _island?.classList.add('finish-armed');
       const lbl = document.getElementById('di-finish-label');
-      if (lbl) lbl.textContent = isRu() ? 'Ещё раз' : 'Confirm?';
+      if (lbl) lbl.textContent = t('island.confirm');
       clearTimeout(_finishTimer);
       _finishTimer = setTimeout(_disarmFinish, 3000);
       return;
@@ -597,7 +643,7 @@ export const DynamicIsland = (() => {
     _finishArmed = false;
     _island?.classList.remove('finish-armed');
     const lbl = document.getElementById('di-finish-label');
-    if (lbl) lbl.textContent = isRu() ? 'Финиш' : 'Finish';
+    if (lbl) lbl.textContent = t('island.finish_lbl');
   }
 
   function toggleExpand() {
@@ -662,7 +708,21 @@ export const DynamicIsland = (() => {
     if (_sublabelEl) _sublabelEl.textContent = _sayText || _statusText;
   }
 
-  return { init, show, hide, update, setRestProgress, stopTimer, pulseSetComplete, toggleExpand, triggerPiP, showFinishReady, clearFinishReady, say, _tapFinish };
+  return {
+    init,
+    show,
+    hide,
+    update,
+    setRestProgress,
+    stopTimer,
+    pulseSetComplete,
+    toggleExpand,
+    triggerPiP,
+    showFinishReady,
+    clearFinishReady,
+    say,
+    _tapFinish,
+  };
 })();
 
 window.DynamicIsland = DynamicIsland;

@@ -70,9 +70,7 @@ function _exRow(ex, pplColor) {
     ? `<svg class="summ-ex-check" viewBox="0 0 16 16" fill="none" stroke="${pplColor}" stroke-width="2.5" stroke-linecap="round" width="12" height="12"><polyline points="13 4 6 11 3 8"/></svg>`
     : `<span class="summ-ex-partial">${ex.doneSets}/${ex.totalSets}</span>`;
 
-  const uiOnlyTag = ex.noDb
-    ? `<span class="summ-ex-ui-tag">UI</span>`
-    : '';
+  const uiOnlyTag = ex.noDb ? `<span class="summ-ex-ui-tag">UI</span>` : '';
 
   return `
     <div class="summ-ex-row${complete ? ' summ-ex-done' : ''}">
@@ -109,11 +107,11 @@ function _blockIsland(block, pplColor, staggerIdx, blockCount) {
     color: pplColor,
     mode: 'completed',
     time: block.durationStr ?? undefined,
-    tonnage: (!isCore && block.tonnage) ? _fmtTon(block.tonnage) : undefined,
+    tonnage: !isCore && block.tonnage ? _fmtTon(block.tonnage) : undefined,
     ticks,
   });
 
-  const exRows = (block.exercises || []).map(ex => _exRow(ex, pplColor)).join('');
+  const exRows = (block.exercises || []).map((ex) => _exRow(ex, pplColor)).join('');
 
   return `
     <div class="summ-island stagger-item" style="--stagger-i:${staggerIdx}; --ppl-color:${pplColor}">
@@ -130,11 +128,15 @@ function _blockIsland(block, pplColor, staggerIdx, blockCount) {
 function _prSection(prs) {
   if (!prs || prs.length === 0) return '';
 
-  const prRows = prs.map(pr => `
+  const prRows = prs
+    .map(
+      (pr) => `
     <div class="summ-pr-row">
       <span class="summ-pr-name">${esc(pr.name)}</span>
       <span class="summ-pr-val">${pr.weight} kg × ${pr.reps}</span>
-    </div>`).join('');
+    </div>`
+    )
+    .join('');
 
   return `
     <div class="summ-pr-section stagger-item" style="--stagger-i:${99}">
@@ -205,9 +207,8 @@ function _ledgerSection(data) {
  */
 function _rpeSection() {
   const chips = [];
-  for (let i = 1; i <= 10; i++) chips.push(
-    `<button class="summ-rpe-chip" data-rpe="${i}" type="button">${i}</button>`
-  );
+  for (let i = 1; i <= 10; i++)
+    chips.push(`<button class="summ-rpe-chip" data-rpe="${i}" type="button">${i}</button>`);
   return `
     <div class="summ-rpe-strip">
       <div class="summ-rpe-label">RPE</div>
@@ -246,25 +247,24 @@ function _wireRpeChips(container, data) {
  *
  * @param {object}   data        — summaryData (see contract above)
  * @param {Function} onSave      — async callback called when user taps Save
- * @param {boolean}  [ru=false]  — Russian locale flag
  * @returns {HTMLElement}        — the overlay element (already appended to body)
  */
-export function renderSummaryModal(data, onSave, ru = false) {
+export function renderSummaryModal(data, onSave) {
   const pplColor = PPL_COLOR[data.type] || 'var(--c-accent)';
 
   const statsGrid = `
     <div class="summ-stats-grid">
       <div class="summ-stat">
         <div class="summ-stat-val">${esc(data.timeStr || '—')}</div>
-        <div class="summ-stat-lbl">${ru ? 'ВРЕМЯ' : 'TIME'}</div>
+        <div class="summ-stat-lbl">${esc(t('summ.time'))}</div>
       </div>
       <div class="summ-stat">
         <div class="summ-stat-val">${_fmtTon(data.totalTonnage)}</div>
-        <div class="summ-stat-lbl">${ru ? 'ОБЪЁМ' : 'VOLUME'}</div>
+        <div class="summ-stat-lbl">${esc(t('summ.volume'))}</div>
       </div>
       <div class="summ-stat">
         <div class="summ-stat-val">${data.totalReps ?? '—'}</div>
-        <div class="summ-stat-lbl">${ru ? 'ПОВТОРЫ' : 'REPS'}</div>
+        <div class="summ-stat-lbl">${esc(t('summ.reps'))}</div>
       </div>
     </div>`;
 
@@ -280,7 +280,8 @@ export function renderSummaryModal(data, onSave, ru = false) {
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay animate-in';
-  overlay.style.cssText = 'z-index:6000; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px)';
+  overlay.style.cssText =
+    'z-index:6000; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px)';
 
   overlay.innerHTML = `
     <div class="modal-sheet summ-sheet" style="max-width:440px; margin:auto">
@@ -294,8 +295,8 @@ export function renderSummaryModal(data, onSave, ru = false) {
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
           </svg>
         </div>
-        <div class="summ-title">${ru ? 'ТРЕНИРОВКА' : 'WORKOUT'} <span style="color:${pplColor}">${data.type.toUpperCase()}</span></div>
-        <div class="summ-subtitle" style="color:${pplColor}">${ru ? 'ЗАВЕРШЕНА' : 'COMPLETE'}</div>
+        <div class="summ-title">${esc(t('summ.workout'))} <span style="color:${pplColor}">${esc(String(data.type).toUpperCase())}</span></div>
+        <div class="summ-subtitle" style="color:${pplColor}">${esc(t('summ.complete'))}</div>
       </div>
 
       ${statsGrid}
@@ -310,10 +311,10 @@ export function renderSummaryModal(data, onSave, ru = false) {
 
       <div class="summ-actions">
         <button class="btn btn-primary summ-save-btn" id="btn-summ-save" style="--btn-accent:${pplColor}">
-          ${ru ? 'СОХРАНИТЬ' : 'SAVE SESSION'}
+          ${esc(t('summ.save'))}
         </button>
         <button class="btn btn-ghost" id="btn-summ-back">
-          ${ru ? 'НАЗАД' : 'BACK'}
+          ${esc(t('summ.back'))}
         </button>
       </div>
     </div>`;
