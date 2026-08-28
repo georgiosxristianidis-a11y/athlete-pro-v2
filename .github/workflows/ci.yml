@@ -102,15 +102,19 @@ jobs:
           # `playwright-1.60.0` пережил бамп до 1.62.1, кеш дал hit со старыми
           # браузерами, установка пропустилась — и все 42 теста упали на
           # «Executable doesn't exist … chromium_headless_shell-1234».
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          # Suffix names the browsers in the cache. Without it a chromium-only
+          # hit skips `playwright install`, and the new webkit project fails
+          # with "Executable doesn't exist" — the same mine as the pinned
+          # `playwright-1.60.0` key above.
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}-chromium-webkit
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Install Playwright OS dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+        run: npx playwright install-deps chromium webkit
 
       - name: E2E tests
         run: npx playwright test --retries=2

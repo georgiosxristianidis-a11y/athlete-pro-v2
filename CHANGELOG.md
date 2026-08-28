@@ -9,11 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### LAUNCH-4 — счётчик (этот PR)
+### LAUNCH-7 — WebKit (этот PR)
 
-Флаг `usage-stats` включён: на проде `/_vercel/insights/script.js` уже 200.
-Скрипт по-прежнему только за пятью воротами (`usage.js`), не безусловным тегом.
-PR #243 не вливаем — он обходил ворота. Тексты LAUNCH-3 переведены в настоящее время.
+Проект `webkit` (iPhone 13) рядом с `chromium` (Pixel 7), не вместо.
+CI ставит оба браузера; ключ кеша с суффиксом, чтобы старый chromium-only hit
+не пропускал установку. `PiP.init` больше не падает на буте без `captureStream`.
+Живой iPhone — Gio (эмулятор не закрывает карточку).
+
+### LAUNCH-4 — счётчик (PR #274, 3722ba2)
+
+Флаг `usage-stats` ON: на проде `/_vercel/insights/script.js` уже 200.
+Скрипт только за воротами `usage.js`. PR #243 не влит.
 
 ### LAUNCH-9 — F-6 и F-9 (PR #273, 440c302)
 

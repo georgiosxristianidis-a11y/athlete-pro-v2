@@ -28,18 +28,26 @@ export const PiP = (() => {
     _canvas.height = 256;
     _ctx = _canvas.getContext('2d');
 
+    // Video-element PiP needs a MediaStream from the canvas. Playwright
+    // WebKit (and some Safari builds) have no captureStream — calling it
+    // throws on boot because Dynamic Island always inits PiP. Document PiP
+    // still runs first in requestPiP when the engine has it.
+    if (typeof _canvas.captureStream !== 'function') {
+      _video = null;
+      return;
+    }
+
     _video = document.createElement('video');
     _video.muted = true;
     _video.playsInline = true;
     _video.style.display = 'none';
 
-    // @ts-ignore
     const stream = _canvas.captureStream(5); // 5 FPS for smoother HR wave
     _video.srcObject = stream;
 
     document.body.appendChild(_canvas);
     _canvas.style.position = 'fixed';
-    _canvas.style.left = '-1000px'; 
+    _canvas.style.left = '-1000px';
     document.body.appendChild(_video);
 
     _video.play().catch(() => {});
