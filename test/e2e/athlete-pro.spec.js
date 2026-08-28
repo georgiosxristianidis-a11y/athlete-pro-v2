@@ -19,23 +19,27 @@ import { test, expect } from '@playwright/test';
 async function bypassOnboarding(page) {
   await page.addInitScript(() => {
     const origOpen = window.indexedDB.open.bind(window.indexedDB);
-    window.indexedDB.open = function(name, version) {
+    window.indexedDB.open = function (name, version) {
       const req = origOpen(name, version);
       let appOnSuccess = null;
 
       Object.defineProperty(req, 'onsuccess', {
-        get() { return appOnSuccess; },
-        set(val) { appOnSuccess = val; },
-        configurable: true
+        get() {
+          return appOnSuccess;
+        },
+        set(val) {
+          appOnSuccess = val;
+        },
+        configurable: true,
       });
 
       req.addEventListener('success', (e) => {
         const db = req.result;
         if (db.objectStoreNames.contains('settings')) {
           const transaction = db.transaction('settings', 'readwrite');
-            transaction.objectStore('settings').put({ key: 'onboarding-complete', value: true });
-            transaction.objectStore('settings').put({ key: 'privacy.mode', value: 'cloud' });
-            transaction.objectStore('settings').put({ key: 'privacy.aiEnabled', value: true });
+          transaction.objectStore('settings').put({ key: 'onboarding-complete', value: true });
+          transaction.objectStore('settings').put({ key: 'privacy.mode', value: 'cloud' });
+          transaction.objectStore('settings').put({ key: 'privacy.aiEnabled', value: true });
           transaction.oncomplete = () => {
             if (appOnSuccess) appOnSuccess.call(req, e);
           };
@@ -73,12 +77,12 @@ async function waitForBoot(page) {
   );
 }
 
-/** Fallback helper: if the wizard still appears, exit via the quick-start path */
+/** Fallback helper: if the wizard still appears, exit via Fast Skip + confirm */
 async function skipOnboarding(page) {
   const overlay = page.locator('#onboarding-overlay');
-  if (await overlay.count() > 0 && await overlay.isVisible()) {
+  if ((await overlay.count()) > 0 && (await overlay.isVisible())) {
     await page.locator('.ob-fast-skip-btn').click({ timeout: 3000 });
-    await page.locator('#ob-finish-btn').click({ timeout: 3000 });
+    await page.locator('.ob-skip-apply').click({ timeout: 3000 });
     await expect(overlay).not.toBeAttached({ timeout: 4000 });
   }
 }
@@ -97,9 +101,15 @@ test.describe('Onboarding Flow (Real)', () => {
     // Step 1: goal cards are interactive
     await page.locator('.ob-card[data-key="strength"]').click();
 
-    // FS card: Fast Skip is one-tap — completes onboarding directly,
-    // no quick-confirm step anymore
+    // F-9: Fast Skip must show placeholders and wait for confirm — not finish silently
     await page.locator('.ob-fast-skip-btn').click();
+    await expect(overlay).toBeVisible();
+    await expect(page.locator('.ob-skip-apply')).toBeVisible();
+    await expect(page.locator('.ob-skip-list')).toContainText('1995-01-01');
+    await expect(page.locator('.ob-skip-list')).toContainText('80');
+    await expect(page.locator('.ob-skip-list')).toContainText('180');
+
+    await page.locator('.ob-skip-apply').click();
 
     // Onboarding should close and land on dashboard
     await expect(overlay).not.toBeAttached({ timeout: 5000 });
@@ -111,14 +121,16 @@ test.describe('Onboarding Flow (Real)', () => {
 
 test.describe('App with Onboarding Bypassed', () => {
   test.beforeEach(async ({ page }) => {
-    page.on('console', msg => {
+    page.on('console', (msg) => {
       console.log(`[BROWSER CONSOLE] ${msg.type()}: ${msg.text()}`);
     });
-    page.on('pageerror', err => {
+    page.on('pageerror', (err) => {
       console.error(`[BROWSER UNCAUGHT ERROR] ${err.stack || err.message}`);
     });
-    page.on('requestfailed', request => {
-      console.error(`[BROWSER REQUEST FAILED] ${request.url()} - ${request.failure()?.errorText || 'unknown error'}`);
+    page.on('requestfailed', (request) => {
+      console.error(
+        `[BROWSER REQUEST FAILED] ${request.url()} - ${request.failure()?.errorText || 'unknown error'}`
+      );
     });
     await bypassOnboarding(page);
   });
@@ -137,7 +149,7 @@ test.describe('App with Onboarding Bypassed', () => {
       // Check style block contains 100dvh
       const hasDvh = await page.evaluate(() => {
         const styles = Array.from(document.querySelectorAll('style'));
-        return styles.some(s => s.textContent.includes('100dvh'));
+        return styles.some((s) => s.textContent.includes('100dvh'));
       });
       expect(hasDvh).toBe(true);
     });
@@ -172,9 +184,11 @@ test.describe('App with Onboarding Bypassed', () => {
     test('page has no critical JS errors on boot', async ({ page }) => {
       const errors = [];
       page.on('pageerror', (err) => {
-        if (!err.message.includes('vibrate') &&
-            !err.message.includes('Intervention') &&
-            !err.message.includes('ServiceWorker')) {
+        if (
+          !err.message.includes('vibrate') &&
+          !err.message.includes('Intervention') &&
+          !err.message.includes('ServiceWorker')
+        ) {
           errors.push(err.message);
         }
       });
@@ -341,10 +355,9 @@ test.describe('App with Onboarding Bypassed', () => {
       // Intel content renders async (API-key check hits /api/ai-status), so the
       // screen gains the active class before its markup lands — poll the length
       // instead of reading innerHTML once and racing the network round-trip.
-      await expect.poll(
-        async () => (await page.locator('#s-intel').innerHTML()).length,
-        { timeout: 10000 }
-      ).toBeGreaterThan(100);
+      await expect
+        .poll(async () => (await page.locator('#s-intel').innerHTML()).length, { timeout: 10000 })
+        .toBeGreaterThan(100);
     });
 
     test('FAB is hidden while on Intel screen', async ({ page }) => {
