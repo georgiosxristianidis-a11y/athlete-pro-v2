@@ -512,7 +512,7 @@ async function _persistFinalSession(summaryData, duration) {
   // Log event
   await DB.Events.log('workout_complete', { type: State.type, tonnage: summaryData.totalTonnage });
 
-  // Счётчик установок (флаг 'usage-stats', OFF) — только тип сплита, без
+  // Счётчик установок (флаг 'usage-stats', ON) — только тип сплита, без
   // тоннажа и упражнений. Не в await: сохранение сессии не ждёт статистику.
   import('../usage.js')
     .then(({ trackUsage }) => trackUsage('workout_completed', { type: State.type }))

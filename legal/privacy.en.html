@@ -225,9 +225,9 @@
 
       <h2>4.3. Usage counter (Vercel Web Analytics)</h2>
       <p>
-        The counter sits behind the <code>usage-stats</code> flag, which is off by default: the
-        script is not loaded and no events are sent. If the flag is ever turned on, only three event
-        names leave the device: <code>app_open</code> (app version and privacy mode),
+        The counter sits behind the <code>usage-stats</code> flag, which is on. The script loads
+        only when the remaining gates are open. Only three event names leave the device:
+        <code>app_open</code> (app version and privacy mode),
         <code>workout_completed</code> (workout type), <code>coach_message</code> (empty payload —
         the fact of a question, not the text). In airgap the payload is stripped entirely. Never
         sent: coach message text, exercise names, weights, tonnage, device id, keys.

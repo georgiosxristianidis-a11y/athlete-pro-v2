@@ -404,7 +404,7 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
   if (_streaming) return;
   _streaming = true;
 
-  // Счётчик установок (флаг 'usage-stats', OFF) — факт вопроса, без единого
+  // Счётчик установок (флаг 'usage-stats', ON) — факт вопроса, без единого
   // байта самого вопроса. Выше приватного гейта: локальный ответ Insights
   // для пользователя тоже «спросил коуча». message===null — это автозагрузка
   // первой карточки, не вопрос, и в счёт не идёт.
