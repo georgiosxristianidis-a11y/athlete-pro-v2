@@ -11,10 +11,14 @@ import { Toast } from '../shell.js';
 import { esc } from '../shared/utils.js';
 import {
   State,
-  loadPlan, savePlan,
-  buildSession, persistSession,
-  getWeekMode, loadCoreChecklist,
-  getExerciseLibrary, resolveMuscleGroup,
+  loadPlan,
+  savePlan,
+  buildSession,
+  persistSession,
+  getWeekMode,
+  loadCoreChecklist,
+  getExerciseLibrary,
+  resolveMuscleGroup,
 } from '../workout.store.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
@@ -24,30 +28,44 @@ import { blockTicks, blockOrder } from '../shared/block-ticks.js';
 import { blockLabel } from '../shared/chamber-pill.js';
 import { on } from '../events.js';
 import { pplColor, isPplType, PPL_TYPES } from '../shared/ppl-color.js';
+import { t, isRu } from '../locale.store.js';
+
+function sessionTypeLabel(type) {
+  if (type === 'push' || type === 'pull' || type === 'legs') {
+    return t(`journal.filter_${type}`);
+  }
+  return t('journal.training');
+}
 
 /** PPL-цвет сессии — семантика типа тренировки, не декор. */
 const PPL_VAR = { push: 'var(--c-push)', pull: 'var(--c-pull)', legs: 'var(--c-legs)' };
 
 const W = () => window.Workout;
-on('wo:noop',          (el, e) => e.stopPropagation());
-on('wo:toggleCore',    (el) => W()._toggleCoreItem(el.dataset.day, +el.dataset.i));
-on('wo:removeCore',    (el, e) => { e.stopPropagation(); W()._removeCoreItem(el.dataset.day, +el.dataset.i); });
-on('wo:addCore',       (el) => W()._addCoreItem(el.dataset.day));
-on('wo:toggleWeek',    () => W()._toggleWeek());
-on('wo:selectType',    (el) => W().selectType(el.dataset.type));
-on('wo:openPlanEditor',() => W().openPlanEditor());
-on('wo:addLiveEx',     () => W()._addLiveExercise());
-on('wo:complete',      () => W().completeSession());
-on('wo:cancel',        () => W().cancelSession());
-on('wo:toggleCard',    (el) => W().toggleCard(+el.dataset.ei));
-on('wo:smartCoach',    (el) => W().smartCoach(+el.dataset.ei, +el.dataset.si));
-on('wo:exMenu',        (el) => W().showExerciseMenu(+el.dataset.ei));
-on('wo:addSet',        (el) => W().addSet(+el.dataset.ei));
-on('wo:toggleBW',      (el, e) => { e.stopPropagation(); W()._toggleBW(+el.dataset.ei); });
-on('wo:toggleSet',     (el) => W().toggleSet(+el.dataset.ei, +el.dataset.si));
-on('wo:closeFocus',    () => W()._closeFocus());
-on('wo:focusStepW',    (el) => W()._focusStepW(+el.dataset.amt));
-on('wo:focusStepR',    (el) => W()._focusStepR(+el.dataset.amt));
+on('wo:noop', (el, e) => e.stopPropagation());
+on('wo:toggleCore', (el) => W()._toggleCoreItem(el.dataset.day, +el.dataset.i));
+on('wo:removeCore', (el, e) => {
+  e.stopPropagation();
+  W()._removeCoreItem(el.dataset.day, +el.dataset.i);
+});
+on('wo:addCore', (el) => W()._addCoreItem(el.dataset.day));
+on('wo:toggleWeek', () => W()._toggleWeek());
+on('wo:selectType', (el) => W().selectType(el.dataset.type));
+on('wo:openPlanEditor', () => W().openPlanEditor());
+on('wo:addLiveEx', () => W()._addLiveExercise());
+on('wo:complete', () => W().completeSession());
+on('wo:cancel', () => W().cancelSession());
+on('wo:toggleCard', (el) => W().toggleCard(+el.dataset.ei));
+on('wo:smartCoach', (el) => W().smartCoach(+el.dataset.ei, +el.dataset.si));
+on('wo:exMenu', (el) => W().showExerciseMenu(+el.dataset.ei));
+on('wo:addSet', (el) => W().addSet(+el.dataset.ei));
+on('wo:toggleBW', (el, e) => {
+  e.stopPropagation();
+  W()._toggleBW(+el.dataset.ei);
+});
+on('wo:toggleSet', (el) => W().toggleSet(+el.dataset.ei, +el.dataset.si));
+on('wo:closeFocus', () => W()._closeFocus());
+on('wo:focusStepW', (el) => W()._focusStepW(+el.dataset.amt));
+on('wo:focusStepR', (el) => W()._focusStepR(+el.dataset.amt));
 on('wo:focusComplete', () => W()._focusCompleteSet());
 
 /* ── Render helpers ── */
@@ -55,9 +73,9 @@ on('wo:focusComplete', () => W()._focusCompleteSet());
 export function svgArrow(dir) {
   const p = {
     minus: '<line x1="5" y1="12" x2="19" y2="12"/>',
-    plus:  '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
-    up:    '<polyline points="18 15 12 9 6 15"/>',
-    down:  '<polyline points="6 9 12 15 18 9"/>',
+    plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    up: '<polyline points="18 15 12 9 6 15"/>',
+    down: '<polyline points="6 9 12 15 18 9"/>',
   };
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -85,9 +103,9 @@ export function typeIcon(type, color) {
              <polyline points="20 18 24 14 28 18"/>
              <circle cx="18" cy="36" r="1.5" fill="${color}"/>
              <circle cx="30" cy="36" r="1.5" fill="${color}"/>
-           </svg>`
+           </svg>`,
   };
-  
+
   if (!icons[type]) return '';
   return `<span class="type-icon kinetic-svg" style="color:${color}; filter: drop-shadow(0 0 5px ${color}) drop-shadow(0 0 15px ${color});" aria-hidden="true">${icons[type]}</span>`;
 }
@@ -108,10 +126,10 @@ function _haptic(ms = 10) {
 
 export async function _getLastSessionWeight(exerciseName) {
   const workouts = await DB.Workouts.getAll();
-  const last = workouts.reverse().find(w =>
-    (w.exercises || []).some(e => e.name === exerciseName)
-  );
-  const ex = last?.exercises?.find(e => e.name === exerciseName);
+  const last = workouts
+    .reverse()
+    .find((w) => (w.exercises || []).some((e) => e.name === exerciseName));
+  const ex = last?.exercises?.find((e) => e.name === exerciseName);
   return ex?.sets?.[0]?.weight || 0;
 }
 
@@ -126,23 +144,25 @@ export async function _computeCoachTarget(exerciseName) {
 export async function _getLastSessionSummary(exerciseName) {
   try {
     const workouts = await DB.Workouts.getAll();
-    const last = [...workouts].reverse().find(w =>
-      (w.exercises || []).some(e => e.name === exerciseName)
-    );
-    const ex = last?.exercises?.find(e => e.name === exerciseName);
-    const sets = (ex?.sets || []).filter(s => s.done && s.reps);
+    const last = [...workouts]
+      .reverse()
+      .find((w) => (w.exercises || []).some((e) => e.name === exerciseName));
+    const ex = last?.exercises?.find((e) => e.name === exerciseName);
+    const sets = (ex?.sets || []).filter((s) => s.done && s.reps);
     if (!sets.length) return '';
-    return sets.map(s => `${s.weight}×${s.reps}`).join(', ');
-  } catch { return ''; }
+    return sets.map((s) => `${s.weight}×${s.reps}`).join(', ');
+  } catch {
+    return '';
+  }
 }
 
 export async function _getExerciseHistory(exerciseName) {
   const workouts = await DB.Workouts.getAll();
   return workouts
-    .filter(w => (w.exercises || []).some(e => e.name === exerciseName))
+    .filter((w) => (w.exercises || []).some((e) => e.name === exerciseName))
     .slice(-10)
-    .map(w => {
-      const ex = w.exercises.find(e => e.name === exerciseName);
+    .map((w) => {
+      const ex = w.exercises.find((e) => e.name === exerciseName);
       return {
         weight: ex?.sets?.[0]?.weight || 0,
         oneRM: null,
@@ -156,11 +176,12 @@ export async function _getExerciseHistory(exerciseName) {
 
 export function _renderCoreSection(day) {
   const items = loadCoreChecklist(day);
-  const rows = items.map((name, i) => {
-    const key = `${day}:${name}`;
-    const checked = State.coreChecked[key] ? 'checked' : '';
+  const rows = items
+    .map((name, i) => {
+      const key = `${day}:${name}`;
+      const checked = State.coreChecked[key] ? 'checked' : '';
 
-    return `
+      return `
       <div class="core-item ${checked}" id="core-item-${i}"
            data-action="wo:toggleCore" data-day="${day}" data-i="${i}">
         <div class="core-box">
@@ -179,7 +200,8 @@ export function _renderCoreSection(day) {
           </svg>
         </button>
       </div>`;
-  }).join('');
+    })
+    .join('');
 
   return `
     <div class="section-header" style="margin-top:var(--sp-2)">
@@ -205,8 +227,7 @@ export async function renderSelect() {
   State.phase = 'select';
   const plan = loadPlan();
   const weekMode = getWeekMode();
-  const lang = await DB.Settings.get('lang', 'en');
-  const ru = lang === 'ru';
+  const ru = isRu();
 
   const trainEl = document.getElementById('s-train');
   if (!trainEl) return;
@@ -214,18 +235,18 @@ export async function renderSelect() {
   trainEl.innerHTML = `
     <div class="screen-header">
       <div>
-        <div class="screen-title">${ru ? 'Тренировки' : 'Training Hub'}</div>
+        <div class="screen-title">${esc(t('train.title'))}</div>
         <div class="screen-sub" id="train-date"></div>
       </div>
       <button class="week-pill week-${weekMode}" data-action="wo:toggleWeek"
-              aria-label="Toggle Week A/B" title="Tap to switch week">
-        <span class="week-pill-lbl">${ru ? 'Неделя' : 'Week'}</span>
+              aria-label="${esc(t('train.week_toggle'))}" title="${esc(t('train.week_toggle'))}">
+        <span class="week-pill-lbl">${esc(t('train.week'))}</span>
         <span class="week-pill-val">${weekMode}</span>
       </button>
     </div>
 
     <div class="section-header stagger-item" style="margin-top:var(--sp-2)">
-      <span class="section-label">${ru ? 'Выбор типа' : 'Select Type'}</span>
+      <span class="section-label">${esc(t('train.select_type'))}</span>
       <button class="btn-text" data-action="wo:openPlanEditor">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -233,58 +254,67 @@ export async function renderSelect() {
           <line x1="12" y1="5" x2="12" y2="19"/>
           <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
-        ${ru ? 'План' : 'Edit Plan'}
+        ${esc(t('train.edit_plan'))}
       </button>
     </div>
 
     <div class="type-grid stagger-item">
-      ${PPL_TYPES
-        .map((t) => {
-          const color = pplColor(t);
-          return `
-        <button class="type-card" data-type="${t}" data-action="wo:selectType">
+      ${PPL_TYPES.map((type) => {
+        const color = pplColor(type);
+        return `
+        <button class="type-card" data-type="${type}" data-action="wo:selectType">
           <div class="type-card-icon" style="color: ${color}">
-            ${typeIcon(t, color)}
+            ${typeIcon(type, color)}
           </div>
           <div class="type-card-text">
-            <div class="type-card-name">${t.toUpperCase()}</div>
-            <div class="type-card-meta">${t === 'push' ? (ru ? 'ГРУДЬ' : 'CHEST') : t === 'pull' ? (ru ? 'СПИНА' : 'BACK') : (ru ? 'ПЛЕЧИ' : 'SHOULDERS')}</div>
+            <div class="type-card-name">${type.toUpperCase()}</div>
+            <div class="type-card-meta">${esc(t(`train.meta_${type}`))}</div>
           </div>
         </button>`;
-    })
-    .join('')}
+      }).join('')}
 </div>
 
     <div class="section-header stagger-item" style="margin-top:var(--sp-3)">
-      <span class="section-label">${ru ? 'Прошлые сессии' : 'Last Sessions'}</span>
+      <span class="section-label">${esc(t('train.last_sessions'))}</span>
     </div>
     <div id="last-sessions-preview" class="stagger-item"></div>
   `;
 
-  document.getElementById('train-date').textContent = new Date().toLocaleDateString(ru ? 'ru' : 'en', {
-    weekday: 'long', month: 'long', day: 'numeric',
-  });
+  document.getElementById('train-date').textContent = new Date().toLocaleDateString(
+    ru ? 'ru' : 'en',
+    {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    }
+  );
 
   DB.Workouts.getLast(3).then((list) => {
     const el = document.getElementById('last-sessions-preview');
     if (!el) return;
     if (!list.length) {
-      el.innerHTML = '<div class="empty-state" style="padding:var(--sp-3)">No sessions yet</div>';
+      el.innerHTML = `<div class="empty-state" style="padding:var(--sp-3)">${esc(t('dash.recent_empty_title'))}</div>`;
       return;
     }
-    el.innerHTML = list.map((w) => {
-      const dot = isPplType(w.type) ? pplColor(w.type) : 'var(--c-text-3)';
-      const date = new Date(w.timestamp).toLocaleDateString(ru ? 'ru' : 'en', { weekday: 'short', month: 'short', day: 'numeric' });
-      const dur = w.duration ? Timer.fmt(Math.round(w.duration / 1000)) : '--';
-      return `<div class="session-item">
+    el.innerHTML = list
+      .map((w) => {
+        const dot = isPplType(w.type) ? pplColor(w.type) : 'var(--c-text-3)';
+        const date = new Date(w.timestamp).toLocaleDateString(ru ? 'ru' : 'en', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        });
+        const dur = w.duration ? Timer.fmt(Math.round(w.duration / 1000)) : '--';
+        return `<div class="session-item">
         <div class="session-dot" style="background:${dot}"></div>
         <div class="session-info">
-          <div class="session-title">${w.type.charAt(0).toUpperCase() + w.type.slice(1)} Day</div>
+          <div class="session-title">${esc(t('dash.day', { type: sessionTypeLabel(w.type) }))}</div>
           <div class="session-meta">${date} · ${dur}</div>
         </div>
         <div class="session-vol">${fmtVol(w.tonnage)} kg</div>
       </div>`;
-    }).join('');
+      })
+      .join('');
   });
 }
 
@@ -292,8 +322,7 @@ export async function renderSelect() {
    ACTIVE WORKOUT
    ════════════════════════════════════════════════════════ */
 export async function renderActive() {
-  const lang = await DB.Settings.get('lang', 'en');
-  const ru = lang === 'ru';
+  const ru = isRu();
   const exCount = State.plan.length;
   const totalSets = State.plan.reduce((s, e) => s + e.sets.length, 0);
 
@@ -389,7 +418,7 @@ export async function renderActive() {
     // Reflect current progress on (re)render — e.g. resuming a session with
     // sets already done — not only after a set toggle. Dynamic import avoids a
     // static render<->handlers import cycle.
-    import('./handlers.js').then(m => m._updateLiveStats?.()).catch(() => {});
+    import('./handlers.js').then((m) => m._updateLiveStats?.()).catch(() => {});
   });
 }
 
@@ -405,16 +434,15 @@ async function getMuscleBadge(exerciseName) {
 }
 
 export async function renderExerciseCard(ex, ei) {
-  const doneSets = ex.sets.filter(s => s.done).length;
+  const doneSets = ex.sets.filter((s) => s.done).length;
   const setRows = await Promise.all(ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)));
   const coach = await _computeCoachTarget(ex.name);
   const muscleBadge = await getMuscleBadge(ex.name);
 
-  const firstUndoneIdx = ex.sets.findIndex(s => !s.done);
+  const firstUndoneIdx = ex.sets.findIndex((s) => !s.done);
   const targetSi = firstUndoneIdx === -1 ? 0 : firstUndoneIdx;
 
-  const lang = await DB.Settings.get('lang', 'en');
-  const ru = lang === 'ru';
+  const ru = isRu();
 
   const iconCoach = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
 
@@ -448,8 +476,8 @@ export async function renderExerciseCard(ex, ei) {
                   data-action="wo:toggleBW" data-ei="${ei}"
                   aria-pressed="${ex.isBW ? 'true' : 'false'}"
                   title="${ru ? 'Упражнение со своим весом' : 'Bodyweight exercise'}">${
-            ex.isBW ? (ru ? 'BW + kg' : 'BW + kg') : (ru ? 'Вес kg' : 'Weight kg')
-          }</button>
+                    ex.isBW ? (ru ? 'BW + kg' : 'BW + kg') : ru ? 'Вес kg' : 'Weight kg'
+                  }</button>
           <span class="set-col-label">${ru ? 'Повторы' : 'Reps'}</span>
           <span class="set-col-label exercise-meta ${doneSets === ex.sets.length ? 'done' : ''}" id="ex-meta-${ei}">${doneSets}/${ex.sets.length}</span>
         </div>
@@ -460,19 +488,17 @@ export async function renderExerciseCard(ex, ei) {
 }
 
 export async function renderSetRow(ex, ei, set, si) {
-  const firstUndoneIdx = ex.sets.findIndex(s => !s.done);
+  const firstUndoneIdx = ex.sets.findIndex((s) => !s.done);
   const isActive = !set.done && si === firstUndoneIdx;
   const isBW = ex.isBW || false;
   const step = ex.isUnilateral ? 2 : 2.5;
   // Reps drum cap (field request 2026-07-08): strength work never needs the
   // full 50-item wheel — 20 covers it and shortens the scroll. Core/abs work
   // is the exception (high-rep sets, Plank logs seconds) — 90 there.
-  const repsMax = (ex.noDb || ex.block === 'core' || ex.block === 'align') ? 90 : 20;
+  const repsMax = ex.noDb || ex.block === 'core' || ex.block === 'align' ? 90 : 20;
 
   // Formatting weight: if BW, show as +Weight or BW
-  const displayWeight = isBW 
-    ? (set.weight > 0 ? `+${set.weight}` : 'BW')
-    : set.weight;
+  const displayWeight = isBW ? (set.weight > 0 ? `+${set.weight}` : 'BW') : set.weight;
 
   return `
     <div class="set-row ${set.done ? 'set-done' : ''} ${isActive ? 'set-active' : ''}" id="set-row-${ei}-${si}">
@@ -498,11 +524,10 @@ export async function renderSetRow(ex, ei, set, si) {
 export async function renderFocusMode(ei) {
   const ex = State.plan[ei];
   if (!ex) return '';
-  const firstUndone = ex.sets.findIndex(s => !s.done);
+  const firstUndone = ex.sets.findIndex((s) => !s.done);
   const si = firstUndone === -1 ? ex.sets.length - 1 : firstUndone;
   const set = ex.sets[si];
-  const lang = await DB.Settings.get('lang', 'en');
-  const ru = lang === 'ru';
+  const ru = isRu();
   const totalEx = State.plan.length;
   const totalSets = ex.sets.length;
 
@@ -520,7 +545,7 @@ export async function renderFocusMode(ei) {
           <div class="focus-hero-divider"></div>
           <div class="focus-hero-item" data-action="wo:focusStepR" data-amt="-1"><div class="focus-hero-val">${set.reps}</div><div class="focus-hero-lbl">${ru ? 'Повторы' : 'Reps'}</div></div>
         </div>
-        <button class="focus-cta ${set.done ? 'done' : ''}" data-action="wo:focusComplete">${set.done ? (ru ? 'Готово!' : 'Set Complete') : (ru ? 'Завершить подход' : 'Complete Set')}</button>
+        <button class="focus-cta ${set.done ? 'done' : ''}" data-action="wo:focusComplete">${set.done ? (ru ? 'Готово!' : 'Set Complete') : ru ? 'Завершить подход' : 'Complete Set'}</button>
       </div>
       <div class="focus-footer">
         <div class="focus-progress-dots">${ex.sets.map((s, i) => `<div class="focus-dot ${s.done ? 'done' : ''} ${i === si ? 'active' : ''}"></div>`).join('')}</div>
@@ -535,8 +560,11 @@ function _initDrag() {
   list.querySelectorAll('.exercise-card').forEach((card) => {
     const handle = card.querySelector('.drag-handle');
     if (!handle) return;
-    let dragging = false, startY = 0, srcIdx = parseInt(card.dataset.ei);
-    let raf = 0, lastClientY = 0;
+    let dragging = false,
+      startY = 0,
+      srcIdx = parseInt(card.dataset.ei);
+    let raf = 0,
+      lastClientY = 0;
     /** @type {{el:HTMLElement, top:number, bottom:number}[]} */
     let cachedRects = [];
 
@@ -555,8 +583,11 @@ function _initDrag() {
     }
 
     handle.addEventListener('pointerdown', (e) => {
-      e.preventDefault(); e.stopPropagation();
-      dragging = true; startY = e.clientY; lastClientY = e.clientY;
+      e.preventDefault();
+      e.stopPropagation();
+      dragging = true;
+      startY = e.clientY;
+      lastClientY = e.clientY;
       handle.setPointerCapture(e.pointerId);
       card.classList.add('ex-dragging');
       // Cache rects after the dragging class is applied (its style changes are
@@ -565,7 +596,11 @@ function _initDrag() {
       list.querySelectorAll('.exercise-card').forEach((other) => {
         if (other === card) return;
         const rect = other.getBoundingClientRect();
-        cachedRects.push({ el: /** @type {HTMLElement} */ (other), top: rect.top, bottom: rect.bottom });
+        cachedRects.push({
+          el: /** @type {HTMLElement} */ (other),
+          top: rect.top,
+          bottom: rect.bottom,
+        });
       });
     });
 
@@ -578,7 +613,10 @@ function _initDrag() {
     handle.addEventListener('pointerup', async () => {
       if (!dragging) return;
       dragging = false;
-      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
       card.style.transform = '';
       card.classList.remove('ex-dragging');
       let dropIdx = srcIdx;
@@ -592,7 +630,8 @@ function _initDrag() {
       if (dropIdx !== srcIdx) {
         const moved = State.plan.splice(srcIdx, 1)[0];
         State.plan.splice(dropIdx, 0, moved);
-        persistSession(); await renderActive();
+        persistSession();
+        await renderActive();
       }
     });
   });

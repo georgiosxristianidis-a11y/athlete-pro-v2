@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### LAUNCH-6 — код ИИ-тренера в main (PR #271, 0ca5fb7)
+
+Airgap 503 больше не выглядит как «ключей нет». Инструкция серверных ключей —
+`docs/DEPLOYMENT.md`. **Осталось за Gio:** `ANTHROPIC_API_KEY` или
+`GOOGLE_GENERATIVE_AI_API_KEY` на Vercel и verify по той же инструкции.
+
+### LAUNCH-5B — дефолт языка и хвосты аудита (срез 1)
+
+У новичка язык берётся из локали устройства и пишется в настройки, а не прибивается к `en`.
+Тост «Assistant hidden», «No sessions yet» на Train, подписи FAB и пользовательские тосты
+train/profile/boot идут через `t()`. Активная тренировка, остров и онбординг-переключатель
+в этом срезе не тронуты.
+
+---
+
 ## [1.27.77] — 2026-08-27
 
 ### LAUNCH-3B — дорога из приложения в юридические документы
