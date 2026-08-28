@@ -58,13 +58,13 @@ function armVa() {
 }
 
 describe('usage: флаг по умолчанию', () => {
-  test("'usage-stats' объявлен и выключен в DEFAULTS", () => {
+  test("'usage-stats' объявлен и включён в DEFAULTS", () => {
     const src = fs.readFileSync(path.join(REPO_ROOT, 'js', 'flags.js'), 'utf8');
     assert.match(
       src,
-      /'usage-stats':\s*false/,
-      "флаг 'usage-stats' должен лежать в DEFAULTS со значением false — " +
-        'телеметрия не включается мёржем, только осознанным флипом',
+      /'usage-stats':\s*true/,
+      "флаг 'usage-stats' включён осознанным флипом LAUNCH-4 — " +
+        "kill switch остаётся Flags.setFlag('usage-stats', false)",
     );
   });
 });
