@@ -422,6 +422,11 @@ const DICT = {
     'ob.endurance': 'Endurance',
     'ob.endurance_sub': 'Conditioning and stamina, 15+ reps.',
     'ob.fast_skip': 'Fast Skip',
+    'ob.skip_confirm_title': 'These are placeholders',
+    'ob.skip_confirm_sub':
+      'Fast Skip fills a sample profile. Confirm only if you accept these values as yours. You can change them later in Profile.',
+    'ob.skip_confirm_apply': 'Use placeholders',
+    'ob.skip_confirm_back': 'Enter my details',
     'ob.exp_title': 'Training experience?',
     'ob.exp_sub': 'Helps us set realistic starting weights.',
     'ob.beginner': 'Beginner',
@@ -878,6 +883,11 @@ const DICT = {
     'ob.endurance': 'Выносливость',
     'ob.endurance_sub': 'Кондиции и тонус, 15+ повторений.',
     'ob.fast_skip': 'Быстрый старт',
+    'ob.skip_confirm_title': 'Это заглушки',
+    'ob.skip_confirm_sub':
+      'Быстрый старт подставляет пример профиля. Подтверди, только если принимаешь эти значения как свои. Потом можно изменить в профиле.',
+    'ob.skip_confirm_apply': 'Взять заглушки',
+    'ob.skip_confirm_back': 'Заполнить свои данные',
     'ob.exp_title': 'Опыт тренировок?',
     'ob.exp_sub': 'Помогает установить стартовые веса.',
     'ob.beginner': 'Новичок',
