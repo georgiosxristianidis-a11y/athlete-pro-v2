@@ -25,7 +25,7 @@ import { RestTimer } from '../rest-timer.js';
 import { esc } from '../shared/utils.js';
 import { Spring } from '../shared/spring.js';
 import { confirmDialog } from '../shared/confirm.js';
-import { isRu, t } from '../locale.store.js';
+import { t } from '../locale.store.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
 import { on } from '../events.js';
 
@@ -178,7 +178,7 @@ export async function toggleSet(ei, si) {
       // @ts-ignore
       if (window.DynamicIsland) window.DynamicIsland.showFinishReady();
     } else {
-      RestTimer.start(ex.name, `Set ${si + 1}`, _restDuration);
+      RestTimer.start(ex.name, t('train.set_n', { n: si + 1 }), _restDuration);
     }
 
     // Elite Auto-collapse logic: ONLY if ALL sets are done (e.g. 4/4)
@@ -274,17 +274,7 @@ export function _toggleBW(ei) {
   ex.isBW = !ex.isBW;
   persistSession();
   renderActive();
-  const ru = isRu();
-  Toast.show(
-    ex.isBW
-      ? ru
-        ? 'Свой вес — вес не обязателен'
-        : 'Bodyweight — weight optional'
-      : ru
-        ? 'Вес обязателен'
-        : 'Weight required',
-    'info'
-  );
+  Toast.show(ex.isBW ? t('train.bw_on') : t('train.bw_off'), 'info');
 }
 
 export function _toggleUnilateral(ei) {
@@ -343,30 +333,22 @@ export async function selectType(type) {
 export async function showExerciseMenu(ei) {
   _haptic(10);
   const ex = State.plan[ei];
-  const ru = isRu();
-
   const _svgSwap = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>`;
   const _svgDumb = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="6.5" y1="12" x2="17.5" y2="12"/><rect x="3" y="9" width="3" height="6" rx="1"/><rect x="18" y="9" width="3" height="6" rx="1"/></svg>`;
   const _svgCopy = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`;
   const actions = [
     {
-      label: ru ? 'Сменить упражнение' : 'Replace Exercise',
+      label: t('train.replace'),
       icon: _svgSwap,
       action: () => openReplaceExModal(ei),
     },
     {
-      label: ex.isUnilateral
-        ? ru
-          ? 'Убрать гантели'
-          : 'Remove Dumbbells'
-        : ru
-          ? 'Гантели (2x)'
-          : 'Add Dumbbells',
+      label: ex.isUnilateral ? t('train.remove_dumbbells') : t('train.add_dumbbells'),
       icon: _svgDumb,
       action: () => _toggleUnilateral(ei),
     },
     {
-      label: ru ? 'Копировать прошлый вес' : 'Smart Copy',
+      label: t('train.smart_copy'),
       icon: _svgCopy,
       action: () => smartCopy(ei, 0),
     },
@@ -385,13 +367,13 @@ export async function showExerciseMenu(ei) {
             (a, i) => `
           <button class="menu-item" data-action="wo:menuAction" data-ei="${ei}" data-i="${i}" style="display:flex; align-items:center; gap:16px; width:100%; padding:16px; background:var(--c-surface); border:1px solid var(--c-border); border-radius:16px; color:var(--c-text-1); cursor:pointer">
             <span style="font-size:var(--fs-4)">${a.icon}</span>
-            <span style="font-size:var(--fs-3); font-weight:var(--fw-bold)">${a.label}</span>
+            <span style="font-size:var(--fs-3); font-weight:var(--fw-bold)">${esc(a.label)}</span>
           </button>
         `
           )
           .join('')}
       </div>
-      <button class="btn btn-ghost" data-action="wo:closeModal" style="width:100%; margin-top:16px; border:none; color:var(--c-text-3); font-weight:var(--fw-black)">${ru ? 'ОТМЕНА' : 'CANCEL'}</button>
+      <button class="btn btn-ghost" data-action="wo:closeModal" style="width:100%; margin-top:16px; border:none; color:var(--c-text-3); font-weight:var(--fw-black)">${esc(t('train.menu_cancel'))}</button>
     </div>
   `;
   document.body.appendChild(overlay);
@@ -404,8 +386,7 @@ export async function showExerciseMenu(ei) {
 
 export async function openReplaceExModal(ei) {
   const { openReplaceExModal: open } = await import('./modals.js').catch(() => ({
-    openReplaceExModal: () =>
-      Toast.show(isRu() ? 'Не удалось открыть окно' : "Couldn't open the dialog", 'error'),
+    openReplaceExModal: () => Toast.show(t('train.dialog_fail'), 'error'),
   }));
   // @ts-ignore
   open(ei);
@@ -421,8 +402,7 @@ export async function openCustomWorkoutModal() {
 
 // Custom-workout authoring isn't built yet — surface a graceful toast, never a
 // native alert() (0-7: zero native dialogs). Implementing it is a separate feature.
-const _soonMsg = () =>
-  isRu() ? 'Пользовательские тренировки — скоро' : 'Custom workouts — coming soon';
+const _soonMsg = () => t('train.custom_soon');
 export async function _createNewCustomWorkout() {
   Toast.show(_soonMsg(), 'info');
 }
@@ -444,15 +424,14 @@ export function _closeCustomWorkoutModal() {
    COMPLETE / CANCEL
    ════════════════════════════════════════════════════════ */
 export async function completeSession() {
-  const ru = isRu();
   const doneSets = State.plan.reduce((sum, ex) => sum + ex.sets.filter((s) => s.done).length, 0);
 
   if (doneSets === 0) {
     const ok = await confirmDialog({
-      title: ru ? 'Завершить тренировку?' : 'Finish workout?',
-      message: ru ? 'Ни один подход не выполнен.' : 'No sets have been completed.',
-      confirmLabel: ru ? 'Завершить' : 'Finish',
-      cancelLabel: ru ? 'Отмена' : 'Cancel',
+      title: t('train.finish_title'),
+      message: t('train.finish_empty'),
+      confirmLabel: t('train.finish_confirm'),
+      cancelLabel: t('train.cancel'),
     });
     if (!ok) return;
   }
@@ -465,7 +444,7 @@ export async function completeSession() {
   const { buildSessionSummary } = await import('../workout.store.js');
   const summaryData = await buildSessionSummary(State, durationMs);
   const { renderSummaryModal } = await import('./summary.js');
-  renderSummaryModal(summaryData, () => _executeFinalSave(summaryData, durationMs), ru);
+  renderSummaryModal(summaryData, () => _executeFinalSave(summaryData, durationMs));
 }
 
 /**
@@ -564,12 +543,11 @@ async function _persistFinalSession(summaryData, duration) {
 }
 
 export async function cancelSession() {
-  const ru = isRu();
   const ok = await confirmDialog({
-    title: ru ? 'Отменить тренировку?' : 'Cancel session?',
-    message: ru ? 'Прогресс будет потерян.' : 'Progress will be lost.',
-    confirmLabel: ru ? 'Отменить' : 'Discard',
-    cancelLabel: ru ? 'Назад' : 'Keep',
+    title: t('train.cancel_title'),
+    message: t('train.cancel_msg'),
+    confirmLabel: t('train.discard'),
+    cancelLabel: t('train.keep'),
     danger: true,
   });
   if (!ok) return;
@@ -614,12 +592,11 @@ export async function _addCoreItem(day) {
 export async function _removeCoreItem(day, idx) {
   const items = loadCoreChecklist(day);
   const name = items[idx];
-  const ru = isRu();
   const ok = await confirmDialog({
-    title: ru ? 'Удалить упражнение?' : 'Remove exercise?',
+    title: t('train.remove_ex_title'),
     message: name || '',
-    confirmLabel: ru ? 'Удалить' : 'Remove',
-    cancelLabel: ru ? 'Назад' : 'Keep',
+    confirmLabel: t('train.remove'),
+    cancelLabel: t('train.keep'),
     danger: true,
   });
   if (!ok) return;
@@ -903,7 +880,7 @@ export async function _addLiveExercise() {
     persistSession();
     const { renderActive } = await import('./render.js');
     await renderActive();
-    Toast.show(isRu() ? `${name} добавлено` : `${name} added`, 'success');
+    Toast.show(t('train.added', { name }), 'success');
   });
 }
 async function _checkAIProactive() {

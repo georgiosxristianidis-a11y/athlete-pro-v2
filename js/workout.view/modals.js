@@ -7,7 +7,7 @@
 import { Toast } from '../shell.js';
 import { esc } from '../shared/utils.js';
 import { confirmDialog } from '../shared/confirm.js';
-import { isRu, t } from '../locale.store.js';
+import { t } from '../locale.store.js';
 import { on, onChange, onInput } from '../events.js';
 
 const W = () => window.Workout;
@@ -93,23 +93,23 @@ export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
       <input class="plan-input" value="${esc(ex.name)}"
         data-change="wo:planName" data-type="${type}" data-pi="${originalIndex}">
       <div class="plan-row-meta">
-        <span class="plan-meta-label">Tag</span>
+        <span class="plan-meta-label">${esc(t('train.plan_tag'))}</span>
         <input class="plan-tag-input" value="${esc(ex.tag || '')}" placeholder="—" maxlength="8"
-          title="Island-only display override — name/history untouched"
+          title="${esc(t('train.tag_hint'))}"
           data-change="wo:planTag" data-type="${type}" data-pi="${originalIndex}">
-        <span class="plan-meta-label">Sets</span>
+        <span class="plan-meta-label">${esc(t('train.plan_sets'))}</span>
         <div class="mini-stepper">
-          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="sets" data-delta="-1" aria-label="Decrease sets">${svgArrow('minus')}</button>
+          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="sets" data-delta="-1" aria-label="${esc(t('train.dec_sets'))}">${svgArrow('minus')}</button>
           <span id="ps-sets-${type}-${originalIndex}">${ex.sets}</span>
-          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="sets" data-delta="1" aria-label="Increase sets">${svgArrow('plus')}</button>
+          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="sets" data-delta="1" aria-label="${esc(t('train.inc_sets'))}">${svgArrow('plus')}</button>
         </div>
-        <span class="plan-meta-label">Reps</span>
+        <span class="plan-meta-label">${esc(t('train.plan_reps'))}</span>
         <div class="mini-stepper">
-          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="reps" data-delta="-1" aria-label="Decrease reps">${svgArrow('minus')}</button>
+          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="reps" data-delta="-1" aria-label="${esc(t('train.dec_reps'))}">${svgArrow('minus')}</button>
           <span id="ps-reps-${type}-${originalIndex}">${ex.reps}</span>
-          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="reps" data-delta="1" aria-label="Increase reps">${svgArrow('plus')}</button>
+          <button data-action="wo:planAdjust" data-type="${type}" data-pi="${originalIndex}" data-field="reps" data-delta="1" aria-label="${esc(t('train.inc_reps'))}">${svgArrow('plus')}</button>
         </div>
-        <button class="plan-delete" data-action="wo:planDelete" data-type="${type}" data-pi="${originalIndex}" aria-label="Remove exercise">
+        <button class="plan-delete" data-action="wo:planDelete" data-type="${type}" data-pi="${originalIndex}" aria-label="${esc(t('train.remove_ex'))}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="14" height="14">
             <polyline points="3 6 5 6 21 6"/>
@@ -121,7 +121,7 @@ export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
     </div>`;
           })
           .join('')
-      : `<div class="plan-empty">No exercises found for "${esc(searchQuery)}"</div>`;
+      : `<div class="plan-empty">${esc(t('train.plan_empty', { q: searchQuery }))}</div>`;
 
   return (
     exercisesHTML +
@@ -132,7 +132,7 @@ export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
         <line x1="12" y1="5" x2="12" y2="19"/>
         <line x1="5" y1="12" x2="19" y2="12"/>
       </svg>
-      Add Exercise
+      ${esc(t('train.add_exercise'))}
     </button>`
   );
 }
@@ -161,8 +161,8 @@ export function openPlanEditor() {
       <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-header">
-          <div class="modal-title">Edit Plan</div>
-          <button class="btn-icon-sm" data-action="wo:planClose" aria-label="Close plan editor">
+          <div class="modal-title">${esc(t('train.edit_plan'))}</div>
+          <button class="btn-icon-sm" data-action="wo:planClose" aria-label="${esc(t('train.plan_close'))}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.5" stroke-linecap="round" width="18" height="18">
               <line x1="18" y1="6" x2="6" y2="18"/>
@@ -173,7 +173,7 @@ export function openPlanEditor() {
 
         <!-- Week toggle -->
         <div class="plan-week-row">
-          <span class="plan-preset-label">Week:</span>
+          <span class="plan-preset-label">${esc(t('train.plan_week'))}</span>
           <div class="week-segment" role="tablist">
             <button class="week-seg-btn ${activeWeek === 'A' ? 'active' : ''}"
                     data-action="wo:planWeek" data-week="A" role="tab"
@@ -182,12 +182,12 @@ export function openPlanEditor() {
                     data-action="wo:planWeek" data-week="B" role="tab"
                     aria-selected="${activeWeek === 'B'}">B</button>
           </div>
-          <span class="plan-week-hint">${activeWeek === 'A' ? 'Biceps focus (Push) · Triceps (Pull)' : 'Triceps focus (Push) · Biceps (Pull)'}</span>
+          <span class="plan-week-hint">${esc(activeWeek === 'A' ? t('train.week_hint_a') : t('train.week_hint_b'))}</span>
         </div>
 
         <!-- Preset loader -->
         <div class="plan-preset-row">
-          <span class="plan-preset-label">Preset:</span>
+          <span class="plan-preset-label">${esc(t('train.plan_preset'))}</span>
           <button class="btn-preset" data-action="wo:planPreset" data-preset="ppl-gio">PPL | GIO</button>
           <button class="btn-preset" data-action="wo:planPreset" data-preset="ppl-hybrid">Hybrid v1</button>
         </div>
@@ -200,18 +200,18 @@ export function openPlanEditor() {
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input class="plan-search-input" id="plan-search" type="text"
-                 placeholder="Search exercises..." value="${esc(searchQuery)}"
+                 placeholder="${esc(t('train.plan_search'))}" value="${esc(searchQuery)}"
                  data-input="wo:planSearch">
         </div>
 
         <div class="plan-tabs">
           ${['push', 'pull', 'legs']
             .map(
-              (t) => `
-            <button class="plan-tab ${t === activeTab ? 'active' : ''}"
-                    data-type="${t}"
+              (day) => `
+            <button class="plan-tab ${day === activeTab ? 'active' : ''}"
+                    data-type="${day}"
                     data-action="wo:planTab">
-              ${t.charAt(0).toUpperCase() + t.slice(1)}
+              ${esc(t(`train.cat_${day}`))}
             </button>`
             )
             .join('')}
@@ -225,7 +225,7 @@ export function openPlanEditor() {
             <svg class="ic-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
             <svg class="ic-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
           </span>
-          Save Plan
+          ${esc(t('train.save_plan'))}
         </button>
       </div>`;
   }
@@ -283,26 +283,18 @@ export async function _loadPreset(presetName) {
   const entry = PLAN_PRESETS[presetName];
   if (!entry) return;
   const { plan: preset, label } = entry;
-  const ru = isRu();
   const ok = await confirmDialog({
-    title: ru ? `Загрузить пресет ${label}?` : `Load ${label} preset?`,
-    message: ru
-      ? 'Планы недели A и недели B будут заменены.'
-      : 'Both Week A and Week B plans will be replaced.',
-    confirmLabel: ru ? 'Загрузить' : 'Load',
-    cancelLabel: ru ? 'Отмена' : 'Cancel',
+    title: t('train.load_preset', { label }),
+    message: t('train.load_preset_msg'),
+    confirmLabel: t('train.load'),
+    cancelLabel: t('train.cancel'),
   });
   if (!ok) return;
   savePlan(JSON.parse(JSON.stringify(preset.weekA)), 'A');
   savePlan(JSON.parse(JSON.stringify(preset.weekB)), 'B');
   _closePlanEditor();
   openPlanEditor();
-  Toast.show(
-    ru
-      ? `${label} загружен для недель A и B — задай рабочие веса`
-      : `${label} loaded for Week A & B — set your working weights`,
-    'success'
-  );
+  Toast.show(t('train.preset_loaded', { label }), 'success');
 }
 
 export function _closePlanEditor() {
@@ -483,8 +475,8 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
     <div class="modal-sheet" style="max-height:85vh;display:flex;flex-direction:column">
       <div class="modal-handle"></div>
       <div class="modal-header">
-        <div class="modal-title">Add Exercise</div>
-        <button class="btn-icon-sm" id="add-ex-close" aria-label="Close exercise picker">
+        <div class="modal-title">${esc(t('train.add_exercise'))}</div>
+        <button class="btn-icon-sm" id="add-ex-close" aria-label="${esc(t('train.picker_close'))}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="18" height="18">
             <line x1="18" y1="6" x2="6" y2="18"/>
@@ -496,22 +488,22 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       <!-- Search -->
       <div class="add-ex-search-wrap">
         <input class="add-ex-search" id="add-ex-search"
-               type="text" placeholder="Search exercises…"
+               type="text" placeholder="${esc(t('train.plan_search'))}"
                autocomplete="off" autocorrect="off" spellcheck="false">
       </div>
 
       <!-- Category filters -->
       <div style="display:flex;gap:var(--sp-1);flex-wrap:wrap;padding:var(--sp-1-5) 0 var(--sp-0-5)">
-        <button class="pill-filter ${filterCategory === 'all' || !filterCategory ? 'active' : ''}" data-cat="all">All</button>
-        <button class="pill-filter ${filterCategory === 'push' ? 'active' : ''}" data-cat="push">Push</button>
-        <button class="pill-filter ${filterCategory === 'pull' ? 'active' : ''}" data-cat="pull">Pull</button>
-        <button class="pill-filter ${filterCategory === 'legs' ? 'active' : ''}" data-cat="legs">Legs</button>
-        <button class="pill-filter" data-cat="core">Core</button>
+        <button class="pill-filter ${filterCategory === 'all' || !filterCategory ? 'active' : ''}" data-cat="all">${esc(t('train.cat_all'))}</button>
+        <button class="pill-filter ${filterCategory === 'push' ? 'active' : ''}" data-cat="push">${esc(t('train.cat_push'))}</button>
+        <button class="pill-filter ${filterCategory === 'pull' ? 'active' : ''}" data-cat="pull">${esc(t('train.cat_pull'))}</button>
+        <button class="pill-filter ${filterCategory === 'legs' ? 'active' : ''}" data-cat="legs">${esc(t('train.cat_legs'))}</button>
+        <button class="pill-filter" data-cat="core">${esc(t('train.core'))}</button>
       </div>
 
       <!-- Results count -->
       <div style="font-size:var(--fs-1);color:var(--c-text-3);padding:var(--sp-1) 0">
-        <span id="add-ex-count">Loading…</span>
+        <span id="add-ex-count">${esc(t('train.loading'))}</span>
       </div>
 
       <!-- Exercise list -->
@@ -520,7 +512,7 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       <!-- Custom exercise -->
       <div style="padding-top:var(--sp-1-5);margin-top:var(--sp-0-5)">
         <input class="add-ex-search" id="add-ex-custom"
-               type="text" placeholder="Or type custom exercise name…"
+               type="text" placeholder="${esc(t('train.custom_ph'))}"
                autocomplete="off" style="margin-bottom:var(--sp-1)">
         <button class="btn btn-primary btn-sm" id="add-ex-add-custom" style="width:100%">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -528,7 +520,7 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Use Custom Exercise
+          ${esc(t('train.use_custom'))}
         </button>
       </div>
     </div>`;
@@ -549,8 +541,8 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
     allExercises = await getExerciseLibrary();
     renderList();
   } catch (err) {
-    listEl.innerHTML = `<div class="add-ex-empty">Failed to load exercises</div>`;
-    countEl.textContent = 'Error loading library';
+    listEl.innerHTML = `<div class="add-ex-empty">${esc(t('train.load_fail'))}</div>`;
+    countEl.textContent = t('train.load_error_lib');
   }
 
   function renderList() {
@@ -572,11 +564,11 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       });
     }
 
-    countEl.textContent = `${filtered.length} exercises`;
+    countEl.textContent = t('train.ex_count', { n: filtered.length });
     listEl.innerHTML = '';
 
     if (!filtered.length) {
-      listEl.innerHTML = `<div class="add-ex-empty">No exercises found</div>`;
+      listEl.innerHTML = `<div class="add-ex-empty">${esc(t('train.picker_empty'))}</div>`;
       return;
     }
 
@@ -658,8 +650,8 @@ export async function openReplaceExModal(ei) {
     <div class="modal-sheet" style="max-height:85vh;display:flex;flex-direction:column">
       <div class="modal-handle"></div>
       <div class="modal-header">
-        <div class="modal-title">Replace Exercise</div>
-        <button class="btn-icon-sm" id="replace-ex-close" aria-label="Close exercise picker">
+        <div class="modal-title">${esc(t('train.replace'))}</div>
+        <button class="btn-icon-sm" id="replace-ex-close" aria-label="${esc(t('train.picker_close'))}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="18" height="18">
             <line x1="18" y1="6" x2="6" y2="18"/>
@@ -671,22 +663,22 @@ export async function openReplaceExModal(ei) {
       <!-- Search -->
       <div class="add-ex-search-wrap">
         <input class="add-ex-search" id="replace-ex-search"
-               type="text" placeholder="Search exercises…"
+               type="text" placeholder="${esc(t('train.plan_search'))}"
                autocomplete="off" autocorrect="off" spellcheck="false">
       </div>
 
       <!-- Category filters -->
       <div style="display:flex;gap:var(--sp-1);flex-wrap:wrap;padding:var(--sp-1-5) 0 var(--sp-0-5)">
-        <button class="pill-filter active" data-cat="all" style="border-color:var(--c-accent);color:var(--c-accent);background:rgba(0,200,110,0.08)">All</button>
-        <button class="pill-filter" data-cat="push" style="border-color:var(--c-indigo);color:var(--c-indigo);background:rgba(99,102,241,0.08)">Push</button>
-        <button class="pill-filter" data-cat="pull" style="border-color:var(--c-cyan);color:var(--c-cyan);background:rgba(6,182,212,0.08)">Pull</button>
-        <button class="pill-filter" data-cat="legs" style="border-color:var(--c-blue);color:var(--c-blue);background:var(--c-blue-bg)">Legs</button>
-        <button class="pill-filter" data-cat="core" style="border-color:var(--c-cyan);color:var(--c-cyan);background:var(--c-cyan-bg)">Core</button>
+        <button class="pill-filter active" data-cat="all" style="border-color:var(--c-accent);color:var(--c-accent);background:rgba(0,200,110,0.08)">${esc(t('train.cat_all'))}</button>
+        <button class="pill-filter" data-cat="push" style="border-color:var(--c-indigo);color:var(--c-indigo);background:rgba(99,102,241,0.08)">${esc(t('train.cat_push'))}</button>
+        <button class="pill-filter" data-cat="pull" style="border-color:var(--c-cyan);color:var(--c-cyan);background:rgba(6,182,212,0.08)">${esc(t('train.cat_pull'))}</button>
+        <button class="pill-filter" data-cat="legs" style="border-color:var(--c-blue);color:var(--c-blue);background:var(--c-blue-bg)">${esc(t('train.cat_legs'))}</button>
+        <button class="pill-filter" data-cat="core" style="border-color:var(--c-cyan);color:var(--c-cyan);background:var(--c-cyan-bg)">${esc(t('train.core'))}</button>
       </div>
 
       <!-- Results count -->
       <div style="font-size:var(--fs-1);color:var(--c-text-3);padding:var(--sp-1) 0">
-        <span id="replace-count">Loading…</span>
+        <span id="replace-count">${esc(t('train.loading'))}</span>
       </div>
 
       <!-- Exercise list -->
@@ -695,7 +687,7 @@ export async function openReplaceExModal(ei) {
       <!-- Custom exercise -->
       <div style="padding-top:var(--sp-1-5);margin-top:var(--sp-0-5)">
         <input class="add-ex-search" id="replace-custom"
-               type="text" placeholder="Or type custom exercise name…"
+               type="text" placeholder="${esc(t('train.custom_ph'))}"
                autocomplete="off" style="margin-bottom:var(--sp-1)">
         <button class="btn btn-primary btn-sm" id="replace-add-custom" style="width:100%">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -703,7 +695,7 @@ export async function openReplaceExModal(ei) {
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Use Custom Exercise
+          ${esc(t('train.use_custom'))}
         </button>
       </div>
     </div>`;
@@ -724,8 +716,8 @@ export async function openReplaceExModal(ei) {
     allExercises = await getExerciseLibrary();
     renderList();
   } catch (err) {
-    listEl.innerHTML = `<div class="add-ex-empty">Failed to load exercises</div>`;
-    countEl.textContent = 'Error loading library';
+    listEl.innerHTML = `<div class="add-ex-empty">${esc(t('train.load_fail'))}</div>`;
+    countEl.textContent = t('train.load_error_lib');
   }
 
   function renderList() {
@@ -747,11 +739,11 @@ export async function openReplaceExModal(ei) {
       });
     }
 
-    countEl.textContent = `${filtered.length} exercises`;
+    countEl.textContent = t('train.ex_count', { n: filtered.length });
     listEl.innerHTML = '';
 
     if (!filtered.length) {
-      listEl.innerHTML = `<div class="add-ex-empty">No exercises found</div>`;
+      listEl.innerHTML = `<div class="add-ex-empty">${esc(t('train.picker_empty'))}</div>`;
       return;
     }
 
@@ -801,7 +793,7 @@ export async function openReplaceExModal(ei) {
       const nameEl = document.querySelector(`#ex-card-${ei} .exercise-name`);
       if (nameEl) nameEl.textContent = customName;
       _haptic(15);
-      Toast.show(`Replaced with ${customName}`, 'info');
+      Toast.show(t('train.replace_with', { name: customName }), 'info');
     }
   });
 
@@ -816,7 +808,7 @@ export async function openReplaceExModal(ei) {
       const nameEl = document.querySelector(`#ex-card-${ei} .exercise-name`);
       if (nameEl) nameEl.textContent = name;
       _haptic(15);
-      Toast.show(`Replaced with ${name}`, 'info');
+      Toast.show(t('train.replace_with', { name }), 'info');
     }
   });
 

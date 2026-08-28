@@ -192,7 +192,7 @@ export function _renderCoreSection(day) {
         </div>
         <span class="core-name">${esc(name)}</span>
         <button class="core-remove" data-action="wo:removeCore" data-day="${day}" data-i="${i}"
-                aria-label="Remove">
+                aria-label="${esc(t('train.remove'))}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.5" stroke-linecap="round" width="14" height="14">
             <line x1="18" y1="6" x2="6" y2="18"/>
@@ -205,18 +205,18 @@ export function _renderCoreSection(day) {
 
   return `
     <div class="section-header" style="margin-top:var(--sp-2)">
-      <span class="section-label">Core</span>
+      <span class="section-label">${esc(t('train.core'))}</span>
       <button class="btn-text" data-action="wo:addCore" data-day="${day}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.5" stroke-linecap="round" width="14" height="14">
           <line x1="12" y1="5" x2="12" y2="19"/>
           <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
-        Add
+        ${esc(t('train.core_add'))}
       </button>
     </div>
     <div class="core-list">
-      ${rows || '<div class="core-empty">No core work — tap Add to include items.</div>'}
+      ${rows || `<div class="core-empty">${esc(t('train.core_empty'))}</div>`}
     </div>`;
 }
 
@@ -332,7 +332,11 @@ export async function renderActive() {
   trainEl.innerHTML = `
     <div class="screen-header">
       <div>
-        <div class="screen-title">${ru ? (State.type === 'push' ? 'Жим' : State.type === 'pull' ? 'Тяга' : 'Ноги') : State.type.charAt(0).toUpperCase() + State.type.slice(1)} ${ru ? 'День' : 'Day'}</div>
+        <div class="screen-title">${esc(
+          State.type === 'push' || State.type === 'pull' || State.type === 'legs'
+            ? t(`train.day_${State.type}`)
+            : t('dash.day', { type: sessionTypeLabel(State.type) })
+        )}</div>
       </div>
       <div class="header-chips">
         <!-- Focused header: Week toggle removed, live-timer moved to dynamic island -->
@@ -345,7 +349,7 @@ export async function renderActive() {
           <span class="live-hero-val" id="live-tonnage">0</span>
           <span class="live-hero-unit">kg</span>
         </div>
-        <span class="live-hero-chip"><span id="live-ex-done">0</span>/${exCount} ex</span>
+        <span class="live-hero-chip"><span id="live-ex-done">0</span>/${exCount} ${esc(t('train.ex_abbr'))}</span>
       </div>
       <div class="live-rail" id="live-rail">${'<div class="live-rail-seg"></div>'.repeat(totalSets)}</div>
     </div>
@@ -397,14 +401,14 @@ export async function renderActive() {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="16" height="16">
         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
       </svg>
-      Add Exercise
+      ${esc(t('train.add_exercise'))}
     </button>
 
     <div class="core-section" id="core-section">${_renderCoreSection(State.type)}</div>
 
     <div style="display:flex;flex-direction:column;gap:var(--sp-1);margin-top:var(--sp-2)">
-      <button class="btn btn-primary" data-action="wo:complete">${ru ? 'Завершить тренировку' : 'Complete Session'}</button>
-      <button class="btn btn-ghost" data-action="wo:cancel">${ru ? 'Отмена' : 'Cancel'}</button>
+      <button class="btn btn-primary" data-action="wo:complete">${esc(t('train.complete_session'))}</button>
+      <button class="btn btn-ghost" data-action="wo:cancel">${esc(t('train.cancel'))}</button>
     </div>
     <div style="height:var(--sp-4)"></div>
   `;
@@ -442,8 +446,6 @@ export async function renderExerciseCard(ex, ei) {
   const firstUndoneIdx = ex.sets.findIndex((s) => !s.done);
   const targetSi = firstUndoneIdx === -1 ? 0 : firstUndoneIdx;
 
-  const ru = isRu();
-
   const iconCoach = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
 
   return `
@@ -459,8 +461,8 @@ export async function renderExerciseCard(ex, ei) {
         </div>
         
         <div class="ex-header-actions" data-action="wo:noop">
-          <button class="ex-action-btn coach" title="Smart Coach" data-action="wo:smartCoach" data-ei="${ei}" data-si="${targetSi}">${iconCoach}</button>
-          <button class="ex-action-btn" title="More options" data-action="wo:exMenu" data-ei="${ei}">
+          <button class="ex-action-btn coach" title="${esc(t('train.smart_coach'))}" data-action="wo:smartCoach" data-ei="${ei}" data-si="${targetSi}">${iconCoach}</button>
+          <button class="ex-action-btn" title="${esc(t('train.more_options'))}" data-action="wo:exMenu" data-ei="${ei}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
               <circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="6" r="1.2"/><circle cx="12" cy="18" r="1.2"/>
             </svg>
@@ -475,14 +477,14 @@ export async function renderExerciseCard(ex, ei) {
           <button class="set-col-label set-col-btn ${ex.isBW ? 'is-bw' : ''}"
                   data-action="wo:toggleBW" data-ei="${ei}"
                   aria-pressed="${ex.isBW ? 'true' : 'false'}"
-                  title="${ru ? 'Упражнение со своим весом' : 'Bodyweight exercise'}">${
-                    ex.isBW ? (ru ? 'BW + kg' : 'BW + kg') : ru ? 'Вес kg' : 'Weight kg'
+                  title="${esc(t('train.bodyweight'))}">${
+                    ex.isBW ? esc(t('train.weight_bw')) : esc(t('train.weight_kg'))
                   }</button>
-          <span class="set-col-label">${ru ? 'Повторы' : 'Reps'}</span>
+          <span class="set-col-label">${esc(t('train.reps'))}</span>
           <span class="set-col-label exercise-meta ${doneSets === ex.sets.length ? 'done' : ''}" id="ex-meta-${ei}">${doneSets}/${ex.sets.length}</span>
         </div>
         ${setRows.join('')}
-        <button class="add-set-btn" data-action="wo:addSet" data-ei="${ei}">${svgArrow('plus')} Add Set</button>
+        <button class="add-set-btn" data-action="wo:addSet" data-ei="${ei}">${svgArrow('plus')} ${esc(t('train.add_set'))}</button>
       </div>
     </div>`;
 }
@@ -527,29 +529,28 @@ export async function renderFocusMode(ei) {
   const firstUndone = ex.sets.findIndex((s) => !s.done);
   const si = firstUndone === -1 ? ex.sets.length - 1 : firstUndone;
   const set = ex.sets[si];
-  const ru = isRu();
   const totalEx = State.plan.length;
   const totalSets = ex.sets.length;
 
   return `
     <div class="focus-overlay animate-in" id="focus-overlay" data-ei="${ei}">
       <div class="focus-header">
-        <div class="focus-meta">${ru ? 'Упражнение' : 'Exercise'} ${ei + 1} ${ru ? 'из' : 'of'} ${totalEx}</div>
-        <button class="focus-close" data-action="wo:closeFocus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        <div class="focus-meta">${esc(t('focus.ex_of', { n: ei + 1, total: totalEx }))}</div>
+        <button class="focus-close" data-action="wo:closeFocus" aria-label="${esc(t('focus.close'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="focus-glass-card">
         <div class="focus-ex-name">${esc(ex.name)}</div>
-        <div class="focus-set-info">${ru ? 'Подход' : 'Set'} ${si + 1} ${ru ? 'из' : 'of'} ${totalSets}</div>
+        <div class="focus-set-info">${esc(t('focus.set_of', { n: si + 1, total: totalSets }))}</div>
         <div class="focus-hero-row">
-          <div class="focus-hero-item" data-action="wo:focusStepW" data-amt="-2.5"><div class="focus-hero-val">${set.weight}<small>kg</small></div><div class="focus-hero-lbl">${ru ? 'Вес' : 'Weight'}</div></div>
+          <div class="focus-hero-item" data-action="wo:focusStepW" data-amt="-2.5"><div class="focus-hero-val">${set.weight}<small>kg</small></div><div class="focus-hero-lbl">${esc(t('focus.weight'))}</div></div>
           <div class="focus-hero-divider"></div>
-          <div class="focus-hero-item" data-action="wo:focusStepR" data-amt="-1"><div class="focus-hero-val">${set.reps}</div><div class="focus-hero-lbl">${ru ? 'Повторы' : 'Reps'}</div></div>
+          <div class="focus-hero-item" data-action="wo:focusStepR" data-amt="-1"><div class="focus-hero-val">${set.reps}</div><div class="focus-hero-lbl">${esc(t('focus.reps'))}</div></div>
         </div>
-        <button class="focus-cta ${set.done ? 'done' : ''}" data-action="wo:focusComplete">${set.done ? (ru ? 'Готово!' : 'Set Complete') : ru ? 'Завершить подход' : 'Complete Set'}</button>
+        <button class="focus-cta ${set.done ? 'done' : ''}" data-action="wo:focusComplete">${esc(set.done ? t('focus.done') : t('focus.complete'))}</button>
       </div>
       <div class="focus-footer">
         <div class="focus-progress-dots">${ex.sets.map((s, i) => `<div class="focus-dot ${s.done ? 'done' : ''} ${i === si ? 'active' : ''}"></div>`).join('')}</div>
-        <div class="focus-hint">${ru ? 'Свайп вниз — закрыть · Свайп влево — далее' : 'Swipe down to close · Swipe left to next'}</div>
+        <div class="focus-hint">${esc(t('focus.hint'))}</div>
       </div>
     </div>`;
 }

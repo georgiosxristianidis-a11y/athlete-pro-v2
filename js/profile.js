@@ -40,13 +40,12 @@ export const Profile = (() => {
     try {
       const [syncStatus, settings] = await Promise.all([_syncStatus(), DB.Settings.getAll()]);
       const lang = getLang() || 'en';
-      const ru = lang === 'ru';
 
       screen.innerHTML = `
       <div class="screen-header">
         <div>
-          <div class="screen-title" id="profile-title">${ru ? 'Профиль' : 'Profile'}</div>
-          <div class="screen-sub" id="profile-sub">${ru ? 'Настройки и данные' : 'Settings & data'}</div>
+          <div class="screen-title" id="profile-title">${esc(t('profile.title'))}</div>
+          <div class="screen-sub" id="profile-sub">${esc(t('profile.sub'))}</div>
         </div>
       </div>
 
@@ -65,12 +64,12 @@ export const Profile = (() => {
       <div id="profile-settings-block">${renderSettings(settings, lang, _AI_UNKNOWN, syncStatus)}</div>
 
       <!-- ── DANGER ZONE ── -->
-      <div class="section-label-alt" style="color:var(--c-red); opacity:0.8">DANGER ZONE</div>
+      <div class="section-label-alt" id="profile-danger-label" style="color:var(--c-red); opacity:0.8">${esc(t('profile.danger_zone'))}</div>
       <button class="danger-btn" id="clear-data-btn" data-action="profile:clearData">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
           <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
         </svg>
-        <span id="clear-data-label">${ru ? 'Сброс всех данных' : 'Clear All Data'}</span>
+        <span id="clear-data-label">${esc(t('profile.clear_all'))}</span>
       </button>
 
       <!-- ── Version (Subtle Elite) ── -->
@@ -141,19 +140,21 @@ export const Profile = (() => {
      what kept the passport alive. */
   async function _refreshLangDependent() {
     const lang = (await DB.Settings.get('lang', 'en')) || 'en';
-    const ru = lang === 'ru';
 
     const title = document.getElementById('profile-title');
-    if (title) title.textContent = ru ? 'Профиль' : 'Profile';
+    if (title) title.textContent = t('profile.title');
     const sub = document.getElementById('profile-sub');
-    if (sub) sub.textContent = ru ? 'Настройки и данные' : 'Settings & data';
+    if (sub) sub.textContent = t('profile.sub');
 
     /* Кнопка бэкапа больше не правится здесь поимённо: она внутри
        #profile-settings-block, который _refreshSettings() ниже перерисовывает
        целиком — уже на новом языке. */
 
+    const dangerLabel = document.getElementById('profile-danger-label');
+    if (dangerLabel) dangerLabel.textContent = t('profile.danger_zone');
+
     const clearLabel = document.getElementById('clear-data-label');
-    if (clearLabel) clearLabel.textContent = ru ? 'Сброс всех данных' : 'Clear All Data';
+    if (clearLabel) clearLabel.textContent = t('profile.clear_all');
 
     await _refreshSettings();
     await _refreshPassport(lang);
