@@ -136,6 +136,8 @@ async function clearAll() {
     Metrics.clear(),
     Events.clear(),
     Settings.clear(),
+    NutritionLogs.clear(),
+    PlannedWorkouts.clear(),
   ]);
 }
 

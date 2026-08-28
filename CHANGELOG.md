@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### LAUNCH-7 — WebKit (этот PR)
+### LAUNCH-8 — бэкап (этот PR)
+
+Выгрузка включает редактируемый план (`localStorage` `ap-custom-plan-A/B`) и
+AI-планы, не только историю в IndexedDB. Восстановление проверено на втором
+чистом профиле (unit wipe + Playwright два контекста). Старый JSON v1 без
+`plans`/`local` импортируется. `ap-device-id` в файл не пишется.
+
+### LAUNCH-7 — WebKit (PR #275, 21ae48d)
 
 Проект `webkit` (iPhone 13) рядом с `chromium` (Pixel 7), не вместо.
 CI ставит оба браузера; ключ кеша с суффиксом, чтобы старый chromium-only hit
