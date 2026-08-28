@@ -15,7 +15,7 @@ import { Privacy } from './privacy.view.js';
 import { DynamicIsland } from './shared/dynamic-island.js';
 import { AthleteRoom } from './shared/athlete-room.js';
 import { Integrity } from './shared/integrity.js';
-import { initLocale } from './locale.store.js';
+import { initLocale, t } from './locale.store.js';
 import { haptic } from './shared/utils.js';
 import { State } from './workout.store.js';
 import { VERSION } from './version.js';
@@ -87,16 +87,21 @@ on('nav:go', (el) => window.Nav.go(el.dataset.s, el.dataset.force ? { force: tru
 const clockEl = document.getElementById('status-time');
 function updateClock() {
   clockEl.textContent = new Date().toLocaleTimeString('en', {
-    hour: '2-digit', minute: '2-digit', hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
   });
 }
 updateClock();
 setInterval(updateClock, 30000);
 
 /* ── Network status ── */
-window.addEventListener('online', () => document.getElementById('di-dot')?.classList.replace('offline', 'online'));
-window.addEventListener('offline', () => document.getElementById('di-dot')?.classList.replace('online', 'offline'));
-
+window.addEventListener('online', () =>
+  document.getElementById('di-dot')?.classList.replace('offline', 'online')
+);
+window.addEventListener('offline', () =>
+  document.getElementById('di-dot')?.classList.replace('online', 'offline')
+);
 
 /* ── Privacy indicator wiring ── */
 // Island Settings is reachable by long-pressing the Island; the status-bar
@@ -132,7 +137,10 @@ function _renderPrivacyIndicator() {
   el.removeAttribute('hidden');
   el.onclick = () => {
     // The long-press already navigated — don't run the tap action on release.
-    if (_privacyLongPressed) { _privacyLongPressed = false; return; }
+    if (_privacyLongPressed) {
+      _privacyLongPressed = false;
+      return;
+    }
     window.Nav.go('s-island-settings');
   };
   el.onpointerdown = () => _startPrivacyPress();
@@ -151,7 +159,8 @@ function _renderPrivacyIndicator() {
     paths = '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>';
   } else if (mode === 'anon') {
     // Anonymous icon (Incognito)
-    paths = '<circle cx="12" cy="8" r="3.5"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/><line x1="3" y1="3" x2="21" y2="21"/>';
+    paths =
+      '<circle cx="12" cy="8" r="3.5"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/><line x1="3" y1="3" x2="21" y2="21"/>';
   } else {
     // Air-gap icon (Locked)
     paths = '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>';
@@ -160,8 +169,13 @@ function _renderPrivacyIndicator() {
   el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
     stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
     width="11" height="11">${paths}</svg>`;
-  
-  el.title = mode === 'airgap' ? 'Air-Gapped' : (mode === 'anon' ? 'Anonymous' : 'Cloud Enabled');
+
+  el.title =
+    mode === 'airgap'
+      ? t('privacy.airgap')
+      : mode === 'anon'
+        ? t('privacy.anon')
+        : t('privacy.cloud');
 }
 
 /* ── Backup reminder (GYM-GRADE DoD-5) — soft nudge, ≤1 toast / 2 weeks ── */
@@ -173,11 +187,14 @@ async function _checkBackupReminder() {
       DB.Settings.get(K_LAST_REMIND, 0),
       DB.Workouts.getAll(),
     ]);
-    if (!shouldRemindBackup({
-      lastExportAt: Number(lastExportAt) || 0,
-      lastRemindAt: Number(lastRemindAt) || 0,
-      workoutCount: workouts.length,
-    })) return;
+    if (
+      !shouldRemindBackup({
+        lastExportAt: Number(lastExportAt) || 0,
+        lastRemindAt: Number(lastRemindAt) || 0,
+        workoutCount: workouts.length,
+      })
+    )
+      return;
     await DB.Settings.set(K_LAST_REMIND, Date.now());
     const { t } = await import('./locale.store.js');
     Toast.show(t('backup.remind'), 'info', 12000, {
@@ -219,10 +236,12 @@ openDB()
       AthleteRoom.initAvatar().catch(() => {});
 
       /* ── Claude FAB (lazy-loaded) ── */
-      Promise.all([import('./claude.view.js'), ensureCss('css/claude.css')]).then(([{ Claude }]) => {
-        window.Claude = Claude;
-        Claude.renderFAB();
-      });
+      Promise.all([import('./claude.view.js'), ensureCss('css/claude.css')]).then(
+        ([{ Claude }]) => {
+          window.Claude = Claude;
+          Claude.renderFAB();
+        }
+      );
 
       _checkBackupReminder();
 
@@ -251,7 +270,7 @@ openDB()
   })
   .catch((err) => {
     console.error('[boot] DB failed', err);
-    Toast.show('Storage unavailable', 'error');
+    Toast.show(t('boot.storage'), 'error');
   });
 
 /* ── Navigation Handlers ── */
@@ -328,12 +347,18 @@ function _trapFocus(overlay) {
     const els = [...overlay.querySelectorAll(_FOCUSABLE)];
     if (!els.length) return;
     const first = els[0];
-    const last  = els[els.length - 1];
+    const last = els[els.length - 1];
 
     if (e.shiftKey) {
-      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
     } else {
-      if (document.activeElement === last)  { e.preventDefault(); first.focus(); }
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
   });
 }
@@ -353,7 +378,6 @@ new MutationObserver((mutations) => {
     }
   }
 }).observe(document.body, { childList: true });
-
 
 /* ── Service Worker ── */
 if ('serviceWorker' in navigator) {
@@ -376,49 +400,69 @@ if ('serviceWorker' in navigator) {
   // In both cases mark this remote as "attempted" so a repeat that still fails
   // escalates to a one-time forceUpdate on next load instead of looping.
   const _requestUpdate = (worker, remote) => {
-    if (remote) { try { sessionStorage.setItem('ap-upd-try', remote); } catch { /* private mode */ } }
+    if (remote) {
+      try {
+        sessionStorage.setItem('ap-upd-try', remote);
+      } catch {
+        /* private mode */
+      }
+    }
     if (worker) worker.postMessage({ type: 'SKIP_WAITING' });
     else forceUpdate();
   };
 
   const _promptUpdate = (worker, remote) => {
     if (_swReloaded) return;
-    const label = remote ? `Update available — v${remote}` : 'Update ready — apply now?';
-    Toast.show(label, 'info', 0, { action: { label: 'Update', onClick: () => _requestUpdate(worker, remote) } });
+    const label = remote ? t('boot.update_available', { v: remote }) : t('boot.update_ready');
+    Toast.show(label, 'info', 0, {
+      action: { label: t('boot.update'), onClick: () => _requestUpdate(worker, remote) },
+    });
   };
 
-  navigator.serviceWorker.register('/sw.js').then((reg) => {
-    _swReg = reg;
-    // Coming back online is the one moment a stale SW is most likely to be
-    // sitting around — nudge it to check for a fresh version.
-    window.addEventListener('online', () => reg.update());
+  navigator.serviceWorker
+    .register('/sw.js')
+    .then((reg) => {
+      _swReg = reg;
+      // Coming back online is the one moment a stale SW is most likely to be
+      // sitting around — nudge it to check for a fresh version.
+      window.addEventListener('online', () => reg.update());
 
-    // A fresh worker may already be parked (installed on a previous visit).
-    if (reg.waiting && navigator.serviceWorker.controller) _promptUpdate(reg.waiting);
+      // A fresh worker may already be parked (installed on a previous visit).
+      if (reg.waiting && navigator.serviceWorker.controller) _promptUpdate(reg.waiting);
 
-    // Catch a worker that finishes installing while the tab is open.
-    reg.addEventListener('updatefound', () => {
-      const nw = reg.installing;
-      if (!nw) return;
-      nw.addEventListener('statechange', () => {
-        if (nw.state === 'installed' && navigator.serviceWorker.controller) _promptUpdate(nw);
+      // Catch a worker that finishes installing while the tab is open.
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) _promptUpdate(nw);
+        });
       });
-    });
-  }).catch(() => {});
+    })
+    .catch(() => {});
 
   // On the very first visit there is no old controller — the page is already
   // running the freshest code, so claim() must not trigger a reload.
   let _hadController = !!navigator.serviceWorker.controller;
 
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!_hadController) { _hadController = true; return; }
+    if (!_hadController) {
+      _hadController = true;
+      return;
+    }
     if (_swReloaded) return;
-    try { sessionStorage.removeItem('ap-upd-try'); } catch { /* private mode */ }
+    try {
+      sessionStorage.removeItem('ap-upd-try');
+    } catch {
+      /* private mode */
+    }
     if (State.phase !== 'active') {
       _applyUpdate();
       return;
     }
-    Toast.show('Update ready — apply now?', 'info', 0, { action: { label: 'Apply', onClick: _applyUpdate } });
+    Toast.show(t('boot.update_ready'), 'info', 0, {
+      action: { label: t('boot.update_apply'), onClick: _applyUpdate },
+    });
     const waitForEnd = setInterval(() => {
       if (State.phase !== 'active') {
         clearInterval(waitForEnd);
@@ -448,9 +492,17 @@ if ('serviceWorker' in navigator) {
       // Loop-guard: previously attempted this exact version and we're STILL on
       // the old bundle → the SW is stuck. Evacuate once (not during a workout).
       let _tried = null;
-      try { _tried = sessionStorage.getItem('ap-upd-try'); } catch { /* private mode */ }
+      try {
+        _tried = sessionStorage.getItem('ap-upd-try');
+      } catch {
+        /* private mode */
+      }
       if (_tried === remote && State.phase !== 'active') {
-        try { sessionStorage.removeItem('ap-upd-try'); } catch { /* private mode */ }
+        try {
+          sessionStorage.removeItem('ap-upd-try');
+        } catch {
+          /* private mode */
+        }
         forceUpdate();
         return;
       }
@@ -461,27 +513,35 @@ if ('serviceWorker' in navigator) {
         if (_swReloaded) return; // SW уже применил обновление сам
         _promptUpdate(_swReg?.waiting || null, remote);
       }, 8000);
-    } catch { /* офлайн — молчим */ }
+    } catch {
+      /* офлайн — молчим */
+    }
   };
   setTimeout(_checkVersion, 4000); // не толкаемся с первым рендером
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) _checkVersion(); });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) _checkVersion();
+  });
 }
 
 /* ── Storage Persistence (Phase 5) ── */
 if (navigator.storage && navigator.storage.persist) {
-  navigator.storage.persist().then(granted => {
+  navigator.storage.persist().then((granted) => {
     if (granted) console.log('[Storage] Persistence granted (Anti-Eviction active)');
   });
 }
 
 /* ── Scroll FPS Optimization (Phase 5) ── */
 let _scrollTimer;
-window.addEventListener('scroll', () => {
-  if (!document.body.classList.contains('is-scrolling')) {
-    document.body.classList.add('is-scrolling');
-  }
-  clearTimeout(_scrollTimer);
-  _scrollTimer = setTimeout(() => {
-    document.body.classList.remove('is-scrolling');
-  }, 150);
-}, { passive: true, capture: true });
+window.addEventListener(
+  'scroll',
+  () => {
+    if (!document.body.classList.contains('is-scrolling')) {
+      document.body.classList.add('is-scrolling');
+    }
+    clearTimeout(_scrollTimer);
+    _scrollTimer = setTimeout(() => {
+      document.body.classList.remove('is-scrolling');
+    }, 150);
+  },
+  { passive: true, capture: true }
+);

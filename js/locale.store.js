@@ -282,6 +282,36 @@ const DICT = {
     'mascot.night_shift': 'Late. Still eating.',
     'mascot.early_bird': 'Early. I never got up.',
     'mascot.ate_progress': 'I ate your progress.',
+    'claude.hidden': 'Assistant hidden. Enable in Profile.',
+    'claude.hide': 'Hide Assistant',
+    'train.title': 'Training Hub',
+    'train.select_type': 'Select Type',
+    'train.edit_plan': 'Edit Plan',
+    'train.last_sessions': 'Last Sessions',
+    'train.week': 'Week',
+    'train.week_toggle': 'Tap to switch week',
+    'train.meta_push': 'CHEST',
+    'train.meta_pull': 'BACK',
+    'train.meta_legs': 'SHOULDERS',
+    'train.saved': 'Elite session saved',
+    'train.plan_saved': 'Plan saved',
+    'train.data_copied': 'Data copied',
+    'train.no_history': 'No history found',
+    'train.turbo': 'Turbo Boost: +2.5kg',
+    'profile.import_ok': 'Import success',
+    'profile.import_fail': 'Import failed',
+    'profile.load_error': 'Error loading profile',
+    'profile.ai_airgap': 'AI disabled in Airgap mode',
+    'profile.mascot_live_on': 'Live mascot on',
+    'profile.mascot_live_off': 'Live mascot off',
+    'profile.panda_mood_on': 'The panda is watching',
+    'profile.panda_mood_off': 'Panda reactions off',
+    'sync.you_offline': 'You are offline',
+    'boot.storage': 'Storage unavailable',
+    'boot.update_ready': 'Update ready — apply now?',
+    'boot.update_apply': 'Apply',
+    'boot.update_available': 'Update available — v{v}',
+    'boot.update': 'Update',
   },
   ru: {
     'profile.title': 'Профиль',
@@ -555,16 +585,77 @@ const DICT = {
     'mascot.night_shift': 'Поздно. Я ужинаю.',
     'mascot.early_bird': 'Рано. Я не вставал.',
     'mascot.ate_progress': 'Я съел твой прогресс.',
+    'claude.hidden': 'Ассистент скрыт. Включите в профиле.',
+    'claude.hide': 'Скрыть ассистента',
+    'train.title': 'Тренировки',
+    'train.select_type': 'Выбор типа',
+    'train.edit_plan': 'План',
+    'train.last_sessions': 'Прошлые сессии',
+    'train.week': 'Неделя',
+    'train.week_toggle': 'Переключить неделю',
+    'train.meta_push': 'ГРУДЬ',
+    'train.meta_pull': 'СПИНА',
+    'train.meta_legs': 'ПЛЕЧИ',
+    'train.saved': 'Сессия сохранена',
+    'train.plan_saved': 'План сохранён',
+    'train.data_copied': 'Данные скопированы',
+    'train.no_history': 'Нет истории',
+    'train.turbo': 'Турбо: +2.5 кг',
+    'profile.import_ok': 'Импорт выполнен',
+    'profile.import_fail': 'Импорт не удался',
+    'profile.load_error': 'Ошибка загрузки профиля',
+    'profile.ai_airgap': 'ИИ выключен в режиме «Без сети»',
+    'profile.mascot_live_on': 'Живой маскот включён',
+    'profile.mascot_live_off': 'Живой маскот выключен',
+    'profile.panda_mood_on': 'Панда следит за тобой',
+    'profile.panda_mood_off': 'Реакции панды выключены',
+    'sync.you_offline': 'Нет сети',
+    'boot.storage': 'Хранилище недоступно',
+    'boot.update_ready': 'Обновление готово — применить?',
+    'boot.update_apply': 'Применить',
+    'boot.update_available': 'Доступно обновление — v{v}',
+    'boot.update': 'Обновить',
   },
 };
 
 let _lang = 'en';
 
 /**
- * Initialize locale from settings.
+ * First-run language from the device locale list. UI code still reads
+ * `getLang()` / `isRu()` / `t()` — not `navigator.language`.
+ * Only the primary tag is consulted; anything other than `ru*` stays `en`.
+ * @param {readonly string[] | undefined} [languages]
+ * @returns {'en'|'ru'}
+ */
+export function detectDeviceLang(languages) {
+  const tags = Array.isArray(languages)
+    ? languages
+    : typeof navigator !== 'undefined'
+      ? navigator.languages?.length
+        ? [...navigator.languages]
+        : navigator.language
+          ? [navigator.language]
+          : []
+      : [];
+  const primary = String(tags[0] || '')
+    .trim()
+    .toLowerCase()
+    .split(/[-_]/)[0];
+  return primary === 'ru' ? 'ru' : 'en';
+}
+
+/**
+ * Initialize locale from saved settings, or persist a device-locale default
+ * when the user has never chosen a language (LAUNCH-5B / F-1).
  */
 export async function initLocale() {
-  _lang = await DB.Settings.get('lang', 'en');
+  const saved = await DB.Settings.get('lang');
+  if (saved === 'ru' || saved === 'en') {
+    _lang = saved;
+    return;
+  }
+  _lang = detectDeviceLang();
+  await DB.Settings.set('lang', _lang);
 }
 
 /**

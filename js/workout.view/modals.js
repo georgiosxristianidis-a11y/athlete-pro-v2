@@ -7,26 +7,34 @@
 import { Toast } from '../shell.js';
 import { esc } from '../shared/utils.js';
 import { confirmDialog } from '../shared/confirm.js';
-import { isRu } from '../locale.store.js';
+import { isRu, t } from '../locale.store.js';
 import { on, onChange, onInput } from '../events.js';
 
 const W = () => window.Workout;
-onChange('wo:planName',  (el, e) => W()._updatePlanName(el.dataset.type, +el.dataset.pi, e.target.value));
-onChange('wo:planTag',   (el, e) => W()._updatePlanTag(el.dataset.type, +el.dataset.pi, e.target.value));
-on('wo:planAdjust',      (el) => W()._adjustPlan(el.dataset.type, +el.dataset.pi, el.dataset.field, +el.dataset.delta));
-on('wo:planDelete',      (el) => W()._deletePlanEx(el.dataset.type, +el.dataset.pi));
-on('wo:planAddEx',       (el) => W()._addPlanEx(el.dataset.type));
-on('wo:planClose',       () => W()._closePlanEditor());
-on('wo:planWeek',        (el) => W()._switchPlanWeek(el.dataset.week));
-on('wo:planPreset',      (el) => W()._loadPreset(el.dataset.preset));
+onChange('wo:planName', (el, e) =>
+  W()._updatePlanName(el.dataset.type, +el.dataset.pi, e.target.value)
+);
+onChange('wo:planTag', (el, e) =>
+  W()._updatePlanTag(el.dataset.type, +el.dataset.pi, e.target.value)
+);
+on('wo:planAdjust', (el) =>
+  W()._adjustPlan(el.dataset.type, +el.dataset.pi, el.dataset.field, +el.dataset.delta)
+);
+on('wo:planDelete', (el) => W()._deletePlanEx(el.dataset.type, +el.dataset.pi));
+on('wo:planAddEx', (el) => W()._addPlanEx(el.dataset.type));
+on('wo:planClose', () => W()._closePlanEditor());
+on('wo:planWeek', (el) => W()._switchPlanWeek(el.dataset.week));
+on('wo:planPreset', (el) => W()._loadPreset(el.dataset.preset));
 onInput('wo:planSearch', (el, e) => W()._setPlanSearch(e.target.value));
-on('wo:planTab',         (el) => W()._switchPlanTab(el.dataset.type));
-on('wo:planSave',        () => W()._savePlanAndClose());
+on('wo:planTab', (el) => W()._switchPlanTab(el.dataset.type));
+on('wo:planSave', () => W()._savePlanAndClose());
 import {
   State,
-  loadPlan, savePlan,
+  loadPlan,
+  savePlan,
   persistSession,
-  getWeekMode, setWeekMode,
+  getWeekMode,
+  setWeekMode,
   getExerciseLibrary,
   PPL_GIO_PLAN,
   PPL_HYBRID_PLAN,
@@ -65,14 +73,15 @@ export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
   let exercises = plan[type] || [];
   if (searchQuery.trim()) {
     const q = searchQuery.toLowerCase();
-    exercises = exercises.filter(ex => ex.name.toLowerCase().includes(q));
+    exercises = exercises.filter((ex) => ex.name.toLowerCase().includes(q));
   }
 
-  const exercisesHTML = exercises.length > 0
-    ? exercises
-        .map((ex) => {
-          const originalIndex = plan[type].indexOf(ex);
-          return `
+  const exercisesHTML =
+    exercises.length > 0
+      ? exercises
+          .map((ex) => {
+            const originalIndex = plan[type].indexOf(ex);
+            return `
     <div class="plan-row" id="plan-row-${type}-${originalIndex}" data-pi="${originalIndex}">
       <div class="plan-drag-handle">
         <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
@@ -110,10 +119,13 @@ export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
         </button>
       </div>
     </div>`;
-        }).join('')
-    : `<div class="plan-empty">No exercises found for "${esc(searchQuery)}"</div>`;
+          })
+          .join('')
+      : `<div class="plan-empty">No exercises found for "${esc(searchQuery)}"</div>`;
 
-  return exercisesHTML + `
+  return (
+    exercisesHTML +
+    `
     <button class="btn-add-ex" data-action="wo:planAddEx" data-type="${type}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="1.5" stroke-linecap="round" width="16" height="16">
@@ -121,9 +133,9 @@ export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
         <line x1="5" y1="12" x2="19" y2="12"/>
       </svg>
       Add Exercise
-    </button>`;
+    </button>`
+  );
 }
-
 
 /* ════════════════════════════════════════════════════════
    PLAN EDITOR MODAL
@@ -141,7 +153,6 @@ export function openPlanEditor() {
     plan = loadPlan(activeWeek); // keep local cache fresh
     return _buildPlanTabHTML(type, activeWeek, searchQuery);
   }
-
 
   let searchQuery = '';
 
@@ -264,7 +275,7 @@ export function _setPlanSearch(query) {
  * в диалоге и тосте (одно имя на все три места, чтобы не расходилось).
  */
 const PLAN_PRESETS = {
-  'ppl-gio':    { plan: PPL_GIO_PLAN,    label: 'PPL | GIO' },
+  'ppl-gio': { plan: PPL_GIO_PLAN, label: 'PPL | GIO' },
   'ppl-hybrid': { plan: PPL_HYBRID_PLAN, label: 'PPL | Hybrid v1' },
 };
 
@@ -275,7 +286,9 @@ export async function _loadPreset(presetName) {
   const ru = isRu();
   const ok = await confirmDialog({
     title: ru ? `Загрузить пресет ${label}?` : `Load ${label} preset?`,
-    message: ru ? 'Планы недели A и недели B будут заменены.' : 'Both Week A and Week B plans will be replaced.',
+    message: ru
+      ? 'Планы недели A и недели B будут заменены.'
+      : 'Both Week A and Week B plans will be replaced.',
     confirmLabel: ru ? 'Загрузить' : 'Load',
     cancelLabel: ru ? 'Отмена' : 'Cancel',
   });
@@ -284,7 +297,12 @@ export async function _loadPreset(presetName) {
   savePlan(JSON.parse(JSON.stringify(preset.weekB)), 'B');
   _closePlanEditor();
   openPlanEditor();
-  Toast.show(ru ? `${label} загружен для недель A и B — задай рабочие веса` : `${label} loaded for Week A & B — set your working weights`, 'success');
+  Toast.show(
+    ru
+      ? `${label} загружен для недель A и B — задай рабочие веса`
+      : `${label} loaded for Week A & B — set your working weights`,
+    'success'
+  );
 }
 
 export function _closePlanEditor() {
@@ -305,14 +323,14 @@ export function _savePlanAndClose() {
   const btn = document.getElementById('plan-save-btn');
   if (!btn || btn.classList.contains('is-done')) {
     _closePlanEditor();
-    Toast.show('Plan saved', 'success');
+    Toast.show(t('train.plan_saved'), 'success');
     return;
   }
   btn.classList.add('is-done');
   btn.disabled = true;
   setTimeout(() => {
     _closePlanEditor();
-    Toast.show('Plan saved', 'success');
+    Toast.show(t('train.plan_saved'), 'success');
   }, 380);
 }
 
@@ -406,7 +424,11 @@ function _initPlanDrag() {
       list.querySelectorAll('.plan-row').forEach((other) => {
         if (other === row) return;
         const rect = other.getBoundingClientRect();
-        cachedRects.push({ el: /** @type {HTMLElement} */ (other), top: rect.top, bottom: rect.bottom });
+        cachedRects.push({
+          el: /** @type {HTMLElement} */ (other),
+          top: rect.top,
+          bottom: rect.bottom,
+        });
       });
     });
 
@@ -419,7 +441,10 @@ function _initPlanDrag() {
     handle.addEventListener('pointerup', () => {
       if (!dragging) return;
       dragging = false;
-      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
       row.style.transform = '';
       row.style.zIndex = '';
       row.classList.remove('plan-row-dragging');
@@ -532,16 +557,17 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
     let filtered = allExercises;
 
     if (activeFilter !== 'all') {
-      filtered = filtered.filter(ex => ex.category === activeFilter);
+      filtered = filtered.filter((ex) => ex.category === activeFilter);
     }
 
     if (currentQuery.trim()) {
       const q = currentQuery.trim().toLowerCase();
-      filtered = filtered.filter(ex => {
+      filtered = filtered.filter((ex) => {
         const nameMatch = ex.name.toLowerCase().includes(q);
-        const tagsMatch = ex.tags?.some(t => t.toLowerCase().includes(q));
-        const muscleMatch = ex.primaryMuscles?.some(m => m.toLowerCase().includes(q)) ||
-                           ex.secondaryMuscles?.some(m => m.toLowerCase().includes(q));
+        const tagsMatch = ex.tags?.some((t) => t.toLowerCase().includes(q));
+        const muscleMatch =
+          ex.primaryMuscles?.some((m) => m.toLowerCase().includes(q)) ||
+          ex.secondaryMuscles?.some((m) => m.toLowerCase().includes(q));
         return nameMatch || tagsMatch || muscleMatch;
       });
     }
@@ -580,7 +606,7 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
 
   filterBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
-      filterBtns.forEach(b => {
+      filterBtns.forEach((b) => {
         b.classList.remove('active');
         b.style.cssText = '';
       });
@@ -706,16 +732,17 @@ export async function openReplaceExModal(ei) {
     let filtered = allExercises;
 
     if (activeFilter !== 'all') {
-      filtered = filtered.filter(ex => ex.category === activeFilter);
+      filtered = filtered.filter((ex) => ex.category === activeFilter);
     }
 
     if (currentQuery.trim()) {
       const q = currentQuery.trim().toLowerCase();
-      filtered = filtered.filter(ex => {
+      filtered = filtered.filter((ex) => {
         const nameMatch = ex.name.toLowerCase().includes(q);
-        const tagsMatch = ex.tags?.some(t => t.toLowerCase().includes(q));
-        const muscleMatch = ex.primaryMuscles?.some(m => m.toLowerCase().includes(q)) ||
-                           ex.secondaryMuscles?.some(m => m.toLowerCase().includes(q));
+        const tagsMatch = ex.tags?.some((t) => t.toLowerCase().includes(q));
+        const muscleMatch =
+          ex.primaryMuscles?.some((m) => m.toLowerCase().includes(q)) ||
+          ex.secondaryMuscles?.some((m) => m.toLowerCase().includes(q));
         return nameMatch || tagsMatch || muscleMatch;
       });
     }
@@ -754,7 +781,7 @@ export async function openReplaceExModal(ei) {
 
   filterBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
-      filterBtns.forEach(b => {
+      filterBtns.forEach((b) => {
         b.classList.remove('active');
         b.style.cssText = '';
       });

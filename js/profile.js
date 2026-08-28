@@ -11,11 +11,11 @@ import { renderSettings, backupSubLabel, backupMetaLabel } from './profile.view/
 import { VERSION } from './version.js';
 import { Toast } from './shell.js';
 import { on, onChange } from './events.js';
-import { haptic } from './shared/utils.js';
+import { haptic, esc } from './shared/utils.js';
 import { forceUpdate } from './shared/sw-update.js';
 import { probeAiStatus } from './shared/ai-status.js';
 
-on('profile:clearData',        () => window.Profile.clearAllData());
+on('profile:clearData', () => window.Profile.clearAllData());
 onChange('profile:importFile', (el, e) => window.Profile._onImportFile(e));
 
 export const Profile = (() => {
@@ -38,12 +38,8 @@ export const Profile = (() => {
     if (!screen) return;
 
     try {
-      const [syncStatus, settings, langRaw] = await Promise.all([
-        _syncStatus(),
-        DB.Settings.getAll(),
-        DB.Settings.get('lang', 'en')
-      ]);
-      const lang = langRaw || 'en';
+      const [syncStatus, settings] = await Promise.all([_syncStatus(), DB.Settings.getAll()]);
+      const lang = getLang() || 'en';
       const ru = lang === 'ru';
 
       screen.innerHTML = `
@@ -91,7 +87,7 @@ export const Profile = (() => {
       _patchAiStatus(settings);
     } catch (err) {
       console.error('Profile load error', err);
-      screen.innerHTML = '<div style="padding:var(--sp-3);">Error loading profile</div>';
+      screen.innerHTML = `<div style="padding:var(--sp-3);">${esc(t('profile.load_error'))}</div>`;
     }
   }
 
@@ -124,7 +120,7 @@ export const Profile = (() => {
     const [syncStatus, settings, langRaw] = await Promise.all([
       _syncStatus(),
       DB.Settings.getAll(),
-      DB.Settings.get('lang', 'en')
+      DB.Settings.get('lang', 'en'),
     ]);
     block.innerHTML = renderSettings(settings, langRaw || 'en', _AI_UNKNOWN, syncStatus);
     _patchAiStatus(settings);
@@ -174,10 +170,13 @@ export const Profile = (() => {
      surface. */
   function _isLocalHost() {
     const h = location.hostname;
-    return h === 'localhost' || h === '127.0.0.1' ||
+    return (
+      h === 'localhost' ||
+      h === '127.0.0.1' ||
       /^192\.168\.\d{1,3}\.\d{1,3}$/.test(h) ||
       /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(h) ||
-      /^172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(h);
+      /^172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(h)
+    );
   }
 
   async function _appendBuildStamp() {
@@ -189,9 +188,10 @@ export const Profile = (() => {
       if (!b || !b.hash) return;
       const el = document.getElementById('app-build-stamp');
       if (!el) return;
-      el.textContent = el.textContent.trim() +
-        ` · ${b.branch}@${b.hash}${b.dirty ? '+' : ''}`;
-    } catch { /* offline — no stamp */ }
+      el.textContent = el.textContent.trim() + ` · ${b.branch}@${b.hash}${b.dirty ? '+' : ''}`;
+    } catch {
+      /* offline — no stamp */
+    }
   }
 
   /* Manual escape hatch: 5 taps on the version stamp within ~3s force a clean
@@ -208,7 +208,9 @@ export const Profile = (() => {
       taps += 1;
       haptic(8);
       clearTimeout(timer);
-      timer = setTimeout(() => { taps = 0; }, 3000);
+      timer = setTimeout(() => {
+        taps = 0;
+      }, 3000);
       if (taps >= 5) {
         taps = 0;
         clearTimeout(timer);
@@ -249,7 +251,7 @@ export const Profile = (() => {
     const next = !current;
     await DB.Settings.set('ai-panda-hidden', next);
     await DB.Settings.set('show-mascot', next ? 'off' : 'on');
-    
+
     const { Claude } = await import('./claude.view.js');
     if (next) {
       const fabContainer = document.getElementById('claude-fab-container');
@@ -274,8 +276,7 @@ export const Profile = (() => {
     const { Claude } = await import('./claude.view.js');
     document.getElementById('claude-fab-container')?.remove();
     await Claude.renderFAB();
-    const ru = document.documentElement.lang === 'ru';
-    Toast.show(next ? (ru ? 'Живой маскот включён' : 'Live mascot on') : (ru ? 'Живой маскот выключен' : 'Live mascot off'), 'success');
+    Toast.show(next ? t('profile.mascot_live_on') : t('profile.mascot_live_off'), 'success');
     _refreshSettings();
   }
 
@@ -296,16 +297,15 @@ export const Profile = (() => {
     const { Claude } = await import('./claude.view.js');
     document.getElementById('claude-fab-container')?.remove();
     await Claude.renderFAB();
-    const ru = document.documentElement.lang === 'ru';
-    Toast.show(next ? (ru ? 'Панда следит за тобой' : 'The panda is watching') : (ru ? 'Реакции панды выключены' : 'Panda reactions off'), 'success');
+    Toast.show(next ? t('profile.panda_mood_on') : t('profile.panda_mood_off'), 'success');
     _refreshSettings();
   }
 
-async function setEngine(engine) {
+  async function setEngine(engine) {
     const { getPrivacyMode } = await import('./privacy.store.js');
     const mode = getPrivacyMode();
     if (mode === 'airgap') {
-      Toast.show('AI disabled in Airgap mode', 'error');
+      Toast.show(t('profile.ai_airgap'), 'error');
       return;
     }
     await DB.Settings.set('ai-engine', engine);
@@ -353,12 +353,14 @@ async function setEngine(engine) {
     try {
       const text = await file.text();
       await DB.Backup.import(text);
-      Toast.show('Import success', 'success');
+      Toast.show(t('profile.import_ok'), 'success');
       // Import can rewrite everything — settings, workouts, language. This is
       // the one case where a full rebuild is the honest answer; it's rare and
       // heavy by nature, so the re-render cost doesn't matter.
       load();
-    } catch { Toast.show('Import failed', 'error'); }
+    } catch {
+      Toast.show(t('profile.import_fail'), 'error');
+    }
   }
 
   let _deleteTapTimer = null;
@@ -401,8 +403,10 @@ async function setEngine(engine) {
    */
   async function toggleNotify() {
     const supported = typeof Notification !== 'undefined';
-    const isOn = (await DB.Settings.get('notify-rest', 'off')) === 'on'
-      && supported && Notification.permission === 'granted';
+    const isOn =
+      (await DB.Settings.get('notify-rest', 'off')) === 'on' &&
+      supported &&
+      Notification.permission === 'granted';
 
     if (isOn) {
       await DB.Settings.set('notify-rest', 'off');
@@ -410,7 +414,10 @@ async function setEngine(engine) {
       return _refreshSettings();
     }
 
-    if (!supported) { Toast.show(t('settings.notify_denied'), 'error'); return; }
+    if (!supported) {
+      Toast.show(t('settings.notify_denied'), 'error');
+      return;
+    }
 
     let perm = Notification.permission;
     if (perm === 'default') perm = await Notification.requestPermission().catch(() => 'denied');
@@ -441,7 +448,7 @@ async function setEngine(engine) {
      и click съела бы тап, вызвавший blur. Индикаторы патчатся на месте. */
   const KEY_DEBOUNCE_MS = 650;
   const KEY_PREFIX = { gemini: 'AIza', anthropic: 'sk-ant-' };
-  const KEY_FIELD  = { gemini: 'gemini-key', anthropic: 'anthropic-key' };
+  const KEY_FIELD = { gemini: 'gemini-key', anthropic: 'anthropic-key' };
 
   let _keyTimer = null;
   /* Гонка: пользователь дописывает ключ, пока летит проверка предыдущего.
@@ -471,21 +478,22 @@ async function setEngine(engine) {
     // without your key». Серый в обоих случаях, но подпись честная.
     if (state === 'empty' && box.dataset.server === '1') state = 'server';
 
-    const text = {
-      empty:    t('settings.key_empty'),
-      server:   t('settings.key_server'),
-      saved:    t('settings.key_saved'),
-      partial:  t('settings.key_partial'),
-      checking: t('settings.key_checking'),
-      ok:       t('settings.key_ok'),
-      invalid:  t('settings.key_invalid'),
-      disabled: t('settings.key_disabled'),
-      offline:  t('settings.key_offline'),
-      blocked:  t('settings.key_blocked'),
-    }[state] || '';
+    const text =
+      {
+        empty: t('settings.key_empty'),
+        server: t('settings.key_server'),
+        saved: t('settings.key_saved'),
+        partial: t('settings.key_partial'),
+        checking: t('settings.key_checking'),
+        ok: t('settings.key_ok'),
+        invalid: t('settings.key_invalid'),
+        disabled: t('settings.key_disabled'),
+        offline: t('settings.key_offline'),
+        blocked: t('settings.key_blocked'),
+      }[state] || '';
 
     const ms = Number(extra.latencyMs) || 0;
-    label.textContent = (state === 'ok' && ms) ? `${text} · ${ms} ${t('settings.key_ms')}` : text;
+    label.textContent = state === 'ok' && ms ? `${text} · ${ms} ${t('settings.key_ms')}` : text;
 
     if (box.dataset.state !== state) {
       box.dataset.state = state;
@@ -502,8 +510,17 @@ async function setEngine(engine) {
     clearTimeout(_keyTimer);
     const val = String(raw || '').trim();
 
-    if (!val) { _keyCheckSeq++; _setKeyConn('empty'); _keyTimer = setTimeout(() => commitKey(engine, ''), KEY_DEBOUNCE_MS); return; }
-    if (!_keyLooksValid(engine, val)) { _keyCheckSeq++; _setKeyConn('partial'); return; }
+    if (!val) {
+      _keyCheckSeq++;
+      _setKeyConn('empty');
+      _keyTimer = setTimeout(() => commitKey(engine, ''), KEY_DEBOUNCE_MS);
+      return;
+    }
+    if (!_keyLooksValid(engine, val)) {
+      _keyCheckSeq++;
+      _setKeyConn('partial');
+      return;
+    }
 
     _setKeyConn('checking');
     _keyTimer = setTimeout(() => commitKey(engine, val), KEY_DEBOUNCE_MS);
@@ -528,8 +545,14 @@ async function setEngine(engine) {
     }
     _patchAiStatus(await DB.Settings.getAll());
 
-    if (!val) { if (seq === _keyCheckSeq) _setKeyConn('empty'); return; }
-    if (!_keyLooksValid(engine, val)) { if (seq === _keyCheckSeq) _setKeyConn('partial'); return; }
+    if (!val) {
+      if (seq === _keyCheckSeq) _setKeyConn('empty');
+      return;
+    }
+    if (!_keyLooksValid(engine, val)) {
+      if (seq === _keyCheckSeq) _setKeyConn('partial');
+      return;
+    }
 
     if (seq === _keyCheckSeq) _setKeyConn('checking');
     const verdict = await _verifyKey(engine, val);
@@ -544,17 +567,23 @@ async function setEngine(engine) {
   async function _verifyKey(engine, key) {
     try {
       const { safeFetch } = await import('./privacy.store.js');
-      const res = await safeFetch('/api/verify-key', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ engine, key }),
-      }, 'ai');
+      const res = await safeFetch(
+        '/api/verify-key',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ engine, key }),
+        },
+        'ai'
+      );
       const data = await res.json();
       if (data.ok) return { state: 'ok', latencyMs: data.latencyMs };
       // «Ключ не принят» и «API не включён в проекте» чинятся по-разному:
       // первое — заменой ключа, второе — тумблером в Google Cloud. Один общий
       // «ошибка» отправлял бы человека искать не там.
-      return { state: { invalid_key: 'invalid', api_disabled: 'disabled' }[data.reason] || 'offline' };
+      return {
+        state: { invalid_key: 'invalid', api_disabled: 'disabled' }[data.reason] || 'offline',
+      };
     } catch (err) {
       // Airgap / AI выключен — это не «ключ плохой», а «сеть закрыта нарочно».
       if (err && err.name === 'PrivacyBlockedError') return { state: 'blocked' };
@@ -581,10 +610,12 @@ async function setEngine(engine) {
     if (!inp || !icon) return;
     if (inp.type === 'password') {
       inp.type = 'text';
-      icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><path d="M2 2l20 20"/>';
+      icon.innerHTML =
+        '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><path d="M2 2l20 20"/>';
     } else {
       inp.type = 'password';
-      icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+      icon.innerHTML =
+        '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
     }
   }
 
@@ -605,7 +636,6 @@ async function setEngine(engine) {
     await setLocaleLang(lang);
     _refreshLangDependent();
   }
-
 
   async function exportCsv() {
     const { workoutsToCsv, downloadCsv } = await import('./shared/csv-export.js');
@@ -643,7 +673,7 @@ async function setEngine(engine) {
         confirmLabel: t('data.place_save'),
         cancelLabel: getLang() === 'ru' ? 'Отмена' : 'Cancel',
       });
-      if (!res) return;                       // отмена — файл не создаём
+      if (!res) return; // отмена — файл не создаём
       place = res;
       await Promise.all([
         DB.Settings.set('gym-name', place.gym || ''),
@@ -709,7 +739,7 @@ async function setEngine(engine) {
         Toast.show(t('sync.status.error'), 'error');
       }
     } catch (e) {
-      Toast.show('You are offline', 'error');
+      Toast.show(t('sync.you_offline'), 'error');
     }
   }
 
@@ -719,7 +749,7 @@ async function setEngine(engine) {
       await SyncManager.signOut();
       _refreshSettings();
     } catch (e) {
-      Toast.show('You are offline', 'error');
+      Toast.show(t('sync.you_offline'), 'error');
     }
   }
 
@@ -729,9 +759,14 @@ async function setEngine(engine) {
       const status = e.detail?.status || 'idle';
       const el = document.getElementById('profile-sync-status');
       if (el) {
-        const color = status === 'syncing' ? 'var(--c-blue)' :
-                      status === 'error' ? 'var(--c-red)' :
-                      status === 'offline' ? 'var(--c-text-3)' : 'var(--c-accent)';
+        const color =
+          status === 'syncing'
+            ? 'var(--c-blue)'
+            : status === 'error'
+              ? 'var(--c-red)'
+              : status === 'offline'
+                ? 'var(--c-text-3)'
+                : 'var(--c-accent)';
         el.innerHTML = `
           <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${color}; box-shadow:0 0 8px ${status === 'offline' ? 'transparent' : color};"></span>
           <span style="font-size:var(--fs-1); font-weight:var(--fw-black); color:var(--c-text-3); text-transform:uppercase;">${status}</span>
@@ -741,17 +776,42 @@ async function setEngine(engine) {
   }
 
   return {
-    load, adjustRest, setUnit, toggleHaptic, toggleKeepAwake, toggleAutoProgress,
-    togglePanda, toggleFabVideo, togglePandaMoods, setLang, setEngine, setGeminiKey,
-    validateGeminiKey, setAnthropicKey, validateAnthropicKey, toggleKeyVisibility,
-    onKeyInput, commitKey, recheckKey,
-    exportData, exportCsv, exportTxt, importData, setTheme, toggleNotify,
-    _onImportFile, clearAllData,
-    syncConnect, syncDisconnect, deduplicateDB
+    load,
+    adjustRest,
+    setUnit,
+    toggleHaptic,
+    toggleKeepAwake,
+    toggleAutoProgress,
+    togglePanda,
+    toggleFabVideo,
+    togglePandaMoods,
+    setLang,
+    setEngine,
+    setGeminiKey,
+    validateGeminiKey,
+    setAnthropicKey,
+    validateAnthropicKey,
+    toggleKeyVisibility,
+    onKeyInput,
+    commitKey,
+    recheckKey,
+    exportData,
+    exportCsv,
+    exportTxt,
+    importData,
+    setTheme,
+    toggleNotify,
+    _onImportFile,
+    clearAllData,
+    syncConnect,
+    syncDisconnect,
+    deduplicateDB,
   };
 })();
 
-function _haptic(ms = 10) { if (navigator.vibrate) navigator.vibrate(ms); }
+function _haptic(ms = 10) {
+  if (navigator.vibrate) navigator.vibrate(ms);
+}
 
 /** Update AI engine indicators after shell render (non-blocking). */
 async function _patchAiStatus(settings) {
@@ -772,5 +832,7 @@ async function _patchAiStatus(settings) {
     if (probed.gemini) {
       document.getElementById('engine-btn-gemini')?.classList.remove('ai-glow-error');
     }
-  } catch (_) { /* probeAiStatus does not throw; keep local-key indicators */ }
+  } catch (_) {
+    /* probeAiStatus does not throw; keep local-key indicators */
+  }
 }

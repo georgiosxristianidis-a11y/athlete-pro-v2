@@ -7,10 +7,19 @@ import { State as WorkoutState } from './workout.store.js';
 import { Toast } from './shell.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
-import { initPandaVideo, togglePandaSound, PANDA_VIDEO_SRC, PANDA_POSTER_SRC } from './shared/panda-video.js';
+import { t } from './locale.store.js';
+import {
+  initPandaVideo,
+  togglePandaSound,
+  PANDA_VIDEO_SRC,
+  PANDA_POSTER_SRC,
+} from './shared/panda-video.js';
 import { attachMood } from './shared/panda-mood.js';
 
-on('claude:dismissFAB', (el, e) => { e.stopPropagation(); window.Claude?.dismissFAB(); });
+on('claude:dismissFAB', (el, e) => {
+  e.stopPropagation();
+  window.Claude?.dismissFAB();
+});
 
 const ICON_SND_ON = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>`;
 const ICON_SND_OFF = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>`;
@@ -34,7 +43,7 @@ export const Claude = (() => {
   const ClaudeState = {
     isOpen: false,
     chatHistory: [],
-    context: null
+    context: null,
   };
 
   /* ══════════════════════════════════════════════
@@ -56,7 +65,7 @@ export const Claude = (() => {
     if (isHidden) return;
     if (document.getElementById('claude-fab-container')) return;
 
-    const engine = await DB.Settings.get('ai-engine').catch(() => 'anthropic') || 'anthropic';
+    const engine = (await DB.Settings.get('ai-engine').catch(() => 'anthropic')) || 'anthropic';
     const isGemini = engine === 'gemini';
     const hasKey = isGemini ? !!(await DB.Settings.get('gemini-key')) : true;
 
@@ -77,11 +86,11 @@ export const Claude = (() => {
 
     container.innerHTML = `
       <div style="position:relative; pointer-events:auto">
-        <div class="fab-close-btn" data-action="claude:dismissFAB" title="Hide Assistant" style="opacity:1; transform:scale(1); top:-10px; right:-10px; pointer-events:auto">
+        <div class="fab-close-btn" data-action="claude:dismissFAB" title="${esc(t('claude.hide'))}" style="opacity:1; transform:scale(1); top:-10px; right:-10px; pointer-events:auto">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </div>
-        ${videoMode ? `<button type="button" class="fab-sound-btn" data-action="claude:toggleSound" title="Sound" aria-label="Toggle sound" aria-pressed="false" style="top:-10px; left:-10px">${ICON_SND_OFF}</button>` : ''}
-        <button id="claude-fab" class="claude-fab ${isGemini ? 'gemini-mode' : ''} ${glowClass} ${videoMode ? 'video-mode' : ''}" aria-label="AI Assistant" style="margin:0">
+        ${videoMode ? `<button type="button" class="fab-sound-btn" data-action="claude:toggleSound" title="${esc(t('dash.sound'))}" aria-label="${esc(t('dash.sound'))}" aria-pressed="false" style="top:-10px; left:-10px">${ICON_SND_OFF}</button>` : ''}
+        <button id="claude-fab" class="claude-fab ${isGemini ? 'gemini-mode' : ''} ${glowClass} ${videoMode ? 'video-mode' : ''}" aria-label="${esc(t('dash.open_coach'))}" style="margin:0">
           <div class="ai-status-wrap">
             <span class="ai-indicator ${hasKey ? 'active' : 'missing'}"></span>
           </div>
@@ -91,17 +100,17 @@ export const Claude = (() => {
       </div>
     `;
 
-      const fab = container.querySelector('#claude-fab');
-      const content = container.querySelector('.fab-content');
-      if (content) {
-        if (videoMode) {
-          content.innerHTML = `<video id="claude-fab-video" class="fab-video" autoplay loop muted playsinline preload="auto" src="${PANDA_VIDEO_SRC}" poster="${PANDA_POSTER_SRC}" aria-hidden="true"></video>`;
-        } else {
-          content.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+    const fab = container.querySelector('#claude-fab');
+    const content = container.querySelector('.fab-content');
+    if (content) {
+      if (videoMode) {
+        content.innerHTML = `<video id="claude-fab-video" class="fab-video" autoplay loop muted playsinline preload="auto" src="${PANDA_VIDEO_SRC}" poster="${PANDA_POSTER_SRC}" aria-hidden="true"></video>`;
+      } else {
+        content.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
             <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/>
           </svg>`;
-        }
       }
+    }
 
     fab.addEventListener('click', open);
     document.body.appendChild(container);
@@ -140,9 +149,8 @@ export const Claude = (() => {
     let screenId = document.querySelector('.screen.active')?.id || 's-home';
     const applyVis = () => {
       const mascotAlive = !!document.querySelector('.empty-dash-mascot video');
-      const hide = screenId === 's-intel'
-        || screenId === 's-train'
-        || (screenId === 's-home' && mascotAlive);
+      const hide =
+        screenId === 's-intel' || screenId === 's-train' || (screenId === 's-home' && mascotAlive);
       container.style.display = hide ? 'none' : '';
     };
     _fabOn.add('ap-nav-change', (e) => {
@@ -165,14 +173,15 @@ export const Claude = (() => {
     // DOM Writes
     el.style.bottom = navH + 14 + 'px';
     if (isAppWide) {
-      el.style.right = (window.innerWidth - rectRight + 14) + 'px';
+      el.style.right = window.innerWidth - rectRight + 14 + 'px';
     } else {
       el.style.right = '14px';
     }
   }
 
   function _initDraggable(el) {
-    let startX = 0, startY = 0;
+    let startX = 0,
+      startY = 0;
     let moved = false;
 
     el.onpointerdown = (e) => {
@@ -181,7 +190,8 @@ export const Claude = (() => {
       startX = e.clientX;
       startY = e.clientY;
       const style = window.getComputedStyle(el);
-      const initialTransform = style.transform !== 'none' ? style.transform : 'matrix(1, 0, 0, 1, 0, 0)';
+      const initialTransform =
+        style.transform !== 'none' ? style.transform : 'matrix(1, 0, 0, 1, 0, 0)';
       const matrix = new DOMMatrix(initialTransform);
       const baseOffsetX = matrix.m41;
       const baseOffsetY = matrix.m42;
@@ -190,12 +200,12 @@ export const Claude = (() => {
       document.onpointermove = (ev) => {
         const dx = ev.clientX - startX;
         const dy = ev.clientY - startY;
-        
+
         // 5px threshold to prevent swallowing taps on mobile due to finger jitter
         if (!moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
           moved = true;
         }
-        
+
         if (moved) {
           el.style.transform = `translate(${baseOffsetX + dx}px, ${baseOffsetY + dy}px)`;
         }
@@ -205,13 +215,17 @@ export const Claude = (() => {
         document.onpointerup = null;
       };
     };
-    
-    el.addEventListener('click', (e) => {
-      if (moved) {
-        e.stopImmediatePropagation();
-        moved = false;
-      }
-    }, true);
+
+    el.addEventListener(
+      'click',
+      (e) => {
+        if (moved) {
+          e.stopImmediatePropagation();
+          moved = false;
+        }
+      },
+      true
+    );
   }
 
   async function dismissFAB() {
@@ -230,7 +244,7 @@ export const Claude = (() => {
     }
     await DB.Settings.set('ai-panda-hidden', true);
     await DB.Settings.set('show-mascot', 'off');
-    Toast.show('Assistant hidden. Enable in Profile.', 'info');
+    Toast.show(t('claude.hidden'), 'info');
   }
 
   /**
@@ -263,16 +277,27 @@ export const Claude = (() => {
     try {
       const { fetchCoach } = await import('./claude.store.js');
       let aiText = '';
-      await fetchCoach(text, {
-        onText: (chunk) => {
-          aiBubble.classList.remove('thinking');
-          aiText += chunk;
-          aiBubble.innerHTML = _markdownToHtml(aiText);
-          hist?.scrollTo(0, hist.scrollHeight);
+      await fetchCoach(
+        text,
+        {
+          onText: (chunk) => {
+            aiBubble.classList.remove('thinking');
+            aiText += chunk;
+            aiBubble.innerHTML = _markdownToHtml(aiText);
+            hist?.scrollTo(0, hist.scrollHeight);
+          },
+          onDone: () => {
+            ClaudeState.chatHistory.push(
+              { role: 'user', content: text },
+              { role: 'assistant', content: aiText }
+            );
+          },
+          onError: (err) => {
+            aiBubble.innerHTML = `<div class="ai-error">${esc(toUserMessage(err))}</div>`;
+          },
         },
-        onDone: () => { ClaudeState.chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: aiText }); },
-        onError: (err) => { aiBubble.innerHTML = `<div class="ai-error">${esc(toUserMessage(err))}</div>`; }
-      }, { history: ClaudeState.chatHistory });
+        { history: ClaudeState.chatHistory }
+      );
     } catch (e) {
       aiBubble.innerHTML = `<div class="ai-error">${esc(toUserMessage(e))}</div>`;
     }
@@ -288,7 +313,9 @@ export const Claude = (() => {
   }
 
   function _markdownToHtml(text) {
-    return esc(text).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    return esc(text)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
   }
 
   function _claudeIcon(size = 32) {
@@ -299,7 +326,12 @@ export const Claude = (() => {
   }
 
   function buildBodySVG(scores) {
-    const f = (m) => scores[m] > 50 ? 'rgba(232,132,140,0.8)' : (scores[m] > 20 ? 'rgba(255,179,0,0.6)' : 'rgba(0,230,118,0.3)');
+    const f = (m) =>
+      scores[m] > 50
+        ? 'rgba(232,132,140,0.8)'
+        : scores[m] > 20
+          ? 'rgba(255,179,0,0.6)'
+          : 'rgba(0,230,118,0.3)';
     return `<svg class="body-svg" viewBox="0 0 260 240">
       <path d="M50,112 Q65,116 80,112 L82,124 Q65,129 48,124 Z" fill="${f('quad')}" stroke="currentColor" stroke-width="1.5"/>
       <text x="130" y="230" text-anchor="middle" font-size="10" fill="var(--c-text-3)">Recovery Heatmap</text>
@@ -314,7 +346,17 @@ export const Claude = (() => {
     setTimeout(renderFAB, 100);
   }
 
-  return { renderFAB, open, close, _sendChat, _claudeIcon, _geminiIcon, dismissFAB, _snapFAB, _toggleEngine };
+  return {
+    renderFAB,
+    open,
+    close,
+    _sendChat,
+    _claudeIcon,
+    _geminiIcon,
+    dismissFAB,
+    _snapFAB,
+    _toggleEngine,
+  };
 })();
 
 window.Claude = Claude;
