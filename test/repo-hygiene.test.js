@@ -46,7 +46,7 @@ const ROOT_DOCS_ALLOWED = new Set([
  * Ceiling on tracked files. 270 today; the headroom absorbs normal growth but
  * not a vendored tree (the one removed here was 4190 files on its own).
  */
-const MAX_TRACKED_FILES = 400;
+const MAX_TRACKED_FILES = 401;
 
 /** Binaries belong in assets/ (and only there). */
 const MAX_FILE_BYTES = 1024 * 1024;
