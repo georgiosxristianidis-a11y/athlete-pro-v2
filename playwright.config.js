@@ -27,5 +27,12 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Pixel 7'] },
     },
+    // LAUNCH-7: second engine, not a replacement. iPhone 13 is a mobile
+    // WebKit profile (Safari UA, 390×664 chrome-aware viewport). Pixel 7
+    // on WebKit would still be an Android UA and miss the iPhone layout.
+    {
+      name: 'webkit',
+      use: { ...devices['iPhone 13'] },
+    },
   ],
 });
