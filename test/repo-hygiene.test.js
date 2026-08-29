@@ -43,10 +43,17 @@ const ROOT_DOCS_ALLOWED = new Set([
 ]);
 
 /**
- * Ceiling on tracked files. 270 today; the headroom absorbs normal growth but
+ * Ceiling on tracked files. 404 today; the headroom absorbs normal growth but
  * not a vendored tree (the one removed here was 4190 files on its own).
+ *
+ * Raised to 450 in its own PR on purpose. It had been sitting one file above
+ * the count (400 → 401 in a9b0d5b, inside the very PR that added the 401st
+ * file), so every branch that added anything had to touch this line — and a
+ * ceiling moved by the work it measures stops being a decision anyone makes.
+ * Headroom is ~11%: still an order of magnitude below the vendored tree this
+ * number exists to catch.
  */
-const MAX_TRACKED_FILES = 401;
+const MAX_TRACKED_FILES = 450;
 
 /** Binaries belong in assets/ (and only there). */
 const MAX_FILE_BYTES = 1024 * 1024;
