@@ -13,9 +13,13 @@
  * вовсе — вопрос «а менялся ли» он не задаёт по построению. Правило о бампе
  * жило только текстом в CLAUDE.md § Rules, то есть было промптом, а не гейтом.
  *
- * Сравнивается не «есть ли version.js в диффе», а сам номер против origin/main:
+ * Сравнивается не «есть ли version.js в диффе», а сам номер против базы PR:
  * одинаковый бамп в стопке веток схлопывается при ребейзе БЕЗ конфликта, и
  * проверка по диффу зеленела бы там, где в прод уезжает старый номер.
+ *
+ * База — origin/main, а в стопке PR та ветка, на которую он открыт
+ * (`GITHUB_BASE_REF` в CI, `GUARD_BASE_REF` локально): второй этаж стопки несёт
+ * коммиты первого, и жёстко прибитый к main гард требовал бы бампа за чужую работу.
  *
  * Осознанный обход: VERSION_BUMP_OK=1 npm test.
  */
@@ -25,7 +29,6 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { MAIN } from '../scripts/drift-core.mjs';
 import { branchScope, fileAtRef } from '../scripts/branch-scope.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -76,7 +79,7 @@ test('версия: список продуктовых путей', () => {
   assert.equal(isProduct('docs/RULES.md'), false);
 });
 
-test('версия: продуктовая правка несёт бамп относительно origin/main', (t) => {
+test('версия: продуктовая правка несёт бамп относительно базы PR', (t) => {
   if (process.env.VERSION_BUMP_OK === '1') {
     t.diagnostic('VER-1 отключён через VERSION_BUMP_OK=1');
     return;
@@ -95,11 +98,11 @@ test('версия: продуктовая правка несёт бамп от
   }
 
   const mine = parseVersion(readFileSync(path.join(REPO_ROOT, VERSION_FILE), 'utf8'));
-  const base = parseVersion(fileAtRef(MAIN, VERSION_FILE, { cwd: REPO_ROOT }) ?? '');
+  const base = parseVersion(fileAtRef(scope.ref, VERSION_FILE, { cwd: REPO_ROOT }) ?? '');
 
   assert.ok(mine, `не удалось прочитать VERSION из ${VERSION_FILE}`);
   if (!base) {
-    t.diagnostic(`VER-1 пропущен: ${VERSION_FILE} не читается на ${MAIN}`);
+    t.diagnostic(`VER-1 пропущен: ${VERSION_FILE} не читается на ${scope.ref}`);
     return;
   }
 
@@ -111,14 +114,14 @@ test('версия: продуктовая правка несёт бамп от
   assert.notEqual(
     mine,
     base,
-    `Ветка правит продуктовый код (${shown}), но версия та же, что в ${MAIN}: ${mine}. ` +
+    `Ветка правит продуктовый код (${shown}), но версия та же, что в ${scope.ref}: ${mine}. ` +
       `Прод и smoke:prod различают релизы по этому номеру. ${how}`,
   );
 
   const order = compareVersions(mine, base);
   assert.ok(
     order === null || order === 1,
-    `Версия ветки ${mine} НИЖЕ, чем в ${MAIN} (${base}) — мёрж откатит номер назад. ` +
+    `Версия ветки ${mine} НИЖЕ, чем в ${scope.ref} (${base}) — мёрж откатит номер назад. ` +
       `Обычно это след ребейза поверх чужого релиза. ${how}`,
   );
 });
