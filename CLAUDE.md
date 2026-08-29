@@ -59,9 +59,9 @@
 
 > Конвенции правки кода (Vanilla JS · `esc()` · закон четырёх вкладок · Haptic Gate · `build:sw` · алиасы миграции планов) — `.claude/rules/architecture.md`, грузится по путям.
 
-- **Версия:** при стабильном мёрже бампить `VERSION`/`js/version.js` + `package.json`+`package-lock.json` (`npm install`). Сторожит `test/version-sync.test.js`.
+- **Версия:** правка `js/`/`css/` = новый номер в `js/version.js` + `package.json`+lock (`npm install`). Гейт: `version-sync`, `version-bump-required`.
+- **Миграции и потолки — отдельным PR** (`ceiling-bump-isolated`).
 - **Анти-хрупкость:** риск — за флагом `js/flags.js` (Strangler-Fig); ветки <24ч от свежего main; застрял → `git checkout .` и дроби. Дефолты OFF, легаси не сносим — новый код рядом за флагом. Перед крупным — тег `checkpoint-<date>`.
-- **Миграции — отдельным PR.**
 - **Никогда не пушить в `main` напрямую** — только PR.
 
 ## Tests
