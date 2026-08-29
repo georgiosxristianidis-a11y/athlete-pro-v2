@@ -31,7 +31,12 @@ export function baseRef(opts = {}) {
   // Имя от GitHub приходит без remote (`main`), локально удобнее назвать ветку
   // как есть. Берём первое, что реально существует, чтобы гард не отвалился в
   // skip именно там, где стопка PR его и нужна.
-  for (const candidate of [named, `origin/${named}`]) {
+  //
+  // Remote-кандидат идёт ПЕРВЫМ, и это не стилистика: `refs/heads/main` в этом
+  // репозитории живёт постоянно (на нём стоит корневой чекаут) и отстаёт — на
+  // 2026-08-29 он был на a9b0d5b при origin/main efe8121. Гард, сверяющийся с
+  // протухшей копией базы, отвечает на вопрос вчерашнего дня.
+  for (const candidate of [`origin/${named}`, named]) {
     if (tryGit(['rev-parse', '--verify', `${candidate}^{commit}`], opts)) return candidate;
   }
   return `origin/${named}`;
