@@ -149,3 +149,15 @@ export async function commitKey(engine, raw) {
   if (seq !== _keyCheckSeq) return { stale: true };
   return { stale: false, ...verdict };
 }
+
+/**
+ * Auth payload for P.A.N.D.A. Core text requests — selected engine plus its BYOK key.
+ * TTS stays on Gemini separately (routes/coach.js is pinned to gemini-tts).
+ * @returns {Promise<{ engine: AiEngine, customKey: string|undefined }>}
+ */
+export async function aiAuth() {
+  const engine = await getEngine();
+  const raw = await DB.Settings.get(keyField(engine));
+  const customKey = raw ? String(raw) : undefined;
+  return { engine, customKey };
+}

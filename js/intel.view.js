@@ -8,7 +8,7 @@ import { stripSecrets } from './shared/sync-secrets.js';
 import { DB } from './db.js';
 import { on, onChange, onKeydown } from './events.js';
 import { probeAiStatus } from './shared/ai-status.js';
-import { getTone } from './ai-settings.store.js';
+import { getTone, aiAuth } from './ai-settings.store.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
 
 on('intel:close', () => window.Nav.go('s-home'));
@@ -151,9 +151,8 @@ export const IntelView = (() => {
   }
 
   async function _checkApiKey() {
-    const { DB } = await import('./db.js');
-    const localKey = await DB.Settings.get('gemini-key');
-    _hasValidKey = !!localKey && localKey.trim().length > 10;
+    const { engine, customKey } = await aiAuth();
+    _hasValidKey = !!customKey && customKey.trim().length > 10;
     _keySource = 'local';
 
     if (_hasValidKey) return;
@@ -161,7 +160,26 @@ export const IntelView = (() => {
     const probed = await probeAiStatus();
     _keySource = probed.source;
     if (probed.source === 'server') {
-      _hasValidKey = probed.gemini || probed.anthropic;
+      _hasValidKey = engine === 'gemini' ? !!probed.gemini : !!probed.anthropic;
+    }
+  }
+
+  /** Патч индикатора в шапке без IntelView.load() — load() стирает ленту ответов. */
+  async function refreshKeyBadge() {
+    await _checkApiKey();
+    const header = document.querySelector('#s-intel .intel-header');
+    if (!header) return;
+    const L = _copy();
+    const dot = header.querySelector('.ai-indicator');
+    const label = header.querySelector('.intel-key-state');
+    if (dot) dot.className = `ai-indicator ${_hasValidKey ? 'active' : 'missing'}`;
+    if (label) {
+      label.className = `intel-key-state ${_hasValidKey ? 'is-ok' : 'is-missing'}`;
+      label.textContent = _hasValidKey
+        ? L.keyOk
+        : _keySource === 'airgap'
+          ? L.keyAirgap
+          : L.keyMissing;
     }
   }
 
@@ -462,8 +480,7 @@ export const IntelView = (() => {
           workouts,
           profile,
           topLifts,
-          engine: 'gemini',
-          customKey: await DB.Settings.get('gemini-key'),
+          ...(await aiAuth()),
           tone: await getTone(),
         }),
       });
@@ -555,6 +572,7 @@ export const IntelView = (() => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: textToSpeak,
+          // Voice is Gemini-only: routes/coach.js pins gemini-2.5-flash-preview-tts.
           customKey: await (await import('./db.js')).DB.Settings.get('gemini-key'),
         }),
       });
@@ -621,8 +639,7 @@ export const IntelView = (() => {
         body: JSON.stringify({
           workouts: recentWorkouts,
           profile,
-          engine: 'gemini',
-          customKey: await DB.Settings.get('gemini-key'),
+          ...(await aiAuth()),
         }),
       });
 
@@ -754,8 +771,7 @@ export const IntelView = (() => {
         body: JSON.stringify({
           workouts,
           profile,
-          engine: 'gemini',
-          customKey: await DB.Settings.get('gemini-key'),
+          ...(await aiAuth()),
         }),
       });
 
@@ -974,6 +990,7 @@ export const IntelView = (() => {
     openSettings,
     saveSettings,
     saveActionCard,
+    refreshKeyBadge,
   };
 })();
 
