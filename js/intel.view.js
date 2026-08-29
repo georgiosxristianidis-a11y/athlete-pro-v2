@@ -6,34 +6,41 @@ import { toUserMessage } from './shared/errors-ui.js';
 import { isRu } from './locale.store.js';
 import { stripSecrets } from './shared/sync-secrets.js';
 import { DB } from './db.js';
-import { on, onChange, onKeydown, onInput } from './events.js';
+import { on, onChange, onKeydown } from './events.js';
 import { probeAiStatus } from './shared/ai-status.js';
+import { getTone } from './ai-settings.store.js';
+import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
 
-on('intel:close',         () => window.Nav.go('s-home'));
-on('intel:toggleLogs',    (el) => {
+on('intel:close', () => window.Nav.go('s-home'));
+on('intel:toggleLogs', (el) => {
   const box = el.closest('.intel-logs');
   if (!box) return;
   const open = box.classList.toggle('expanded');
   box.setAttribute('aria-expanded', String(open));
 });
-on('intel:camera',        () => window.IntelView.handleCamera());
-on('intel:submit',        () => window.IntelView.submit());
-on('intel:weekly',        () => window.IntelView.generateWeekly());
+on('intel:camera', () => window.IntelView.handleCamera());
+on('intel:submit', () => window.IntelView.submit());
+on('intel:weekly', () => window.IntelView.generateWeekly());
 on('intel:createWorkout', () => window.IntelView.createWorkout());
-on('intel:analyzeStats',  () => window.IntelView.analyzeStats());
-on('intel:biometrics',    () => window.IntelView.checkBiometrics());
-on('intel:clearImage',    () => { const w = document.getElementById('intel-vision-preview-wrap'); if (w) w.innerHTML = ''; window.IntelView._clearImage(); });
-on('intel:playAudio',     (el) => window.IntelView.playAudio(el));
-on('intel:closeReport',   (el) => el.closest('.intel-report-overlay')?.remove());
-on('intel:openSettings',  () => window.IntelView.openSettings());
-on('intel:saveSettings',  () => window.IntelView.saveSettings());
+on('intel:analyzeStats', () => window.IntelView.analyzeStats());
+on('intel:biometrics', () => window.IntelView.checkBiometrics());
+on('intel:clearImage', () => {
+  const w = document.getElementById('intel-vision-preview-wrap');
+  if (w) w.innerHTML = '';
+  window.IntelView._clearImage();
+});
+on('intel:playAudio', (el) => window.IntelView.playAudio(el));
+on('intel:closeReport', (el) => el.closest('.intel-report-overlay')?.remove());
+on('intel:openSettings', () => openAiSettings());
+on('intel:saveSettings', () => closeAiSettings());
 on('intel:saveActionCard', (el) => window.IntelView.saveActionCard(el));
-on('intel:closeOverlay',  (el) => { const o = document.getElementById(el.dataset.overlay); if (o) o.remove(); });
+on('intel:closeOverlay', (el) => {
+  const o = document.getElementById(el.dataset.overlay);
+  if (o) o.remove();
+});
 onChange('intel:fileSelected', (el, e) => window.IntelView.onFileSelected(e));
-onKeydown('intel:submitEnter', (el, e) => { if (e.key === 'Enter') window.IntelView.submit(); });
-onInput('intel:toneInput', (el) => {
-  const val = document.getElementById('intel-tone-val');
-  if (val) val.textContent = el.value;
+onKeydown('intel:submitEnter', (el, e) => {
+  if (e.key === 'Enter') window.IntelView.submit();
 });
 // Пилюля лога — не <button> (внутри неё заголовок и лента), поэтому клавиатуру
 // ей приходится выдавать руками: role="button" без Enter/Space — ловушка для скринридера.
@@ -62,42 +69,85 @@ export const IntelView = (() => {
   function _copy() {
     return isRu()
       ? {
-          keyOk: 'система защищена', keyMissing: 'нет ключа', keyAirgap: 'режим airgap',
-          summary: 'СВОДКА', generate: 'ГЕНЕРАЦИЯ', analyze: 'АНАЛИЗ', biometrics: 'БИОМЕТРИЯ',
+          keyOk: 'система защищена',
+          keyMissing: 'нет ключа',
+          keyAirgap: 'режим airgap',
+          summary: 'СВОДКА',
+          generate: 'ГЕНЕРАЦИЯ',
+          analyze: 'АНАЛИЗ',
+          biometrics: 'БИОМЕТРИЯ',
           input: 'Команда или запрос по фото…',
-          close: 'Закрыть', camera: 'Прикрепить фото', send: 'Отправить',
-          logs: 'Журнал потока', speak: 'Озвучить', clearImage: 'Убрать фото',
-          feedback: 'Ответ ИИ', waiting: 'Анализирую…', failed: 'Сбой',
-          streaming: 'Ответ печатается', empty: 'Ответ пришёл пустым',
-          settings: 'Настройки ИИ', settingsTitle: 'Настройки ИИ', save: 'Сохранить',
-          toneLabel: 'Тон тренера', toneTherapist: 'Психолог', toneNeutral: 'Нейтрально', toneGoggins: 'Гоггинс',
-          saveWorkout: 'Сохранить в план', saved: 'Сохранено',
-          scanning: 'СКАНИРОВАНИЕ', scanFailed: 'Сбой сканирования',
-          scanCns: 'СКАН ЦНС…', scanVolume: 'СБОР ДАННЫХ О НАГРУЗКЕ…', scanSleep: 'АНАЛИЗ СНА…',
-          scanRpe: 'РАСЧЁТ RPE-УТОМЛЕНИЯ…', scanAcwr: 'РАСЧЁТ ACWR…',
-          cnsFatigue: 'УТОМЛЕНИЕ ЦНС', muscleDamage: 'МЫШЕЧНЫЕ ПОВРЕЖДЕНИЯ', readiness: 'ГОТОВНОСТЬ',
+          close: 'Закрыть',
+          camera: 'Прикрепить фото',
+          send: 'Отправить',
+          logs: 'Журнал потока',
+          speak: 'Озвучить',
+          clearImage: 'Убрать фото',
+          feedback: 'Ответ ИИ',
+          waiting: 'Анализирую…',
+          failed: 'Сбой',
+          streaming: 'Ответ печатается',
+          empty: 'Ответ пришёл пустым',
+          settings: 'Настройки ИИ',
+          settingsTitle: 'Настройки ИИ',
+          save: 'Сохранить',
+          toneLabel: 'Тон тренера',
+          toneTherapist: 'Психолог',
+          toneNeutral: 'Нейтрально',
+          toneGoggins: 'Гоггинс',
+          saveWorkout: 'Сохранить в план',
+          saved: 'Сохранено',
+          scanning: 'СКАНИРОВАНИЕ',
+          scanFailed: 'Сбой сканирования',
+          scanCns: 'СКАН ЦНС…',
+          scanVolume: 'СБОР ДАННЫХ О НАГРУЗКЕ…',
+          scanSleep: 'АНАЛИЗ СНА…',
+          scanRpe: 'РАСЧЁТ RPE-УТОМЛЕНИЯ…',
+          scanAcwr: 'РАСЧЁТ ACWR…',
+          cnsFatigue: 'УТОМЛЕНИЕ ЦНС',
+          muscleDamage: 'МЫШЕЧНЫЕ ПОВРЕЖДЕНИЯ',
+          readiness: 'ГОТОВНОСТЬ',
         }
       : {
-          keyOk: 'system secure', keyMissing: 'key missing', keyAirgap: 'air-gapped',
-          summary: 'SUMMARY', generate: 'GENERATE', analyze: 'ANALYZE', biometrics: 'BIOMETRICS',
+          keyOk: 'system secure',
+          keyMissing: 'key missing',
+          keyAirgap: 'air-gapped',
+          summary: 'SUMMARY',
+          generate: 'GENERATE',
+          analyze: 'ANALYZE',
+          biometrics: 'BIOMETRICS',
           input: 'Command or vision query…',
-          close: 'Close', camera: 'Attach photo', send: 'Send',
-          logs: 'Streaming logs', speak: 'Speak', clearImage: 'Clear photo',
-          feedback: 'AI Feedback', waiting: 'Analysing…', failed: 'Failed',
-          streaming: 'Response is typing', empty: 'The response came back empty',
-          settings: 'AI Settings', settingsTitle: 'AI Settings', save: 'Save',
-          toneLabel: 'Coach tone', toneTherapist: 'Therapist', toneNeutral: 'Neutral', toneGoggins: 'Goggins',
-          saveWorkout: 'Save to plan', saved: 'Saved',
-          scanning: 'SCANNING', scanFailed: 'Scan failed',
-          scanCns: 'CNS SCAN…', scanVolume: 'GATHERING VOLUME DATA…', scanSleep: 'ANALYSING SLEEP…',
-          scanRpe: 'COMPUTING RPE FATIGUE…', scanAcwr: 'COMPUTING ACWR…',
-          cnsFatigue: 'CNS FATIGUE', muscleDamage: 'MUSCLE DAMAGE', readiness: 'READINESS',
+          close: 'Close',
+          camera: 'Attach photo',
+          send: 'Send',
+          logs: 'Streaming logs',
+          speak: 'Speak',
+          clearImage: 'Clear photo',
+          feedback: 'AI Feedback',
+          waiting: 'Analysing…',
+          failed: 'Failed',
+          streaming: 'Response is typing',
+          empty: 'The response came back empty',
+          settings: 'AI Settings',
+          settingsTitle: 'AI Settings',
+          save: 'Save',
+          toneLabel: 'Coach tone',
+          toneTherapist: 'Therapist',
+          toneNeutral: 'Neutral',
+          toneGoggins: 'Goggins',
+          saveWorkout: 'Save to plan',
+          saved: 'Saved',
+          scanning: 'SCANNING',
+          scanFailed: 'Scan failed',
+          scanCns: 'CNS SCAN…',
+          scanVolume: 'GATHERING VOLUME DATA…',
+          scanSleep: 'ANALYSING SLEEP…',
+          scanRpe: 'COMPUTING RPE FATIGUE…',
+          scanAcwr: 'COMPUTING ACWR…',
+          cnsFatigue: 'CNS FATIGUE',
+          muscleDamage: 'MUSCLE DAMAGE',
+          readiness: 'READINESS',
         };
-  }
-
-  /** Тон коуча, 0 (терапевт) .. 100 (Гоггинс). Дефолт — нейтрально. */
-  async function _getTone() {
-    return DB.Settings.get('intel-tone', 50);
   }
 
   async function _checkApiKey() {
@@ -133,7 +183,7 @@ export const IntelView = (() => {
           <h1 class="intel-title">P.A.N.D.A. Core</h1>
           <div class="intel-sub">
             <span class="ai-indicator ${_hasValidKey ? 'active' : 'missing'}"></span>
-            <span class="intel-key-state ${_hasValidKey ? 'is-ok' : 'is-missing'}">${esc(_hasValidKey ? L.keyOk : (_keySource === 'airgap' ? L.keyAirgap : L.keyMissing))}</span>
+            <span class="intel-key-state ${_hasValidKey ? 'is-ok' : 'is-missing'}">${esc(_hasValidKey ? L.keyOk : _keySource === 'airgap' ? L.keyAirgap : L.keyMissing)}</span>
             <span class="intel-sub-sep">·</span>
             <span id="intel-status-text" class="intel-status-text">${esc(IntelStore.getStatus())}</span>
           </div>
@@ -220,13 +270,17 @@ export const IntelView = (() => {
     const container = document.getElementById('intel-logs-container');
     if (!container) return;
     const logs = IntelStore.getLogs();
-    container.innerHTML = logs.map(l => `
+    container.innerHTML = logs
+      .map(
+        (l) => `
       <div class="intel-log-entry">
         <span class="intel-log-time">[${l.time}]</span>
         <span class="intel-log-type ${l.type.toLowerCase()}">${l.type}</span>
         <span class="intel-log-msg">${esc(l.text)}</span>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
     container.scrollTop = 0;
   }
 
@@ -242,7 +296,7 @@ export const IntelView = (() => {
       const statusText = IntelStore.getStatus();
       const el = document.getElementById('intel-status-text');
       if (el) el.textContent = statusText;
-      
+
       const pill = document.getElementById('intel-logs-status-pill');
       if (pill) {
         pill.textContent = statusText;
@@ -266,8 +320,8 @@ export const IntelView = (() => {
   async function onFileSelected(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    IntelStore.addLog('SYS', `Packet formed: ${file.name} (${Math.round(file.size/1024)}KB)`);
-    
+    IntelStore.addLog('SYS', `Packet formed: ${file.name} (${Math.round(file.size / 1024)}KB)`);
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const base64 = event.target.result;
@@ -312,16 +366,20 @@ export const IntelView = (() => {
 
   /** Хвостовые точки — «текст ещё идёт». Вставляются в конец последнего блока. */
   function _typingHtml(L) {
-    return `<span class="intel-typing" role="status" aria-label="${L.streaming}">`
-      + '<span class="intel-typing-dot"></span><span class="intel-typing-dot"></span><span class="intel-typing-dot"></span>'
-      + '</span>';
+    return (
+      `<span class="intel-typing" role="status" aria-label="${L.streaming}">` +
+      '<span class="intel-typing-dot"></span><span class="intel-typing-dot"></span><span class="intel-typing-dot"></span>' +
+      '</span>'
+    );
   }
 
   /** Волна в кнопке отправки. Живёт в разметке всегда, показывается классом is-busy. */
   function _waveHtml() {
-    return '<span class="intel-wave" aria-hidden="true">'
-      + '<span class="intel-wave-bar"></span>'.repeat(4)
-      + '</span>';
+    return (
+      '<span class="intel-wave" aria-hidden="true">' +
+      '<span class="intel-wave-bar"></span>'.repeat(4) +
+      '</span>'
+    );
   }
 
   /**
@@ -355,19 +413,19 @@ export const IntelView = (() => {
     const input = /** @type {HTMLInputElement} */ (document.getElementById('intel-input'));
     if (!input || (!input.value.trim() && !_pendingImage)) return;
 
-    const text = input.value.trim() || "Analyze this photo";
+    const text = input.value.trim() || 'Analyze this photo';
     const image = _pendingImage;
-    
+
     IntelStore.addLog('USER', text);
     if (image) IntelStore.addLog('SYS', 'Attaching vision packet...');
-    
+
     input.value = '';
     _pendingImage = null;
     const previewWrap = document.getElementById('intel-vision-preview-wrap');
     if (previewWrap) previewWrap.innerHTML = '';
 
     IntelStore.setStatus('AI SCANNING...');
-    
+
     const L = _copy();
     const feedbackFeed = document.getElementById('intel-feedback-feed');
     const feedbackEl = document.createElement('div');
@@ -406,8 +464,8 @@ export const IntelView = (() => {
           topLifts,
           engine: 'gemini',
           customKey: await DB.Settings.get('gemini-key'),
-          tone: await _getTone()
-        })
+          tone: await getTone(),
+        }),
       });
 
       if (!response.ok) {
@@ -426,7 +484,7 @@ export const IntelView = (() => {
 
           const chunk = decoder.decode(value);
           const lines = chunk.split('\n');
-          
+
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = line.slice(6);
@@ -464,7 +522,6 @@ export const IntelView = (() => {
         const textToSpeak = feedbackText.innerText.trim();
         if (textToSpeak) speakText(textToSpeak);
       }
-
     } catch (err) {
       console.error(err);
       IntelStore.addLog('ERROR', err?.message || 'Connection failed');
@@ -481,7 +538,9 @@ export const IntelView = (() => {
     }
   }
 
-  function _clearImage() { _pendingImage = null; }
+  function _clearImage() {
+    _pendingImage = null;
+  }
 
   let _isSpeaking = false;
 
@@ -494,88 +553,92 @@ export const IntelView = (() => {
       const response = await fetch('/api/coach/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           text: textToSpeak,
-          customKey: await (await import('./db.js')).DB.Settings.get('gemini-key')
-        })
+          customKey: await (await import('./db.js')).DB.Settings.get('gemini-key'),
+        }),
       });
 
       if (!response.ok) throw new Error('Voice sync failed');
 
       const result = await response.json();
       const pcmData = result.audioBase64;
-      if (!pcmData) throw new Error("Audio data not found");
+      if (!pcmData) throw new Error('Audio data not found');
 
-      const audioBlob = pcmToWav(pcmData, 24000); 
+      const audioBlob = pcmToWav(pcmData, 24000);
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
-      audio.onended = () => { _isSpeaking = false; URL.revokeObjectURL(audioUrl); };
+      audio.onended = () => {
+        _isSpeaking = false;
+        URL.revokeObjectURL(audioUrl);
+      };
       await audio.play();
-    } catch (err) { 
-      IntelStore.addLog('ERROR', 'Voice synthesis failed'); 
-      _isSpeaking = false; 
+    } catch (err) {
+      IntelStore.addLog('ERROR', 'Voice synthesis failed');
+      _isSpeaking = false;
     }
   }
 
   function pcmToWav(base64Pcm, sampleRate) {
-    const pcmBuffer = Uint8Array.from(atob(base64Pcm), c => c.charCodeAt(0)).buffer;
+    const pcmBuffer = Uint8Array.from(atob(base64Pcm), (c) => c.charCodeAt(0)).buffer;
     const wavBuffer = new ArrayBuffer(44 + pcmBuffer.byteLength);
     const view = new DataView(wavBuffer);
-    const writeString = (offset, string) => { for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i)); };
-    writeString(0, 'RIFF'); 
-    view.setUint32(4, 36 + pcmBuffer.byteLength, true); 
-    writeString(8, 'WAVE'); 
-    writeString(12, 'fmt '); 
-    view.setUint32(16, 16, true); 
-    view.setUint16(20, 1, true); 
-    view.setUint16(22, 1, true); 
-    view.setUint32(24, sampleRate, true); 
-    view.setUint32(28, sampleRate * 2, true); 
-    view.setUint16(32, 2, true); 
-    view.setUint16(34, 16, true); 
-    writeString(36, 'data'); 
+    const writeString = (offset, string) => {
+      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+    };
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + pcmBuffer.byteLength, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
     view.setUint32(40, pcmBuffer.byteLength, true);
     new Uint8Array(wavBuffer).set(new Uint8Array(pcmBuffer), 44);
     return new Blob([wavBuffer], { type: 'audio/wav' });
   }
 
   async function generateWeekly() {
-     IntelStore.addLog('SYS', 'Computing weekly intelligence...');
-     IntelStore.setStatus('COMPUTING INTEL...');
-     
-     try {
-       const { DB } = await import('./db.js');
-       const workouts = await DB.Workouts.getAll();
-       // Filter for last 7 days
-       const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-       const recentWorkouts = workouts.filter(w => new Date(w.date).getTime() > sevenDaysAgo);
-       const profile = stripSecrets(await DB.Settings.getAll());
+    IntelStore.addLog('SYS', 'Computing weekly intelligence...');
+    IntelStore.setStatus('COMPUTING INTEL...');
 
-       const response = await fetch('/api/coach/weekly-report', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ 
-           workouts: recentWorkouts, 
-           profile, 
-           engine: 'gemini',
-           customKey: await DB.Settings.get('gemini-key')
-         })
-       });
+    try {
+      const { DB } = await import('./db.js');
+      const workouts = await DB.Workouts.getAll();
+      // Filter for last 7 days
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const recentWorkouts = workouts.filter((w) => new Date(w.date).getTime() > sevenDaysAgo);
+      const profile = stripSecrets(await DB.Settings.getAll());
 
-       if (!response.ok) throw new Error('Report generation failed');
+      const response = await fetch('/api/coach/weekly-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workouts: recentWorkouts,
+          profile,
+          engine: 'gemini',
+          customKey: await DB.Settings.get('gemini-key'),
+        }),
+      });
 
-       const { report } = await response.json();
-       
-       IntelStore.addLog('AI', `Weekly report generated. Performance Score: ${report.score}`);
-       IntelStore.setStatus('SYSTEM STANDBY');
+      if (!response.ok) throw new Error('Report generation failed');
 
-       _renderReportOverlay(report);
-       speakText(`Твой прогресс за неделю: ${report.score} баллов. ${report.summary}`);
+      const { report } = await response.json();
 
-     } catch (err) {
-       IntelStore.addLog('ERROR', 'Failed to generate weekly intel');
-       IntelStore.setStatus('ERROR');
-     }
+      IntelStore.addLog('AI', `Weekly report generated. Performance Score: ${report.score}`);
+      IntelStore.setStatus('SYSTEM STANDBY');
+
+      _renderReportOverlay(report);
+      speakText(`Твой прогресс за неделю: ${report.score} баллов. ${report.summary}`);
+    } catch (err) {
+      IntelStore.addLog('ERROR', 'Failed to generate weekly intel');
+      IntelStore.setStatus('ERROR');
+    }
   }
 
   function _renderReportOverlay(report) {
@@ -583,8 +646,9 @@ export const IntelView = (() => {
     overlay.className = 'intel-report-overlay animate-in fade-in duration-500';
     /* Гуттер до края экрана, а не ритм блока: --side-padding — узаконенное
        off-grid исключение (base.css:128), снапить его к 16/24 нельзя. */
-    overlay.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(5,5,7,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:var(--side-padding);';
-    
+    overlay.style.cssText =
+      'position:fixed; inset:0; z-index:9999; background:rgba(5,5,7,0.95); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:var(--side-padding);';
+
     overlay.innerHTML = `
       <div style="background:var(--c-bg-1); width:100%; max-width:500px; border-radius:32px; border:1px solid var(--c-border-h); padding:var(--sp-5); position:relative; max-height:90vh; overflow-y:auto;">
         <button data-action="intel:closeReport" style="position:absolute; top:24px; right:24px; background:none; border:none; color:var(--c-text-3); font-size:var(--fs-5); cursor:pointer;">&times;</button>
@@ -606,13 +670,13 @@ export const IntelView = (() => {
             <div style="background:rgba(0,230,118,0.05); padding:var(--sp-2); border-radius:24px; border:1px solid rgba(0,230,118,0.1);">
                <h4 style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-accent); margin-bottom:var(--sp-1-5); letter-spacing:0.2em;">Wins</h4>
                <ul style="font-size:var(--fs-2); color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:var(--sp-1);">
-                 ${report.pros.map(p => `<li style="display:flex; gap:var(--sp-1);"><span style="color:var(--c-accent)">+</span>${esc(p)}</li>`).join('')}
+                 ${report.pros.map((p) => `<li style="display:flex; gap:var(--sp-1);"><span style="color:var(--c-accent)">+</span>${esc(p)}</li>`).join('')}
                </ul>
             </div>
             <div style="background:rgba(255,77,136,0.05); padding:var(--sp-2); border-radius:24px; border:1px solid rgba(255,77,136,0.1);">
                <h4 style="font-size:var(--fs-1); font-weight:var(--fw-black); text-transform:uppercase; color:var(--c-red); margin-bottom:var(--sp-1-5); letter-spacing:0.2em;">Leaks</h4>
                <ul style="font-size:var(--fs-2); color:var(--c-text-3); list-style:none; display:flex; flex-direction:column; gap:var(--sp-1);">
-                 ${report.cons.map(c => `<li style="display:flex; gap:var(--sp-1);"><span style="color:var(--c-red)">-</span>${esc(c)}</li>`).join('')}
+                 ${report.cons.map((c) => `<li style="display:flex; gap:var(--sp-1);"><span style="color:var(--c-red)">-</span>${esc(c)}</li>`).join('')}
                </ul>
             </div>
           </div>
@@ -622,28 +686,28 @@ export const IntelView = (() => {
     document.body.appendChild(overlay);
   }
 
-
   function createWorkout() {
-     haptic(10);
-     IntelStore.addLog('SYS', 'Ready to generate workout plan');
-     IntelStore.setStatus('WAITING FOR PROMPT');
-     const input = document.getElementById('intel-input');
-     if (input) {
-         input.value = "";
-         input.focus();
-         // @ts-ignore
-         input.placeholder = "Какую группу мышц тренируем сегодня?";
-     }
+    haptic(10);
+    IntelStore.addLog('SYS', 'Ready to generate workout plan');
+    IntelStore.setStatus('WAITING FOR PROMPT');
+    const input = document.getElementById('intel-input');
+    if (input) {
+      input.value = '';
+      input.focus();
+      // @ts-ignore
+      input.placeholder = 'Какую группу мышц тренируем сегодня?';
+    }
   }
 
   function analyzeStats() {
-     haptic(10);
-     IntelStore.addLog('SYS', 'Ready to analyze stats');
-     const input = document.getElementById('intel-input');
-     if (input) {
-         input.value = "Проведи глубокий разбор последней тренировки. Сгенерируй readiness-виджет (_widget: readiness) с оценкой 0-100. Напиши пару строк о главном успехе и слабом месте.";
-         submit();
-     }
+    haptic(10);
+    IntelStore.addLog('SYS', 'Ready to analyze stats');
+    const input = document.getElementById('intel-input');
+    if (input) {
+      input.value =
+        'Проведи глубокий разбор последней тренировки. Сгенерируй readiness-виджет (_widget: readiness) с оценкой 0-100. Напиши пару строк о главном успехе и слабом месте.';
+      submit();
+    }
   }
 
   /** Биометрический радар (HUD-3): полноэкранный скан → отчёт ЦНС/готовности. */
@@ -669,9 +733,10 @@ export const IntelView = (() => {
     let logIndex = 0;
     const logEl = overlay.querySelector('#intel-radar-log');
     const logInterval = setInterval(() => {
-      const line = logIndex < logLines.length
-        ? logLines[logIndex++]
-        : Math.random().toString(36).slice(2, 10).toUpperCase();
+      const line =
+        logIndex < logLines.length
+          ? logLines[logIndex++]
+          : Math.random().toString(36).slice(2, 10).toUpperCase();
       const row = document.createElement('div');
       row.className = 'intel-radar-log-row';
       row.textContent = `> ${line}`;
@@ -690,8 +755,8 @@ export const IntelView = (() => {
           workouts,
           profile,
           engine: 'gemini',
-          customKey: await DB.Settings.get('gemini-key')
-        })
+          customKey: await DB.Settings.get('gemini-key'),
+        }),
       });
 
       clearInterval(logInterval);
@@ -701,7 +766,10 @@ export const IntelView = (() => {
       }
 
       const { report } = await response.json();
-      const readiness = Math.max(0, 100 - Math.round((report.cnsFatigue + report.muscleDamage) / 2));
+      const readiness = Math.max(
+        0,
+        100 - Math.round((report.cnsFatigue + report.muscleDamage) / 2)
+      );
 
       overlay.innerHTML = _buildBiometricReport(report, readiness, L);
       haptic(50);
@@ -746,47 +814,10 @@ export const IntelView = (() => {
     `;
   }
 
-  /* ── Настройки: тон коуча (HUD-3). Язык/голос сюда не входят —
-     язык живёт в isRu(), голос маскота отдельной картой PANDA-C. ── */
-  async function openSettings() {
-    const L = _copy();
-    const tone = await _getTone();
-
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.id = 'intel-settings-overlay';
-    overlay.innerHTML = `
-      <div class="modal-sheet">
-        <div class="modal-handle"></div>
-        <div class="modal-header">
-          <div class="modal-title">${L.settingsTitle}</div>
-          <button class="btn-icon-sm" data-action="intel:closeOverlay" data-overlay="intel-settings-overlay" aria-label="${L.close}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-        <div class="intel-tone-row">
-          <div class="intel-tone-head">
-            <span class="intel-tone-label">${L.toneLabel}</span>
-            <span id="intel-tone-val" class="intel-tone-val">${tone}</span>
-          </div>
-          <input type="range" id="intel-tone-slider" class="intel-tone-slider" min="0" max="100" value="${tone}" data-input="intel:toneInput">
-          <div class="intel-tone-scale">
-            <span>${L.toneTherapist}</span><span>${L.toneNeutral}</span><span>${L.toneGoggins}</span>
-          </div>
-        </div>
-        <button class="btn btn-primary intel-settings-save" data-action="intel:saveSettings">${L.save}</button>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-    requestAnimationFrame(() => overlay.classList.add('visible'));
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-  }
-
-  async function saveSettings() {
-    const slider = /** @type {HTMLInputElement|null} */ (document.getElementById('intel-tone-slider'));
-    if (slider) await DB.Settings.set('intel-tone', parseInt(slider.value, 10));
-    document.getElementById('intel-settings-overlay')?.remove();
-  }
+  /* ── Настройки ИИ: движок, ключ, тон — js/ai-settings.view.js.
+     Язык живёт в isRu(), голос маскота отдельной картой PANDA-C. ── */
+  const openSettings = openAiSettings;
+  const saveSettings = closeAiSettings;
 
   function _buildReadinessWidget(data) {
     const getColor = (val) => {
@@ -812,7 +843,14 @@ export const IntelView = (() => {
     };
 
     const mainColor = getColor(data.index);
-    const indexLabel = data.index >= 90 ? 'отлично' : data.index >= 70 ? 'хорошо' : data.index >= 50 ? 'удовл' : 'внимание';
+    const indexLabel =
+      data.index >= 90
+        ? 'отлично'
+        : data.index >= 70
+          ? 'хорошо'
+          : data.index >= 50
+            ? 'удовл'
+            : 'внимание';
 
     return `
       <div class="intel-readiness-widget animate-in" style="background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.1); border-radius:24px; padding:var(--sp-3); margin:var(--sp-2) 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
@@ -895,12 +933,16 @@ export const IntelView = (() => {
           <span class="intel-workout-type">${esc(data.type || 'Custom')}</span>
         </div>
         <ul class="intel-workout-list">
-          ${exercises.map(ex => `
+          ${exercises
+            .map(
+              (ex) => `
             <li class="intel-workout-item">
               <span class="intel-workout-ex-name">${esc(ex?.name || '')}</span>
               <span class="intel-workout-ex-sets">${esc(String(ex?.sets ?? ''))}×${esc(String(ex?.reps ?? ''))}</span>
             </li>
-          `).join('')}
+          `
+            )
+            .join('')}
         </ul>
         <button class="btn btn-ghost intel-workout-save" data-action="intel:saveActionCard" data-workout-id="${id}">${L.saveWorkout}</button>
       </div>
@@ -919,8 +961,19 @@ export const IntelView = (() => {
   }
 
   return {
-    load, handleCamera, onFileSelected, submit, generateWeekly, createWorkout, analyzeStats,
-    checkBiometrics, playAudio, _clearImage, openSettings, saveSettings, saveActionCard,
+    load,
+    handleCamera,
+    onFileSelected,
+    submit,
+    generateWeekly,
+    createWorkout,
+    analyzeStats,
+    checkBiometrics,
+    playAudio,
+    _clearImage,
+    openSettings,
+    saveSettings,
+    saveActionCard,
   };
 })();
 
