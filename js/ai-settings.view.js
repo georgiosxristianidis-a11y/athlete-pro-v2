@@ -250,6 +250,7 @@ export async function openAiSettings() {
         <div id="ai-settings-engine" style="display:flex; flex-direction:column; gap: var(--sp-2);">
           ${renderEngineAndKey(settings, _serverStatus)}
         </div>
+        <p class="pref-sub" style="margin: var(--sp-2) 0 0; font-size: var(--fs-1);">${esc(t('settings.voice_gemini'))}</p>
         ${_toneRow(tone)}
         <button class="btn btn-primary intel-settings-save" data-action="ai:closeSettings">${esc(t('settings.done'))}</button>
       </div>
@@ -304,6 +305,7 @@ async function applyKey(engine, raw) {
   }
   patchAiStatus(await DB.Settings.getAll());
   setKeyConn(/** @type {any} */ (result.state), result);
+  await window.IntelView?.refreshKeyBadge?.();
 }
 
 async function recheckKey() {
@@ -353,4 +355,5 @@ async function _onSetEngine(engine) {
   const el = document.getElementById('ai-settings-engine');
   if (el) el.innerHTML = renderEngineAndKey(settings, _serverStatus);
   patchAiStatus(settings);
+  await window.IntelView?.refreshKeyBadge?.();
 }
