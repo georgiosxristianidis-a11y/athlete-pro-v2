@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-bf0f655a';
+const CACHE_NAME = 'athlete-pro-v121-c40f8108';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -87,6 +87,8 @@ const ASSETS = [
 
 const ASSETS_WARM = [
   '/exercises-library.json',
+  '/js/ai-settings.store.js',
+  '/js/ai-settings.view.js',
   '/js/analytics.store.js',
   '/js/analytics.strength-curves.js',
   '/js/analytics.view.js',
