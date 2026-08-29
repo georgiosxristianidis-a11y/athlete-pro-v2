@@ -14,6 +14,10 @@
  * что он меряет». Поднять потолок отдельной веткой — законно и зелено:
  * решение остаётся видимым и обсуждаемым, а не спрятанным в диффе фичи.
  *
+ * База сравнения — origin/main, а в стопке PR та ветка, на которую он открыт
+ * (`GITHUB_BASE_REF` в CI, `GUARD_BASE_REF` локально): иначе второй этаж стопки
+ * краснеет за потолок, поднятый первым этажом.
+ *
  * Осознанный обход: CEILING_OK=1 npm test.
  */
 import test from 'node:test';
@@ -22,7 +26,6 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { MAIN } from '../scripts/drift-core.mjs';
 import { branchScope, fileAtRef } from '../scripts/branch-scope.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -145,7 +148,7 @@ test('потолки: поднятие потолка не едет тем же 
   const findings = findViolations(
     scope,
     (file) => readFileSafe(file),
-    (file) => fileAtRef(MAIN, file, { cwd: REPO_ROOT }),
+    (file) => fileAtRef(scope.ref, file, { cwd: REPO_ROOT }),
   );
 
   assert.deepEqual(
