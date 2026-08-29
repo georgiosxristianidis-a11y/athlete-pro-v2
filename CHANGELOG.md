@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Гарды VER-1 и CEIL-1 — правила стали гейтом (этот PR)
+
+Бамп версии: ветка, которая правит `js/` или `css/`, обязана нести номер,
+отличный от `origin/main` — `test/version-bump-required.test.js`. Опорный факт:
+#271…#276 уехали в main без бампа, прод показывал 1.27.77 на коде шести
+карточек, а `smoke:prod` сверяет ровно этот номер.
+
+Потолки: поднятие потолка не едет тем же PR, который в него упёрся —
+`test/ceiling-bump-isolated.test.js`. Опорный факт: `a9b0d5b` поднял
+`MAX_TRACKED_FILES` 400→401 внутри PR #276, добавившего 401-й файл. Сам потолок
+поднят до 450 отдельным PR, с запасом — при нулевом запасе эту строку трогает
+каждая ветка. Обходы у гардов свои: `VERSION_BUMP_OK=1`, `CEILING_OK=1`.
+
 ### LAUNCH-8 — бэкап (этот PR)
 
 Выгрузка включает редактируемый план (`localStorage` `ap-custom-plan-A/B`) и

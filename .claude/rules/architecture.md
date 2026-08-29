@@ -58,5 +58,6 @@ node scripts/telemetry-server.mjs --lan
 - Animations: GPU-only (`transform`/`opacity`), Spring Physics из `js/shared/spring.js`
 - Route files: suffix only (`/coach` not `/api/coach`)
 - `sw.js`: ASSETS генерить через `npm run build:sw` (НЕ руками) — сторожит `test/sw-cache-name.test.js`
+- **Тронул `js/` или `css/` — подними номер** (`js/version.js` + `package.json`+lock). Гард `test/version-bump-required.test.js` сверяет номер с `origin/main`, а не наличие файла в диффе: одинаковый бамп в стопке веток схлопывается при ребейзе без конфликта, и проверка по диффу зеленела бы там, где в прод уезжает старый номер. Обход: `VERSION_BUMP_OK=1`
 - `server.js` никогда не заменять отладочными стабами — для телеметрии есть `scripts/telemetry-server.mjs`
 - **Миграция планов:** при смене сид/дефолт-плана новые имена упражнений ОБЯЗАНЫ нести `alias: [старые имена]` — префилл истории ищет по имени, без алиасов веса пользователя отвязываются (кейс 0кг 2026-07-08)
