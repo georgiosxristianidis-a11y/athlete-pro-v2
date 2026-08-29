@@ -13,8 +13,6 @@ import { Toast } from './shell.js';
 import { on, onChange } from './events.js';
 import { haptic, esc } from './shared/utils.js';
 import { forceUpdate } from './shared/sw-update.js';
-import { probeAiStatus } from './shared/ai-status.js';
-import { DEFAULT_AI_ENGINE } from './shared/ai-engine.js';
 
 on('profile:clearData', () => window.Profile.clearAllData());
 onChange('profile:importFile', (el, e) => window.Profile._onImportFile(e));
@@ -62,7 +60,7 @@ export const Profile = (() => {
       <!-- PP-6: wrapper exists so _refreshSettings() can swap the settings
            markup alone. Plain div, no styling of its own: .screen is padding
            only (no flex/gap), so it doesn't disturb the vertical rhythm. -->
-      <div id="profile-settings-block">${renderSettings(settings, lang, _AI_UNKNOWN, syncStatus)}</div>
+      <div id="profile-settings-block">${renderSettings(settings, lang, syncStatus)}</div>
 
       <!-- ── DANGER ZONE ── -->
       <div class="section-label-alt" id="profile-danger-label" style="color:var(--c-red); opacity:0.8">${esc(t('profile.danger_zone'))}</div>
@@ -84,7 +82,6 @@ export const Profile = (() => {
       _refreshPassport(lang);
       _appendBuildStamp();
       _wireVersionTap();
-      _patchAiStatus(settings);
     } catch (err) {
       console.error('Profile load error', err);
       screen.innerHTML = `<div style="padding:var(--sp-3);">${esc(t('profile.load_error'))}</div>`;
@@ -98,10 +95,6 @@ export const Profile = (() => {
      Handlers are delegated on `document` (events.js), so swapping innerHTML
      never loses a listener and nothing needs re-binding.
      ══════════════════════════════════════════════ */
-
-  /* AI indicators can't be known at render time — the screen must not wait for
-     the network (a15e70c). Render "unknown", patch after paint. */
-  const _AI_UNKNOWN = { gemini: false, anthropic: false };
 
   async function _syncStatus() {
     try {
@@ -122,8 +115,7 @@ export const Profile = (() => {
       DB.Settings.getAll(),
       DB.Settings.get('lang', 'en'),
     ]);
-    block.innerHTML = renderSettings(settings, langRaw || 'en', _AI_UNKNOWN, syncStatus);
-    _patchAiStatus(settings);
+    block.innerHTML = renderSettings(settings, langRaw || 'en', syncStatus);
   }
 
   /** Re-render the passport only — for actions that change workouts, not settings. */
@@ -303,31 +295,6 @@ export const Profile = (() => {
     _refreshSettings();
   }
 
-  async function setEngine(engine) {
-    const { getPrivacyMode } = await import('./privacy.store.js');
-    const mode = getPrivacyMode();
-    if (mode === 'airgap') {
-      Toast.show(t('profile.ai_airgap'), 'error');
-      return;
-    }
-    await DB.Settings.set('ai-engine', engine);
-    const fab = document.getElementById('claude-fab');
-    if (fab) {
-      const { Claude } = await import('./claude.view.js');
-      if (engine === 'gemini') {
-        fab.classList.add('gemini-mode');
-        const content = fab.querySelector('.fab-content');
-        if (content) content.innerHTML = Claude._geminiIcon();
-      } else {
-        fab.classList.remove('gemini-mode');
-        const content = fab.querySelector('.fab-content');
-        if (content) content.innerHTML = Claude._claudeIcon();
-      }
-    }
-    _haptic(20);
-    _refreshSettings();
-  }
-
   async function exportData() {
     const json = await DB.Backup.export();
     const { downloadText, exportFilename } = await import('./shared/download.js');
@@ -434,203 +401,6 @@ export const Profile = (() => {
     haptic(10);
     Toast.show(t('settings.notify_on'), 'success');
     return _refreshSettings();
-  }
-
-  /* ── BYOK key: ввод → применение → индикатор коннекта ────────────────────
-     Раньше поле отвечало только на «похоже на ключ?» (префикс + длина) и
-     сохраняло значение на blur. Отозванный или опечатанный в середине ключ
-     проходил обе проверки и всплывал 401-м уже внутри диалога с коучем.
-
-     Теперь ввод сам доводит дело до конца: debounce → сохранение → живой
-     пинг провайдера через /api/verify-key → зелёный/серый/красный индикатор.
-     Blur остаётся, но только как «применить немедленно», не как единственный
-     момент сохранения.
-
-     Хендлеры НЕ перерисовывают блок настроек: подмена разметки между mousedown
-     и click съела бы тап, вызвавший blur. Индикаторы патчатся на месте. */
-  const KEY_DEBOUNCE_MS = 650;
-  const KEY_PREFIX = { gemini: 'AIza', anthropic: 'sk-ant-' };
-  const KEY_FIELD = { gemini: 'gemini-key', anthropic: 'anthropic-key' };
-
-  let _keyTimer = null;
-  /* Гонка: пользователь дописывает ключ, пока летит проверка предыдущего.
-     Ответ старого запроса обязан быть выброшен, иначе индикатор мигнёт
-     вердиктом про уже несуществующее значение. */
-  let _keyCheckSeq = 0;
-
-  /** @param {string} engine */
-  function _keyLooksValid(engine, val) {
-    const v = val.trim();
-    return v.startsWith(KEY_PREFIX[engine] || '') && v.length > 30;
-  }
-
-  /**
-   * Отрисовать состояние индикатора коннекта. Единственная точка, которая
-   * трогает DOM индикатора — состояние живёт в data-state, вся анимация в CSS.
-   * @param {'empty'|'server'|'saved'|'partial'|'checking'|'ok'|'invalid'|'disabled'|'offline'|'blocked'} state
-   * @param {{ latencyMs?: number }} [extra]
-   */
-  function _setKeyConn(state, extra = {}) {
-    const box = document.getElementById('key-conn');
-    if (!box) return;
-    const label = box.querySelector('.key-conn-label');
-    if (!label) return;
-
-    // Пустое поле при живом серверном ключе — не «нет коннекта», а «works
-    // without your key». Серый в обоих случаях, но подпись честная.
-    if (state === 'empty' && box.dataset.server === '1') state = 'server';
-
-    const text =
-      {
-        empty: t('settings.key_empty'),
-        server: t('settings.key_server'),
-        saved: t('settings.key_saved'),
-        partial: t('settings.key_partial'),
-        checking: t('settings.key_checking'),
-        ok: t('settings.key_ok'),
-        invalid: t('settings.key_invalid'),
-        disabled: t('settings.key_disabled'),
-        offline: t('settings.key_offline'),
-        blocked: t('settings.key_blocked'),
-      }[state] || '';
-
-    const ms = Number(extra.latencyMs) || 0;
-    label.textContent = state === 'ok' && ms ? `${text} · ${ms} ${t('settings.key_ms')}` : text;
-
-    if (box.dataset.state !== state) {
-      box.dataset.state = state;
-      // Рестарт входной анимации: без этого повторный тот же вердикт молчит.
-      box.classList.remove('is-swap');
-      void box.offsetWidth;
-      box.classList.add('is-swap');
-      if (state === 'ok') haptic(10);
-    }
-  }
-
-  /** Ввод: мгновенная реакция формой + отложенное применение и проверка. */
-  function onKeyInput(engine, raw) {
-    clearTimeout(_keyTimer);
-    const val = String(raw || '').trim();
-
-    if (!val) {
-      _keyCheckSeq++;
-      _setKeyConn('empty');
-      _keyTimer = setTimeout(() => commitKey(engine, ''), KEY_DEBOUNCE_MS);
-      return;
-    }
-    if (!_keyLooksValid(engine, val)) {
-      _keyCheckSeq++;
-      _setKeyConn('partial');
-      return;
-    }
-
-    _setKeyConn('checking');
-    _keyTimer = setTimeout(() => commitKey(engine, val), KEY_DEBOUNCE_MS);
-  }
-
-  /**
-   * Применить ключ: сохранить, обновить зависимые узлы, проверить коннект.
-   * @param {'gemini'|'anthropic'} engine
-   */
-  async function commitKey(engine, raw) {
-    clearTimeout(_keyTimer);
-    const val = String(raw || '').trim();
-    const seq = ++_keyCheckSeq;
-
-    await DB.Settings.set(KEY_FIELD[engine], val);
-
-    if (engine === 'gemini') {
-      // FAB коуча читает ключ на построении — пересобрать, иначе кнопка врёт.
-      const { Claude } = await import('./claude.view.js');
-      document.getElementById('claude-fab-container')?.remove();
-      Claude.renderFAB();
-    }
-    _patchAiStatus(await DB.Settings.getAll());
-
-    if (!val) {
-      if (seq === _keyCheckSeq) _setKeyConn('empty');
-      return;
-    }
-    if (!_keyLooksValid(engine, val)) {
-      if (seq === _keyCheckSeq) _setKeyConn('partial');
-      return;
-    }
-
-    if (seq === _keyCheckSeq) _setKeyConn('checking');
-    const verdict = await _verifyKey(engine, val);
-    if (seq !== _keyCheckSeq) return; // ключ уже переписан — вердикт протух
-    _setKeyConn(verdict.state, verdict);
-  }
-
-  /**
-   * Пинг провайдера через backend-прокси (ключ на фронте наружу не уходит).
-   * @returns {Promise<{state:'ok'|'invalid'|'offline'|'blocked', latencyMs?:number}>}
-   */
-  async function _verifyKey(engine, key) {
-    try {
-      const { safeFetch } = await import('./privacy.store.js');
-      const res = await safeFetch(
-        '/api/verify-key',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ engine, key }),
-        },
-        'ai'
-      );
-      const data = await res.json();
-      if (data.ok) return { state: 'ok', latencyMs: data.latencyMs };
-      // «Ключ не принят» и «API не включён в проекте» чинятся по-разному:
-      // первое — заменой ключа, второе — тумблером в Google Cloud. Один общий
-      // «ошибка» отправлял бы человека искать не там.
-      return {
-        state: { invalid_key: 'invalid', api_disabled: 'disabled' }[data.reason] || 'offline',
-      };
-    } catch (err) {
-      // Airgap / AI выключен — это не «ключ плохой», а «сеть закрыта нарочно».
-      if (err && err.name === 'PrivacyBlockedError') return { state: 'blocked' };
-      return { state: 'offline' };
-    }
-  }
-
-  async function setGeminiKey(key) {
-    return commitKey('gemini', key);
-  }
-
-  /** Ручная перепроверка коннекта — ключ мог быть отозван уже после ввода. */
-  async function recheckKey() {
-    const inp = /** @type {HTMLInputElement|null} */ (document.getElementById('ai-key-input'));
-    if (!inp) return;
-    const engine = inp.dataset.engine === 'gemini' ? 'gemini' : 'anthropic';
-    haptic(10);
-    await commitKey(engine, inp.value);
-  }
-
-  function toggleKeyVisibility() {
-    const inp = document.getElementById('ai-key-input');
-    const icon = document.getElementById('eye-icon');
-    if (!inp || !icon) return;
-    if (inp.type === 'password') {
-      inp.type = 'text';
-      icon.innerHTML =
-        '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><path d="M2 2l20 20"/>';
-    } else {
-      inp.type = 'password';
-      icon.innerHTML =
-        '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
-    }
-  }
-
-  function validateGeminiKey(val) {
-    onKeyInput('gemini', val);
-  }
-
-  async function setAnthropicKey(key) {
-    return commitKey('anthropic', key);
-  }
-
-  function validateAnthropicKey(val) {
-    onKeyInput('anthropic', val);
   }
 
   async function setLang(lang) {
@@ -788,15 +558,6 @@ export const Profile = (() => {
     toggleFabVideo,
     togglePandaMoods,
     setLang,
-    setEngine,
-    setGeminiKey,
-    validateGeminiKey,
-    setAnthropicKey,
-    validateAnthropicKey,
-    toggleKeyVisibility,
-    onKeyInput,
-    commitKey,
-    recheckKey,
     exportData,
     exportCsv,
     exportTxt,
@@ -813,28 +574,4 @@ export const Profile = (() => {
 
 function _haptic(ms = 10) {
   if (navigator.vibrate) navigator.vibrate(ms);
-}
-
-/** Update AI engine indicators after shell render (non-blocking). */
-async function _patchAiStatus(settings) {
-  try {
-    const probed = await probeAiStatus();
-    const currentEngine = settings['ai-engine'] || DEFAULT_AI_ENGINE;
-    const geminiActive = probed.gemini || !!settings['gemini-key'];
-    const anthropicActive = probed.anthropic || !!settings['anthropic-key'];
-
-    const anthropicEl = document.getElementById('ai-status-anthropic');
-    if (anthropicEl) {
-      anthropicEl.className = `ai-indicator ${anthropicActive ? (currentEngine === 'anthropic' ? 'active' : 'ready') : 'missing'}`;
-    }
-    const geminiEl = document.getElementById('ai-status-gemini');
-    if (geminiEl) {
-      geminiEl.className = `ai-indicator ${geminiActive ? (currentEngine === 'gemini' ? 'active' : 'ready') : 'missing'}`;
-    }
-    if (probed.gemini) {
-      document.getElementById('engine-btn-gemini')?.classList.remove('ai-glow-error');
-    }
-  } catch (_) {
-    /* probeAiStatus does not throw; keep local-key indicators */
-  }
 }

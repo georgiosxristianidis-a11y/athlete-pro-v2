@@ -1,11 +1,11 @@
 // @ts-check
 import { esc } from '../shared/utils.js';
 import { t, getLang } from '../locale.store.js';
-import { on, onInput, onBlur } from '../events.js';
+import { on } from '../events.js';
 import { flag } from '../flags.js';
 import { K_LAST_EXPORT } from '../db/backup.js';
 import { getThemePref } from '../shared/theme.js';
-import { DEFAULT_AI_ENGINE } from '../shared/ai-engine.js';
+import '../ai-settings.view.js';
 
 /**
  * Подпись под кнопкой бэкапа: «Последний бэкап: 18 июл» / «ни разу».
@@ -16,7 +16,10 @@ import { DEFAULT_AI_ENGINE } from '../shared/ai-engine.js';
 export function backupSubLabel(lastExportAt) {
   const ts = Number(lastExportAt) || 0;
   if (!ts) return t('backup.save_sub_never');
-  const d = new Date(ts).toLocaleDateString(getLang() === 'ru' ? 'ru' : 'en', { day: 'numeric', month: 'short' });
+  const d = new Date(ts).toLocaleDateString(getLang() === 'ru' ? 'ru' : 'en', {
+    day: 'numeric',
+    month: 'short',
+  });
   return t('backup.save_sub_last', { d });
 }
 
@@ -31,38 +34,24 @@ export function backupSubLabel(lastExportAt) {
 export function backupMetaLabel(lastExportAt) {
   const ts = Number(lastExportAt) || 0;
   if (!ts) return t('backup.meta_never');
-  const d = new Date(ts).toLocaleDateString(getLang() === 'ru' ? 'ru' : 'en', { day: 'numeric', month: 'short' });
+  const d = new Date(ts).toLocaleDateString(getLang() === 'ru' ? 'ru' : 'en', {
+    day: 'numeric',
+    month: 'short',
+  });
   return t('backup.meta_last', { d });
 }
 
 const P = () => window.Profile;
-on('settings:adjustRest',  (el) => P().adjustRest(+el.dataset.amt));
-on('settings:toggleHaptic',(el) => P().toggleHaptic());
+on('settings:adjustRest', (el) => P().adjustRest(+el.dataset.amt));
+on('settings:toggleHaptic', (el) => P().toggleHaptic());
 on('settings:toggleKeepAwake', () => P().toggleKeepAwake());
 on('settings:toggleNotify', () => P().toggleNotify());
-on('settings:setLang',     (el) => P().setLang(el.dataset.lang));
+on('settings:setLang', (el) => P().setLang(el.dataset.lang));
 on('settings:toggleAutoProgress', () => P().toggleAutoProgress());
-on('settings:setUnit',     (el) => P().setUnit(el.dataset.unit));
-on('settings:setEngine',   (el) => P().setEngine(el.dataset.engine));
+on('settings:setUnit', (el) => P().setUnit(el.dataset.unit));
 on('settings:togglePanda', () => P().togglePanda());
 on('settings:toggleFabVideo', () => P().toggleFabVideo());
 on('settings:togglePandaMoods', () => P().togglePandaMoods());
-on('settings:toggleKeyVis',() => P().toggleKeyVisibility());
-/* Тот же словарь движения, что у кнопки синка: крутится, пока летит запрос, и
-   доводит оборот пружиной на ответе — «дело сделано», а не «анимация оборвалась». */
-on('settings:keyRecheck', async () => {
-  const icon = document.getElementById('key-conn-icon');
-  icon?.classList.add('is-spinning');
-  try {
-    await P().recheckKey();
-  } finally {
-    if (icon) {
-      icon.classList.remove('is-spinning');
-      icon.classList.add('is-settled');
-      setTimeout(() => icon.classList.remove('is-settled'), 500);
-    }
-  }
-});
 on('settings:syncToggle', async (el) => {
   const icon = document.getElementById('sync-connect-icon');
   icon?.classList.add('is-spinning');
@@ -76,30 +65,21 @@ on('settings:syncToggle', async (el) => {
     }
   }
 });
-on('settings:setTheme',    (el) => P().setTheme(el.dataset.theme));
-on('settings:exportData',  () => P().exportData());
-on('settings:exportCsv',   () => P().exportCsv());
-on('settings:exportTxt',   () => P().exportTxt());
-on('settings:importData',  () => P().importData());
-on('settings:dedup',       () => P().deduplicateDB());
-onInput('settings:keyInput',    (el) => el.dataset.engine === 'gemini' ? P().validateGeminiKey(el.value) : P().validateAnthropicKey(el.value));
-onBlur('settings:keyBlur',      (el) => el.dataset.engine === 'gemini' ? P().setGeminiKey(el.value) : P().setAnthropicKey(el.value));
+on('settings:setTheme', (el) => P().setTheme(el.dataset.theme));
+on('settings:exportData', () => P().exportData());
+on('settings:exportCsv', () => P().exportCsv());
+on('settings:exportTxt', () => P().exportTxt());
+on('settings:importData', () => P().importData());
+on('settings:dedup', () => P().deduplicateDB());
 
 /**
  * Render the complete Application Settings for the Profile tab.
  * @param {Object} settings - All settings from DB.Settings.getAll()
  * @param {string} lang - Current language code ('en'|'ru')
- * @param {Object} serverStatus - AI server status
  * @param {string} syncStatus - Current sync status
  * @returns {string}
  */
-export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle') {
-  const currentEngine = settings['ai-engine'] || DEFAULT_AI_ENGINE;
-  const hasLocalGemini = !!settings['gemini-key'];
-  const hasLocalAnthropic = !!settings['anthropic-key'];
-  const geminiActive = (serverStatus.gemini || hasLocalGemini);
-  const anthropicActive = (serverStatus.anthropic || hasLocalAnthropic);
-
+export function renderSettings(settings, lang, syncStatus = 'idle') {
   const themePref = getThemePref();
   // Тумблер уведомлений отражает ДВА состояния сразу: наше «хочу» из базы и
   // ответ браузера. Разрешение можно отозвать в настройках телефона, минуя
@@ -108,7 +88,14 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
   const notifyBlocked = perm === 'denied';
   const notifyOn = settings['notify-rest'] === 'on' && perm === 'granted';
   const syncStatusLabel = t(`sync.status.${syncStatus}`);
-  const syncStatusColor = syncStatus === 'error' ? 'var(--c-red)' : (syncStatus === 'syncing' ? 'var(--c-blue)' : (syncStatus === 'offline' ? 'var(--c-text-3)' : 'var(--c-accent)'));
+  const syncStatusColor =
+    syncStatus === 'error'
+      ? 'var(--c-red)'
+      : syncStatus === 'syncing'
+        ? 'var(--c-blue)'
+        : syncStatus === 'offline'
+          ? 'var(--c-text-3)'
+          : 'var(--c-accent)';
 
   return `
     <!-- ── GENERAL SETTINGS ── -->
@@ -266,18 +253,19 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
     <!-- ── AI ASSISTANT ── -->
     <div class="section-label-alt">${t('settings.ai')}</div>
     <div class="profile-card" style="padding:var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-2);">
-        <div class="engine-toggle-grid">
-          <button class="engine-toggle-btn claude-active ${currentEngine === 'anthropic' ? 'active' : ''}"
-                  data-action="settings:setEngine" data-engine="anthropic">
-            <span class="ai-indicator ${anthropicActive ? (currentEngine === 'anthropic' ? 'active' : 'ready') : 'missing'}" id="ai-status-anthropic"></span>
-            ${t('settings.engine_claude')}
-          </button>
-          <button class="engine-toggle-btn gemini-active ${currentEngine === 'gemini' ? 'active' : ''} ${currentEngine === 'gemini' && !geminiActive ? 'ai-glow-error' : ''}"
-                  id="engine-btn-gemini"
-                  data-action="settings:setEngine" data-engine="gemini">
-            <span class="ai-indicator ${geminiActive ? (currentEngine === 'gemini' ? 'active' : 'ready') : 'missing'}" id="ai-status-gemini"></span>
-            ${t('settings.engine_gemini')}
-          </button>
+        <div class="pref-row-icon" data-action="ai:openSettings">
+          <div class="pref-icon-box" style="background:var(--c-surface-h)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </div>
+          <div class="pref-info">
+            <div class="pref-title">${t('settings.ai_core')}</div>
+            <div class="pref-sub">${t('settings.ai_core_sub')}</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="color:var(--c-text-3); flex-shrink:0">
+            <polyline points="9 6 15 12 9 18"/>
+          </svg>
         </div>
 
         <div style="display:flex; align-items:center; justify-content:space-between; padding: var(--sp-0-5) 0;">
@@ -315,78 +303,6 @@ export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle'
             </div>
           </div>
         </div>
-
-        ${(() => {
-          // BYOK key field for the CURRENTLY selected engine — symmetric for both
-          // Claude (sk-ant-) and Gemini (AIza). Makes the two engine buttons an
-          // honest "activate with your own key" path.
-          const isGem = currentEngine === 'gemini';
-          const keyId = isGem ? 'gemini-key' : 'anthropic-key';
-          const val = settings[keyId] || '';
-          const prefix = isGem ? 'AIza' : 'sk-ant-';
-          const ru = lang === 'ru';
-          const label = isGem ? t('settings.gemini_key') : (ru ? 'Ключ Claude' : 'Claude Key');
-          const getLbl = isGem ? t('settings.gemini_get_key') : (ru ? 'Получить ключ' : 'Get key');
-          const getUrl = isGem ? 'https://aistudio.google.com/app/apikey' : 'https://console.anthropic.com/settings/keys';
-          const serverHas = isGem ? serverStatus.gemini : serverStatus.anthropic;
-          const placeholder = isGem
-            ? (serverHas ? t('settings.gemini_placeholder_server') : t('settings.gemini_placeholder_opt'))
-            : (serverHas ? (ru ? 'Серверный ключ активен' : 'Server key active') : (ru ? 'sk-ant-… (опционально)' : 'sk-ant-… (optional)'));
-          // Стартовое состояние индикатора — без сетевой проверки: открытие
-          // настроек не должно молча стучаться к провайдеру (приложение
-          // airgap-first). Сохранённый ключ показывается как «сохранён», а не
-          // как «подключён» — коннект подтверждает только живой пинг.
-          const trimmed = val.trim();
-          const initState = !trimmed
-            ? (serverHas ? 'server' : 'empty')
-            : (trimmed.startsWith(prefix) && trimmed.length > 30 ? 'saved' : 'partial');
-          const initLabel = {
-            server:  t('settings.key_server'),
-            empty:   t('settings.key_empty'),
-            saved:   t('settings.key_saved'),
-            partial: t('settings.key_partial'),
-          }[initState];
-          return `
-        <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-0-5);">
-            <div class="pref-sub" style="font-size: var(--fs-1); margin: 0; font-weight: var(--fw-bold);">${esc(label)}</div>
-            <a href="${getUrl}" target="_blank" class="pref-sub"
-               style="font-size: var(--fs-1); color: var(--c-blue); text-decoration: none; font-weight: var(--fw-black);">
-               ${esc(getLbl)} ↗
-            </a>
-          </div>
-          <div style="position: relative; display: flex; align-items: center;">
-            <!-- Правые 44px — не ритм, а клиренс под абсолютную кнопку показа ключа
-                 (тап-таргет 44×44). Вне шкалы --sp-* осознанно. -->
-            <input type="password" id="ai-key-input" class="pref-textarea" style="height: 38px; padding: 0 44px 0 var(--sp-1-5); margin: 0; font-family: monospace; border-radius: var(--r-m); width: 100%; box-sizing: border-box;"
-                   placeholder="${esc(placeholder)}"
-                   value="${esc(val)}"
-                   data-engine="${isGem ? 'gemini' : 'anthropic'}"
-                   data-input="settings:keyInput"
-                   data-blur="settings:keyBlur">
-            <div style="position: absolute; right: 8px; display: flex; align-items: center; gap: var(--sp-1);">
-              <button class="btn-text" data-action="settings:toggleKeyVis" style="padding: var(--sp-0-5); color: var(--c-text-3);">
-                <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <!-- Индикатор коннекта. Галочка «похоже на ключ» стояла ВНУТРИ поля и
-               отвечала на вопрос про формат, а пользователь читал её как «ключ
-               работает». Статус вынесен строкой под поле: точка + вердикт +
-               ручная перепроверка. Состояние держит data-state, анимация — CSS. -->
-          <div class="key-conn" id="key-conn" data-state="${initState}" data-server="${serverHas ? '1' : '0'}">
-            <span class="key-conn-dot"></span>
-            <span class="key-conn-label">${esc(initLabel)}</span>
-            <button class="key-conn-recheck" data-action="settings:keyRecheck" aria-label="${esc(t('settings.key_recheck'))}">
-              <svg class="icon-rotate" id="key-conn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-              </svg>
-            </button>
-          </div>
-        </div>`;
-        })()}
     </div>
 
     <!-- ── DATA & CLOUD SYNC ── -->
