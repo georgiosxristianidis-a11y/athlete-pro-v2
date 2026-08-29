@@ -8,6 +8,7 @@ import { DB } from './db.js';
 import { safeFetch } from './privacy.store.js';
 import { loadProfile, computeAge } from './profile.store.js';
 import { athleteProScore } from './strength-engine.js';
+import { DEFAULT_AI_ENGINE } from './shared/ai-engine.js';
 
 export const COMPUTE_REST_HOURS = 72; // Standard window for fatigue decay
 
@@ -253,7 +254,7 @@ async function _fetchAIRecommendations(workout, fatigue, orms, nextPlan) {
   const history = await DB.Workouts.getAll();
   const recentHistory = history.filter((w) => w.timestamp > Date.now() - 14 * 24 * 3600000);
 
-  const engine = await DB.Settings.get('ai-engine', 'anthropic');
+  const engine = await DB.Settings.get('ai-engine', DEFAULT_AI_ENGINE);
   // A BYOK key belongs only to its own engine (per-engine field). Empty → server
   // .env key. Sending the wrong engine's key would 401.
   const customKey = (await DB.Settings.get(engine === 'gemini' ? 'gemini-key' : 'anthropic-key')) || undefined;
@@ -445,7 +446,7 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
   const chatSource =
     ctx.chatHistory != null && Array.isArray(ctx.chatHistory) ? ctx.chatHistory : _chatHistory;
 
-  const engine = await DB.Settings.get('ai-engine', 'anthropic');
+  const engine = await DB.Settings.get('ai-engine', DEFAULT_AI_ENGINE);
   const requestId = _newRequestId();
   const ac = new AbortController();
   const timeoutId = setTimeout(() => ac.abort(), COACH_CLIENT_TIMEOUT_MS);

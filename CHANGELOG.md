@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Gemini — дефолтный движок коуча
+
+Новая установка ходит в Gemini (`gemini-3.6-flash`), не в Anthropic: на проде
+есть только Google-ключ. Claude остаётся переключателем. `GEMINI_MODEL` может
+быть только `gemini-3.6-flash` или `gemini-3.1-pro-preview` — остальное
+сворачивается на 3.6-flash.
+
 ### LAUNCH-10 — чеклист и ссылка (этот PR)
 
 Чеклист готовности с честным статусом — `docs/LAUNCH_CHECKLIST.md`.

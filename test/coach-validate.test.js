@@ -97,7 +97,7 @@ describe('coachSchema — context fields and defaults', () => {
     assert.deepEqual(r.data.workouts, []);
     assert.deepEqual(r.data.topLifts, []);
     assert.deepEqual(r.data.images, []);
-    assert.equal(r.data.engine, 'anthropic');
+    assert.equal(r.data.engine, 'gemini');
   });
 
   test('full valid payload → accepted', () => {

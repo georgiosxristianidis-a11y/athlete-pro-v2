@@ -14,6 +14,7 @@ import { on, onChange } from './events.js';
 import { haptic, esc } from './shared/utils.js';
 import { forceUpdate } from './shared/sw-update.js';
 import { probeAiStatus } from './shared/ai-status.js';
+import { DEFAULT_AI_ENGINE } from './shared/ai-engine.js';
 
 on('profile:clearData', () => window.Profile.clearAllData());
 onChange('profile:importFile', (el, e) => window.Profile._onImportFile(e));
@@ -818,7 +819,7 @@ function _haptic(ms = 10) {
 async function _patchAiStatus(settings) {
   try {
     const probed = await probeAiStatus();
-    const currentEngine = settings['ai-engine'] || 'anthropic';
+    const currentEngine = settings['ai-engine'] || DEFAULT_AI_ENGINE;
     const geminiActive = probed.gemini || !!settings['gemini-key'];
     const anthropicActive = probed.anthropic || !!settings['anthropic-key'];
 

@@ -5,6 +5,7 @@ import { AIOrchestrator } from '../lib/aiOrchestrator.js';
 import { logInfo, logWarn } from '../lib/logger.js';
 import { asyncHandler } from '../lib/errors.js';
 import { stripSecrets } from '../js/shared/sync-secrets.js';
+import { DEFAULT_AI_ENGINE } from '../js/shared/ai-engine.js';
 import { z } from 'zod';
 
 const router = express.Router();
@@ -25,7 +26,7 @@ const generatePlanSchema = z.object({
   oneRMs: z.array(z.any()).optional().default([]),
   goals: z.string().optional().default('strength'),
   experience: z.string().optional().default('intermediate'),
-  engine: z.string().optional().default('anthropic')
+  engine: z.string().optional().default(DEFAULT_AI_ENGINE)
 });
 
 /* ── POST /generate-plan ── */
@@ -77,7 +78,7 @@ const recommendationsSchema = z.object({
   fatigue: z.any().optional().default({}),
   topLifts: z.array(z.any()).optional().default([]),
   nextSessionPlan: z.array(z.any()).min(1, 'nextSessionPlan is required'),
-  engine: z.string().optional().default('anthropic')
+  engine: z.string().optional().default(DEFAULT_AI_ENGINE)
 });
 
 /* ── POST /recommendations ── */
@@ -135,7 +136,7 @@ export const coachSchema = z.object({
   images: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
   longTermStats: z.any().optional().default({}),
-  engine: z.string().optional().default('anthropic'),
+  engine: z.string().optional().default(DEFAULT_AI_ENGINE),
   customKey: z.string().optional(),
   tone: z.coerce.number().min(0).max(100).optional().default(50)
 });
@@ -274,7 +275,7 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
 const weeklyReportSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
-  engine: z.string().optional().default('anthropic'),
+  engine: z.string().optional().default(DEFAULT_AI_ENGINE),
   customKey: z.string().optional()
 });
 
@@ -321,7 +322,7 @@ Profile: ${JSON.stringify(profile)}`;
 const biometricsScanSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
-  engine: z.string().optional().default('anthropic'),
+  engine: z.string().optional().default(DEFAULT_AI_ENGINE),
   customKey: z.string().optional()
 });
 
