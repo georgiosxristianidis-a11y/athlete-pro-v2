@@ -14,10 +14,28 @@
 
 import { execFileSync } from 'node:child_process';
 
-import { MAIN, currentBranch, mainKnown, mergeBase, tryGit } from './drift-core.mjs';
+import { MAIN, currentBranch, tryGit } from './drift-core.mjs';
 
 /** В CI detached HEAD — норма: actions/checkout на pull_request даёт refs/pull/N/merge. */
 const inCI = () => process.env.CI === 'true' || process.env.CI === '1';
+
+/**
+ * База, относительно которой судим ветку. Обычно origin/main, но в стопке PR —
+ * ветка-основание: PR со вторым этажом несёт коммиты первого, и гард, жёстко
+ * прибитый к main, краснел бы на всей стопке, требуя бампа за чужую работу.
+ * В CI имя базы даёт сам GitHub (`GITHUB_BASE_REF`), локально — GUARD_BASE_REF.
+ */
+export function baseRef(opts = {}) {
+  const named = process.env.GUARD_BASE_REF || process.env.GITHUB_BASE_REF;
+  if (!named) return MAIN;
+  // Имя от GitHub приходит без remote (`main`), локально удобнее назвать ветку
+  // как есть. Берём первое, что реально существует, чтобы гард не отвалился в
+  // skip именно там, где стопка PR его и нужна.
+  for (const candidate of [named, `origin/${named}`]) {
+    if (tryGit(['rev-parse', '--verify', `${candidate}^{commit}`], opts)) return candidate;
+  }
+  return `origin/${named}`;
+}
 
 /**
  * Вывод git БЕЗ trim. Отдельно от `tryGit` не по вкусу: в `--porcelain` статус
@@ -72,27 +90,30 @@ function parsePorcelainZ(raw) {
 }
 
 /**
- * Что правит текущая ветка поверх общей базы с origin/main.
+ * Что правит текущая ветка поверх общей базы со своей базовой веткой.
  *
  * Незакоммиченное считается наравне с коммитами намеренно: локально гард
  * обязан отвечать на вопрос «что уедет в PR», а не «что уже закоммичено» —
  * иначе он краснеет ровно до `git commit` и приучает гонять тесты после него.
  *
  * @param {{cwd?: string, includeWorktree?: boolean}} [options]
- * @returns {{skip: string} | {base: string, entries: Array<{status: string, path: string}>,
+ * @returns {{skip: string} | {ref: string, base: string, entries: Array<{status: string, path: string}>,
  *   paths: string[], added: string[], deleted: string[]}}
  */
 export function branchScope({ cwd, includeWorktree = true } = {}) {
   const opts = cwd ? { cwd } : {};
+  const ref = baseRef(opts);
 
   const branch = currentBranch(opts);
   if (!branch) return { skip: 'не git-репозиторий' };
   if (branch === 'main') return { skip: 'сессия на main — сравнивать не с чем' };
   if (branch === 'HEAD' && !inCI()) return { skip: 'detached HEAD вне CI' };
-  if (!mainKnown(opts)) return { skip: `${MAIN} недоступен (мелкий клон?)` };
+  if (!tryGit(['rev-parse', '--verify', `${ref}^{commit}`], opts)) {
+    return { skip: `${ref} недоступен (мелкий клон?)` };
+  }
 
-  const base = mergeBase(opts);
-  if (!base) return { skip: `общий предок с ${MAIN} не найден` };
+  const base = tryGit(['merge-base', 'HEAD', ref], opts);
+  if (!base) return { skip: `общий предок с ${ref} не найден` };
 
   const entries = [];
   const committed = rawGit(['diff', '--name-status', '-z', `${base}..HEAD`], opts);
@@ -113,6 +134,7 @@ export function branchScope({ cwd, includeWorktree = true } = {}) {
   const merged = [...byPath.values()];
 
   return {
+    ref,
     base,
     entries: merged,
     paths: merged.map((e) => e.path),
