@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-adba7f08';
+const CACHE_NAME = 'athlete-pro-v121-bf0f655a';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -110,6 +110,7 @@ const ASSETS_WARM = [
   '/js/profile.view/settings.js',
   '/js/profile.view.js',
   '/js/progressive-overload.js',
+  '/js/shared/ai-engine.js',
   '/js/shared/ai-status.js',
   '/js/shared/air-markdown.js',
   '/js/shared/block-ticks.js',

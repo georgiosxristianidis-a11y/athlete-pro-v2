@@ -8,6 +8,7 @@ import { Toast } from './shell.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
 import { t } from './locale.store.js';
+import { DEFAULT_AI_ENGINE } from './shared/ai-engine.js';
 import {
   initPandaVideo,
   togglePandaSound,
@@ -65,7 +66,8 @@ export const Claude = (() => {
     if (isHidden) return;
     if (document.getElementById('claude-fab-container')) return;
 
-    const engine = (await DB.Settings.get('ai-engine').catch(() => 'anthropic')) || 'anthropic';
+    const engine =
+      (await DB.Settings.get('ai-engine').catch(() => DEFAULT_AI_ENGINE)) || DEFAULT_AI_ENGINE;
     const isGemini = engine === 'gemini';
     const hasKey = isGemini ? !!(await DB.Settings.get('gemini-key')) : true;
 
@@ -339,7 +341,7 @@ export const Claude = (() => {
   }
 
   async function _toggleEngine() {
-    const isGem = (await DB.Settings.get('ai-engine')) === 'gemini';
+    const isGem = (await DB.Settings.get('ai-engine', DEFAULT_AI_ENGINE)) === 'gemini';
     await DB.Settings.set('ai-engine', isGem ? 'anthropic' : 'gemini');
     haptic(10);
     close();

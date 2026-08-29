@@ -74,6 +74,7 @@ describe('POST /api/coach — no API key (500)', () => {
     delete process.env.ANTHROPIC_API_KEY;
     try {
       const res = await post('/api/coach', {
+        engine: 'anthropic',
         messages: [{ role: 'user', content: 'How should I train today?' }],
       });
       assert.equal(res.status, 500);
@@ -91,6 +92,7 @@ describe('POST /api/coach/generate-plan — fallback (no API key)', () => {
     delete process.env.ANTHROPIC_API_KEY;
     try {
       const res = await post('/api/coach/generate-plan', {
+        engine: 'anthropic',
         workoutHistory: [],
         oneRMs: [],
         goals: 'strength',
@@ -110,10 +112,16 @@ describe('POST /api/coach/generate-plan — fallback (no API key)', () => {
     const saved = process.env.ANTHROPIC_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
     try {
-      const res = await post('/api/coach/generate-plan', { workoutHistory: [] });
+      const res = await post('/api/coach/generate-plan', {
+        engine: 'anthropic',
+        workoutHistory: [],
+      });
       const body = await res.json();
       for (const split of ['push', 'pull', 'legs']) {
-        assert.ok(Array.isArray(body.plan[split]) && body.plan[split].length > 0, `${split} missing exercises`);
+        assert.ok(
+          Array.isArray(body.plan[split]) && body.plan[split].length > 0,
+          `${split} missing exercises`
+        );
       }
     } finally {
       if (saved !== undefined) process.env.ANTHROPIC_API_KEY = saved;
@@ -127,6 +135,7 @@ describe('POST /api/coach/recommendations', () => {
     delete process.env.ANTHROPIC_API_KEY;
     try {
       const res = await post('/api/coach/recommendations', {
+        engine: 'anthropic',
         workout: { type: 'push', exercises: [] },
         fatigue: {},
         topLifts: [],

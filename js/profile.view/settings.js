@@ -5,6 +5,7 @@ import { on, onInput, onBlur } from '../events.js';
 import { flag } from '../flags.js';
 import { K_LAST_EXPORT } from '../db/backup.js';
 import { getThemePref } from '../shared/theme.js';
+import { DEFAULT_AI_ENGINE } from '../shared/ai-engine.js';
 
 /**
  * Подпись под кнопкой бэкапа: «Последний бэкап: 18 июл» / «ни разу».
@@ -93,7 +94,7 @@ onBlur('settings:keyBlur',      (el) => el.dataset.engine === 'gemini' ? P().set
  * @returns {string}
  */
 export function renderSettings(settings, lang, serverStatus, syncStatus = 'idle') {
-  const currentEngine = settings['ai-engine'] || 'anthropic';
+  const currentEngine = settings['ai-engine'] || DEFAULT_AI_ENGINE;
   const hasLocalGemini = !!settings['gemini-key'];
   const hasLocalAnthropic = !!settings['anthropic-key'];
   const geminiActive = (serverStatus.gemini || hasLocalGemini);
