@@ -10,6 +10,7 @@ import { on, onChange, onKeydown } from './events.js';
 import { probeAiStatus } from './shared/ai-status.js';
 import { getTone, aiAuth } from './ai-settings.store.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
+import { safeFetch } from './privacy.store.js';
 
 on('intel:close', () => window.Nav.go('s-home'));
 on('intel:toggleLogs', (el) => {
@@ -471,19 +472,23 @@ export const IntelView = (() => {
       const profile = stripSecrets(await DB.Settings.getAll());
       const topLifts = await DB.OneRM.getAll();
 
-      const response = await fetch('/api/coach', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: text }],
-          images: image ? [image] : [],
-          workouts,
-          profile,
-          topLifts,
-          ...(await aiAuth()),
-          tone: await getTone(),
-        }),
-      });
+      const response = await safeFetch(
+        '/api/coach',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: text }],
+            images: image ? [image] : [],
+            workouts,
+            profile,
+            topLifts,
+            ...(await aiAuth()),
+            tone: await getTone(),
+          }),
+        },
+        'ai'
+      );
 
       if (!response.ok) {
         const errJson = await response.json().catch(() => ({}));
@@ -575,14 +580,18 @@ export const IntelView = (() => {
       // выбрасывает undefined сам.
       const geminiKey = await DB.Settings.get('gemini-key');
 
-      const response = await fetch('/api/coach/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: textToSpeak,
-          customKey: geminiKey ? String(geminiKey) : undefined,
-        }),
-      });
+      const response = await safeFetch(
+        '/api/coach/tts',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: textToSpeak,
+            customKey: geminiKey ? String(geminiKey) : undefined,
+          }),
+        },
+        'ai'
+      );
 
       if (!response.ok) throw new Error('Voice sync failed');
 
@@ -640,15 +649,19 @@ export const IntelView = (() => {
       const recentWorkouts = workouts.filter((w) => new Date(w.date).getTime() > sevenDaysAgo);
       const profile = stripSecrets(await DB.Settings.getAll());
 
-      const response = await fetch('/api/coach/weekly-report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          workouts: recentWorkouts,
-          profile,
-          ...(await aiAuth()),
-        }),
-      });
+      const response = await safeFetch(
+        '/api/coach/weekly-report',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            workouts: recentWorkouts,
+            profile,
+            ...(await aiAuth()),
+          }),
+        },
+        'ai'
+      );
 
       if (!response.ok) throw new Error('Report generation failed');
 
@@ -772,15 +785,19 @@ export const IntelView = (() => {
       const workouts = await DB.Workouts.getLast(10);
       const profile = stripSecrets(await DB.Settings.getAll());
 
-      const response = await fetch('/api/coach/biometrics-scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          workouts,
-          profile,
-          ...(await aiAuth()),
-        }),
-      });
+      const response = await safeFetch(
+        '/api/coach/biometrics-scan',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            workouts,
+            profile,
+            ...(await aiAuth()),
+          }),
+        },
+        'ai'
+      );
 
       clearInterval(logInterval);
       if (!response.ok) {
