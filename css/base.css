@@ -1505,8 +1505,11 @@ button:focus-visible {
   display: inline-block;
 }
 .ai-indicator.active { background-color: rgba(0, 184, 212, 0.2); }
+.ai-indicator.ready { background-color: var(--c-accent-bg); }
 .ai-indicator.missing { background-color: var(--c-bg-3); }
+.ai-indicator.airgap { background-color: var(--c-secondary-bg); }
 .ai-indicator.active::after,
+.ai-indicator.ready::after,
 .ai-indicator.missing::after {
   content: '';
   position: absolute;
@@ -1515,7 +1518,15 @@ button:focus-visible {
   will-change: opacity;
   animation: ai-blink-fade 2s infinite;
 }
+.ai-indicator.airgap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-color: var(--c-secondary);
+}
 .ai-indicator.active::after { background-color: var(--c-blue); box-shadow: 0 0 6px var(--c-blue); }
+.ai-indicator.ready::after { background-color: var(--c-accent); box-shadow: 0 0 6px var(--c-accent); }
 .ai-indicator.missing::after { background-color: var(--c-text-3); }
 
 .ai-status-wrap {

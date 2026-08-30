@@ -79,7 +79,46 @@ export async function setEngine(engine) {
   if (getPrivacyMode() === 'airgap') return { ok: false, reason: 'airgap' };
   const next = normalizeEngine(engine);
   await DB.Settings.set('ai-engine', next);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('ap-ai-engine', { detail: { engine: next } }));
+  }
   return { ok: true, engine: next };
+}
+
+/**
+ * FAB / engine-dot visual from probe × local BYOK × selected engine.
+ * Airgap and ai-off are a working mode, not a missing key.
+ *
+ * @param {{ gemini?: boolean, anthropic?: boolean, source?: string } | null | undefined} probed
+ * @param {boolean} hasLocalKey
+ * @param {string} [engine]
+ * @returns {'active' | 'ready' | 'airgap' | 'missing'}
+ */
+export function fabKeyState(probed, hasLocalKey, engine) {
+  const source = probed && probed.source;
+  if (source === 'airgap' || source === 'ai-off') return 'airgap';
+
+  const eng = normalizeEngine(engine);
+  const serverHas = !!(probed && probed[eng]);
+  const local = !!hasLocalKey;
+
+  if (serverHas || (source === 'server' && local)) return 'active';
+  if (local) return 'ready';
+  return 'missing';
+}
+
+/**
+ * Glow on the FAB itself. Error red only for a truly missing key —
+ * airgap must not look like a fault.
+ *
+ * @param {'active' | 'ready' | 'airgap' | 'missing'} state
+ * @param {string} [engine]
+ * @returns {string}
+ */
+export function fabGlowClass(state, engine) {
+  if (state === 'missing') return 'ai-glow-error';
+  if (state === 'active' && normalizeEngine(engine) !== 'gemini') return 'ai-glow-selection';
+  return '';
 }
 
 /** Тон коуча, 0 (терапевт) .. 100 (Гоггинс). Дефолт — нейтрально. */
