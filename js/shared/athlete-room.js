@@ -173,6 +173,57 @@ export const AthleteRoom = (() => {
    * @type {Object|null}
    */
   let _ctx = null;
+  /** F-10: overlay-запись в history, чтобы Back закрыл комнату, а не экран под ней. */
+  let _historyPushed = false;
+  /** @type {(() => void)|null} */
+  let _cropCleanup = null;
+
+  const OVERLAY_KEY = 'athlete-room';
+
+  function isOpen() {
+    return !!_overlay?.classList?.contains('open');
+  }
+
+  function _pushOverlayHistory() {
+    if (_historyPushed) return;
+    const hist = globalThis.history;
+    if (typeof hist?.pushState !== 'function') return;
+    const prev = hist.state && typeof hist.state === 'object' ? hist.state : {};
+    hist.pushState({ ...prev, overlay: OVERLAY_KEY }, '');
+    _historyPushed = true;
+  }
+
+  function _consumeOverlayHistory() {
+    if (!_historyPushed) return;
+    _historyPushed = false;
+    const hist = globalThis.history;
+    if (hist?.state?.overlay === OVERLAY_KEY && typeof hist.back === 'function') {
+      hist.back();
+    }
+  }
+
+  function _dismissCrop() {
+    if (!_cropCleanup) return false;
+    _cropCleanup();
+    return true;
+  }
+
+  function _onPopState(e) {
+    if (!isOpen()) return;
+    if (e.state?.overlay === OVERLAY_KEY) return;
+    close({ fromPop: true });
+  }
+
+  function _onKeydown(e) {
+    if (e.key !== 'Escape') return;
+    if (_dismissCrop()) {
+      e.preventDefault();
+      return;
+    }
+    if (!isOpen()) return;
+    e.preventDefault();
+    close();
+  }
 
   async function open() {
     haptic(15);
@@ -182,6 +233,8 @@ export const AthleteRoom = (() => {
     _overlay.innerHTML = `<div class="ar-loader"></div>`;
     _overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
+    // До await: Back должен закрывать комнату уже на лоадере, не после CSS.
+    _pushOverlayHistory();
 
     // Athlete Room — оверлей поверх ЛЮБОГО экрана, а не экран: в SCREEN_CSS
     // (lazy-css.js) его нет, и ensureScreenCss за него не отработает никогда.
@@ -195,12 +248,19 @@ export const AthleteRoom = (() => {
     await render();
   }
 
-  function close() {
+  /**
+   * @param {{ fromPop?: boolean }} [opts] — fromPop:true = уже сняли overlay-запись
+   *   системным Back; history.back() второй раз уехал бы на предыдущий экран.
+   */
+  function close(opts = {}) {
     haptic(10);
     if (!_overlay) return;
+    _dismissCrop();
     _overlay.classList.remove('open');
-    document.body.style.overflow = '';
-    setTimeout(() => { _overlay.innerHTML = ''; }, 350);
+    if (document.body?.style) document.body.style.overflow = '';
+    setTimeout(() => { if (_overlay) _overlay.innerHTML = ''; }, 350);
+    if (opts.fromPop) _historyPushed = false;
+    else _consumeOverlayHistory();
   }
 
   async function render() {
@@ -788,7 +848,9 @@ export const AthleteRoom = (() => {
       window.removeEventListener('touchmove', onPointerMove);
       window.removeEventListener('touchend', onPointerUp);
       modal.remove();
+      _cropCleanup = null;
     };
+    _cropCleanup = cleanup;
 
     btnCancel.onclick = cleanup;
 
@@ -863,6 +925,13 @@ export const AthleteRoom = (() => {
       else sheet.style.transform = '';
       currentY = 0;
     });
+  }
+
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('popstate', _onPopState);
+  }
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('keydown', _onKeydown);
   }
 
   return { open, close, switchTab, editName, cancelEdit, saveName, cycleColor, selectColor, selectFrame, initAvatar, triggerPhotoUpload, handlePhotoSelected, removePhoto, editStat, cancelStatEdit, saveStat };

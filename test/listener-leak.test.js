@@ -211,8 +211,14 @@ describe('LEAK-1: адреса утечек закрыты и заперты', (
  * событий. Адрес одноразовый по конструкции — `initUsage()` выходит по
  * `_initialized` первой строкой, и до регистрации доходит только первый вызов
  * при открытых воротах ('usage-stats' + не DNT + не самоисключение + прод-хост).
+ *
+ * 2026-08-30, 37 → 39: F-10, Athlete Room. `popstate` (системный Back) и
+ * `keydown` (Escape) — оба модульный top-level, один раз за жизнь страницы.
+ * popstate нельзя preventDefault, поэтому комната сама кладёт overlay-запись
+ * и слушает её снятие; вынести в shell.js значило бы циклический импорт
+ * и второй обработчик того же события.
  */
-const MAX_RAW_LONGLIVED_LISTENERS = 37;
+const MAX_RAW_LONGLIVED_LISTENERS = 39;
 
 describe('Класс утечки: сырые слушатели window/document под счётом', () => {
   /** @param {string} dir @returns {string[]} */

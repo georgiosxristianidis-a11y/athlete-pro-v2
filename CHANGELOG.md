@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### LAUNCH-9 F-10 — системный Back закрывает Athlete Room (1.27.82)
+
+Комната кладёт overlay-запись в History API при открытии: аппаратный Back и
+Escape снимают оверлей, экран под ним не переключается. Шеврон внутри комнаты
+ту же запись потребляет, иначе следующий Back попадал бы в пустой слой.
+Гард — `test/athlete-room-back.test.js`.
+
 ### PC-2 — индикатор ключа у FAB говорит правду (#285, 1.27.81)
 
 Точка у кнопки панды судила ключ по локальному BYOK и врала в обе стороны:
