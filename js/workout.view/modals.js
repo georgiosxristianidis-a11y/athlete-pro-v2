@@ -84,8 +84,8 @@ export function _buildPlanTabHTML(type, activeWeek, searchQuery) {
             const originalIndex = plan[type].indexOf(ex);
             return `
     <div class="plan-row" id="plan-row-${type}-${originalIndex}" data-pi="${originalIndex}">
-      <div class="plan-drag-handle">
-        <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
+      <div class="plan-drag-handle" role="img" aria-label="${esc(t('train.reorder'))}">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11" aria-hidden="true">
           <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
           <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
           <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>

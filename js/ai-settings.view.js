@@ -193,8 +193,8 @@ export function renderEngineAndKey(settings, serverStatus = {}) {
                    data-input="ai:keyInput"
                    data-blur="ai:keyBlur">
             <div style="position: absolute; right: 8px; display: flex; align-items: center; gap: var(--sp-1);">
-              <button class="btn-text" data-action="ai:toggleKeyVis" style="padding: var(--sp-0-5); color: var(--c-text-3);">
-                <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <button class="btn-text" id="ai-key-vis" data-action="ai:toggleKeyVis" aria-label="${esc(t('settings.key_show'))}" aria-pressed="false" style="padding: var(--sp-0-5); color: var(--c-text-3);">
+                <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                 </svg>
               </button>
@@ -318,15 +318,20 @@ async function recheckKey() {
 function toggleKeyVisibility() {
   const inp = document.getElementById('ai-key-input');
   const icon = document.getElementById('eye-icon');
+  const btn = document.getElementById('ai-key-vis');
   if (!inp || !icon) return;
   if (inp.type === 'password') {
     inp.type = 'text';
     icon.innerHTML =
       '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><path d="M2 2l20 20"/>';
+    btn?.setAttribute('aria-label', t('settings.key_hide'));
+    btn?.setAttribute('aria-pressed', 'true');
   } else {
     inp.type = 'password';
     icon.innerHTML =
       '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    btn?.setAttribute('aria-label', t('settings.key_show'));
+    btn?.setAttribute('aria-pressed', 'false');
   }
 }
 

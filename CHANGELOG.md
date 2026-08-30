@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### LAUNCH-9 F-11 — имена контролов и модальный онбординг (1.27.84)
+
+На экране тренировки `set-check`, барабаны веса/повторов и ручка перестановки
+несли только SVG: скринридер слышал «кнопка». Профиль — те же безымянные
+степперы отдыха и глаз ключа. Онбординг не был диалогом: Tab уходил в таб-бар,
+Enter открывал Train под незакрытым оверлеем. Оверлей стал `role=dialog`
+`aria-modal`, шелл и FAB получают `inert`. Гард — `test/a11y-f11.test.js`.
+
 ### Motion — compositor-only switch, tab pill, shake, stepper (#290, 1.27.83)
 
 Тумблер в Профиле едет на `--ease-spring`. Сегменты недели / плана / Athlete Room
