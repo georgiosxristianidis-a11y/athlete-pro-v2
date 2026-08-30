@@ -6,7 +6,7 @@
  * visibility, and the live Dynamic Island DHL tracker.
  */
 
-const BASE = 'http://localhost:3000';
+const BASE = process.env.E2E_BASE || 'http://localhost:3000';
 import { test, expect } from '@playwright/test';
 
 /** Mark onboarding complete in IDB before the app boots. */
@@ -296,5 +296,51 @@ test.describe('Unhandled-rejection boundary', () => {
 
     expect(res.newToasts).toBe(1);
     expect(errors.filter((t) => /double-report canary/.test(t))).toHaveLength(1);
+  });
+});
+
+// ─── F-10: system Back closes Athlete Room ────────────────────────────────
+test.describe('F-10 Athlete Room Back', () => {
+  /** Profile → open the room over it, leaving s-train one history entry back. */
+  async function openRoomOverProfile(page) {
+    await openApp(page);
+    await page.locator('button[data-s="s-train"]').click();
+    await expect(page.locator('#s-train')).toHaveClass(/active/, { timeout: 5000 });
+    await page.locator('button[data-s="s-profile"]').click();
+    await expect(page.locator('#s-profile')).toHaveClass(/active/, { timeout: 5000 });
+    await page.locator('#pp-avatar-main').waitFor({ state: 'visible', timeout: 8000 });
+    await page.locator('#pp-avatar-main').click();
+    await expect(page.locator('#athlete-room')).toHaveClass(/open/, { timeout: 8000 });
+  }
+
+  test('hardware Back closes the room and leaves the screen underneath', async ({ page }) => {
+    await openRoomOverProfile(page);
+
+    await page.goBack();
+
+    await expect(page.locator('#athlete-room')).not.toHaveClass(/open/);
+    await expect(page.locator('#s-profile')).toHaveClass(/active/);
+    await expect(page.locator('#s-train')).not.toHaveClass(/active/);
+  });
+
+  test('chevron close consumes history so the next Back is a screen pop', async ({ page }) => {
+    await openRoomOverProfile(page);
+
+    await page.locator('#athlete-room .ar-back-btn').click();
+    await expect(page.locator('#athlete-room')).not.toHaveClass(/open/);
+    await expect(page.locator('#s-profile')).toHaveClass(/active/);
+
+    await page.goBack();
+    await expect(page.locator('#s-train')).toHaveClass(/active/, { timeout: 5000 });
+  });
+
+  test('Escape closes the room without moving the screen', async ({ page }) => {
+    await openRoomOverProfile(page);
+
+    await page.keyboard.press('Escape');
+
+    await expect(page.locator('#athlete-room')).not.toHaveClass(/open/);
+    await expect(page.locator('#s-profile')).toHaveClass(/active/);
+    await expect(page.locator('#s-train')).not.toHaveClass(/active/);
   });
 });
