@@ -8,7 +8,9 @@ import { Toast } from './shell.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
 import { t } from './locale.store.js';
-import { DEFAULT_AI_ENGINE } from './shared/ai-engine.js';
+import { probeAiStatus } from './shared/ai-status.js';
+import { onPrivacyChange } from './privacy.store.js';
+import { fabGlowClass, fabKeyState, getEngine, keyField } from './ai-settings.store.js';
 import {
   initPandaVideo,
   togglePandaSound,
@@ -58,18 +60,62 @@ export const Claude = (() => {
    */
   let _fabOn = null;
 
+  /** Last /api/ai-status verdict — renderFAB is called from four places. */
+  let _statusCache = /** @type {import('./shared/ai-status.js').AiStatus | null} */ (null);
+  let _fabReactive = false;
+
+  async function _probedStatus() {
+    if (_statusCache) return _statusCache;
+    _statusCache = await probeAiStatus();
+    return _statusCache;
+  }
+
+  async function _fabVisual() {
+    const engine = await getEngine();
+    const localRaw = await DB.Settings.get(keyField(engine)).catch(() => '');
+    const state = fabKeyState(await _probedStatus(), !!String(localRaw || '').trim(), engine);
+    return { engine, state, glow: fabGlowClass(state, engine) };
+  }
+
+  function _applyFabVisual({ engine, state, glow }) {
+    const fab = document.getElementById('claude-fab');
+    const dot = fab?.querySelector('.ai-indicator');
+    if (!fab || !dot) return;
+    dot.className = `ai-indicator ${state}`;
+    fab.classList.toggle('gemini-mode', engine === 'gemini');
+    fab.classList.remove('ai-glow-error', 'ai-glow-selection', 'ai-glow-gemini');
+    if (glow) fab.classList.add(glow);
+  }
+
+  async function patchFabKeyState() {
+    const vis = await _fabVisual();
+    _applyFabVisual(vis);
+    return vis;
+  }
+
+  function _bindFabReactivity() {
+    if (_fabReactive) return;
+    _fabReactive = true;
+    onPrivacyChange(() => {
+      _statusCache = null;
+      patchFabKeyState();
+    });
+  }
+
   /**
    * Render the persistent AI Panda assistant button.
    */
   async function renderFAB() {
     const isHidden = await DB.Settings.get('ai-panda-hidden', false);
     if (isHidden) return;
-    if (document.getElementById('claude-fab-container')) return;
+    _bindFabReactivity();
+    if (document.getElementById('claude-fab-container')) {
+      await patchFabKeyState();
+      return;
+    }
 
-    const engine =
-      (await DB.Settings.get('ai-engine').catch(() => DEFAULT_AI_ENGINE)) || DEFAULT_AI_ENGINE;
+    const { engine, state, glow: glowClass } = await _fabVisual();
     const isGemini = engine === 'gemini';
-    const hasKey = isGemini ? !!(await DB.Settings.get('gemini-key')) : true;
 
     // ── Create Container ──
     const container = document.createElement('div');
@@ -77,10 +123,6 @@ export const Claude = (() => {
     container.style.position = 'fixed';
     container.style.zIndex = '500';
     container.style.pointerEvents = 'none'; // Only children have pointers
-
-    // Status Logic
-    let glowClass = isGemini ? '' : 'ai-glow-selection';
-    if (isGemini && !hasKey) glowClass = 'ai-glow-error';
 
     const videoMode = flag('fab-video');
     // Мимики живут внутри видео-FAB — без него включать нечего.
@@ -94,7 +136,7 @@ export const Claude = (() => {
         ${videoMode ? `<button type="button" class="fab-sound-btn" data-action="claude:toggleSound" title="${esc(t('dash.sound'))}" aria-label="${esc(t('dash.sound'))}" aria-pressed="false" style="top:-10px; left:-10px">${ICON_SND_OFF}</button>` : ''}
         <button id="claude-fab" class="claude-fab ${isGemini ? 'gemini-mode' : ''} ${glowClass} ${videoMode ? 'video-mode' : ''}" aria-label="${esc(t('dash.open_coach'))}" style="margin:0">
           <div class="ai-status-wrap">
-            <span class="ai-indicator ${hasKey ? 'active' : 'missing'}"></span>
+            <span class="ai-indicator ${state}"></span>
           </div>
           <div class="fab-content">
           </div>
@@ -133,6 +175,9 @@ export const Claude = (() => {
     _fabOn = listenerGroup();
 
     _fabOn.add('resize', () => _snapFAB(container));
+    _fabOn.add('ap-ai-engine', () => {
+      patchFabKeyState();
+    });
 
     // Скрыт на s-intel и на s-home, пока там живёт большой маскот-видео
     // (иначе две панды на экране); дашборд шлёт 'ap-mascot-video' при
@@ -341,7 +386,7 @@ export const Claude = (() => {
   }
 
   async function _toggleEngine() {
-    const isGem = (await DB.Settings.get('ai-engine', DEFAULT_AI_ENGINE)) === 'gemini';
+    const isGem = (await getEngine()) === 'gemini';
     await DB.Settings.set('ai-engine', isGem ? 'anthropic' : 'gemini');
     haptic(10);
     close();
@@ -350,6 +395,7 @@ export const Claude = (() => {
 
   return {
     renderFAB,
+    patchFabKeyState,
     open,
     close,
     _sendChat,
