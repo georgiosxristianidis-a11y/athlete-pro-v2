@@ -451,7 +451,7 @@ export async function renderExerciseCard(ex, ei) {
   return `
     <div class="exercise-card ${ex.noDb ? 'ex-no-db' : ''}" id="ex-card-${ei}" data-ei="${ei}">
       <div class="exercise-header" data-action="wo:toggleCard" data-ei="${ei}">
-        <div class="drag-handle" data-action="wo:noop"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/></svg></div>
+        <div class="drag-handle" data-action="wo:noop" role="img" aria-label="${esc(t('train.reorder'))}"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12" aria-hidden="true"><circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/></svg></div>
         <div class="exercise-icon"><span class="ex-num">${ei + 1}</span></div>
         <div class="exercise-info">
           <div class="exercise-name">
@@ -461,9 +461,9 @@ export async function renderExerciseCard(ex, ei) {
         </div>
         
         <div class="ex-header-actions" data-action="wo:noop">
-          <button class="ex-action-btn coach" title="${esc(t('train.smart_coach'))}" data-action="wo:smartCoach" data-ei="${ei}" data-si="${targetSi}">${iconCoach}</button>
-          <button class="ex-action-btn" title="${esc(t('train.more_options'))}" data-action="wo:exMenu" data-ei="${ei}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <button class="ex-action-btn coach" title="${esc(t('train.smart_coach'))}" aria-label="${esc(t('train.smart_coach'))}" data-action="wo:smartCoach" data-ei="${ei}" data-si="${targetSi}">${iconCoach}</button>
+          <button class="ex-action-btn" title="${esc(t('train.more_options'))}" aria-label="${esc(t('train.more_options'))}" data-action="wo:exMenu" data-ei="${ei}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" aria-hidden="true">
               <circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="6" r="1.2"/><circle cx="12" cy="18" r="1.2"/>
             </svg>
           </button>
@@ -477,6 +477,7 @@ export async function renderExerciseCard(ex, ei) {
           <button class="set-col-label set-col-btn ${ex.isBW ? 'is-bw' : ''}"
                   data-action="wo:toggleBW" data-ei="${ei}"
                   aria-pressed="${ex.isBW ? 'true' : 'false'}"
+                  aria-label="${esc(t('train.bodyweight'))}"
                   title="${esc(t('train.bodyweight'))}">${
                     ex.isBW ? esc(t('train.weight_bw')) : esc(t('train.weight_kg'))
                   }</button>
@@ -508,13 +509,17 @@ export async function renderSetRow(ex, ei, set, si) {
       <div class="drum-wrap" id="sw-${ei}-${si}"
            data-type="w" data-ei="${ei}" data-si="${si}"
            data-value="${set.weight}"
-           data-step="${step}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sw-val stepper-val hidden">${displayWeight}</span></div>
+           data-step="${step}"
+           role="group"
+           aria-label="${esc(t('train.weight_set', { n: si + 1 }))}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sw-val stepper-val hidden">${displayWeight}</span></div>
       <div class="drum-wrap" id="sr-${ei}-${si}"
            data-type="r" data-ei="${ei}" data-si="${si}"
            data-value="${set.reps}"
-           data-max="${repsMax}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sr-val stepper-val hidden">${set.reps}</span></div>
+           data-max="${repsMax}"
+           role="group"
+           aria-label="${esc(t('train.reps_set', { n: si + 1 }))}"><div class="drum-sel"></div><div class="drum-track"></div><span class="sr-val stepper-val hidden">${set.reps}</span></div>
       <div class="set-done-summary">${displayWeight}&times;${set.reps}</div>
-      <button class="set-check ${set.done ? 'done' : ''}" id="chk-${ei}-${si}" data-action="wo:toggleSet" data-ei="${ei}" data-si="${si}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg></button>
+      <button class="set-check ${set.done ? 'done' : ''}" id="chk-${ei}-${si}" data-action="wo:toggleSet" data-ei="${ei}" data-si="${si}" aria-pressed="${set.done ? 'true' : 'false'}" aria-label="${esc(t(set.done ? 'train.unmark_set' : 'train.mark_set', { n: si + 1 }))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></button>
     </div>`;
 }
 

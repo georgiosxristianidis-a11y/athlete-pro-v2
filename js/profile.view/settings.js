@@ -108,11 +108,11 @@ export function renderSettings(settings, lang, syncStatus = 'idle') {
           <div class="pref-sub">${settings['rest-duration'] || 90}s ${t('settings.rest_sub')}</div>
         </div>
         <div class="mini-stepper" style="background: var(--c-bg-3); border-radius: var(--r-m); padding: var(--sp-0-5); gap: var(--sp-1); display: flex; align-items: center;">
-          <button data-action="settings:adjustRest" data-amt="-15" style="width: 28px; height: 28px; border-radius: var(--r-sm); background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text-1);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="12" height="12"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <button data-action="settings:adjustRest" data-amt="-15" aria-label="${esc(t('settings.rest_dec'))}" style="width: 28px; height: 28px; border-radius: var(--r-sm); background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text-1);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="12" height="12" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
-          <button data-action="settings:adjustRest" data-amt="15" style="width: 28px; height: 28px; border-radius: var(--r-sm); background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text-1);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <button data-action="settings:adjustRest" data-amt="15" aria-label="${esc(t('settings.rest_inc'))}" style="width: 28px; height: 28px; border-radius: var(--r-sm); background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text-1);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="12" height="12" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
         </div>
       </div>

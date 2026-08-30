@@ -13,17 +13,32 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = fs.readFileSync(path.join(ROOT, 'js', 'onboarding.js'), 'utf8');
 
 function makeNode() {
+  const attrs = {};
   const node = {
     style: {},
     innerHTML: '',
     textContent: '',
     id: '',
+    tabIndex: 0,
     children: [],
     appendChild(child) {
       this.children.push(child);
       return child;
     },
     remove() {},
+    setAttribute(k, v) {
+      attrs[k] = String(v);
+    },
+    getAttribute(k) {
+      return Object.prototype.hasOwnProperty.call(attrs, k) ? attrs[k] : null;
+    },
+    removeAttribute(k) {
+      delete attrs[k];
+    },
+    querySelector() {
+      return null;
+    },
+    focus() {},
   };
   return node;
 }
@@ -145,6 +160,8 @@ describe('F-9 Fast Skip confirmation', () => {
     assert.match(overlay.innerHTML, /1995-01-01/);
     assert.match(overlay.innerHTML, /data-action="ob:finish"/);
     assert.equal(overlay.innerHTML.includes("You're set."), false);
+    assert.equal(overlay.getAttribute('role'), 'dialog');
+    assert.equal(overlay.getAttribute('aria-modal'), 'true');
     overlay._resolve();
     await shown;
   });

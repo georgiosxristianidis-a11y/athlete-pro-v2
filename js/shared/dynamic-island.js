@@ -95,11 +95,20 @@ export const DynamicIsland = (() => {
 
   function _applyIslandLocale() {
     const skip = _island?.querySelector('[data-action="island:skipExercise"]');
-    if (skip) skip.setAttribute('title', t('island.skip_ex'));
+    if (skip) {
+      skip.setAttribute('title', t('island.skip_ex'));
+      skip.setAttribute('aria-label', t('island.skip_ex'));
+    }
     const plus30 = _island?.querySelector('.island-action-btn.plus');
-    if (plus30) plus30.setAttribute('title', t('island.add_rest_30'));
+    if (plus30) {
+      plus30.setAttribute('title', t('island.add_rest_30'));
+      plus30.setAttribute('aria-label', t('island.add_rest_30'));
+    }
     const pip = _island?.querySelector('[data-action="island:pip"]');
-    if (pip) pip.setAttribute('title', t('island.pip'));
+    if (pip) {
+      pip.setAttribute('title', t('island.pip'));
+      pip.setAttribute('aria-label', t('island.pip'));
+    }
     const restPlus = document.getElementById('di-rest-plus');
     if (restPlus) {
       restPlus.setAttribute('title', t('island.add_rest_15'));
@@ -163,15 +172,15 @@ export const DynamicIsland = (() => {
           <div class="island-sublabel" id="di-sublabel"></div>
 
           <div class="island-actions">
-            <button class="island-action-btn skip" title="${t('island.skip_ex')}" data-action="island:skipExercise">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+            <button class="island-action-btn skip" title="${t('island.skip_ex')}" aria-label="${t('island.skip_ex')}" data-action="island:skipExercise">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
             </button>
-            <button class="island-action-btn plus" title="${t('island.add_rest_30')}" data-action="island:addRest" data-amt="30">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <button class="island-action-btn plus" title="${t('island.add_rest_30')}" aria-label="${t('island.add_rest_30')}" data-action="island:addRest" data-amt="30">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>30s</span>
             </button>
-            <button class="island-action-btn" title="${t('island.pip')}" data-action="island:pip" style="margin-left:auto">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1"/></svg>
+            <button class="island-action-btn" title="${t('island.pip')}" aria-label="${t('island.pip')}" data-action="island:pip" style="margin-left:auto">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1"/></svg>
               <span>PiP</span>
             </button>
           </div>
@@ -184,10 +193,10 @@ export const DynamicIsland = (() => {
           <span class="island-rest-next" id="di-rest-next"></span>
           <div class="island-rest-actions">
             <button class="island-rest-btn" id="di-rest-plus" title="${t('island.add_rest_15')}" aria-label="${t('island.add_rest_15')}" data-action="island:addRest" data-amt="15">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
             <button class="island-rest-btn primary" id="di-rest-skip" title="${t('island.skip_rest')}" aria-label="${t('island.skip_rest')}" data-action="island:skipRest">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
             </button>
           </div>
         </div>

@@ -151,11 +151,25 @@ export async function needsOnboarding() {
   return !done;
 }
 
+/** F-11: шелл под оверлеем не в таб-порядке и не читается AT. FAB — сосед #app. */
+export function setShellInert(on) {
+  for (const id of ['app', 'claude-fab-container']) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.inert = on;
+    if (on) el.setAttribute('aria-hidden', 'true');
+    else el.removeAttribute('aria-hidden');
+  }
+}
+
 export async function showOnboarding() {
   await restoreOnboardingDraft();
   return new Promise((resolve) => {
     _overlay = document.createElement('div');
     _overlay.id = 'onboarding-overlay';
+    _overlay.setAttribute('role', 'dialog');
+    _overlay.setAttribute('aria-modal', 'true');
+    _overlay.setAttribute('aria-labelledby', 'ob-title');
     _overlay.style.cssText = `
       position: fixed; inset: 0; background: var(--c-bg); z-index: 9000;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
@@ -163,7 +177,10 @@ export async function showOnboarding() {
     `;
     _overlay._resolve = resolve;
     document.body.appendChild(_overlay);
+    setShellInert(true);
     _render();
+    const title = _overlay.querySelector('h1');
+    if (title && typeof title.focus === 'function') title.focus();
   });
 }
 
@@ -200,6 +217,11 @@ function _render() {
       </div>
     </div>
   `;
+  const title = _overlay.querySelector('h1');
+  if (title) {
+    title.id = 'ob-title';
+    title.tabIndex = -1;
+  }
 }
 
 function _buildStep() {
@@ -218,7 +240,7 @@ function _stepGoal() {
         <!-- Premium Hero Background Glow -->
         <div style="position:absolute; top:-20px; left:-20px; right:-20px; bottom:-20px; background: radial-gradient(circle at top left, rgba(0,230,118,0.12), transparent 70%); filter:blur(30px); z-index:-1; pointer-events:none;"></div>
         
-        <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.05em; color:var(--c-text-1); margin-bottom:var(--sp-1-5); line-height:1.1;">
+        <h1 id="ob-title" tabindex="-1" style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.05em; color:var(--c-text-1); margin-bottom:var(--sp-1-5); line-height:1.1;">
           ${esc(t('ob.goal_title'))}
         </h1>
         <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); line-height:1.5; max-width:90%;">
@@ -249,7 +271,7 @@ function _stepGoal() {
 function _stepExp() {
   return `
     <div class="animate-in">
-      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
+      <h1 id="ob-title" tabindex="-1" style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
         ${esc(t('ob.exp_title'))}
       </h1>
       <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:var(--sp-4)">
@@ -275,7 +297,7 @@ function _stepBio() {
 
   return `
     <div class="animate-in">
-      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
+      <h1 id="ob-title" tabindex="-1" style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
         ${esc(t('ob.bio_title'))}
       </h1>
       <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:var(--sp-4)">
@@ -324,7 +346,7 @@ function _stepBio() {
 function _stepMetrics() {
   return `
     <div class="animate-in">
-      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
+      <h1 id="ob-title" tabindex="-1" style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
         ${esc(t('ob.metrics_title'))}
       </h1>
       <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:var(--sp-4)">
@@ -354,7 +376,7 @@ function _stepMetrics() {
 function _stepPrivacy() {
   return `
     <div class="animate-in">
-      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
+      <h1 id="ob-title" tabindex="-1" style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
         ${esc(t('ob.privacy_title'))}
       </h1>
       <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:var(--sp-4)">
@@ -388,7 +410,7 @@ function _stepSkipConfirm() {
   ];
   return `
     <div class="animate-in">
-      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
+      <h1 id="ob-title" tabindex="-1" style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.04em; color:var(--c-text-1); margin-bottom:var(--sp-1)">
         ${esc(t('ob.skip_confirm_title'))}
       </h1>
       <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); margin-bottom:var(--sp-4); line-height:1.5;">
@@ -421,7 +443,7 @@ function _stepReady() {
       <div style="width:80px; height:80px; border-radius:50%; background:var(--c-accent-bg); color:var(--c-accent); display:flex; align-items:center; justify-content:center; margin:0 auto var(--sp-3)">
         ${SVG.check}
       </div>
-      <h1 style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.05em; color:var(--c-text-1); margin-bottom:var(--sp-1-5)">
+      <h1 id="ob-title" tabindex="-1" style="font-size:var(--fs-6); font-weight:var(--fw-black); letter-spacing:-0.05em; color:var(--c-text-1); margin-bottom:var(--sp-1-5)">
         ${esc(t('ob.ready_title'))}
       </h1>
       <p style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-3); line-height:1.5; margin-bottom:var(--sp-5)">
@@ -541,6 +563,7 @@ window._obPrev = async () => {
 window._obFinish = async () => {
   await commitOnboarding();
   if (!_overlay) return;
+  setShellInert(false);
   _overlay.style.opacity = '0';
   setTimeout(() => {
     _overlay._resolve();

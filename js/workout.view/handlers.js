@@ -214,6 +214,15 @@ export async function toggleSet(ei, si) {
   const row = document.getElementById(`set-row-${ei}-${si}`);
   if (row) {
     row.classList.toggle('set-done', set.done);
+    const chk = document.getElementById(`chk-${ei}-${si}`);
+    if (chk) {
+      chk.classList.toggle('done', set.done);
+      chk.setAttribute('aria-pressed', set.done ? 'true' : 'false');
+      chk.setAttribute(
+        'aria-label',
+        t(set.done ? 'train.unmark_set' : 'train.mark_set', { n: si + 1 })
+      );
+    }
     // The .set-done-summary is baked at render time, so without this it would
     // show the weight/reps the row had when last rendered — not what the user
     // scrolled the drum to. Refresh it from live State on every completion.
