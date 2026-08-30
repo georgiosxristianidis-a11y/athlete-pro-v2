@@ -41,15 +41,25 @@ function runSw(src = SW_SRC) {
   const stored = new Set();
   const listeners = {};
   const cache = {
-    add: async (url) => { added.push(url); stored.add(url); },
+    add: async (url) => {
+      added.push(url);
+      stored.add(url);
+    },
     match: async (url) => (stored.has(url) ? { ok: true } : undefined),
     put: async () => {},
   };
   const context = {
     console: { warn() {}, log() {} },
-    URL, Request, Response, Headers, Blob, fetch,
+    URL,
+    Request,
+    Response,
+    Headers,
+    Blob,
+    fetch,
     self: {
-      addEventListener: (type, fn) => { (listeners[type] ||= []).push(fn); },
+      addEventListener: (type, fn) => {
+        (listeners[type] ||= []).push(fn);
+      },
       location: new URL('https://athlete.pro/sw.js'),
       skipWaiting() {},
       clients: { claim: async () => {} },
@@ -83,9 +93,10 @@ test('install downloads the boot closure and nothing else', async () => {
   const sw = runSw();
   await sw.fire('install');
   assert.deepEqual(
-    [...sw.added].sort(), [...BOOT].sort(),
+    [...sw.added].sort(),
+    [...BOOT].sort(),
     'the install phase must fetch exactly ASSETS — this is the number the ' +
-    'cellular budget in test/sw-media-budget.test.js is measuring (PRECACHE-1)'
+      'cellular budget in test/sw-media-budget.test.js is measuring (PRECACHE-1)'
   );
   const leaked = sw.added.filter((u) => WARM.includes(u));
   assert.deepEqual(leaked, [], 'warm assets must not ride along with the install');
@@ -98,9 +109,10 @@ test('activate warms the rest — offline coverage stays complete', async () => 
   await sw.fire('activate');
   const warmed = sw.added.slice(afterInstall);
   assert.deepEqual(
-    [...warmed].sort(), [...WARM].sort(),
+    [...warmed].sort(),
+    [...WARM].sort(),
     'everything outside the boot closure must still reach the cache — otherwise ' +
-    'the split traded install traffic for a blank screen offline'
+      'the split traded install traffic for a blank screen offline'
   );
 });
 
@@ -109,7 +121,9 @@ test('the warm phase does not re-download the boot closure', async () => {
   await sw.fire('install');
   await sw.fire('activate');
   const counts = sw.added.reduce((acc, u) => ({ ...acc, [u]: (acc[u] || 0) + 1 }), {});
-  const twice = Object.entries(counts).filter(([, n]) => n > 1).map(([u]) => u);
+  const twice = Object.entries(counts)
+    .filter(([, n]) => n > 1)
+    .map(([u]) => u);
   assert.deepEqual(twice, [], 'an asset fetched in both phases is paid for twice');
 });
 
@@ -127,18 +141,20 @@ test('the guard fails if install swallows the warm list, or the warm phase dies'
   const swGreedy = runSw(greedy);
   await swGreedy.fire('install');
   assert.notDeepEqual(
-    [...swGreedy.added].sort(), [...BOOT].sort(),
+    [...swGreedy.added].sort(),
+    [...BOOT].sort(),
     'install pulling the whole offline set must be caught'
   );
 
-  const dead = SW_SRC.replace(/\.then\(\(\) => \{ warmCache\(\); \}\)/, '');
+  const dead = SW_SRC.replace(/\.then\(\(\)\s*=>\s*\{\s*warmCache\(\);\s*\}\)/, '');
   assert.notEqual(dead, SW_SRC, 'baseline lost its anchor — warm wiring was renamed');
   const swDead = runSw(dead);
   await swDead.fire('install');
   const before = swDead.added.length;
   await swDead.fire('activate');
   assert.equal(
-    swDead.added.length, before,
+    swDead.added.length,
+    before,
     'a warm phase that never starts must be caught — offline would be broken'
   );
 });

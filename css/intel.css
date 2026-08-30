@@ -35,7 +35,11 @@
   height: 360px;
   top: -80px;
   left: -80px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--c-intel) 12%, transparent), transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--c-intel) 12%, transparent),
+    transparent 70%
+  );
   animation: intel-glow-drift 8s ease-in-out infinite alternate;
 }
 
@@ -44,7 +48,11 @@
   height: 280px;
   bottom: 80px;
   right: -60px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--c-accent) 8%, transparent), transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--c-accent) 8%, transparent),
+    transparent 70%
+  );
   animation: intel-glow-drift 11s ease-in-out infinite alternate-reverse;
 }
 
@@ -56,9 +64,18 @@
 }
 
 @keyframes intel-glow-drift {
-  0%   { transform: translate(0, 0) scale(1); opacity: 0.7; }
-  50%  { transform: translate(20px, 30px) scale(1.1); opacity: 1; }
-  100% { transform: translate(-10px, 15px) scale(0.95); opacity: 0.6; }
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(20px, 30px) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-10px, 15px) scale(0.95);
+    opacity: 0.6;
+  }
 }
 
 /* Контент — поверх свечения. */
@@ -103,8 +120,12 @@
   font-weight: var(--fw-bold);
   text-transform: lowercase;
 }
-.intel-key-state.is-ok { color: var(--c-accent); }
-.intel-key-state.is-missing { color: var(--c-text-3); }
+.intel-key-state.is-ok {
+  color: var(--c-accent);
+}
+.intel-key-state.is-missing {
+  color: var(--c-text-3);
+}
 
 .intel-sub-sep {
   color: var(--c-border-h);
@@ -138,7 +159,9 @@
   font-weight: var(--fw-md);
   line-height: 1;
   cursor: pointer;
-  transition: color var(--t-fast), background-color var(--t-fast);
+  transition:
+    color var(--t-fast),
+    background-color var(--t-fast);
 }
 
 .intel-btn-close:hover {
@@ -155,22 +178,34 @@
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
-.intel-body::-webkit-scrollbar { display: none; }
+.intel-body::-webkit-scrollbar {
+  display: none;
+}
 
 /* ── Ответ ИИ ── */
 .intel-feedback {
   margin-bottom: var(--sp-3);
   padding: var(--sp-3);
   border-radius: var(--r-l);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--c-intel) 7%, transparent), var(--c-surface));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--c-intel) 7%, transparent),
+    var(--c-surface)
+  );
   border: 1px solid var(--c-border);
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-intel) 60%, transparent);
   animation: intel-slide-in 0.5s var(--spring-bounce);
 }
 
 @keyframes intel-slide-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .intel-feedback-head {
@@ -241,32 +276,58 @@
   border-radius: var(--r-pill);
 }
 
-.intel-skeleton-line.is-full { width: 100%; }
-.intel-skeleton-line.is-wide { width: 80%; }
-.intel-skeleton-line.is-half { width: 50%; }
+.intel-skeleton-line.is-full {
+  width: 100%;
+}
+.intel-skeleton-line.is-wide {
+  width: 80%;
+}
+.intel-skeleton-line.is-half {
+  width: 50%;
+}
 
-.intel-skeleton-head .intel-skeleton-line { animation-delay: 0.15s; }
-.intel-skeleton > .intel-skeleton-line:nth-of-type(1) { animation-delay: 0.3s; }
-.intel-skeleton > .intel-skeleton-line:nth-of-type(2) { animation-delay: 0.45s; }
+.intel-skeleton-head .intel-skeleton-line {
+  animation-delay: 0.15s;
+}
+.intel-skeleton > .intel-skeleton-line:nth-of-type(1) {
+  animation-delay: 0.3s;
+}
+.intel-skeleton > .intel-skeleton-line:nth-of-type(2) {
+  animation-delay: 0.45s;
+}
 
 .intel-skeleton-avatar::before,
 .intel-skeleton-line::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--c-intel) 30%, transparent), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--c-intel) 30%, transparent),
+    transparent
+  );
   transform: translateX(-100%);
   animation: intel-skeleton-shimmer 2s ease-in-out infinite;
 }
 
 @keyframes intel-skeleton-pulse {
-  0%, 100% { opacity: 0.3; }
-  50%      { opacity: 0.85; }
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.85;
+  }
 }
 
 @keyframes intel-skeleton-shimmer {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* ── Хвост потока: три точки в конце последнего блока ──
@@ -289,20 +350,37 @@
   animation: intel-typing-bounce 0.6s ease-in-out infinite;
 }
 
-.intel-typing-dot:nth-child(2) { animation-delay: 0.12s; }
-.intel-typing-dot:nth-child(3) { animation-delay: 0.24s; }
+.intel-typing-dot:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.intel-typing-dot:nth-child(3) {
+  animation-delay: 0.24s;
+}
 
 @keyframes intel-typing-bounce {
-  0%, 100% { transform: translateY(0); opacity: 0.4; }
-  50%      { transform: translateY(-4px); opacity: 1; }
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
 }
 
 /* ── Error UI ── */
 .intel-feedback.is-error {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--c-red) 7%, transparent), var(--c-surface));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--c-red) 7%, transparent),
+    var(--c-surface)
+  );
   border-color: color-mix(in srgb, var(--c-red) 25%, transparent);
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-red) 60%, transparent);
-  animation: intel-slide-in 0.5s var(--spring-bounce), intel-error-pulse 2s ease-in-out 0.5s infinite;
+  animation:
+    intel-slide-in 0.5s var(--spring-bounce),
+    intel-error-pulse 2s ease-in-out 0.5s infinite;
 }
 
 .intel-feedback.is-error .intel-feedback-label {
@@ -314,8 +392,17 @@
 }
 
 @keyframes intel-error-pulse {
-  0%, 100% { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-red) 60%, transparent), 0 0 12px color-mix(in srgb, var(--c-red) 8%, transparent); }
-  50%      { box-shadow: inset 3px 0 0 var(--c-red), 0 0 24px color-mix(in srgb, var(--c-red) 18%, transparent); }
+  0%,
+  100% {
+    box-shadow:
+      inset 3px 0 0 color-mix(in srgb, var(--c-red) 60%, transparent),
+      0 0 12px color-mix(in srgb, var(--c-red) 8%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 3px 0 0 var(--c-red),
+      0 0 24px color-mix(in srgb, var(--c-red) 18%, transparent);
+  }
 }
 
 /* ── Модули: 2×2 вместо четырёх узких колонок ── */
@@ -342,17 +429,33 @@
   animation: intel-card-in 0.6s var(--spring-bounce) both;
 }
 
-.intel-module-card:nth-child(2) { animation-delay: 0.06s; }
-.intel-module-card:nth-child(3) { animation-delay: 0.12s; }
-.intel-module-card:nth-child(4) { animation-delay: 0.18s; }
-
-@keyframes intel-card-in {
-  from { opacity: 0; transform: translateY(14px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+.intel-module-card:nth-child(2) {
+  animation-delay: 0.06s;
+}
+.intel-module-card:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.intel-module-card:nth-child(4) {
+  animation-delay: 0.18s;
 }
 
-.intel-module-card:hover { transform: translateY(-2px); }
-.intel-module-card:active { transform: scale(0.96); }
+@keyframes intel-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.intel-module-card:hover {
+  transform: translateY(-2px);
+}
+.intel-module-card:active {
+  transform: scale(0.96);
+}
 
 .intel-module-icon {
   width: 48px;
@@ -368,10 +471,22 @@
   height: 22px;
 }
 
-.intel-module-icon--intel  { color: var(--c-intel);  background: color-mix(in srgb, var(--c-intel) 14%, transparent); }
-.intel-module-icon--accent { color: var(--c-accent); background: color-mix(in srgb, var(--c-accent) 14%, transparent); }
-.intel-module-icon--blue   { color: var(--c-blue);   background: color-mix(in srgb, var(--c-blue) 14%, transparent); }
-.intel-module-icon--red    { color: var(--c-red);    background: color-mix(in srgb, var(--c-red) 12%, transparent); }
+.intel-module-icon--intel {
+  color: var(--c-intel);
+  background: color-mix(in srgb, var(--c-intel) 14%, transparent);
+}
+.intel-module-icon--accent {
+  color: var(--c-accent);
+  background: color-mix(in srgb, var(--c-accent) 14%, transparent);
+}
+.intel-module-icon--blue {
+  color: var(--c-blue);
+  background: color-mix(in srgb, var(--c-blue) 14%, transparent);
+}
+.intel-module-icon--red {
+  color: var(--c-red);
+  background: color-mix(in srgb, var(--c-red) 12%, transparent);
+}
 
 .intel-module-label {
   font-size: var(--fs-2);
@@ -381,86 +496,142 @@
   letter-spacing: 0.07em;
 }
 
-/* ── Tier 2 · пилюля лога ──
-   Свёрнута до статуса; раскрывается тапом (data-action="intel:toggleLogs").
-   Blur здесь легален: элемент плавает над потоком. */
-.intel-logs {
-  flex-shrink: 0;
-  align-self: center;
-  max-width: max-content;
-  margin: 0 auto var(--sp-2);
-  padding: 6px 12px;
-  border-radius: var(--r-pill);
-  background: color-mix(in srgb, var(--c-bg-2) 70%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--c-border);
-  cursor: pointer;
-  overflow: hidden;
+/* ── Active voice pill (Tier 1 — flat, no blur) ── */
+.intel-voice-center-wrap {
   display: flex;
+  justify-content: center;
   align-items: center;
-  transition: border-radius var(--t-normal), padding var(--t-normal), max-width var(--t-normal);
+  flex-shrink: 0;
+  margin: 0 auto var(--sp-2);
 }
 
-.intel-logs.expanded {
-  align-self: stretch;
-  max-width: 100%;
-  padding: var(--sp-2);
-  border-radius: var(--r-l);
-  flex-direction: column;
-  align-items: stretch;
+.intel-voice-hud {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  color: var(--c-text-2);
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  transition: all var(--t-normal) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.intel-logs:not(.expanded) .intel-logs-title,
-.intel-logs:not(.expanded) #intel-logs-container {
+.intel-voice-hud:hover {
+  background: var(--c-surface-h);
+  border-color: color-mix(in srgb, var(--c-intel) 40%, transparent);
+  color: var(--c-text-1);
+}
+
+.intel-voice-hud.talk.live {
+  background: color-mix(in srgb, var(--c-intel) 14%, var(--c-surface));
+  border-color: var(--c-intel);
+  color: var(--c-intel);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--c-intel) 35%, transparent);
+  transform: scale(1.02);
+}
+
+.intel-voice-hud-label {
+  font-family: monospace;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.talk-wave {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+}
+
+.talk-wave i {
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: var(--c-intel);
+  border-radius: 2px;
+  transform: scaleY(0.12);
+  transform-origin: center bottom;
+  transition: transform var(--t-normal) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.intel-voice-hud.talk.live .talk-wave i {
+  animation: talk-bar 0.42s ease-in-out infinite alternate;
+}
+
+.intel-voice-hud.talk.live .talk-wave i:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.intel-voice-hud.talk.live .talk-wave i:nth-child(3) {
+  animation-duration: 0.28s;
+}
+
+.intel-voice-hud.talk.live .talk-wave i:nth-child(4) {
+  animation-delay: 0.14s;
+}
+
+@keyframes talk-bar {
+  from {
+    transform: scaleY(0.18);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.intel-settings-debug {
+  border-top: 1px solid var(--c-border);
+  padding-top: var(--sp-1-5);
+  margin-top: var(--sp-2);
+}
+
+.intel-settings-debug-summary {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-3);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  user-select: none;
+}
+
+.intel-settings-debug-summary:hover {
+  color: var(--c-intel);
+}
+
+.intel-settings-logs {
+  max-height: 140px;
+  overflow-y: auto;
+  margin-top: var(--sp-1);
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-m);
+  padding: var(--sp-1);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.intel-settings-logs::-webkit-scrollbar {
   display: none;
 }
 
-.intel-logs-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--sp-2);
-  width: 100%;
-}
-
-.intel-logs.expanded .intel-logs-header {
-  margin-bottom: var(--sp-2);
-}
-
-.intel-logs-title {
-  font-family: monospace;
-  font-size: var(--fs-1);
-  font-weight: var(--fw-md);
-  color: var(--c-text-3);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
-.intel-logs-status {
-  font-size: var(--fs-1);
-  font-weight: var(--fw-black);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 2px 8px;
-  border-radius: var(--r-xs);
-  background: var(--c-intel-bg);
-  color: var(--c-intel);
-  border: 1px solid color-mix(in srgb, var(--c-intel) 25%, transparent);
-  white-space: nowrap;
-  transition: color var(--t-normal), border-color var(--t-normal);
-}
-
-/* Строки растворяются сверху и снизу — лента без видимых обрезов. */
+/* Debug log rows (settings accordion + legacy container id) */
 #intel-logs-container {
-  max-height: 160px;
+  max-height: 140px;
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
-  mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
 }
-#intel-logs-container::-webkit-scrollbar { display: none; }
+
+#intel-logs-container::-webkit-scrollbar {
+  display: none;
+}
 
 .intel-log-entry {
   display: flex;
@@ -473,18 +644,44 @@
 }
 
 @keyframes intel-log-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.intel-log-time { color: var(--c-text-3); flex-shrink: 0; }
-.intel-log-type { font-weight: var(--fw-black); text-transform: uppercase; min-width: 34px; flex-shrink: 0; }
-.intel-log-type.sys { color: var(--c-intel); }
-.intel-log-type.db { color: var(--c-accent); }
-.intel-log-type.ai { color: var(--c-secondary); }
-.intel-log-type.user { color: var(--c-text-2); }
-.intel-log-type.error { color: var(--c-red); }
-.intel-log-msg { color: var(--c-text-2); }
+.intel-log-time {
+  color: var(--c-text-3);
+  flex-shrink: 0;
+}
+.intel-log-type {
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  min-width: 34px;
+  flex-shrink: 0;
+}
+.intel-log-type.sys {
+  color: var(--c-intel);
+}
+.intel-log-type.db {
+  color: var(--c-accent);
+}
+.intel-log-type.ai {
+  color: var(--c-secondary);
+}
+.intel-log-type.user {
+  color: var(--c-text-2);
+}
+.intel-log-type.error {
+  color: var(--c-red);
+}
+.intel-log-msg {
+  color: var(--c-text-2);
+}
 
 /* ── Tier 2 · плавающий композер ── */
 .intel-cmd-wrap {
@@ -503,12 +700,16 @@
   border: 1px solid var(--c-border);
   border-radius: var(--r-xxl);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  transition: border-color var(--t-normal), box-shadow var(--t-normal);
+  transition:
+    border-color var(--t-normal),
+    box-shadow var(--t-normal);
 }
 
 .intel-cmd-bar:focus-within {
   border-color: color-mix(in srgb, var(--c-intel) 35%, transparent);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 24px color-mix(in srgb, var(--c-intel) 12%, transparent);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 24px color-mix(in srgb, var(--c-intel) 12%, transparent);
 }
 
 .intel-cmd-input {
@@ -540,7 +741,10 @@
   border: none;
   color: var(--c-text-3);
   cursor: pointer;
-  transition: color var(--t-fast), background-color var(--t-fast), transform var(--t-fast);
+  transition:
+    color var(--t-fast),
+    background-color var(--t-fast),
+    transform var(--t-fast);
 }
 
 .intel-btn-icon:hover {
@@ -581,8 +785,12 @@
   height: 18px;
 }
 
-.intel-btn-send.is-busy svg { display: none; }
-.intel-btn-send.is-busy .intel-wave { display: inline-flex; }
+.intel-btn-send.is-busy svg {
+  display: none;
+}
+.intel-btn-send.is-busy .intel-wave {
+  display: inline-flex;
+}
 
 .intel-btn-send:disabled {
   cursor: default;
@@ -598,13 +806,26 @@
   animation: intel-wave-bounce 1.2s ease-in-out infinite;
 }
 
-.intel-wave-bar:nth-child(2) { animation-delay: 0.15s; }
-.intel-wave-bar:nth-child(3) { animation-delay: 0.3s; }
-.intel-wave-bar:nth-child(4) { animation-delay: 0.45s; }
+.intel-wave-bar:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.intel-wave-bar:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.intel-wave-bar:nth-child(4) {
+  animation-delay: 0.45s;
+}
 
 @keyframes intel-wave-bounce {
-  0%, 100% { transform: scaleY(0.25); opacity: 0.5; }
-  50%      { transform: scaleY(1);    opacity: 1; }
+  0%,
+  100% {
+    transform: scaleY(0.25);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }
 
 /* ── Vision Preview ── */
@@ -655,8 +876,12 @@
 }
 
 @keyframes intel-scan {
-  0% { top: 0; }
-  100% { top: 100%; }
+  0% {
+    top: 0;
+  }
+  100% {
+    top: 100%;
+  }
 }
 
 /* ════════════════════════════════════════════════════════
@@ -686,8 +911,12 @@
   color: var(--c-intel);
 }
 
-.intel-md-body > *:first-child { margin-top: 0; }
-.intel-md-body > *:last-child  { margin-bottom: 0; }
+.intel-md-body > *:first-child {
+  margin-top: 0;
+}
+.intel-md-body > *:last-child {
+  margin-bottom: 0;
+}
 
 .intel-md-p {
   margin-bottom: var(--sp-2);
@@ -747,8 +976,14 @@
   font-weight: var(--fw-black);
 }
 
-.intel-md-body strong { font-weight: var(--fw-black); color: var(--c-text-1); }
-.intel-md-body em     { font-style: italic; color: var(--c-text-2); }
+.intel-md-body strong {
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+}
+.intel-md-body em {
+  font-style: italic;
+  color: var(--c-text-2);
+}
 
 /* ════════════════════════════════════════════════════════
    Карточка тренировки в потоке (HUD-3)
@@ -804,10 +1039,17 @@
   border-bottom: 1px solid var(--c-border);
 }
 
-.intel-workout-item:last-child { border-bottom: none; }
+.intel-workout-item:last-child {
+  border-bottom: none;
+}
 
-.intel-workout-ex-name { color: var(--c-text-2); }
-.intel-workout-ex-sets { color: var(--c-accent); font-weight: var(--fw-bold); }
+.intel-workout-ex-name {
+  color: var(--c-text-2);
+}
+.intel-workout-ex-sets {
+  color: var(--c-accent);
+  font-weight: var(--fw-bold);
+}
 
 .intel-workout-save {
   width: 100%;
@@ -867,7 +1109,7 @@
 /* ════════════════════════════════════════════════════════
    Биометрический радар (HUD-3)
    Полноэкранный, плоский чёрный фон — НЕ blur: Tier-2 whitelist intel.css
-   несёт только `.intel-cmd-bar`/`.intel-logs` (test/air-guard.test.js),
+   несёт только `.intel-cmd-bar` (test/air-guard.test.js),
    а третье стекло на экране AIR не разрешает.
    ════════════════════════════════════════════════════════ */
 .intel-radar-overlay {
@@ -929,8 +1171,12 @@
 }
 
 @keyframes intel-radar-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .intel-radar-log {
@@ -1024,7 +1270,9 @@
   flex-shrink: 0;
 }
 
-.intel-radar-metric-val.is-high { color: var(--c-red); }
+.intel-radar-metric-val.is-high {
+  color: var(--c-red);
+}
 
 .intel-radar-metric-track {
   flex: 1;
@@ -1040,7 +1288,9 @@
   border-radius: 2px;
 }
 
-.intel-radar-metric-fill.is-high { background: var(--c-red); }
+.intel-radar-metric-fill.is-high {
+  background: var(--c-red);
+}
 
 .intel-radar-report-summary {
   margin-top: var(--sp-3);

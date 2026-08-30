@@ -4,7 +4,7 @@
  * Hung on body; both the s-intel gear and the Profile pointer call openAiSettings().
  */
 import { esc, haptic } from './shared/utils.js';
-import { t } from './locale.store.js';
+import { t, isRu } from './locale.store.js';
 import { on, onInput, onBlur, onChange } from './events.js';
 import { DB } from './db.js';
 import { Toast } from './shell.js';
@@ -23,6 +23,7 @@ import {
   commitKey,
   normalizeEngine,
 } from './ai-settings.store.js';
+import { renderIntelLogs } from './intel.view.js';
 
 on('ai:openSettings', () => openAiSettings());
 on('ai:closeSettings', () => closeAiSettings());
@@ -252,10 +253,15 @@ export async function openAiSettings() {
         </div>
         <p class="pref-sub" style="margin: var(--sp-2) 0 0; font-size: var(--fs-1);">${esc(t('settings.voice_gemini'))}</p>
         ${_toneRow(tone)}
+        <details class="intel-settings-debug">
+          <summary class="intel-settings-debug-summary">${esc(isRu() ? 'Системные логи' : 'Debug logs')}</summary>
+          <div id="intel-logs-container" class="intel-settings-logs"></div>
+        </details>
         <button class="btn btn-primary intel-settings-save" data-action="ai:closeSettings">${esc(t('settings.done'))}</button>
       </div>
     `;
   document.body.appendChild(overlay);
+  renderIntelLogs();
   requestAnimationFrame(() => overlay.classList.add('visible'));
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) closeAiSettings();
