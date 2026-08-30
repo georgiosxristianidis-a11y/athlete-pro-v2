@@ -23,7 +23,6 @@ import {
   commitKey,
   normalizeEngine,
 } from './ai-settings.store.js';
-import { renderIntelLogs } from './intel.view.js';
 
 on('ai:openSettings', () => openAiSettings());
 on('ai:closeSettings', () => closeAiSettings());
@@ -261,7 +260,7 @@ export async function openAiSettings() {
       </div>
     `;
   document.body.appendChild(overlay);
-  renderIntelLogs();
+  (await import('./intel.view.js')).renderIntelLogs();
   requestAnimationFrame(() => overlay.classList.add('visible'));
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) closeAiSettings();

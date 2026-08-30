@@ -42,8 +42,22 @@ onKeydown('intel:submitEnter', (el, e) => {
 
 /** Debug log panel lives in AI settings; IntelView.load() no longer mounts it. */
 export function renderIntelLogs() {
-  // @ts-ignore
-  window.IntelView?.renderLogs?.();
+  IntelStore.init();
+  const container = document.getElementById('intel-logs-container');
+  if (!container) return;
+  const logs = IntelStore.getLogs();
+  container.innerHTML = logs
+    .map(
+      (l) => `
+      <div class="intel-log-entry">
+        <span class="intel-log-time">[${l.time}]</span>
+        <span class="intel-log-type ${l.type.toLowerCase()}">${l.type}</span>
+        <span class="intel-log-msg">${esc(l.text)}</span>
+      </div>
+    `
+    )
+    .join('');
+  container.scrollTop = 0;
 }
 
 /**
@@ -287,21 +301,7 @@ export const IntelView = (() => {
   }
 
   function renderLogs() {
-    const container = document.getElementById('intel-logs-container');
-    if (!container) return;
-    const logs = IntelStore.getLogs();
-    container.innerHTML = logs
-      .map(
-        (l) => `
-      <div class="intel-log-entry">
-        <span class="intel-log-time">[${l.time}]</span>
-        <span class="intel-log-type ${l.type.toLowerCase()}">${l.type}</span>
-        <span class="intel-log-msg">${esc(l.text)}</span>
-      </div>
-    `
-      )
-      .join('');
-    container.scrollTop = 0;
+    renderIntelLogs();
   }
 
   function _listen() {
@@ -977,6 +977,7 @@ export const IntelView = (() => {
       await audio.play();
     } catch (err) {
       IntelStore.addLog('INFO', 'Local speech synthesis active');
+      _isSpeaking = false;
       _speakNativeSpeech(textToSpeak, toneVal);
     }
   }

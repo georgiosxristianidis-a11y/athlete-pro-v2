@@ -26,7 +26,7 @@ describe('intel voice HUD markup', () => {
   test('debug logs moved to AI settings sheet', () => {
     assert.match(settings, /intel-settings-debug/);
     assert.match(settings, /id="intel-logs-container"/);
-    assert.match(settings, /renderIntelLogs\(\)/);
+    assert.match(settings, /import\('\.\/intel\.view\.js'\)\)\.renderIntelLogs\(\)/);
   });
 
   test('speakText and replayVoice are wired', () => {
