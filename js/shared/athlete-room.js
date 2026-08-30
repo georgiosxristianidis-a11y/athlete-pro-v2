@@ -5,24 +5,31 @@ import { mapOneRMs, powerTotal } from './lift-map.js';
 import { renderLiftBars } from '../profile.view/lift-bars.js';
 import { loadProfile, updateProfile, updateWeightAndHeight, computeAge } from '../profile.store.js';
 import { esc, haptic, dobSelectsHtml, readDobFromSelects } from './utils.js';
+import { shakeField } from './field-shake.js';
+import { initSegPill, syncSegPill } from '../ui/seg-pill.js';
 import { isRu } from '../locale.store.js';
 import { on, onChange } from '../events.js';
 import { ensureCss } from './lazy-css.js';
 
+const _nextFrame =
+  typeof requestAnimationFrame === 'function'
+    ? (fn) => requestAnimationFrame(fn)
+    : (fn) => setTimeout(fn, 0);
+
 const AR = () => window.AthleteRoom;
-on('ar:open',           () => AR().open());
-on('ar:close',          () => AR().close());
-on('ar:switchTab',      (el) => AR().switchTab(el.dataset.tab));
-on('ar:photoUpload',    () => AR().triggerPhotoUpload());
-on('ar:removePhoto',    (el, e) => AR().removePhoto(e));
-on('ar:editName',       () => AR().editName());
-on('ar:editStat',       (el) => AR().editStat(el.dataset.stat, +el.dataset.val));
-on('ar:saveStat',       () => AR().saveStat());
+on('ar:open', () => AR().open());
+on('ar:close', () => AR().close());
+on('ar:switchTab', (el) => AR().switchTab(el.dataset.tab));
+on('ar:photoUpload', () => AR().triggerPhotoUpload());
+on('ar:removePhoto', (el, e) => AR().removePhoto(e));
+on('ar:editName', () => AR().editName());
+on('ar:editStat', (el) => AR().editStat(el.dataset.stat, +el.dataset.val));
+on('ar:saveStat', () => AR().saveStat());
 on('ar:cancelStatEdit', () => AR().cancelStatEdit());
-on('ar:selectColor',    (el) => AR().selectColor(+el.dataset.i));
-on('ar:selectFrame',    (el) => AR().selectFrame(+el.dataset.i));
-on('ar:saveName',       () => AR().saveName());
-on('ar:cancelEdit',     () => AR().cancelEdit());
+on('ar:selectColor', (el) => AR().selectColor(+el.dataset.i));
+on('ar:selectFrame', (el) => AR().selectFrame(+el.dataset.i));
+on('ar:saveName', () => AR().saveName());
+on('ar:cancelEdit', () => AR().cancelEdit());
 onChange('ar:photoSelected', (el, e) => AR().handlePhotoSelected(e));
 
 /* ════════════════════════════════════════════════════════
@@ -34,53 +41,103 @@ const AVATAR_COLORS = [
   ['#10b981', '#059669'], // Emerald -> Green
   ['#f59e0b', '#d97706'], // Amber -> Yellow
   ['#ec4899', '#be185d'], // Pink -> Rose
-  ['#8b5cf6', '#6d28d9']  // Violet -> Purple
+  ['#8b5cf6', '#6d28d9'], // Violet -> Purple
 ];
 
 // Neon frame (ring) colors. Index 0 = original green→blue neon (default look).
 // Applied to the thin ring only (--c1/--c2), never as a fill over the photo.
 const FRAME_COLORS = [
   ['var(--c-accent)', 'var(--c-blue)'], // 0 Green→Blue (default neon)
-  ['#00e676', '#00c853'],               // 1 Green
-  ['#00b8d4', '#0091ea'],               // 2 Cyan
-  ['#8b5cf6', '#6d28d9'],               // 3 Purple
-  ['#ffb300', '#ff8f00'],               // 4 Amber
-  ['#ff4d88', '#c2185b'],               // 5 Pink
+  ['#00e676', '#00c853'], // 1 Green
+  ['#00b8d4', '#0091ea'], // 2 Cyan
+  ['#8b5cf6', '#6d28d9'], // 3 Purple
+  ['#ffb300', '#ff8f00'], // 4 Amber
+  ['#ff4d88', '#c2185b'], // 5 Pink
 ];
 
 const TIER_COLOR = {
-  Untrained:    '#78909c',
-  Novice:       '#26a69a',
+  Untrained: '#78909c',
+  Novice: '#26a69a',
   Intermediate: '#f59e0b',
-  Advanced:     '#7c3aed',
-  Elite:        '#ff6d00'
+  Advanced: '#7c3aed',
+  Elite: '#ff6d00',
 };
 
 const TIER_RU = {
-  Untrained:    'Новичок',
-  Novice:       'Начинающий',
+  Untrained: 'Новичок',
+  Novice: 'Начинающий',
   Intermediate: 'Средний',
-  Advanced:     'Продвинутый',
-  Elite:        'Элита'
+  Advanced: 'Продвинутый',
+  Elite: 'Элита',
 };
 
 const ACHIEVEMENTS = [
-  { id: 'first_workout',  icon: '1st', ru: 'Первая тренировка',   en: 'First Workout',      check: (w) => w.length >= 1 },
-  { id: 'five_workouts',  icon: '5x',  ru: '5 тренировок',         en: '5 Workouts',         check: (w) => w.length >= 5 },
-  { id: 'ten_workouts',   icon: '10x', ru: '10 тренировок',        en: '10 Workouts',        check: (w) => w.length >= 10 },
-  { id: 'fifty_workouts', icon: '50x', ru: '50 тренировок',        en: '50 Workouts',        check: (w) => w.length >= 50 },
-  { id: 'streak_7',       icon: '7D',  ru: '7 дней подряд',        en: '7-Day Streak',       check: (w) => _calcStreak(w) >= 7 },
-  { id: 'tonne_club',     icon: '1T',  ru: '1 тонна за сессию',    en: '1 Tonne Session',    check: (w) => w.some(s => s.tonnage >= 1000) },
-  { id: 'push_master',    icon: 'PM',  ru: 'Мастер жима',          en: 'Push Master',        check: (w) => w.filter(s => s.type === 'push').length >= 10 },
-  { id: 'consistency',    icon: '3W',  ru: '3 недели без пропусков', en: '3 Weeks Consistent', check: (w) => _calcConsistency(w) },
+  {
+    id: 'first_workout',
+    icon: '1st',
+    ru: 'Первая тренировка',
+    en: 'First Workout',
+    check: (w) => w.length >= 1,
+  },
+  {
+    id: 'five_workouts',
+    icon: '5x',
+    ru: '5 тренировок',
+    en: '5 Workouts',
+    check: (w) => w.length >= 5,
+  },
+  {
+    id: 'ten_workouts',
+    icon: '10x',
+    ru: '10 тренировок',
+    en: '10 Workouts',
+    check: (w) => w.length >= 10,
+  },
+  {
+    id: 'fifty_workouts',
+    icon: '50x',
+    ru: '50 тренировок',
+    en: '50 Workouts',
+    check: (w) => w.length >= 50,
+  },
+  {
+    id: 'streak_7',
+    icon: '7D',
+    ru: '7 дней подряд',
+    en: '7-Day Streak',
+    check: (w) => _calcStreak(w) >= 7,
+  },
+  {
+    id: 'tonne_club',
+    icon: '1T',
+    ru: '1 тонна за сессию',
+    en: '1 Tonne Session',
+    check: (w) => w.some((s) => s.tonnage >= 1000),
+  },
+  {
+    id: 'push_master',
+    icon: 'PM',
+    ru: 'Мастер жима',
+    en: 'Push Master',
+    check: (w) => w.filter((s) => s.type === 'push').length >= 10,
+  },
+  {
+    id: 'consistency',
+    icon: '3W',
+    ru: '3 недели без пропусков',
+    en: '3 Weeks Consistent',
+    check: (w) => _calcConsistency(w),
+  },
 ];
 
 function _calcStreak(workouts) {
   if (!workouts.length) return 0;
-  const dates = new Set(workouts.map(w => {
-    const d = new Date(w.timestamp);
-    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  }));
+  const dates = new Set(
+    workouts.map((w) => {
+      const d = new Date(w.timestamp);
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    })
+  );
   let streak = 0;
   const now = new Date();
   for (let i = 0; i < 365; i++) {
@@ -96,10 +153,12 @@ function _calcStreak(workouts) {
 function _calcConsistency(workouts) {
   if (workouts.length < 9) return false;
   const now = new Date();
-  const weeks = new Set(workouts.map(w => {
-    const d = new Date(w.timestamp);
-    return Math.floor(d.getTime() / (7 * 86400000));
-  }));
+  const weeks = new Set(
+    workouts.map((w) => {
+      const d = new Date(w.timestamp);
+      return Math.floor(d.getTime() / (7 * 86400000));
+    })
+  );
   let activeWeeks = 0;
   const currentWeek = Math.floor(now.getTime() / (7 * 86400000));
   for (let i = 0; i < 5; i++) {
@@ -119,23 +178,31 @@ const _tierFromScore = tierFromScore;
  * `computeAge`. Один и тот же атлет получал два разных скора на двух экранах.
  */
 async function _buildContext() {
-  const [workouts, orms, customName, colorIdx, frameIdx, lang, profile, metrics, photo] = await Promise.all([
-    DB.Workouts.getAll().catch(() => []),
-    DB.OneRM.getAll().catch(() => []),
-    DB.Settings.get('athlete-name', ''),
-    DB.Settings.get('avatar-color', '0'),
-    DB.Settings.get('avatar-frame', '0'),
-    DB.Settings.get('lang', 'en'),
-    loadProfile().catch(() => null),
-    DB.Metrics.latest().catch(() => null),
-    DB.Settings.get('athlete-photo', null),
-  ]);
+  const [workouts, orms, customName, colorIdx, frameIdx, lang, profile, metrics, photo] =
+    await Promise.all([
+      DB.Workouts.getAll().catch(() => []),
+      DB.OneRM.getAll().catch(() => []),
+      DB.Settings.get('athlete-name', ''),
+      DB.Settings.get('avatar-color', '0'),
+      DB.Settings.get('avatar-frame', '0'),
+      DB.Settings.get('lang', 'en'),
+      loadProfile().catch(() => null),
+      DB.Metrics.latest().catch(() => null),
+      DB.Settings.get('athlete-photo', null),
+    ]);
 
   const ru = lang === 'ru';
   const name = customName || profile?.name || (ru ? 'Атлет' : 'Athlete');
   const [c1, c2] = AVATAR_COLORS[(parseInt(colorIdx) || 0) % AVATAR_COLORS.length];
   const [f1, f2] = FRAME_COLORS[(parseInt(frameIdx) || 0) % FRAME_COLORS.length];
-  const initials = name.split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'A';
+  const initials =
+    name
+      .split(' ')
+      .map((s) => s[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'A';
 
   const oneRMs = mapOneRMs(orms);
   const total = powerTotal(oneRMs);
@@ -145,20 +212,45 @@ async function _buildContext() {
   const age = computeAge(profile?.dob);
 
   const breakdown = scoreBreakdown({
-    total, bodyweight: weight, sex, age,
-    experience: profile?.experienceYears, height,
+    total,
+    bodyweight: weight,
+    sex,
+    age,
+    experience: profile?.experienceYears,
+    height,
   });
   const score = breakdown.score;
   const dots = breakdown.base;
   const tier = _tierFromScore(score);
 
   return {
-    workouts, name, initials, c1, c2, f1, f2, colorIdx, frameIdx,
-    tierLabel: ru ? TIER_RU[tier] : tier, tierColor: TIER_COLOR[tier], tier,
+    workouts,
+    name,
+    initials,
+    c1,
+    c2,
+    f1,
+    f2,
+    colorIdx,
+    frameIdx,
+    tierLabel: ru ? TIER_RU[tier] : tier,
+    tierColor: TIER_COLOR[tier],
+    tier,
     streak: _calcStreak(workouts),
-    total, score, dots, breakdown, oneRMs, age, sex, weight, height,
-    unlockedAch: new Set(ACHIEVEMENTS.filter(a => a.check(workouts)).map(a => a.id)),
-    metrics, photo, profile, ru,
+    total,
+    score,
+    dots,
+    breakdown,
+    oneRMs,
+    age,
+    sex,
+    weight,
+    height,
+    unlockedAch: new Set(ACHIEVEMENTS.filter((a) => a.check(workouts)).map((a) => a.id)),
+    metrics,
+    photo,
+    profile,
+    ru,
   };
 }
 
@@ -203,7 +295,9 @@ export const AthleteRoom = (() => {
     _overlay.classList.remove('open');
     document.body.style.overflow = '';
     window.Nav?.unregisterOverlay('athlete-room');
-    setTimeout(() => { _overlay.innerHTML = ''; }, 350);
+    setTimeout(() => {
+      _overlay.innerHTML = '';
+    }, 350);
   }
 
   async function render() {
@@ -238,16 +332,27 @@ export const AthleteRoom = (() => {
 
     _initSheetDrag();
     await switchTab(activeTab, ctx);
+    _nextFrame(() => {
+      const bar = _overlay?.querySelector('.bs-tab-bar');
+      if (bar) {
+        delete bar.dataset.segPillInit;
+        initSegPill(bar);
+      }
+    });
   }
 
   async function switchTab(tabId, dataContext = null) {
     haptic(10);
     window._arActiveTab = tabId === 'settings' ? 'profile' : tabId; // Fallback if settings was active
-    
+
     // Update active state in UI if overlay is open
     if (_overlay) {
-      _overlay.querySelectorAll('.bs-tab').forEach(btn => {
+      _overlay.querySelectorAll('.bs-tab').forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.tab === window._arActiveTab);
+      });
+      _nextFrame(() => {
+        const bar = _overlay.querySelector('.bs-tab-bar');
+        if (bar?._segPill) syncSegPill(bar);
       });
     }
 
@@ -270,8 +375,25 @@ export const AthleteRoom = (() => {
   }
 
   function _renderProfileTab(container, ctx) {
-    const { name, initials, c1, c2, f1, f2, tierLabel, tierColor, streak, total, score, dots, unlockedAch, photo, ru, metrics } = ctx;
-    
+    const {
+      name,
+      initials,
+      c1,
+      c2,
+      f1,
+      f2,
+      tierLabel,
+      tierColor,
+      streak,
+      total,
+      score,
+      dots,
+      unlockedAch,
+      photo,
+      ru,
+      metrics,
+    } = ctx;
+
     // Use the existing avatar init logic but wrap the HTML
     const avatarHtml = photo
       ? `<div class="ar-avatar has-photo" style="background-image: url('${photo}')" data-action="ar:photoUpload">
@@ -302,13 +424,13 @@ export const AthleteRoom = (() => {
           </div>
 
           <div class="ar-stats" style="margin-bottom:var(--sp-1-5)">
-            <div class="ar-stat" data-action="ar:editStat" data-stat="weight" data-val="${metrics?.weight||80}" style="cursor:pointer">
-              <div class="ar-stat-val">${metrics?.weight||'—'} <span style="font-size:var(--fs-1);opacity:0.6">kg</span></div>
-              <div class="ar-stat-lbl">${ru?'Вес':'Weight'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:var(--sp-0-5); opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+            <div class="ar-stat" data-action="ar:editStat" data-stat="weight" data-val="${metrics?.weight || 80}" style="cursor:pointer">
+              <div class="ar-stat-val">${metrics?.weight || '—'} <span style="font-size:var(--fs-1);opacity:0.6">kg</span></div>
+              <div class="ar-stat-lbl">${ru ? 'Вес' : 'Weight'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:var(--sp-0-5); opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
-            <div class="ar-stat" data-action="ar:editStat" data-stat="height" data-val="${metrics?.height||180}" style="cursor:pointer">
-              <div class="ar-stat-val">${metrics?.height||'—'} <span style="font-size:var(--fs-1);opacity:0.6">cm</span></div>
-              <div class="ar-stat-lbl">${ru?'Рост':'Height'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:var(--sp-0-5); opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+            <div class="ar-stat" data-action="ar:editStat" data-stat="height" data-val="${metrics?.height || 180}" style="cursor:pointer">
+              <div class="ar-stat-val">${metrics?.height || '—'} <span style="font-size:var(--fs-1);opacity:0.6">cm</span></div>
+              <div class="ar-stat-lbl">${ru ? 'Рост' : 'Height'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:var(--sp-0-5); opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
             <div class="ar-stat" style="box-shadow: 0 4px 16px ${tierColor}20; border-color: ${tierColor}40">
               <div class="ar-stat-val" style="color: ${tierColor}; text-shadow: 0 0 12px ${tierColor}80">${Math.round(score)}</div>
@@ -332,7 +454,7 @@ export const AthleteRoom = (() => {
 
           <div class="ar-section-label">${ru ? 'Достижения' : 'Achievements'}</div>
           <div class="ar-achievements">
-            ${ACHIEVEMENTS.map(a => {
+            ${ACHIEVEMENTS.map((a) => {
               const unlocked = unlockedAch.has(a.id);
               return `
                 <div class="ar-ach-card ${unlocked ? 'unlocked' : 'locked'}">
@@ -369,18 +491,22 @@ export const AthleteRoom = (() => {
               
               <div class="ar-editor-colors-label" style="margin-top:var(--sp-2)">${ru ? 'Цвет аватара' : 'Avatar Color'}</div>
               <div class="ar-color-row">
-                ${AVATAR_COLORS.map(([e, t], i) => `
+                ${AVATAR_COLORS.map(
+                  ([e, t], i) => `
                   <div class="ar-color-swatch ${i === (parseInt(ctx.colorIdx) || 0) ? 'active' : ''}"
                        style="background:linear-gradient(135deg, ${e}, ${t})"
-                       data-action="ar:selectColor" data-i="${i}"></div>`).join('')}
+                       data-action="ar:selectColor" data-i="${i}"></div>`
+                ).join('')}
               </div>
 
               <div class="ar-editor-colors-label" style="margin-top:var(--sp-2)">${ru ? 'Цвет рамки' : 'Frame Color'}</div>
               <div class="ar-color-row">
-                ${FRAME_COLORS.map(([e, t], i) => `
+                ${FRAME_COLORS.map(
+                  ([e, t], i) => `
                   <div class="ar-color-swatch ar-frame-swatch ${i === (parseInt(ctx.frameIdx) || 0) ? 'active' : ''}"
                        style="background:conic-gradient(from 0deg, ${e}, ${t}, ${e})"
-                       data-action="ar:selectFrame" data-i="${i}"></div>`).join('')}
+                       data-action="ar:selectFrame" data-i="${i}"></div>`
+                ).join('')}
               </div>
 
               <div class="ar-editor-actions" style="margin-top:var(--sp-3)">
@@ -406,11 +532,15 @@ export const AthleteRoom = (() => {
     const tierLabel = (id) => (ru ? TIER_RU[id] : id);
 
     // Ступени тира на шкале — те же пороги, что решают, каким словом назвать атлета.
-    const ticks = SCORE_TIERS.slice(1).map(t => `
+    const ticks = SCORE_TIERS.slice(1)
+      .map(
+        (t) => `
       <div class="ar-sc-tick" style="left:${(t.min / SCALE_MAX) * 100}%">
         <div class="ar-sc-tick-line"></div>
         <div class="ar-sc-tick-lbl">${t.min}</div>
-      </div>`).join('');
+      </div>`
+      )
+      .join('');
 
     /** Строка разложения: множитель + причина, почему он такой. */
     const modRow = (label, value, why) => {
@@ -424,27 +554,55 @@ export const AthleteRoom = (() => {
     };
 
     const ageWhy = !age
-      ? (ru ? 'возраст не указан' : 'age not set')
-      : age >= 40 ? (ru ? `${age} лет — надбавка мастеру` : `${age} yo — masters bonus`)
-      : age <= 23 ? (ru ? `${age} лет — надбавка юниору` : `${age} yo — junior bonus`)
-      : (ru ? `${age} лет — пиковый возраст` : `${age} yo — prime years`);
+      ? ru
+        ? 'возраст не указан'
+        : 'age not set'
+      : age >= 40
+        ? ru
+          ? `${age} лет — надбавка мастеру`
+          : `${age} yo — masters bonus`
+        : age <= 23
+          ? ru
+            ? `${age} лет — надбавка юниору`
+            : `${age} yo — junior bonus`
+          : ru
+            ? `${age} лет — пиковый возраст`
+            : `${age} yo — prime years`;
 
-    const levWhy = b.bmi == null
-      ? (ru ? 'нужен рост в замерах' : 'height not set')
-      : b.bmi < 25
-        ? (ru ? `BMI ${b.bmi.toFixed(1)} — длинная амплитуда` : `BMI ${b.bmi.toFixed(1)} — longer range of motion`)
-        : (ru ? `BMI ${b.bmi.toFixed(1)} — рычаги без надбавки` : `BMI ${b.bmi.toFixed(1)} — no leverage bonus`);
+    const levWhy =
+      b.bmi == null
+        ? ru
+          ? 'нужен рост в замерах'
+          : 'height not set'
+        : b.bmi < 25
+          ? ru
+            ? `BMI ${b.bmi.toFixed(1)} — длинная амплитуда`
+            : `BMI ${b.bmi.toFixed(1)} — longer range of motion`
+          : ru
+            ? `BMI ${b.bmi.toFixed(1)} — рычаги без надбавки`
+            : `BMI ${b.bmi.toFixed(1)} — no leverage bonus`;
 
     const exp = profile?.experienceYears;
-    const expWhy = typeof exp !== 'number'
-      ? (ru ? 'опыт не указан' : 'experience not set')
-      : exp < 1 ? (ru ? 'меньше года в зале' : 'under a year of training')
-      : exp < 3 ? (ru ? `${exp} г. опыта — ещё новичок` : `${exp}y — still a novice`)
-      : (ru ? `${exp} г. опыта — надбавки нет` : `${exp}y — no bonus`);
+    const expWhy =
+      typeof exp !== 'number'
+        ? ru
+          ? 'опыт не указан'
+          : 'experience not set'
+        : exp < 1
+          ? ru
+            ? 'меньше года в зале'
+            : 'under a year of training'
+          : exp < 3
+            ? ru
+              ? `${exp} г. опыта — ещё новичок`
+              : `${exp}y — still a novice`
+            : ru
+              ? `${exp} г. опыта — надбавки нет`
+              : `${exp}y — no bonus`;
 
     // Лучшее из четырёх движений — именно оно даёт «Топ X%» в паспорте.
     let best = null;
-    ['bench', 'squat', 'deadlift', 'ohp'].forEach(lift => {
+    ['bench', 'squat', 'deadlift', 'ohp'].forEach((lift) => {
       const rm = oneRMs[lift];
       if (!rm) return;
       const res = exrxTier({ lift, sex, bodyweight: weight, oneRM: rm, age: age || 30 });
@@ -469,23 +627,34 @@ export const AthleteRoom = (() => {
       </div>
 
       <div class="ar-sc-next">
-        ${empty
-          ? (ru ? 'Запиши присед, жим и становую — скор появится сам' : 'Log squat, bench and deadlift — the score follows')
-          : b.next
-            ? (ru
+        ${
+          empty
+            ? ru
+              ? 'Запиши присед, жим и становую — скор появится сам'
+              : 'Log squat, bench and deadlift — the score follows'
+            : b.next
+              ? ru
                 ? `До тира «${esc(tierLabel(b.next.id))}» осталось <b>+${b.kgToNext} кг</b> в сумме трёх`
-                : `<b>+${b.kgToNext} kg</b> on the big three to reach ${esc(tierLabel(b.next.id))}`)
-            : (ru ? 'Высший тир — выше некуда' : 'Top tier — nothing above')}
+                : `<b>+${b.kgToNext} kg</b> on the big three to reach ${esc(tierLabel(b.next.id))}`
+              : ru
+                ? 'Высший тир — выше некуда'
+                : 'Top tier — nothing above'
+        }
       </div>
 
-      ${empty ? '' : `
+      ${
+        empty
+          ? ''
+          : `
       <div class="ar-section-label">${ru ? 'Из чего собран скор' : 'How the score is built'}</div>
       <div class="ar-sc-card">
         <div class="ar-sc-row ar-sc-row-base">
           <div class="ar-sc-row-lbl">DOTS</div>
-          <div class="ar-sc-row-why">${ru
-            ? `${total} кг суммы при весе ${weight} кг`
-            : `${total} kg total at ${weight} kg bodyweight`}</div>
+          <div class="ar-sc-row-why">${
+            ru
+              ? `${total} кг суммы при весе ${weight} кг`
+              : `${total} kg total at ${weight} kg bodyweight`
+          }</div>
           <div class="ar-sc-row-val">${b.base}</div>
         </div>
         ${modRow(ru ? 'Возраст' : 'Age', b.ageMod, ageWhy)}
@@ -499,22 +668,31 @@ export const AthleteRoom = (() => {
       </div>
 
       <div class="ar-sc-note">
-        ${ru
-          ? 'DOTS — коэффициент из пауэрлифтинга: он уже уравнивает атлетов разного веса, поэтому сумма в килограммах сама по себе ничего не говорит.'
-          : 'DOTS is a powerlifting coefficient: it already normalises across bodyweights, so raw kilograms alone say little.'}
+        ${
+          ru
+            ? 'DOTS — коэффициент из пауэрлифтинга: он уже уравнивает атлетов разного веса, поэтому сумма в килограммах сама по себе ничего не говорит.'
+            : 'DOTS is a powerlifting coefficient: it already normalises across bodyweights, so raw kilograms alone say little.'
+        }
       </div>
 
-      ${best ? `
+      ${
+        best
+          ? `
       <div class="ar-section-label">${ru ? 'Откуда «Топ»' : 'Where “Top” comes from'}</div>
       <div class="ar-sc-card">
         <div class="ar-sc-pct">${ru ? 'Топ' : 'Top'} ${100 - best.percentile}%</div>
         <div class="ar-sc-note" style="margin:0">
-          ${ru
-            ? `Лучшее из четырёх движений — ${LIFT_RU[best.lift]} ${best.rm} кг. Сравнение идёт по таблицам ExRx для пола, веса тела и возраста, а не с другими пользователями приложения.`
-            : `Best of the four lifts — ${LIFT_EN[best.lift]} ${best.rm} kg. Compared against ExRx tables for your sex, bodyweight and age, not against other app users.`}
+          ${
+            ru
+              ? `Лучшее из четырёх движений — ${LIFT_RU[best.lift]} ${best.rm} кг. Сравнение идёт по таблицам ExRx для пола, веса тела и возраста, а не с другими пользователями приложения.`
+              : `Best of the four lifts — ${LIFT_EN[best.lift]} ${best.rm} kg. Compared against ExRx tables for your sex, bodyweight and age, not against other app users.`
+          }
         </div>
-      </div>` : ''}
-      `}
+      </div>`
+          : ''
+      }
+      `
+      }
 
       ${renderLiftBars(oneRMs, weight, sex, age, ru ? 'ru' : 'en')}
     `;
@@ -525,9 +703,9 @@ export const AthleteRoom = (() => {
     // Пара с инсетом .ar-content (--sp-2): отрицательный margin гасит верхний
     // отступ вкладки, поэтому переводится только вместе с ним.
     container.innerHTML = `<div id="ar-body-stats-root" style="margin-top: calc(-1 * var(--sp-2));"></div>`;
-    import('../body-stats.js').then(mod => {
+    import('../body-stats.js').then((mod) => {
       const root = document.getElementById('ar-body-stats-root');
-      if(root) {
+      if (root) {
         mod.renderBodyStats(root);
       }
     });
@@ -551,9 +729,14 @@ export const AthleteRoom = (() => {
     const lbl = document.getElementById('ar-stat-label');
     const inp = /** @type {HTMLInputElement} */ (document.getElementById('ar-stat-input'));
     if (!ed || !lbl || !inp) return;
-    lbl.textContent = type === 'weight'
-      ? (isRu() ? 'Вес (кг)' : 'Weight (kg)')
-      : (isRu() ? 'Рост (см)' : 'Height (cm)');
+    lbl.textContent =
+      type === 'weight'
+        ? isRu()
+          ? 'Вес (кг)'
+          : 'Weight (kg)'
+        : isRu()
+          ? 'Рост (см)'
+          : 'Height (cm)';
     inp.value = val;
     ed.style.display = 'block';
     inp.focus();
@@ -567,13 +750,18 @@ export const AthleteRoom = (() => {
 
   async function saveStat() {
     haptic(15);
-    const val = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('ar-stat-input'))?.value);
-    if (!val || val <= 0) { cancelStatEdit(); return; }
-    
+    const inp = /** @type {HTMLInputElement|null} */ (document.getElementById('ar-stat-input'));
+    const val = parseFloat(inp?.value ?? '');
+    if (!val || val <= 0) {
+      shakeField(inp);
+      haptic([20, 50, 20]);
+      return;
+    }
+
     const latest = await DB.Metrics.latest();
-    const w = _currentStat === 'weight' ? val : (latest?.weight || 80);
-    const h = _currentStat === 'height' ? val : (latest?.height || 180);
-    
+    const w = _currentStat === 'weight' ? val : latest?.weight || 80;
+    const h = _currentStat === 'height' ? val : latest?.height || 180;
+
     await updateWeightAndHeight(w, h);
     cancelStatEdit();
     render();
@@ -585,7 +773,8 @@ export const AthleteRoom = (() => {
       const { renderProfile } = await import('../profile.view.js');
       renderProfile(sProfile);
     }
-    const statLbl = _currentStat === 'weight' ? (isRu() ? 'Вес' : 'Weight') : (isRu() ? 'Рост' : 'Height');
+    const statLbl =
+      _currentStat === 'weight' ? (isRu() ? 'Вес' : 'Weight') : isRu() ? 'Рост' : 'Height';
     window.Toast?.show(isRu() ? `${statLbl} обновлён` : `${statLbl} updated`, 'success');
   }
 
@@ -597,7 +786,7 @@ export const AthleteRoom = (() => {
     const newName = input.value.trim();
     const dob = readDobFromSelects('ar-dob');
     const sex = sexInput.value;
-    
+
     // updateProfile уже импортирован статически (см. шапку файла).
     // Идёт ПЕРЕД записью 'athlete-name': если этот await упадёт, имя не
     // осядет частично без dob/sex — тот же класс рассинхрона, что чинил F-1.
@@ -606,10 +795,10 @@ export const AthleteRoom = (() => {
     if (newName) {
       await DB.Settings.set('athlete-name', newName);
     }
-    
+
     cancelEdit();
     render();
-    
+
     // Dispatch event so Passport updates
     window.dispatchEvent(new Event('ap-sync-status'));
 
@@ -649,11 +838,18 @@ export const AthleteRoom = (() => {
       DB.Settings.get('avatar-color', '0'),
       DB.Settings.get('athlete-photo', null),
       DB.Settings.get('athlete-name', ''),
-      loadProfile()
+      loadProfile(),
     ]);
     const [c1, c2] = AVATAR_COLORS[(parseInt(colorIdx) || 0) % AVATAR_COLORS.length];
     const name = customName || profile?.name || 'Athlete';
-    const initials = name.split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'A';
+    const initials =
+      name
+        .split(' ')
+        .map((s) => s[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join('')
+        .toUpperCase() || 'A';
 
     // Кнопка — только хит-бокс 48x48 (a11y tap target); красится кружок внутри.
     const face = document.getElementById('athlete-avatar-face') || btn;
@@ -680,7 +876,6 @@ export const AthleteRoom = (() => {
     document.getElementById('ar-photo-input')?.click();
   }
 
-  
   function handlePhotoSelected(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -698,7 +893,7 @@ export const AthleteRoom = (() => {
 
   function _openCropModal(base64) {
     const ru = isRu();
-    
+
     const modal = document.createElement('div');
     modal.className = 'ar-crop-modal';
     modal.innerHTML = `
@@ -732,8 +927,12 @@ export const AthleteRoom = (() => {
     const btnApply = modal.querySelector('#ar-crop-apply');
     const btnCancel = modal.querySelector('#ar-crop-cancel');
 
-    let scale = 1, tx = 0, ty = 0;
-    let isDragging = false, startX = 0, startY = 0;
+    let scale = 1,
+      tx = 0,
+      ty = 0;
+    let isDragging = false,
+      startX = 0,
+      startY = 0;
     const BOX_SIZE = 180; // Size of the mask box
 
     img.onload = () => {
@@ -771,7 +970,9 @@ export const AthleteRoom = (() => {
       _updateTransform();
     };
 
-    const onPointerUp = () => { isDragging = false; };
+    const onPointerUp = () => {
+      isDragging = false;
+    };
 
     img.addEventListener('mousedown', onPointerDown);
     window.addEventListener('mousemove', onPointerMove);
@@ -803,8 +1004,8 @@ export const AthleteRoom = (() => {
       const cy = rectMask.top + rectMask.height / 2;
 
       // Offset of mask top-left relative to image top-left
-      const offX = (cx - BOX_SIZE / 2) - rectImg.left;
-      const offY = (cy - BOX_SIZE / 2) - rectImg.top;
+      const offX = cx - BOX_SIZE / 2 - rectImg.left;
+      const offY = cy - BOX_SIZE / 2 - rectImg.top;
 
       // Calculate scale of natural image vs rendered image bounds
       const scaleX = img.naturalWidth / rectImg.width;
@@ -819,14 +1020,14 @@ export const AthleteRoom = (() => {
       canvas.width = 400;
       canvas.height = 400;
       const ctx = canvas.getContext('2d');
-      
+
       if (ctx) {
         ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, 400, 400);
         const finalBase64 = canvas.toDataURL('image/jpeg', 0.9);
         await DB.Settings.set('athlete-photo', finalBase64);
         render();
         initAvatar();
-        
+
         // Dynamic UI Refresh
         if (window.Dashboard?.load) window.Dashboard.load();
         const sProfile = document.getElementById('s-profile');
@@ -839,7 +1040,6 @@ export const AthleteRoom = (() => {
     };
   }
 
-
   async function removePhoto() {
     await DB.Settings.set('athlete-photo', null);
     render();
@@ -849,17 +1049,26 @@ export const AthleteRoom = (() => {
   function _initSheetDrag() {
     const sheet = _overlay?.querySelector('.ar-sheet');
     if (!sheet) return;
-    let startY = 0, currentY = 0;
-    sheet.addEventListener('touchstart', (e) => {
-      if (sheet.scrollTop > 0) return;
-      startY = e.touches[0].clientY;
-      sheet.style.transition = 'none';
-    }, { passive: true });
-    sheet.addEventListener('touchmove', (e) => {
-      if (sheet.scrollTop > 0) return;
-      currentY = e.touches[0].clientY - startY;
-      if (currentY > 0) sheet.style.transform = `translateY(${currentY}px)`;
-    }, { passive: true });
+    let startY = 0,
+      currentY = 0;
+    sheet.addEventListener(
+      'touchstart',
+      (e) => {
+        if (sheet.scrollTop > 0) return;
+        startY = e.touches[0].clientY;
+        sheet.style.transition = 'none';
+      },
+      { passive: true }
+    );
+    sheet.addEventListener(
+      'touchmove',
+      (e) => {
+        if (sheet.scrollTop > 0) return;
+        currentY = e.touches[0].clientY - startY;
+        if (currentY > 0) sheet.style.transform = `translateY(${currentY}px)`;
+      },
+      { passive: true }
+    );
     sheet.addEventListener('touchend', () => {
       sheet.style.transition = '';
       if (currentY > 120) close();
@@ -868,5 +1077,22 @@ export const AthleteRoom = (() => {
     });
   }
 
-  return { open, close, switchTab, editName, cancelEdit, saveName, cycleColor, selectColor, selectFrame, initAvatar, triggerPhotoUpload, handlePhotoSelected, removePhoto, editStat, cancelStatEdit, saveStat };
+  return {
+    open,
+    close,
+    switchTab,
+    editName,
+    cancelEdit,
+    saveName,
+    cycleColor,
+    selectColor,
+    selectFrame,
+    initAvatar,
+    triggerPhotoUpload,
+    handlePhotoSelected,
+    removePhoto,
+    editStat,
+    cancelStatEdit,
+    saveStat,
+  };
 })();

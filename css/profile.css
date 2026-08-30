@@ -187,7 +187,9 @@
    контейнер вокруг тумблера, подсвечивать его = обещать несуществующий тап. */
 button.pref-row-icon,
 .pref-row-icon[data-action] {
-  transition: transform var(--t-fast), background var(--t-fast);
+  transition:
+    transform var(--t-fast),
+    background var(--t-fast);
 }
 button.pref-row-icon:active,
 .pref-row-icon[data-action]:active {
@@ -209,7 +211,6 @@ button.pref-row-icon:active,
   margin-top: 1px;
 }
 
-
 /* ── AI Engine Toggles ── */
 .engine-toggle-grid {
   display: grid;
@@ -230,7 +231,12 @@ button.pref-row-icon:active,
   background: transparent;
   color: var(--c-text-3);
   cursor: pointer;
-  transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+  transition:
+    opacity var(--t-fast),
+    transform var(--t-fast),
+    background-color var(--t-fast),
+    border-color var(--t-fast),
+    color var(--t-fast);
   position: relative;
 }
 .engine-toggle-btn:active {
@@ -269,9 +275,18 @@ button.pref-row-icon:active,
 }
 
 @keyframes engine-pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.2); opacity: 0.7; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ── Toggle group ── */
@@ -294,7 +309,12 @@ button.pref-row-icon:active,
   cursor: pointer;
   font-family: inherit;
   letter-spacing: 0.04em;
-  transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+  transition:
+    opacity var(--t-fast),
+    transform var(--t-fast),
+    background-color var(--t-fast),
+    border-color var(--t-fast),
+    color var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
 .toggle-btn:active {
@@ -391,8 +411,15 @@ button.pref-row-icon:active,
   height: 22px;
   border-radius: 50%;
   background: white;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.1);
-  transition: opacity 0.25s var(--ease-std), transform 0.25s var(--ease-std), background-color 0.25s var(--ease-std), border-color 0.25s var(--ease-std), color 0.25s var(--ease-std);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.15),
+    0 1px 1px rgba(0, 0, 0, 0.1);
+  transition:
+    opacity 0.25s var(--ease-std),
+    transform 0.26s var(--ease-spring),
+    background-color 0.25s var(--ease-std),
+    border-color 0.25s var(--ease-std),
+    color 0.25s var(--ease-std);
 }
 .switch.on .switch-thumb {
   transform: translateX(18px);
@@ -498,8 +525,8 @@ button.pref-row-icon:active,
 
 /* ── Danger Zone ── */
 .danger-btn {
-  width: 250px;             
-  height: 46px;             
+  width: 250px;
+  height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -508,14 +535,19 @@ button.pref-row-icon:active,
   border: 1.2px solid rgba(255, 77, 136, 0.3);
   border-radius: var(--r-m);
   color: var(--c-red);
-  font-size: var(--fs-2);          
+  font-size: var(--fs-2);
   font-weight: var(--fw-md);
   cursor: pointer;
-  transition: opacity var(--t-fast), transform var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+  transition:
+    opacity var(--t-fast),
+    transform var(--t-fast),
+    background-color var(--t-fast),
+    border-color var(--t-fast),
+    color var(--t-fast);
   margin: var(--sp-1) auto 0;
 }
 .danger-btn svg {
-  width: 15px;              
+  width: 15px;
   height: 15px;
 }
 .danger-btn:active {
@@ -526,7 +558,9 @@ button.pref-row-icon:active,
 .danger-btn.slide-out {
   transform: translateX(-150vw);
   opacity: 0;
-  transition: transform 0.4s var(--ease-std), opacity 0.4s ease;
+  transition:
+    transform 0.4s var(--ease-std),
+    opacity 0.4s ease;
 }
 .danger-btn.armed {
   background: var(--c-red);
@@ -535,8 +569,13 @@ button.pref-row-icon:active,
   animation: pulse-red 1s infinite;
 }
 @keyframes pulse-red {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* ════════════════════════════════════════════════
@@ -560,7 +599,11 @@ button.pref-row-icon:active,
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, color-mix(in srgb, var(--c-secondary) 15%, transparent) 0%, transparent 70%);
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--c-secondary) 15%, transparent) 0%,
+    transparent 70%
+  );
   filter: blur(20px);
   z-index: -1;
   pointer-events: none;
@@ -585,8 +628,13 @@ button.pref-row-icon:active,
   color: var(--c-text-1);
   letter-spacing: -0.04em;
   cursor: pointer;
-  transition: opacity 0.2s var(--ease-std), transform 0.2s var(--ease-std), background-color 0.2s var(--ease-std), border-color 0.2s var(--ease-std), color 0.2s var(--ease-std);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+  transition:
+    opacity 0.2s var(--ease-std),
+    transform 0.2s var(--ease-std),
+    background-color 0.2s var(--ease-std),
+    border-color 0.2s var(--ease-std),
+    color 0.2s var(--ease-std);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .pp-avatar-v2:active {
@@ -645,11 +693,17 @@ button.pref-row-icon:active,
   border: 1px solid color-mix(in srgb, var(--tier-c) 20%, transparent);
 }
 
-.pp-tier-pill-v2[data-tier="Untrained"] { --tier-c: var(--c-text-3); }
-.pp-tier-pill-v2[data-tier="Novice"],
-.pp-tier-pill-v2[data-tier="Intermediate"] { --tier-c: var(--c-text-2); }
-.pp-tier-pill-v2[data-tier="Advanced"],
-.pp-tier-pill-v2[data-tier="Elite"] { --tier-c: var(--c-text-1); }
+.pp-tier-pill-v2[data-tier='Untrained'] {
+  --tier-c: var(--c-text-3);
+}
+.pp-tier-pill-v2[data-tier='Novice'],
+.pp-tier-pill-v2[data-tier='Intermediate'] {
+  --tier-c: var(--c-text-2);
+}
+.pp-tier-pill-v2[data-tier='Advanced'],
+.pp-tier-pill-v2[data-tier='Elite'] {
+  --tier-c: var(--c-text-1);
+}
 
 /* Score — achievement semantics (gold), glow derived from the token */
 .pp-tier-score {
@@ -669,7 +723,9 @@ button.pref-row-icon:active,
 .pp-percentile-pill[data-action] {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform var(--t-fast), background var(--t-fast);
+  transition:
+    transform var(--t-fast),
+    background var(--t-fast);
 }
 .pp-tier-pill-v2[data-action]:active,
 .pp-percentile-pill[data-action]:active {
@@ -760,9 +816,6 @@ button.pref-row-icon:active,
 
 /* ── Breathable Bento adjustment ── */
 
-
-
-
 /* ── Bento: три ячейки в ряд ──
    Было 2×2, но PP-3 убрала ячейку DOTS (разбор скора переехал на вкладку
    «Сила»). Три равные колонки вместо сетки с дырой в правом нижнем углу. */
@@ -777,7 +830,11 @@ button.pref-row-icon:active,
   content: '';
   position: absolute;
   inset: -10px;
-  background: radial-gradient(circle at center, color-mix(in srgb, var(--c-secondary) 8%, transparent) 0%, transparent 60%);
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--c-secondary) 8%, transparent) 0%,
+    transparent 60%
+  );
   filter: blur(20px);
   z-index: -1;
   pointer-events: none;
@@ -791,7 +848,10 @@ button.pref-row-icon:active,
   gap: var(--sp-0-5);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: box-shadow var(--t-normal), background var(--t-normal), transform var(--t-fast);
+  transition:
+    box-shadow var(--t-normal),
+    background var(--t-normal),
+    transform var(--t-fast);
   min-height: 76px; /* Slightly decreased height */
   justify-content: center;
 }
@@ -928,7 +988,9 @@ button.pref-row-icon:active,
   border: 1px solid var(--c-border);
 }
 
-.lift-dot.filled { border: none; }
+.lift-dot.filled {
+  border: none;
+}
 
 .lift-stats-v2 {
   width: 54px;
@@ -963,10 +1025,18 @@ button.pref-row-icon:active,
 .pp-bento-cell {
   animation: card-in 0.3s var(--ease-std) both;
 }
-.pp-bento-cell:nth-child(1) { animation-delay: 0.06s; }
-.pp-bento-cell:nth-child(2) { animation-delay: 0.10s; }
-.pp-bento-cell:nth-child(3) { animation-delay: 0.14s; }
-.pp-bento-cell:nth-child(4) { animation-delay: 0.18s; }
+.pp-bento-cell:nth-child(1) {
+  animation-delay: 0.06s;
+}
+.pp-bento-cell:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.pp-bento-cell:nth-child(3) {
+  animation-delay: 0.14s;
+}
+.pp-bento-cell:nth-child(4) {
+  animation-delay: 0.18s;
+}
 .pp-card {
   animation: card-in 0.3s var(--ease-std) 0.08s both;
 }
@@ -975,15 +1045,27 @@ button.pref-row-icon:active,
 .lift-row-v2 {
   animation: card-in 0.28s var(--ease-std) both;
 }
-.lift-row-v2:nth-child(1) { animation-delay: 0.06s; }
-.lift-row-v2:nth-child(2) { animation-delay: 0.11s; }
-.lift-row-v2:nth-child(3) { animation-delay: 0.16s; }
-.lift-row-v2:nth-child(4) { animation-delay: 0.21s; }
+.lift-row-v2:nth-child(1) {
+  animation-delay: 0.06s;
+}
+.lift-row-v2:nth-child(2) {
+  animation-delay: 0.11s;
+}
+.lift-row-v2:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.lift-row-v2:nth-child(4) {
+  animation-delay: 0.21s;
+}
 
 /* ── Lift bar grow animation ── */
 @keyframes bar-grow {
-  from { width: 0; }
-  to   { width: var(--bar-w, 0%); }
+  from {
+    width: 0;
+  }
+  to {
+    width: var(--bar-w, 0%);
+  }
 }
 
 /* ── BYOK: индикатор коннекта ключа ──────────────────────────────────────────
@@ -1005,7 +1087,9 @@ button.pref-row-icon:active,
   border-radius: var(--r-pill);
   flex-shrink: 0;
   background: var(--c-text-3);
-  transition: background var(--t-normal), box-shadow var(--t-normal);
+  transition:
+    background var(--t-normal),
+    box-shadow var(--t-normal);
 }
 
 .key-conn-label {
@@ -1030,47 +1114,89 @@ button.pref-row-icon:active,
   display: flex;
   align-items: center;
   cursor: pointer;
-  transition: color var(--t-fast), transform var(--t-fast);
+  transition:
+    color var(--t-fast),
+    transform var(--t-fast);
 }
-.key-conn-recheck:active { transform: scale(0.9); }
+.key-conn-recheck:active {
+  transform: scale(0.9);
+}
 
 /* Проверка — пульс: живое ожидание вместо замершей серой точки. */
-.key-conn[data-state="checking"] .key-conn-dot {
+.key-conn[data-state='checking'] .key-conn-dot {
   background: var(--c-blue);
   animation: key-conn-pulse 1s var(--ease-std) infinite;
 }
-.key-conn[data-state="checking"] .key-conn-label { color: var(--c-blue); }
+.key-conn[data-state='checking'] .key-conn-label {
+  color: var(--c-blue);
+}
 
-.key-conn[data-state="ok"] .key-conn-dot {
+.key-conn[data-state='ok'] .key-conn-dot {
   background: var(--c-accent);
   box-shadow: 0 0 8px var(--c-accent);
   animation: key-conn-pop 0.4s var(--ease-spring) both;
 }
-.key-conn[data-state="ok"] .key-conn-label { color: var(--c-accent); }
+.key-conn[data-state='ok'] .key-conn-label {
+  color: var(--c-accent);
+}
 
-.key-conn[data-state="invalid"] .key-conn-dot { background: var(--c-red); }
-.key-conn[data-state="invalid"] .key-conn-label { color: var(--c-red); }
-.key-conn[data-state="invalid"].is-swap { animation: key-conn-shake 0.3s var(--ease-out) both; }
+.key-conn[data-state='invalid'] .key-conn-dot {
+  background: var(--c-red);
+}
+.key-conn[data-state='invalid'] .key-conn-label {
+  color: var(--c-red);
+}
+.key-conn[data-state='invalid'].is-swap {
+  animation: key-conn-shake 0.3s var(--ease-out) both;
+}
 
-.key-conn[data-state="offline"] .key-conn-dot,
-.key-conn[data-state="blocked"] .key-conn-dot { background: var(--c-amber); }
-.key-conn[data-state="offline"] .key-conn-label,
-.key-conn[data-state="blocked"] .key-conn-label { color: var(--c-amber); }
+.key-conn[data-state='offline'] .key-conn-dot,
+.key-conn[data-state='blocked'] .key-conn-dot {
+  background: var(--c-amber);
+}
+.key-conn[data-state='offline'] .key-conn-label,
+.key-conn[data-state='blocked'] .key-conn-label {
+  color: var(--c-amber);
+}
 
 @keyframes key-conn-swap {
-  from { opacity: 0; transform: translateY(3px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes key-conn-pulse {
-  0%, 100% { transform: scale(1);   opacity: 1; }
-  50%      { transform: scale(1.5); opacity: 0.45; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.45;
+  }
 }
 @keyframes key-conn-pop {
-  0%   { transform: scale(0.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(0.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 @keyframes key-conn-shake {
-  0%, 100% { transform: translateX(0); }
-  25%      { transform: translateX(-3px); }
-  75%      { transform: translateX(3px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
 }

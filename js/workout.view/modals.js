@@ -7,6 +7,7 @@
 import { Toast } from '../shell.js';
 import { esc } from '../shared/utils.js';
 import { confirmDialog } from '../shared/confirm.js';
+import { mountSegPills } from '../ui/seg-pill.js';
 import { t } from '../locale.store.js';
 import { on, onChange, onInput } from '../events.js';
 
@@ -228,6 +229,7 @@ export function openPlanEditor() {
           ${esc(t('train.save_plan'))}
         </button>
       </div>`;
+    requestAnimationFrame(() => mountSegPills(overlay));
   }
 
   render();
