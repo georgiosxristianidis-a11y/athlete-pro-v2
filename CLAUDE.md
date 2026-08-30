@@ -69,7 +69,7 @@
 ```bash
 npm test                # node --test (unit + integration)
 npx playwright test     # e2e (отдельно)
-npm run smoke:prod      # доехал ли релиз до прода; --wait 180 = поллить
+npm run smoke:prod -- --wait 180   # релиз доехал? без -- флаг съест npm
 ```
 
 **Счёт тестов не хардкодить** — добывать командой:
