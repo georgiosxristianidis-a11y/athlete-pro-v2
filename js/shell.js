@@ -1,6 +1,6 @@
 'use strict';
 import { State } from './workout.store.js';
-import { haptic } from './shared/utils.js';
+import { haptic, listenerGroup } from './shared/utils.js';
 import { ensureScreenCss } from './shared/lazy-css.js';
 
 /* ════════════════════════════════════════════════════════
@@ -86,20 +86,97 @@ async function go(id, opts = {}) {
   await _transitionQueue;
 }
 
-export const Nav = { on, go, current: () => _current };
+/**
+ * Реестр полноэкранных оверлеев. Back/Escape закрывают верхний, который
+ * реально перекрывает вьюпорт (elementFromPoint), а не листают экран под ним.
+ * В этой карточке подключается только Athlete Room; остальные оверлеи — своими.
+ * @typedef {{ id: string, el: Element, close: () => void }} OverlayEntry
+ * @type {OverlayEntry[]}
+ */
+const _overlays = [];
+let _popClosing = false;
+
+function _coversViewport(el) {
+  if (!el || el.isConnected === false) return false;
+  const r = el.getBoundingClientRect?.();
+  if (!r || r.width < 1 || r.height < 1) return false;
+  const hit = document.elementFromPoint?.(r.left + r.width / 2, r.top + r.height / 2);
+  if (!hit) return false;
+  return hit === el || (typeof el.contains === 'function' && el.contains(hit));
+}
+
+function _topCovering() {
+  for (let i = _overlays.length - 1; i >= 0; i--) {
+    if (_coversViewport(_overlays[i].el)) return _overlays[i];
+  }
+  return null;
+}
+
+function _dismissCoveringOverlay() {
+  const top = _topCovering();
+  if (!top) return false;
+  _popClosing = true;
+  try {
+    const i = _overlays.lastIndexOf(top);
+    if (i >= 0) _overlays.splice(i, 1);
+    top.close();
+  } finally {
+    _popClosing = false;
+  }
+  return true;
+}
+
+/**
+ * Зарегистрировать открытый оверлей: кладёт запись в history, чтобы Back на
+ * корневом экране закрыл слой, а не приложение.
+ * @param {OverlayEntry} entry
+ */
+function registerOverlay(entry) {
+  if (!entry?.id || !entry.el || typeof entry.close !== 'function') return;
+  if (_overlays.some((o) => o.id === entry.id)) return;
+  _overlays.push(entry);
+  if (history.state?.overlay !== entry.id) {
+    history.pushState({ screen: _current, overlay: entry.id }, '');
+  }
+}
+
+/**
+ * Снять оверлей из реестра. Если закрыли не через popstate (кнопка внутри) —
+ * pop-аем лишнюю запись, чтобы следующий Back ушёл на предыдущий экран.
+ * @param {string} id
+ */
+function unregisterOverlay(id) {
+  const i = _overlays.findLastIndex((o) => o.id === id);
+  if (i < 0) return;
+  _overlays.splice(i, 1);
+  if (!_popClosing && history.state?.overlay === id) history.back();
+}
+
+export const Nav = { on, go, current: () => _current, registerOverlay, unregisterOverlay };
 
 /* Системная «назад» (Android back / iOS edge-swipe): каждый переход кладёт
    запись в history, popstate возвращает на предыдущий экран вместо выхода
    из PWA. Корневая запись — replaceState, поэтому «назад» на s-home
-   закрывает приложение (ожидаемое поведение). */
+   закрывает приложение (ожидаемое поведение). Оверлей в history — отдельная
+   запись: первый Back закрывает его, экран под ним не трогает. */
 if (!history.state?.screen) {
   history.replaceState({ screen: _current }, '');
 }
 window.addEventListener('popstate', (e) => {
+  if (_dismissCoveringOverlay()) return;
   const screen = e.state?.screen;
   if (screen && document.getElementById(screen)) {
     go(screen, { fromPop: true });
   }
+});
+
+/* Escape = тот же первый Back: закрыть перекрывающий оверлей. listenerGroup,
+   а не сырой window.addEventListener — иначе краснеет потолок LEAK-1. */
+listenerGroup().add('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (!_topCovering()) return;
+  e.preventDefault();
+  history.back();
 });
 
 /* ════════════════════════════════════════════════

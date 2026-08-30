@@ -182,6 +182,8 @@ export const AthleteRoom = (() => {
     _overlay.innerHTML = `<div class="ar-loader"></div>`;
     _overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
+    // F-10: комната не экран, в history её не было — Back листал то, что под ней.
+    window.Nav?.registerOverlay({ id: 'athlete-room', el: _overlay, close });
 
     // Athlete Room — оверлей поверх ЛЮБОГО экрана, а не экран: в SCREEN_CSS
     // (lazy-css.js) его нет, и ensureScreenCss за него не отработает никогда.
@@ -200,6 +202,7 @@ export const AthleteRoom = (() => {
     if (!_overlay) return;
     _overlay.classList.remove('open');
     document.body.style.overflow = '';
+    window.Nav?.unregisterOverlay('athlete-room');
     setTimeout(() => { _overlay.innerHTML = ''; }, 350);
   }
 
