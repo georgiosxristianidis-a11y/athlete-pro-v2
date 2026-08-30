@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### LAUNCH-9 F-7/F-8 — явный выбор пола и приватности (1.27.87)
+
+Шаг «Био» подсвечивал «М» до первого касания: `_data.sex` стартовал как `m`,
+и гейт пропускал шаг без выбора. Шаг «Приватность» держал `_navButtons(true)` —
+Continue была активна при нулевом выборе, в профиль уезжал `airgap` без осознанного
+тапа. Пустые дефолты, Continue заблокирована, Fast Skip по-прежнему показывает
+заглушки и ждёт подтверждения. Гард — `test/onboarding-defaults.test.js`.
+
 ### Privacy — P.A.N.D.A. Core respects the AI gate (1.27.86)
 
 Chat, weekly report, biometrics and TTS on `s-intel` went through raw
@@ -23,19 +31,6 @@ buffer (a split `data:` frame no longer drops tokens) and surfaces mid-stream
 onboarding commit cannot brick Train.
 
 ### VOICE-1 — озвучка коуча перестала падать на пустом ключе Gemini (1.27.85)
-
-`POST /api/coach/tts` отвечал `400 Invalid input schema` каждому, у кого не
-заведён свой ключ Gemini: фронт читал `gemini-key` из IndexedDB, получал `null`
-(дефолт `DB.Settings.get`) и слал его в теле, а `ttsSchema` валидировала
-`customKey` как `z.string().optional()` — `null` такой схеме не подходит.
-Запрос умирал на входе, так и не дав серверу взять ключ из окружения, и голос
-молчал молча: `speakText()` пишет отказ только в журнал потока. Вылезло после
-PC-1 (1.27.81), где движок стал выбираемым: на Claude поле `gemini-key` пустое
-по определению, а TTS прошит на `gemini-2.5-flash-preview-tts`. Теперь
-`intel.view.js` схлопывает отсутствующий ключ в `undefined` (`JSON.stringify`
-выбрасывает поле сам), а схема принимает `nullish` — чужой `null` больше не
-роняет чужой запрос. Гарды: `ttsSchema` в `test/coach-validate.test.js` и
-статическая проверка тела в `test/intel-engine-wiring.test.js`.
 
 ### LAUNCH-9 F-11 — имена контролов и модальный онбординг (1.27.84)
 
