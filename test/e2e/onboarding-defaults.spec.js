@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3003';
+// CI webServer listens on 3000 (playwright.config.js); 3003 was local-only.
+const BASE = process.env.E2E_BASE || 'http://localhost:3000';
 
 async function reachBioStep(page) {
   await page.locator('.ob-card[data-key="strength"]').click();
