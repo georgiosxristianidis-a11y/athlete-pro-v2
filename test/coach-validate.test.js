@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { coachSchema } from '../routes/coach.js';
+import { coachSchema, ttsSchema } from '../routes/coach.js';
 
 const validMsg = { role: 'user', content: 'Hello coach' };
 
@@ -117,5 +117,37 @@ describe('coachSchema — context fields and defaults', () => {
     const r = parse({ messages: [validMsg], evil: 'payload' });
     assert.equal(r.success, true);
     assert.equal('evil' in r.data, false);
+  });
+});
+
+/* Карточка VOICE-1. «Ключа нет» приезжает с фронта как null — DB.Settings.get
+   отдаёт именно его, а не undefined. При `customKey: z.string().optional()`
+   схема резала такой запрос 400-м, и озвучка молчала даже там, где серверный
+   ключ Gemini был на месте. */
+describe('ttsSchema — customKey отсутствует', () => {
+  const parseTts = (body) => ttsSchema.safeParse(body);
+
+  test('customKey: null → принят (ключа нет, сервер берёт свой)', () => {
+    const r = parseTts({ text: 'Привет', customKey: null });
+    assert.equal(r.success, true);
+    assert.ok(!r.data.customKey, 'null не должен подменять серверный ключ');
+  });
+
+  test('поля customKey нет вовсе → принят', () => {
+    assert.equal(parseTts({ text: 'Привет' }).success, true);
+  });
+
+  test('customKey строкой → принят и доезжает до маршрута', () => {
+    const r = parseTts({ text: 'Привет', customKey: 'AIzaKEY' });
+    assert.equal(r.success, true);
+    assert.equal(r.data.customKey, 'AIzaKEY');
+  });
+
+  test('customKey числом → отвергнут', () => {
+    assert.equal(parseTts({ text: 'Привет', customKey: 42 }).success, false);
+  });
+
+  test('пустой text → отвергнут', () => {
+    assert.equal(parseTts({ text: '' }).success, false);
   });
 });

@@ -30,6 +30,25 @@ test("intel.view.js has no literal engine: 'gemini' — requests go through aiAu
   );
 });
 
+/* Карточка VOICE-1. Сырое `customKey: await DB.Settings.get('gemini-key')`
+   отправляло в тело null, когда ключ не сохранён, а ttsSchema принимает
+   строку — запрос умирал 400-м, не дойдя до серверного ключа. Значение
+   обязано схлопываться в undefined: JSON.stringify выбросит поле сам. */
+test('TTS never sends a raw null customKey — no key means no field', () => {
+  const line = tts.split('\n').find((l) => l.includes('customKey:'));
+  assert.ok(line, 'поле customKey исчезло из тела запроса TTS');
+  assert.doesNotMatch(
+    line,
+    /customKey:\s*await/,
+    'сырое чтение ключа прямо в теле — вернулся null → 400 на пустом gemini-key'
+  );
+  assert.match(
+    line,
+    /undefined/,
+    'отсутствующий ключ обязан становиться undefined, иначе схема режет запрос'
+  );
+});
+
 test("gemini-key is read only inside TTS — text requests use the selected engine's key", () => {
   assert.match(
     tts,
