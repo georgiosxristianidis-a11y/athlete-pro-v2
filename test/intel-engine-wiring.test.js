@@ -49,6 +49,32 @@ test('TTS never sends a raw null customKey — no key means no field', () => {
   );
 });
 
+test('P.A.N.D.A. Core coach requests go through safeFetch kind=ai, not raw fetch', () => {
+  assert.match(
+    SRC,
+    /import\s*\{[^}]*\bsafeFetch\b[^}]*\}\s*from\s*['"]\.\/privacy\.store\.js['"]/,
+    'intel.view.js must import safeFetch — raw fetch bypasses the AI privacy gate'
+  );
+  assert.equal(
+    /(?<!safe)fetch\(\s*['"`]\/api\/coach/.test(SRC),
+    false,
+    'raw fetch(/api/coach…) leaks workouts after the user turns AI off'
+  );
+  const calls = SRC.split('safeFetch(').slice(1);
+  assert.equal(calls.length, 4, 'chat, tts, weekly, biometrics — each one safeFetch');
+  const paths = [
+    '/api/coach',
+    '/api/coach/tts',
+    '/api/coach/weekly-report',
+    '/api/coach/biometrics-scan',
+  ];
+  for (const path of paths) {
+    const hit = calls.find((c) => c.includes(`'${path}'`) || c.includes(`"${path}"`));
+    assert.ok(hit, `${path} must go through safeFetch`);
+    assert.match(hit, /['"]ai['"]/, `${path} must pass kind 'ai'`);
+  }
+});
+
 test("gemini-key is read only inside TTS — text requests use the selected engine's key", () => {
   assert.match(
     tts,

@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Privacy — P.A.N.D.A. Core respects the AI gate (1.27.86)
+
+Chat, weekly report, biometrics and TTS on `s-intel` went through raw
+`fetch()`. Turning AI off in Privacy (or sitting in airgap without a live SW)
+still sent workout history and profile to `/api/coach*`. Dashboard coach
+already used `safeFetch(..., 'ai')`. Core now does the same; the throw maps
+to a privacy message, not a generic failure.
+
 ### VOICE-1 — озвучка коуча перестала падать на пустом ключе Gemini (1.27.85)
 
 `POST /api/coach/tts` отвечал `400 Invalid input schema` каждому, у кого не
