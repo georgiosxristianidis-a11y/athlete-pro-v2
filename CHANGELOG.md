@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Motion — compositor-only switch, tab pill, shake, stepper (#290, 1.27.83)
+
+Тумблер в Профиле едет на `--ease-spring`. Сегменты недели / плана / Athlete Room
+получили пилюлю на `translateX`+`scaleX` (не `left`/`width`). Невалидный вес/рост
+в комнате трясёт поле вместо тихого закрытия. Цифра веса/повторов тикает ≤150ms.
+Rest-бар, `.set-check` и `island-set-pulse` не тронуты.
+
 ### LAUNCH-9 F-10 — системный Back закрывает Athlete Room (1.27.82)
 
 Аппаратный Back под открытой комнатой листал экран под ней: было `s-train`,
