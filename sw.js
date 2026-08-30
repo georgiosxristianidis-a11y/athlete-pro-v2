@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-9e76d3f3';
+const CACHE_NAME = 'athlete-pro-v121-53da3856';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -118,6 +118,7 @@ const ASSETS_WARM = [
   '/js/shared/block-ticks.js',
   '/js/shared/csv-export.js',
   '/js/shared/download.js',
+  '/js/shared/field-shake.js',
   '/js/shared/lww.js',
   '/js/shared/ppl-color.js',
   '/js/shared/sync-merge.js',
@@ -129,6 +130,7 @@ const ASSETS_WARM = [
   '/js/ui/drum-picker.js',
   '/js/ui/gravity-submit.js',
   '/js/ui/receipt.js',
+  '/js/ui/seg-pill.js',
   '/js/usage.js',
   '/js/workers/crypto.worker.js',
   '/js/workout-ai.view.js',

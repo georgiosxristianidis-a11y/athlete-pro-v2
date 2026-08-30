@@ -68,7 +68,7 @@ export function stepWeight(ei, si, delta) {
   const set = ex.sets[si];
   if (!set) return;
   set.weight = Math.max(0, (set.weight || 0) + delta);
-  _updateStepperUI('w', ei, si, set.weight, set.weight <= 0);
+  _updateStepperUI('w', ei, si, set.weight, set.weight <= 0, true);
   _updateLiveStats();
   persistSession();
 }
@@ -79,16 +79,27 @@ export function stepReps(ei, si, delta) {
   const set = ex.sets[si];
   if (!set) return;
   set.reps = Math.max(1, (set.reps || 0) + delta);
-  _updateStepperUI('r', ei, si, set.reps, set.reps <= 1);
+  _updateStepperUI('r', ei, si, set.reps, set.reps <= 1, true);
   _updateLiveStats();
   persistSession();
 }
 
-function _updateStepperUI(type, ei, si, val, atMin) {
+function _bumpStepperVal(valEl) {
+  if (!valEl) return;
+  valEl.classList.remove('bump');
+  void valEl.offsetWidth;
+  valEl.classList.add('bump');
+  valEl.addEventListener('animationend', () => valEl.classList.remove('bump'), { once: true });
+}
+
+function _updateStepperUI(type, ei, si, val, atMin, bump = false) {
   const prefix = type === 'w' ? 'sw' : 'sr';
   const valEl = document.getElementById(`${prefix}v-${ei}-${si}`);
   const inpEl = document.getElementById(`${prefix}i-${ei}-${si}`);
-  if (valEl) valEl.textContent = val;
+  if (valEl) {
+    valEl.textContent = val;
+    if (bump) _bumpStepperVal(valEl);
+  }
   if (inpEl) inpEl.value = val;
   syncDrum(type, ei, si, val);
 }
@@ -114,7 +125,7 @@ export function commitVal(ei, si, type, val) {
   const num = parseFloat(val);
   if (type === 'w') set.weight = isNaN(num) ? 0 : num;
   else set.reps = isNaN(num) ? 1 : Math.round(num);
-  _updateStepperUI(type, ei, si, type === 'w' ? set.weight : set.reps, false);
+  _updateStepperUI(type, ei, si, type === 'w' ? set.weight : set.reps, false, true);
 }
 
 /* ════════════════════════════════════════════════════════
@@ -729,8 +740,8 @@ export function smartCopy(ei, si) {
   if (source) {
     set.weight = source.weight;
     set.reps = source.reps;
-    _updateStepperUI('w', ei, si, set.weight, set.weight <= 0);
-    _updateStepperUI('r', ei, si, set.reps, set.reps <= 1);
+    _updateStepperUI('w', ei, si, set.weight, set.weight <= 0, true);
+    _updateStepperUI('r', ei, si, set.reps, set.reps <= 1, true);
     _updateLiveStats();
     persistSession();
     Toast.show(t('train.data_copied'), 'info', 1000);
@@ -752,7 +763,7 @@ export async function smartCoach(ei, si) {
   }
   const lastWeight = Math.max(...lastEx.sets.map((s) => s.weight));
   set.weight = lastWeight + 2.5;
-  _updateStepperUI('w', ei, si, set.weight, set.weight <= 0);
+  _updateStepperUI('w', ei, si, set.weight, set.weight <= 0, true);
   _updateLiveStats();
   persistSession();
   Toast.show(t('train.turbo'), 'success');

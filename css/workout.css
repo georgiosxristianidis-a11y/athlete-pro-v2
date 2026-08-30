@@ -19,42 +19,114 @@
    намеренная асимметрия инсета (`.live-hero`), эллипсис имени на 375px
    (`.ex-header-actions`) и дифференциал активной строки (`.set-row`). */
 
-.type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-1-5); margin-bottom: var(--sp-3); max-width: 480px; }
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-1-5);
+  margin-bottom: var(--sp-3);
+  max-width: 480px;
+}
 .type-card {
-  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-  height: 200px; padding: var(--sp-4) var(--sp-1) var(--sp-3);
-  background: color-mix(in srgb, var(--c-text-1) 2%, transparent); 
-  border: 1px solid var(--c-border); 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 200px;
+  padding: var(--sp-4) var(--sp-1) var(--sp-3);
+  background: color-mix(in srgb, var(--c-text-1) 2%, transparent);
+  border: 1px solid var(--c-border);
   cursor: pointer;
-  transition: opacity 0.3s var(--ease-std), transform 0.3s var(--ease-std), background-color 0.3s var(--ease-std), border-color 0.3s var(--ease-std), color 0.3s var(--ease-std);
-  -webkit-tap-highlight-color: transparent; 
+  transition:
+    opacity 0.3s var(--ease-std),
+    transform 0.3s var(--ease-std),
+    background-color 0.3s var(--ease-std),
+    border-color 0.3s var(--ease-std),
+    color 0.3s var(--ease-std);
+  -webkit-tap-highlight-color: transparent;
   position: relative;
   overflow: hidden;
 }
-.type-card:hover { background: var(--c-surface); transform: translateY(-2px); }
-.type-card:active { transform: scale(var(--press-scale)); background: var(--c-border); }
+.type-card:hover {
+  background: var(--c-surface);
+  transform: translateY(-2px);
+}
+.type-card:active {
+  transform: scale(var(--press-scale));
+  background: var(--c-border);
+}
 
 /* Glow variants — Refined Intensity */
-.type-card[data-type="push"] { background: color-mix(in srgb, var(--c-accent) 4%, transparent); border-color: color-mix(in srgb, var(--c-accent) 10%, transparent); }
-.type-card[data-type="pull"] { background: color-mix(in srgb, var(--c-pull) 4%, transparent); border-color: color-mix(in srgb, var(--c-pull) 10%, transparent); }
-.type-card[data-type="legs"] { background: color-mix(in srgb, var(--c-legs) 4%, transparent); border-color: color-mix(in srgb, var(--c-legs) 10%, transparent); }
+.type-card[data-type='push'] {
+  background: color-mix(in srgb, var(--c-accent) 4%, transparent);
+  border-color: color-mix(in srgb, var(--c-accent) 10%, transparent);
+}
+.type-card[data-type='pull'] {
+  background: color-mix(in srgb, var(--c-pull) 4%, transparent);
+  border-color: color-mix(in srgb, var(--c-pull) 10%, transparent);
+}
+.type-card[data-type='legs'] {
+  background: color-mix(in srgb, var(--c-legs) 4%, transparent);
+  border-color: color-mix(in srgb, var(--c-legs) 10%, transparent);
+}
 
-.type-card[data-type="push"]:hover, .type-card[data-type="push"]:active { background: color-mix(in srgb, var(--c-accent) 8%, transparent); border-color: color-mix(in srgb, var(--c-accent) 30%, transparent); box-shadow: 0 10px 30px color-mix(in srgb, var(--c-accent) 15%, transparent); }
-.type-card[data-type="pull"]:hover, .type-card[data-type="pull"]:active { background: color-mix(in srgb, var(--c-pull) 8%, transparent); border-color: color-mix(in srgb, var(--c-pull) 30%, transparent); box-shadow: 0 10px 30px color-mix(in srgb, var(--c-pull) 15%, transparent); }
-.type-card[data-type="legs"]:hover, .type-card[data-type="legs"]:active { background: color-mix(in srgb, var(--c-legs) 8%, transparent); border-color: color-mix(in srgb, var(--c-legs) 30%, transparent); box-shadow: 0 10px 30px color-mix(in srgb, var(--c-legs) 15%, transparent); }
+.type-card[data-type='push']:hover,
+.type-card[data-type='push']:active {
+  background: color-mix(in srgb, var(--c-accent) 8%, transparent);
+  border-color: color-mix(in srgb, var(--c-accent) 30%, transparent);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--c-accent) 15%, transparent);
+}
+.type-card[data-type='pull']:hover,
+.type-card[data-type='pull']:active {
+  background: color-mix(in srgb, var(--c-pull) 8%, transparent);
+  border-color: color-mix(in srgb, var(--c-pull) 30%, transparent);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--c-pull) 15%, transparent);
+}
+.type-card[data-type='legs']:hover,
+.type-card[data-type='legs']:active {
+  background: color-mix(in srgb, var(--c-legs) 8%, transparent);
+  border-color: color-mix(in srgb, var(--c-legs) 30%, transparent);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--c-legs) 15%, transparent);
+}
 
-.type-card-icon { 
-  flex: 1; display: flex; align-items: center; justify-content: center; width: 100%;
+.type-card-icon {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
   position: relative;
 }
 /* Removed redundant pseudo-element glow to clean up the look */
 
-.type-card-text { display: flex; flex-direction: column; align-items: center; gap: var(--sp-0-5); z-index: 1; }
-.type-card-name { font-family: var(--font-heading); font-size: var(--fs-5); font-weight: var(--fw-black); color: var(--c-text-1); letter-spacing: 0.12em; text-transform: uppercase; }
-.type-card-meta { font-size: var(--fs-1); font-weight: var(--fw-black); color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.45em; opacity: 0.7; text-align: center; line-height: 1.4; }
+.type-card-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-0-5);
+  z-index: 1;
+}
+.type-card-name {
+  font-family: var(--font-heading);
+  font-size: var(--fs-5);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.type-card-meta {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.45em;
+  opacity: 0.7;
+  text-align: center;
+  line-height: 1.4;
+}
 
 .kinetic-svg svg {
-  width: 56px; height: 56px;
+  width: 56px;
+  height: 56px;
   filter: drop-shadow(0 0 8px currentColor);
   /* Animation paused by default */
   animation: kinetic-pulse 2s ease-in-out infinite;
@@ -68,11 +140,20 @@
 }
 
 @keyframes kinetic-pulse {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
-.type-icon { display: block; width: 64px; height: 64px; }
+.type-icon {
+  display: block;
+  width: 64px;
+  height: 64px;
+}
 
 /* .btn-text base styles live in base.css (eager-loaded) — see note there. */
 
@@ -84,8 +165,15 @@
    целиком, иначе заголовок разъедется. Значения те же, что у такой же
    пары на дашборде (`.dash-recent-header .btn-text`) — один компонент,
    одна тап-зона. */
-#s-train .section-header { display: flex; align-items: center; justify-content: space-between; }
-#s-train .section-header .btn-text { padding: var(--sp-1-5) var(--sp-1); margin: calc(-1 * var(--sp-1-5)) calc(-1 * var(--sp-1)); }
+#s-train .section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#s-train .section-header .btn-text {
+  padding: var(--sp-1-5) var(--sp-1);
+  margin: calc(-1 * var(--sp-1-5)) calc(-1 * var(--sp-1));
+}
 
 /* Позиционирование приехало из base.css вместе с остальным компонентом (CSS-2).
    Якорь — `.screen-header` (position: relative, base.css § Screen header):
@@ -102,7 +190,12 @@
   border: 1px solid var(--c-border);
   border-radius: var(--r-xl);
   cursor: pointer;
-  transition: opacity 0.2s var(--ease-std), transform 0.2s var(--ease-std), background-color 0.2s var(--ease-std), border-color 0.2s var(--ease-std), color 0.2s var(--ease-std);
+  transition:
+    opacity 0.2s var(--ease-std),
+    transform 0.2s var(--ease-std),
+    background-color 0.2s var(--ease-std),
+    border-color 0.2s var(--ease-std),
+    color 0.2s var(--ease-std);
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
@@ -148,46 +241,217 @@
    это workout-специфичная подача. */
 /* Нижний инсет намеренно меньше верхнего: снизу стоит рельс высотой 4px,
    и симметричные 16 читались бы провалом. --sp-1-5 сохраняет асимметрию. */
-.live-hero { background: var(--c-surface); border-radius: var(--r-xl); padding: var(--sp-2) var(--sp-3) var(--sp-1-5); margin-bottom: var(--sp-3); }
-.live-hero-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-1); }
-.live-hero-num { display: flex; align-items: baseline; gap: var(--sp-0-5); min-width: 0; }
+.live-hero {
+  background: var(--c-surface);
+  border-radius: var(--r-xl);
+  padding: var(--sp-2) var(--sp-3) var(--sp-1-5);
+  margin-bottom: var(--sp-3);
+}
+.live-hero-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-1);
+}
+.live-hero-num {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-0-5);
+  min-width: 0;
+}
 /* `.live-hero-val` и `.stepper-val` ниже намеренно объявлены и здесь, и в
    группе «Data & Digits» base.css: база даёт цифрам общий вид (шрифт заголовка,
    tabular-nums, --fw-md), экран поднимает вес до --fw-black и задаёт размер.
    Пересекается один --fw-*, и перебивается он осознанно (CSS-2). */
-.live-hero-val { font-size: var(--fs-6); font-weight: var(--fw-black); letter-spacing: -0.04em; line-height: 1; color: var(--c-text-1); }
-.live-hero-unit { font-size: var(--fs-1); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-text-3); }
-.live-hero-chip { font-size: var(--fs-1); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-3); opacity: 0.7; white-space: nowrap; }
-.live-rail { display: flex; gap: 3px; margin-top: var(--sp-2); }
-.live-rail-seg { flex: 1; height: 4px; border-radius: 2px; background: var(--c-border-h); transition: background 0.3s ease, box-shadow 0.3s ease; }
-.live-rail-seg.done { background: var(--c-accent); box-shadow: 0 0 6px color-mix(in srgb, var(--c-accent) 45%, transparent); }
+.live-hero-val {
+  font-size: var(--fs-6);
+  font-weight: var(--fw-black);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--c-text-1);
+}
+.live-hero-unit {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-text-3);
+}
+.live-hero-chip {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-3);
+  opacity: 0.7;
+  white-space: nowrap;
+}
+.live-rail {
+  display: flex;
+  gap: 3px;
+  margin-top: var(--sp-2);
+}
+.live-rail-seg {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--c-border-h);
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.live-rail-seg.done {
+  background: var(--c-accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--c-accent) 45%, transparent);
+}
 
-.exercise-card { background: var(--c-bg-2) !important; border: 1.5px solid var(--c-border); overflow: hidden; margin-bottom: var(--sp-3); transition: transform 0.2s, border-color 0.2s; }
-.exercise-header { display: flex; align-items: center; padding: var(--sp-1-5) var(--sp-2); gap: var(--sp-1); cursor: pointer; min-height: 56px; }
-.exercise-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--c-accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.ex-num { font-size: var(--fs-3); font-weight: var(--fw-black); color: var(--c-text-inverse); opacity: 0.35; }
+.exercise-card {
+  background: var(--c-bg-2) !important;
+  border: 1.5px solid var(--c-border);
+  overflow: hidden;
+  margin-bottom: var(--sp-3);
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
+}
+.exercise-header {
+  display: flex;
+  align-items: center;
+  padding: var(--sp-1-5) var(--sp-2);
+  gap: var(--sp-1);
+  cursor: pointer;
+  min-height: 56px;
+}
+.exercise-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ex-num {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-black);
+  color: var(--c-text-inverse);
+  opacity: 0.35;
+}
 
-.exercise-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.exercise-name { font-size: var(--fs-3); font-weight: var(--fw-md); color: var(--c-text-1); display: flex; align-items: center; gap: var(--sp-1); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.exercise-meta { font-size: var(--fs-1); font-weight: var(--fw-md); color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.3; transition: opacity 0.3s; line-height: 1; }
-.exercise-meta.done { opacity: 0.25 !important; }
+.exercise-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.exercise-name {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
+  color: var(--c-text-1);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.exercise-meta {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.3;
+  transition: opacity 0.3s;
+  line-height: 1;
+}
+.exercise-meta.done {
+  opacity: 0.25 !important;
+}
 
 /* ── Header Actions — Premium Distribution ── */
 /* padding-left ушёл вниз (20 → 16, а не 24): имя упражнения в этой строке
    режется эллипсисом на 375px, и освободившиеся 4px достаются ему. */
-.ex-header-actions { display: flex; align-items: center; gap: var(--sp-0-5); margin-left: auto; padding-left: var(--sp-2); padding-right: var(--sp-0-5); flex-shrink: 0; }
-.ex-action-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--c-text-3); cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; border-radius: var(--r-s); opacity: 0.4; font-size: var(--fs-1); font-weight: var(--fw-black); }
-.ex-action-btn:active { transform: scale(var(--press-scale)); background: var(--c-bg-3); opacity: 1; color: var(--c-text-1); }
-.ex-action-btn.active { color: var(--c-accent); opacity: 0.9; }
-.ex-action-btn.coach { color: var(--c-accent); opacity: 0.7; }
-.ex-action-btn svg { width: 14px; height: 14px; stroke-width: 2.2; }
+.ex-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-0-5);
+  margin-left: auto;
+  padding-left: var(--sp-2);
+  padding-right: var(--sp-0-5);
+  flex-shrink: 0;
+}
+.ex-action-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--c-text-3);
+  cursor: pointer;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+  border-radius: var(--r-s);
+  opacity: 0.4;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+}
+.ex-action-btn:active {
+  transform: scale(var(--press-scale));
+  background: var(--c-bg-3);
+  opacity: 1;
+  color: var(--c-text-1);
+}
+.ex-action-btn.active {
+  color: var(--c-accent);
+  opacity: 0.9;
+}
+.ex-action-btn.coach {
+  color: var(--c-accent);
+  opacity: 0.7;
+}
+.ex-action-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.2;
+}
 
-.exercise-chevron { color: var(--c-text-3); opacity: 0.2; transition: transform 0.2s; flex-shrink: 0; }
+.exercise-chevron {
+  color: var(--c-text-3);
+  opacity: 0.2;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
 
 /* ── Sets Section ── */
-.sets-wrap { padding: var(--sp-0-5) var(--sp-2) var(--sp-2); }
-.set-header-row { display: grid; grid-template-columns: 20px 1fr 1fr 44px; gap: var(--sp-1-5); align-items: center; padding: 0 0 var(--sp-1); }
-.set-col-label { font-size: var(--fs-1); font-weight: var(--fw-black); text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-text-3); text-align: center; opacity: 0.3; }
+.sets-wrap {
+  padding: var(--sp-0-5) var(--sp-2) var(--sp-2);
+}
+.set-header-row {
+  display: grid;
+  grid-template-columns: 20px 1fr 1fr 44px;
+  gap: var(--sp-1-5);
+  align-items: center;
+  padding: 0 0 var(--sp-1);
+}
+.set-col-label {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-text-3);
+  text-align: center;
+  opacity: 0.3;
+}
 /* Шапка колонки веса — единственная нажимаемая из трёх: тумблер «свой вес».
    Наследует вид соседних подписей, чтобы строка не разъехалась, но получает
    тап-зону (отрицательный margin гасит сдвиг разметки, приём из .btn-text)
@@ -200,12 +464,20 @@
   padding: var(--sp-1) var(--sp-0-5);
   margin: calc(-1 * var(--sp-1)) calc(-1 * var(--sp-0-5));
   -webkit-tap-highlight-color: transparent;
-  transition: opacity var(--t-fast), color var(--t-fast), transform var(--t-fast);
+  transition:
+    opacity var(--t-fast),
+    color var(--t-fast),
+    transform var(--t-fast);
 }
-.set-col-btn:active { transform: scale(var(--press-scale)); }
+.set-col-btn:active {
+  transform: scale(var(--press-scale));
+}
 /* Включённое состояние обязано быть видно без чтения: подпись выходит из
    30%-шёпота в акцент. Иначе тумблер молчит о том, включён он или нет. */
-.set-col-btn.is-bw { opacity: 1; color: var(--c-accent); }
+.set-col-btn.is-bw {
+  opacity: 1;
+  color: var(--c-accent);
+}
 
 /* gap ушёл вверх (10 → 12) не ради ступени, а ради выравнивания: у шапки
    колонок сетка та же, а gap был 12 — колонки строк не вставали под свои
@@ -214,16 +486,76 @@
    72px барабана, а не паддинг, и 8 против 12 у `.set-active` оставляет
    активной строке видимый прирост воздуха — иначе состояние держится
    только на градиенте. */
-.set-row { display: grid; grid-template-columns: 20px 1fr 1fr 44px; gap: var(--sp-1-5); align-items: center; padding: var(--sp-1) 0; border-bottom: 0; }
-.set-num { font-size: var(--fs-1); font-weight: var(--fw-black); color: var(--c-text-3); text-align: center; opacity: 0.35; }
-.set-row.set-active { background: linear-gradient(180deg, color-mix(in srgb, var(--c-text-1) 2%, transparent) 0%, transparent 100%); border-radius: var(--r-s); margin: 0 calc(-1 * var(--sp-1)); padding: var(--sp-1-5) var(--sp-1); }
+.set-row {
+  display: grid;
+  grid-template-columns: 20px 1fr 1fr 44px;
+  gap: var(--sp-1-5);
+  align-items: center;
+  padding: var(--sp-1) 0;
+  border-bottom: 0;
+}
+.set-num {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  color: var(--c-text-3);
+  text-align: center;
+  opacity: 0.35;
+}
+.set-row.set-active {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--c-text-1) 2%, transparent) 0%,
+    transparent 100%
+  );
+  border-radius: var(--r-s);
+  margin: 0 calc(-1 * var(--sp-1));
+  padding: var(--sp-1-5) var(--sp-1);
+}
 
-.stepper-val { font-size: var(--fs-5) !important; font-weight: var(--fw-black) !important; letter-spacing: -0.04em !important; color: color-mix(in srgb, var(--c-text-1) 60%, transparent) !important; }
-.set-row.set-active .stepper-val { color: var(--c-text-1) !important; }
-.set-row.set-done { opacity: 0.45; padding: var(--sp-0-5) 0; }
-.set-row.set-done .drum-wrap { display: none; }
-.set-done-summary { display: none; grid-column: 2 / 4; font-size: var(--fs-2); font-weight: var(--fw-bold); letter-spacing: 0.02em; color: var(--c-text-2); text-align: center; }
-.set-row.set-done .set-done-summary { display: flex; align-items: center; justify-content: center; }
+.stepper-val {
+  font-size: var(--fs-5) !important;
+  font-weight: var(--fw-black) !important;
+  letter-spacing: -0.04em !important;
+  color: color-mix(in srgb, var(--c-text-1) 60%, transparent) !important;
+}
+.set-row.set-active .stepper-val {
+  color: var(--c-text-1) !important;
+}
+@keyframes stepper-bump {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.stepper-val.bump {
+  animation: stepper-bump 0.15s var(--ease-spring) both;
+}
+.set-row.set-done {
+  opacity: 0.45;
+  padding: var(--sp-0-5) 0;
+}
+.set-row.set-done .drum-wrap {
+  display: none;
+}
+.set-done-summary {
+  display: none;
+  grid-column: 2 / 4;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.02em;
+  color: var(--c-text-2);
+  text-align: center;
+}
+.set-row.set-done .set-done-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* ── Drum Picker — Elite Refinement ── */
 /* BLACK-DRUM (Total black / AIR): барабан прозрачный — сливается с
@@ -231,7 +563,7 @@
    Только цифры + две hairline-линии выбора. */
 .drum-wrap {
   position: relative;
-  height: 72px;          /* 5-1: compact — was 100px; drum-item 36px + 2×18px padding */
+  height: 72px; /* 5-1: compact — was 100px; drum-item 36px + 2×18px padding */
   background: transparent;
   overflow: hidden;
   /* DRUM-TOUCH-1 (поле 2026-08-05, iPhone 17): было `touch-action: none`, и
@@ -253,7 +585,13 @@
      fade actually clips the content instead of just dimming it further —
      top/bottom ~18px (half an item) fade to transparent, selection band
      (middle 36px) stays fully opaque. */
-  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 18px, #000 54px, transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0,
+    #000 18px,
+    #000 54px,
+    transparent 100%
+  );
   mask-image: linear-gradient(180deg, transparent 0, #000 18px, #000 54px, transparent 100%);
 }
 /* Полоса выбора — две hairline-линии во всю ширину вместо плашки. */
@@ -280,7 +618,9 @@
      the scrollTop ↔ index math (P0 0kg). */
   overflow-anchor: none;
 }
-.drum-track::-webkit-scrollbar { display: none; }
+.drum-track::-webkit-scrollbar {
+  display: none;
+}
 .drum-item {
   height: 36px;
   display: flex;
@@ -290,7 +630,10 @@
   font-weight: var(--fw-md);
   color: var(--c-text-3);
   scroll-snap-align: center;
-  transition: opacity var(--t-fast), transform var(--t-fast), color var(--t-fast);
+  transition:
+    opacity var(--t-fast),
+    transform var(--t-fast),
+    color var(--t-fast);
   /* Neighbours stay faintly visible so the control reads as a scrollable wheel
      (affordance), not a static number. Active item overrides to full below.
      BLACK-DRUM: 0.4 (was 0.22) — на чистом чёрном 0.22 исчезает. */
@@ -303,17 +646,41 @@
   transform: scale(1.1);
 }
 
-.set-check { width: 44px; height: 44px; border-radius: var(--r-m); border: 1.5px solid var(--c-surface-h); background: transparent; cursor: pointer; color: var(--c-text-3); display: flex; align-items: center; justify-content: center; }
-.set-check.done { background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent); }
-.set-check svg { width: 16px; height: 16px; stroke-width: 2.5; }
+.set-check {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-m);
+  border: 1.5px solid var(--c-surface-h);
+  background: transparent;
+  cursor: pointer;
+  color: var(--c-text-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.set-check.done {
+  background: var(--c-accent-bg);
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+.set-check svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.5;
+}
 /* Нажатие намеренно без transition: это самая нажимаемая кнопка приложения
    (десятки раз за тренировку) — на двадцатом сете плавный скейл читается уже
    как задержка. Дополняет Haptic Gate, не дублирует его. */
-.set-check:active { transform: scale(var(--press-scale)); transition: none; }
+.set-check:active {
+  transform: scale(var(--press-scale));
+  transition: none;
+}
 
 /* ── Add Exercise picker (W-1) — styles were never shipped; the buttons fell
    back to native chrome (light-grey bg) so white text was invisible. ── */
-.add-ex-search-wrap { padding-top: var(--sp-0-5); }
+.add-ex-search-wrap {
+  padding-top: var(--sp-0-5);
+}
 .add-ex-search {
   width: 100%;
   background: var(--c-surface);
@@ -326,8 +693,13 @@
   font-family: inherit;
   transition: border-color var(--t-fast);
 }
-.add-ex-search::placeholder { color: var(--c-text-3); }
-.add-ex-search:focus { outline: none; border-color: var(--c-accent); }
+.add-ex-search::placeholder {
+  color: var(--c-text-3);
+}
+.add-ex-search:focus {
+  outline: none;
+  border-color: var(--c-accent);
+}
 
 .pill-filter {
   background: var(--c-surface);
@@ -338,7 +710,10 @@
   font-weight: var(--fw-bold);
   color: var(--c-text-2);
   cursor: pointer;
-  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+  transition:
+    background var(--t-fast),
+    color var(--t-fast),
+    border-color var(--t-fast);
 }
 .pill-filter.active {
   background: var(--c-accent-bg);
@@ -346,7 +721,11 @@
   color: var(--c-accent);
 }
 
-.add-ex-list { display: flex; flex-direction: column; gap: var(--sp-1); }
+.add-ex-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
 .add-ex-item {
   display: block;
   width: 100%;
@@ -354,21 +733,80 @@
   border: 1px solid var(--c-border);
   border-radius: var(--r-m);
   cursor: pointer;
-  transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast),
+    transform var(--t-fast);
 }
-.add-ex-item:hover { background: var(--c-surface-h); border-color: var(--c-border-h); }
-.add-ex-item:active { transform: scale(var(--press-scale)); }
-.add-ex-empty { text-align: center; color: var(--c-text-3); font-size: var(--fs-2); padding: var(--sp-4) var(--sp-2); }
+.add-ex-item:hover {
+  background: var(--c-surface-h);
+  border-color: var(--c-border-h);
+}
+.add-ex-item:active {
+  transform: scale(var(--press-scale));
+}
+.add-ex-empty {
+  text-align: center;
+  color: var(--c-text-3);
+  font-size: var(--fs-2);
+  padding: var(--sp-4) var(--sp-2);
+}
 
 /* GLOW-SL (b): no background was ever set on the base rule, so the native
    <button> UA-default (light grey) showed through at opacity 0.5 as a scrim
    overlapping the dashed row. Explicit transparent background removes it. */
-.add-set-btn { display: flex; align-items: center; justify-content: center; gap: var(--sp-1); width: 100%; padding: var(--sp-2); background: transparent; border: 1.5px dashed var(--c-border); border-radius: var(--r-m); font-size: var(--fs-1); font-weight: var(--fw-md); color: var(--c-text-3); opacity: 0.5; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s; }
-.add-set-btn:active { background: var(--c-surface); opacity: 1; }
-.add-set-btn svg { width: 14px; height: 14px; }
+.add-set-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  width: 100%;
+  padding: var(--sp-2);
+  background: transparent;
+  border: 1.5px dashed var(--c-border);
+  border-radius: var(--r-m);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+  opacity: 0.5;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    opacity 0.2s,
+    transform 0.2s,
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+.add-set-btn:active {
+  background: var(--c-surface);
+  opacity: 1;
+}
+.add-set-btn svg {
+  width: 14px;
+  height: 14px;
+}
 
-.btn-add-live-ex { display: flex; align-items: center; justify-content: center; gap: var(--sp-1); width: 100%; padding: var(--sp-3); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-xxl); color: var(--c-text-1); font-size: var(--fs-3); font-weight: var(--fw-md); cursor: pointer; margin-top: var(--sp-2); }
-.btn-add-live-ex svg { width: 16px; height: 16px; }
+.btn-add-live-ex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  width: 100%;
+  padding: var(--sp-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xxl);
+  color: var(--c-text-1);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
+  cursor: pointer;
+  margin-top: var(--sp-2);
+}
+.btn-add-live-ex svg {
+  width: 16px;
+  height: 16px;
+}
 
 /* ── Заголовок блока в логгере сетов ──
    Разметка есть с W-2, стилей у неё не было ни одного: заголовок ехал
@@ -400,16 +838,36 @@
   color: var(--c-text-3);
 }
 /* Первый блок не отбивается от hero — над ним и так воздух live-hero. */
-#exercise-list > .workout-block-header:first-child { margin-top: var(--sp-1); }
+#exercise-list > .workout-block-header:first-child {
+  margin-top: var(--sp-1);
+}
 
-.muscle-badge { border-radius: var(--r-xs); padding: 2px var(--sp-0-5); font-size: var(--fs-1); font-weight: var(--fw-black); margin-left: var(--sp-1); opacity: 0.8; }
-.ex-no-db { border-style: dashed !important; opacity: 0.7; }
+.muscle-badge {
+  border-radius: var(--r-xs);
+  padding: 2px var(--sp-0-5);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  margin-left: var(--sp-1);
+  opacity: 0.8;
+}
+.ex-no-db {
+  border-style: dashed !important;
+  opacity: 0.7;
+}
 
 /* ── Contextual Colors ── */
-[data-day="pull"] .exercise-icon { border-top-color: var(--c-pull); }
-[data-day="legs"] .exercise-icon { border-top-color: var(--c-legs); }
+[data-day='pull'] .exercise-icon {
+  border-top-color: var(--c-pull);
+}
+[data-day='legs'] .exercise-icon {
+  border-top-color: var(--c-legs);
+}
 
-.progress-fill { transform-origin: left; transform: scaleX(0); width: 100%; }
+.progress-fill {
+  transform-origin: left;
+  transform: scaleX(0);
+  width: 100%;
+}
 
 /* ══════════════════════════════════════════════════════════
    CORE SECTION — Block IV (UI-only, noDb)
@@ -448,7 +906,9 @@
   border: 1px dashed var(--c-border-h);
   border-radius: var(--r-m);
   cursor: pointer;
-  transition: background var(--t-fast), border-color var(--t-fast);
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -472,7 +932,10 @@
   align-items: center;
   justify-content: center;
   color: transparent;
-  transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast);
+  transition:
+    border-color var(--t-fast),
+    background var(--t-fast),
+    color var(--t-fast);
 }
 
 .core-item.checked .core-box {
@@ -508,7 +971,10 @@
   opacity: 0;
   cursor: pointer;
   border-radius: var(--r-s);
-  transition: opacity var(--t-fast), background var(--t-fast), color var(--t-fast);
+  transition:
+    opacity var(--t-fast),
+    background var(--t-fast),
+    color var(--t-fast);
 }
 
 .core-item:hover .core-remove,
