@@ -561,15 +561,20 @@ window._obPrev = async () => {
 };
 
 window._obFinish = async () => {
-  await commitOnboarding();
-  if (!_overlay) return;
-  setShellInert(false);
-  _overlay.style.opacity = '0';
-  setTimeout(() => {
-    _overlay._resolve();
-    _overlay.remove();
-    _overlay = null;
-  }, 300);
+  try {
+    await commitOnboarding();
+    if (!_overlay) return;
+    _overlay.style.opacity = '0';
+    setTimeout(() => {
+      _overlay._resolve();
+      _overlay.remove();
+      _overlay = null;
+    }, 300);
+  } finally {
+    // F-11 ставит inert при открытии. Без finally сбой commit (IDB) оставлял
+    // #app + FAB inert навсегда — Train и таб-бар мертвы под живым оверлеем.
+    setShellInert(false);
+  }
 };
 
 /* ── Styles ── */

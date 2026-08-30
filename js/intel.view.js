@@ -11,6 +11,7 @@ import { probeAiStatus } from './shared/ai-status.js';
 import { getTone, aiAuth } from './ai-settings.store.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
 import { safeFetch } from './privacy.store.js';
+import { appendSseChunk, parseSseDataLine } from './shared/sse.js';
 
 on('intel:close', () => window.Nav.go('s-home'));
 on('intel:toggleLogs', (el) => {
@@ -497,31 +498,45 @@ export const IntelView = (() => {
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
+      let sseBuf = '';
       let fullText = '';
 
       if (reader) {
-        while (true) {
+        outer: while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            if (sseBuf) {
+              const flushed = appendSseChunk(sseBuf, '\n');
+              sseBuf = '';
+              for (const line of flushed.lines) {
+                const ev = parseSseDataLine(line);
+                if (!ev) continue;
+                if (ev.done) break outer;
+                if (ev.error) throw new Error(ev.error);
+                if (ev.text) {
+                  if (!fullText) haptic(2);
+                  fullText += ev.text;
+                }
+              }
+            }
+            break;
+          }
 
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
+          const { buffer, lines } = appendSseChunk(sseBuf, decoder.decode(value, { stream: true }));
+          sseBuf = buffer;
 
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') break;
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.text) {
-                  // Тычок — один, на первом токене. Вибрация на КАЖДЫЙ чанк
-                  // (так было раньше) — это сотни вызовов navigator.vibrate
-                  // за ответ, и каждый из них синхронный.
-                  if (!fullText) haptic(2);
-                  fullText += parsed.text;
-                  if (feedbackText) _renderStream(feedbackText, fullText, L, true);
-                }
-              } catch (e) {}
+            const ev = parseSseDataLine(line);
+            if (!ev) continue;
+            if (ev.done) break outer;
+            if (ev.error) throw new Error(ev.error);
+            if (ev.text) {
+              // Тычок — один, на первом токене. Вибрация на КАЖДЫЙ чанк
+              // (так было раньше) — это сотни вызовов navigator.vibrate
+              // за ответ, и каждый из них синхронный.
+              if (!fullText) haptic(2);
+              fullText += ev.text;
+              if (feedbackText) _renderStream(feedbackText, fullText, L, true);
             }
           }
         }
