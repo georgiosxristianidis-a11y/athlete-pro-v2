@@ -73,12 +73,31 @@ function blankOnboardingData() {
   return {
     goal: '',
     exp: '',
-    sex: 'm',
+    sex: '',
     dob: '',
     height: '',
     weight: '',
-    privacy: 'airgap',
+    privacy: '',
   };
+}
+
+export function isSexChosen(sex) {
+  return sex === 'm' || sex === 'f';
+}
+
+export function isPrivacyChosen(mode) {
+  return mode === 'airgap' || mode === 'cloud';
+}
+
+export function canAdvanceFromStep(step, data) {
+  if (step === 1) return !!data.goal;
+  if (step === 2) return !!data.exp;
+  if (step === 3) {
+    return isSexChosen(data.sex) && !!data.dob && data.dob.split('-').length === 3;
+  }
+  if (step === 4) return !!data.height && !!data.weight;
+  if (step === 5) return isPrivacyChosen(data.privacy);
+  return true;
 }
 
 let _step = 1;
@@ -130,6 +149,8 @@ export async function clearOnboardingDraft() {
 }
 
 export async function commitOnboarding() {
+  if (!isSexChosen(_data.sex)) throw new Error('onboarding: sex required');
+  if (!isPrivacyChosen(_data.privacy)) throw new Error('onboarding: privacy required');
   await Promise.all([
     DB.Settings.set('profile.goal', _data.goal),
     DB.Settings.set(
@@ -339,7 +360,7 @@ function _stepBio() {
         </div>
       </div>
     </div>
-    ${_navButtons(!!_data.sex && !!_data.dob && _data.dob.split('-').length === 3)}
+    ${_navButtons(canAdvanceFromStep(3, _data))}
   `;
 }
 
@@ -387,7 +408,7 @@ function _stepPrivacy() {
         ${_choiceCard('cloud', SVG.cloud, t('ob.privacy_cloud'), t('ob.privacy_cloud_sub'), 'var(--c-blue)')}
       </div>
     </div>
-    ${_navButtons(true)}
+    ${_navButtons(canAdvanceFromStep(5, _data))}
   `;
 }
 
@@ -547,6 +568,7 @@ window._obSetData = (patch) => {
 
 window._obNext = async () => {
   if (_step < STEPS) {
+    if (!canAdvanceFromStep(_step, _data)) return;
     _step++;
     await persistOnboardingDraft();
     _render();
