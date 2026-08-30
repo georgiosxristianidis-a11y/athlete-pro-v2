@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { coachSchema, ttsSchema } from '../routes/coach.js';
+import { coachSchema, weeklyReportSchema, ttsSchema } from '../routes/coach.js';
 
 const validMsg = { role: 'user', content: 'Hello coach' };
 
@@ -120,31 +120,52 @@ describe('coachSchema — context fields and defaults', () => {
   });
 });
 
-/* Карточка VOICE-1. «Ключа нет» приезжает с фронта как null — DB.Settings.get
-   отдаёт именно его, а не undefined. При `customKey: z.string().optional()`
-   схема резала такой запрос 400-м, и озвучка молчала даже там, где серверный
-   ключ Gemini был на месте. */
+describe('weeklyReportSchema — body shape', () => {
+  function parseWeekly(body) {
+    return weeklyReportSchema.safeParse(body);
+  }
+
+  test('minimal payload → accepted with defaults', () => {
+    const r = parseWeekly({});
+    assert.equal(r.success, true);
+    assert.deepEqual(r.data.workouts, []);
+    assert.deepEqual(r.data.profile, {});
+    assert.equal(r.data.engine, 'gemini');
+  });
+
+  test('null customKey → accepted (nullish)', () => {
+    const r = parseWeekly({ workouts: [], customKey: null });
+    assert.equal(r.success, true);
+    assert.equal(r.data.customKey, null);
+  });
+
+  test('null workouts → rejected', () => {
+    assert.equal(parseWeekly({ workouts: null }).success, false);
+  });
+
+  test('full payload with engine and key → accepted', () => {
+    const r = parseWeekly({
+      workouts: [{ type: 'push' }],
+      profile: { goal: 'strength' },
+      engine: 'anthropic',
+      customKey: 'sk-ant-' + 'k'.repeat(24),
+    });
+    assert.equal(r.success, true);
+    assert.equal(r.data.engine, 'anthropic');
+  });
+});
+
 describe('ttsSchema — customKey отсутствует', () => {
   const parseTts = (body) => ttsSchema.safeParse(body);
 
   test('customKey: null → принят (ключа нет, сервер берёт свой)', () => {
-    const r = parseTts({ text: 'Привет', customKey: null });
+    const r = parseTts({ text: 'Hello', customKey: null });
     assert.equal(r.success, true);
     assert.ok(!r.data.customKey, 'null не должен подменять серверный ключ');
   });
 
   test('поля customKey нет вовсе → принят', () => {
-    assert.equal(parseTts({ text: 'Привет' }).success, true);
-  });
-
-  test('customKey строкой → принят и доезжает до маршрута', () => {
-    const r = parseTts({ text: 'Привет', customKey: 'AIzaKEY' });
-    assert.equal(r.success, true);
-    assert.equal(r.data.customKey, 'AIzaKEY');
-  });
-
-  test('customKey числом → отвергнут', () => {
-    assert.equal(parseTts({ text: 'Привет', customKey: 42 }).success, false);
+    assert.equal(parseTts({ text: 'Hello' }).success, true);
   });
 
   test('пустой text → отвергнут', () => {

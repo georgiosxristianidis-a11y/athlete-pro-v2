@@ -6,6 +6,7 @@ import { logInfo, logWarn } from '../lib/logger.js';
 import { asyncHandler } from '../lib/errors.js';
 import { stripSecrets } from '../js/shared/sync-secrets.js';
 import { DEFAULT_AI_ENGINE } from '../js/shared/ai-engine.js';
+import { keyLooksValid } from '../js/ai-settings.store.js';
 import { z } from 'zod';
 
 const router = express.Router();
@@ -276,11 +277,11 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
   res.json({ success: true, audioBase64: pcmData });
 }));
 
-const weeklyReportSchema = z.object({
+export const weeklyReportSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
   engine: z.string().optional().default(DEFAULT_AI_ENGINE),
-  customKey: z.string().optional()
+  customKey: z.string().nullish().optional(),
 });
 
 /* ── POST /weekly-report ── */
@@ -288,8 +289,12 @@ router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = weeklyReportSchema.safeParse(req.body);
   if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { workouts, profile: rawProfile, engine, customKey } = parseResult.data;
+  const { workouts, profile: rawProfile, engine, customKey: rawCustomKey } = parseResult.data;
   const profile = stripSecrets(rawProfile);
+  const customKey =
+    typeof rawCustomKey === 'string' && keyLooksValid(engine, rawCustomKey)
+      ? rawCustomKey.trim()
+      : undefined;
 
   logInfo(req, 'weekly_report_started', `Generating weekly report`);
 
@@ -307,16 +312,26 @@ If no workouts exist, set score to 0 and encourage them to start.`;
   const prompt = `Workouts (Last 7 Days): ${JSON.stringify(workouts)}
 Profile: ${JSON.stringify(profile)}`;
 
-  const content = await AIOrchestrator.generateJSON({
-    system,
-    prompt,
-    engine,
-    customKey
-  }, req);
+  let content;
+  try {
+    content = await AIOrchestrator.generateJSON({
+      system,
+      prompt,
+      engine,
+      customKey
+    }, req);
+  } catch (err) {
+    logWarn(req, 'weekly_report_fallback', err.message, { code: err.code });
+    return res.json({
+      success: true,
+      report: _weeklyReportFallback(workouts),
+      warning: 'AI weekly report unavailable'
+    });
+  }
 
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);
-    const report = jsonMatch ? JSON.parse(jsonMatch[0]) : { score: 0, summary: "Data unreadable. Push harder.", pros: [], cons: [] };
+    const report = jsonMatch ? JSON.parse(jsonMatch[0]) : _weeklyReportFallback(workouts);
     res.json({ success: true, report });
   } catch (err) {
     res.status(500).json({ error: 'Failed to parse AI report' });
@@ -368,6 +383,23 @@ Profile: ${JSON.stringify(profile)}`;
   const report = _parseBiometricsReport(content);
   res.json({ success: true, report });
 }));
+
+function _weeklyReportFallback(workouts) {
+  if (!Array.isArray(workouts) || !workouts.length) {
+    return {
+      score: 0,
+      summary: 'No workouts logged this week. Start a session and come back for your intel.',
+      pros: [],
+      cons: ['Zero sessions recorded']
+    };
+  }
+  return {
+    score: 50,
+    summary: 'AI is offline — review your sessions manually and keep pushing.',
+    pros: [`${workouts.length} session(s) logged this week`],
+    cons: ['AI summary unavailable']
+  };
+}
 
 function _parseBiometricsReport(content) {
   const fallback = { cnsFatigue: 0, muscleDamage: 0, injuryRisk: 'Low', summary: '' };

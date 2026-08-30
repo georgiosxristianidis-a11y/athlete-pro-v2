@@ -197,6 +197,9 @@ export async function commitKey(engine, raw) {
 export async function aiAuth() {
   const engine = await getEngine();
   const raw = await DB.Settings.get(keyField(engine));
-  const customKey = raw ? String(raw) : undefined;
+  const val = raw ? String(raw).trim() : '';
+  // Partial BYOK must not ride along: server would prefer it over env key and Gemini
+  // answers 400 API_KEY_INVALID — same failure mode as weekly-report in the field.
+  const customKey = val && keyLooksValid(engine, val) ? val : undefined;
   return { engine, customKey };
 }

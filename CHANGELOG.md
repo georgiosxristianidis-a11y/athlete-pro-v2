@@ -32,6 +32,17 @@ onboarding commit cannot brick Train.
 
 ### VOICE-1 — озвучка коуча перестала падать на пустом ключе Gemini (1.27.85)
 
+### Coach — weekly-report fallback и валидный BYOK (1.27.87)
+
+`POST /api/coach/weekly-report` падал 500 без ключа или с частичным BYOK:
+невалидный `customKey` уезжал в `AIOrchestrator` и Gemini отвечал
+`API_KEY_INVALID`, а маршрут не имел деградации как `/biometrics-scan`.
+Теперь `weeklyReportSchema` экспортируется с `customKey: nullish`, маршрут
+отбрасывает ключ, который не проходит `keyLooksValid`, и при ошибке AI
+возвращает `_weeklyReportFallback` с `warning` вместо 500. `aiAuth()` тоже
+не шлёт частичный BYOK — сервер берёт env-ключ. Гарды —
+`test/coach-api.test.js`, `weeklyReportSchema` в `test/coach-validate.test.js`.
+
 ### LAUNCH-9 F-11 — имена контролов и модальный онбординг (1.27.84)
 
 На экране тренировки `set-check`, барабаны веса/повторов и ручка перестановки

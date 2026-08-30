@@ -158,3 +158,44 @@ describe('POST /api/coach/recommendations', () => {
     assert.ok(body.error);
   });
 });
+
+describe('POST /api/coach/weekly-report — fallback (no API key)', () => {
+  test('no workouts + no API key → 200 with fallback report', async () => {
+    const saved = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    try {
+      const res = await post('/api/coach/weekly-report', {
+        engine: 'gemini',
+        workouts: [],
+        profile: {},
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.success, true);
+      assert.equal(body.report.score, 0);
+      assert.ok(Array.isArray(body.report.pros));
+      assert.ok(body.warning);
+    } finally {
+      if (saved !== undefined) process.env.GOOGLE_GENERATIVE_AI_API_KEY = saved;
+    }
+  });
+
+  test('invalid customKey + no API key → 200 fallback, not 400', async () => {
+    const saved = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    try {
+      const res = await post('/api/coach/weekly-report', {
+        engine: 'gemini',
+        workouts: [{ type: 'push', date: new Date().toISOString() }],
+        profile: {},
+        customKey: 'not-a-real-key',
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.success, true);
+      assert.ok(body.report.score >= 0);
+    } finally {
+      if (saved !== undefined) process.env.GOOGLE_GENERATIVE_AI_API_KEY = saved;
+    }
+  });
+});
