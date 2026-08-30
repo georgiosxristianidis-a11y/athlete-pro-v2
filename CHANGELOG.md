@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### VOICE-1 — озвучка коуча перестала падать на пустом ключе Gemini (1.27.85)
+
+`POST /api/coach/tts` отвечал `400 Invalid input schema` каждому, у кого не
+заведён свой ключ Gemini: фронт читал `gemini-key` из IndexedDB, получал `null`
+(дефолт `DB.Settings.get`) и слал его в теле, а `ttsSchema` валидировала
+`customKey` как `z.string().optional()` — `null` такой схеме не подходит.
+Запрос умирал на входе, так и не дав серверу взять ключ из окружения, и голос
+молчал молча: `speakText()` пишет отказ только в журнал потока. Вылезло после
+PC-1 (1.27.81), где движок стал выбираемым: на Claude поле `gemini-key` пустое
+по определению, а TTS прошит на `gemini-2.5-flash-preview-tts`. Теперь
+`intel.view.js` схлопывает отсутствующий ключ в `undefined` (`JSON.stringify`
+выбрасывает поле сам), а схема принимает `nullish` — чужой `null` больше не
+роняет чужой запрос. Гарды: `ttsSchema` в `test/coach-validate.test.js` и
+статическая проверка тела в `test/intel-engine-wiring.test.js`.
+
 ### LAUNCH-9 F-11 — имена контролов и модальный онбординг (1.27.84)
 
 На экране тренировки `set-check`, барабаны веса/повторов и ручка перестановки

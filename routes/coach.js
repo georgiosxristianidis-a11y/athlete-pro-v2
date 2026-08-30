@@ -224,9 +224,13 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
   }
 }));
 
-const ttsSchema = z.object({
+/* `nullish`, а не `optional`: BYOK-ключ живёт в IndexedDB, где «не сохранён» —
+   это null, и он доезжает в теле запроса. При `optional()` такой запрос падал
+   400-м на входе, так и не дав серверу взять собственный ключ из окружения —
+   озвучка молчала у всех, кто не завёл свой ключ Gemini. */
+export const ttsSchema = z.object({
   text: z.string().min(1, 'text is required'),
-  customKey: z.string().optional()
+  customKey: z.string().nullish()
 });
 
 /* ── POST /tts (Gemini 2.5 Flash Preview TTS) ── */
