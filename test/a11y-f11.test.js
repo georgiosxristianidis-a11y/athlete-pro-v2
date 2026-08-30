@@ -102,6 +102,14 @@ describe('F-11 онбординг: модальный слой', () => {
     assert.match(ob, /'app'/);
     assert.match(ob, /'claude-fab-container'/);
   });
+
+  test('_obFinish снимает inert в finally, а не только после успешного commit', () => {
+    const start = ob.indexOf('window._obFinish');
+    const end = ob.indexOf('/* ── Styles');
+    assert.ok(start >= 0 && end > start, '_obFinish / Styles anchors missing');
+    const fn = ob.slice(start, end);
+    assert.match(fn, /finally\s*\{[\s\S]*setShellInert\(false\)/);
+  });
 });
 
 function makeNode() {

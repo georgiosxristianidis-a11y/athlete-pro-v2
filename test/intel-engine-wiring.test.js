@@ -75,6 +75,20 @@ test('P.A.N.D.A. Core coach requests go through safeFetch kind=ai, not raw fetch
   }
 });
 
+test('P.A.N.D.A. Core SSE uses the carry-buffer parser, not per-chunk split', () => {
+  assert.match(SRC, /appendSseChunk/);
+  assert.match(SRC, /parseSseDataLine/);
+  const submit = SRC.slice(
+    SRC.indexOf('async function submit'),
+    SRC.indexOf('function _clearImage')
+  );
+  assert.equal(
+    submit.includes("chunk.split('\\n')"),
+    false,
+    'naive per-chunk split вернулся — разорванный SSE-кадр снова теряет текст'
+  );
+});
+
 test("gemini-key is read only inside TTS — text requests use the selected engine's key", () => {
   assert.match(
     tts,

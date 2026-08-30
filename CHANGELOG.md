@@ -17,6 +17,11 @@ still sent workout history and profile to `/api/coach*`. Dashboard coach
 already used `safeFetch(..., 'ai')`. Core now does the same; the throw maps
 to a privacy message, not a generic failure.
 
+Same pass, two more holes from the same scan: Core SSE now carries a leftover
+buffer (a split `data:` frame no longer drops tokens) and surfaces mid-stream
+`error` events; `_obFinish` releases `inert` in `finally` so a failed
+onboarding commit cannot brick Train.
+
 ### VOICE-1 — озвучка коуча перестала падать на пустом ключе Gemini (1.27.85)
 
 `POST /api/coach/tts` отвечал `400 Invalid input schema` каждому, у кого не
