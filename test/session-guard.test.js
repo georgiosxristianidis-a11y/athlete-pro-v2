@@ -22,7 +22,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync, execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url';
 
 import { fileDrift } from '../scripts/drift-core.mjs';
 import { relevantLines } from '../scripts/session-guard.mjs';
+import { sandboxGit, sandboxGitIn } from './git-sandbox.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const GUARD = path.join(REPO_ROOT, 'scripts', 'session-guard.mjs');
@@ -38,11 +39,6 @@ const sandbox = mkdtempSync(path.join(os.tmpdir(), 'session-guard-'));
 let seq = 0;
 
 test.after(() => rmSync(sandbox, { recursive: true, force: true }));
-
-const git =
-  (cwd) =>
-  (...args) =>
-    execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 
 /**
  * Сцена PP-6 в миниатюре: ветка отросла от старого main, за это время main
@@ -54,9 +50,9 @@ function repoWithDrift() {
   const work = path.join(root, 'work');
   mkdirSync(root);
 
-  execFileSync('git', ['init', '--bare', '-b', 'main', '-q', origin]);
-  execFileSync('git', ['clone', '-q', origin, work]);
-  const g = git(work);
+  sandboxGit(['init', '--bare', '-b', 'main', '-q', origin]);
+  sandboxGit(['clone', '-q', origin, work]);
+  const g = sandboxGitIn(work);
   g('config', 'user.email', 'agent@example.com');
   g('config', 'user.name', 'Agent');
 
@@ -158,7 +154,7 @@ test('новый файл — дрейфовать нечему', () => {
 
 test('сессия на main — проверять нечего, и причина названа', () => {
   const work = repoWithDrift();
-  git(work)('checkout', '-q', 'main');
+  sandboxGitIn(work)('checkout', '-q', 'main');
   const verdict = fileDrift(path.join(work, 'js', 'profile.js'), { cwd: work });
   assert.equal(verdict.drift, false);
   assert.equal(verdict.skip, 'сессия на main', 'пропуск без причины неотличим от поломки');
