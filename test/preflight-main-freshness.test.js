@@ -24,11 +24,13 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync, execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { sandboxGit, sandboxGitIn } from './git-sandbox.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PREFLIGHT = path.join(REPO_ROOT, 'scripts', 'preflight.mjs');
@@ -38,12 +40,6 @@ let seq = 0;
 
 test.after(() => rmSync(sandbox, { recursive: true, force: true }));
 
-/** @param {string} cwd */
-const git =
-  (cwd) =>
-  (...args) =>
-    execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-
 /** Синтетический репозиторий: bare origin с веткой `main` + клон на ней. */
 function makeRepo() {
   const root = path.join(sandbox, `case-${++seq}`);
@@ -51,9 +47,9 @@ function makeRepo() {
   const work = path.join(root, 'work');
   mkdirSync(root);
 
-  execFileSync('git', ['init', '--bare', '-b', 'main', '-q', origin]);
-  execFileSync('git', ['clone', '-q', origin, work]);
-  const g = git(work);
+  sandboxGit(['init', '--bare', '-b', 'main', '-q', origin]);
+  sandboxGit(['clone', '-q', origin, work]);
+  const g = sandboxGitIn(work);
   g('config', 'user.email', 'agent@example.com');
   g('config', 'user.name', 'Agent');
   g('config', 'core.hooksPath', '.githooks');

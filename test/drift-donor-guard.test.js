@@ -25,13 +25,14 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync, execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { REJECTED_LINES } from '../scripts/rejected-lines.mjs';
+import { sandboxGit, sandboxGitIn } from './git-sandbox.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DRIFT = path.join(REPO_ROOT, 'scripts', 'check-branch-drift.mjs');
@@ -42,20 +43,15 @@ let seq = 0;
 
 test.after(() => rmSync(sandbox, { recursive: true, force: true }));
 
-const git =
-  (cwd) =>
-  (...args) =>
-    execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-
 function makeRepo() {
   const root = path.join(sandbox, `case-${++seq}`);
   const origin = path.join(root, 'origin.git');
   const work = path.join(root, 'work');
   mkdirSync(root);
 
-  execFileSync('git', ['init', '--bare', '-b', 'main', '-q', origin]);
-  execFileSync('git', ['clone', '-q', origin, work]);
-  const g = git(work);
+  sandboxGit(['init', '--bare', '-b', 'main', '-q', origin]);
+  sandboxGit(['clone', '-q', origin, work]);
+  const g = sandboxGitIn(work);
   g('config', 'user.email', 'agent@example.com');
   g('config', 'user.name', 'Agent');
 

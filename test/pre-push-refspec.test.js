@@ -45,11 +45,13 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync, execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { sandboxGit } from './git-sandbox.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HOOK_SRC = process.env.PRE_PUSH_HOOK || path.join(REPO_ROOT, '.githooks', 'pre-push');
@@ -174,14 +176,14 @@ test('удаление вперемешку с обычным пушем — г�
 test('пустой stdin (хук вызван не гитом) — откат на имя HEAD', opts, () => {
   const repo = path.join(sandbox, 'repo-main');
   mkdirSync(repo);
-  execFileSync('git', ['init', '-q'], { cwd: repo });
-  execFileSync('git', ['symbolic-ref', 'HEAD', 'refs/heads/main'], { cwd: repo });
+  sandboxGit(['init', '-q'], { cwd: repo });
+  sandboxGit(['symbolic-ref', 'HEAD', 'refs/heads/main'], { cwd: repo });
 
   const onMain = runHook({ stdin: '', cwd: repo });
   assert.match(onMain.out, /\[Main Block\]/, 'HEAD=main без рефспека — прежняя эвристика');
   assert.equal(onMain.code, 1);
 
-  execFileSync('git', ['symbolic-ref', 'HEAD', 'refs/heads/claude/feature'], { cwd: repo });
+  sandboxGit(['symbolic-ref', 'HEAD', 'refs/heads/claude/feature'], { cwd: repo });
   const onFeature = runHook({ stdin: '', cwd: repo });
   assert.doesNotMatch(onFeature.out, /\[Main Block\]/);
 });

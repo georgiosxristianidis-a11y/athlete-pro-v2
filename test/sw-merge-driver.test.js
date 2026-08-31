@@ -22,11 +22,13 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync, execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { sandboxGit, sandboxGitIn } from './git-sandbox.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const POSTINSTALL = path.join(REPO_ROOT, 'scripts', 'fix-hooks-path.mjs');
@@ -36,12 +38,6 @@ let seq = 0;
 
 test.after(() => rmSync(sandbox, { recursive: true, force: true }));
 
-/** @param {string} cwd */
-const git =
-  (cwd) =>
-  (...args) =>
-    execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-
 /**
  * Репозиторий с двумя расходящимися правками `sw.js`: `main` ушёл на свою
  * версию, ветка — на свою. Ровно картина ребейза перед мёржем.
@@ -50,8 +46,8 @@ const git =
 function makeDivergence({ attributes, driver }) {
   const work = path.join(sandbox, `case-${++seq}`);
   mkdirSync(work);
-  execFileSync('git', ['init', '-q', '-b', 'main', work]);
-  const g = git(work);
+  sandboxGit(['init', '-q', '-b', 'main', work]);
+  const g = sandboxGitIn(work);
   g('config', 'user.email', 'agent@example.com');
   g('config', 'user.name', 'Agent');
 
