@@ -946,14 +946,18 @@ export const IntelView = (() => {
     try {
       toneVal = await getTone();
       const geminiKey = await DB.Settings.get('gemini-key');
-      const response = await fetch('/api/coach/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: textToSpeak,
-          customKey: geminiKey ? String(geminiKey) : undefined,
-        }),
-      });
+      const response = await safeFetch(
+        '/api/coach/tts',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: textToSpeak,
+            customKey: geminiKey ? String(geminiKey) : undefined,
+          }),
+        },
+        'ai'
+      );
 
       if (!response.ok) throw new Error('Voice sync failed');
 

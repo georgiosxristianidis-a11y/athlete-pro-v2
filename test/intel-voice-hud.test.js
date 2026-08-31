@@ -32,6 +32,6 @@ describe('intel voice HUD markup', () => {
   test('speakText and replayVoice are wired', () => {
     assert.match(view, /async function speakText/);
     assert.match(view, /function replayVoice/);
-    assert.match(view, /fetch\('\/api\/coach\/tts'/);
+    assert.match(view, /safeFetch\([\s\S]*?\/api\/coach\/tts/);
   });
 });
