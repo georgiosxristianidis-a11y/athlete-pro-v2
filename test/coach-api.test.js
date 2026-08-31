@@ -158,3 +158,33 @@ describe('POST /api/coach/recommendations', () => {
     assert.ok(body.error);
   });
 });
+
+describe('POST /api/coach/weekly-report — fallback when AI fails', () => {
+  test('empty workouts + invalid BYOK → 200 with zero-score fallback', async () => {
+    const res = await post('/api/coach/weekly-report', {
+      engine: 'gemini',
+      workouts: [],
+      profile: {},
+      customKey: 'not-a-real-key',
+    });
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.success, true);
+    assert.equal(body.report.score, 0);
+    assert.ok(Array.isArray(body.report.pros));
+    assert.ok(body.warning);
+  });
+
+  test('invalid customKey with sessions → 200 fallback, not 400', async () => {
+    const res = await post('/api/coach/weekly-report', {
+      engine: 'gemini',
+      workouts: [{ type: 'push', date: new Date().toISOString() }],
+      profile: {},
+      customKey: 'not-a-real-key',
+    });
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.success, true);
+    assert.ok(body.report.score >= 0);
+  });
+});

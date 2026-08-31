@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Coach — weekly-report fallback и валидный BYOK (1.27.88)
+
+`POST /api/coach/weekly-report` падал 500 без ключа или с частичным BYOK:
+невалидный `customKey` уезжал в `AIOrchestrator` и Gemini отвечал
+`API_KEY_INVALID`, а маршрут не имел деградации как `/biometrics-scan`.
+Теперь `weeklyReportSchema` экспортируется с `customKey: nullish`, маршрут
+отбрасывает ключ, который не проходит `keyLooksValid`, и при ошибке AI
+возвращает `_weeklyReportFallback` с `warning` вместо 500. `aiAuth()` тоже
+не шлёт частичный BYOK — сервер берёт env-ключ. Гарды —
+`test/coach-api.test.js`, `weeklyReportSchema` в `test/coach-validate.test.js`.
+
 ### LAUNCH-9 F-7/F-8 — явный выбор пола и приватности (1.27.87)
 
 Шаг «Био» подсвечивал «М» до первого касания: `_data.sex` стартовал как `m`,
