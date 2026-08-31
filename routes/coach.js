@@ -17,107 +17,123 @@ const _limitOpts = {
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) =>
-    res.status(429).json({ error: 'Too many requests — please slow down.', requestId: req.correlationId }),
+    res
+      .status(429)
+      .json({ error: 'Too many requests — please slow down.', requestId: req.correlationId }),
 };
 const coachLimiter = rateLimit({ ..._limitOpts, max: 10 });
-const apiLimiter   = rateLimit({ ..._limitOpts, max: 20 });
+const apiLimiter = rateLimit({ ..._limitOpts, max: 20 });
 
 const generatePlanSchema = z.object({
   workoutHistory: z.array(z.any()).optional().default([]),
   oneRMs: z.array(z.any()).optional().default([]),
   goals: z.string().optional().default('strength'),
   experience: z.string().optional().default('intermediate'),
-  engine: z.string().optional().default(DEFAULT_AI_ENGINE)
+  engine: z.string().optional().default(DEFAULT_AI_ENGINE),
 });
 
 /* ── POST /generate-plan ── */
-router.post('/generate-plan', apiLimiter, asyncHandler(async (req, res) => {
-  const parseResult = generatePlanSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
-  
-  const {
-    workoutHistory,
-    oneRMs,
-    goals,
-    experience,
-    engine
-  } = parseResult.data;
+router.post(
+  '/generate-plan',
+  apiLimiter,
+  asyncHandler(async (req, res) => {
+    const parseResult = generatePlanSchema.safeParse(req.body);
+    if (!parseResult.success)
+      return res
+        .status(400)
+        .json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  logInfo(req, 'plan_generation_started', `Generating plan for ${goals}`);
+    const { workoutHistory, oneRMs, goals, experience, engine } = parseResult.data;
 
-  const DEFAULT_PLAN = {
-    push: [{ name: 'Bench Press', sets: 4, reps: 8, weight: 80, notes: '' }],
-    pull: [{ name: 'Deadlift', sets: 4, reps: 5, weight: 120, notes: '' }],
-    legs: [{ name: 'Squat', sets: 4, reps: 6, weight: 100, notes: '' }]
-  };
+    logInfo(req, 'plan_generation_started', `Generating plan for ${goals}`);
 
-  const system = _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience);
-  let content;
-  try {
-    content = await AIOrchestrator.generateJSON({
-      system,
-      prompt: 'Generate a highly personalized 3-day PPL rotation. Return JSON only.',
-      engine
-    }, req);
-  } catch (err) {
-    // Offline-first contract: degrade to default plan instead of erroring
-    logWarn(req, 'plan_generation_fallback', err.message, { code: err.code });
-    return res.json({
-      success: true,
-      plan: DEFAULT_PLAN,
-      generated: true,
-      note: 'Default plan — AI unavailable'
-    });
-  }
+    const DEFAULT_PLAN = {
+      push: [{ name: 'Bench Press', sets: 4, reps: 8, weight: 80, notes: '' }],
+      pull: [{ name: 'Deadlift', sets: 4, reps: 5, weight: 120, notes: '' }],
+      legs: [{ name: 'Squat', sets: 4, reps: 6, weight: 100, notes: '' }],
+    };
 
-  const plan = _parseGeneratedPlan(content, DEFAULT_PLAN);
-  res.json({ success: true, plan, generated: true, aiNotes: content });
-}));
+    const system = _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience);
+    let content;
+    try {
+      content = await AIOrchestrator.generateJSON(
+        {
+          system,
+          prompt: 'Generate a highly personalized 3-day PPL rotation. Return JSON only.',
+          engine,
+        },
+        req
+      );
+    } catch (err) {
+      // Offline-first contract: degrade to default plan instead of erroring
+      logWarn(req, 'plan_generation_fallback', err.message, { code: err.code });
+      return res.json({
+        success: true,
+        plan: DEFAULT_PLAN,
+        generated: true,
+        note: 'Default plan — AI unavailable',
+      });
+    }
+
+    const plan = _parseGeneratedPlan(content, DEFAULT_PLAN);
+    res.json({ success: true, plan, generated: true, aiNotes: content });
+  })
+);
 
 const recommendationsSchema = z.object({
   workout: z.any(), // Keeping it loose as it's a complex object
   fatigue: z.any().optional().default({}),
   topLifts: z.array(z.any()).optional().default([]),
   nextSessionPlan: z.array(z.any()).min(1, 'nextSessionPlan is required'),
-  engine: z.string().optional().default(DEFAULT_AI_ENGINE)
+  engine: z.string().optional().default(DEFAULT_AI_ENGINE),
 });
 
 /* ── POST /recommendations ── */
-router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
-  const parseResult = recommendationsSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
-  
-  const { workout, fatigue, topLifts, nextSessionPlan, engine } = parseResult.data;
-  
-  const system = _buildRecommendationsPrompt(workout, fatigue, topLifts, nextSessionPlan);
-  let content;
-  try {
-    content = await AIOrchestrator.generateJSON({
-      system,
-      prompt: 'Generate weight recommendations for the next session. Return JSON only.',
-      engine
-    }, req);
-  } catch (err) {
-    // Offline-first contract: maintain current weights instead of erroring
-    logWarn(req, 'recommendations_fallback', err.message, { code: err.code });
-    const fallback = nextSessionPlan.map((ex) => ({
-      name: ex.name,
-      sets: ex.sets,
-      reps: ex.reps,
-      recommendedWeight: ex.weight,
-      reason: 'Maintain current weight (AI unavailable)',
-    }));
-    return res.json({
-      success: true,
-      recommendations: fallback,
-      aiNotes: null,
-      warning: 'AI recommendations unavailable'
-    });
-  }
+router.post(
+  '/recommendations',
+  apiLimiter,
+  asyncHandler(async (req, res) => {
+    const parseResult = recommendationsSchema.safeParse(req.body);
+    if (!parseResult.success)
+      return res
+        .status(400)
+        .json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const recommendations = _parseRecommendations(content, nextSessionPlan);
-  res.json({ success: true, recommendations, aiNotes: content });
-}));
+    const { workout, fatigue, topLifts, nextSessionPlan, engine } = parseResult.data;
+
+    const system = _buildRecommendationsPrompt(workout, fatigue, topLifts, nextSessionPlan);
+    let content;
+    try {
+      content = await AIOrchestrator.generateJSON(
+        {
+          system,
+          prompt: 'Generate weight recommendations for the next session. Return JSON only.',
+          engine,
+        },
+        req
+      );
+    } catch (err) {
+      // Offline-first contract: maintain current weights instead of erroring
+      logWarn(req, 'recommendations_fallback', err.message, { code: err.code });
+      const fallback = nextSessionPlan.map((ex) => ({
+        name: ex.name,
+        sets: ex.sets,
+        reps: ex.reps,
+        recommendedWeight: ex.weight,
+        reason: 'Maintain current weight (AI unavailable)',
+      }));
+      return res.json({
+        success: true,
+        recommendations: fallback,
+        aiNotes: null,
+        warning: 'AI recommendations unavailable',
+      });
+    }
+
+    const recommendations = _parseRecommendations(content, nextSessionPlan);
+    res.json({ success: true, recommendations, aiNotes: content });
+  })
+);
 
 const COACH_MAX_MESSAGES = 40;
 const COACH_MAX_CONTENT_LEN = 12000;
@@ -139,91 +155,107 @@ export const coachSchema = z.object({
   longTermStats: z.any().optional().default({}),
   engine: z.string().optional().default(DEFAULT_AI_ENGINE),
   customKey: z.string().optional(),
-  tone: z.coerce.number().min(0).max(100).optional().default(50)
+  tone: z.coerce.number().min(0).max(100).optional().default(50),
 });
 
 /* ── POST / (Main Coach SSE) ── */
-router.post('/', coachLimiter, asyncHandler(async (req, res) => {
-  const parseResult = coachSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
+router.post(
+  '/',
+  coachLimiter,
+  asyncHandler(async (req, res) => {
+    const parseResult = coachSchema.safeParse(req.body);
+    if (!parseResult.success)
+      return res
+        .status(400)
+        .json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  let { 
-    workouts, 
-    fatigue, 
-    topLifts, 
-    messages, 
-    images, 
-    profile,
-    longTermStats,
-    engine,
-    customKey,
-    tone
-  } = parseResult.data;
-
-  // `profile` — снимок store `settings` целиком, и он уезжает в текст промпта.
-  // Клиент уже фильтрует (js/shared/sync-secrets.js), но дверь наружу закрывается
-  // с обеих сторон: забытый call-site не должен открывать её заново.
-  profile = stripSecrets(profile);
-
-  // Final sanitization to prevent Gemini 400 errors
-  if (!Array.isArray(workouts)) workouts = [];
-  if (typeof fatigue !== 'object' || fatigue === null) fatigue = {};
-  if (!Array.isArray(topLifts)) topLifts = [];
-  if (!Array.isArray(images)) images = [];
-
-  if (!Array.isArray(messages) || !messages.length) {
-    return res.status(400).json({ error: 'messages array is required' });
-  }
-
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering so chunks flush immediately
-
-  const system = _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats, tone);
-
-  // Track client disconnect so we never write to a dead socket.
-  let clientGone = false;
-  res.on('close', () => { clientGone = true; });
-  const canWrite = () => !clientGone && !res.writableEnded;
-
-  const heartbeat = setInterval(() => {
-    if (canWrite()) res.write(': ping\n\n');
-  }, SSE_HEARTBEAT_MS);
-
-  try {
-    await AIOrchestrator.streamResponse({
-      system,
+    let {
+      workouts,
+      fatigue,
+      topLifts,
       messages,
       images,
+      profile,
+      longTermStats,
       engine,
       customKey,
-      onChunk: (text) => { if (canWrite()) res.write(`data: ${JSON.stringify({ text })}\n\n`); }
-    }, req);
+      tone,
+    } = parseResult.data;
 
-    if (canWrite()) res.write('data: [DONE]\n\n');
-  } catch (err) {
-    if (res.headersSent) {
-      // Mid-stream failure: headers already flushed, so a JSON error is impossible.
-      // Emit a structured SSE error frame the client can render instead of a silent drop.
-      logWarn(req, 'coach_stream_failed', err.message, { code: err.code });
-      if (canWrite()) {
-        res.write(`data: ${JSON.stringify({ error: err.message || 'AI stream failed', code: err.code || 'STREAM_ERROR' })}\n\n`);
-      }
-    } else {
-      // Failed before the first byte (e.g. missing API key): drop the staged stream
-      // headers so errorMiddleware can respond as clean application/json.
-      res.removeHeader('Content-Type');
-      res.removeHeader('X-Accel-Buffering');
-      throw err;
+    // `profile` — снимок store `settings` целиком, и он уезжает в текст промпта.
+    // Клиент уже фильтрует (js/shared/sync-secrets.js), но дверь наружу закрывается
+    // с обеих сторон: забытый call-site не должен открывать её заново.
+    profile = stripSecrets(profile);
+
+    // Final sanitization to prevent Gemini 400 errors
+    if (!Array.isArray(workouts)) workouts = [];
+    if (typeof fatigue !== 'object' || fatigue === null) fatigue = {};
+    if (!Array.isArray(topLifts)) topLifts = [];
+    if (!Array.isArray(images)) images = [];
+
+    if (!Array.isArray(messages) || !messages.length) {
+      return res.status(400).json({ error: 'messages array is required' });
     }
-  } finally {
-    clearInterval(heartbeat);
-    // Only close here in streaming mode; the rethrow path leaves the response
-    // open so errorMiddleware can still send a JSON error (e.g. missing API key).
-    if (res.headersSent && !res.writableEnded) res.end();
-  }
-}));
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering so chunks flush immediately
+
+    const system = _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats, tone);
+
+    // Track client disconnect so we never write to a dead socket.
+    let clientGone = false;
+    res.on('close', () => {
+      clientGone = true;
+    });
+    const canWrite = () => !clientGone && !res.writableEnded;
+
+    const heartbeat = setInterval(() => {
+      if (canWrite()) res.write(': ping\n\n');
+    }, SSE_HEARTBEAT_MS);
+
+    try {
+      await AIOrchestrator.streamResponse(
+        {
+          system,
+          messages,
+          images,
+          engine,
+          customKey,
+          onChunk: (text) => {
+            if (canWrite()) res.write(`data: ${JSON.stringify({ text })}\n\n`);
+          },
+        },
+        req
+      );
+
+      if (canWrite()) res.write('data: [DONE]\n\n');
+    } catch (err) {
+      if (res.headersSent) {
+        // Mid-stream failure: headers already flushed, so a JSON error is impossible.
+        // Emit a structured SSE error frame the client can render instead of a silent drop.
+        logWarn(req, 'coach_stream_failed', err.message, { code: err.code });
+        if (canWrite()) {
+          res.write(
+            `data: ${JSON.stringify({ error: err.message || 'AI stream failed', code: err.code || 'STREAM_ERROR' })}\n\n`
+          );
+        }
+      } else {
+        // Failed before the first byte (e.g. missing API key): drop the staged stream
+        // headers so errorMiddleware can respond as clean application/json.
+        res.removeHeader('Content-Type');
+        res.removeHeader('X-Accel-Buffering');
+        throw err;
+      }
+    } finally {
+      clearInterval(heartbeat);
+      // Only close here in streaming mode; the rethrow path leaves the response
+      // open so errorMiddleware can still send a JSON error (e.g. missing API key).
+      if (res.headersSent && !res.writableEnded) res.end();
+    }
+  })
+);
 
 /* `nullish`, а не `optional`: BYOK-ключ живёт в IndexedDB, где «не сохранён» —
    это null, и он доезжает в теле запроса. При `optional()` такой запрос падал
@@ -231,51 +263,63 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
    озвучка молчала у всех, кто не завёл свой ключ Gemini. */
 export const ttsSchema = z.object({
   text: z.string().min(1, 'text is required'),
-  customKey: z.string().nullish()
+  customKey: z.string().nullish(),
 });
 
 /* ── POST /tts (Gemini 2.5 Flash Preview TTS) ── */
-router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
-  const parseResult = ttsSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
+router.post(
+  '/tts',
+  apiLimiter,
+  asyncHandler(async (req, res) => {
+    const parseResult = ttsSchema.safeParse(req.body);
+    if (!parseResult.success)
+      return res
+        .status(400)
+        .json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { text, customKey } = parseResult.data;
+    const { text, customKey } = parseResult.data;
 
-  const { gemini } = await import('../lib/geminiClient.js');
-  const apiKey = customKey || gemini.apiKey;
-  
-  if (!apiKey || apiKey === 'dummy-key') {
-    return res.status(500).json({ error: 'GOOGLE_GENERATIVE_AI_API_KEY is not configured.' });
-  }
+    const { gemini } = await import('../lib/geminiClient.js');
+    const apiKey = customKey || gemini.apiKey;
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: `Скажи мотивирующим и суровым голосом тренера: ${text}` }] }],
-      generationConfig: { 
-        responseModalities: ["AUDIO"], 
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Fenrir" } } } 
-      },
-      model: "gemini-2.5-flash-preview-tts"
-    })
-  });
+    if (!apiKey || apiKey === 'dummy-key') {
+      return res.status(500).json({ error: 'GOOGLE_GENERATIVE_AI_API_KEY is not configured.' });
+    }
 
-  if (!response.ok) {
-    const errText = await response.text();
-    logWarn(req, 'tts_failed', `TTS API error: ${errText}`);
-    return res.status(response.status).json({ error: 'TTS Generation failed' });
-  }
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            { parts: [{ text: `Скажи мотивирующим и суровым голосом тренера: ${text}` }] },
+          ],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Fenrir' } } },
+          },
+          model: 'gemini-2.5-flash-preview-tts',
+        }),
+      }
+    );
 
-  const result = await response.json();
-  const pcmData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-  
-  if (!pcmData) {
-    return res.status(500).json({ error: 'No audio data returned from Gemini' });
-  }
+    if (!response.ok) {
+      const errText = await response.text();
+      logWarn(req, 'tts_failed', `TTS API error: ${errText}`);
+      return res.status(response.status).json({ error: 'TTS Generation failed' });
+    }
 
-  res.json({ success: true, audioBase64: pcmData });
-}));
+    const result = await response.json();
+    const pcmData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+
+    if (!pcmData) {
+      return res.status(500).json({ error: 'No audio data returned from Gemini' });
+    }
+
+    res.json({ success: true, audioBase64: pcmData });
+  })
+);
 
 export const weeklyReportSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
@@ -285,20 +329,26 @@ export const weeklyReportSchema = z.object({
 });
 
 /* ── POST /weekly-report ── */
-router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
-  const parseResult = weeklyReportSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
+router.post(
+  '/weekly-report',
+  coachLimiter,
+  asyncHandler(async (req, res) => {
+    const parseResult = weeklyReportSchema.safeParse(req.body);
+    if (!parseResult.success)
+      return res
+        .status(400)
+        .json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { workouts, profile: rawProfile, engine, customKey: rawCustomKey } = parseResult.data;
-  const profile = stripSecrets(rawProfile);
-  const customKey =
-    typeof rawCustomKey === 'string' && keyLooksValid(engine, rawCustomKey)
-      ? rawCustomKey.trim()
-      : undefined;
+    const { workouts, profile: rawProfile, engine, customKey: rawCustomKey } = parseResult.data;
+    const profile = stripSecrets(rawProfile);
+    const customKey =
+      typeof rawCustomKey === 'string' && keyLooksValid(engine, rawCustomKey)
+        ? rawCustomKey.trim()
+        : undefined;
 
-  logInfo(req, 'weekly_report_started', `Generating weekly report`);
+    logInfo(req, 'weekly_report_started', `Generating weekly report`);
 
-  const system = `You are "Athlete Pro Analyst", an elite sports data scientist.
+    const system = `You are "Athlete Pro Analyst", an elite sports data scientist.
 Analyze the user's past 7 days of workouts. 
 Return ONLY JSON with this exact schema:
 {
@@ -309,53 +359,63 @@ Return ONLY JSON with this exact schema:
 }
 If no workouts exist, set score to 0 and encourage them to start.`;
 
-  const prompt = `Workouts (Last 7 Days): ${JSON.stringify(workouts)}
+    const prompt = `Workouts (Last 7 Days): ${JSON.stringify(workouts)}
 Profile: ${JSON.stringify(profile)}`;
 
-  let content;
-  try {
-    content = await AIOrchestrator.generateJSON({
-      system,
-      prompt,
-      engine,
-      customKey
-    }, req);
-  } catch (err) {
-    logWarn(req, 'weekly_report_fallback', err.message, { code: err.code });
-    return res.json({
-      success: true,
-      report: _weeklyReportFallback(workouts),
-      warning: 'AI weekly report unavailable'
-    });
-  }
+    let content;
+    try {
+      content = await AIOrchestrator.generateJSON(
+        {
+          system,
+          prompt,
+          engine,
+          customKey,
+        },
+        req
+      );
+    } catch (err) {
+      logWarn(req, 'weekly_report_fallback', err.message, { code: err.code });
+      return res.json({
+        success: true,
+        report: _weeklyReportFallback(workouts),
+        warning: 'AI weekly report unavailable',
+      });
+    }
 
-  try {
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    const report = jsonMatch ? JSON.parse(jsonMatch[0]) : _weeklyReportFallback(workouts);
-    res.json({ success: true, report });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to parse AI report' });
-  }
-}));
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const report = jsonMatch ? JSON.parse(jsonMatch[0]) : _weeklyReportFallback(workouts);
+      res.json({ success: true, report });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to parse AI report' });
+    }
+  })
+);
 
 const biometricsScanSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
   engine: z.string().optional().default(DEFAULT_AI_ENGINE),
-  customKey: z.string().optional()
+  customKey: z.string().optional(),
 });
 
 /* ── POST /biometrics-scan ──
  * Отчёт для радара HUD-3: cnsFatigue / muscleDamage / summary из истории и профиля.
  * Fallback вместо 500: сеть/ключ мертвы → нули + пометка, чтобы UI не показывал пустой оверлей. */
-router.post('/biometrics-scan', coachLimiter, asyncHandler(async (req, res) => {
-  const parseResult = biometricsScanSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
+router.post(
+  '/biometrics-scan',
+  coachLimiter,
+  asyncHandler(async (req, res) => {
+    const parseResult = biometricsScanSchema.safeParse(req.body);
+    if (!parseResult.success)
+      return res
+        .status(400)
+        .json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { workouts, profile: rawProfile, engine, customKey } = parseResult.data;
-  const profile = stripSecrets(rawProfile);
+    const { workouts, profile: rawProfile, engine, customKey } = parseResult.data;
+    const profile = stripSecrets(rawProfile);
 
-  const system = `You are "Athlete Pro Medical AI".
+    const system = `You are "Athlete Pro Medical AI".
 Оцени биометрическое состояние по последней истории и профилю.
 Ответ — ТОЛЬКО JSON строго по схеме, без markdown и без комментариев:
 {
@@ -365,24 +425,25 @@ router.post('/biometrics-scan', coachLimiter, asyncHandler(async (req, res) => {
   "summary": "<2 предложения по-русски, разбор состояния>"
 }`;
 
-  const prompt = `Workouts (last 10): ${JSON.stringify(workouts)}
+    const prompt = `Workouts (last 10): ${JSON.stringify(workouts)}
 Profile: ${JSON.stringify(profile)}`;
 
-  let content;
-  try {
-    content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req);
-  } catch (err) {
-    logWarn(req, 'biometrics_scan_fallback', err.message, { code: err.code });
-    return res.json({
-      success: true,
-      report: { cnsFatigue: 0, muscleDamage: 0, injuryRisk: 'Low', summary: '' },
-      warning: 'AI biometrics unavailable'
-    });
-  }
+    let content;
+    try {
+      content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req);
+    } catch (err) {
+      logWarn(req, 'biometrics_scan_fallback', err.message, { code: err.code });
+      return res.json({
+        success: true,
+        report: { cnsFatigue: 0, muscleDamage: 0, injuryRisk: 'Low', summary: '' },
+        warning: 'AI biometrics unavailable',
+      });
+    }
 
-  const report = _parseBiometricsReport(content);
-  res.json({ success: true, report });
-}));
+    const report = _parseBiometricsReport(content);
+    res.json({ success: true, report });
+  })
+);
 
 function _weeklyReportFallback(workouts) {
   if (!Array.isArray(workouts) || !workouts.length) {
@@ -390,14 +451,14 @@ function _weeklyReportFallback(workouts) {
       score: 0,
       summary: 'No workouts logged this week. Start a session and come back for your intel.',
       pros: [],
-      cons: ['Zero sessions recorded']
+      cons: ['Zero sessions recorded'],
     };
   }
   return {
     score: 50,
     summary: 'AI is offline — review your sessions manually and keep pushing.',
     pros: [`${workouts.length} session(s) logged this week`],
-    cons: ['AI summary unavailable']
+    cons: ['AI summary unavailable'],
   };
 }
 
@@ -413,7 +474,7 @@ function _parseBiometricsReport(content) {
       cnsFatigue: clamp(raw.cnsFatigue),
       muscleDamage: clamp(raw.muscleDamage),
       injuryRisk: risk,
-      summary: typeof raw.summary === 'string' ? raw.summary.slice(0, 500) : ''
+      summary: typeof raw.summary === 'string' ? raw.summary.slice(0, 500) : '',
     };
   } catch {
     return fallback;
@@ -424,8 +485,10 @@ function _parseBiometricsReport(content) {
 
 function _toneInstruction(tone) {
   // Слайдер настроек HUD-3: 0 = Психолог, 50 = Нейтрально, 100 = Гоггинс.
-  if (tone < 30) return 'Тон: эмпатичный, поддерживающий, восстановительный. Как заботливый физиотерапевт — упор на восстановление и позитивное подкрепление.';
-  if (tone > 70) return 'Тон: жёсткий, бескомпромиссный, в духе Дэвида Гоггинса. Ноль оправданий, абсолютная дисциплина, суровая правда.';
+  if (tone < 30)
+    return 'Тон: эмпатичный, поддерживающий, восстановительный. Как заботливый физиотерапевт — упор на восстановление и позитивное подкрепление.';
+  if (tone > 70)
+    return 'Тон: жёсткий, бескомпромиссный, в духе Дэвида Гоггинса. Ноль оправданий, абсолютная дисциплина, суровая правда.';
   return 'Тон: нейтральный, профессиональный, сбалансированный — как опытный тренер.';
 }
 
@@ -470,7 +533,7 @@ function _buildRecommendationsPrompt(workout, fatigue, topLifts, nextPlan) {
   return `Performance Analyst.
 Last Workout: ${JSON.stringify(workout)}
 Fatigue: ${JSON.stringify(fatigue)}
-Plan: ${nextPlan.map(e => e.name).join(', ')}
+Plan: ${nextPlan.map((e) => e.name).join(', ')}
 
 Recommend weights and reasons in JSON format.`;
 }
@@ -479,22 +542,25 @@ function _parseGeneratedPlan(content, fallback) {
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     return jsonMatch ? JSON.parse(jsonMatch[0]) : fallback;
-  } catch { return fallback; }
+  } catch {
+    return fallback;
+  }
 }
 
 function _parseRecommendations(content, plan) {
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return plan.map(ex => ({ ...ex, recommendedWeight: ex.weight, reason: 'Maintain' }));
-    
+    if (!jsonMatch)
+      return plan.map((ex) => ({ ...ex, recommendedWeight: ex.weight, reason: 'Maintain' }));
+
     const parsed = JSON.parse(jsonMatch[0]);
-    return plan.map(ex => ({
+    return plan.map((ex) => ({
       ...ex,
       recommendedWeight: parsed[ex.name] || ex.weight,
-      reason: parsed.reasons?.[ex.name] || 'Standard progression'
+      reason: parsed.reasons?.[ex.name] || 'Standard progression',
     }));
   } catch {
-    return plan.map(ex => ({ ...ex, recommendedWeight: ex.weight, reason: 'Maintain' }));
+    return plan.map((ex) => ({ ...ex, recommendedWeight: ex.weight, reason: 'Maintain' }));
   }
 }
 
