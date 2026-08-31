@@ -101,8 +101,16 @@ export function formatAirMarkdown(rawText, buildWidget, buildWorkoutCard) {
     if (t === WIDGET_MARK) { flush(); out.push(widgetHtml); continue; }
     if (t === WORKOUT_MARK) { flush(); out.push(workoutHtml); continue; }
 
+    // Тематический разделитель. Горизонтальной линии в HUD нет, поэтому строка
+    // работает как пустая: закрывает открытые блоки и исчезает. До MD-1 она
+    // проваливалась в абзац и `---` виднелся в ответе сырыми дефисами.
+    if (/^(?:\*{3,}|-{3,}|_{3,})$/.test(t)) { flush(); continue; }
+
     let m;
-    if ((m = t.match(/^###\s+(.*)$/))) {
+    // Уровни глубже третьего складываем в h3, а не в текст: контракт промпта
+    // просит не уходить глубже `###`, но промпт — просьба, а не гарантия, и
+    // непослушный `#### Разбор` обязан остаться заголовком, а не решётками.
+    if ((m = t.match(/^#{3,6}\s+(.*)$/))) {
       flush(); out.push(`<h3 class="intel-md-h3">${inline(m[1])}</h3>`); continue;
     }
     if ((m = t.match(/^#{1,2}\s+(.*)$/))) {

@@ -14,6 +14,11 @@
  */
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const { formatAirMarkdown } = await import('../js/shared/air-markdown.js');
 
@@ -100,6 +105,85 @@ describe('Air Markdown — блоки', () => {
     const html = formatAirMarkdown('<thinking>план ответа</thinking>Ответ');
     assert.ok(!html.includes('план ответа'));
     assert.ok(html.includes('Ответ'));
+  });
+});
+
+/**
+ * Карточка MD-1. До неё формат ответа не был задан нигде: чат всегда слал
+ * `engine: 'gemini'`, движок стал выбираемым в `552e800`, и на Claude пришла
+ * другая разметка — `---` между секциями и `#### Подзаголовок`. Форматтер ни
+ * того ни другого не знал, и оба протекали в текст сырыми символами.
+ *
+ * Половин у контракта две, и держать их надо вместе: промпт просит не выходить
+ * за поддерживаемое подмножество, форматтер деградирует то, что модель всё
+ * равно прислала. Одна половина без другой чинит проблему наполовину.
+ */
+describe('Air Markdown — формат ответа движка (MD-1)', () => {
+  test('--- поглощается, а не показывается дефисами', () => {
+    const html = formatAirMarkdown('Разбор\n\n---\n\nВывод');
+    assert.ok(!html.includes('---'), 'разделитель протёк в текст');
+    assert.equal((html.match(/<p class="intel-md-p">/g) || []).length, 2);
+  });
+
+  test('*** и ___ — тоже разделители', () => {
+    for (const rule of ['***', '___', '-----']) {
+      const html = formatAirMarkdown(`До\n\n${rule}\n\nПосле`);
+      assert.ok(!html.includes(rule), `${rule} протёк в текст`);
+    }
+  });
+
+  test('разделитель закрывает открытый блок, как пустая строка', () => {
+    const html = formatAirMarkdown('- раз\n---\nВывод');
+    assert.ok(html.includes('</ul>'), 'список не закрыт разделителем');
+    assert.ok(
+      html.includes('<p class="intel-md-p">Вывод</p>'),
+      'следующий абзац начинается заново, а не склеивается с разделителем через <br>'
+    );
+  });
+
+  test('#### падает до h3, а не до решёток в абзаце', () => {
+    const html = formatAirMarkdown('#### Подсобка');
+    assert.ok(html.includes('<h3 class="intel-md-h3">Подсобка</h3>'));
+    assert.ok(!html.includes('#'), 'решётки остались в тексте');
+  });
+
+  test('###### тоже h3 — глубже уровня нет', () => {
+    assert.ok(formatAirMarkdown('###### Мелочь').includes('<h3'));
+  });
+
+  test('## и # по-прежнему h2 — уровни не съехали', () => {
+    assert.ok(formatAirMarkdown('## Итог').includes('<h2'));
+    assert.ok(formatAirMarkdown('# Итог').includes('<h2'));
+  });
+
+  test('жирный текст в строке не принимается за разделитель', () => {
+    const html = formatAirMarkdown('**Важно**');
+    assert.ok(html.includes('<strong>Важно</strong>'));
+  });
+});
+
+describe('MD-1 — контракт формата в системном промпте', () => {
+  const COACH = fs.readFileSync(path.join(ROOT, 'routes', 'coach.js'), 'utf8');
+  const section = COACH.slice(COACH.indexOf('[OUTPUT FORMAT]'), COACH.indexOf('[WORKFLOW]'));
+
+  test('промпт вообще задаёт границы разметки', () => {
+    assert.ok(COACH.includes('[OUTPUT FORMAT]'), 'секция формата исчезла из системного промпта');
+  });
+
+  test('перечислено то, чего форматтер не умеет', () => {
+    for (const banned of ['####', 'tables', '---', 'code fence']) {
+      assert.ok(section.includes(banned), `контракт молчит про ${banned}`);
+    }
+  });
+
+  test('контракт уезжает в оба движка — промпт один на всех', () => {
+    // `engine` приходит из тела запроса и влияет только на выбор клиента,
+    // system собирается до него. Литерал движка внутри сборщика промпта
+    // означал бы, что формат задан лишь одному из них.
+    const start = COACH.indexOf('function _buildSystemPrompt');
+    const builder = COACH.slice(start, COACH.indexOf('function _buildPlanGenerationPrompt'));
+    assert.ok(start !== -1, 'якорь _buildSystemPrompt пропал');
+    assert.doesNotMatch(builder, /\bengine\b/, 'промпт стал зависеть от движка — контракт расходится');
   });
 });
 
