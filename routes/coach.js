@@ -420,6 +420,14 @@ JSON FORMAT MUST BE EXACTLY:
 {"_widget": "readiness", "index": 82, "recovery": 77, "acwr": 88, "sleep": 64, "monotony": 95, "density": 93, "cns": 48, "goal": "Лёгкая / техническая"}
 (Calculate these values from 0-100 based on fatigue, history, and rest days. Goal must be a short string in Russian).
 
+[OUTPUT FORMAT]
+The answer is rendered by a narrow mobile HUD that supports a small Markdown subset
+(js/shared/air-markdown.js). Anything outside it is shown to the user as raw characters.
+ALLOWED: headings "##" and "###" (never "####" or deeper), bullets "- ", numbered steps
+"1. ", bold "**text**", italic "*text*".
+FORBIDDEN: tables, horizontal rules ("---", "***"), code fences (\`\`\`), blockquotes ("> "),
+Markdown links. The readiness JSON from rule 5 is emitted raw, never inside a code fence.
+
 [WORKFLOW]
 Before answering, use <thinking> tags to calculate the metrics. If #gym is requested, output the JSON block, then output your surgical advice.`;
 }
