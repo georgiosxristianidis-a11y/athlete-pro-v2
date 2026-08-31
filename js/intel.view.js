@@ -14,12 +14,7 @@ import { safeFetch } from './privacy.store.js';
 import { appendSseChunk, parseSseDataLine } from './shared/sse.js';
 
 on('intel:close', () => window.Nav.go('s-home'));
-on('intel:toggleLogs', (el) => {
-  const box = el.closest('.intel-logs');
-  if (!box) return;
-  const open = box.classList.toggle('expanded');
-  box.setAttribute('aria-expanded', String(open));
-});
+on('intel:replayVoice', () => window.IntelView.replayVoice());
 on('intel:camera', () => window.IntelView.handleCamera());
 on('intel:submit', () => window.IntelView.submit());
 on('intel:weekly', () => window.IntelView.generateWeekly());
@@ -44,15 +39,26 @@ onChange('intel:fileSelected', (el, e) => window.IntelView.onFileSelected(e));
 onKeydown('intel:submitEnter', (el, e) => {
   if (e.key === 'Enter') window.IntelView.submit();
 });
-// Пилюля лога — не <button> (внутри неё заголовок и лента), поэтому клавиатуру
-// ей приходится выдавать руками: role="button" без Enter/Space — ловушка для скринридера.
-onKeydown('intel:toggleLogs', (el, e) => {
-  if (e.key !== 'Enter' && e.key !== ' ') return;
-  e.preventDefault();
-  const box = el.closest('.intel-logs');
-  if (!box) return;
-  box.setAttribute('aria-expanded', String(box.classList.toggle('expanded')));
-});
+
+/** Debug log panel lives in AI settings; IntelView.load() no longer mounts it. */
+export function renderIntelLogs() {
+  IntelStore.init();
+  const container = document.getElementById('intel-logs-container');
+  if (!container) return;
+  const logs = IntelStore.getLogs();
+  container.innerHTML = logs
+    .map(
+      (l) => `
+      <div class="intel-log-entry">
+        <span class="intel-log-time">[${l.time}]</span>
+        <span class="intel-log-type ${l.type.toLowerCase()}">${l.type}</span>
+        <span class="intel-log-msg">${esc(l.text)}</span>
+      </div>
+    `
+    )
+    .join('');
+  container.scrollTop = 0;
+}
 
 /**
  * IntelView — Athlete Pro
@@ -63,6 +69,8 @@ export const IntelView = (() => {
   let _hasValidKey = false;
   /** @type {string} */
   let _keySource = 'offline';
+  let _lastSpokenText = '';
+  let _isSpeaking = false;
 
   /**
    * Строки экрана. Язык — только через isRu() (правило i18n проекта):
@@ -109,6 +117,9 @@ export const IntelView = (() => {
           cnsFatigue: 'УТОМЛЕНИЕ ЦНС',
           muscleDamage: 'МЫШЕЧНЫЕ ПОВРЕЖДЕНИЯ',
           readiness: 'ГОТОВНОСТЬ',
+          voiceLabel: 'ACTIVE VOICE',
+          voiceSpeaking: 'SPEAKING…',
+          voiceReplay: 'Воспроизвести вердикт коуча',
         }
       : {
           keyOk: 'system secure',
@@ -149,6 +160,9 @@ export const IntelView = (() => {
           cnsFatigue: 'CNS FATIGUE',
           muscleDamage: 'MUSCLE DAMAGE',
           readiness: 'READINESS',
+          voiceLabel: 'ACTIVE VOICE',
+          voiceSpeaking: 'SPEAKING…',
+          voiceReplay: 'Replay coach verdict',
         };
   }
 
@@ -251,12 +265,13 @@ export const IntelView = (() => {
         </div>
       </div>
 
-      <div class="intel-logs" data-action="intel:toggleLogs" data-keydown="intel:toggleLogs" role="button" tabindex="0" aria-expanded="false" aria-label="${L.logs}">
-        <div class="intel-logs-header">
-          <h3 class="intel-logs-title">STREAMING_LOGS</h3>
-          <span class="intel-logs-status" id="intel-logs-status-pill">${esc(IntelStore.getStatus())}</span>
-        </div>
-        <div id="intel-logs-container"></div>
+      <div class="intel-voice-center-wrap">
+        <button type="button" class="intel-voice-hud talk" data-action="intel:replayVoice" aria-label="${L.voiceReplay}">
+          <div class="talk-wave" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <span class="intel-voice-hud-label" id="intel-voice-hud-label">${esc(L.voiceLabel)}</span>
+        </button>
       </div>
 
       <div class="intel-cmd-wrap">
@@ -278,7 +293,6 @@ export const IntelView = (() => {
       </div>
     `;
 
-    renderLogs();
     _listen();
     // Разметку экрана load() пересобирает целиком, а запрос мог остаться в
     // полёте (ушёл с экрана и вернулся) — иначе кнопка выглядит свободной,
@@ -287,21 +301,7 @@ export const IntelView = (() => {
   }
 
   function renderLogs() {
-    const container = document.getElementById('intel-logs-container');
-    if (!container) return;
-    const logs = IntelStore.getLogs();
-    container.innerHTML = logs
-      .map(
-        (l) => `
-      <div class="intel-log-entry">
-        <span class="intel-log-time">[${l.time}]</span>
-        <span class="intel-log-type ${l.type.toLowerCase()}">${l.type}</span>
-        <span class="intel-log-msg">${esc(l.text)}</span>
-      </div>
-    `
-      )
-      .join('');
-    container.scrollTop = 0;
+    renderIntelLogs();
   }
 
   function _listen() {
@@ -316,18 +316,6 @@ export const IntelView = (() => {
       const statusText = IntelStore.getStatus();
       const el = document.getElementById('intel-status-text');
       if (el) el.textContent = statusText;
-
-      const pill = document.getElementById('intel-logs-status-pill');
-      if (pill) {
-        pill.textContent = statusText;
-        let color = 'var(--c-intel)';
-        if (statusText.includes('ERROR')) color = 'var(--c-red)';
-        else if (statusText.includes('SCANNING')) color = 'var(--c-accent)';
-        else if (statusText.includes('COMPUTING')) color = 'var(--c-amber)';
-        else if (statusText.includes('STANDBY')) color = 'var(--c-text-3)';
-        pill.style.color = color;
-        pill.style.borderColor = color;
-      }
     });
   }
 
@@ -577,79 +565,6 @@ export const IntelView = (() => {
 
   function _clearImage() {
     _pendingImage = null;
-  }
-
-  let _isSpeaking = false;
-
-  async function speakText(textToSpeak) {
-    if (!textToSpeak || _isSpeaking) return;
-    _isSpeaking = true;
-    IntelStore.addLog('SYS', 'Synthesizing coach voice...');
-
-    try {
-      // Voice is Gemini-only: routes/coach.js pins gemini-2.5-flash-preview-tts.
-      // Ключа может не быть вовсе (движок anthropic, BYOK не заведён) — тогда
-      // DB.Settings.get отдаёт null, а ttsSchema валидирует customKey как строку:
-      // null роняет запрос в 400 ещё до того, как сервер попробует свой ключ из
-      // окружения. Нет ключа — поля в теле быть не должно, JSON.stringify
-      // выбрасывает undefined сам.
-      const geminiKey = await DB.Settings.get('gemini-key');
-
-      const response = await safeFetch(
-        '/api/coach/tts',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: textToSpeak,
-            customKey: geminiKey ? String(geminiKey) : undefined,
-          }),
-        },
-        'ai'
-      );
-
-      if (!response.ok) throw new Error('Voice sync failed');
-
-      const result = await response.json();
-      const pcmData = result.audioBase64;
-      if (!pcmData) throw new Error('Audio data not found');
-
-      const audioBlob = pcmToWav(pcmData, 24000);
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audio.onended = () => {
-        _isSpeaking = false;
-        URL.revokeObjectURL(audioUrl);
-      };
-      await audio.play();
-    } catch (err) {
-      IntelStore.addLog('ERROR', 'Voice synthesis failed');
-      _isSpeaking = false;
-    }
-  }
-
-  function pcmToWav(base64Pcm, sampleRate) {
-    const pcmBuffer = Uint8Array.from(atob(base64Pcm), (c) => c.charCodeAt(0)).buffer;
-    const wavBuffer = new ArrayBuffer(44 + pcmBuffer.byteLength);
-    const view = new DataView(wavBuffer);
-    const writeString = (offset, string) => {
-      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
-    };
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + pcmBuffer.byteLength, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, pcmBuffer.byteLength, true);
-    new Uint8Array(wavBuffer).set(new Uint8Array(pcmBuffer), 44);
-    return new Blob([wavBuffer], { type: 'audio/wav' });
   }
 
   async function generateWeekly() {
@@ -949,6 +864,152 @@ export const IntelView = (() => {
       </div>
     `;
   }
+
+  function _setVoiceLabel(text) {
+    const label = document.getElementById('intel-voice-hud-label');
+    if (label) label.textContent = text;
+  }
+
+  function _stopVoiceVisualizer() {
+    document
+      .querySelectorAll('.intel-voice-hud.talk')
+      .forEach((el) => el.classList.remove('live', 'talk'));
+    _setVoiceLabel(_copy().voiceLabel);
+  }
+
+  function replayVoice() {
+    haptic(15);
+    if (_lastSpokenText) {
+      speakText(_lastSpokenText);
+      return;
+    }
+    speakText(
+      isRu()
+        ? 'Голосовой модуль готов. Запустите анализ или тренировку.'
+        : 'Voice module ready. Run an analysis or workout.'
+    );
+  }
+
+  function _speakNativeSpeech(textToSpeak, toneVal) {
+    if (!('speechSynthesis' in window)) {
+      _isSpeaking = false;
+      _stopVoiceVisualizer();
+      return;
+    }
+
+    _isSpeaking = true;
+    window.speechSynthesis.cancel();
+    const cleanText = textToSpeak.replace(/[*_#`~[\]()]/g, '').trim();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = isRu() ? 'ru-RU' : 'en-US';
+
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find((v) => v.lang.startsWith(utterance.lang.slice(0, 2)));
+    if (preferred) utterance.voice = preferred;
+
+    if (toneVal < 35) {
+      utterance.pitch = 1.1;
+      utterance.rate = 0.95;
+    } else if (toneVal > 70) {
+      utterance.pitch = 0.85;
+      utterance.rate = 1.05;
+    } else {
+      utterance.pitch = 0.95;
+      utterance.rate = 1;
+    }
+
+    utterance.onstart = () => {
+      document.querySelector('.intel-voice-hud')?.classList.add('talk', 'live');
+      _setVoiceLabel(_copy().voiceSpeaking);
+    };
+    utterance.onend = () => {
+      _isSpeaking = false;
+      _stopVoiceVisualizer();
+    };
+    utterance.onerror = () => {
+      _isSpeaking = false;
+      _stopVoiceVisualizer();
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  async function speakText(textToSpeak) {
+    if (!textToSpeak || _isSpeaking) return;
+    _lastSpokenText = textToSpeak;
+    _isSpeaking = true;
+    IntelStore.addLog('SYS', 'Synthesizing coach voice...');
+    _setVoiceLabel(_copy().voiceSpeaking);
+    document.querySelector('.intel-voice-hud')?.classList.add('talk', 'live');
+
+    let toneVal = 50;
+    try {
+      toneVal = await getTone();
+      const geminiKey = await DB.Settings.get('gemini-key');
+      const response = await safeFetch(
+        '/api/coach/tts',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: textToSpeak,
+            customKey: geminiKey ? String(geminiKey) : undefined,
+          }),
+        },
+        'ai'
+      );
+
+      if (!response.ok) throw new Error('Voice sync failed');
+
+      const result = await response.json();
+      const pcmData = result.audioBase64;
+      if (!pcmData) throw new Error('Audio data not found');
+
+      const audioBlob = pcmToWav(pcmData, 24000);
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.onended = () => {
+        _isSpeaking = false;
+        _stopVoiceVisualizer();
+        URL.revokeObjectURL(audioUrl);
+      };
+      audio.onerror = () => {
+        _isSpeaking = false;
+        _stopVoiceVisualizer();
+        URL.revokeObjectURL(audioUrl);
+      };
+      await audio.play();
+    } catch (err) {
+      IntelStore.addLog('INFO', 'Local speech synthesis active');
+      _isSpeaking = false;
+      _speakNativeSpeech(textToSpeak, toneVal);
+    }
+  }
+
+  function pcmToWav(base64Pcm, sampleRate) {
+    const pcmBuffer = Uint8Array.from(atob(base64Pcm), (c) => c.charCodeAt(0)).buffer;
+    const wavBuffer = new ArrayBuffer(44 + pcmBuffer.byteLength);
+    const view = new DataView(wavBuffer);
+    const writeString = (offset, string) => {
+      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+    };
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + pcmBuffer.byteLength, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, pcmBuffer.byteLength, true);
+    new Uint8Array(wavBuffer).set(new Uint8Array(pcmBuffer), 44);
+    return new Blob([wavBuffer], { type: 'audio/wav' });
+  }
+
   function playAudio(btn) {
     const container = btn.closest('.intel-feedback');
     if (!container) return;
@@ -1025,6 +1086,8 @@ export const IntelView = (() => {
     analyzeStats,
     checkBiometrics,
     playAudio,
+    replayVoice,
+    renderLogs,
     _clearImage,
     openSettings,
     saveSettings,

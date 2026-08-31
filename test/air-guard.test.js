@@ -26,13 +26,10 @@ const CSS_DIR = join(__dirname, '..', 'css');
 /** Tier 2 — the ONLY selectors allowed to declare a blurring backdrop-filter. */
 const TIER2_WHITELIST = {
   'base.css': [/\.modal-overlay\b/, /\.modal-sheet\b/, /\.claude-sheet\b/, /\.toast\b/],
-  'dynamic-island.css': [/./],            // whole file is the island (Tier 2 HUD)
+  'dynamic-island.css': [/./], // whole file is the island (Tier 2 HUD)
   'athlete-room.css': [/\.ar-crop-modal\b/], // a modal, not a card
-  // s-intel (HUD-1): экран — колонка «шапка / поток / пилюли». Плавают ровно две
-  // поверхности — композер и свёрнутый лог; поток под ними остаётся Tier 1, плоским.
-  // Именно селекторами, не файлом: `'intel.css': [/./]` — та строка, которой
-  // отвергнутая линия сняла проверку с девяти backdrop-filter разом.
-  'intel.css': [/\.intel-cmd-bar\b/, /\.intel-logs\b/],
+  // s-intel (HUD-1): плавает только композер (.intel-cmd-bar); голос — Tier 1.
+  'intel.css': [/\.intel-cmd-bar\b/],
 };
 
 /** Strips comments, preserving newlines so line numbers stay honest. */
@@ -58,21 +55,41 @@ function declarations(css) {
     const value = buf.slice(i + 1).trim();
     if (!prop || prop.startsWith('@')) return;
     // innermost non-at-rule prelude = the selector this declaration applies to
-    const selector = [...stack].reverse().find((s) => !s.startsWith('@')) || stack[stack.length - 1];
+    const selector =
+      [...stack].reverse().find((s) => !s.startsWith('@')) || stack[stack.length - 1];
     out.push({ selector, prop, value, line: endLine });
   };
 
   for (const ch of src) {
-    if (ch === '\n') { line++; buf += ' '; continue; }
-    if (ch === '{') { stack.push(buf.trim().replace(/\s+/g, ' ')); buf = ''; continue; }
-    if (ch === '}') { flush(line); stack.pop(); buf = ''; continue; }
-    if (ch === ';') { flush(line); buf = ''; continue; }
+    if (ch === '\n') {
+      line++;
+      buf += ' ';
+      continue;
+    }
+    if (ch === '{') {
+      stack.push(buf.trim().replace(/\s+/g, ' '));
+      buf = '';
+      continue;
+    }
+    if (ch === '}') {
+      flush(line);
+      stack.pop();
+      buf = '';
+      continue;
+    }
+    if (ch === ';') {
+      flush(line);
+      buf = '';
+      continue;
+    }
     buf += ch;
   }
   return out;
 }
 
-const cssFiles = readdirSync(CSS_DIR).filter((f) => f.endsWith('.css')).sort();
+const cssFiles = readdirSync(CSS_DIR)
+  .filter((f) => f.endsWith('.css'))
+  .sort();
 
 test('css/ has files to guard (self-check)', () => {
   assert.ok(cssFiles.length >= 10, `expected the css/ dir, got ${cssFiles.length} files`);
@@ -85,16 +102,18 @@ test('backdrop-filter appears only on the Tier-2 whitelist (AIR Tier 1 stays fla
     const allowed = TIER2_WHITELIST[file] || [];
     for (const d of declarations(readFileSync(join(CSS_DIR, file), 'utf8'))) {
       if (!/^(-webkit-)?backdrop-filter$/.test(d.prop)) continue;
-      if (/^none$/i.test(d.value)) continue;       // removing blur is always legal
+      if (/^none$/i.test(d.value)) continue; // removing blur is always legal
       if (allowed.some((re) => re.test(d.selector))) continue;
       offenders.push(`css/${file}:${d.line}  ${d.selector} { ${d.prop}: ${d.value} }`);
     }
   }
 
   assert.deepEqual(
-    offenders, [],
+    offenders,
+    [],
     'Tier 1 must stay flat (background: var(--c-bg-2) + hairline). ' +
-    'backdrop-filter outside the Tier-2 whitelist:\n' + offenders.join('\n'),
+      'backdrop-filter outside the Tier-2 whitelist:\n' +
+      offenders.join('\n')
   );
 });
 
@@ -110,7 +129,11 @@ test('will-change: backdrop-filter follows the same whitelist', () => {
     }
   }
 
-  assert.deepEqual(offenders, [], 'will-change hints a blur that Tier 1 must not have:\n' + offenders.join('\n'));
+  assert.deepEqual(
+    offenders,
+    [],
+    'will-change hints a blur that Tier 1 must not have:\n' + offenders.join('\n')
+  );
 });
 
 // ── Mirror side: Tier 2 must KEEP its glass ──────────────────────────────
@@ -121,15 +144,15 @@ const TIER2_REQUIRED = [
   ['dynamic-island.css', '.island'],
   ['athlete-room.css', '.ar-crop-modal'],
   ['intel.css', '.intel-cmd-bar'],
-  ['intel.css', '.intel-logs'],
 ];
 
 for (const [file, selector] of TIER2_REQUIRED) {
   test(`Tier 2 keeps its blur: ${file} ${selector}`, () => {
     const blurred = declarations(readFileSync(join(CSS_DIR, file), 'utf8')).some(
-      (d) => d.prop === 'backdrop-filter'
-        && /blur\(/.test(d.value)
-        && new RegExp(`(^|[,\\s])\\${selector}(\\b|[.:,\\s])`).test(d.selector),
+      (d) =>
+        d.prop === 'backdrop-filter' &&
+        /blur\(/.test(d.value) &&
+        new RegExp(`(^|[,\\s])\\${selector}(\\b|[.:,\\s])`).test(d.selector)
     );
     assert.ok(blurred, `${selector} lost its Tier-2 backdrop-filter: blur()`);
   });

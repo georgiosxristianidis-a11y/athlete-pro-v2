@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### P.A.N.D.A. Core — active voice pill вместо ERROR-лога (1.27.89)
+
+Центральная пилюля снова — **ACTIVE VOICE** (тап = replay), а не
+`intel-logs-status-pill` со статусом ERROR/STANDBY. Журнал потока переехал
+в шторку настроек ИИ (`details.intel-settings-debug`). Восстановлены
+`speakText` / `replayVoice` и Web Speech fallback при отказе TTS.
+TTS идёт через `safeFetch(..., 'ai')`, как остальные маршруты Core.
+Гарды — `test/intel-voice-hud.test.js`, `test/air-guard.test.js`.
+
 ### LAUNCH-9 F-7/F-8 — явный выбор пола и приватности (1.27.87)
 
 Шаг «Био» подсвечивал «М» до первого касания: `_data.sex` стартовал как `m`,
