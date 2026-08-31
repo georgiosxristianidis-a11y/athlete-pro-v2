@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Weekly intel — окно недели читает timestamp, а не w.date (1.27.89)
+
+P.A.N.D.A. Core weekly report фильтровал историю как `new Date(w.date)`. У
+`WorkoutRecord` поля `date` нет, только `timestamp` (`js/db.js`): `Date` от
+`undefined` даёт `NaN`, сравнение всегда ложь, в `/api/coach/weekly-report`
+уезжал пустой массив. Модель честно отвечала score 0 и «начни тренироваться»
+поверх живой недели. Тот же корень, что у отвергнутого движка готовности
+(CHANGELOG, `w.date`). Фильтр совпал с `generateWeeklySummary`: `timestamp >= since`.
+Гард — `test/intel-engine-wiring.test.js`.
+
 ### MD-1 — формат ответа коуча под выбранный движок (1.27.88)
 
 До `552e800` чат всегда слал `engine: 'gemini'`; движок стал выбираемым, и на
