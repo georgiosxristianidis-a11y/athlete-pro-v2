@@ -659,9 +659,11 @@ export const IntelView = (() => {
     try {
       const { DB } = await import('./db.js');
       const workouts = await DB.Workouts.getAll();
-      // Filter for last 7 days
+      // Filter for last 7 days. WorkoutRecord carries `timestamp` (epoch ms);
+      // `w.date` does not exist — new Date(undefined) is NaN and the predicate
+      // is always false, so the coach received an empty week on every tap.
       const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const recentWorkouts = workouts.filter((w) => new Date(w.date).getTime() > sevenDaysAgo);
+      const recentWorkouts = workouts.filter((w) => Number(w.timestamp) >= sevenDaysAgo);
       const profile = stripSecrets(await DB.Settings.getAll());
 
       const response = await safeFetch(
