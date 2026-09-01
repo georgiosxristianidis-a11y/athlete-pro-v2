@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### fix — body-stats Navy formula uses onboarding sex (1.27.89)
+
+F-7 made sex an explicit onboarding choice and wrote it to `profile.sex`.
+Body measurements still read the legacy Settings key `sex` (default `'m'`).
+A woman who tapped Female in setup then logged waist/neck/hips got the male
+Navy formula — typically ~10–15 points too low, Athletic instead of Average.
+Onboarding now mirrors `sex` the same way Athlete Room already does;
+`renderBodyStats` prefers `profile.sex` so existing female profiles are scored
+correctly without re-saving. Guard: `test/body-stats.test.js`,
+`test/onboarding-defaults.test.js`.
+
 ### MD-1 — формат ответа коуча под выбранный движок (1.27.88)
 
 До `552e800` чат всегда слал `engine: 'gemini'`; движок стал выбираемым, и на

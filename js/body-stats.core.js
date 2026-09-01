@@ -82,6 +82,19 @@ export const cellFocusField = (cellId) => {
 /* ── Body fat (U.S. Navy) ───────────────────────────────────────────────── */
 
 /**
+ * Onboarding (F-7) writes `profile.sex`. Body-stats used to read only the
+ * legacy key `sex` (default `'m'`), so a woman who chose Female in setup
+ * still got the male Navy formula. Prefer the namespaced key; fall back to
+ * the legacy mirror that Athlete Room already writes.
+ * @param {unknown} profileSex  DB.Settings `profile.sex`
+ * @param {unknown} legacySex   DB.Settings `sex`
+ * @returns {'m'|'f'}
+ */
+export function resolveSex(profileSex, legacySex) {
+  return (profileSex || legacySex) === 'f' ? 'f' : 'm';
+}
+
+/**
  * @param {{ sex: string, heightCm: number|null|undefined, waistCm: number|null|undefined,
  *           neckCm: number|null|undefined, hipCm?: number|null }} p
  * @returns {number|null} percent, one decimal, or null when the inputs cannot answer
