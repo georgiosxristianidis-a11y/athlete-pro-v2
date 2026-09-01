@@ -187,6 +187,7 @@ describe('F-9 Fast Skip confirmation', () => {
       assert.equal(await DB.Settings.get('onboarding-complete'), true);
       assert.equal(await DB.Settings.get('profile.dob'), SKIP_PLACEHOLDERS.dob);
       assert.equal(await DB.Settings.get('profile.sex'), SKIP_PLACEHOLDERS.sex);
+      assert.equal(await DB.Settings.get('sex'), SKIP_PLACEHOLDERS.sex);
       assert.equal(await DB.Settings.get(ONBOARDING_DRAFT_KEY), null);
     } finally {
       DB.Metrics.save = save;

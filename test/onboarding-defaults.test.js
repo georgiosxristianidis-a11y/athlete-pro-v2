@@ -119,6 +119,20 @@ describe('F-7 sex is not chosen until the user taps', () => {
     await globalThis.window._obNext();
     assert.equal(snapshotOnboarding().step, 4);
   });
+
+  test('commit mirrors profile.sex onto the legacy sex key body-stats reads', async () => {
+    globalThis.window._obQuickStart();
+    globalThis.window._obSetData({ sex: 'f' });
+    const save = DB.Metrics.save;
+    DB.Metrics.save = async () => {};
+    try {
+      await commitOnboarding();
+      assert.equal(await DB.Settings.get('profile.sex'), 'f');
+      assert.equal(await DB.Settings.get('sex'), 'f');
+    } finally {
+      DB.Metrics.save = save;
+    }
+  });
 });
 
 describe('F-8 privacy is not chosen until the user taps', () => {
@@ -171,6 +185,7 @@ describe('F-8 privacy is not chosen until the user taps', () => {
       await commitOnboarding();
       assert.equal(await DB.Settings.get('privacy.mode'), 'airgap');
       assert.equal(await DB.Settings.get('profile.sex'), 'm');
+      assert.equal(await DB.Settings.get('sex'), 'm');
     } finally {
       DB.Metrics.save = save;
     }
