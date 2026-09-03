@@ -419,7 +419,9 @@ export const IntelView = (() => {
 
   /** Перерисовка ответа целиком: форматтер чистый, дешевле держать одну ветку кода. */
   function _renderStream(feedbackText, fullText, L, withTail) {
-    feedbackText.innerHTML = formatAirMarkdown(fullText, _buildReadinessWidget, _buildWorkoutCard);
+    feedbackText.innerHTML = formatAirMarkdown(fullText, _buildReadinessWidget, _buildWorkoutCard, {
+      final: !withTail,
+    });
     if (!withTail) return;
     const body = feedbackText.querySelector('.intel-md-body');
     let anchor = body?.lastElementChild || body || feedbackText;
@@ -544,10 +546,18 @@ export const IntelView = (() => {
 
       // Хвостовые точки снимаем вместе с последней перерисовкой.
       if (feedbackText) {
-        if (fullText.trim()) _renderStream(feedbackText, fullText, L, false);
-        // Пустой поток оставлял скелетон крутиться вечно — до HUD-2 это был
-        // единственный сценарий, где экран не выходил из ожидания.
-        else feedbackText.textContent = L.empty;
+        if (fullText.trim()) {
+          _renderStream(feedbackText, fullText, L, false);
+          // Сырой поток непустой, а видимое тело пустое: типичный случай —
+          // ответ целиком сидел в <thinking> и форматтер его снял. Без этой
+          // проверки карточка оставалась пустой, а L.empty не показывался.
+          const body = feedbackText.querySelector('.intel-md-body');
+          if (body && !body.textContent.trim()) feedbackText.textContent = L.empty;
+        } else {
+          // Пустой поток оставлял скелетон крутиться вечно — до HUD-2 это был
+          // единственный сценарий, где экран не выходил из ожидания.
+          feedbackText.textContent = L.empty;
+        }
       }
 
       IntelStore.addLog('AI', 'Insight received.');

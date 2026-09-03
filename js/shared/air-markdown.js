@@ -16,7 +16,9 @@
  * Форматтер вызывается на КАЖДЫЙ чанк стрима, поэтому недописанная разметка —
  * норма: незакрытый `<thinking>`, обрубленный JSON виджета, одинокие `**`.
  * Ни один из этих случаев не должен ронять рендер — показываем как есть,
- * следующий чанк дорисует.
+ * следующий чанк дорисует. На последнем кадре (`opts.final`) незакрытый
+ * `<thinking>` больше не режет хвост до EOF: модель часто забывает
+ * `</thinking>` или упирается в лимит токенов, и весь ответ пропадал.
  */
 import { esc } from './utils.js';
 
@@ -40,14 +42,23 @@ function inline(s) {
  * @param {string} rawText — сырой текст от модели
  * @param {(data: any) => string} [buildWidget] — сборщик виджета готовности
  * @param {(data: any) => string} [buildWorkoutCard] — сборщик карточки тренировки (HUD-3)
+ * @param {{ final?: boolean }} [opts] — `final: true` на последнем кадре стрима
  * @returns {string} HTML
  */
-export function formatAirMarkdown(rawText, buildWidget, buildWorkoutCard) {
+export function formatAirMarkdown(rawText, buildWidget, buildWorkoutCard, opts) {
   let text = String(rawText ?? '');
+  const final = !!(opts && opts.final);
 
   // 1. <thinking> — модель думает вслух, пользователю это не показываем.
-  //    Хвост без закрывающего тега режем тоже: во время стрима его ещё нет.
-  text = text.replace(/<thinking>[\s\S]*?(<\/thinking>|$)/g, '');
+  //    Закрытый блок режем всегда. Хвост без </thinking> во время стрима
+  //    тоже (закрывающего тега ещё нет). На финальном кадре тот же хвост —
+  //    забытый или обрезанный тег, а не «ещё думаю»: оставляем текст.
+  text = text.replace(/<thinking>[\s\S]*?<\/thinking>/g, '');
+  if (!final) {
+    text = text.replace(/<thinking>[\s\S]*$/g, '');
+  } else {
+    text = text.replace(/<\/?thinking>/gi, '');
+  }
 
   // 2. Виджет готовности достаём ДО экранирования — это JSON, а не текст.
   let widgetHtml = '';
@@ -92,29 +103,50 @@ export function formatAirMarkdown(rawText, buildWidget, buildWorkoutCard) {
     out.push(`<p class="intel-md-p">${para.join('<br>')}</p>`);
     para = [];
   };
-  const flush = () => { flushList(); flushPara(); };
+  const flush = () => {
+    flushList();
+    flushPara();
+  };
 
   for (const line of lines) {
     const t = line.trim();
-    if (!t) { flush(); continue; }
+    if (!t) {
+      flush();
+      continue;
+    }
 
-    if (t === WIDGET_MARK) { flush(); out.push(widgetHtml); continue; }
-    if (t === WORKOUT_MARK) { flush(); out.push(workoutHtml); continue; }
+    if (t === WIDGET_MARK) {
+      flush();
+      out.push(widgetHtml);
+      continue;
+    }
+    if (t === WORKOUT_MARK) {
+      flush();
+      out.push(workoutHtml);
+      continue;
+    }
 
     // Тематический разделитель. Горизонтальной линии в HUD нет, поэтому строка
     // работает как пустая: закрывает открытые блоки и исчезает. До MD-1 она
     // проваливалась в абзац и `---` виднелся в ответе сырыми дефисами.
-    if (/^(?:\*{3,}|-{3,}|_{3,})$/.test(t)) { flush(); continue; }
+    if (/^(?:\*{3,}|-{3,}|_{3,})$/.test(t)) {
+      flush();
+      continue;
+    }
 
     let m;
     // Уровни глубже третьего складываем в h3, а не в текст: контракт промпта
     // просит не уходить глубже `###`, но промпт — просьба, а не гарантия, и
     // непослушный `#### Разбор` обязан остаться заголовком, а не решётками.
     if ((m = t.match(/^#{3,6}\s+(.*)$/))) {
-      flush(); out.push(`<h3 class="intel-md-h3">${inline(m[1])}</h3>`); continue;
+      flush();
+      out.push(`<h3 class="intel-md-h3">${inline(m[1])}</h3>`);
+      continue;
     }
     if ((m = t.match(/^#{1,2}\s+(.*)$/))) {
-      flush(); out.push(`<h2 class="intel-md-h2">${inline(m[1])}</h2>`); continue;
+      flush();
+      out.push(`<h2 class="intel-md-h2">${inline(m[1])}</h2>`);
+      continue;
     }
     if ((m = t.match(/^(\d+)\.\s+(.*)$/))) {
       flush();
@@ -124,7 +156,9 @@ export function formatAirMarkdown(rawText, buildWidget, buildWorkoutCard) {
       continue;
     }
     if ((m = t.match(/^[*-]\s+(.*)$/))) {
-      flushPara(); list.push(`<li class="intel-md-li">${inline(m[1])}</li>`); continue;
+      flushPara();
+      list.push(`<li class="intel-md-li">${inline(m[1])}</li>`);
+      continue;
     }
 
     flushList();
