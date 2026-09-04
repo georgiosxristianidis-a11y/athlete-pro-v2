@@ -2021,13 +2021,14 @@ button:focus-visible {
   height: 2px;
   background: var(--c-border);
 }
+/* Spring writes transform every frame (dashboard + analytics). CSS transition
+   on the same property restarts each frame — dual-driver, same as 1.27.89. */
 .orm-bar-fill {
   height: 100%;
   width: 100%;
   border-radius: 2px;
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.8s var(--ease-std);
 }
 @media (hover: hover) {
   .orm-row:hover {
