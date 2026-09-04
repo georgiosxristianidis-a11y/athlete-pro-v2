@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Motion — бары 1RM одним драйвером Spring (1.27.91)
+
+Бары `.orm-bar-fill` на Дашборде и Stats ехали через `Spring.animate` и
+одновременно CSS `transition: transform`. Каждый кадр spring начинал новый
+переход — вязко, как лист «Обновить» до 1.27.89. CSS transition снят; Spring
+оставлен. Гард — `test/orm-bar-motion.test.js`.
+
 ### Body Metrics — лист формы без двойного драйвера (1.27.89)
 
 Кнопка «Обновить» открывала шит через `Spring.animate` и одновременно CSS
