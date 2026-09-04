@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Body Metrics — лист формы без двойного драйвера (1.27.89)
+
+Кнопка «Обновить» открывала шит через `Spring.animate` и одновременно CSS
+`transition: transform`. Каждый кадр spring начинал новый переход — шит ехал
+вязко. Оверлей ещё наследовал `backdrop-filter: blur(8px)` поверх Athlete Room.
+Один драйвер, как у `.ar-sheet`: CSS `0.26s var(--ease-decel)`, blur на оверлее
+снят, стекло остаётся на шите.
+
 ### MD-1 — формат ответа коуча под выбранный движок (1.27.88)
 
 До `552e800` чат всегда слал `engine: 'gemini'`; движок стал выбираемым, и на

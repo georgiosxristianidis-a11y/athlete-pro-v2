@@ -31,10 +31,14 @@
   font-size: var(--fs-2);
   font-weight: var(--fw-bold);
   cursor: pointer;
-  transition: transform var(--t-fast), opacity 0.3s var(--ease-std);
+  transition:
+    transform var(--t-fast),
+    opacity 0.3s var(--ease-std);
   -webkit-tap-highlight-color: transparent;
 }
-.bs-tab:active { transform: scale(var(--press-scale)); }
+.bs-tab:active {
+  transform: scale(var(--press-scale));
+}
 .bs-tab.active {
   background: var(--c-chrome-t);
   border: 1px solid var(--c-border-h);
@@ -92,15 +96,29 @@
   overflow: hidden;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform var(--t-fast), border-color var(--t-normal);
+  transition:
+    transform var(--t-fast),
+    border-color var(--t-normal);
   animation: card-in 0.28s var(--ease-std) both;
 }
-.bs-stat-card:nth-child(1) { animation-delay: 0.04s; }
-.bs-stat-card:nth-child(2) { animation-delay: 0.08s; }
-.bs-stat-card:nth-child(3) { animation-delay: 0.12s; }
-.bs-stat-card:nth-child(4) { animation-delay: 0.16s; }
-.bs-stat-card:nth-child(5) { animation-delay: 0.20s; }
-.bs-stat-card:nth-child(6) { animation-delay: 0.24s; }
+.bs-stat-card:nth-child(1) {
+  animation-delay: 0.04s;
+}
+.bs-stat-card:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.bs-stat-card:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.bs-stat-card:nth-child(4) {
+  animation-delay: 0.16s;
+}
+.bs-stat-card:nth-child(5) {
+  animation-delay: 0.2s;
+}
+.bs-stat-card:nth-child(6) {
+  animation-delay: 0.24s;
+}
 .bs-stat-card:active {
   transform: scale(var(--press-scale));
   border-color: var(--c-border-h);
@@ -233,7 +251,9 @@
   border: 1px solid var(--c-border);
   border-radius: var(--r-m);
   overflow: hidden;
-  transition: transform var(--t-fast), border-color var(--t-normal);
+  transition:
+    transform var(--t-fast),
+    border-color var(--t-normal);
 }
 .bs-hist-entry.open {
   border-color: var(--c-border-h);
@@ -308,7 +328,9 @@
   font-weight: var(--fw-bold);
   font-family: inherit;
   cursor: pointer;
-  transition: transform var(--t-fast), opacity var(--t-fast);
+  transition:
+    transform var(--t-fast),
+    opacity var(--t-fast);
   -webkit-tap-highlight-color: transparent;
   letter-spacing: 0.02em;
 }
@@ -324,7 +346,13 @@
   z-index: 5000;
   animation: none;
   background: transparent;
-  transition: background 0.25s;
+  transition: background 0.26s var(--ease-decel);
+  /* Inherited blur(8px) + will-change from .modal-overlay recaptures the
+     Athlete Room under this sheet every frame. Dim is the background;
+     glass stays on .modal-sheet (AIR Tier 2). */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  will-change: auto;
 }
 .modal-overlay.bs-overlay.visible {
   background: color-mix(in srgb, var(--c-black) 82%, transparent);
@@ -332,7 +360,7 @@
 .modal-overlay.bs-overlay .modal-sheet {
   animation: none;
   transform: translateY(100%);
-  transition: transform 0.3s var(--ease-std);
+  transition: transform 0.26s var(--ease-decel);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -390,7 +418,9 @@
   text-transform: uppercase;
   margin-top: var(--sp-1);
 }
-.bs-form-sec:first-child { margin-top: 0; }
+.bs-form-sec:first-child {
+  margin-top: 0;
+}
 .bs-form-note {
   font-size: var(--fs-1);
   font-weight: var(--fw-md);
@@ -434,7 +464,9 @@
   font-family: inherit;
   padding: 0 36px 0 12px;
   -webkit-appearance: none;
-  transition: transform var(--t-fast), border-color var(--t-fast);
+  transition:
+    transform var(--t-fast),
+    border-color var(--t-fast);
 }
 .bs-field-inp::-webkit-outer-spin-button,
 .bs-field-inp::-webkit-inner-spin-button {
