@@ -4,11 +4,11 @@ import { Timer } from '../timer.js';
 import { Nav, Toast } from '../shell.js';
 import {
   State,
-  SESSION_KEY,
   loadPlan,
   savePlan,
   buildSession,
   persistSession,
+  clearPersistedSession,
   getWeekMode,
   setWeekMode,
   getCustomWorkouts,
@@ -552,7 +552,7 @@ async function _persistFinalSession(summaryData, duration) {
   }
 
   // Cleanup
-  localStorage.removeItem(SESSION_KEY);
+  clearPersistedSession();
   if (window.DynamicIsland) window.DynamicIsland.hide();
   releaseWakeLock();
   Timer.reset();
@@ -575,7 +575,9 @@ export async function cancelSession() {
   State.startedAt = 0;
   State.plan = [];
   State.blockTimings = {};
-  persistSession();
+  // persistSession() no-ops when phase !== 'active', so a leftover snapshot
+  // would come back on the next Train load / cold boot as "Session restored".
+  clearPersistedSession();
   Timer.reset();
   // @ts-ignore
   if (window.DynamicIsland) window.DynamicIsland.hide();
