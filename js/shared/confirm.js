@@ -62,15 +62,19 @@ export function confirmDialog({
       playOut(overlay, prevFocus, resolve, result);
     };
 
-    // Minimal focus trap: keep Tab cycling between the two buttons.
+    // Capture + stopPropagation: app.js _trapFocus also listens for Esc/Tab
+    // on .modal-overlay and would overlay.remove() immediately, skipping
+    // the CSS exit, and would undo Tab between the two buttons.
     const onKey = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
+        e.stopPropagation();
         finish(false);
         return;
       }
       if (e.key === 'Tab') {
         e.preventDefault();
+        e.stopPropagation();
         (document.activeElement === okBtn ? cancelBtn : okBtn).focus();
       }
     };
@@ -191,9 +195,11 @@ export function promptFieldsDialog({
     const onKey = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
+        e.stopPropagation();
         finish(null);
       } else if (e.key === 'Enter') {
         e.preventDefault();
+        e.stopPropagation();
         submit();
       }
     };

@@ -39,4 +39,14 @@ describe('confirm/prompt motion', () => {
       'шит едет как .ar-sheet / .bs-overlay, одним драйвером'
     );
   });
+
+  test('Escape stops at confirm — F6 trap must not yank the overlay mid-exit', () => {
+    const escStops = /if \(e\.key === 'Escape'\) \{[\s\S]*?e\.stopPropagation\(\)/g;
+    const hits = src.match(escStops) || [];
+    assert.equal(
+      hits.length,
+      2,
+      'confirmDialog и promptFieldsDialog: stopPropagation на Escape, иначе _trapFocus делает overlay.remove() и CSS-выход не играет'
+    );
+  });
 });
