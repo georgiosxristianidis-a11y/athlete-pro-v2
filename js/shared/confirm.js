@@ -1,5 +1,4 @@
 // @ts-check
-import { Spring } from './spring.js';
 import { esc } from './utils.js';
 import { TextField } from '../ui/factory.js';
 
@@ -7,9 +6,9 @@ import { TextField } from '../ui/factory.js';
  * Shared dark confirmation dialog — replaces native confirm().
  * Promise-based: resolves true on confirm, false on cancel / backdrop / ESC.
  *
- * Built on the same premium primitives as the rest of the app
- * (.modal-overlay / .modal-sheet from css/base.css + Spring physics),
- * so it stays visually consistent with bsPromptField and the workout modals.
+ * Motion is CSS-only — same recipe as .bs-overlay / .ar-sheet. A JS spring
+ * writing transform on .modal-sheet (which already has `animation: sheet-in`)
+ * starts a new interpolation every frame and stutters.
  *
  * @param {Object} opts
  * @param {string} opts.title           - Short heading (already localized).
@@ -19,7 +18,13 @@ import { TextField } from '../ui/factory.js';
  * @param {boolean} [opts.danger]       - Red confirm button for destructive actions.
  * @returns {Promise<boolean>}
  */
-export function confirmDialog({ title, message = '', confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false } = {}) {
+export function confirmDialog({
+  title,
+  message = '',
+  confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
+  danger = false,
+} = {}) {
   return new Promise((resolve) => {
     // Only one confirm at a time — drop any stale instance.
     document.querySelector('.confirm-overlay')?.remove();
@@ -44,43 +49,26 @@ export function confirmDialog({ title, message = '', confirmLabel = 'Confirm', c
       </div>`;
     document.body.appendChild(overlay);
 
-    const sheet = /** @type {HTMLElement} */ (overlay.querySelector('.confirm-sheet'));
     const okBtn = /** @type {HTMLElement} */ (overlay.querySelector('[data-act="ok"]'));
     const cancelBtn = /** @type {HTMLElement} */ (overlay.querySelector('[data-act="cancel"]'));
 
-    // Spring entrance (matches bsPromptField).
-    sheet.style.transform = 'translateY(100%)';
-    requestAnimationFrame(() => {
-      overlay.classList.add('visible');
-      Spring.animate({
-        from: 100, to: 0, stiffness: 200, damping: 20,
-        onUpdate: (v) => { sheet.style.transform = `translateY(${v}%)`; }
-      });
-      // Destructive dialogs default to the safe (cancel) button.
-      // Second rAF: focus only sticks once the element is painted past insert.
-      requestAnimationFrame(() => (danger ? cancelBtn : okBtn).focus());
-    });
+    playIn(overlay, () => (danger ? cancelBtn : okBtn).focus());
 
     let settled = false;
     const finish = (result) => {
       if (settled) return;
       settled = true;
       document.removeEventListener('keydown', onKey, true);
-      overlay.classList.remove('visible');
-      Spring.animate({
-        from: 0, to: 100, stiffness: 250, damping: 25,
-        onUpdate: (v) => { sheet.style.transform = `translateY(${v}%)`; },
-        onComplete: () => {
-          overlay.remove();
-          if (prevFocus && typeof prevFocus.focus === 'function') prevFocus.focus();
-          resolve(result);
-        }
-      });
+      playOut(overlay, prevFocus, resolve, result);
     };
 
     // Minimal focus trap: keep Tab cycling between the two buttons.
     const onKey = (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); finish(false); return; }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        finish(false);
+        return;
+      }
       if (e.key === 'Tab') {
         e.preventDefault();
         (document.activeElement === okBtn ? cancelBtn : okBtn).focus();
@@ -90,13 +78,15 @@ export function confirmDialog({ title, message = '', confirmLabel = 'Confirm', c
 
     okBtn.addEventListener('click', () => finish(true));
     cancelBtn.addEventListener('click', () => finish(false));
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(false); });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) finish(false);
+    });
   });
 }
 
 /**
  * Text-input dialog — the dark replacement for native prompt() (0-7).
- * Built on the same .modal-sheet + Spring as confirmDialog, with a TextField
+ * Built on the same .modal-sheet as confirmDialog, with a TextField
  * from the UI factory. Resolves the trimmed string, or null on cancel / empty /
  * backdrop / ESC.
  *
@@ -108,12 +98,19 @@ export function confirmDialog({ title, message = '', confirmLabel = 'Confirm', c
  * @param {string} [opts.cancelLabel]   Default 'Cancel'.
  * @returns {Promise<string|null>}
  */
-export function promptDialog({ title, placeholder = '', value = '', confirmLabel = 'OK', cancelLabel = 'Cancel' } = {}) {
+export function promptDialog({
+  title,
+  placeholder = '',
+  value = '',
+  confirmLabel = 'OK',
+  cancelLabel = 'Cancel',
+} = {}) {
   return promptFieldsDialog({
     title,
     fields: [{ key: 'value', placeholder, value }],
-    confirmLabel, cancelLabel,
-  }).then((res) => (res ? (res.value || null) : null));
+    confirmLabel,
+    cancelLabel,
+  }).then((res) => (res ? res.value || null : null));
 }
 
 /**
@@ -133,7 +130,13 @@ export function promptDialog({ title, placeholder = '', value = '', confirmLabel
  * @param {string} [opts.cancelLabel]
  * @returns {Promise<Record<string,string>|null>}
  */
-export function promptFieldsDialog({ title, message = '', fields = [], confirmLabel = 'OK', cancelLabel = 'Cancel' } = {}) {
+export function promptFieldsDialog({
+  title,
+  message = '',
+  fields = [],
+  confirmLabel = 'OK',
+  cancelLabel = 'Cancel',
+} = {}) {
   return new Promise((resolve) => {
     document.querySelector('.confirm-overlay')?.remove();
     const prevFocus = /** @type {HTMLElement|null} */ (document.activeElement);
@@ -160,49 +163,66 @@ export function promptFieldsDialog({ title, message = '', fields = [], confirmLa
     const host = overlay.querySelector('.confirm-field');
     /** @type {Array<{ key: string, input: HTMLInputElement }>} */
     const inputs = fields.map((f) => {
-      const el = TextField({ label: f.label || '', value: f.value || '', placeholder: f.placeholder || '' });
+      const el = TextField({
+        label: f.label || '',
+        value: f.value || '',
+        placeholder: f.placeholder || '',
+      });
       host?.appendChild(el);
       return { key: f.key, input: el.inputEl };
     });
     const input = inputs[0]?.input;
 
-    const sheet = /** @type {HTMLElement} */ (overlay.querySelector('.confirm-sheet'));
     const okBtn = /** @type {HTMLElement} */ (overlay.querySelector('[data-act="ok"]'));
     const cancelBtn = /** @type {HTMLElement} */ (overlay.querySelector('[data-act="cancel"]'));
 
-    sheet.style.transform = 'translateY(100%)';
-    requestAnimationFrame(() => {
-      overlay.classList.add('visible');
-      Spring.animate({ from: 100, to: 0, stiffness: 200, damping: 20, onUpdate: (v) => { sheet.style.transform = `translateY(${v}%)`; } });
-      requestAnimationFrame(() => input?.focus());
-    });
+    playIn(overlay, () => input?.focus());
 
     let settled = false;
     const finish = (result) => {
       if (settled) return;
       settled = true;
       document.removeEventListener('keydown', onKey, true);
-      overlay.classList.remove('visible');
-      Spring.animate({
-        from: 0, to: 100, stiffness: 250, damping: 25,
-        onUpdate: (v) => { sheet.style.transform = `translateY(${v}%)`; },
-        onComplete: () => {
-          overlay.remove();
-          if (prevFocus && typeof prevFocus.focus === 'function') prevFocus.focus();
-          resolve(result);
-        }
-      });
+      playOut(overlay, prevFocus, resolve, result);
     };
-    const submit = () => finish(Object.fromEntries(inputs.map(({ key, input: el }) => [key, el.value.trim()])));
+    const submit = () =>
+      finish(Object.fromEntries(inputs.map(({ key, input: el }) => [key, el.value.trim()])));
 
     const onKey = (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); finish(null); }
-      else if (e.key === 'Enter') { e.preventDefault(); submit(); }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        finish(null);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        submit();
+      }
     };
     document.addEventListener('keydown', onKey, true);
 
     okBtn.addEventListener('click', submit);
     cancelBtn.addEventListener('click', () => finish(null));
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(null); });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) finish(null);
+    });
   });
+}
+
+/** 0.26s --ease-decel + paint buffer, same as .bs-overlay. */
+const SHEET_MS = 350;
+
+function playIn(overlay, onReady) {
+  requestAnimationFrame(() => {
+    overlay.classList.add('visible');
+    // Second rAF: focus only sticks once the element is painted past insert.
+    requestAnimationFrame(() => onReady?.());
+  });
+}
+
+function playOut(overlay, prevFocus, resolve, result) {
+  overlay.classList.remove('visible');
+  setTimeout(() => {
+    overlay.remove();
+    if (prevFocus && typeof prevFocus.focus === 'function') prevFocus.focus();
+    resolve(result);
+  }, SHEET_MS);
 }

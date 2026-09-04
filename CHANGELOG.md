@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Confirm/prompt — один CSS-драйвер, как лист «Обновить» (1.27.90)
+
+`confirmDialog` / `promptDialog` писали `transform` через Spring и одновременно
+ехали `@keyframes sheet-in` на `.modal-sheet`. Оверлей наследовал
+`backdrop-filter: blur(8px)`. Один драйвер: CSS `0.26s var(--ease-decel)` по
+классу `.visible`, blur на оверлее снят, стекло остаётся на шите. Все
+подтверждения в приложении — один примитив. Гард — `test/confirm-motion.test.js`.
+
 ### Body Metrics — лист формы без двойного драйвера (1.27.89)
 
 Кнопка «Обновить» открывала шит через `Spring.animate` и одновременно CSS
