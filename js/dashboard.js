@@ -4,7 +4,12 @@
    ════════════════════════════════════════════════ */
 
 import { DB, weeklyVolumeFrom, monthlyVolumeFrom, weeklyCountFrom, pplTonnageFrom } from './db.js';
-import { generateSparkline, generateSparklineMulti } from './shared/sparkline.js';
+import {
+  generateSparkline,
+  generateSparklineMulti,
+  VOLUME_DAYS,
+  parseVolumeDays,
+} from './shared/sparkline.js';
 import { getRecommendations } from './claude.store.js';
 import { Spring } from './shared/spring.js';
 import { esc, listenerGroup } from './shared/utils.js';
@@ -61,6 +66,7 @@ on('dash:toggleList', (el) => {
   if (label) label.textContent = expanded ? t('dash.show_less') : el.dataset.moreLabel;
   window.haptic?.(8);
 });
+on('dash:setVolumeDays', (el) => window.Dashboard.setVolumeDays(el.dataset.days));
 
 export const Dashboard = (() => {
   const TYPE_COLOR = {
@@ -71,6 +77,13 @@ export const Dashboard = (() => {
 
   // Всегда на виду — «большая тройка», остальные 1RM свёрнуты по умолчанию.
   const PINNED_LIFTS = ['Bench Press', 'Leg Press', 'Lat Pulldown'];
+
+  const SPARK_DAYS_KEY = 'ap-dash-volume-days';
+  let _sparkDays = parseVolumeDays(
+    typeof localStorage !== 'undefined' ? localStorage.getItem(SPARK_DAYS_KEY) : 30
+  );
+  /** @type {Array|null} */
+  let _sparkWorkouts = null;
 
   /** PPL label — journal keys, so Home and Journal stay in agreement. */
   function typeLabel(type) {
@@ -202,7 +215,16 @@ export const Dashboard = (() => {
               <div style="color:var(--c-text-2); font-size:var(--fs-1); font-weight:var(--fw-bold); letter-spacing:0.05em; text-transform:uppercase;">${esc(t('dash.volume_trend'))}</div>
               <div id="spark-total" style="color:var(--c-text-1); font-size:var(--fs-5); font-family:var(--font-heading); font-weight:var(--fw-black);">--</div>
             </div>
-            <div class="badge" style="background:var(--c-bg-3); color:var(--c-text-2); font-size:var(--fs-1); font-weight:var(--fw-bold); border:1px solid var(--c-border);">${esc(t('dash.days_30'))}</div>
+            <div class="dash-vol-seg" role="group" aria-label="${esc(t('dash.volume_period'))}">
+              ${VOLUME_DAYS.map((d) => {
+                const key = d === 7 ? 'dash.days_7' : d === 90 ? 'dash.days_90' : 'dash.days_30';
+                return `
+              <button type="button" class="dash-vol-btn${_sparkDays === d ? ' active' : ''}"
+                      data-action="dash:setVolumeDays" data-days="${d}"
+                      aria-pressed="${_sparkDays === d ? 'true' : 'false'}"
+                      aria-label="${esc(t(key))}">${d}</button>`;
+              }).join('')}
+            </div>
           </div>
           <div id="spark-container" style="height: 60px; width: calc(100% - 2 * var(--sp-2)); margin: var(--sp-2) auto;"></div>
         </div>
@@ -422,20 +444,20 @@ export const Dashboard = (() => {
   }
 
   /**
-   * Render the 30-day sparkline volume chart
+   * Render the volume-trend sparkline for the selected window (7 / 30 / 90 days).
    */
   function renderSparkline(workouts) {
     const container = document.getElementById('spark-container');
     const totalEl = document.getElementById('spark-total');
     if (!container || !totalEl) return;
+    _sparkWorkouts = workouts;
 
     if (!workouts || workouts.length === 0) {
       container.innerHTML = `<div style="padding: var(--sp-2); text-align: center; color: var(--c-text-3); font-size: var(--fs-2);">${esc(t('dash.no_data'))}</div>`;
       return;
     }
 
-    // Group tonnage by day + PPL type for the last 30 days
-    const days = 30;
+    const days = _sparkDays;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const dayMs = 24 * 60 * 60 * 1000;
@@ -453,7 +475,7 @@ export const Dashboard = (() => {
       legs: new Map(dayKeys.map((k) => [k, 0])),
     };
 
-    let total30d = 0;
+    let totalWindow = 0;
     let last7d = 0;
     let prev7d = 0;
 
@@ -470,11 +492,11 @@ export const Dashboard = (() => {
       const map = pplMaps[type];
       if (map && map.has(ts)) {
         map.set(ts, map.get(ts) + w.tonnage);
-        total30d += w.tonnage;
+        totalWindow += w.tonnage;
       } else if (!map) {
         // non-PPL type — add to total only
         const anyMap = pplMaps.push;
-        if (anyMap.has(ts)) total30d += w.tonnage;
+        if (anyMap.has(ts)) totalWindow += w.tonnage;
       }
     });
 
@@ -501,7 +523,7 @@ export const Dashboard = (() => {
       return;
     }
 
-    totalEl.innerHTML = `${fmtVol(total30d)} kg ${trendHtml}`;
+    totalEl.innerHTML = `${fmtVol(totalWindow)} kg ${trendHtml}`;
     container.innerHTML = generateSparklineMulti(
       [
         { data: pushArr, color: 'var(--c-push)' },
@@ -957,6 +979,28 @@ export const Dashboard = (() => {
     `;
   }
 
+  /**
+   * Switch the Home Volume Trend window (7 / 30 / 90) and redraw in place.
+   * @param {string|number} days
+   */
+  function setVolumeDays(days) {
+    const n = parseVolumeDays(days);
+    if (n === _sparkDays) return;
+    _sparkDays = n;
+    try {
+      localStorage.setItem(SPARK_DAYS_KEY, String(n));
+    } catch {
+      /* persistence is best-effort */
+    }
+    document.querySelectorAll('.dash-vol-btn').forEach((btn) => {
+      const on = Number(btn.dataset.days) === n;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    if (_sparkWorkouts) renderSparkline(_sparkWorkouts);
+    window.haptic?.(8);
+  }
+
   return {
     load,
     renderRecommendations,
@@ -965,6 +1009,7 @@ export const Dashboard = (() => {
     closeMascot,
     _initMascotDrag,
     directLaunch,
+    setVolumeDays,
   };
 })();
 
