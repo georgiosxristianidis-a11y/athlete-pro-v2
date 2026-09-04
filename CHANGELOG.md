@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security — qs 6.16.0 через override
+
+Express 4 пинит `qs@~6.15.1` (потолок 6.15.3). Оба moderate advisory
+(array-limit bypass, isBuffer DoS) закрыты в 6.16.0. Override, не
+`npm audit fix` — Express остался 4.22.2. `@humanfs/node` (eslint) не трогали.
+
 ### AGENT-7 — гейт наряда якорится SHA до выдачи
 
 Наряд больше не обещает «проверено на main» без якоря: `npm run brief:gate` гоняет
