@@ -10,27 +10,46 @@
    Logic lives in body-stats.core.js — this file is DOM only.
    ════════════════════════════════════════════════════════ */
 import { DB } from './db.js';
-import { Spring } from './shared/spring.js';
 import { Toast } from './shell.js';
 import { esc } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
 import { isRu } from './locale.store.js';
 import { on } from './events.js';
 import {
-  BS_FIELDS, BS_INPUT_FIELDS, BS_FORM_SECTIONS, BS_BENTO,
-  cellFocusField, bodyFatCategory, enrichEntries, sortEntries, latestValues,
-  cellSeries, cellDelta, fieldDeltaAt, sparkPoints, fmtNum, fmtDelta,
+  BS_FIELDS,
+  BS_INPUT_FIELDS,
+  BS_FORM_SECTIONS,
+  BS_BENTO,
+  cellFocusField,
+  bodyFatCategory,
+  enrichEntries,
+  sortEntries,
+  latestValues,
+  cellSeries,
+  cellDelta,
+  fieldDeltaAt,
+  sparkPoints,
+  fmtNum,
+  fmtDelta,
 } from './body-stats.core.js';
 
-on('bs:edit',       (el) => openForm(el.dataset.focus || null));
+on('bs:edit', (el) => openForm(el.dataset.focus || null));
 on('bs:histToggle', (el) => el.parentElement?.classList.toggle('open'));
-on('bs:delete',     (el, e) => { e.stopPropagation(); deleteEntry(el.dataset.date); });
+on('bs:delete', (el, e) => {
+  e.stopPropagation();
+  deleteEntry(el.dataset.date);
+});
 
 const BS_KEY = 'ap-bodystats';
-const SPARK_W = 100, SPARK_H = 38;
+const SPARK_W = 100,
+  SPARK_H = 38;
 
 const fmtDate = (iso) =>
-  new Date(iso).toLocaleDateString(isRu() ? 'ru' : 'en', { month: 'short', day: 'numeric', year: 'numeric' });
+  new Date(iso).toLocaleDateString(isRu() ? 'ru' : 'en', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 
 const label = (f) => (isRu() ? f.ru : f.label);
 
@@ -38,7 +57,9 @@ function bsLoad() {
   try {
     const raw = JSON.parse(localStorage.getItem(BS_KEY) || '[]');
     return Array.isArray(raw) ? raw : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 function bsSave(data) {
   localStorage.setItem(BS_KEY, JSON.stringify(data));
@@ -81,15 +102,21 @@ export async function renderBodyStats(targetEl) {
         </button>
       </div>
       <div class="bs-last-date">
-        ${latest
-          ? `${ru ? 'последний замер' : 'last measured'} · ${esc(fmtDate(latest.date))}`
-          : (ru ? 'ещё нет замеров' : 'no measurements yet')}
+        ${
+          latest
+            ? `${ru ? 'последний замер' : 'last measured'} · ${esc(fmtDate(latest.date))}`
+            : ru
+              ? 'ещё нет замеров'
+              : 'no measurements yet'
+        }
       </div>
       <div class="bs-grid">${entries.length ? gridHtml(entries, latestMetric, sex, ru) : ''}</div>
-      ${entries.length
-        ? `<div class="bs-section-title">${ru ? 'История' : 'History'}</div>
+      ${
+        entries.length
+          ? `<div class="bs-section-title">${ru ? 'История' : 'History'}</div>
            <div class="bs-history">${historyHtml(entries, ru)}</div>`
-        : emptyHtml(ru)}
+          : emptyHtml(ru)
+      }
     </div>`;
 }
 
@@ -101,9 +128,11 @@ function emptyHtml(ru) {
         <path d="M7 8v3M11 8v5M15 8v3M19 8v5"/>
       </svg>
       <p class="bs-empty-title">${ru ? 'Пока пусто' : 'Nothing yet'}</p>
-      <p class="bs-empty-sub">${ru
-        ? 'Один замер — это точка. Два — уже тренд: рост рук, уход талии, динамика жира.'
-        : 'One entry is a dot. Two make a trend — arm growth, waist loss, fat direction.'}</p>
+      <p class="bs-empty-sub">${
+        ru
+          ? 'Один замер — это точка. Два — уже тренд: рост рук, уход талии, динамика жира.'
+          : 'One entry is a dot. Two make a trend — arm growth, waist loss, fat direction.'
+      }</p>
       <button class="btn-primary bs-add-btn" data-action="bs:edit">${ru ? 'Первый замер' : 'First entry'}</button>
     </div>`;
 }
@@ -120,7 +149,11 @@ function gridHtml(entries, latestMetric, sex, ru) {
     if (cell.id === 'weight' && val == null && latestMetric?.weight) val = latestMetric.weight;
 
     const delta = cellDelta(entries, cell);
-    const pts = sparkPoints(points.map((p) => p.v), SPARK_W, SPARK_H);
+    const pts = sparkPoints(
+      points.map((p) => p.v),
+      SPARK_W,
+      SPARK_H
+    );
 
     let sub = '';
     if (cell.id === 'body_fat' && val != null) {
@@ -139,31 +172,37 @@ function gridHtml(entries, latestMetric, sex, ru) {
         </div>
         <div class="bs-stat-value">${fmtNum(val)}<span class="bs-stat-unit">${cell.unit}</span></div>
         ${sub}
-        ${pts
-          ? `<svg class="bs-spark" viewBox="0 0 ${SPARK_W} ${SPARK_H}" preserveAspectRatio="none" aria-hidden="true">
+        ${
+          pts
+            ? `<svg class="bs-spark" viewBox="0 0 ${SPARK_W} ${SPARK_H}" preserveAspectRatio="none" aria-hidden="true">
                <polyline points="${pts}" fill="none" stroke="var(--bs-accent)" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
              </svg>`
-          : `<div class="bs-spark-empty">${ru ? 'нужен ещё замер' : 'one more entry'}</div>`}
+            : `<div class="bs-spark-empty">${ru ? 'нужен ещё замер' : 'one more entry'}</div>`
+        }
       </div>`;
   }).join('');
 }
 
 /** Collapsed by date; opened it shows every field with its own change. */
 function historyHtml(entries, ru) {
-  return entries.slice(0, 12).map((e, i) => {
-    const rows = BS_FIELDS.filter((f) => e[f.id] != null).map((f) => {
-      const d = fieldDeltaAt(entries, f.id, i);
-      return `
+  return entries
+    .slice(0, 12)
+    .map((e, i) => {
+      const rows = BS_FIELDS.filter((f) => e[f.id] != null)
+        .map((f) => {
+          const d = fieldDeltaAt(entries, f.id, i);
+          return `
         <div class="bs-hist-cell">
           <span class="bs-hist-lbl">${label(f)}</span>
           ${d ? `<span class="bs-delta bs-delta-${d.tone}">${fmtDelta(d.diff)}</span>` : ''}
           <span class="bs-hist-val">${fmtNum(e[f.id])} ${f.unit}</span>
         </div>`;
-    }).join('');
+        })
+        .join('');
 
-    const w = e.weight != null ? `${fmtNum(e.weight)} kg` : '';
-    return `
+      const w = e.weight != null ? `${fmtNum(e.weight)} kg` : '';
+      return `
       <div class="bs-hist-entry">
         <div class="bs-hist-head" data-action="bs:histToggle">
           <span class="bs-hist-date">${esc(fmtDate(e.date))}</span>
@@ -179,7 +218,8 @@ function historyHtml(entries, ru) {
           </button>
         </div>
       </div>`;
-  }).join('');
+    })
+    .join('');
 }
 
 /* ── Form ───────────────────────────────────────────────────────────────── */
@@ -191,6 +231,10 @@ function historyHtml(entries, ru) {
  * @param {string|null} focusId
  */
 function openForm(focusId) {
+  // A second tap while the first sheet is opening stacked two blur layers
+  // on Athlete Room. One form at a time.
+  if (document.querySelector('.modal-overlay.bs-overlay')) return;
+
   const ru = isRu();
   const today = new Date().toISOString().split('T')[0];
   const latest = latestValues(bsLoad());
@@ -211,13 +255,15 @@ function openForm(focusId) {
         <input type="date" id="bsf-date" class="bs-date-inp" value="${today}" max="${today}">
       </div>
       <div class="bs-fields-scroll">
-        ${BS_FORM_SECTIONS.map((sec) => `
+        ${BS_FORM_SECTIONS.map(
+          (sec) => `
           <div class="bs-form-sec">${ru ? sec.ru : sec.label}</div>
-          ${sec.fields.map((id) => {
-            const f = BS_INPUT_FIELDS.find((x) => x.id === id);
-            if (!f) return '';
-            const v = latest[f.id] != null ? fmtNum(latest[f.id]) : '';
-            return `
+          ${sec.fields
+            .map((id) => {
+              const f = BS_INPUT_FIELDS.find((x) => x.id === id);
+              if (!f) return '';
+              const v = latest[f.id] != null ? fmtNum(latest[f.id]) : '';
+              return `
               <div class="bs-field">
                 <label class="bs-field-label" for="bsf-${f.id}">${label(f)}</label>
                 <div class="bs-field-inp-wrap">
@@ -226,11 +272,15 @@ function openForm(focusId) {
                   <span class="bs-field-unit">${f.unit}</span>
                 </div>
               </div>`;
-          }).join('')}
-        `).join('')}
-        <p class="bs-form-note">${ru
-          ? 'Процент жира считается по формуле ВМФ США из талии, шеи и роста — вводить его не нужно.'
-          : 'Body fat is derived from waist, neck and height (U.S. Navy formula) — no need to enter it.'}</p>
+            })
+            .join('')}
+        `
+        ).join('')}
+        <p class="bs-form-note">${
+          ru
+            ? 'Процент жира считается по формуле ВМФ США из талии, шеи и роста — вводить его не нужно.'
+            : 'Body fat is derived from waist, neck and height (U.S. Navy formula) — no need to enter it.'
+        }</p>
       </div>
       <div class="bs-form-actions">
         <button class="btn-primary bs-save-btn" id="bsf-save">${ru ? 'Сохранить' : 'Save'}</button>
@@ -238,30 +288,33 @@ function openForm(focusId) {
     </div>`;
   document.body.appendChild(overlay);
 
-  const sheet = /** @type {HTMLElement} */ (overlay.querySelector('.bs-sheet'));
-  sheet.style.transform = 'translateY(100%)';
+  // Motion is CSS-only — same recipe as .ar-sheet / .claude-sheet. A JS spring
+  // writing transform on an element that also has `transition: transform`
+  // starts a new 0.3s interpolation every frame and stutters.
   requestAnimationFrame(() => {
     overlay.classList.add('visible');
-    Spring.animate({
-      from: 100, to: 0, stiffness: 200, damping: 20,
-      onUpdate: (v) => { sheet.style.transform = `translateY(${v}%)`; },
-    });
     const target = /** @type {HTMLInputElement|null} */ (
-      focusId ? overlay.querySelector('#bsf-' + focusId) : null);
+      focusId ? overlay.querySelector('#bsf-' + focusId) : null
+    );
     // inline: 'nearest' явно: дефолт умеет уводить контейнер по горизонтали.
-    if (target) { target.focus(); target.select(); target.scrollIntoView({ block: 'center', inline: 'nearest' }); }
+    if (target) {
+      target.focus();
+      target.select();
+      target.scrollIntoView({ block: 'center', inline: 'nearest' });
+    }
   });
 
+  let closing = false;
   const close = () => {
+    if (closing) return;
+    closing = true;
     overlay.classList.remove('visible');
-    Spring.animate({
-      from: 0, to: 100, stiffness: 250, damping: 25,
-      onUpdate: (v) => { sheet.style.transform = `translateY(${v}%)`; },
-      onComplete: () => overlay.remove(),
-    });
+    setTimeout(() => overlay.remove(), 350);
   };
   /** @type {HTMLElement} */ (overlay.querySelector('.bs-close-x')).onclick = close;
-  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  overlay.onclick = (e) => {
+    if (e.target === overlay) close();
+  };
 
   // Prefilled values are a convenience, not a measurement: saving them all would
   // stamp today's date onto numbers the user never re-measured, and every metric
@@ -308,7 +361,13 @@ function openForm(focusId) {
     close();
     await renderBodyStats();
     Toast.show(
-      isRu() ? (changed ? 'Замеры сохранены' : 'Без изменений') : (changed ? 'Measurements saved' : 'No changes'),
+      isRu()
+        ? changed
+          ? 'Замеры сохранены'
+          : 'Без изменений'
+        : changed
+          ? 'Measurements saved'
+          : 'No changes',
       changed ? 'success' : 'info'
     );
   };
@@ -318,7 +377,10 @@ async function deleteEntry(dateIso) {
   const ru = isRu();
   const ok = await confirmDialog({
     title: ru ? 'Удалить запись?' : 'Delete entry?',
-    message: (ru ? 'Замеры за ' : 'Measurements for ') + fmtDate(dateIso) + (ru ? ' будут удалены.' : ' will be removed.'),
+    message:
+      (ru ? 'Замеры за ' : 'Measurements for ') +
+      fmtDate(dateIso) +
+      (ru ? ' будут удалены.' : ' will be removed.'),
     confirmLabel: ru ? 'Удалить' : 'Delete',
     danger: true,
   });
