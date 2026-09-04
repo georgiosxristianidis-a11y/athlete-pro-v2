@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security — qs 6.16.0 через override
+
+Express 4 пинит `qs@~6.15.1` (потолок 6.15.3). Оба moderate advisory
+(array-limit bypass, isBuffer DoS) закрыты в 6.16.0. Override, не
+`npm audit fix` — Express остался 4.22.2. `@humanfs/node` (eslint) не трогали.
+
 ### Body Metrics — лист формы без двойного драйвера (1.27.89)
 
 Кнопка «Обновить» открывала шит через `Spring.animate` и одновременно CSS
