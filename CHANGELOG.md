@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Analytics field — Volume Trend период, Strength Index тап, кривые без крючков (1.27.92)
+
+Полевой тест на телефоне: бейдж Volume Trend писал «30 Days» и не переключался;
+карточка Strength Index не открывалась; Strength Progression рисовал Catmull-Rom
+крючки и фальшивые пики на редких точках. Сегмент 7/30/90 на Home, тап по индексу
+открывает лист с графиком, интерполяция — monotone cubic. Гард —
+`test/analytics-charts.test.js`.
+
 ### Motion — бары 1RM одним драйвером Spring (1.27.91)
 
 Бары `.orm-bar-fill` на Дашборде и Stats ехали через `Spring.animate` и
