@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Train — Discard больше не воскрешает сессию (1.27.90)
+
+`cancelSession()` ставил `phase = 'select'` и звал `persistSession()`.
+Тот хелпер пишет снимок только пока сессия активна, поэтому ключ
+`ap-active-session` оставался. Следующий заход на Train или холодный старт
+поднимал выброшенную тренировку с тостом «Session restored». Снимок теперь
+снимается явно через `clearPersistedSession()`.
+
 ### Body Metrics — лист формы без двойного драйвера (1.27.89)
 
 Кнопка «Обновить» открывала шит через `Spring.animate` и одновременно CSS
