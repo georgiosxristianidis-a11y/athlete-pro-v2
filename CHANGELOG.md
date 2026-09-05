@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Train — prefill берёт последнюю сессию, не первую (1.27.92)
+
+`buildSession` искал историю через `[...workouts].reverse().find()`.
+`DB.Workouts.getAll()` уже отдаёт newest-first, reverse превращал список
+в oldest-first, и каждый новый день подставлял веса первой тренировки.
+Lookup идёт по `timestamp`. Гард — `test/alias-prefill.test.js`.
+
 ### Motion — бары 1RM одним драйвером Spring (1.27.91)
 
 Бары `.orm-bar-fill` на Дашборде и Stats ехали через `Spring.animate` и
