@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Backup — Body Metrics round-trip on restore (1.27.92)
+
+`ap-bodystats` lives only in localStorage. LAUNCH-8 added plan keys to the
+export allowlist so a clean-phone restore would not silently drop the
+training plan, but Body Metrics stayed off the list. Export → wipe → import
+brought workouts and weight back and erased waist/neck/arms history. The
+key is now in `LOCAL_BACKUP_KEYS`. Guard: `test/backup.test.js`.
+
 ### Motion — бары 1RM одним драйвером Spring (1.27.91)
 
 Бары `.orm-bar-fill` на Дашборде и Stats ехали через `Spring.animate` и
