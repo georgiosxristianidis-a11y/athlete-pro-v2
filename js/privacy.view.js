@@ -9,12 +9,8 @@
 
 import { DB } from './db.js';
 import {
-  getPrivacyMode,
-  getAiEnabled,
-  setPrivacyMode,
-  setAiEnabled,
-  getAuditLog,
-  clearAuditLog,
+  getPrivacyMode, getAiEnabled, setPrivacyMode, setAiEnabled,
+  getAuditLog, clearAuditLog,
 } from './privacy.store.js';
 import { isUsageEnabled, setUsageEnabled, getUsageState } from './usage.js';
 import { t, isRu, getLang } from './locale.store.js';
@@ -22,26 +18,19 @@ import { esc } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
 import { on } from './events.js';
 
-on('privacy:setMode', (el) => _setMode(el.dataset.mode));
-on('privacy:toggleAi', () => _toggleAi());
-on('privacy:passport', () => openDataPassport());
-on('privacy:audit', () => openAuditLog());
-on('privacy:closeOverlay', (el) => _closeOverlay(el.dataset.overlay));
-on('privacy:exportAndClose', () => {
-  window.Profile?.exportData();
-  _closeOverlay('data-passport-overlay');
-});
-on('privacy:confirmDelete', () => _confirmDelete());
-on('privacy:clearAudit', () => _clearAudit());
-on('privacy:toggleUsage', () => _toggleUsage());
+on('privacy:setMode',        (el) => _setMode(el.dataset.mode));
+on('privacy:toggleAi',       () => _toggleAi());
+on('privacy:passport',       () => openDataPassport());
+on('privacy:audit',          () => openAuditLog());
+on('privacy:closeOverlay',   (el) => _closeOverlay(el.dataset.overlay));
+on('privacy:exportAndClose', () => { window.Profile?.exportData(); _closeOverlay('data-passport-overlay'); });
+on('privacy:confirmDelete',  () => _confirmDelete());
+on('privacy:clearAudit',     () => _clearAudit());
+on('privacy:toggleUsage',    () => _toggleUsage());
 
 const MODES = [
-  { id: 'cloud', label: 'Cloud', desc: 'AI Coach + cloud sync available.' },
-  {
-    id: 'anon',
-    label: 'Anonymous',
-    desc: 'AI works, but identifiers are stripped before sending.',
-  },
+  { id: 'cloud',  label: 'Cloud',     desc: 'AI Coach + cloud sync available.' },
+  { id: 'anon',   label: 'Anonymous', desc: 'AI works, but identifiers are stripped before sending.' },
   { id: 'airgap', label: 'Air-Gapped', desc: 'Zero data leaves this device. AI is disabled.' },
 ];
 
@@ -52,7 +41,7 @@ const MODES = [
 export function renderPrivacyCard() {
   const mode = getPrivacyMode();
   const ai = getAiEnabled();
-  const cur = MODES.find((m) => m.id === mode) || MODES[2];
+  const cur = MODES.find(m => m.id === mode) || MODES[2];
 
   return `
     <div class="section-header" style="margin-top:var(--sp-3)">
@@ -64,15 +53,13 @@ export function renderPrivacyCard() {
 
     <div class="profile-card privacy-card">
       <div class="privacy-segment" role="tablist" aria-label="Privacy mode">
-        ${MODES.map(
-          (m) => `
+        ${MODES.map(m => `
           <button class="privacy-seg-btn ${m.id === mode ? 'active' : ''}"
                   data-mode="${m.id}" role="tab" aria-selected="${m.id === mode}"
                   data-action="privacy:setMode">
             ${_modeIcon(m.id)}
             <span>${t(`privacy.${m.id}`)}</span>
-          </button>`
-        ).join('')}
+          </button>`).join('')}
       </div>
 
       <div class="privacy-desc" id="privacy-desc">${cur.desc}</div>
@@ -82,7 +69,9 @@ export function renderPrivacyCard() {
         <div class="pref-info">
           <div class="pref-title">${t('privacy.ai_coach')}</div>
           <div class="pref-sub">
-            ${mode === 'airgap' ? t('privacy.ai_desc_airgap') : t('privacy.ai_desc_active')}
+            ${mode === 'airgap'
+              ? t('privacy.ai_desc_airgap')
+              : t('privacy.ai_desc_active')}
           </div>
         </div>
         <div class="switch-wrap ${mode === 'airgap' ? 'switch-disabled' : ''}"
@@ -128,12 +117,12 @@ function _renderLegalLinks() {
   const lang = getLang() === 'ru' ? 'ru' : 'en';
   const docs = [
     { id: 'privacy', key: 'privacy.legal_privacy' },
-    { id: 'terms', key: 'privacy.legal_terms' },
+    { id: 'terms',   key: 'privacy.legal_terms' },
     { id: 'consent', key: 'privacy.legal_consent' },
   ];
   return `
       <nav class="privacy-legal" aria-label="${t('privacy.title')}">
-        ${docs.map((d) => `<a href="/legal/${d.id}.${lang}.html" target="_blank" rel="noopener">${t(d.key)}</a>`).join('')}
+        ${docs.map(d => `<a href="/legal/${d.id}.${lang}.html" target="_blank" rel="noopener">${t(d.key)}</a>`).join('')}
       </nav>
 `;
 }
@@ -151,9 +140,7 @@ function _renderUsageRow(mode) {
   const on = !locked && isUsageEnabled();
   const sub = locked
     ? t(`privacy.usage_${state}`)
-    : mode === 'airgap'
-      ? t('privacy.usage_desc_airgap')
-      : t('privacy.usage_desc');
+    : (mode === 'airgap' ? t('privacy.usage_desc_airgap') : t('privacy.usage_desc'));
 
   return `
       <div class="pref-row">
@@ -225,9 +212,9 @@ export async function openDataPassport() {
   ]);
 
   const audit = getAuditLog();
-  const sentRecently = audit.filter((a) => a.allowed && Date.now() - a.t < 30 * 24 * 3600e3);
-  const aiCalls = sentRecently.filter((a) => a.kind === 'ai').length;
-  const syncCalls = sentRecently.filter((a) => a.kind === 'sync').length;
+  const sentRecently = audit.filter(a => a.allowed && (Date.now() - a.t) < 30 * 24 * 3600e3);
+  const aiCalls = sentRecently.filter(a => a.kind === 'ai').length;
+  const syncCalls = sentRecently.filter(a => a.kind === 'sync').length;
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
@@ -308,12 +295,9 @@ export function openAuditLog() {
   overlay.id = 'audit-overlay';
   overlay.style.zIndex = '5000';
 
-  const rows =
-    audit.length === 0
-      ? `<div class="audit-empty">${t('privacy.audit_empty')}</div>`
-      : audit
-          .map(
-            (a) => `
+  const rows = audit.length === 0
+    ? `<div class="audit-empty">${t('privacy.audit_empty')}</div>`
+    : audit.map(a => `
         <div class="audit-row ${a.allowed ? 'allowed' : 'blocked'}">
           <div class="audit-row-left">
             <span class="audit-dot ${a.allowed ? '' : 'blocked'}"></span>
@@ -323,9 +307,7 @@ export function openAuditLog() {
             </div>
           </div>
           <span class="audit-status">${a.allowed ? esc(t('privacy.status_sent')) : esc(a.reason || t('privacy.status_blocked'))}</span>
-        </div>`
-          )
-          .join('');
+        </div>`).join('');
 
   overlay.innerHTML = `
     <div class="modal-sheet" style="max-height:88vh;overflow-y:auto">
@@ -337,7 +319,7 @@ export function openAuditLog() {
         </button>
       </div>
       <div class="audit-summary">
-        ${t('privacy.audit_summary', { total: audit.length, sent: audit.filter((a) => a.allowed).length, blocked: audit.filter((a) => !a.allowed).length })}
+        ${t('privacy.audit_summary', { total: audit.length, sent: audit.filter(a => a.allowed).length, blocked: audit.filter(a => !a.allowed).length })}
       </div>
       <div class="audit-list">${rows}</div>
       <button class="btn btn-ghost" style="margin-top:var(--sp-2)"
@@ -396,8 +378,8 @@ function _flashStatusBar() {
 
 function _modeIcon(mode) {
   const paths = {
-    cloud: '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
-    anon: '<circle cx="12" cy="8" r="3.5"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/><line x1="3" y1="3" x2="21" y2="21"/>',
+    cloud:  '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
+    anon:   '<circle cx="12" cy="8" r="3.5"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/><line x1="3" y1="3" x2="21" y2="21"/>',
     airgap: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   };
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -439,8 +421,8 @@ function _iconClose() {
 
 function _relTime(ts) {
   const d = Date.now() - ts;
-  if (d < 60_000) return t('privacy.time_now');
-  if (d < 3600_000) return t('privacy.time_m', { n: Math.floor(d / 60_000) });
+  if (d < 60_000)    return t('privacy.time_now');
+  if (d < 3600_000)  return t('privacy.time_m', { n: Math.floor(d / 60_000) });
   if (d < 86_400_000) return t('privacy.time_h', { n: Math.floor(d / 3600_000) });
   return t('privacy.time_d', { n: Math.floor(d / 86_400_000) });
 }
