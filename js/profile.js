@@ -341,7 +341,7 @@ export const Profile = (() => {
       _deleteTapTimer = null;
       btn.classList.add('slide-out');
       setTimeout(async () => {
-        await DB.clearAll();
+        await DB.clearAll({ local: true });
         window.location.reload();
       }, 400);
     } else {

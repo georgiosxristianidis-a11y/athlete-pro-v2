@@ -6,7 +6,17 @@
    re-exports the same public API (DB.*) so no caller changes.
    ════════════════════════════════════════════════════════ */
 
-import { S, newId, getDeviceId, withMeta, openDB, tx, req2p, req2pSafe, _triggerSync } from './db/core.js';
+import {
+  S,
+  newId,
+  getDeviceId,
+  withMeta,
+  openDB,
+  tx,
+  req2p,
+  req2pSafe,
+  _triggerSync,
+} from './db/core.js';
 import { Settings } from './db/settings.js';
 import { OneRM } from './db/onerm.js';
 import { Metrics } from './db/metrics.js';
@@ -33,7 +43,7 @@ export { newId, getDeviceId, withMeta, openDB };
  * @typedef {{ id: number, weight: number, height: number, bmi: number, timestamp: number }} MetricsRecord
  *
  * @typedef {{ id: number, timestamp: number, payload: Object }} NutritionRecord
- * 
+ *
  * @typedef {{ id: number, timestamp: number, name: string, payload: Object }} PlanRecord
  */
 
@@ -78,7 +88,7 @@ export function startOfMonth(ref = new Date()) {
  */
 export function weeklyVolumeFrom(list, ref = new Date()) {
   const since = startOfWeek(ref);
-  return list.filter(w => w.timestamp >= since).reduce((s, w) => s + (w.tonnage || 0), 0);
+  return list.filter((w) => w.timestamp >= since).reduce((s, w) => s + (w.tonnage || 0), 0);
 }
 
 /**
@@ -89,7 +99,7 @@ export function weeklyVolumeFrom(list, ref = new Date()) {
  */
 export function monthlyVolumeFrom(list, ref = new Date()) {
   const since = startOfMonth(ref);
-  return list.filter(w => w.timestamp >= since).reduce((s, w) => s + (w.tonnage || 0), 0);
+  return list.filter((w) => w.timestamp >= since).reduce((s, w) => s + (w.tonnage || 0), 0);
 }
 
 /**
@@ -100,7 +110,7 @@ export function monthlyVolumeFrom(list, ref = new Date()) {
  */
 export function monthlyCountFrom(list, ref = new Date()) {
   const since = startOfMonth(ref);
-  return list.filter(w => w.timestamp >= since).length;
+  return list.filter((w) => w.timestamp >= since).length;
 }
 
 /**
@@ -110,7 +120,9 @@ export function monthlyCountFrom(list, ref = new Date()) {
  */
 export function pplTonnageFrom(list) {
   const r = { push: 0, pull: 0, legs: 0 };
-  list.forEach(w => { if (r[w.type] !== undefined) r[w.type] += w.tonnage || 0; });
+  list.forEach((w) => {
+    if (r[w.type] !== undefined) r[w.type] += w.tonnage || 0;
+  });
   return r;
 }
 
@@ -122,14 +134,23 @@ export function pplTonnageFrom(list) {
  */
 export function weeklyCountFrom(list, ref = new Date()) {
   const since = startOfWeek(ref);
-  return list.filter(w => w.timestamp >= since).length;
+  return list.filter((w) => w.timestamp >= since).length;
 }
 
 /* ════════════════════════════════════════════════════════
    NUKE — clear everything (Danger Zone)
    ════════════════════════════════════════════════════════ */
-/** @returns {Promise<void>} */
-async function clearAll() {
+/**
+ * Wipe IndexedDB stores. Pass `{ local: true }` for the user-facing
+ * delete paths — plans, Body Metrics, and crash-recovery live in
+ * localStorage, so an IDB-only clear leaves a ghost session that
+ * boot (`ap-active-session`) will restore after reload.
+ * Tests keep the default so they can reset IDB without clobbering
+ * a mocked localStorage.
+ * @param {{ local?: boolean }} [opts]
+ * @returns {Promise<void>}
+ */
+async function clearAll(opts = {}) {
   await Promise.all([
     Workouts.clear(),
     OneRM.clear(),
@@ -139,18 +160,40 @@ async function clearAll() {
     NutritionLogs.clear(),
     PlannedWorkouts.clear(),
   ]);
+  if (opts.local && typeof localStorage !== 'undefined') {
+    try {
+      localStorage.clear();
+    } catch {
+      /* private mode / missing storage */
+    }
+  }
 }
 
 /* ── Public API ── */
 export const DB = {
-  Workouts, OneRM, Metrics, Settings, Events, NutritionLogs, PlannedWorkouts, Backup,
-  clearAll, openDB, newId, getDeviceId, withMeta,
-  _getRaw: (store, id) => tx(store).then(s => req2p(s.get(id))),
+  Workouts,
+  OneRM,
+  Metrics,
+  Settings,
+  Events,
+  NutritionLogs,
+  PlannedWorkouts,
+  Backup,
+  clearAll,
+  openDB,
+  newId,
+  getDeviceId,
+  withMeta,
+  _getRaw: (store, id) => tx(store).then((s) => req2p(s.get(id))),
   // Raw writes for the sync pull path — plain put/delete with NO _triggerSync, so
   // applying a remote-won record locally never re-queues an upstream push (no echo).
-  _putRaw: (store, row) => tx(store, 'readwrite').then(s => req2pSafe(s.put(row), s.transaction)),
-  _delRaw: (store, id) => tx(store, 'readwrite').then(s => {
-    const keyField = (store === 'settings') ? 'key' : 'id';
-    return req2pSafe(s.put({ [keyField]: id, _deleted: true, updatedAt: Date.now(), deviceId: getDeviceId() }), s.transaction);
-  }),
+  _putRaw: (store, row) => tx(store, 'readwrite').then((s) => req2pSafe(s.put(row), s.transaction)),
+  _delRaw: (store, id) =>
+    tx(store, 'readwrite').then((s) => {
+      const keyField = store === 'settings' ? 'key' : 'id';
+      return req2pSafe(
+        s.put({ [keyField]: id, _deleted: true, updatedAt: Date.now(), deviceId: getDeviceId() }),
+        s.transaction
+      );
+    }),
 };

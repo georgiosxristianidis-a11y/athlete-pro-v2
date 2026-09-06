@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Privacy — Delete all data also wipes localStorage (1.27.92)
+
+Danger Zone and Privacy delete called `DB.clearAll()`, which only
+empties IndexedDB. Plans, Body Metrics, and `ap-active-session` live
+in localStorage, so after reload boot restored a ghost workout and
+measurements the user had just erased. Both entry points now pass
+`{ local: true }`. Guard: `test/clear-all-local.test.js`.
+
 ### Motion — бары 1RM одним драйвером Spring (1.27.91)
 
 Бары `.orm-bar-fill` на Дашборде и Stats ехали через `Spring.animate` и
