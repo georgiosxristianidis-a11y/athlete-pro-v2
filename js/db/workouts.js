@@ -23,13 +23,47 @@ export const Workouts = {
   },
 
   /**
+   * Active (non-tombstoned) session by id, or null.
+   * @param {string|number} id
+   * @returns {Promise<import('../db.js').WorkoutRecord|null>}
+   */
+  get(id) {
+    return tx(S.WORKOUTS).then((s) => req2p(s.get(id)).then((r) => (r && !r._deleted ? r : null)));
+  },
+
+  /**
+   * Patch an existing session in place. Used when the calendar retags a day
+   * so a completed session is never replaced by an empty stub. Returns the
+   * updated record, or null when the id is missing or already tombstoned.
+   * `id` in the patch is ignored — the primary key stays put.
+   * @param {string|number} id
+   * @param {Record<string, unknown>} patch
+   * @returns {Promise<import('../db.js').WorkoutRecord|null>}
+   */
+  update(id, patch) {
+    if (!patch || typeof patch !== 'object') return Promise.resolve(null);
+    return tx(S.WORKOUTS, 'readwrite').then((s) =>
+      req2p(s.get(id)).then((record) => {
+        if (!record || record._deleted) return null;
+        const { id: _ignore, ...safe } = patch;
+        Object.assign(record, safe);
+        withMeta(record);
+        return req2pSafe(s.put(record), s.transaction).then(() => {
+          _triggerSync(S.WORKOUTS, record);
+          return record;
+        });
+      })
+    );
+  },
+
+  /**
    * Get all sessions, sorted newest first.
    * @returns {Promise<import('../db.js').WorkoutRecord[]>}
    */
   getAll() {
-    return tx(S.WORKOUTS).then(s => {
+    return tx(S.WORKOUTS).then((s) => {
       const idx = s.index('timestamp');
-      return req2p(idx.getAll()).then(list => list.reverse().filter(w => !w._deleted));
+      return req2p(idx.getAll()).then((list) => list.reverse().filter((w) => !w._deleted));
     });
   },
 
@@ -39,7 +73,7 @@ export const Workouts = {
    * @returns {Promise<import('../db.js').WorkoutRecord[]>}
    */
   getLast(n = 5) {
-    return tx(S.WORKOUTS).then(s => {
+    return tx(S.WORKOUTS).then((s) => {
       const idx = s.index('timestamp');
       return new Promise((res, rej) => {
         const list = [];
@@ -74,7 +108,7 @@ export const Workouts = {
    * @returns {Promise<import('../db.js').WorkoutRecord|undefined>}
    */
   getLastByType(type) {
-    return tx(S.WORKOUTS).then(s => {
+    return tx(S.WORKOUTS).then((s) => {
       const idx = s.index('type');
       const req = idx.openCursor(IDBKeyRange.only(type), 'prev');
       return new Promise((res, rej) => {
@@ -101,7 +135,7 @@ export const Workouts = {
    */
   weeklyVolume() {
     const since = Date.now() - 7 * 86400000;
-    return tx(S.WORKOUTS).then(s => {
+    return tx(S.WORKOUTS).then((s) => {
       const idx = s.index('timestamp');
       const req = idx.openCursor(IDBKeyRange.lowerBound(since));
       return new Promise((res) => {
@@ -109,7 +143,7 @@ export const Workouts = {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor) {
-            if (!cursor.value._deleted) total += (cursor.value.tonnage || 0);
+            if (!cursor.value._deleted) total += cursor.value.tonnage || 0;
             cursor.continue();
           } else {
             res(total);
@@ -125,7 +159,7 @@ export const Workouts = {
    */
   monthlyVolume() {
     const since = Date.now() - 30 * 86400000;
-    return tx(S.WORKOUTS).then(s => {
+    return tx(S.WORKOUTS).then((s) => {
       const idx = s.index('timestamp');
       const req = idx.openCursor(IDBKeyRange.lowerBound(since));
       return new Promise((res) => {
@@ -133,7 +167,7 @@ export const Workouts = {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor) {
-            if (!cursor.value._deleted) total += (cursor.value.tonnage || 0);
+            if (!cursor.value._deleted) total += cursor.value.tonnage || 0;
             cursor.continue();
           } else {
             res(total);
@@ -150,9 +184,11 @@ export const Workouts = {
   monthlyCount() {
     const now = new Date();
     const from = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    return tx(S.WORKOUTS).then(s => {
+    return tx(S.WORKOUTS).then((s) => {
       const idx = s.index('timestamp');
-      return req2p(idx.getAll(IDBKeyRange.lowerBound(from))).then(list => list.filter(w => !w._deleted).length);
+      return req2p(idx.getAll(IDBKeyRange.lowerBound(from))).then(
+        (list) => list.filter((w) => !w._deleted).length
+      );
     });
   },
 
@@ -162,22 +198,24 @@ export const Workouts = {
    */
   async pplTonnage() {
     const r = { push: 0, pull: 0, legs: 0 };
-    await Promise.all(['push', 'pull', 'legs'].map(async (type) => {
+    await Promise.all(
+      ['push', 'pull', 'legs'].map(async (type) => {
         const s = await tx(S.WORKOUTS);
         const idx = s.index('type');
         const req = idx.openCursor(IDBKeyRange.only(type));
         return new Promise((res) => {
-            req.onsuccess = (e) => {
-                const cursor = e.target.result;
-                if (cursor) {
-                    if (!cursor.value._deleted) r[type] += (cursor.value.tonnage || 0);
-                    cursor.continue();
-                } else {
-                    res();
-                }
-            };
+          req.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+              if (!cursor.value._deleted) r[type] += cursor.value.tonnage || 0;
+              cursor.continue();
+            } else {
+              res();
+            }
+          };
         });
-    }));
+      })
+    );
     return r;
   },
 
@@ -239,7 +277,7 @@ export const Workouts = {
     }
 
     if (toDelete.length > 0) {
-      await Promise.all(toDelete.map(id => this.delete(id)));
+      await Promise.all(toDelete.map((id) => this.delete(id)));
     }
 
     return toDelete.length;

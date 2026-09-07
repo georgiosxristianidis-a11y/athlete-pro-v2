@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Calendar — retag no longer wipes a completed session (1.27.92)
+
+A tap on a day that already had a tracked workout deleted that row and wrote
+an empty `logged: true` stub. Tapping the highlighted type (the obvious
+"that's my workout" confirm) dropped every set, PR and kilo from the day.
+Type changes now retag in place; the same-type tap is a no-op. Newest session
+wins when two land on one date. Guard — `test/calendar-log.test.js`.
+
 ### Motion — бары 1RM одним драйвером Spring (1.27.91)
 
 Бары `.orm-bar-fill` на Дашборде и Stats ехали через `Spring.animate` и
