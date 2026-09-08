@@ -127,7 +127,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform var(--t-fast), opacity var(--t-fast);
+  transition:
+    transform var(--t-fast),
+    opacity var(--t-fast);
 }
 .streak-dot.has-workout {
   border-color: transparent;
@@ -201,7 +203,9 @@
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-m);
-  margin-bottom: var(--sp-1-5); /* list-density: ступень ниже --sp-2 между карточками, но выше исходных 6px */
+  margin-bottom: var(
+    --sp-1-5
+  ); /* list-density: ступень ниже --sp-2 между карточками, но выше исходных 6px */
   transition: background var(--t-fast);
   cursor: pointer;
 }
@@ -340,7 +344,10 @@
   transition: opacity var(--t-enter);
   animation: emptyFloat 3s ease-in-out infinite;
 }
-.empty-dash-mascot-wrap:active { cursor: grabbing; animation-play-state: paused; }
+.empty-dash-mascot-wrap:active {
+  cursor: grabbing;
+  animation-play-state: paused;
+}
 
 .empty-dash-mascot {
   width: 100%;
@@ -349,7 +356,9 @@
   overflow: hidden;
   border: 2px solid rgba(0, 230, 118, 0.15);
   background: var(--c-surface);
-  box-shadow: 0 0 40px rgba(0, 230, 118, 0.08), 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 0 40px rgba(0, 230, 118, 0.08),
+    0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .empty-dash-mascot video {
@@ -367,7 +376,9 @@
   }
 }
 /* Тап по маскоту = тумблер озвучки (флаг 'fab-video') */
-.empty-dash-mascot-wrap[data-action] { cursor: pointer; }
+.empty-dash-mascot-wrap[data-action] {
+  cursor: pointer;
+}
 .empty-dash-mascot.sound-on {
   border-color: color-mix(in srgb, var(--c-accent) 45%, transparent);
   box-shadow:
@@ -402,7 +413,9 @@
   z-index: 20;
   opacity: 0.6;
   transform: scale(1);
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
@@ -435,8 +448,13 @@
 }
 
 @keyframes emptyFloat {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-8px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 .empty-dash-title {
   font-size: var(--fs-5);
@@ -471,7 +489,9 @@
   cursor: pointer;
   touch-action: manipulation;
   transition: transform var(--t-fast);
-  box-shadow: 0 0 20px rgba(0, 230, 118, 0.12), 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 0 20px rgba(0, 230, 118, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.3);
   animation: glowPulse 2.5s ease-in-out infinite;
   pointer-events: auto;
   user-select: none;
@@ -488,8 +508,17 @@
   height: 18px;
 }
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(0, 230, 118, 0.12), 0 4px 16px rgba(0, 0, 0, 0.3); }
-  50%      { box-shadow: 0 0 32px rgba(0, 230, 118, 0.22), 0 4px 16px rgba(0, 0, 0, 0.3); }
+  0%,
+  100% {
+    box-shadow:
+      0 0 20px rgba(0, 230, 118, 0.12),
+      0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 32px rgba(0, 230, 118, 0.22),
+      0 4px 16px rgba(0, 0, 0, 0.3);
+  }
 }
 
 /* DESIGN-3: Staggered entrance animations */
@@ -796,7 +825,6 @@
 }
 /* ── Weekly Summary Chip — icon layout ── */
 
-
 /* ── Recent → Журнал ──────────────────────────────────────
    Заголовок секции с текстовым действием справа — тот же паттерн,
    что «Edit Plan» / «Add» на экране Train (css/workout.css:76).
@@ -854,4 +882,41 @@
 }
 .list-toggle.expanded .list-toggle-icon {
   transform: rotate(180deg);
+}
+
+/* Volume Trend period (7 / 30 / 90) — the old "30 Days" badge was not a control. */
+.dash-vol-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-s);
+  flex-shrink: 0;
+}
+.dash-vol-btn {
+  min-width: 36px;
+  min-height: 32px;
+  padding: 0 var(--sp-1);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--r-xs);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  font-family: inherit;
+  color: var(--c-text-2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast),
+    transform var(--t-fast);
+}
+.dash-vol-btn:active {
+  transform: scale(var(--press-scale));
+}
+.dash-vol-btn.active {
+  background: var(--c-chrome-t);
+  border-color: var(--c-border-h);
+  color: var(--c-text-1);
 }
