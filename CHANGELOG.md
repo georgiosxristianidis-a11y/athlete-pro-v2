@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### AGENT-4 — подпись держится без гарда
+
+Две недели после `AGENT-1` (с 2026-08-25): `npm run scorecard` на `--limit 100` не нашёл
+новых `unsigned` среди влитых PR. Шесть бессигнатурных (#195–197, #218, #221–222) все
+старше окна наблюдения. Хук `commit-msg` и дубль в CI не заводятся — карточка закрыта
+замером.
+
 ### Motion — бары 1RM одним драйвером Spring (1.27.91)
 
 Бары `.orm-bar-fill` на Дашборде и Stats ехали через `Spring.animate` и
