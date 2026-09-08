@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### AGENT-7 — гейт наряда якорится SHA до выдачи
+
+Наряд больше не обещает «проверено на main» без якоря: `npm run brief:gate` гоняет
+цепочку ГЕЙТ на текущем дереве и печатает `# verified @ <sha>` для поля в скилле
+`agent-brief`. Известная мина `prettier --check .` (каскад LAUNCH-5A) отвергается
+до запуска. Гард — `test/brief-gate.test.js`.
+
 ### AGENT-4 — подпись держится без гарда
 
 Две недели после `AGENT-1` (с 2026-08-25): `npm run scorecard` на `--limit 100` не нашёл
