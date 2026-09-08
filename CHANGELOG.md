@@ -17,6 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 открывает лист с графиком, интерполяция — monotone cubic. Гард —
 `test/analytics-charts.test.js`.
 
+### AGENT-7 — гейт наряда якорится SHA до выдачи
+
+Наряд больше не обещает «проверено на main» без якоря: `npm run brief:gate` гоняет
+цепочку ГЕЙТ на текущем дереве и печатает `# verified @ <sha>` для поля в скилле
+`agent-brief`. Известная мина `prettier --check .` (каскад LAUNCH-5A) отвергается
+до запуска. Гард — `test/brief-gate.test.js`.
+
+### AGENT-4 — подпись держится без гарда
+
+Две недели после `AGENT-1` (с 2026-08-25): `npm run scorecard` на `--limit 100` не нашёл
+новых `unsigned` среди влитых PR. Шесть бессигнатурных (#195–197, #218, #221–222) все
+старше окна наблюдения. Хук `commit-msg` и дубль в CI не заводятся — карточка закрыта
+замером.
+
 ### Motion — бары 1RM одним драйвером Spring (1.27.91)
 
 Бары `.orm-bar-fill` на Дашборде и Stats ехали через `Spring.animate` и
