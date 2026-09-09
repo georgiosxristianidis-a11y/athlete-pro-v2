@@ -38,10 +38,14 @@ on('dash:mascotSound', (el, e) => {
   const v = wrap.querySelector('video');
   if (!(v instanceof HTMLVideoElement)) return;
   window.haptic?.(10);
-  _loadPandaVideo().then(({ togglePandaSound }) => {
-    const muted = togglePandaSound(v);
-    wrap.querySelector('.empty-dash-mascot')?.classList.toggle('sound-on', !muted);
-  });
+  _loadPandaVideo()
+    .then(({ togglePandaSound }) => {
+      const muted = togglePandaSound(v);
+      wrap.querySelector('.empty-dash-mascot')?.classList.toggle('sound-on', !muted);
+    })
+    .catch(() => {
+      _pandaVideoP = null;
+    });
 });
 on('dash:openCoach', () => {
   window.Claude?.open();
@@ -265,13 +269,15 @@ export const Dashboard = (() => {
     `;
   }
 
-  async function _buildEmptyState(showMascot = true) {
+  function _buildEmptyState(showMascot = true) {
     const videoMode = flag('fab-video');
     let mascotInner = '';
     if (showMascot) {
       if (videoMode) {
-        const { PANDA_VIDEO_SRC, PANDA_POSTER_SRC } = await _loadPandaVideo();
-        mascotInner = `<video autoplay loop muted playsinline preload="metadata" src="${PANDA_VIDEO_SRC}" poster="${PANDA_POSTER_SRC}" aria-hidden="true"></video>`;
+        // src/poster приезжают в _hydrateMascot(): адреса живут в лениво
+        // грузимом panda-video.js, а разметка пустого Home обязана писаться
+        // синхронно — иначе первый заход ждёт сетевой чанк ради маскота.
+        mascotInner = `<video autoplay loop muted playsinline preload="metadata" aria-hidden="true"></video>`;
       } else {
         mascotInner = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent, #00e676)" stroke-width="1.5" stroke-linejoin="round" width="64" height="64" style="filter: drop-shadow(0 0 12px rgba(0, 230, 118, 0.4))">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
@@ -316,6 +322,34 @@ export const Dashboard = (() => {
           ${esc(t('dash.start_first'))}
         </button>
       </div>`;
+  }
+
+  /**
+   * Дотянуть маскота после того, как пустой Home уже нарисован: подставить
+   * адреса видео и завести шину настроения/зума. Чанк не доехал — экран
+   * остаётся рабочим (CTA на месте), маскот просто без видео, а кеш промиса
+   * сбрасывается, чтобы следующий заход попробовал снова.
+   * @param {HTMLElement} wrap
+   */
+  async function _hydrateMascot(wrap) {
+    const videoEl = wrap.querySelector('video');
+    try {
+      if (videoEl instanceof HTMLVideoElement) {
+        const { PANDA_VIDEO_SRC, PANDA_POSTER_SRC } = await _loadPandaVideo();
+        videoEl.poster = PANDA_POSTER_SRC;
+        videoEl.src = PANDA_VIDEO_SRC;
+      }
+      if (flag('panda-moods')) {
+        const { attachMood } = await _loadPandaMood();
+        attachMood(wrap, videoEl);
+      } else {
+        const { initPandaVideo } = await _loadPandaVideo();
+        initPandaVideo(wrap, videoEl);
+      }
+    } catch {
+      _pandaVideoP = null;
+      _pandaMoodP = null;
+    }
   }
 
   /**
@@ -402,7 +436,12 @@ export const Dashboard = (() => {
     const last = workouts && workouts[0];
     const daysSinceLast =
       last && last.timestamp ? Math.floor((Date.now() - last.timestamp) / 86400000) : null;
-    const { entryGreeting, emitMood } = await _loadPandaMood();
+    const mood = await _loadPandaMood().catch(() => null);
+    if (!mood) {
+      _pandaMoodP = null;
+      return;
+    }
+    const { entryGreeting, emitMood } = mood;
     const greeting = entryGreeting({ daysSinceLast, hour: new Date().getHours() });
     if (!greeting) return;
 
@@ -826,21 +865,13 @@ export const Dashboard = (() => {
 
     // Empty state — first-time user
     if (!allWorkouts.length) {
-      screen.innerHTML = await _buildEmptyState(showMascot);
+      screen.innerHTML = _buildEmptyState(showMascot);
       _initMascotDrag();
       const mascotWrap = document.getElementById('mascot-draggable');
       // PANDA-3: большой маскот должен слышать ту же шину, что и FAB — иначе
       // половина персонажа реактивная, половина крутит старый зум.
-      if (mascotWrap) {
-        const videoEl = mascotWrap.querySelector('video');
-        if (flag('panda-moods')) {
-          const { attachMood } = await _loadPandaMood();
-          attachMood(mascotWrap, videoEl);
-        } else {
-          const { initPandaVideo } = await _loadPandaVideo();
-          initPandaVideo(mascotWrap, videoEl);
-        }
-      }
+      // Не через await: панда не держит первый кадр пустого Home.
+      if (mascotWrap) _hydrateMascot(mascotWrap);
       window.dispatchEvent(new CustomEvent('ap-mascot-video'));
       _pandaGreet(allWorkouts); // после монтирования маскота, иначе мимика уйдёт в пустоту
       screen.querySelector('.btn-start-workout')?.addEventListener('click', () => {
