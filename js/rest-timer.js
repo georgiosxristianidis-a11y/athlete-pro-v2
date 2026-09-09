@@ -22,17 +22,24 @@ import { isRu, t } from './locale.store.js';
 import { haptic } from './shared/utils.js';
 import { State } from './workout.store.js';
 import { flag } from './flags.js';
-import { emitMood, restOverrunMood, BASE_MOOD, OVERRUN_JUDGE_SEC } from './shared/panda-mood.js';
+
+/** @type {Promise<typeof import('./shared/panda-mood.js')>|null} */
+let _pandaMoodP = null;
+function _loadPandaMood() {
+  if (!_pandaMoodP) _pandaMoodP = import('./shared/panda-mood.js');
+  return _pandaMoodP;
+}
 
 export const RestTimer = (() => {
-  let _end = 0;          // absolute epoch-ms the rest ends
-  let _total = 0;        // total seconds (for the progress ratio)
-  let _interval = null;  // 1 Hz display ticker
-  let _alarm = null;     // single fallback timeout aimed at _end
-  let _done = false;     // guard: interval / alarm / visibility can race the finish
-  let _nextName = '';    // "next" for the PiP mirror — single source of truth (F-2)
-  let _overrun = null;   // PANDA-1: 5s watcher over "rest expired, still no set"
-  let _overrunFrom = 0;  // epoch-ms the overrun started
+  let _end = 0; // absolute epoch-ms the rest ends
+  let _total = 0; // total seconds (for the progress ratio)
+  let _interval = null; // 1 Hz display ticker
+  let _alarm = null; // single fallback timeout aimed at _end
+  let _done = false; // guard: interval / alarm / visibility can race the finish
+  let _nextName = ''; // "next" for the PiP mirror — single source of truth (F-2)
+  let _overrun = null; // PANDA-1: 5s watcher over "rest expired, still no set"
+  let _overrunFrom = 0; // epoch-ms the overrun started
+  let _overrunGen = 0; // invalidates in-flight panda-mood import()
 
   /** PANDA-1 — мимики живут в видео-FAB, без него включать нечего. */
   const _moodsOn = () => flag('panda-moods') && flag('fab-video');
@@ -44,31 +51,41 @@ export const RestTimer = (() => {
    */
   function _startOverrun() {
     if (!_moodsOn()) return;
+    const gen = ++_overrunGen;
     _overrunFrom = Date.now();
-    emitMood(restOverrunMood(0));           // +0с → watch
-    _overrun = setInterval(() => {
-      const elapsed = (Date.now() - _overrunFrom) / 1000;
-      if (elapsed < OVERRUN_JUDGE_SEC) return;
-      emitMood(restOverrunMood(elapsed));   // +30с → judge
-      // @ts-ignore
-      window.DynamicIsland?.say?.(t('mascot.cold_bamboo'));
-      _stopOverrun(false);                  // выше judge эскалации нет
-    }, 5000);
+    _loadPandaMood().then((m) => {
+      if (gen !== _overrunGen) return;
+      m.emitMood(m.restOverrunMood(0)); // +0с → watch
+      _overrun = setInterval(() => {
+        if (gen !== _overrunGen) return;
+        const elapsed = (Date.now() - _overrunFrom) / 1000;
+        if (elapsed < m.OVERRUN_JUDGE_SEC) return;
+        m.emitMood(m.restOverrunMood(elapsed)); // +30с → judge
+        // @ts-ignore
+        window.DynamicIsland?.say?.(t('mascot.cold_bamboo'));
+        _stopOverrun(false); // выше judge эскалации нет
+      }, 5000);
+    });
   }
 
   /** @param {boolean} [reset=true] вернуть мимику к базовой и снять реплику */
   function _stopOverrun(reset = true) {
-    clearInterval(_overrun); _overrun = null;
+    const gen = ++_overrunGen;
+    clearInterval(_overrun);
+    _overrun = null;
     if (!reset) return;
     _overrunFrom = 0;
     if (!_moodsOn()) return;
-    emitMood(BASE_MOOD);
-    // @ts-ignore
-    window.DynamicIsland?.say?.(null);
+    _loadPandaMood().then((m) => {
+      if (gen !== _overrunGen) return;
+      m.emitMood(m.BASE_MOOD);
+      // @ts-ignore
+      window.DynamicIsland?.say?.(null);
+    });
   }
 
   function start(_exName, _setLabel, duration) {
-    stop();                       // clear any prior rest cleanly (снимает и осуждение)
+    stop(); // clear any prior rest cleanly (снимает и осуждение)
     _total = duration;
     _end = Date.now() + duration * 1000;
     _done = false;
@@ -77,7 +94,7 @@ export const RestTimer = (() => {
     // (first exercise still holding an undone set). Computed once here and
     // fed into every PiP frame during this rest so the island and the PiP
     // mirror can never disagree (F-2: PiP was showing a stale pre-rest frame).
-    const nx = State.plan?.find(ex => ex.sets.some(s => !s.done));
+    const nx = State.plan?.find((ex) => ex.sets.some((s) => !s.done));
     _nextName = nx ? nx.name : '';
 
     // Разрешение на уведомления здесь БОЛЬШЕ НЕ ПРОСИМ. Раньше системный
@@ -85,8 +102,8 @@ export const RestTimer = (() => {
     // без объяснения, и отказ («не сейчас») закрывал уведомления навсегда.
     // Теперь спрашивает только тумблер «Сигнал об отдыхе» в Настройках
     // (Profile.toggleNotify), по тапу пользователя.
-    _render();                                   // immediate paint
-    _interval = setInterval(_render, 1000);      // 1 Hz — no rAF freeze, no 60fps churn
+    _render(); // immediate paint
+    _interval = setInterval(_render, 1000); // 1 Hz — no rAF freeze, no 60fps churn
     _alarm = setTimeout(_finish, duration * 1000 + 250); // fires near on-time if page stays alive
     document.addEventListener('visibilitychange', _onVisible); // instant catch-up on return
   }
@@ -100,9 +117,15 @@ export const RestTimer = (() => {
     if (window.DynamicIsland) window.DynamicIsland.setRestProgress(rem, _total);
 
     // Document/video PiP mirror — only visible when the browser is minimized
-    const m = Math.floor(rem / 60).toString().padStart(2, '0');
+    const m = Math.floor(rem / 60)
+      .toString()
+      .padStart(2, '0');
     const s = (rem % 60).toString().padStart(2, '0');
-    PiP.drawFrame({ time: `${m}:${s}`, name: isRu() ? 'ОТДЫХ...' : 'RESTING...', nextName: _nextName });
+    PiP.drawFrame({
+      time: `${m}:${s}`,
+      name: isRu() ? 'ОТДЫХ...' : 'RESTING...',
+      nextName: _nextName,
+    });
 
     if (rem <= 0) _finish();
   }
@@ -114,9 +137,11 @@ export const RestTimer = (() => {
   }
 
   function stop() {
-    clearInterval(_interval); _interval = null;
-    clearTimeout(_alarm); _alarm = null;
-    _stopOverrun();   // следующий подход / скип отдыха — панда возвращается к еде
+    clearInterval(_interval);
+    _interval = null;
+    clearTimeout(_alarm);
+    _alarm = null;
+    _stopOverrun(); // следующий подход / скип отдыха — панда возвращается к еде
     document.removeEventListener('visibilitychange', _onVisible);
     // @ts-ignore
     if (window.DynamicIsland) window.DynamicIsland.stopTimer();
@@ -142,7 +167,7 @@ export const RestTimer = (() => {
     stop();
     haptic([0, 80, 40, 80]);
     _triggerNotification().catch(() => {}); // floating promise: never let it reject globally
-    _startOverrun();                        // PANDA-1: с этой секунды панда считает перебор
+    _startOverrun(); // PANDA-1: с этой секунды панда считает перебор
   }
 
   async function _triggerNotification() {
@@ -166,7 +191,7 @@ export const RestTimer = (() => {
         badge: '/icons/icon-192.png',
         vibrate: [200, 100, 200],
         tag: 'rest-alarm',
-        renotify: true
+        renotify: true,
       });
     }
   }

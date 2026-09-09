@@ -14,13 +14,19 @@ import { renderPplGauge } from './shared/ppl-gauge.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
 import { t, getLang } from './locale.store.js';
-import {
-  initPandaVideo,
-  togglePandaSound,
-  PANDA_VIDEO_SRC,
-  PANDA_POSTER_SRC,
-} from './shared/panda-video.js';
-import { attachMood, emitMood, entryGreeting } from './shared/panda-mood.js';
+
+/** @type {Promise<typeof import('./shared/panda-video.js')>|null} */
+let _pandaVideoP = null;
+function _loadPandaVideo() {
+  if (!_pandaVideoP) _pandaVideoP = import('./shared/panda-video.js');
+  return _pandaVideoP;
+}
+/** @type {Promise<typeof import('./shared/panda-mood.js')>|null} */
+let _pandaMoodP = null;
+function _loadPandaMood() {
+  if (!_pandaMoodP) _pandaMoodP = import('./shared/panda-mood.js');
+  return _pandaMoodP;
+}
 
 on('dash:directLaunch', (el) => window.Dashboard.directLaunch(el.dataset.type));
 on('dash:weeklySummary', () => showWeeklySummary());
@@ -32,8 +38,10 @@ on('dash:mascotSound', (el, e) => {
   const v = wrap.querySelector('video');
   if (!(v instanceof HTMLVideoElement)) return;
   window.haptic?.(10);
-  const muted = togglePandaSound(v);
-  wrap.querySelector('.empty-dash-mascot')?.classList.toggle('sound-on', !muted);
+  _loadPandaVideo().then(({ togglePandaSound }) => {
+    const muted = togglePandaSound(v);
+    wrap.querySelector('.empty-dash-mascot')?.classList.toggle('sound-on', !muted);
+  });
 });
 on('dash:openCoach', () => {
   window.Claude?.open();
@@ -257,13 +265,19 @@ export const Dashboard = (() => {
     `;
   }
 
-  function _buildEmptyState(showMascot = true) {
+  async function _buildEmptyState(showMascot = true) {
     const videoMode = flag('fab-video');
-    const mascotInner = videoMode
-      ? `<video autoplay loop muted playsinline preload="auto" src="${PANDA_VIDEO_SRC}" poster="${PANDA_POSTER_SRC}" aria-hidden="true"></video>`
-      : `<svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent, #00e676)" stroke-width="1.5" stroke-linejoin="round" width="64" height="64" style="filter: drop-shadow(0 0 12px rgba(0, 230, 118, 0.4))">
+    let mascotInner = '';
+    if (showMascot) {
+      if (videoMode) {
+        const { PANDA_VIDEO_SRC, PANDA_POSTER_SRC } = await _loadPandaVideo();
+        mascotInner = `<video autoplay loop muted playsinline preload="metadata" src="${PANDA_VIDEO_SRC}" poster="${PANDA_POSTER_SRC}" aria-hidden="true"></video>`;
+      } else {
+        mascotInner = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--c-accent, #00e676)" stroke-width="1.5" stroke-linejoin="round" width="64" height="64" style="filter: drop-shadow(0 0 12px rgba(0, 230, 118, 0.4))">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
             </svg>`;
+      }
+    }
     return `
       <div class="empty-dashboard">
         ${
@@ -388,6 +402,7 @@ export const Dashboard = (() => {
     const last = workouts && workouts[0];
     const daysSinceLast =
       last && last.timestamp ? Math.floor((Date.now() - last.timestamp) / 86400000) : null;
+    const { entryGreeting, emitMood } = await _loadPandaMood();
     const greeting = entryGreeting({ daysSinceLast, hour: new Date().getHours() });
     if (!greeting) return;
 
@@ -811,14 +826,20 @@ export const Dashboard = (() => {
 
     // Empty state — first-time user
     if (!allWorkouts.length) {
-      screen.innerHTML = _buildEmptyState(showMascot);
+      screen.innerHTML = await _buildEmptyState(showMascot);
       _initMascotDrag();
       const mascotWrap = document.getElementById('mascot-draggable');
       // PANDA-3: большой маскот должен слышать ту же шину, что и FAB — иначе
       // половина персонажа реактивная, половина крутит старый зум.
       if (mascotWrap) {
-        if (flag('panda-moods')) attachMood(mascotWrap, mascotWrap.querySelector('video'));
-        else initPandaVideo(mascotWrap, mascotWrap.querySelector('video'));
+        const videoEl = mascotWrap.querySelector('video');
+        if (flag('panda-moods')) {
+          const { attachMood } = await _loadPandaMood();
+          attachMood(mascotWrap, videoEl);
+        } else {
+          const { initPandaVideo } = await _loadPandaVideo();
+          initPandaVideo(mascotWrap, videoEl);
+        }
       }
       window.dispatchEvent(new CustomEvent('ap-mascot-video'));
       _pandaGreet(allWorkouts); // после монтирования маскота, иначе мимика уйдёт в пустоту
