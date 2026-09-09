@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Train — Home Go no longer wipes a live session (1.27.92)
+
+The Home hero **Go** button always called `Workout.selectType()`, which rebuilds
+`State.plan`, stamps a new `startedAt`, and `persistSession()`s over
+`ap-active-session`. Mid-workout tab to Home then tap Go dropped every logged
+set. `hasLiveSession()` now resumes Train instead. Guard —
+`test/direct-launch-active.test.js`.
+
 ### AGENT-7 — гейт наряда якорится SHA до выдачи
 
 Наряд больше не обещает «проверено на main» без якоря: `npm run brief:gate` гоняет

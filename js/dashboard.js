@@ -783,6 +783,12 @@ export const Dashboard = (() => {
    * @param {string} type — 'push'|'pull'|'legs'
    */
   async function directLaunch(type) {
+    const { hasLiveSession } = await import('./workout.store.js');
+    if (hasLiveSession()) {
+      window.Nav.go('s-train', { force: true });
+      return;
+    }
+
     if (window.haptic) window.haptic(15);
     window.Toast?.show(t('dash.launching', { type: typeLabel(type) }), 'success');
 
