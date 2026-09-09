@@ -108,6 +108,15 @@ jobs:
           # `playwright-1.60.0` key above.
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}-chromium-webkit
 
+      # Оба шага ниже зовут `apt-get update`, а он падает целиком, если сбоит
+      # ЛЮБОЙ источник образа. 09.09 таким источником стал репозиторий Google
+      # Chrome: `dl.google.com/linux/chrome-stable` отдавал `Packages.gz` с
+      # несовпадающим хешем, четыре прогона подряд легли с кодом 100. Playwright
+      # ставит собственные сборки Chromium и WebKit — этот источник в прогоне
+      # не нужен ни одному шагу, и его сбои чек касаться не должны.
+      - name: Drop third-party apt sources
+        run: sudo rm -f /etc/apt/sources.list.d/google-chrome.list
+
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium webkit
