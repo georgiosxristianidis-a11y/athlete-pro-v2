@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-f11ad820';
+const CACHE_NAME = 'athlete-pro-v121-921bb6c9';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -43,10 +43,7 @@ const ASSETS = [
   '/js/locale.store.js',
   '/js/privacy.store.js',
   '/js/privacy.view.js',
-  '/js/profile.store.js',
-  '/js/profile.view/lift-bars.js',
   '/js/rest-timer.js',
-  '/js/shared/athlete-room.js',
   '/js/shared/chamber-pill.js',
   '/js/shared/confirm.js',
   '/js/shared/cryptoClient.js',
@@ -54,12 +51,8 @@ const ASSETS = [
   '/js/shared/errors-ui.js',
   '/js/shared/exercise-shorthand.js',
   '/js/shared/format.js',
-  '/js/shared/integrity.js',
   '/js/shared/island-tracker.js',
   '/js/shared/lazy-css.js',
-  '/js/shared/lift-map.js',
-  '/js/shared/panda-mood.js',
-  '/js/shared/panda-video.js',
   '/js/shared/ppl-gauge.js',
   '/js/shared/sparkline.js',
   '/js/shared/spring.js',
@@ -69,7 +62,6 @@ const ASSETS = [
   '/js/shared/theme.js',
   '/js/shared/utils.js',
   '/js/shell.js',
-  '/js/strength-engine.js',
   '/js/theme-boot.js',
   '/js/timer.js',
   '/js/ui/factory.js',
@@ -106,8 +98,10 @@ const ASSETS_WARM = [
   '/js/onboarding.js',
   '/js/plate-calc.js',
   '/js/profile.js',
+  '/js/profile.store.js',
   '/js/profile.view/bento.js',
   '/js/profile.view/hexagon-radar.js',
+  '/js/profile.view/lift-bars.js',
   '/js/profile.view/passport-hero.js',
   '/js/profile.view/settings.js',
   '/js/profile.view.js',
@@ -115,15 +109,21 @@ const ASSETS_WARM = [
   '/js/shared/ai-engine.js',
   '/js/shared/ai-status.js',
   '/js/shared/air-markdown.js',
+  '/js/shared/athlete-room.js',
   '/js/shared/block-ticks.js',
   '/js/shared/csv-export.js',
   '/js/shared/download.js',
   '/js/shared/field-shake.js',
+  '/js/shared/integrity.js',
+  '/js/shared/lift-map.js',
   '/js/shared/lww.js',
+  '/js/shared/panda-mood.js',
+  '/js/shared/panda-video.js',
   '/js/shared/ppl-color.js',
   '/js/shared/sse.js',
   '/js/shared/sync-merge.js',
   '/js/shared/txt-export.js',
+  '/js/strength-engine.js',
   '/js/supabase-check.js',
   '/js/supabase.js',
   '/js/sync.js',

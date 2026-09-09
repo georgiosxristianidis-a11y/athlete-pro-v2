@@ -13,8 +13,6 @@ import { Dashboard } from './dashboard.js';
 import { initPrivacy, getPrivacyMode, setPrivacyMode, onPrivacyChange } from './privacy.store.js';
 import { Privacy } from './privacy.view.js';
 import { DynamicIsland } from './shared/dynamic-island.js';
-import { AthleteRoom } from './shared/athlete-room.js';
-import { Integrity } from './shared/integrity.js';
 import { initLocale, t } from './locale.store.js';
 import { haptic } from './shared/utils.js';
 import { State } from './workout.store.js';
@@ -66,6 +64,16 @@ async function _loadIntel() {
   return IntelView;
 }
 
+/** @type {typeof import('./shared/athlete-room.js').AthleteRoom|null} */
+let _athleteRoomMod = null;
+async function _loadAthleteRoom() {
+  if (_athleteRoomMod) return _athleteRoomMod;
+  const { AthleteRoom } = await import('./shared/athlete-room.js');
+  _athleteRoomMod = AthleteRoom;
+  window.AthleteRoom = AthleteRoom;
+  return AthleteRoom;
+}
+
 /* ── Bridge: expose to window for legacy global handlers + delegation ── */
 window.DB = DB;
 window.Nav = Nav;
@@ -74,14 +82,25 @@ window.Timer = Timer;
 window.Dashboard = Dashboard;
 window.Privacy = Privacy;
 window.DynamicIsland = DynamicIsland;
-window.AthleteRoom = AthleteRoom;
+window.AthleteRoom = {
+  open() {
+    return _loadAthleteRoom().then((AR) => AR.open());
+  },
+  initAvatar() {
+    return _loadAthleteRoom().then((AR) => AR.initAvatar());
+  },
+};
 window._loadWorkout = _loadWorkout;
 window._loadProfile = _loadProfile;
 window._loadBodyStats = _loadBodyStats;
 window._loadIntel = _loadIntel;
+window._loadAthleteRoom = _loadAthleteRoom;
 
 /* ── Static-shell delegation (bottom nav + avatar in index.html) ── */
 on('nav:go', (el) => window.Nav.go(el.dataset.s, el.dataset.force ? { force: true } : undefined));
+on('ar:open', () => {
+  window.AthleteRoom.open();
+});
 
 /* ── Clock ── */
 const clockEl = document.getElementById('status-time');
@@ -233,7 +252,9 @@ openDB()
       // до init(), FAB до renderFAB() не существует. Ждём CSS перед вставкой,
       // иначе оба моргнут нестилизованными (LOAD-1).
       ensureCss('css/dynamic-island.css').then(() => DynamicIsland.init());
-      AthleteRoom.initAvatar().catch(() => {});
+      _loadAthleteRoom()
+        .then((AR) => AR.initAvatar())
+        .catch(() => {});
 
       /* ── Claude FAB (lazy-loaded) ── */
       Promise.all([import('./claude.view.js'), ensureCss('css/claude.css')]).then(

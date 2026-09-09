@@ -148,7 +148,7 @@ export const Claude = (() => {
     const content = container.querySelector('.fab-content');
     if (content) {
       if (videoMode) {
-        content.innerHTML = `<video id="claude-fab-video" class="fab-video" autoplay loop muted playsinline preload="auto" src="${PANDA_VIDEO_SRC}" poster="${PANDA_POSTER_SRC}" aria-hidden="true"></video>`;
+        content.innerHTML = `<video id="claude-fab-video" class="fab-video" autoplay loop muted playsinline preload="metadata" src="${PANDA_VIDEO_SRC}" poster="${PANDA_POSTER_SRC}" aria-hidden="true"></video>`;
       } else {
         content.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
             <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/>

@@ -14,14 +14,23 @@
          110-160. og:/twitter: URL только абсолютные — боты не резолвят
          относительные. Байты тут в бюджете прекеша (test/sw-media-budget),
          поэтому блок держим плотным. -->
-    <meta name="description" content="Athlete Pro — offline-first PPL workout tracker: log push, pull and leg sessions, follow 1RM progress, readiness and body metrics." />
+    <meta
+      name="description"
+      content="Athlete Pro — offline-first PPL workout tracker: log push, pull and leg sessions, follow 1RM progress, readiness and body metrics."
+    />
     <meta name="robots" content="index,follow" />
     <link rel="canonical" href="https://athlete-pro-v7.vercel.app/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Athlete Pro" />
     <meta property="og:url" content="https://athlete-pro-v7.vercel.app/" />
-    <meta property="og:title" content="Athlete Pro — PPL Workout Tracker &amp; Strength Analytics" />
-    <meta property="og:description" content="Athlete Pro — offline-first PPL workout tracker: log push, pull and leg sessions, follow 1RM progress, readiness and body metrics." />
+    <meta
+      property="og:title"
+      content="Athlete Pro — PPL Workout Tracker &amp; Strength Analytics"
+    />
+    <meta
+      property="og:description"
+      content="Athlete Pro — offline-first PPL workout tracker: log push, pull and leg sessions, follow 1RM progress, readiness and body metrics."
+    />
     <meta property="og:image" content="https://athlete-pro-v7.vercel.app/icons/icon-512.png" />
     <meta property="og:image:alt" content="Athlete Pro app icon" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -35,7 +44,16 @@
     <!-- JSON-LD: data-block, не исполняемый скрипт — CSP script-src к нему не
          применяется, 'unsafe-inline' не нужен. -->
     <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Athlete Pro","url":"https://athlete-pro-v7.vercel.app/","applicationCategory":"HealthApplication","operatingSystem":"Web, Android, iOS","image":"https://athlete-pro-v7.vercel.app/icons/icon-512.png","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Athlete Pro",
+        "url": "https://athlete-pro-v7.vercel.app/",
+        "applicationCategory": "HealthApplication",
+        "operatingSystem": "Web, Android, iOS",
+        "image": "https://athlete-pro-v7.vercel.app/icons/icon-512.png",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
     </script>
 
     <!-- Тема ДО первой отрисовки: классический синхронный скрипт (module был бы
@@ -53,8 +71,20 @@
 
     <!-- Fonts: self-hosted in /fonts (@font-face in css/base.css) — no external requests, airgap-safe -->
     <link rel="preload" as="font" type="font/woff2" href="fonts/manrope-latin.woff2" crossorigin />
-    <link rel="preload" as="font" type="font/woff2" href="fonts/manrope-cyrillic.woff2" crossorigin />
-    <link rel="preload" as="font" type="font/woff2" href="fonts/instrument-sans-latin.woff2" crossorigin />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="fonts/manrope-cyrillic.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="fonts/instrument-sans-latin.woff2"
+      crossorigin
+    />
 
     <!-- LOAD-2: без бандлера браузер узнаёт о модуле только разобрав того, кто
          его импортирует — отсюда лестница из 12 волн на прогретом кеше
@@ -70,8 +100,8 @@
          видит: о них браузер узнаёт, лишь разобрав сам entry. Отсюда второй
          блок — прямое замыкание бута. -->
 
-    <!-- Волна 2 — прямые статические импорты entry: js/app.js:7-24 (17 шт)
-         + js/boot.js:5 (errors-ui). Порядок — как в app.js. -->
+    <!-- Волна 2 — прямые статические импорты entry (Athlete Room и Integrity
+         сняты с бута: import() после idle / по тапу). + js/boot.js errors-ui. -->
     <link rel="modulepreload" href="js/events.js" />
     <link rel="modulepreload" href="js/db.js" />
     <link rel="modulepreload" href="js/timer.js" />
@@ -80,8 +110,6 @@
     <link rel="modulepreload" href="js/privacy.store.js" />
     <link rel="modulepreload" href="js/privacy.view.js" />
     <link rel="modulepreload" href="js/shared/dynamic-island.js" />
-    <link rel="modulepreload" href="js/shared/athlete-room.js" />
-    <link rel="modulepreload" href="js/shared/integrity.js" />
     <link rel="modulepreload" href="js/locale.store.js" />
     <link rel="modulepreload" href="js/shared/utils.js" />
     <link rel="modulepreload" href="js/workout.store.js" />
@@ -112,25 +140,22 @@
     <link rel="modulepreload" href="js/flags.js" />
     <link rel="modulepreload" href="js/shared/format.js" />
     <link rel="modulepreload" href="js/shared/ppl-gauge.js" />
-    <link rel="modulepreload" href="js/shared/panda-video.js" />
-    <link rel="modulepreload" href="js/shared/panda-mood.js" />
     <link rel="modulepreload" href="js/shared/confirm.js" />
     <link rel="modulepreload" href="js/shared/island-tracker.js" />
     <link rel="modulepreload" href="js/rest-timer.js" />
     <link rel="modulepreload" href="js/features/pip.js" />
     <link rel="modulepreload" href="js/shared/sync-dot.js" />
     <link rel="modulepreload" href="js/island-profile.store.js" />
-    <link rel="modulepreload" href="js/strength-engine.js" />
-    <link rel="modulepreload" href="js/shared/lift-map.js" />
-    <link rel="modulepreload" href="js/profile.view/lift-bars.js" />
-    <link rel="modulepreload" href="js/profile.store.js" />
     <link rel="modulepreload" href="js/shared/chamber-pill.js" />
     <link rel="modulepreload" href="js/shared/cryptoClient.js" />
     <link rel="modulepreload" href="js/ui/factory.js" />
     <!-- PERF-3: сняты onboarding.js · claude.view.js · shared/block-ticks.js —
          все три вне бут-замыкания, приходят через import() (js/app.js:231,
          js/app.js:222, и block-ticks ← workout.view/render.js за ленивым
-         _loadWorkout()). Прелоад тянул их в первый заход зря. -->
+         _loadWorkout()). Прелоад тянул их в первый заход зря.
+         BOOT-TRIM: athlete-room · integrity · panda-* и AR-транзитивы
+         (strength-engine, lift-map, lift-bars, profile.store) — тоже вне
+         первого кадра: комната по тапу/idle, панда по empty-state/overrun. -->
 
     <!-- ── BLOCK 0: Critical CSS (inline — zero flash) ──────────────── -->
     <style>
@@ -155,7 +180,9 @@
         background: #050507;
         color: #ffffff;
         overflow: hidden;
-        transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        transition:
+          background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+          color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         user-select: none;
@@ -184,7 +211,10 @@
         --c-red-bg: rgba(255, 77, 136, 0.12);
         --c-border: rgba(255, 255, 255, 0.08);
         --nav-h: 72px;
-        --sp-1: 8px; --sp-2: 16px; --sp-3: 24px; --sp-4: 32px;
+        --sp-1: 8px;
+        --sp-2: 16px;
+        --sp-3: 24px;
+        --sp-4: 32px;
         --safe-top: env(safe-area-inset-top, 0px);
         --safe-bottom: env(safe-area-inset-bottom, 0px);
         --safe-left: env(safe-area-inset-left, 0px);
@@ -230,7 +260,7 @@
 
       /* STATUS BAR — Elite Solid */
       #status-bar {
-  padding-top: env(safe-area-inset-top, 0px);
+        padding-top: env(safe-area-inset-top, 0px);
         position: absolute;
         top: 0;
         left: 0;
@@ -244,7 +274,7 @@
         border-bottom: 1px solid var(--c-border);
         z-index: 200;
         transition: all 0.4s ease;
-        }
+      }
 
       .status-logo {
         display: flex;
@@ -265,8 +295,16 @@
         gap: var(--sp-0-5);
         align-items: baseline;
       }
-      .logo-w1 { color: var(--c-text-1); font-weight: var(--fw-black); }
-      .logo-w2 { color: var(--c-secondary); font-weight: var(--fw-black); letter-spacing: 0.12em; text-shadow: 0 0 12px rgba(139, 92, 246, 0.4); }
+      .logo-w1 {
+        color: var(--c-text-1);
+        font-weight: var(--fw-black);
+      }
+      .logo-w2 {
+        color: var(--c-secondary);
+        font-weight: var(--fw-black);
+        letter-spacing: 0.12em;
+        text-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+      }
 
       #status-time {
         font-size: var(--fs-1);
@@ -293,7 +331,9 @@
         opacity: 0;
         pointer-events: none;
         transform: translateY(12px);
-        transition: opacity 0.4s ease, transform 0.5s var(--spring-bounce);
+        transition:
+          opacity 0.4s ease,
+          transform 0.5s var(--spring-bounce);
         will-change: transform, opacity;
         -webkit-overflow-scrolling: touch;
       }
@@ -338,29 +378,53 @@
         color: var(--c-text-3);
         transition: all 0.2s ease;
       }
-      .nav-btn svg { width: 24px; height: 24px; stroke-width: 1.5; }
-      .nav-btn.active { color: var(--c-accent); }
-      .nav-btn:active { transform: scale(var(--press-scale)); }
+      .nav-btn svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 1.5;
+      }
+      .nav-btn.active {
+        color: var(--c-accent);
+      }
+      .nav-btn:active {
+        transform: scale(var(--press-scale));
+      }
 
       /* Avatar Btn — кнопка 48x48 (tap target), кружок внутри 30x30.
          Отрицательные поля гасят прирост ширины: шапка выглядит как раньше. */
       .athlete-avatar-btn {
-        width: 48px; height: 48px; margin: 0 -9px;
-        display: flex; align-items: center; justify-content: center;
-        background: none; border: none; padding: 0; cursor: pointer;
+        width: 48px;
+        height: 48px;
+        margin: 0 -9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
       }
       .athlete-avatar-face {
-        width: 30px; height: 30px; border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        background: var(--c-accent-bg); border: 1px solid rgba(0, 230, 118, 0.2);
-        color: var(--c-accent); font-size: var(--fs-2); font-weight: var(--fw-black);
+        width: 30px;
+        height: 30px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--c-accent-bg);
+        border: 1px solid rgba(0, 230, 118, 0.2);
+        color: var(--c-accent);
+        font-size: var(--fs-2);
+        font-weight: var(--fw-black);
       }
 
       /* Скрыто визуально, доступно скринридеру. */
       .sr-only {
         position: absolute;
-        width: 1px; height: 1px;
-        padding: 0; margin: -1px;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
@@ -388,18 +452,25 @@
       <header id="status-bar">
         <div class="status-logo">
           <img src="icons/icon-64.png" class="status-logo-img" alt="AP" />
-          <span class="status-logo-text"><span class="logo-w1">Athlete</span><span class="logo-w2">Pro</span></span>
+          <span class="status-logo-text"
+            ><span class="logo-w1">Athlete</span><span class="logo-w2">Pro</span></span
+          >
         </div>
         <div id="status-island-container"></div>
-        <div class="status-right" style="display:flex; align-items:center; gap:var(--sp-2)">
-        <div id="privacy-indicator" class="privacy-indicator" hidden></div>
-        <span id="status-time"></span>
-        <button id="athlete-avatar-btn" class="athlete-avatar-btn" data-action="ar:open" aria-label="Athlete room">
-          <span id="athlete-avatar-face" class="athlete-avatar-face">
-            <span id="athlete-avatar-initials">A</span>
-          </span>
-        </button>
-      </div>
+        <div class="status-right" style="display: flex; align-items: center; gap: var(--sp-2)">
+          <div id="privacy-indicator" class="privacy-indicator" hidden></div>
+          <span id="status-time"></span>
+          <button
+            id="athlete-avatar-btn"
+            class="athlete-avatar-btn"
+            data-action="ar:open"
+            aria-label="Athlete room"
+          >
+            <span id="athlete-avatar-face" class="athlete-avatar-face">
+              <span id="athlete-avatar-initials">A</span>
+            </span>
+          </button>
+        </div>
       </header>
 
       <main id="screens">
@@ -415,17 +486,67 @@
 
       <nav id="nav">
         <button class="nav-btn active" data-s="s-home" data-action="nav:go" aria-label="Home">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" /></svg>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            width="22"
+            height="22"
+          >
+            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" />
+          </svg>
         </button>
-        <button class="nav-btn" data-s="s-train" data-action="nav:go" data-force="1" aria-label="Train">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><line x1="6.5" y1="12" x2="17.5" y2="12" /><rect x="3" y="9" width="3" height="6" rx="1" /><rect x="18" y="9" width="3" height="6" rx="1" /><line x1="2" y1="11" x2="2" y2="13" /><line x1="22" y1="11" x2="22" y2="13" /></svg>
+        <button
+          class="nav-btn"
+          data-s="s-train"
+          data-action="nav:go"
+          data-force="1"
+          aria-label="Train"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            width="22"
+            height="22"
+          >
+            <line x1="6.5" y1="12" x2="17.5" y2="12" />
+            <rect x="3" y="9" width="3" height="6" rx="1" />
+            <rect x="18" y="9" width="3" height="6" rx="1" />
+            <line x1="2" y1="11" x2="2" y2="13" />
+            <line x1="22" y1="11" x2="22" y2="13" />
+          </svg>
         </button>
         <button class="nav-btn" data-s="s-stats" data-action="nav:go" aria-label="Stats">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            width="22"
+            height="22"
+          >
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
         </button>
         <button class="nav-btn" data-s="s-profile" data-action="nav:go" aria-label="Profile">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            width="22"
+            height="22"
+          >
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
           </svg>
         </button>
       </nav>
@@ -434,7 +555,9 @@
       <!-- Ландмарк footer: у приложения-шелла нет визуального подвала, но
            скринридерам и аудиту нужна замыкающая семантическая область.
            .sr-only — вне потока, нулевой размер, но читается AT. -->
-      <footer id="app-footer" class="sr-only">Athlete Pro — offline-first PPL workout tracker.</footer>
+      <footer id="app-footer" class="sr-only">
+        Athlete Pro — offline-first PPL workout tracker.
+      </footer>
     </div>
 
     <div id="toast-wrap" role="status" aria-live="polite"></div>
