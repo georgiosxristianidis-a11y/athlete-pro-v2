@@ -121,6 +121,37 @@ describe('BOOT-TRIM: modulepreload is the boot closure only', () => {
   });
 });
 
+describe('BOOT-TRIM: empty Home paints before the panda chunk', () => {
+  const dash = stripComments(readText('js/dashboard.js'));
+
+  test('_buildEmptyState stays synchronous', () => {
+    assert.equal(
+      /async\s+function\s+_buildEmptyState/.test(dash),
+      false,
+      'разметка пустого Home снова ждёт импорт: _buildEmptyState стал async'
+    );
+    assert.match(dash, /screen\.innerHTML\s*=\s*_buildEmptyState\(/);
+    assert.equal(
+      /screen\.innerHTML\s*=\s*await\s+_buildEmptyState\(/.test(dash),
+      false,
+      'load() снова await-ит разметку пустого Home'
+    );
+  });
+
+  test('mascot hydration degrades instead of rejecting load()', () => {
+    assert.match(dash, /async\s+function\s+_hydrateMascot/);
+    // Тело берём окном по LF-нормализованному тексту: слайс по '\n  }\n'
+    // зеленел бы в CI и краснел на CRLF-чекауте.
+    const lf = dash.replace(/\r\n/g, '\n');
+    const body = lf.slice(lf.indexOf('async function _hydrateMascot'));
+    assert.match(
+      body.slice(0, body.indexOf('\n  }\n') + 5),
+      /catch/,
+      '_hydrateMascot без catch: провал чанка панды роняет Home'
+    );
+  });
+});
+
 describe('BOOT-TRIM: empty Home video does not preload=auto', () => {
   test('dashboard.js and claude.view.js use preload=metadata, not auto', () => {
     const dash = stripComments(readText('js/dashboard.js'));
