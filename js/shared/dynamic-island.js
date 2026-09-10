@@ -2,8 +2,6 @@
 import { State } from '../workout.store.js';
 import { renderIslandTracker } from './island-tracker.js';
 import { Timer } from '../timer.js';
-import { RestTimer } from '../rest-timer.js';
-import { PiP } from '../features/pip.js';
 import { haptic } from './utils.js';
 import { t } from '../locale.store.js';
 import { getPrivacyMode } from '../privacy.store.js';
@@ -12,6 +10,22 @@ import { on } from '../events.js';
 import { flag } from '../flags.js';
 import { getIslandProfile } from '../island-profile.store.js';
 import { islandLabel } from './exercise-shorthand.js';
+
+/** PiP is Train-only — parse and canvas init stay off the Home boot graph. */
+/** @type {null | { init: () => void, drawFrame: (s: object) => void, requestPiP: () => void }} */
+let _pip = null;
+/** @type {Promise<NonNullable<typeof _pip>> | null} */
+let _pipP = null;
+function _loadPiP() {
+  if (!_pipP) {
+    _pipP = import('../features/pip.js').then(({ PiP }) => {
+      PiP.init();
+      _pip = PiP;
+      return PiP;
+    });
+  }
+  return _pipP;
+}
 
 /** Active island layout profile. Flag off → always the proven Apple path. */
 function activeProfile() {
@@ -30,7 +44,7 @@ on('island:skipExercise', (el, e) => {
 });
 on('island:addRest', (el, e) => {
   e.stopPropagation();
-  RestTimer?.addTime(+el.dataset.amt);
+  window.RestTimer?.addTime(+el.dataset.amt);
 });
 on('island:pip', (el, e) => {
   e.stopPropagation();
@@ -38,7 +52,7 @@ on('island:pip', (el, e) => {
 });
 on('island:skipRest', (el, e) => {
   e.stopPropagation();
-  RestTimer?.tapSkip();
+  window.RestTimer?.tapSkip();
 });
 on('island:finish', (el, e) => {
   e.stopPropagation();
@@ -289,9 +303,6 @@ export const DynamicIsland = (() => {
     });
     window.addEventListener('ap-privacy-mode', _updateNetworkStatus);
 
-    // Initialize PiP canvas
-    PiP.init();
-
     // Initial render (will show idle state if no workout)
     update();
   }
@@ -482,12 +493,17 @@ export const DynamicIsland = (() => {
     // RestTimer owns the PiP frame during rest, so the 1 Hz session tick
     // must not overwrite the "RESTING…" frame (was flickering).
     if (!_timerActive) {
-      PiP.drawFrame({
+      const frame = {
         time: Timer.fmt(Timer.seconds()),
         name: currentEx ? islandLabel(currentEx) : 'Workout',
         sets: setsLabel,
         nextName: islandLabel(nextEx),
-      });
+      };
+      if (_pip) _pip.drawFrame(frame);
+      else
+        _loadPiP()
+          .then((pip) => pip.drawFrame(frame))
+          .catch(() => {});
     }
   }
 
@@ -703,7 +719,13 @@ export const DynamicIsland = (() => {
   }
 
   function triggerPiP() {
-    PiP.requestPiP();
+    if (_pip) {
+      _pip.requestPiP();
+      return;
+    }
+    _loadPiP()
+      .then((pip) => pip.requestPiP())
+      .catch(() => {});
   }
 
   /**

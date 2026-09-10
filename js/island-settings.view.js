@@ -8,11 +8,13 @@
    Privacy action handlers live in privacy.view.js (wired on import).
    ════════════════════════════════════════════════════════ */
 
-import { renderPrivacyCard } from './privacy.view.js';
+import { renderPrivacyCard, Privacy } from './privacy.view.js';
 import { isRu } from './locale.store.js';
 import { flag } from './flags.js';
 import { getIslandProfile, setIslandProfile } from './island-profile.store.js';
 import { on } from './events.js';
+
+window.Privacy = Privacy;
 
 // Profile switch → persist + re-render this screen and the live island.
 on('island:setProfile', (el) => {

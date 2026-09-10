@@ -10,8 +10,7 @@ import { DB, openDB } from './db.js';
 import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
 import { Dashboard } from './dashboard.js';
-import { initPrivacy, getPrivacyMode, setPrivacyMode, onPrivacyChange } from './privacy.store.js';
-import { Privacy } from './privacy.view.js';
+import { initPrivacy, getPrivacyMode, onPrivacyChange } from './privacy.store.js';
 import { DynamicIsland } from './shared/dynamic-island.js';
 import { initLocale, t } from './locale.store.js';
 import { haptic } from './shared/utils.js';
@@ -80,7 +79,6 @@ window.Nav = Nav;
 window.Toast = Toast;
 window.Timer = Timer;
 window.Dashboard = Dashboard;
-window.Privacy = Privacy;
 window.DynamicIsland = DynamicIsland;
 window.AthleteRoom = {
   open() {

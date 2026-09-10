@@ -100,15 +100,14 @@
          видит: о них браузер узнаёт, лишь разобрав сам entry. Отсюда второй
          блок — прямое замыкание бута. -->
 
-    <!-- Волна 2 — прямые статические импорты entry (Athlete Room и Integrity
-         сняты с бута: import() после idle / по тапу). + js/boot.js errors-ui. -->
+    <!-- Волна 2 — прямые статические импорты entry (Athlete Room, Integrity,
+         privacy.view, rest-timer/pip сняты с бута). + js/boot.js errors-ui. -->
     <link rel="modulepreload" href="js/events.js" />
     <link rel="modulepreload" href="js/db.js" />
     <link rel="modulepreload" href="js/timer.js" />
     <link rel="modulepreload" href="js/shell.js" />
     <link rel="modulepreload" href="js/dashboard.js" />
     <link rel="modulepreload" href="js/privacy.store.js" />
-    <link rel="modulepreload" href="js/privacy.view.js" />
     <link rel="modulepreload" href="js/shared/dynamic-island.js" />
     <link rel="modulepreload" href="js/locale.store.js" />
     <link rel="modulepreload" href="js/shared/utils.js" />
@@ -140,15 +139,11 @@
     <link rel="modulepreload" href="js/flags.js" />
     <link rel="modulepreload" href="js/shared/format.js" />
     <link rel="modulepreload" href="js/shared/ppl-gauge.js" />
-    <link rel="modulepreload" href="js/shared/confirm.js" />
     <link rel="modulepreload" href="js/shared/island-tracker.js" />
-    <link rel="modulepreload" href="js/rest-timer.js" />
-    <link rel="modulepreload" href="js/features/pip.js" />
     <link rel="modulepreload" href="js/shared/sync-dot.js" />
     <link rel="modulepreload" href="js/island-profile.store.js" />
     <link rel="modulepreload" href="js/shared/chamber-pill.js" />
     <link rel="modulepreload" href="js/shared/cryptoClient.js" />
-    <link rel="modulepreload" href="js/ui/factory.js" />
     <!-- Транзитивы claude.store.js: статический импорт из dashboard.js, то есть
          первый кадр. Прелоад тут не украшение — он же кладёт файл в install-фазу
          прекеша (scripts/build-sw.mjs собирает ASSETS по этим ссылкам), а без
@@ -156,14 +151,15 @@
     <link rel="modulepreload" href="js/profile.store.js" />
     <link rel="modulepreload" href="js/strength-engine.js" />
     <link rel="modulepreload" href="js/shared/ai-engine.js" />
-    <link rel="modulepreload" href="js/usage.js" />
     <!-- PERF-3: сняты onboarding.js · claude.view.js · shared/block-ticks.js —
          все три вне бут-замыкания, приходят через import() (js/app.js:231,
          js/app.js:222, и block-ticks ← workout.view/render.js за ленивым
          _loadWorkout()). Прелоад тянул их в первый заход зря.
          BOOT-TRIM: athlete-room · integrity · panda-* и AR-транзитивы
-         (lift-map, lift-bars) — тоже вне первого кадра: комната по тапу/idle,
-         панда по empty-state/overrun. Сторожит test/boot-graph.test.js. -->
+         (lift-map, lift-bars) — вне первого кадра.
+         BOOT-TRIM-2: privacy.view · rest-timer · pip · confirm · factory ·
+         usage — UI настроек / Train / FAB, не Home. Сторожит
+         test/boot-graph.test.js. -->
 
     <!-- ── BLOCK 0: Critical CSS (inline — zero flash) ──────────────── -->
     <style>

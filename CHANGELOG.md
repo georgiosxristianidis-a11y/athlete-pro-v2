@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### BOOT-TRIM-2 — privacy.view, rest-timer и pip с бута (1.27.93)
+
+Home больше не парсит UI настроек и Train-оверлеи. `privacy.view` грузится
+с Island Settings; rest-timer — с `_loadWorkout`; PiP — при первом кадре
+живой сессии, не на idle Home. `modulepreload` и install-фаза следуют
+замыканию. Сторожит `test/boot-graph.test.js`.
+
 ### Security — qs 6.16.0 через override
 
 Express 4 пинит `qs@~6.15.1` (потолок 6.15.3). Оба moderate advisory
