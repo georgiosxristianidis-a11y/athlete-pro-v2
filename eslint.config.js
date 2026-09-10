@@ -20,7 +20,7 @@ export default [
     },
   },
   {
-    files: ['server.js', 'routes/**/*.js', 'lib/**/*.js', 'scripts/**/*.js', 'scripts/**/*.mjs', '*.js'],
+    files: ['server.js', 'routes/**/*.js', 'lib/**/*.js', 'scripts/**/*.js', 'scripts/**/*.mjs', '.cursor/**/*.mjs', '*.js'],
     ignores: ['js/**', 'sw.js', 'eslint.config.js', 'playwright.config.js'],
     languageOptions: {
       ecmaVersion: 'latest',

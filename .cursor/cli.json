@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(npm)",
+      "Shell(npx)",
+      "Shell(node)",
+      "Shell(git)",
+      "Read(**)",
+      "Write(js/**)",
+      "Write(css/**)",
+      "Write(test/**)",
+      "Write(docs/**)"
+    ],
+    "deny": [
+      "Shell(rm)",
+      "Shell(gh)",
+      "Shell(curl)",
+      "Shell(powershell)",
+      "Read(.env*)",
+      "Write(.env*)",
+      "Write(sw.js)",
+      "Write(scripts/**)",
+      "Write(.github/**)",
+      "Write(.cursor/**)",
+      "Write(CLAUDE.md)",
+      "Write(package-lock.json)"
+    ]
+  }
+}
