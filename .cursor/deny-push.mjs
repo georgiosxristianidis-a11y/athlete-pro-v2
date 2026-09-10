@@ -29,8 +29,9 @@ function segments(command) {
  * (отказ), `git -c "x=y stash" push` — пуш, а не stash. Строковыми заменами это неразрешимо:
  * снимаешь кавычки — ломаешь сообщения коммитов, оставляешь — пропускаешь пуш в кавычках.
  *
- * Подстановки и группировка шелла (`$( )`, backtick, `{}`, `|`) — разделители токенов: код в
- * `$(git push)` виден, а не спрятан внутри аргумента.
+ * Скобки и труба — разделители токенов: код в `$(git push)` виден, а не спрятан внутри
+ * аргумента. `$`, backtick и `{}` в тексте токена ОСТАЮТСЯ: подстановку хук вычислить не может,
+ * значит должен её увидеть и отказать.
  */
 function tokenize(segment) {
   const out = [];
@@ -57,7 +58,7 @@ function tokenize(segment) {
       started = true;
       continue;
     }
-    if (/\s/.test(ch) || '$()`{}|'.includes(ch)) {
+    if (/\s/.test(ch) || '()|'.includes(ch)) {
       flush();
       continue;
     }
@@ -111,10 +112,37 @@ function gitSubcommands(list) {
   return found;
 }
 
-const PUBLISHES = new Set(['push', 'send-pack']);
+/** Публикуют не только `push`: `http-push` и `send-pack` — та же ветка в публичном remote. */
+const PUBLISHES = /(?:^|-)push$|^send-pack$/;
 
 /** `git -c alias.x=push x` — публикация под чужим именем: подкоманда невинна, значение нет. */
-const ALIAS_TO_PUSH = /alias\.[^=\s]*=\S*\b(?:push|send-pack)\b/;
+const ALIAS_TO_PUSH = /alias\.[^=\s]*=\S*(?:push|send-pack)/;
+
+/**
+ * Формы, значение которых хук вычислить не может, а git может: подстановка шелла и конфиг из
+ * окружения (`FOO=push git --config-env=alias.x=FOO x`, `GIT_CONFIG_KEY_*`). Разбор строки тут
+ * бессилен по устройству, поэтому такая строка — отказ, а не догадка.
+ */
+function unevaluable(list) {
+  const bare = (token) => !token.quoted;
+  const configFromEnv = (token) =>
+    /^--config-env(?:=|$)/.test(token.text) || /^GIT_CONFIG/.test(token.text);
+  if (list.filter(bare).some(configFromEnv)) return true;
+
+  const gitAt = list.findIndex((token) => /(?:^|[/\\])git(?:\.exe)?$/.test(token.text));
+  // Присваивание перед самим git: `FOO=push git --config-env=alias.x=FOO x`.
+  if (gitAt > 0 && list.slice(0, gitAt).some((t) => bare(t) && /^[A-Za-z_]\w*=/.test(t.text))) {
+    return true;
+  }
+  // Подстановка ровно там, где решается судьба команды: на месте подкоманды…
+  if (gitSubcommands(list).some((name) => /[$`]/.test(name))) return true;
+  // …или в значении конфиг-опции (`-c alias.x=$FOO`). Аргумент вроде
+  // `npx prettier --write $(git diff --name-only)` при этом остаётся рабочим.
+  return list.some(
+    (token, i) =>
+      i > 0 && GIT_OPTS_WITH_VALUE.has(list[i - 1].text) && bare(token) && /[$`]/.test(token.text)
+  );
+}
 
 /** Формы, которые ночь не выполняет. Проверяются по каждой команде строки. */
 const FORBIDDEN = [
@@ -135,16 +163,17 @@ const FORBIDDEN = [
      */
     hit: (list) => {
       const subcommands = gitSubcommands(list);
-      if (subcommands.some((name) => PUBLISHES.has(name))) return true;
+      if (subcommands.some((name) => PUBLISHES.test(name))) return true;
       const optionValues = list.filter(
         (token, i) => i > 0 && GIT_OPTS_WITH_VALUE.has(list[i - 1].text)
       );
       if (optionValues.some((token) => ALIAS_TO_PUSH.test(token.text))) return true;
       if (subcommands.length > 0 && subcommands.every((name) => name === 'stash')) return false;
-      return list.some((token) => !token.quoted && PUBLISHES.has(token.text));
+      return list.some((token) => !token.quoted && PUBLISHES.test(token.text));
     },
     why: 'пуш делает LEAD утром, после приёмки',
   },
+  { hit: unevaluable, why: 'подстановку и конфиг из окружения хук не вычисляет — отказ' },
   { re: /\bgh\b\s+pr\b/, why: 'PR заводит человек, не ночной прогон' },
   { re: /--no-verify\b/, why: 'обход хуков прячет красный гейт' },
   {
@@ -152,9 +181,12 @@ const FORBIDDEN = [
     why: 'короткий -n это тот же обход хуков',
   },
   {
-    // Любой короткий кластер, где есть `e` или `p`: `-e`, `-pe`, `-ep`, `-epi`. Длинные
-    // опции (`--test`, `--wait`) не задевает — у них второй дефис.
-    re: /\bnode\b[^\n]*(?:^|\s)-(?:[a-z]*[ep][a-z]*|-eval|-print)\b/,
+    // По токенам, включая квотированные: `node "-e"` — тот же инлайн-скрипт. Сообщение
+    // коммита при этом безопасно — из кавычек приходит один токен, а не `node` плюс `-e`.
+    // Кластер с `e`/`p` (`-e`, `-pe`, `-epi`) ловится, длинные `--test`/`--wait` — нет.
+    hit: (list) =>
+      list.some((token) => /(?:^|[/\\])node(?:\.exe)?$/.test(token.text)) &&
+      list.some((token) => /^-(?:[a-z]*[ep][a-z]*|-eval|-print)(?:=|$)/.test(token.text)),
     why: 'инлайн-скрипт минует разбор строки',
   },
   { re: /\bgit\b[^\n]*\breset\b[^\n]*--hard\b/, why: 'снос незакоммиченной работы' },
