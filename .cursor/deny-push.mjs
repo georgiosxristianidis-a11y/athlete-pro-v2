@@ -26,25 +26,64 @@ function stripQuoted(command) {
   return command.replace(/'[^']*'/g, "''").replace(/"(?:\\.|[^"\\])*"/g, '""');
 }
 
-/**
- * `git stash push` — не публикация, но и не повод пропустить пуш рядом. Снимается ровно эта
- * форма, а не любое слово `stash`: иначе `git push origin refs/stash` уезжал бы в allow.
- */
-function dropStashPush(segment) {
-  return segment.replace(/\bstash\s+push\b/g, 'stash');
-}
-
 /** Каждая команда судится отдельно: `git stash push && git push` — две разные строки. */
 function segments(command) {
-  return stripQuoted(command)
-    .split(/&&|\|\||[;|\n]/)
-    .map(dropStashPush);
+  return stripQuoted(command).split(/&&|\|\||[;|\n]/);
 }
+
+/** Опции git, которые несут значение отдельным токеном: в `git -C dir push` подкоманда третья. */
+const GIT_OPTS_WITH_VALUE = new Set([
+  '-C',
+  '-c',
+  '--git-dir',
+  '--work-tree',
+  '--exec-path',
+  '--namespace',
+]);
+
+/** Токены команды: подстановки и группировка шелла — пробелы, иначе `$(git push)` не виден. */
+function tokens(segment) {
+  return segment
+    .replace(/[$()`{}]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+/**
+ * Подкоманда git, а не слово в строке. Разница видна только на токенах: `git stash push` —
+ * не публикация, а `git -c x.y=stash push` — публикация. Два круга ревью ушли на попытки
+ * выразить это регэкспом с исключением: каждое исключение оказывалось дыркой.
+ */
+function gitSubcommands(segment) {
+  const list = tokens(segment);
+  const found = [];
+  for (let i = 0; i < list.length; i += 1) {
+    if (!/(?:^|[/\\])git(?:\.exe)?$/.test(list[i])) continue;
+    for (let j = i + 1; j < list.length; j += 1) {
+      if (GIT_OPTS_WITH_VALUE.has(list[j])) {
+        j += 1;
+        continue;
+      }
+      if (list[j].startsWith('-')) continue;
+      found.push(list[j]);
+      break;
+    }
+  }
+  return found;
+}
+
+const PUBLISHES = new Set(['push', 'send-pack']);
 
 /** Формы, которые ночь не выполняет. Проверяются по каждой команде строки. */
 const FORBIDDEN = [
   {
-    re: /\bgit\b[^\n]*\b(?:push|send-pack)\b/,
+    // Имя бинаря в кавычках срезается вместе с кавычками, git не опознаётся — тогда
+    // судим по голому токену: fail-closed важнее, чем `push` в чужом аргументе.
+    hit: (segment) => {
+      const subcommands = gitSubcommands(segment);
+      if (subcommands.length > 0) return subcommands.some((name) => PUBLISHES.has(name));
+      return tokens(segment).some((token) => PUBLISHES.has(token));
+    },
     why: 'пуш делает LEAD утром, после приёмки',
   },
   { re: /\bgh\b\s+pr\b/, why: 'PR заводит человек, не ночной прогон' },
@@ -54,8 +93,9 @@ const FORBIDDEN = [
     why: 'короткий -n это тот же обход хуков',
   },
   {
-    // `[a-z]*[ep]` держит кластерные формы `-pe` / `-ep`; `--test`, `--wait` не задевает.
-    re: /\bnode\b[^\n]*(?:^|\s)-(?:[a-z]*[ep]\b|-eval\b|-print\b)/,
+    // Любой короткий кластер, где есть `e` или `p`: `-e`, `-pe`, `-ep`, `-epi`. Длинные
+    // опции (`--test`, `--wait`) не задевает — у них второй дефис.
+    re: /\bnode\b[^\n]*(?:^|\s)-(?:[a-z]*[ep][a-z]*|-eval|-print)\b/,
     why: 'инлайн-скрипт минует разбор строки',
   },
   { re: /\bgit\b[^\n]*\breset\b[^\n]*--hard\b/, why: 'снос незакоммиченной работы' },
@@ -76,7 +116,7 @@ function decide(command) {
     };
   }
   for (const segment of segments(command)) {
-    const hit = FORBIDDEN.find((rule) => rule.re.test(segment));
+    const hit = FORBIDDEN.find((rule) => (rule.re ? rule.re.test(segment) : rule.hit(segment)));
     if (hit) {
       return { permission: 'deny', userMessage: `ночной гард: ${hit.why}` };
     }

@@ -47,9 +47,14 @@ const DENIED = [
   'git push origin HEAD && git stash push -m wip',
   'git push origin refs/stash',
   'git push origin $(git stash list)',
+  'git -c x.y=stash push',
+  'git --config-env=user.name=stash push',
+  'git stash push -m wip $(git push origin HEAD)',
+  '"C:/Program Files/Git/bin/git.exe" push',
   'node -e "require(\'child_process\').execSync(\'git push\')"',
   'node -pe "1+1"',
   'node -ep "1+1"',
+  'node -epi "1+1"',
 ];
 
 const ALLOWED = [
@@ -62,6 +67,8 @@ const ALLOWED = [
   'node --test test/cursor-night-guard.test.js',
   'node scripts/smoke-prod.mjs --wait 180',
   'node --experimental-vm-modules --test',
+  'git -C ../athlete-pro-agent-9 stash push -m wip',
+  'git stash list',
   'git checkout -b cursor/card-x origin/main',
   'npm run build:sw',
   'npm test',
