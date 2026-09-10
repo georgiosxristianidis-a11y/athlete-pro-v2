@@ -149,13 +149,21 @@
     <link rel="modulepreload" href="js/shared/chamber-pill.js" />
     <link rel="modulepreload" href="js/shared/cryptoClient.js" />
     <link rel="modulepreload" href="js/ui/factory.js" />
+    <!-- Транзитивы claude.store.js: статический импорт из dashboard.js, то есть
+         первый кадр. Прелоад тут не украшение — он же кладёт файл в install-фазу
+         прекеша (scripts/build-sw.mjs собирает ASSETS по этим ссылкам), а без
+         него холодный офлайн-старт сразу после апдейта падает на пустом кеше. -->
+    <link rel="modulepreload" href="js/profile.store.js" />
+    <link rel="modulepreload" href="js/strength-engine.js" />
+    <link rel="modulepreload" href="js/shared/ai-engine.js" />
+    <link rel="modulepreload" href="js/usage.js" />
     <!-- PERF-3: сняты onboarding.js · claude.view.js · shared/block-ticks.js —
          все три вне бут-замыкания, приходят через import() (js/app.js:231,
          js/app.js:222, и block-ticks ← workout.view/render.js за ленивым
          _loadWorkout()). Прелоад тянул их в первый заход зря.
          BOOT-TRIM: athlete-room · integrity · panda-* и AR-транзитивы
-         (strength-engine, lift-map, lift-bars, profile.store) — тоже вне
-         первого кадра: комната по тапу/idle, панда по empty-state/overrun. -->
+         (lift-map, lift-bars) — тоже вне первого кадра: комната по тапу/idle,
+         панда по empty-state/overrun. Сторожит test/boot-graph.test.js. -->
 
     <!-- ── BLOCK 0: Critical CSS (inline — zero flash) ──────────────── -->
     <style>

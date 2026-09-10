@@ -44,15 +44,17 @@ function modulepreloadHrefs(html) {
 const OFF_BOOT = {
   app: ['athlete-room', 'integrity', 'panda-video', 'panda-mood'],
   pandaHosts: ['panda-video', 'panda-mood'],
+  // strength-engine.js и profile.store.js сюда не входят намеренно: они
+  // приезжают статическим импортом claude.store.js ← dashboard.js, то есть
+  // сидят в первом кадре независимо от Athlete Room. Прелоад им положен —
+  // см. 'the first-frame closure rides the install phase'.
   preload: [
     'js/shared/athlete-room.js',
     'js/shared/integrity.js',
     'js/shared/panda-video.js',
     'js/shared/panda-mood.js',
-    'js/strength-engine.js',
     'js/shared/lift-map.js',
     'js/profile.view/lift-bars.js',
-    'js/profile.store.js',
   ],
   keepPreload: [
     'js/shared/dynamic-island.js',
@@ -118,6 +120,58 @@ describe('BOOT-TRIM: modulepreload is the boot closure only', () => {
     for (const href of OFF_BOOT.preload) {
       assert.ok(!hrefs.includes(href), `index.html still modulepreloads '${href}'`);
     }
+  });
+});
+
+/**
+ * Обратная сторона трима: прелоад-подсказки не просто хинт, по ним
+ * scripts/build-sw.mjs собирает install-фазу прекеша. Модуль, который остался
+ * статическим импортом первого кадра, но выпал из ASSETS в ASSETS_WARM, ломает
+ * холодный офлайн-старт сразу после апдейта — warm-фаза туда ещё не доехала.
+ */
+describe('BOOT-TRIM: the first-frame closure rides the install phase', () => {
+  /** Транзитивное замыкание статических import от entry-скриптов index.html. */
+  function firstFrameClosure() {
+    const html = readText('index.html');
+    const entries = [
+      ...html.matchAll(/<script[^>]*type=["']module["'][^>]*src=["']([^"']+)["']/g),
+    ].map((m) => m[1]);
+    const seen = new Set();
+    const walk = (rel) => {
+      const file = rel.replace(/^\//, '');
+      if (seen.has(file) || !fs.existsSync(path.join(ROOT, file))) return;
+      seen.add(file);
+      for (const spec of staticSpecs(readText(file))) {
+        if (!spec.startsWith('.')) continue;
+        walk(path.posix.normalize(path.posix.join(path.posix.dirname(file), spec)));
+      }
+    };
+    entries.forEach(walk);
+    return seen;
+  }
+
+  /** Массив путей из манифеста sw.js по имени константы. */
+  function swManifest(name) {
+    const sw = readText('sw.js');
+    const block = sw.match(new RegExp('const ' + name + ' = \\[([\\s\\S]*?)\\];'));
+    assert.ok(block, `sw.js has no ${name} array`);
+    return new Set([...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  }
+
+  test('every static import of boot is in ASSETS, not in ASSETS_WARM', () => {
+    const boot = swManifest('ASSETS');
+    const warm = swManifest('ASSETS_WARM');
+    const stranded = [...firstFrameClosure()]
+      .map((f) => '/' + f)
+      .filter((f) => !boot.has(f))
+      .sort();
+    assert.deepEqual(
+      stranded,
+      [],
+      'модули первого кадра уехали мимо install-фазы ' +
+        `(${stranded.map((f) => (warm.has(f) ? f + ' [warm]' : f + ' [не кэшируется]')).join(', ')}) — ` +
+        'верни им <link rel="modulepreload"> или сними статический импорт с бут-графа'
+    );
   });
 });
 

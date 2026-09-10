@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-f47c5abd';
+const CACHE_NAME = 'athlete-pro-v121-2af08dff';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -43,7 +43,9 @@ const ASSETS = [
   '/js/locale.store.js',
   '/js/privacy.store.js',
   '/js/privacy.view.js',
+  '/js/profile.store.js',
   '/js/rest-timer.js',
+  '/js/shared/ai-engine.js',
   '/js/shared/chamber-pill.js',
   '/js/shared/confirm.js',
   '/js/shared/cryptoClient.js',
@@ -62,9 +64,11 @@ const ASSETS = [
   '/js/shared/theme.js',
   '/js/shared/utils.js',
   '/js/shell.js',
+  '/js/strength-engine.js',
   '/js/theme-boot.js',
   '/js/timer.js',
   '/js/ui/factory.js',
+  '/js/usage.js',
   '/js/version.js',
   '/js/workout.store.js',
   '/css/base.css',
@@ -98,7 +102,6 @@ const ASSETS_WARM = [
   '/js/onboarding.js',
   '/js/plate-calc.js',
   '/js/profile.js',
-  '/js/profile.store.js',
   '/js/profile.view/bento.js',
   '/js/profile.view/hexagon-radar.js',
   '/js/profile.view/lift-bars.js',
@@ -106,7 +109,6 @@ const ASSETS_WARM = [
   '/js/profile.view/settings.js',
   '/js/profile.view.js',
   '/js/progressive-overload.js',
-  '/js/shared/ai-engine.js',
   '/js/shared/ai-status.js',
   '/js/shared/air-markdown.js',
   '/js/shared/athlete-room.js',
@@ -123,7 +125,6 @@ const ASSETS_WARM = [
   '/js/shared/sse.js',
   '/js/shared/sync-merge.js',
   '/js/shared/txt-export.js',
-  '/js/strength-engine.js',
   '/js/supabase-check.js',
   '/js/supabase.js',
   '/js/sync.js',
@@ -132,7 +133,6 @@ const ASSETS_WARM = [
   '/js/ui/gravity-submit.js',
   '/js/ui/receipt.js',
   '/js/ui/seg-pill.js',
-  '/js/usage.js',
   '/js/workers/crypto.worker.js',
   '/js/workout-ai.view.js',
   '/js/workout.view/handlers.js',
