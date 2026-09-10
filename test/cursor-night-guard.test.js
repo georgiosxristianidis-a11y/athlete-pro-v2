@@ -62,6 +62,14 @@ const DENIED = [
   'node -pe "1+1"',
   'node -ep "1+1"',
   'node -epi "1+1"',
+  'node "-e" "1+1"',
+  'node "--eval=1+1"',
+  'git http-push origin main',
+  'git ${PUSH:-push}',
+  'git $VERB origin main',
+  'FOO=push git --config-env=alias.x=FOO x',
+  'GIT_CONFIG_KEY_0=alias.x GIT_CONFIG_VALUE_0=push git x',
+  'git -c alias.x=$FOO x',
 ];
 
 const ALLOWED = [
@@ -82,6 +90,9 @@ const ALLOWED = [
   'npm run build:sw',
   'npm test',
   'npx prettier --write js/app.js',
+  'npx prettier --write $(git diff --name-only)',
+  'git commit -m "$(date) wip"',
+  'git commit -m "node -e не звать"',
 ];
 
 for (const command of DENIED) {
