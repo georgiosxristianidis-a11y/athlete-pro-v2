@@ -10,7 +10,9 @@
  * входе, а не наличие файла.
  *
  * Негативная половина здесь обязательна: гард, который запрещает всё, ночь не
- * переживёт — `git commit` и `npm run build:sw` должны проходить.
+ * переживёт — `git commit` и `npm run build:sw` должны проходить. Отдельно закреплено,
+ * что текст в кавычках — данные, а не команда: `push` здесь тип тренировки, и коммит
+ * `feat(push): …` обязан проходить, иначе ночь встанет на первом же дне толчка.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -39,10 +41,20 @@ const DENIED = [
   'git worktree remove ../wt',
   'git branch -D feature',
   'git checkout main',
+  'git send-pack origin main',
+  'git commit -an -m "wip"',
+  'git commit -n -m "wip"',
+  'git push origin HEAD && git stash push -m wip',
+  'node -e "require(\'child_process\').execSync(\'git push\')"',
 ];
 
 const ALLOWED = [
   'git commit -m "feat(train): x"',
+  'git commit -m "feat(push): день толчка"',
+  'git commit -m "fix(workout): не терять push-день при смене плана"',
+  'git stash push -m wip',
+  'git commit --amend --no-edit',
+  'git log -n 5 --oneline',
   'git checkout -b cursor/card-x origin/main',
   'npm run build:sw',
   'npm test',
@@ -67,6 +79,13 @@ test('нечитаемый вход закрывает, а не открывае
   assert.equal(ask('').permission, 'deny');
   assert.equal(ask('not json').permission, 'deny');
   assert.equal(ask(JSON.stringify({})).permission, 'deny');
+});
+
+test('hooks.json закрывается на падении хука, а не открывается', () => {
+  const hooks = JSON.parse(readFileSync(path.join(REPO_ROOT, '.cursor', 'hooks.json'), 'utf8'));
+  const [hook] = hooks.hooks.beforeShellExecution;
+  assert.equal(hook.command, 'node .cursor/deny-push.mjs');
+  assert.equal(hook.failClosed, true, 'дефолт Cursor — fail-open: краш хука пропустит команду');
 });
 
 test('cli.json запрещает запись в генерируемое и в собственный конфиг', () => {

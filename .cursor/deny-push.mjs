@@ -10,14 +10,40 @@
  * `{"permission":"allow"|"deny"|"ask"}`. Ненулевой выход 2 равен `deny`.
  *
  * Fail-closed: строку не удалось разобрать — запрет. Ночь, вставшая на разборе,
- * чинится утром; ветка, уехавшая в публичный remote, — нет.
+ * чинится утром; ветка, уехавшая в публичный remote, — нет. Падение самого хука
+ * закрывает `failClosed` в `.cursor/hooks.json`: по умолчанию Cursor пропускает.
+ *
+ * Граница: хук видит только внешнюю строку. `Shell(node)`/`Shell(npm)` разрешены, значит
+ * интерпретатор дотянется до git в обход разбора — это защита от случайной публикации,
+ * не песочница. Инлайн `node -e` закрыт, чужой `npm run <script>` — нет.
  */
 
-/** Формы, которые ночь не выполняет. Проверяются по всей строке: `a && git push` тоже ловится. */
+/**
+ * Текст в кавычках — данные, а не команда. В этом репозитории `push` — тип тренировки,
+ * поэтому `git commit -m "feat(push): …"` обязан проходить, а `git push` — нет.
+ */
+function stripQuoted(command) {
+  return command.replace(/'[^']*'/g, "''").replace(/"(?:\\.|[^"\\])*"/g, '""');
+}
+
+/** Каждая команда судится отдельно: `git stash push && git push` — две разные строки. */
+function segments(command) {
+  return stripQuoted(command).split(/&&|\|\||[;|\n]/);
+}
+
+/** Формы, которые ночь не выполняет. Проверяются по каждой команде строки. */
 const FORBIDDEN = [
-  { re: /\bgit\b[^\n]*\bpush\b/, why: 'пуш делает LEAD утром, после приёмки' },
+  {
+    re: /\bgit\b(?![^\n]*\bstash\b)[^\n]*\b(?:push|send-pack)\b/,
+    why: 'пуш делает LEAD утром, после приёмки',
+  },
   { re: /\bgh\b\s+pr\b/, why: 'PR заводит человек, не ночной прогон' },
   { re: /--no-verify\b/, why: 'обход хуков прячет красный гейт' },
+  {
+    re: /\bgit\b[^\n]*\bcommit\b[^\n]*(?:^|\s)-[a-z]*n/,
+    why: 'короткий -n это тот же обход хуков',
+  },
+  { re: /\bnode\b[^\n]*(?:^|\s)-(?:e|p|-eval|-print)\b/, why: 'инлайн-скрипт минует разбор строки' },
   { re: /\bgit\b[^\n]*\breset\b[^\n]*--hard\b/, why: 'снос незакоммиченной работы' },
   { re: /\bgit\b[^\n]*\bclean\b[^\n]*-[a-z]*f/, why: 'снос неотслеживаемых файлов' },
   { re: /\bgit\b[^\n]*\bworktree\b[^\n]*\bremove\b/, why: 'рабочие копии трогает только человек' },
@@ -35,9 +61,11 @@ function decide(command) {
       userMessage: 'ночной гард: команда не прочитана, отказ по умолчанию',
     };
   }
-  const hit = FORBIDDEN.find((rule) => rule.re.test(command));
-  if (hit) {
-    return { permission: 'deny', userMessage: `ночной гард: ${hit.why}` };
+  for (const segment of segments(command)) {
+    const hit = FORBIDDEN.find((rule) => rule.re.test(segment));
+    if (hit) {
+      return { permission: 'deny', userMessage: `ночной гард: ${hit.why}` };
+    }
   }
   return { permission: 'allow' };
 }

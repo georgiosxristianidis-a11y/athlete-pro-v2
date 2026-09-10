@@ -1,6 +1,8 @@
 {
   "version": 1,
   "hooks": {
-    "beforeShellExecution": [{ "command": "node .cursor/deny-push.mjs" }]
+    "beforeShellExecution": [
+      { "command": "node .cursor/deny-push.mjs", "failClosed": true, "timeout": 10 }
+    ]
   }
 }
