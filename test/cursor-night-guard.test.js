@@ -45,7 +45,11 @@ const DENIED = [
   'git commit -an -m "wip"',
   'git commit -n -m "wip"',
   'git push origin HEAD && git stash push -m wip',
+  'git push origin refs/stash',
+  'git push origin $(git stash list)',
   'node -e "require(\'child_process\').execSync(\'git push\')"',
+  'node -pe "1+1"',
+  'node -ep "1+1"',
 ];
 
 const ALLOWED = [
@@ -55,6 +59,9 @@ const ALLOWED = [
   'git stash push -m wip',
   'git commit --amend --no-edit',
   'git log -n 5 --oneline',
+  'node --test test/cursor-night-guard.test.js',
+  'node scripts/smoke-prod.mjs --wait 180',
+  'node --experimental-vm-modules --test',
   'git checkout -b cursor/card-x origin/main',
   'npm run build:sw',
   'npm test',

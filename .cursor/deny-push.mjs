@@ -26,15 +26,25 @@ function stripQuoted(command) {
   return command.replace(/'[^']*'/g, "''").replace(/"(?:\\.|[^"\\])*"/g, '""');
 }
 
+/**
+ * `git stash push` — не публикация, но и не повод пропустить пуш рядом. Снимается ровно эта
+ * форма, а не любое слово `stash`: иначе `git push origin refs/stash` уезжал бы в allow.
+ */
+function dropStashPush(segment) {
+  return segment.replace(/\bstash\s+push\b/g, 'stash');
+}
+
 /** Каждая команда судится отдельно: `git stash push && git push` — две разные строки. */
 function segments(command) {
-  return stripQuoted(command).split(/&&|\|\||[;|\n]/);
+  return stripQuoted(command)
+    .split(/&&|\|\||[;|\n]/)
+    .map(dropStashPush);
 }
 
 /** Формы, которые ночь не выполняет. Проверяются по каждой команде строки. */
 const FORBIDDEN = [
   {
-    re: /\bgit\b(?![^\n]*\bstash\b)[^\n]*\b(?:push|send-pack)\b/,
+    re: /\bgit\b[^\n]*\b(?:push|send-pack)\b/,
     why: 'пуш делает LEAD утром, после приёмки',
   },
   { re: /\bgh\b\s+pr\b/, why: 'PR заводит человек, не ночной прогон' },
@@ -43,7 +53,11 @@ const FORBIDDEN = [
     re: /\bgit\b[^\n]*\bcommit\b[^\n]*(?:^|\s)-[a-z]*n/,
     why: 'короткий -n это тот же обход хуков',
   },
-  { re: /\bnode\b[^\n]*(?:^|\s)-(?:e|p|-eval|-print)\b/, why: 'инлайн-скрипт минует разбор строки' },
+  {
+    // `[a-z]*[ep]` держит кластерные формы `-pe` / `-ep`; `--test`, `--wait` не задевает.
+    re: /\bnode\b[^\n]*(?:^|\s)-(?:[a-z]*[ep]\b|-eval\b|-print\b)/,
+    why: 'инлайн-скрипт минует разбор строки',
+  },
   { re: /\bgit\b[^\n]*\breset\b[^\n]*--hard\b/, why: 'снос незакоммиченной работы' },
   { re: /\bgit\b[^\n]*\bclean\b[^\n]*-[a-z]*f/, why: 'снос неотслеживаемых файлов' },
   { re: /\bgit\b[^\n]*\bworktree\b[^\n]*\bremove\b/, why: 'рабочие копии трогает только человек' },
