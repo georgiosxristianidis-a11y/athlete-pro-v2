@@ -18,17 +18,62 @@
  * не песочница. Инлайн `node -e` закрыт, чужой `npm run <script>` — нет.
  */
 
-/**
- * Текст в кавычках — данные, а не команда. В этом репозитории `push` — тип тренировки,
- * поэтому `git commit -m "feat(push): …"` обязан проходить, а `git push` — нет.
- */
-function stripQuoted(command) {
-  return command.replace(/'[^']*'/g, "''").replace(/"(?:\\.|[^"\\])*"/g, '""');
-}
-
 /** Каждая команда судится отдельно: `git stash push && git push` — две разные строки. */
 function segments(command) {
-  return command.split(/&&|\|\||[;|\n]/);
+  return command.split(/&&|\|\||[;\n]/);
+}
+
+/**
+ * Разбор на токены с памятью о кавычках. Ровно эта память и решает спор, на котором сломались
+ * пять кругов ревью: `git commit -m "git push"` — данные (проход), `git "push"` — команда
+ * (отказ), `git -c "x=y stash" push` — пуш, а не stash. Строковыми заменами это неразрешимо:
+ * снимаешь кавычки — ломаешь сообщения коммитов, оставляешь — пропускаешь пуш в кавычках.
+ *
+ * Подстановки и группировка шелла (`$( )`, backtick, `{}`, `|`) — разделители токенов: код в
+ * `$(git push)` виден, а не спрятан внутри аргумента.
+ */
+function tokenize(segment) {
+  const out = [];
+  let text = '';
+  let quoted = false;
+  let started = false;
+  let quote = null;
+  const flush = () => {
+    if (started) out.push({ text, quoted });
+    text = '';
+    quoted = false;
+    started = false;
+  };
+  for (const ch of segment) {
+    if (quote) {
+      if (ch === quote) quote = null;
+      else text += ch;
+      started = true;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      quoted = true;
+      started = true;
+      continue;
+    }
+    if (/\s/.test(ch) || '$()`{}|'.includes(ch)) {
+      flush();
+      continue;
+    }
+    text += ch;
+    started = true;
+  }
+  flush();
+  return out;
+}
+
+/** Код команды без данных: то, что стоит в кавычках, правилам-регэкспам не показывается. */
+function unquotedCode(list) {
+  return list
+    .filter((token) => !token.quoted)
+    .map((token) => token.text)
+    .join(' ');
 }
 
 /** Опции git со значением отдельным токеном: в `git -C dir push` подкоманда третья. */
@@ -45,33 +90,21 @@ const GIT_OPTS_WITH_VALUE = new Set([
 ]);
 
 /**
- * Токены команды. Подстановки и группировка шелла — пробелы (`$(git push)` иначе не виден),
- * кавычки снимаются с самих токенов, но содержимое остаётся: `git "push"` — тот же пуш.
- */
-function tokens(segment) {
-  return segment
-    .replace(/[$()`{}]/g, ' ')
-    .split(/\s+/)
-    .map((token) => token.replace(/['"]/g, ''))
-    .filter(Boolean);
-}
-
-/**
  * Подкоманда git, а не слово в строке: `git stash push` — не публикация, `git -c x.y=stash push` —
- * публикация. Регэкспом эта разница не выражается, три круга ревью это доказали.
+ * публикация. Опция со значением съедает свой аргумент целиком, поэтому квотированное
+ * `-c "x=y stash"` не выдаёт себя за подкоманду.
  */
-function gitSubcommands(segment) {
-  const list = tokens(segment);
+function gitSubcommands(list) {
   const found = [];
   for (let i = 0; i < list.length; i += 1) {
-    if (!/(?:^|[/\\])git(?:\.exe)?$/.test(list[i])) continue;
+    if (!/(?:^|[/\\])git(?:\.exe)?$/.test(list[i].text)) continue;
     for (let j = i + 1; j < list.length; j += 1) {
-      if (GIT_OPTS_WITH_VALUE.has(list[j])) {
+      if (GIT_OPTS_WITH_VALUE.has(list[j].text)) {
         j += 1;
         continue;
       }
-      if (list[j].startsWith('-')) continue;
-      found.push(list[j]);
+      if (list[j].text.startsWith('-')) continue;
+      found.push(list[j].text);
       break;
     }
   }
@@ -87,26 +120,28 @@ const ALIAS_TO_PUSH = /alias\.[^=\s]*=\S*\b(?:push|send-pack)\b/;
 const FORBIDDEN = [
   {
     /*
-     * Два прохода, потому что вопросы разные.
+     * Три вопроса на одном разборе токенов.
      *
-     * 1. Подкоманда — по токенам с содержимым кавычек: ловит `git "push"`, `git "-C" . push`,
-     *    `git -c x.y=stash push`.
-     * 2. Голое слово — по строке БЕЗ содержимого кавычек: fail-closed на любую форму, где
-     *    подкоманду опознать не удалось (неизвестная опция со значением, `git --attr-source
-     *    HEAD push`, алиас бинаря). Единственное исключение — когда все найденные подкоманды
-     *    это `stash`: `git stash push -m wip` ночь делает штатно.
+     * 1. Подкоманда публикует? Ловит `git push`, `git "push"`, `git "-C" . push`,
+     *    `git -c "x=y stash" push`.
+     * 2. Значение `-c` переименовывает пуш в алиас? Смотрится по значению опции, где бы оно
+     *    ни стояло, — подкоманда при этом невинна.
+     * 3. Если подкоманду опознать не удалось (незнакомая опция со значением, алиас бинаря) —
+     *    fail-closed по голому слову среди НЕквотированных токенов. Исключение одно: все
+     *    найденные подкоманды это `stash`, `git stash push -m wip` ночь делает штатно.
      *
-     * Второй проход и держит правило от списка опций: пополнять `GIT_OPTS_WITH_VALUE` больше
-     * не обязательно, незнакомая опция просто уводит в отказ.
+     * Третий вопрос и снимает зависимость от полноты `GIT_OPTS_WITH_VALUE`: незнакомая опция
+     * уводит в отказ, а не в пропуск.
      */
-    hit: (segment) => {
-      const subcommands = gitSubcommands(segment);
+    hit: (list) => {
+      const subcommands = gitSubcommands(list);
       if (subcommands.some((name) => PUBLISHES.has(name))) return true;
-      // Алиас ищется по токенам С содержимым кавычек: `-c alias.p="push --force"` иначе пуст.
-      const code = stripQuoted(segment);
-      if (ALIAS_TO_PUSH.test(tokens(segment).join(' '))) return true;
+      const optionValues = list.filter(
+        (token, i) => i > 0 && GIT_OPTS_WITH_VALUE.has(list[i - 1].text)
+      );
+      if (optionValues.some((token) => ALIAS_TO_PUSH.test(token.text))) return true;
       if (subcommands.length > 0 && subcommands.every((name) => name === 'stash')) return false;
-      return tokens(code).some((token) => PUBLISHES.has(token));
+      return list.some((token) => !token.quoted && PUBLISHES.has(token.text));
     },
     why: 'пуш делает LEAD утром, после приёмки',
   },
@@ -141,9 +176,10 @@ function decide(command) {
   }
   for (const segment of segments(command)) {
     // Регэкспы судят код без содержимого кавычек (сообщение коммита — данные), правило пуша
-    // разбирает сырой сегмент само: ему нужны и кавычки, и то, что под ними.
-    const code = stripQuoted(segment);
-    const hit = FORBIDDEN.find((rule) => (rule.re ? rule.re.test(code) : rule.hit(segment)));
+    // работает по токенам: ему нужно знать, что пришло из кавычек, а что нет.
+    const list = tokenize(segment);
+    const code = unquotedCode(list);
+    const hit = FORBIDDEN.find((rule) => (rule.re ? rule.re.test(code) : rule.hit(list)));
     if (hit) {
       return { permission: 'deny', userMessage: `ночной гард: ${hit.why}` };
     }
