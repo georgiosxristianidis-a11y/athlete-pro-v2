@@ -619,7 +619,7 @@ WARN с числом и `git pull --ff-only`. Гард — `test/preflight-main-
 
 **Права и гард заведены** (PR #325): `.cursor/cli.json` (allow/deny, deny побеждает),
 `.cursor/hooks.json` → `.cursor/deny-push.mjs` (разбор строки, fail-closed),
-`test/cursor-night-guard.test.js` — 73 кейса, из них 22 на проход: гард, запрещающий всё,
+`test/cursor-night-guard.test.js` — 77 кейсов, из них 22 на проход: гард, запрещающий всё,
 ночь не переживёт. Раннера цикла в репо нет и не будет — одноразовые скрипты не коммитятся.
 
 Три находки ревью закрыты в том же PR, каждая ломала бы ночь или гард:
