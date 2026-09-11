@@ -124,33 +124,37 @@ const ALIAS_TO_PUSH = /alias\.[^=\s]*=\S*(?:push|send-pack)/;
  * бессилен по устройству, поэтому такая строка — отказ, а не догадка.
  */
 const EXPANSION = /[$`{}]/;
+const ASSIGNMENT = /^[A-Za-z_]\w*=/;
+const ENV_WRAPPER = /(?:^|[/\\])env$/;
 
 function unevaluable(list) {
   const bare = (token) => !token.quoted;
-  const configFromEnv = (token) =>
-    /^--config-env(?:=|$)/.test(token.text) || /^GIT_CONFIG/.test(token.text);
-  if (list.filter(bare).some(configFromEnv)) return true;
+  // Любая переменная git в окружении команды — конфиг мимо строки, читать его хук не может.
+  const gitEnv = (token) => /^GIT_[A-Z_]*=/.test(token.text) || /^GIT_CONFIG/.test(token.text);
+  if (list.filter(bare).some((t) => gitEnv(t) || /^--config-env(?:=|$)/.test(t.text))) return true;
 
-  /* Присваивания идут вплотную перед командой — `FOO=push git … FOO`. Проверять «есть
-     присваивание где-то раньше git» нельзя: `FOO=bar npx prettier --write $(git diff)`
-     это не запуск git с окружением, а аргумент, и такая строка обязана проходить. */
+  /* Присваивания идут вплотную перед командой — `FOO=push git … FOO`, в том числе через
+     обёртку `env`. Проверять «есть присваивание где-то раньше git» нельзя:
+     `CI=1 npx prettier --write $(git diff)` это не запуск git с окружением, а аргумент,
+     и такая строка обязана проходить. */
   const gitAt = list.findIndex((token) => /(?:^|[/\\])git(?:\.exe)?$/.test(token.text));
   const prefix = gitAt > 0 ? list.slice(0, gitAt) : [];
-  if (prefix.length > 0 && prefix.every((t) => bare(t) && /^[A-Za-z_]\w*=/.test(t.text))) {
-    return true;
-  }
+  const wrapperPrefix =
+    prefix.length > 0 &&
+    prefix.every((t) => bare(t) && (ASSIGNMENT.test(t.text) || ENV_WRAPPER.test(t.text))) &&
+    prefix.some((t) => ASSIGNMENT.test(t.text));
+  if (wrapperPrefix) return true;
+
   // Подстановка и brace-expansion ровно там, где решается судьба команды: на месте
   // подкоманды (`git ${X:-push}`, `git {push,fetch} origin`)…
   if (gitSubcommands(list).some((name) => EXPANSION.test(name))) return true;
-  // …или в значении конфиг-опции (`-c alias.x=$FOO`). Аргумент вроде
-  // `npx prettier --write $(git diff --name-only)` при этом остаётся рабочим.
-  return list.some(
-    (token, i) =>
-      i > 0 &&
-      GIT_OPTS_WITH_VALUE.has(list[i - 1].text) &&
-      bare(token) &&
-      EXPANSION.test(token.text)
-  );
+  /* …или в значении конфиг-опции. Кавычки здесь не спасают (`-c alias.x='!git $FOO'`):
+     двойные их и не гасят, а для гарда невычислимое остаётся невычислимым в любых.
+     `!` в начале значения алиаса — это shell-алиас, то есть произвольная команда. */
+  return list.some((token, i) => {
+    if (i === 0 || !GIT_OPTS_WITH_VALUE.has(list[i - 1].text)) return false;
+    return EXPANSION.test(token.text) || /^!|=\s*!/.test(token.text);
+  });
 }
 
 /** Формы, которые ночь не выполняет. Проверяются по каждой команде строки. */
