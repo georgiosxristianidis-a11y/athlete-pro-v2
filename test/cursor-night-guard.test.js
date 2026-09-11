@@ -70,6 +70,9 @@ const DENIED = [
   'FOO=push git --config-env=alias.x=FOO x',
   'GIT_CONFIG_KEY_0=alias.x GIT_CONFIG_VALUE_0=push git x',
   'git -c alias.x=$FOO x',
+  'git {push,fetch} origin main',
+  'git pu{sh,ll} origin',
+  'FOO=bar git {push,status}',
 ];
 
 const ALLOWED = [
@@ -91,6 +94,8 @@ const ALLOWED = [
   'npm test',
   'npx prettier --write js/app.js',
   'npx prettier --write $(git diff --name-only)',
+  'CI=1 npx prettier --write $(git diff --name-only)',
+  'NODE_ENV=test npm test',
   'git commit -m "$(date) wip"',
   'git commit -m "node -e не звать"',
 ];
