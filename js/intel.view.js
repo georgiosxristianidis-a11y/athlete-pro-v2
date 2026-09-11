@@ -12,6 +12,7 @@ import { getTone, aiAuth } from './ai-settings.store.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
 import { safeFetch } from './privacy.store.js';
 import { appendSseChunk, parseSseDataLine } from './shared/sse.js';
+import { startVoiceWave, stopVoiceWave } from './intel.voice-wave.js';
 
 on('intel:close', () => window.Nav.go('s-home'));
 on('intel:toggleLogs', (el) => {
@@ -453,6 +454,7 @@ export const IntelView = (() => {
     feedbackEl.innerHTML = `
       <div class="intel-feedback-head">
         <div class="intel-feedback-label">${L.feedback}</div>
+        <span class="intel-voice-slot"></span>
         <button class="intel-btn-icon intel-feedback-speak" title="${L.speak}" aria-label="${L.speak}" data-action="intel:playAudio">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
@@ -553,11 +555,12 @@ export const IntelView = (() => {
       IntelStore.addLog('AI', 'Insight received.');
       IntelStore.setStatus('SYSTEM STANDBY');
 
-      // Auto-Speech
+      // Auto-Speech. Волна идёт в слот ЭТОЙ карточки: лента растёт сверху,
+      // и общий поиск по экрану нашёл бы слот соседней реплики.
       const autoSpeech = await DB.Settings.get('ai-auto-speech', true);
       if (autoSpeech && feedbackText) {
         const textToSpeak = feedbackText.innerText.trim();
-        if (textToSpeak) speakText(textToSpeak);
+        if (textToSpeak) speakText(textToSpeak, feedbackEl.querySelector('.intel-voice-slot'));
       }
     } catch (err) {
       console.error(err);
@@ -581,10 +584,28 @@ export const IntelView = (() => {
 
   let _isSpeaking = false;
 
-  async function speakText(textToSpeak) {
+  /**
+   * Куда вешать волну, если вызвавший не указал слот: открытый отчёт важнее
+   * ленты — человек смотрит в него, а не в карточку под оверлеем.
+   */
+  function _voiceSlot() {
+    return (
+      document.querySelector('.intel-report-overlay .intel-voice-slot') ||
+      document.querySelector('.intel-voice-slot')
+    );
+  }
+
+  /**
+   * @param {string} textToSpeak
+   * @param {Element|null} [slot] куда вмонтировать волну на время реплики
+   */
+  async function speakText(textToSpeak, slot) {
     if (!textToSpeak || _isSpeaking) return;
     _isSpeaking = true;
     IntelStore.addLog('SYS', 'Synthesizing coach voice...');
+
+    /** Ссылка на блоб живёт дольше try: её обязан отозвать и путь ошибки. */
+    let audioUrl = '';
 
     try {
       // Voice is Gemini-only: routes/coach.js pins gemini-2.5-flash-preview-tts.
@@ -615,16 +636,32 @@ export const IntelView = (() => {
       if (!pcmData) throw new Error('Audio data not found');
 
       const audioBlob = pcmToWav(pcmData, 24000);
-      const audioUrl = URL.createObjectURL(audioBlob);
+      audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
-      audio.onended = () => {
+      // Конец, сбой и провал play() — один выход: флаг снят, волна снята,
+      // блоб отозван. До VOICE-2 ветка onerror отсутствовала совсем, и
+      // битый ответ навсегда оставлял _isSpeaking взведённым: второй
+      // «Озвучить» молча выходил по первой же строке.
+      const release = () => {
         _isSpeaking = false;
-        URL.revokeObjectURL(audioUrl);
+        stopVoiceWave();
+        if (audioUrl) {
+          URL.revokeObjectURL(audioUrl);
+          audioUrl = '';
+        }
       };
+      audio.onended = release;
+      audio.onerror = release;
+
+      // Волну не ждём: она догоняет звук, а не наоборот. Её resume() может
+      // уйти в микротаск, и await здесь подвесил бы начало реплики.
+      startVoiceWave(audio, slot ?? _voiceSlot());
       await audio.play();
     } catch (err) {
       IntelStore.addLog('ERROR', 'Voice synthesis failed');
       _isSpeaking = false;
+      stopVoiceWave();
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
     }
   }
 
@@ -685,14 +722,18 @@ export const IntelView = (() => {
       IntelStore.addLog('AI', `Weekly report generated. Performance Score: ${report.score}`);
       IntelStore.setStatus('SYSTEM STANDBY');
 
-      _renderReportOverlay(report);
-      speakText(`Твой прогресс за неделю: ${report.score} баллов. ${report.summary}`);
+      const overlay = _renderReportOverlay(report);
+      speakText(
+        `Твой прогресс за неделю: ${report.score} баллов. ${report.summary}`,
+        overlay.querySelector('.intel-voice-slot')
+      );
     } catch (err) {
       IntelStore.addLog('ERROR', 'Failed to generate weekly intel');
       IntelStore.setStatus('ERROR');
     }
   }
 
+  /** @returns {HTMLElement} оверлей — из него берётся слот волны для озвучки */
   function _renderReportOverlay(report) {
     const overlay = document.createElement('div');
     overlay.className = 'intel-report-overlay animate-in fade-in duration-500';
@@ -709,6 +750,7 @@ export const IntelView = (() => {
            <div style="display:flex; flex-direction:column; align-items:center;">
              <span style="font-size:var(--fs-6); font-weight:var(--fw-black); color:var(--c-intel); text-shadow:0 0 20px rgba(0,209,255,0.4); line-height:1;">${report.score}</span>
              <span style="font-size:var(--fs-1); font-weight:var(--fw-black); color:var(--c-text-3); text-transform:uppercase; letter-spacing:0.5em; margin-top:var(--sp-1);">Performance Score</span>
+             <span class="intel-voice-slot"></span>
            </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:var(--sp-3);">
@@ -736,6 +778,7 @@ export const IntelView = (() => {
       </div>
     `;
     document.body.appendChild(overlay);
+    return overlay;
   }
 
   function createWorkout() {
@@ -958,7 +1001,7 @@ export const IntelView = (() => {
     // We only want the text, ignoring HTML structure like the readiness widget
     const textToSpeak = textEl.innerText.trim();
     if (textToSpeak) {
-      speakText(textToSpeak);
+      speakText(textToSpeak, container.querySelector('.intel-voice-slot'));
     }
   }
 

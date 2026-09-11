@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-2af08dff';
+const CACHE_NAME = 'athlete-pro-v121-6f47b67c';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -96,6 +96,7 @@ const ASSETS_WARM = [
   '/js/intel.engine.js',
   '/js/intel.store.js',
   '/js/intel.view.js',
+  '/js/intel.voice-wave.js',
   '/js/island-settings.view.js',
   '/js/journal.store.js',
   '/js/journal.view.js',
