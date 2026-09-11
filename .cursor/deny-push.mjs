@@ -129,9 +129,11 @@ const ENV_WRAPPER = /(?:^|[/\\])env$/;
 
 function unevaluable(list) {
   const bare = (token) => !token.quoted;
-  // Любая переменная git в окружении команды — конфиг мимо строки, читать его хук не может.
+  /* Кавычки на присваивании ничего не меняют: `"GIT_DIR=/tmp/x" git status` и
+     `GIT_DIR="/tmp/x" git status` — одна и та же переменная в окружении команды, а конфиг
+     мимо строки хук не читает. Поэтому здесь квотированность не спрашивается. */
   const gitEnv = (token) => /^GIT_[A-Z_]*=/.test(token.text) || /^GIT_CONFIG/.test(token.text);
-  if (list.filter(bare).some((t) => gitEnv(t) || /^--config-env(?:=|$)/.test(t.text))) return true;
+  if (list.some((t) => gitEnv(t) || /^--config-env(?:=|$)/.test(t.text))) return true;
 
   /* Присваивания идут вплотную перед командой — `FOO=push git … FOO`, в том числе через
      обёртку `env`. Проверять «есть присваивание где-то раньше git» нельзя:
@@ -141,7 +143,7 @@ function unevaluable(list) {
   const prefix = gitAt > 0 ? list.slice(0, gitAt) : [];
   const wrapperPrefix =
     prefix.length > 0 &&
-    prefix.every((t) => bare(t) && (ASSIGNMENT.test(t.text) || ENV_WRAPPER.test(t.text))) &&
+    prefix.every((t) => ASSIGNMENT.test(t.text) || ENV_WRAPPER.test(t.text)) &&
     prefix.some((t) => ASSIGNMENT.test(t.text));
   if (wrapperPrefix) return true;
 

@@ -79,6 +79,10 @@ const DENIED = [
   'GIT_DIR=/tmp/other npx git status',
   '{git,echo} pu{sh,ll} origin',
   '{git,ls} push',
+  '"GIT_DIR=/tmp/x" git status',
+  'GIT_DIR="/tmp/x" git status',
+  '"FOO=push" git x',
+  'env "FOO=push" git x',
 ];
 
 const ALLOWED = [
