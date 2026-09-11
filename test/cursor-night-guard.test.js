@@ -77,6 +77,8 @@ const DENIED = [
   'env FOO=push /usr/bin/git x',
   "git -c alias.x='!git $FOO' x",
   'GIT_DIR=/tmp/other npx git status',
+  '{git,echo} pu{sh,ll} origin',
+  '{git,ls} push',
 ];
 
 const ALLOWED = [
