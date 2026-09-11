@@ -145,8 +145,12 @@ function unevaluable(list) {
     prefix.some((t) => ASSIGNMENT.test(t.text));
   if (wrapperPrefix) return true;
 
-  // Подстановка и brace-expansion ровно там, где решается судьба команды: на месте
-  // подкоманды (`git ${X:-push}`, `git {push,fetch} origin`)…
+  /* Brace-expansion где угодно вне кавычек. Узко, «только на месте подкоманды», не выходит:
+     в `{git,echo} pu{sh,ll}` за скобками и бинарь, и глагол, так что ни один разбор не
+     срабатывает, а шелл всё равно разворачивает строку в пуш. Легального применения у голых
+     `{}` в наряде нет — в отличие от `$( )`, которым живёт `prettier --write $(git diff)`. */
+  if (list.some((token) => bare(token) && /[{}]/.test(token.text))) return true;
+  // Подстановка на месте подкоманды: `git ${X:-push}`, `git $VERB origin`.
   if (gitSubcommands(list).some((name) => EXPANSION.test(name))) return true;
   /* …или в значении конфиг-опции. Кавычки здесь не спасают (`-c alias.x='!git $FOO'`):
      двойные их и не гасят, а для гарда невычислимое остаётся невычислимым в любых.
