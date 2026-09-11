@@ -1050,3 +1050,76 @@
   color: var(--c-text-2);
   line-height: 1.5;
 }
+
+/* ── Живая волна озвучки (VOICE-2) ──
+   Пять столбиков рядом с репликой, снятые с настоящего звука через Web Audio
+   (js/intel.voice-wave.js). Имя класса НЕ `.intel-wave-bar`: та волна занята
+   кнопкой отправки выше по файлу, и общий селектор угонял её столбики.
+   Высота идёт scaleY, прозрачность — opacity: закон GPU-only анимаций. */
+.intel-voice-slot {
+  display: inline-flex;
+  align-items: center;
+}
+
+.intel-report-overlay .intel-voice-slot {
+  margin-top: var(--sp-1-5);
+}
+
+.intel-voice-wave {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 14px;
+  padding: 3px 7px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--c-intel) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-intel) 25%, transparent);
+}
+
+.intel-voice-wave-bar {
+  display: block;
+  width: 3px;
+  height: 14px;
+  border-radius: var(--r-pill);
+  background: var(--c-intel);
+  transform: scaleY(0.15);
+  opacity: 0.35;
+  transition:
+    transform 0.08s ease-out,
+    opacity 0.08s ease-out;
+  will-change: transform, opacity;
+}
+
+/* Пока анализатор не поднят (нет Web Audio, контекст не проснулся) — волна
+   идёт ключевыми кадрами. Разный темп: пять столбиков в унисон читаются как
+   эквалайзер моно-сигнала, а не как речь. */
+.intel-voice-wave.is-live .intel-voice-wave-bar {
+  animation: intel-voice-bounce 0.9s ease-in-out infinite alternate;
+}
+
+.intel-voice-wave.is-live .intel-voice-wave-bar:nth-child(2) { animation-duration: 0.72s; }
+.intel-voice-wave.is-live .intel-voice-wave-bar:nth-child(3) { animation-duration: 0.58s; }
+.intel-voice-wave.is-live .intel-voice-wave-bar:nth-child(4) { animation-duration: 0.66s; }
+.intel-voice-wave.is-live .intel-voice-wave-bar:nth-child(5) { animation-duration: 0.84s; }
+
+@keyframes intel-voice-bounce {
+  from { transform: scaleY(0.2); opacity: 0.4; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+
+/* Просили без движения — пилюля остаётся индикатором «тренер говорит».
+   Глобальное правило base.css только ужимает длительность, поэтому кадры
+   гасим явно: иначе столбики замирают на случайной фазе. */
+.intel-voice-wave.is-static .intel-voice-wave-bar {
+  animation: none;
+  transform: scaleY(0.55);
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intel-voice-wave .intel-voice-wave-bar {
+    animation: none;
+    transform: scaleY(0.55);
+    opacity: 0.6;
+  }
+}
