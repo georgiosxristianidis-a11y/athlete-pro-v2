@@ -7,6 +7,7 @@
 import { Timer } from './timer.js';
 import { RestTimer } from './rest-timer.js'; // eslint-disable-line no-unused-vars
 import { State, persistSession, tryRestoreSession } from './workout.store.js';
+import { listenerGroup } from './shared/utils.js';
 
 import { 
   renderSelect, renderActive, renderExerciseCard, renderSetRow, renderFocusMode, _renderCoreSection
@@ -31,12 +32,37 @@ import {
 
 /* ── Public API (window.Workout) ── */
 
+/** One stale-session sweeper for the page; 0 = not running. */
+let _staleTimer = 0;
+/** @type {ReturnType<typeof listenerGroup> | null} */
+let _staleNavOn = null;
+
+function _stopStaleCleanup() {
+  if (!_staleTimer) return;
+  clearInterval(_staleTimer);
+  _staleTimer = 0;
+}
+
+function _startStaleCleanup() {
+  if (_staleTimer) return;
+  _staleTimer = setInterval(() => {
+    if (State.phase === 'active' && Date.now() - (State.startedAt || 0) > 12 * 3600000) {
+      cancelSession();
+    }
+  }, 8000);
+  if (_staleNavOn) return;
+  _staleNavOn = listenerGroup();
+  _staleNavOn.add('ap-nav-change', (e) => {
+    const id = /** @type {CustomEvent} */ (e).detail?.id;
+    if (id && id !== 's-train') _stopStaleCleanup();
+  });
+}
+
 /**
  * Initialize and load the workout view.
  * @returns {Promise<boolean>} — true if a session was restored
  */
 export async function load() {
-  console.log('Workout.load() called');
   const screen = document.getElementById('s-train');
   if (!screen) return false;
 
@@ -45,13 +71,7 @@ export async function load() {
   // re-registered on every load() leaked, and re-logged rejections the boundary
   // had deliberately suppressed — preventDefault does not stop other listeners.
 
-  // Background cleanup
-  setInterval(() => {
-    if (State.phase === 'active' && Date.now() - (State.startedAt || 0) > 12 * 3600000) {
-      console.log('Stale session cleanup');
-      cancelSession();
-    }
-  }, 8000);
+  _startStaleCleanup();
 
   const restored = tryRestoreSession();
   if (restored) {
