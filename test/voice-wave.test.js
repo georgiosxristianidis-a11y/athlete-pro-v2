@@ -12,9 +12,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   BANDS,
+  BAND_EDGES_HZ,
   BAND_GAIN,
   BAR_COUNT,
   MIN_SCALE,
+  bandsForRate,
   barOpacity,
   barScale,
   waveScales,
@@ -27,7 +29,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
    ловила бы слова из этого объяснения. */
 const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-const WAVE_SRC = stripComments(fs.readFileSync(path.join(ROOT, 'js', 'intel.voice-wave.js'), 'utf8'));
+const WAVE_SRC = stripComments(
+  fs.readFileSync(path.join(ROOT, 'js', 'intel.voice-wave.js'), 'utf8')
+);
 const VIEW_SRC = stripComments(fs.readFileSync(path.join(ROOT, 'js', 'intel.view.js'), 'utf8'));
 const CSS = fs.readFileSync(path.join(ROOT, 'css', 'intel.css'), 'utf8');
 
@@ -38,7 +42,11 @@ test('barScale: тишина и мусор дают минимум, полная
   assert.equal(barScale(255), 1);
   assert.equal(barScale(NaN), MIN_SCALE);
   assert.equal(barScale(undefined), MIN_SCALE);
-  assert.equal(barScale(-40), MIN_SCALE, 'отрицательный байт спектра не должен переворачивать столбик');
+  assert.equal(
+    barScale(-40),
+    MIN_SCALE,
+    'отрицательный байт спектра не должен переворачивать столбик'
+  );
   assert.equal(barScale(1e6), 1, 'усиление полосы не имеет права выгнать столбик за единицу');
 });
 
@@ -98,6 +106,65 @@ test('waveScales: верхняя полоса всё-таки достижима
   assert.ok(out[BAR_COUNT - 1] > 0.7, `верхняя полоса недобирает: ${out[BAR_COUNT - 1]}`);
 });
 
+/* ── Мина 3: ширина бина идёт от контекста, а не от файла ──
+   Бин анализатора = `AudioContext.sampleRate / fftSize`. WAV с TTS приходит на
+   24 кГц, но контекст почти везде 44.1/48 кГц: полосы, посчитанные «по файлу»,
+   уезжают выше речи, и верхние столбики стоят на минимуме при живом графе. */
+
+test('bandsForRate: на 24 кГц раскладка та же, что была прошита числами', () => {
+  assert.deepEqual(
+    bandsForRate(24000, 64).map(([a, b]) => [a, b]),
+    BANDS.map(([a, b]) => [a, b])
+  );
+  assert.equal(BAND_EDGES_HZ.length, BAR_COUNT, 'полос в герцах должно быть по числу столбиков');
+});
+
+test('bandsForRate: на 44.1 и 48 кГц полосы непустые и в пределах бинов', () => {
+  for (const rate of [44100, 48000]) {
+    const bands = bandsForRate(rate, 64);
+    assert.equal(bands.length, BAR_COUNT, `${rate}: полос не по числу столбиков`);
+    for (const [from, to] of bands) {
+      assert.ok(to > from, `${rate}: пустая полоса [${from}, ${to}) — столбик мёртв`);
+      assert.ok(from >= 0 && to <= 32, `${rate}: полоса [${from}, ${to}) вне 32 бинов`);
+    }
+  }
+});
+
+test('bandsForRate: мусор на входе не роняет и даёт непустые полосы', () => {
+  for (const bad of [NaN, 0, -1, undefined]) {
+    const bands = bandsForRate(/** @type {any} */ (bad), 64);
+    assert.equal(bands.length, BAR_COUNT);
+    assert.ok(bands.every(([from, to]) => to > from));
+  }
+});
+
+/* Регрессия в числах: речь укладывается в нижние бины, и на 48 кГц их всего восемь.
+   По раскладке «для 24 кГц» верхние два столбика на этом же спектре стоят мёртвые. */
+test('на 48 кГц верхние столбики отзываются на речь, а по старой раскладке — нет', () => {
+  const bins = new Uint8Array(32);
+  for (let i = 0; i < 8; i++) bins[i] = 150;
+
+  const byRate = waveScales(bins, bandsForRate(48000, 64));
+  assert.ok(
+    byRate[BAR_COUNT - 1] > 0.7,
+    `верхний столбик обязан ожить на живом голосе, получено ${byRate[BAR_COUNT - 1]}`
+  );
+
+  const byFile = waveScales(bins);
+  assert.ok(
+    byFile[BAR_COUNT - 1] <= MIN_SCALE + 0.01,
+    'раскладка «по частоте файла» обязана оставаться доказательством бага, иначе тест ничего не стережёт'
+  );
+});
+
+test('полосы для графа снимаются с sampleRate контекста, а не с числа в коде', () => {
+  assert.match(
+    WAVE_SRC,
+    /bandsForRate\(\s*_ctx\.sampleRate/,
+    'визуализатор снова считает бины по частоте файла: верхние столбики встанут'
+  );
+});
+
 /* ── Мина 1: чужой класс ── */
 
 test('волна озвучки не трогает `.intel-wave-bar` — это волна кнопки отправки', () => {
@@ -146,7 +213,11 @@ test('цикл кадров гасится без разбора графа, к�
 });
 
 test('движение отключается при prefers-reduced-motion', () => {
-  assert.match(WAVE_SRC, /prefers-reduced-motion: reduce/, 'визуализатор игнорирует запрос «без движения»');
+  assert.match(
+    WAVE_SRC,
+    /prefers-reduced-motion: reduce/,
+    'визуализатор игнорирует запрос «без движения»'
+  );
   assert.match(CSS, /@media \(prefers-reduced-motion: reduce\)[\s\S]{0,260}intel-voice-wave-bar/);
 });
 
@@ -159,18 +230,43 @@ test('speakText снимает волну и отзывает блоб на КА
   const speak = VIEW_SRC.slice(start, end);
 
   assert.match(speak, /startVoiceWave\(audio,/, 'волна больше не стартует вместе с озвучкой');
-  assert.match(speak, /audio\.onerror\s*=/, 'битый ответ снова оставит _isSpeaking взведённым навсегда');
+
+  /* Порядок, а не только наличие. `createMediaElementSource` уводит элемент из колонок
+     в граф; на УЖЕ играющем элементе WebKit на этом регулярно теряет вывод — и вместо
+     волны выходит тишина, ровно та, ради которой заведена VOICE-1. */
+  const wave = speak.indexOf('startVoiceWave(audio,');
+  const play = speak.indexOf('audio.play()');
+  assert.ok(play !== -1, 'речь перестала запускаться');
+  assert.ok(wave < play, 'граф поднимается после play(): на WebKit это меняет голос на тишину');
+  assert.match(
+    speak.slice(wave - 12, wave),
+    /await\s*$/,
+    'startVoiceWave не ждут: play() успеет стартовать до подключения графа'
+  );
+  assert.match(
+    speak,
+    /audio\.onerror\s*=/,
+    'битый ответ снова оставит _isSpeaking взведённым навсегда'
+  );
   assert.equal(
     (speak.match(/stopVoiceWave\(\)/g) || []).length >= 2,
     true,
     'выходов у речи два (release и catch) — волну обязаны снимать оба'
   );
   const tail = speak.slice(speak.indexOf('} catch'));
-  assert.match(tail, /revokeObjectURL/, 'путь ошибки не отзывает blob: URL — утечка на каждой неудачной озвучке');
+  assert.match(
+    tail,
+    /revokeObjectURL/,
+    'путь ошибки не отзывает blob: URL — утечка на каждой неудачной озвучке'
+  );
 });
 
 test('волна монтируется в слот своей карточки, а не в первый попавшийся', () => {
-  assert.match(VIEW_SRC, /<span class="intel-voice-slot"><\/span>/, 'в разметке нет слота под волну');
+  assert.match(
+    VIEW_SRC,
+    /<span class="intel-voice-slot"><\/span>/,
+    'в разметке нет слота под волну'
+  );
   assert.match(
     VIEW_SRC,
     /speakText\(textToSpeak, feedbackEl\.querySelector\('\.intel-voice-slot'\)\)/,

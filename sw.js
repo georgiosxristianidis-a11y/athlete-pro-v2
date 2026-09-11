@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-6f47b67c';
+const CACHE_NAME = 'athlete-pro-v121-f49efd2a';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте

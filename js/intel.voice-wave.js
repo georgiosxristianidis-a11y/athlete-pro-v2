@@ -17,6 +17,9 @@
       transform после конца реплики. Здесь своё имя — `.intel-voice-wave-bar`.
    3. Полосы спектра логарифмические, а не равные. Речь живёт в нижних бинах:
       при линейной нарезке 32 бинов на пять столбиков верхние два стоят мёртвые.
+      И считаются они в ГЕРЦАХ: ширина бина у `AnalyserNode` идёт от
+      `AudioContext.sampleRate` (44.1/48 кГц), а не от 24 кГц самого файла TTS —
+      полосы, прошитые числами «по файлу», уезжают выше речи с тем же результатом.
    ════════════════════════════════════════════════════════ */
 
 /** Столбиков в волне. Пять — как у реплики маскота (`.talk-wave` в base.css). */
@@ -26,17 +29,45 @@ export const BAR_COUNT = 5;
 export const MIN_SCALE = 0.15;
 
 /**
- * Границы полос в бинах анализатора (fftSize 64 → 32 бина, TTS 24 кГц →
- * ~375 Гц на бин). Выше 16-го бина (≈6 кГц) в синтезированной речи пусто.
+ * Границы полос в ГЕРЦАХ, а не в бинах. Бины считать наперёд нельзя: ширина бина у
+ * `AnalyserNode` идёт от `AudioContext.sampleRate`, а не от частоты файла. WAV с TTS
+ * приходит на 24 кГц, но контекст почти везде 44.1/48 кГц — бин вдвое шире, и полосы,
+ * нарезанные «по файлу», уезжают в пустоту выше речи: верхние столбики стоят на
+ * `MIN_SCALE` при живом графе. Речь укладывается в 0–6 кГц, дальше синтез молчит.
  * @type {ReadonlyArray<readonly [number, number]>}
  */
-export const BANDS = /** @type {const} */ ([
-  [0, 2],
-  [2, 4],
-  [4, 7],
-  [7, 11],
-  [11, 16],
+export const BAND_EDGES_HZ = /** @type {const} */ ([
+  [0, 750],
+  [750, 1500],
+  [1500, 2625],
+  [2625, 4125],
+  [4125, 6000],
 ]);
+
+/**
+ * Полосы в бинах для конкретного контекста. Бин = sampleRate / fftSize.
+ * @param {number} sampleRate Гц, `AudioContext.sampleRate`
+ * @param {number} fftSize размер БПФ анализатора
+ * @returns {Array<[number, number]>} пары [from, to) по бинам, каждая непустая
+ */
+export function bandsForRate(sampleRate, fftSize) {
+  const rate = Number(sampleRate);
+  const size = Number(fftSize);
+  const bins = size / 2;
+  if (!Number.isFinite(rate) || rate <= 0 || !Number.isFinite(size) || size <= 0) {
+    return BAND_EDGES_HZ.map(([,], i) => /** @type {[number, number]} */ ([i, i + 1]));
+  }
+  const perBin = rate / size;
+  return BAND_EDGES_HZ.map(([lo, hi]) => {
+    const from = Math.min(bins - 1, Math.floor(lo / perBin));
+    // Полоса обязана быть непустой даже на широком бине, иначе столбик мёртв.
+    const to = Math.min(bins, Math.max(from + 1, Math.ceil(hi / perBin)));
+    return /** @type {[number, number]} */ ([from, to]);
+  });
+}
+
+/** Полосы для 24 кГц при fftSize 64 — ровно те, что были прошиты числами до правки. */
+export const BANDS = bandsForRate(24000, 64);
 
 /** Верхние полосы тише нижних на порядок — без компенсации они не шевелятся. */
 export const BAND_GAIN = [1, 1.15, 1.4, 1.8, 2.2];
@@ -70,12 +101,14 @@ export function barOpacity(scale) {
 /**
  * Спектр → высоты пяти столбиков.
  * @param {ArrayLike<number>|null|undefined} bins
+ * @param {ReadonlyArray<readonly [number, number]>} [bands] полосы в бинах; по умолчанию
+ *   раскладка для 24 кГц — вызывающий обязан передать свою, снятую с `bandsForRate`
  * @returns {number[]} длиной BANDS.length
  */
-export function waveScales(bins) {
+export function waveScales(bins, bands = BANDS) {
   const out = [];
-  for (let b = 0; b < BANDS.length; b++) {
-    const [from, to] = BANDS[b];
+  for (let b = 0; b < bands.length; b++) {
+    const [from, to] = bands[b];
     let sum = 0;
     let n = 0;
     for (let i = from; i < to; i++) {
@@ -100,6 +133,8 @@ let _analyser = null;
 let _source = null;
 /** @type {Uint8Array|null} */
 let _bins = null;
+/** @type {ReadonlyArray<readonly [number, number]>} полосы под sampleRate текущего графа */
+let _bands = BANDS;
 let _raf = 0;
 /** @type {HTMLElement|null} */
 let _wave = null;
@@ -159,6 +194,8 @@ async function _attach(audioEl) {
     _source = _ctx.createMediaElementSource(audioEl);
     _source.connect(_analyser);
     _analyser.connect(_ctx.destination);
+    // Полосы снимаются с контекста, а не с частоты файла: бин = sampleRate / fftSize.
+    _bands = bandsForRate(_ctx.sampleRate, _analyser.fftSize);
     return _analyser;
   } catch {
     // Источник мог успеть создаться до броска — тогда элемент уже отвязан от
@@ -183,7 +220,7 @@ function _frame() {
     return;
   }
   _analyser.getByteFrequencyData(_bins);
-  const scales = waveScales(_bins);
+  const scales = waveScales(_bins, _bands);
   for (let i = 0; i < _bars.length; i++) {
     const s = scales[i] ?? MIN_SCALE;
     _bars[i].style.transform = `scaleY(${s})`;

@@ -653,9 +653,13 @@ export const IntelView = (() => {
       audio.onended = release;
       audio.onerror = release;
 
-      // Волну не ждём: она догоняет звук, а не наоборот. Её resume() может
-      // уйти в микротаск, и await здесь подвесил бы начало реплики.
-      startVoiceWave(audio, slot ?? _voiceSlot());
+      /* Волну ЖДЁМ, хотя она всего лишь картинка. `createMediaElementSource` уводит
+         элемент из колонок в граф, и делать это на УЖЕ играющем элементе — та самая
+         мина, ради которой заведена VOICE-1: WebKit на таком переключении регулярно
+         теряет вывод, и вместо волны выходит тишина. Безопасный порядок один: сперва
+         граф, потом play(). Цена — `ctx.resume()`, он реально ждёт только на первой
+         реплике, дальше контекст переиспользуется. */
+      await startVoiceWave(audio, slot ?? _voiceSlot());
       await audio.play();
     } catch (err) {
       IntelStore.addLog('ERROR', 'Voice synthesis failed');
