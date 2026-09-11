@@ -171,6 +171,45 @@ function _mount(host) {
 }
 
 /**
+ * Потолок ожидания графа. Речь ждёт волну (иначе `createMediaElementSource` уводит уже
+ * играющий элемент и WebKit роняет вывод), но ждать её бесконечно нельзя: на
+ * заблокированном автоплее `ctx.resume()` не резолвится вовсе, пока не будет жеста.
+ */
+export const ATTACH_TIMEOUT_MS = 400;
+
+/**
+ * Поднять контекст, но не дольше `ms`. Возвращает «граф готов». Отдельная экспортируемая
+ * функция, потому что вся её суть — в поведении на зависшем `resume()`, и проверяется это
+ * фейковым контекстом, без Web Audio.
+ * @param {{state: string, resume?: () => Promise<void>}} ctx
+ * @param {number} ms
+ * @returns {Promise<boolean>}
+ */
+export async function resumeWithin(ctx, ms) {
+  if (!ctx) return false;
+  if (ctx.state === 'running') return true;
+  if (typeof ctx.resume !== 'function') return false;
+
+  /** @type {any} */
+  let timer;
+  const capped = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(false), ms);
+  });
+  try {
+    const resumed = await Promise.race([
+      Promise.resolve(ctx.resume()).then(
+        () => true,
+        () => false
+      ),
+      capped,
+    ]);
+    return resumed === true && ctx.state === 'running';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
  * Поднять граф. Возвращает анализатор или null — null значит «звук идёт мимо
  * нас», и это штатный исход, а не ошибка.
  * @param {HTMLAudioElement} audioEl
@@ -183,9 +222,12 @@ async function _attach(audioEl) {
 
   try {
     if (!_ctx) _ctx = new Ctx();
-    if (_ctx.state === 'suspended') await _ctx.resume();
-    // Мина №1: пока контекст не running, элемент в граф не уводим — иначе
-    // визуализация обменяет голос на картинку.
+    /* Мина №1: пока контекст не running, элемент в граф не уводим — иначе визуализация
+       обменяет голос на картинку. И ждём его не дольше потолка: на заблокированном
+       автоплее `resume()` висит до жеста, а речь ждёт этот вызов — без потолка вместо
+       тишины на WebKit получилась бы тишина везде. Не успел — волна идёт ключевыми
+       кадрами, звук мимо графа, а поздний resume уже ничего не подключит: мы вышли. */
+    if (!(await resumeWithin(_ctx, ATTACH_TIMEOUT_MS))) return null;
     if (_ctx.state !== 'running') return null;
 
     _analyser = _ctx.createAnalyser();

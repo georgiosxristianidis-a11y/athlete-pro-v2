@@ -16,7 +16,9 @@ import {
   BAND_GAIN,
   BAR_COUNT,
   MIN_SCALE,
+  ATTACH_TIMEOUT_MS,
   bandsForRate,
+  resumeWithin,
   barOpacity,
   barScale,
   waveScales,
@@ -154,6 +156,66 @@ test('на 48 кГц верхние столбики отзываются на �
   assert.ok(
     byFile[BAR_COUNT - 1] <= MIN_SCALE + 0.01,
     'раскладка «по частоте файла» обязана оставаться доказательством бага, иначе тест ничего не стережёт'
+  );
+});
+
+/* ── Мина 4: речь ждёт граф, но не вечно ──
+   `ctx.resume()` на заблокированном автоплее не резолвится, пока не будет жеста.
+   Речь ждёт этот вызов, поэтому без потолка авто-озвучка повисла бы вместе с
+   `_isSpeaking`, и следующий «Озвучить» стал бы молчаливым no-op. */
+
+test('resumeWithin: работающий контекст не ждут вовсе', async () => {
+  let called = false;
+  const ok = await resumeWithin(
+    {
+      state: 'running',
+      resume: () => {
+        called = true;
+        return new Promise(() => {});
+      },
+    },
+    50
+  );
+  assert.equal(ok, true);
+  assert.equal(called, false, 'у running-контекста resume() звать незачем');
+});
+
+test('resumeWithin: зависший resume() отпускает речь по потолку', async () => {
+  const started = Date.now();
+  const ok = await resumeWithin({ state: 'suspended', resume: () => new Promise(() => {}) }, 60);
+  assert.equal(ok, false, 'зависший resume обязан отдать false, а не висеть');
+  assert.ok(Date.now() - started < 1000, 'ожидание вышло за потолок');
+});
+
+test('resumeWithin: успешный resume поднимает граф', async () => {
+  const ctx = {
+    state: 'suspended',
+    resume: async () => {
+      ctx.state = 'running';
+    },
+  };
+  assert.equal(await resumeWithin(ctx, 200), true);
+});
+
+test('resumeWithin: отказ resume() и мусор на входе не роняют', async () => {
+  assert.equal(
+    await resumeWithin({ state: 'suspended', resume: () => Promise.reject(new Error('no')) }, 50),
+    false
+  );
+  assert.equal(await resumeWithin({ state: 'suspended' }, 50), false);
+  assert.equal(await resumeWithin(/** @type {any} */ (null), 50), false);
+});
+
+test('граф поднимается через потолок, а не безусловным await resume()', () => {
+  assert.match(
+    WAVE_SRC,
+    /resumeWithin\(_ctx,\s*ATTACH_TIMEOUT_MS\)/,
+    'вернулся безусловный await: на заблокированном автоплее речь повиснет вместе с _isSpeaking'
+  );
+  assert.doesNotMatch(WAVE_SRC, /await\s+_ctx\.resume\(\)/, 'резюм контекста снова без потолка');
+  assert.ok(
+    Number.isFinite(ATTACH_TIMEOUT_MS) && ATTACH_TIMEOUT_MS > 0 && ATTACH_TIMEOUT_MS <= 1000,
+    `потолок ожидания графа ${ATTACH_TIMEOUT_MS} мс: речь не должна ждать графа секундами`
   );
 });
 
