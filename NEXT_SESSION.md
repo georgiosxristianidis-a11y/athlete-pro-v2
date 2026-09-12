@@ -34,6 +34,7 @@ npm run preflight && npm run inventory && npm run smoke:prod && npm run docs:bud
 ```
 
 Версия — `js/version.js`. Done — `CHANGELOG.md`. Правила — `CLAUDE.md`, дизайн — `.claude/rules/design.md`.
+Архитектура % / долг / next — `docs/ARCHITECTURE_SCORECARD.md` (не сюда числа).
 **Строка роутера ≤200 символов** — иначе в хендофф.
 
 ## Барьеры репозитория
