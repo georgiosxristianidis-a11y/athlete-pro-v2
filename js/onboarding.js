@@ -158,6 +158,7 @@ export async function commitOnboarding() {
       _data.exp === 'beginner' ? 0 : _data.exp === 'intermediate' ? 2 : 5
     ),
     DB.Settings.set('profile.sex', _data.sex),
+    DB.Settings.set('sex', _data.sex), // legacy mirror — body-stats Navy formula
     DB.Settings.set('profile.dob', _data.dob),
     DB.Metrics.save(Number(_data.weight), Number(_data.height)),
     setPrivacyMode(_data.privacy),

@@ -31,6 +31,7 @@ import {
   sparkPoints,
   fmtNum,
   fmtDelta,
+  resolveSex,
 } from './body-stats.core.js';
 
 on('bs:edit', (el) => openForm(el.dataset.focus || null));
@@ -83,7 +84,11 @@ export async function renderBodyStats(targetEl) {
   _root = root;
 
   const ru = isRu();
-  const sex = (await DB.Settings.get('sex', 'm')) === 'f' ? 'f' : 'm';
+  const [sexProfile, sexLegacy] = await Promise.all([
+    DB.Settings.get('profile.sex', null),
+    DB.Settings.get('sex', 'm'),
+  ]);
+  const sex = resolveSex(sexProfile, sexLegacy);
   const latestMetric = await DB.Metrics.latest();
   const stored = bsLoad();
   // Height lives in the metrics store (onboarding writes it there); legacy logs
