@@ -19,6 +19,9 @@ import { PlannedWorkouts } from './planned.js';
  * lives here (`ap-custom-plan-A/B`), not in IndexedDB — an IDB-only export
  * restored on a clean phone would silently fall back to the PPL | GIO
  * preset and look like "history came back, the plan did not".
+ * Body Metrics (`ap-bodystats`) is the same class: waist/neck/arms history
+ * is not in IndexedDB, so omitting it drops every measurement on restore
+ * while weight (Metrics IDB) comes back.
  * Device id, in-progress session, flags, and sync cursors stay off the list.
  */
 export const LOCAL_BACKUP_KEYS = Object.freeze([
@@ -29,6 +32,7 @@ export const LOCAL_BACKUP_KEYS = Object.freeze([
   'ap-core-checklist',
   'ap-custom-workouts',
   'ap-theme',
+  'ap-bodystats',
 ]);
 
 /** Cap a single localStorage value so a hostile file cannot fill the origin. */
