@@ -375,7 +375,7 @@ async function _confirmDelete() {
     danger: true,
   });
   if (!ok) return;
-  await DB.clearAll();
+  await DB.deleteAllUserData();
   location.reload();
 }
 
