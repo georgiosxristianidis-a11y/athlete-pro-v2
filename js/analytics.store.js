@@ -18,13 +18,21 @@ let _calWorkouts = [];
 
 export const CalState = {
   /** @returns {number} */
-  get year() { return _calYear; },
+  get year() {
+    return _calYear;
+  },
   /** @returns {number} */
-  get month() { return _calMonth; },
+  get month() {
+    return _calMonth;
+  },
   /** @returns {import('./db.js').WorkoutRecord[]} */
-  get workouts() { return _calWorkouts; },
+  get workouts() {
+    return _calWorkouts;
+  },
   /** @param {import('./db.js').WorkoutRecord[]} w */
-  set workouts(w) { _calWorkouts = w; },
+  set workouts(w) {
+    _calWorkouts = w;
+  },
 };
 
 /* ══════════════════════════════════════════════
@@ -37,7 +45,10 @@ export const CalState = {
  */
 export function calPrev() {
   _calMonth--;
-  if (_calMonth < 0) { _calMonth = 11; _calYear--; }
+  if (_calMonth < 0) {
+    _calMonth = 11;
+    _calYear--;
+  }
   return { year: _calYear, month: _calMonth };
 }
 
@@ -47,8 +58,77 @@ export function calPrev() {
  */
 export function calNext() {
   _calMonth++;
-  if (_calMonth > 11) { _calMonth = 0; _calYear++; }
+  if (_calMonth > 11) {
+    _calMonth = 0;
+    _calYear++;
+  }
   return { year: _calYear, month: _calMonth };
+}
+
+/**
+ * Newest workout per calendar day. Two sessions on the same date used to
+ * overwrite each other in forEach order (oldest won because getAll is
+ * newest-first); the cell then pointed at the wrong id for retag/remove.
+ * @param {Array<{ id?: *, type?: string, timestamp?: number, _deleted?: boolean }>} workouts
+ * @param {number} year
+ * @param {number} month
+ * @returns {Record<number, { type: string, id: *, timestamp: number }>}
+ */
+export function calendarDayMarkers(workouts, year, month) {
+  /** @type {Record<number, { type: string, id: *, timestamp: number }>} */
+  const days = {};
+  for (const w of Array.isArray(workouts) ? workouts : []) {
+    if (!w || w._deleted) continue;
+    const d = new Date(w.timestamp);
+    if (Number.isNaN(d.getTime())) continue;
+    if (d.getFullYear() !== year || d.getMonth() !== month) continue;
+    const day = d.getDate();
+    const prev = days[day];
+    const ts = w.timestamp || 0;
+    if (!prev || ts >= prev.timestamp) {
+      days[day] = { type: w.type, id: w.id, timestamp: ts };
+    }
+  }
+  return days;
+}
+
+/**
+ * Calendar type-button tap. A completed session must never be deleted and
+ * replaced with an empty `logged: true` stub — that was wiping sets/PRs
+ * when the user retagged a day or tapped the already-active type.
+ * @param {{ type?: string, _deleted?: boolean }|null|undefined} existing
+ * @param {string} nextType
+ * @returns {'noop'|'retag'|'create'}
+ */
+export function resolveCalendarTypeTap(existing, nextType) {
+  if (!existing || existing._deleted) return 'create';
+  if (existing.type === nextType) return 'noop';
+  return 'retag';
+}
+
+/**
+ * Apply a calendar type tap. Retags in place when a row already exists.
+ * @param {{ existingId?: string|number|null, type: string, timestamp: number }} p
+ * @returns {Promise<{ action: 'noop'|'retag'|'create', id?: * }>}
+ */
+export async function applyCalendarTypeTap({ existingId, type, timestamp }) {
+  const existing =
+    existingId != null && existingId !== '' ? await DB.Workouts.get(existingId) : null;
+  const action = resolveCalendarTypeTap(existing, type);
+  if (action === 'noop') return { action };
+  if (action === 'retag' && existingId != null && existingId !== '') {
+    await DB.Workouts.update(existingId, { type });
+    return { action, id: existingId };
+  }
+  const id = await DB.Workouts.save({
+    type,
+    timestamp,
+    duration: 0,
+    tonnage: 0,
+    exercises: [],
+    logged: true,
+  });
+  return { action: 'create', id };
 }
 
 /* ══════════════════════════════════════════════
@@ -99,7 +179,9 @@ export function loadPeriodPref() {
         return { period: saved.period, customRange: null };
       }
     }
-  } catch { /* ignore — corrupt storage falls back to default */ }
+  } catch {
+    /* ignore — corrupt storage falls back to default */
+  }
   return { period: 'month', customRange: null };
 }
 
@@ -109,11 +191,14 @@ export function loadPeriodPref() {
  */
 export function savePeriodPref(period, customRange = null) {
   try {
-    const payload = period === 'custom' && customRange
-      ? { period, from: customRange.from, to: customRange.to }
-      : { period };
+    const payload =
+      period === 'custom' && customRange
+        ? { period, from: customRange.from, to: customRange.to }
+        : { period };
     localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(payload));
-  } catch { /* ignore — persistence is best-effort */ }
+  } catch {
+    /* ignore — persistence is best-effort */
+  }
 }
 
 /* ══════════════════════════════════════════════
@@ -253,7 +338,9 @@ export function fetchExerciseHistory(workouts, exerciseName) {
     for (const ex of w.exercises) {
       if (!ex || !ex.name) continue;
       const normName = ex.name.trim().toLowerCase();
-      const aliases = Array.isArray(ex.alias) ? ex.alias.map((a) => String(a).trim().toLowerCase()) : [];
+      const aliases = Array.isArray(ex.alias)
+        ? ex.alias.map((a) => String(a).trim().toLowerCase())
+        : [];
       if (normName !== normTarget && !aliases.includes(normTarget)) continue;
 
       if (w.type && Object.prototype.hasOwnProperty.call(typeCounts, w.type)) {
@@ -343,4 +430,3 @@ export function fetchExerciseHistory(workouts, exerciseName) {
     pts,
   };
 }
-

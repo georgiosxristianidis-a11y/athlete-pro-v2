@@ -11,6 +11,8 @@ import {
   CalState,
   calPrev as storePrev,
   calNext as storeNext,
+  calendarDayMarkers,
+  applyCalendarTypeTap,
   fetchAllData,
   fetchWeeklyTrend,
   fmtVol,
@@ -23,14 +25,21 @@ import {
 } from './analytics.store.js';
 import { pplTonnageFrom } from './db.js';
 import { t, isRu } from './locale.store.js';
-import { renderStrengthHero, renderStrengthCurves, smoothPath, wireScrub, fmtMon, GOLD } from './analytics.strength-curves.js';
+import {
+  renderStrengthHero,
+  renderStrengthCurves,
+  smoothPath,
+  wireScrub,
+  fmtMon,
+  GOLD,
+} from './analytics.strength-curves.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { on } from './events.js';
 import { fmtDate, fmtWeight } from './shared/format.js';
 import { pplColor, pplColorAlpha, isPplType, PPL_TYPES } from './shared/ppl-color.js';
 
-on('analytics:calPrev',    () => calPrev());
-on('analytics:calNext',    () => calNext());
+on('analytics:calPrev', () => calPrev());
+on('analytics:calNext', () => calNext());
 on('analytics:startFirst', () => window.Nav.go('s-train', { force: true }));
 on('analytics:periodMenu', () => _openPeriodSheet());
 on('analytics:openExercise', (el) => {
@@ -43,7 +52,7 @@ on('analytics:openExercise', (el) => {
 function svgArrow(dir) {
   const p = {
     minus: '<line x1="5" y1="12" x2="19" y2="12"/>',
-    plus:  '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
   };
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">${p[dir]}</svg>`;
 }
@@ -161,10 +170,10 @@ export async function load() {
       <div style="height:40px"></div>
     `;
 
-    const { workouts, orms } = await fetchAllData();
+  const { workouts, orms } = await fetchAllData();
 
-    if (!workouts.length) {
-      container.innerHTML = `
+  if (!workouts.length) {
+    container.innerHTML = `
         <div class="empty-state" style="padding: var(--sp-6) var(--sp-4); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px;">
           <div class="empty-icon-wrap" style="width: 80px; height: 80px; background: var(--c-surface-h); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: var(--sp-3); color: var(--c-accent);">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="40" height="40">
@@ -180,18 +189,18 @@ export async function load() {
           <div class="pp-bento-cell pp-bento-glow" style="--bento-color: var(--c-accent); --bento-glow: var(--glow-accent-md); align-items: center; padding: var(--sp-2); margin-top: var(--sp-3);" data-action="analytics:startFirst"><div class="pp-bento-val" style="color: var(--c-accent); font-size: var(--fs-5);">${t('analytics.start_first')}</div></div>
         </div>
       `;
-      return;
-    }
+    return;
+  }
 
-    _workoutsCache = workouts;
-    renderStrengthHero(workouts, document.getElementById('strength-hero'));
-    _renderQuickStats();
-    _renderPPLBalance();
-    renderStrengthCurves(workouts, document.getElementById('strength-curves'));
-    _renderCalendar(workouts);
-    const trend = await fetchWeeklyTrend(10);
-    _renderVolumeChart(workouts, trend);
-    _renderORMList(orms);
+  _workoutsCache = workouts;
+  renderStrengthHero(workouts, document.getElementById('strength-hero'));
+  _renderQuickStats();
+  _renderPPLBalance();
+  renderStrengthCurves(workouts, document.getElementById('strength-curves'));
+  _renderCalendar(workouts);
+  const trend = await fetchWeeklyTrend(10);
+  _renderVolumeChart(workouts, trend);
+  _renderORMList(orms);
 }
 
 /** Workouts inside the currently selected period (AN-1). */
@@ -203,7 +212,9 @@ function _periodWorkouts() {
 function _renderQuickStats() {
   const recent = _periodWorkouts();
   const totalVol = recent.reduce((s, w) => s + (w.tonnage || 0), 0);
-  const avgMs = recent.length ? recent.reduce((s, w) => s + (w.duration || 0), 0) / recent.length : 0;
+  const avgMs = recent.length
+    ? recent.reduce((s, w) => s + (w.duration || 0), 0) / recent.length
+    : 0;
   _set('an-total-sessions', recent.length);
   _set('an-total-vol', fmtVol(totalVol) + '<span class="stat-chip-unit">kg</span>');
   _set('an-avg-time', Math.round(avgMs / 60000) + '<span class="stat-chip-unit">m</span>');
@@ -256,11 +267,15 @@ function _openPeriodSheet() {
     ['week', 'analytics.period_week'],
     ['month', 'analytics.period_month'],
     ['3month', 'analytics.period_3month'],
-  ]).map(([key, labelKey]) => `
+  ])
+    .map(
+      ([key, labelKey]) => `
     <button class="period-row ${_period === key ? 'active' : ''}" data-period="${key}">
       <span>${t(labelKey)}</span>
       <span class="period-row-hint">${PERIOD_DAYS[key]}${isRu() ? ' дн.' : 'd'}</span>
-    </button>`).join('');
+    </button>`
+    )
+    .join('');
 
   overlay.innerHTML = `
     <div class="modal-sheet">
@@ -307,7 +322,9 @@ function _openPeriodSheet() {
     btn.addEventListener('click', () => {
       const period = btn.dataset.period;
       if (period === 'custom') {
-        overlay.querySelectorAll('.period-row').forEach((r) => r.classList.toggle('active', r === btn));
+        overlay
+          .querySelectorAll('.period-row')
+          .forEach((r) => r.classList.toggle('active', r === btn));
         customFields.hidden = false;
         return;
       }
@@ -327,23 +344,40 @@ function _openPeriodSheet() {
   });
 
   overlay.querySelector('#an-period-close').addEventListener('click', close);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
 }
 
-export function calPrev() { storePrev(); _drawCalendar(); }
-export function calNext() { storeNext(); _drawCalendar(); }
+export function calPrev() {
+  storePrev();
+  _drawCalendar();
+}
+export function calNext() {
+  storeNext();
+  _drawCalendar();
+}
 
 function _drawCalendar() {
   const card = document.getElementById('cal-card');
   const label = document.getElementById('cal-month-label');
   if (!card) return;
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   if (label) label.textContent = monthNames[CalState.month] + ' ' + CalState.year;
-  const workedDays = {};
-  CalState.workouts.forEach((w) => {
-    const d = new Date(w.timestamp);
-    if (d.getFullYear() === CalState.year && d.getMonth() === CalState.month) workedDays[d.getDate()] = { type: w.type, id: w.id };
-  });
+  const workedDays = calendarDayMarkers(CalState.workouts, CalState.year, CalState.month);
   const firstDay = new Date(CalState.year, CalState.month, 1).getDay();
   const daysInMonth = new Date(CalState.year, CalState.month + 1, 0).getDate();
   const startOffset = firstDay === 0 ? 6 : firstDay - 1;
@@ -351,8 +385,12 @@ function _drawCalendar() {
   let html = `<div class="cal-day-headers">${dayLabels.map((d) => `<div class="cal-day-hdr">${d}</div>`).join('')}</div><div class="cal-grid">`;
   for (let i = 0; i < startOffset; i++) html += `<div class="cal-cell empty"></div>`;
   for (let d = 1; d <= daysInMonth; d++) {
-    const entry = workedDays[d], type = entry?.type || '', isToday = (new Date().getDate() === d && new Date().getMonth() === CalState.month);
-    const style = isPplType(type) ? `background:${pplColorAlpha(type, 0.125)};border-color:${pplColorAlpha(type, 0.25)}` : '';
+    const entry = workedDays[d],
+      type = entry?.type || '',
+      isToday = new Date().getDate() === d && new Date().getMonth() === CalState.month;
+    const style = isPplType(type)
+      ? `background:${pplColorAlpha(type, 0.125)};border-color:${pplColorAlpha(type, 0.25)}`
+      : '';
     html += `<div class="cal-cell ${type ? 'has-workout' : ''} ${isToday ? 'cal-today' : ''}" style="${style}" data-day="${d}" data-type="${type}" data-wid="${entry?.id ?? ''}"><span class="cal-num">${d}</span>${isPplType(type) ? `<div class="cal-dot" style="background:${pplColor(type)}"></div>` : ''}</div>`;
   }
   card.innerHTML = html + `</div>`;
@@ -361,26 +399,47 @@ function _drawCalendar() {
     if (!cell || cell.classList.contains('empty')) return;
     // IDB keys are typed: legacy ids are numbers, CRDT ids are UUID strings
     const wid = cell.dataset.wid || '';
-    const existingId = wid === '' ? null : (/^\d+$/.test(wid) ? parseInt(wid) : wid);
-    calDayClick(CalState.year, CalState.month, parseInt(cell.dataset.day), cell.dataset.type, existingId);
+    const existingId = wid === '' ? null : /^\d+$/.test(wid) ? parseInt(wid) : wid;
+    calDayClick(
+      CalState.year,
+      CalState.month,
+      parseInt(cell.dataset.day),
+      cell.dataset.type,
+      existingId
+    );
   });
 }
 
 export function calDayClick(year, month, day, existingType, existingId) {
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   const dateLabel = `${day} ${monthNames[month]} ${year}`;
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.style.zIndex = '4000';
 
-  const removeBtn = existingType ? `
+  const removeBtn = existingType
+    ? `
     <button class="cal-pick-remove" id="cal-pick-rm">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="14" height="14">
         <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
       </svg>
       Remove workout
-    </button>` : '';
+    </button>`
+    : '';
 
   overlay.innerHTML = `
     <!-- Инлайн padding-bottom снят: base.css .modal-sheet уже даёт ровно
@@ -397,7 +456,8 @@ export function calDayClick(year, month, day, existingType, existingId) {
       </div>
       <div class="cal-pick-date">${dateLabel}</div>
       <div class="cal-pick-grid">
-        ${PPL_TYPES.map((t) => `
+        ${PPL_TYPES.map(
+          (t) => `
           <button class="cal-pick-btn ${existingType === t ? 'active' : ''}" data-type="${t}" style="--pick-color:${pplColor(t)}">
             <span class="cal-pick-dot" style="background:${pplColor(t)}"></span>
             ${t.charAt(0).toUpperCase() + t.slice(1)}
@@ -418,14 +478,10 @@ export function calDayClick(year, month, day, existingType, existingId) {
   overlay.querySelectorAll('[data-type]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const type = btn.dataset.type;
-      if (existingId) await DB.Workouts.deleteById(existingId);
-      await DB.Workouts.save({
+      await applyCalendarTypeTap({
+        existingId,
         type,
         timestamp: new Date(year, month, day, 12, 0, 0).getTime(),
-        duration: 0,
-        tonnage: 0,
-        exercises: [],
-        logged: true,
       });
       close();
       load();
@@ -441,14 +497,16 @@ export function calDayClick(year, month, day, existingType, existingId) {
   });
 
   overlay.querySelector('#cal-pick-close').addEventListener('click', close);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
 }
 
 function _renderVolumeChart(workouts, buckets) {
   const canvas = document.getElementById('cv-volume');
   if (!canvas) return;
 
-  const max  = Math.max(...buckets.map((b) => b.tonnage), 1);
+  const max = Math.max(...buckets.map((b) => b.tonnage), 1);
   const best = Math.max(...buckets.map((b) => b.tonnage));
   const el = document.getElementById('an-week-best');
   if (el) el.textContent = fmtVol(best) + ' kg best';
@@ -467,7 +525,7 @@ function _renderVolumeChart(workouts, buckets) {
   });
 
   const W = canvas.offsetWidth || 320;
-  canvas.width  = W * devicePixelRatio;
+  canvas.width = W * devicePixelRatio;
   canvas.height = 140 * devicePixelRatio;
   const ctx = canvas.getContext('2d');
   ctx.scale(devicePixelRatio, devicePixelRatio);
@@ -478,13 +536,13 @@ function _renderVolumeChart(workouts, buckets) {
   const chartH = 140 - pad.t - pad.b;
 
   buckets.forEach((b, i) => {
-    const x  = pad.l + i * bW + gap / 2;
+    const x = pad.l + i * bW + gap / 2;
     const bw = bW - gap;
     const bh = b.tonnage ? Math.max(4, (b.tonnage / max) * chartH) : 2;
-    const y  = pad.t + chartH - bh;
+    const y = pad.t + chartH - bh;
 
-    const isBest  = b.tonnage === best && best > 0;
-    const barHex  = pplColor(bucketType[i]);
+    const isBest = b.tonnage === best && best > 0;
+    const barHex = pplColor(bucketType[i]);
 
     // Gradient bar: PPL color at top, fade to transparent at bottom
     const grad = ctx.createLinearGradient(x, y, x, y + bh);
@@ -519,12 +577,16 @@ function _renderORMList(orms) {
   const el = document.getElementById('orm-list');
   if (!el || !orms.length) return;
   const sorted = orms.sort((a, b) => b.value - a.value);
-  el.innerHTML = sorted.map((o, i) => `
+  el.innerHTML = sorted
+    .map(
+      (o, i) => `
     <div class="orm-row stagger-item" style="animation-delay: ${0.2 + i * 0.05}s" data-action="analytics:openExercise" data-exercise="${esc(o.id)}" role="button" tabindex="0" aria-label="${esc(o.id)}">
       <div class="orm-name">${esc(o.id)}</div>
       <div class="orm-val">${o.value}<span class="orm-unit">kg</span></div>
       <div class="orm-bar-wrap"><div class="orm-bar-fill" id="an-orm-bar-${i}" style="background:linear-gradient(90deg, var(--c-legs), var(--c-legs))"></div></div>
-    </div>`).join('');
+    </div>`
+    )
+    .join('');
 
   // Spring animation for bars
   setTimeout(() => {
@@ -537,7 +599,9 @@ function _renderORMList(orms) {
         to: targetWidth,
         stiffness: 120,
         damping: 14,
-        onUpdate: (v) => { bar.style.transform = `scaleX(${v / 100})`; }
+        onUpdate: (v) => {
+          bar.style.transform = `scaleX(${v / 100})`;
+        },
       });
     });
   }, 150);
@@ -562,13 +626,21 @@ export function openExerciseHistoryModal(exerciseName) {
 
   // SVG Chart geometry
   let chartHtml = '';
-  const W = 320, H = 110, padX = 8, padTop = 14, padBot = 22;
+  const W = 320,
+    H = 110,
+    padX = 8,
+    padTop = 14,
+    padBot = 22;
   const ptsGeo = [];
 
   if (history.pts.length >= 2) {
-    const t0 = history.pts[0].t, tN = history.pts[history.pts.length - 1].t, tr = (tN - t0) || 1;
+    const t0 = history.pts[0].t,
+      tN = history.pts[history.pts.length - 1].t,
+      tr = tN - t0 || 1;
     const vs = history.pts.map((p) => p.v);
-    const vmin = Math.min(...vs), vmax = Math.max(...vs), vr = (vmax - vmin) || 1;
+    const vmin = Math.min(...vs),
+      vmax = Math.max(...vs),
+      vr = vmax - vmin || 1;
     const X = (p) => padX + ((p.t - t0) / tr) * (W - 2 * padX);
     const Y = (p) => padTop + (1 - (p.v - vmin) / vr) * (H - padTop - padBot);
     history.pts.forEach((p) => ptsGeo.push({ x: X(p), y: Y(p), v: p.v, t: p.t }));
@@ -615,16 +687,20 @@ export function openExerciseHistoryModal(exerciseName) {
   }
 
   // Sessions log
-  const sessionsLogHtml = [...history.sessions].reverse().map((s) => {
-    const dateStr = fmtDate(s.timestamp, { day: 'numeric', month: 'short', year: 'numeric' });
-    const setsChips = (s.sets || []).map((set, idx) => {
-      const skipped = set?.done === false ? ' skipped' : '';
-      const w = Number(set?.weight) || 0;
-      const reps = Number(set?.reps) || 0;
-      return `<span class="ex-set-chip${skipped}"><span class="ex-set-idx">${idx + 1}</span>${esc(fmtWeight(w))}<span class="ex-set-u">kg</span> × ${reps}</span>`;
-    }).join('');
+  const sessionsLogHtml = [...history.sessions]
+    .reverse()
+    .map((s) => {
+      const dateStr = fmtDate(s.timestamp, { day: 'numeric', month: 'short', year: 'numeric' });
+      const setsChips = (s.sets || [])
+        .map((set, idx) => {
+          const skipped = set?.done === false ? ' skipped' : '';
+          const w = Number(set?.weight) || 0;
+          const reps = Number(set?.reps) || 0;
+          return `<span class="ex-set-chip${skipped}"><span class="ex-set-idx">${idx + 1}</span>${esc(fmtWeight(w))}<span class="ex-set-u">kg</span> × ${reps}</span>`;
+        })
+        .join('');
 
-    return `
+      return `
       <div class="ex-session-row">
         <div class="ex-session-meta">
           <span class="ex-session-date">${esc(dateStr)}</span>
@@ -632,7 +708,8 @@ export function openExerciseHistoryModal(exerciseName) {
         </div>
         <div class="ex-session-sets">${setsChips || `<span class="ex-nosets">${t('journal.no_sets')}</span>`}</div>
       </div>`;
-  }).join('');
+    })
+    .join('');
 
   overlay.innerHTML = `
     <div class="modal-sheet ex-history-sheet" style="--sc:${color}">
@@ -689,7 +766,9 @@ export function openExerciseHistoryModal(exerciseName) {
   };
 
   overlay.querySelector('#ex-history-close')?.addEventListener('click', close);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
 
   const chartCard = overlay.querySelector('.ex-chart-card');
   if (chartCard && ptsGeo.length >= 2) {
@@ -699,8 +778,22 @@ export function openExerciseHistoryModal(exerciseName) {
   haptic(10);
 }
 
-function _roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); }
-function _set(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = String(html); }
+function _roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+function _set(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = String(html);
+}
 
 export const Analytics = { load, calPrev, calNext, calDayClick, openExerciseHistoryModal };
-
