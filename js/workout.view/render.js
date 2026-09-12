@@ -14,6 +14,7 @@ import {
   loadPlan,
   savePlan,
   buildSession,
+  latestWorkoutForNames,
   persistSession,
   getWeekMode,
   loadCoreChecklist,
@@ -126,9 +127,7 @@ function _haptic(ms = 10) {
 
 export async function _getLastSessionWeight(exerciseName) {
   const workouts = await DB.Workouts.getAll();
-  const last = workouts
-    .reverse()
-    .find((w) => (w.exercises || []).some((e) => e.name === exerciseName));
+  const last = latestWorkoutForNames(workouts, [exerciseName]);
   const ex = last?.exercises?.find((e) => e.name === exerciseName);
   return ex?.sets?.[0]?.weight || 0;
 }
@@ -144,9 +143,7 @@ export async function _computeCoachTarget(exerciseName) {
 export async function _getLastSessionSummary(exerciseName) {
   try {
     const workouts = await DB.Workouts.getAll();
-    const last = [...workouts]
-      .reverse()
-      .find((w) => (w.exercises || []).some((e) => e.name === exerciseName));
+    const last = latestWorkoutForNames(workouts, [exerciseName]);
     const ex = last?.exercises?.find((e) => e.name === exerciseName);
     const sets = (ex?.sets || []).filter((s) => s.done && s.reps);
     if (!sets.length) return '';
@@ -160,6 +157,7 @@ export async function _getExerciseHistory(exerciseName) {
   const workouts = await DB.Workouts.getAll();
   return workouts
     .filter((w) => (w.exercises || []).some((e) => e.name === exerciseName))
+    .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
     .slice(-10)
     .map((w) => {
       const ex = w.exercises.find((e) => e.name === exerciseName);

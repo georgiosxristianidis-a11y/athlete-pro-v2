@@ -718,6 +718,28 @@ export function classifyChamber(ex) {
 }
 
 /**
+ * Newest workout (by `timestamp`) that contains an exercise matching `names`.
+ * `DB.Workouts.getAll()` is newest-first; `[...workouts].reverse().find(...)`
+ * then walked oldest-first and prefills collapsed to the first-ever session.
+ * @param {Array<{ timestamp?: number, exercises?: Array<{ name?: string }> }>} [workouts]
+ * @param {string[]} names
+ * @returns {{ timestamp?: number, exercises?: Array }|null}
+ */
+export function latestWorkoutForNames(workouts, names) {
+  let best = null;
+  let bestTs = -Infinity;
+  for (const w of workouts || []) {
+    if (!(w.exercises || []).some((e) => names.includes(e.name))) continue;
+    const ts = Number(w.timestamp) || 0;
+    if (ts >= bestTs) {
+      best = w;
+      bestTs = ts;
+    }
+  }
+  return best;
+}
+
+/**
  * Build an active workout session from the user's plan (default: PPL | GIO).
  * @param {string} [type] — 'push'|'pull'|'legs'
  * @param {{ workouts?: Array, autoProgress?: boolean }} [opts]
@@ -740,7 +762,7 @@ export function buildSession(type, opts = {}) {
       // legacy names; alias:[] carries every other name the lift was ever
       // logged under, so history (and its progression) follows renames.
       const names = [ex.name, ...(ex.alias || [])];
-      const last = [...workouts].reverse().find(w => (w.exercises || []).some(e => names.includes(e.name)));
+      const last = latestWorkoutForNames(workouts, names);
       const lastEx = last?.exercises?.find(e => names.includes(e.name));
       if (lastEx?.sets?.length) {
         const next = _smartNextWeight(lastEx.sets, ex.reps);
