@@ -6,10 +6,19 @@
  * The view owns the indicator; this module returns verdicts and persists.
  */
 import { DB } from './db.js';
-import { DEFAULT_AI_ENGINE } from './shared/ai-engine.js';
+import {
+  DEFAULT_AI_ENGINE,
+  KEY_PREFIX,
+  normalizeEngine,
+  keyLooksValid,
+} from './shared/ai-engine.js';
+
+// Форма ключа переехала в js/shared/ai-engine.js: её проверяет и сервер, а
+// импортировать ради этого весь этот модуль он не может — за ним ./db.js и
+// восемь store-модулей IndexedDB. Здесь остаётся прежний адрес для браузера.
+export { KEY_PREFIX, normalizeEngine, keyLooksValid };
 
 export const KEY_DEBOUNCE_MS = 650;
-export const KEY_PREFIX = { gemini: 'AIza', anthropic: 'sk-ant-' };
 export const KEY_FIELD = { gemini: 'gemini-key', anthropic: 'anthropic-key' };
 
 /** @typedef {'gemini' | 'anthropic'} AiEngine */
@@ -20,11 +29,6 @@ export const KEY_FIELD = { gemini: 'gemini-key', anthropic: 'anthropic-key' };
  */
 let _keyCheckSeq = 0;
 
-/** @param {string} [engine] @returns {AiEngine} */
-export function normalizeEngine(engine) {
-  return engine === 'anthropic' ? 'anthropic' : 'gemini';
-}
-
 /** @param {string} [engine] */
 export function keyField(engine) {
   return KEY_FIELD[normalizeEngine(engine)];
@@ -33,12 +37,6 @@ export function keyField(engine) {
 /** @param {string} [engine] */
 export function keyPrefix(engine) {
   return KEY_PREFIX[normalizeEngine(engine)];
-}
-
-/** @param {string} engine @param {string} val */
-export function keyLooksValid(engine, val) {
-  const v = String(val || '').trim();
-  return v.startsWith(KEY_PREFIX[normalizeEngine(engine)] || '') && v.length > 30;
 }
 
 /**
@@ -197,6 +195,10 @@ export async function commitKey(engine, raw) {
 export async function aiAuth() {
   const engine = await getEngine();
   const raw = await DB.Settings.get(keyField(engine));
-  const customKey = raw ? String(raw) : undefined;
+  const val = raw ? String(raw).trim() : '';
+  // Недописанный BYOK ехать не должен: сервер предпочтёт его ключу окружения,
+  // и провайдер ответит 400 API_KEY_INVALID. Ровно так недельный отчёт падал
+  // в поле — у человека в поле ключа лежала половина строки.
+  const customKey = val && keyLooksValid(engine, val) ? val : undefined;
   return { engine, customKey };
 }

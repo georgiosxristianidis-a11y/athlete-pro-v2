@@ -24,3 +24,27 @@ export function resolveGeminiModel(envValue) {
   if (envValue && ALLOWED_GEMINI_MODELS.includes(envValue)) return envValue;
   return DEFAULT_GEMINI_MODEL;
 }
+
+/**
+ * Префикс ключа провайдера. Живёт здесь, а не в `js/ai-settings.store.js`,
+ * потому что форму ключа проверяют обе стороны: вид — перед сохранением,
+ * сервер — перед тем как предпочесть BYOK ключу окружения. Тащить ради семи
+ * строк весь `ai-settings.store.js` в граф сервера нельзя: он импортирует
+ * `./db.js`, а за ним восемь store-модулей IndexedDB.
+ */
+export const KEY_PREFIX = { gemini: 'AIza', anthropic: 'sk-ant-' };
+
+/** @param {string} [engine] @returns {AiEngine} */
+export function normalizeEngine(engine) {
+  return engine === 'anthropic' ? 'anthropic' : 'gemini';
+}
+
+/**
+ * Форма ключа, а не его годность: сеть здесь не трогается.
+ * @param {string} engine
+ * @param {string} val
+ */
+export function keyLooksValid(engine, val) {
+  const v = String(val || '').trim();
+  return v.startsWith(KEY_PREFIX[normalizeEngine(engine)] || '') && v.length > 30;
+}
