@@ -193,6 +193,33 @@ describe('body fat', () => {
     const rows = C.enrichEntries([e('2026-07-01', { waist: 86 })], { sex: 'm', heightCm: 180 });
     assert.equal(rows[0].body_fat, undefined);
   });
+
+  test('resolveSex предпочитает profile.sex легаси-ключу', () => {
+    assert.equal(C.resolveSex('f', 'm'), 'f');
+    assert.equal(C.resolveSex('f', null), 'f');
+    assert.equal(C.resolveSex(null, 'f'), 'f');
+    assert.equal(C.resolveSex(null, 'm'), 'm');
+    assert.equal(C.resolveSex(null, null), 'm');
+    assert.equal(C.resolveSex('m', 'f'), 'm');
+  });
+
+  test('женский результат Navy — не мужская формула на той же ленте', () => {
+    const female = C.bodyFatNavy({
+      sex: 'f',
+      heightCm: 170,
+      waistCm: 74,
+      neckCm: 32,
+      hipCm: 98,
+    });
+    const maleOnSameWaist = C.bodyFatNavy({
+      sex: 'm',
+      heightCm: 170,
+      waistCm: 74,
+      neckCm: 32,
+    });
+    assert.ok(female > 0 && maleOnSameWaist > 0);
+    assert.notEqual(female, maleOnSameWaist);
+  });
 });
 
 describe('view wiring', () => {
@@ -269,6 +296,21 @@ describe('view wiring', () => {
       css,
       /\.modal-overlay\.bs-overlay \.modal-sheet \{[\s\S]*?transition:\s*transform 0\.26s var\(--ease-decel\)/,
       'шит едет как .ar-sheet / .claude-sheet, одним драйвером'
+    );
+  });
+
+  test('вид читает profile.sex раньше легаси-ключа sex', () => {
+    assert.match(src, /DB\.Settings\.get\('profile\.sex'/);
+    assert.match(src, /resolveSex\(sexProfile, sexLegacy\)/);
+  });
+
+  test('онбординг зеркалит пол в легаси-ключ, иначе формула Navy его не увидит', () => {
+    const ob = fs.readFileSync(path.join(REPO_ROOT, 'js', 'onboarding.js'), 'utf8');
+    assert.match(ob, /DB\.Settings\.set\('profile\.sex', _data\.sex\)/);
+    assert.match(
+      ob,
+      /DB\.Settings\.set\('sex', _data\.sex\)/,
+      'без зеркала body-stats читает пустой легаси-ключ и падает в дефолт'
     );
   });
 });

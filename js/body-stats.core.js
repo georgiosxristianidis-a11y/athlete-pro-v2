@@ -21,19 +21,19 @@
 
 /** @type {BsField[]} */
 export const BS_FIELDS = [
-  { id: 'weight',    label: 'Weight',      ru: 'Вес',            unit: 'kg', group: 'core' },
-  { id: 'body_fat',  label: 'Body Fat',    ru: 'Жир',            unit: '%',  group: 'core', computed: true },
-  { id: 'chest',     label: 'Chest',       ru: 'Грудь',          unit: 'cm', group: 'push' },
-  { id: 'shoulders', label: 'Shoulders',   ru: 'Плечи',          unit: 'cm', group: 'push' },
-  { id: 'waist',     label: 'Waist',       ru: 'Талия',          unit: 'cm', group: 'core' },
-  { id: 'hips',      label: 'Hips',        ru: 'Бёдра',          unit: 'cm', group: 'legs' },
-  { id: 'neck',      label: 'Neck',        ru: 'Шея',            unit: 'cm', group: 'core' },
-  { id: 'arm_l',     label: 'Left Arm',    ru: 'Рука (лев.)',    unit: 'cm', group: 'pull' },
-  { id: 'arm_r',     label: 'Right Arm',   ru: 'Рука (прав.)',   unit: 'cm', group: 'pull' },
-  { id: 'thigh_l',   label: 'Left Thigh',  ru: 'Бедро (лев.)',   unit: 'cm', group: 'legs' },
-  { id: 'thigh_r',   label: 'Right Thigh', ru: 'Бедро (прав.)',  unit: 'cm', group: 'legs' },
-  { id: 'calf_l',    label: 'Left Calf',   ru: 'Голень (лев.)',  unit: 'cm', group: 'legs' },
-  { id: 'calf_r',    label: 'Right Calf',  ru: 'Голень (прав.)', unit: 'cm', group: 'legs' },
+  { id: 'weight', label: 'Weight', ru: 'Вес', unit: 'kg', group: 'core' },
+  { id: 'body_fat', label: 'Body Fat', ru: 'Жир', unit: '%', group: 'core', computed: true },
+  { id: 'chest', label: 'Chest', ru: 'Грудь', unit: 'cm', group: 'push' },
+  { id: 'shoulders', label: 'Shoulders', ru: 'Плечи', unit: 'cm', group: 'push' },
+  { id: 'waist', label: 'Waist', ru: 'Талия', unit: 'cm', group: 'core' },
+  { id: 'hips', label: 'Hips', ru: 'Бёдра', unit: 'cm', group: 'legs' },
+  { id: 'neck', label: 'Neck', ru: 'Шея', unit: 'cm', group: 'core' },
+  { id: 'arm_l', label: 'Left Arm', ru: 'Рука (лев.)', unit: 'cm', group: 'pull' },
+  { id: 'arm_r', label: 'Right Arm', ru: 'Рука (прав.)', unit: 'cm', group: 'pull' },
+  { id: 'thigh_l', label: 'Left Thigh', ru: 'Бедро (лев.)', unit: 'cm', group: 'legs' },
+  { id: 'thigh_r', label: 'Right Thigh', ru: 'Бедро (прав.)', unit: 'cm', group: 'legs' },
+  { id: 'calf_l', label: 'Left Calf', ru: 'Голень (лев.)', unit: 'cm', group: 'legs' },
+  { id: 'calf_r', label: 'Right Calf', ru: 'Голень (прав.)', unit: 'cm', group: 'legs' },
 ];
 
 /** Fields the user actually types — body fat is derived, never entered. */
@@ -45,9 +45,24 @@ export const BS_INPUT_FIELDS = BS_FIELDS.filter((f) => !f.computed);
  * @type {{ id: string, label: string, ru: string, fields: string[] }[]}
  */
 export const BS_FORM_SECTIONS = [
-  { id: 'comp',  label: 'Composition', ru: 'Композиция', fields: ['weight', 'waist', 'neck', 'hips'] },
-  { id: 'upper', label: 'Upper Body',  ru: 'Верх',       fields: ['chest', 'shoulders', 'arm_l', 'arm_r'] },
-  { id: 'lower', label: 'Lower Body',  ru: 'Низ',        fields: ['thigh_l', 'thigh_r', 'calf_l', 'calf_r'] },
+  {
+    id: 'comp',
+    label: 'Composition',
+    ru: 'Композиция',
+    fields: ['weight', 'waist', 'neck', 'hips'],
+  },
+  {
+    id: 'upper',
+    label: 'Upper Body',
+    ru: 'Верх',
+    fields: ['chest', 'shoulders', 'arm_l', 'arm_r'],
+  },
+  {
+    id: 'lower',
+    label: 'Lower Body',
+    ru: 'Низ',
+    fields: ['thigh_l', 'thigh_r', 'calf_l', 'calf_r'],
+  },
 ];
 
 /**
@@ -63,12 +78,60 @@ export const BS_FORM_SECTIONS = [
  * @type {BsCell[]}
  */
 export const BS_BENTO = [
-  { id: 'weight',   label: 'Weight',   ru: 'Вес',    unit: 'kg', source: ['weight'],            trend: 'neutral', color: 'var(--c-text-1)' },
-  { id: 'body_fat', label: 'Body Fat', ru: 'Жир',    unit: '%',  source: ['body_fat'],          trend: 'down',    color: 'var(--c-text-1)' },
-  { id: 'chest',    label: 'Chest',    ru: 'Грудь',  unit: 'cm', source: ['chest'],             trend: 'up',      color: 'var(--c-push)' },
-  { id: 'waist',    label: 'Waist',    ru: 'Талия',  unit: 'cm', source: ['waist'],             trend: 'down',    color: 'var(--c-text-1)' },
-  { id: 'arms',     label: 'Arms',     ru: 'Руки',   unit: 'cm', source: ['arm_l', 'arm_r'],    trend: 'up',      color: 'var(--c-pull)' },
-  { id: 'thighs',   label: 'Thighs',   ru: 'Бёдра',  unit: 'cm', source: ['thigh_l', 'thigh_r'], trend: 'up',     color: 'var(--c-legs)' },
+  {
+    id: 'weight',
+    label: 'Weight',
+    ru: 'Вес',
+    unit: 'kg',
+    source: ['weight'],
+    trend: 'neutral',
+    color: 'var(--c-text-1)',
+  },
+  {
+    id: 'body_fat',
+    label: 'Body Fat',
+    ru: 'Жир',
+    unit: '%',
+    source: ['body_fat'],
+    trend: 'down',
+    color: 'var(--c-text-1)',
+  },
+  {
+    id: 'chest',
+    label: 'Chest',
+    ru: 'Грудь',
+    unit: 'cm',
+    source: ['chest'],
+    trend: 'up',
+    color: 'var(--c-push)',
+  },
+  {
+    id: 'waist',
+    label: 'Waist',
+    ru: 'Талия',
+    unit: 'cm',
+    source: ['waist'],
+    trend: 'down',
+    color: 'var(--c-text-1)',
+  },
+  {
+    id: 'arms',
+    label: 'Arms',
+    ru: 'Руки',
+    unit: 'cm',
+    source: ['arm_l', 'arm_r'],
+    trend: 'up',
+    color: 'var(--c-pull)',
+  },
+  {
+    id: 'thighs',
+    label: 'Thighs',
+    ru: 'Бёдра',
+    unit: 'cm',
+    source: ['thigh_l', 'thigh_r'],
+    trend: 'up',
+    color: 'var(--c-legs)',
+  },
 ];
 
 /** Which input field a bento tap should focus. */
@@ -82,6 +145,19 @@ export const cellFocusField = (cellId) => {
 /* ── Body fat (U.S. Navy) ───────────────────────────────────────────────── */
 
 /**
+ * Onboarding (F-7) writes `profile.sex`. Body-stats used to read only the
+ * legacy key `sex` (default `'m'`), so a woman who chose Female in setup
+ * still got the male Navy formula. Prefer the namespaced key; fall back to
+ * the legacy mirror that Athlete Room already writes.
+ * @param {unknown} profileSex  DB.Settings `profile.sex`
+ * @param {unknown} legacySex   DB.Settings `sex`
+ * @returns {'m'|'f'}
+ */
+export function resolveSex(profileSex, legacySex) {
+  return (profileSex || legacySex) === 'f' ? 'f' : 'm';
+}
+
+/**
  * @param {{ sex: string, heightCm: number|null|undefined, waistCm: number|null|undefined,
  *           neckCm: number|null|undefined, hipCm?: number|null }} p
  * @returns {number|null} percent, one decimal, or null when the inputs cannot answer
@@ -89,10 +165,14 @@ export const cellFocusField = (cellId) => {
 export function bodyFatNavy({ sex, heightCm, waistCm, neckCm, hipCm }) {
   if (!heightCm || !waistCm || !neckCm) return null;
   if (sex === 'f' && !hipCm) return null;
-  const W = waistCm, N = neckCm, H = hipCm || 0, HT = heightCm;
-  const bf = sex === 'f'
-    ? 495 / (1.29579 - 0.35004 * Math.log10(W + H - N) + 0.221 * Math.log10(HT)) - 450
-    : 495 / (1.0324 - 0.19077 * Math.log10(W - N) + 0.15456 * Math.log10(HT)) - 450;
+  const W = waistCm,
+    N = neckCm,
+    H = hipCm || 0,
+    HT = heightCm;
+  const bf =
+    sex === 'f'
+      ? 495 / (1.29579 - 0.35004 * Math.log10(W + H - N) + 0.221 * Math.log10(HT)) - 450
+      : 495 / (1.0324 - 0.19077 * Math.log10(W - N) + 0.15456 * Math.log10(HT)) - 450;
   return !isFinite(bf) || bf < 1 || bf > 80 ? null : Math.round(bf * 10) / 10;
 }
 
@@ -102,9 +182,22 @@ export function bodyFatNavy({ sex, heightCm, waistCm, neckCm, hipCm }) {
  * @returns {{ label: string, ru: string, color: string }}
  */
 export function bodyFatCategory(bf, sex) {
-  const ranges = sex === 'f'
-    ? [[13, 'Essential', 'Минимум', 'var(--c-blue)'], [20, 'Athletic', 'Атлет', 'var(--c-accent)'], [24, 'Fitness', 'Форма', 'var(--c-accent)'], [31, 'Average', 'Средне', 'var(--c-amber)'], [100, 'High', 'Высокий', 'var(--c-red)']]
-    : [[6, 'Essential', 'Минимум', 'var(--c-blue)'], [13, 'Athletic', 'Атлет', 'var(--c-accent)'], [17, 'Fitness', 'Форма', 'var(--c-accent)'], [25, 'Average', 'Средне', 'var(--c-amber)'], [100, 'High', 'Высокий', 'var(--c-red)']];
+  const ranges =
+    sex === 'f'
+      ? [
+          [13, 'Essential', 'Минимум', 'var(--c-blue)'],
+          [20, 'Athletic', 'Атлет', 'var(--c-accent)'],
+          [24, 'Fitness', 'Форма', 'var(--c-accent)'],
+          [31, 'Average', 'Средне', 'var(--c-amber)'],
+          [100, 'High', 'Высокий', 'var(--c-red)'],
+        ]
+      : [
+          [6, 'Essential', 'Минимум', 'var(--c-blue)'],
+          [13, 'Athletic', 'Атлет', 'var(--c-accent)'],
+          [17, 'Fitness', 'Форма', 'var(--c-accent)'],
+          [25, 'Average', 'Средне', 'var(--c-amber)'],
+          [100, 'High', 'Высокий', 'var(--c-red)'],
+        ];
   for (const [max, label, ru, color] of ranges) {
     if (bf < Number(max)) return { label: String(label), ru: String(ru), color: String(color) };
   }
@@ -176,7 +269,8 @@ export function cellSeries(enriched, cell, limit = 8) {
 export function cellDelta(enriched, cell) {
   const points = cellSeries(enriched, cell, 2);
   if (points.length < 2) return null;
-  const prev = points[0], curr = points[1];
+  const prev = points[0],
+    curr = points[1];
   const diff = Math.round((curr.v - prev.v) * 10) / 10;
   return { diff, tone: toneFor(cell.trend, diff), since: prev.date };
 }
@@ -241,7 +335,7 @@ export function fieldDeltaAt(enriched, fieldId, index) {
  */
 export function toneFor(trend, diff) {
   if (diff === 0 || trend === 'neutral') return 'flat';
-  return (trend === 'up') === (diff > 0) ? 'good' : 'warn';
+  return (trend === 'up') === diff > 0 ? 'good' : 'warn';
 }
 
 /**
@@ -255,12 +349,16 @@ export function toneFor(trend, diff) {
  */
 export function sparkPoints(values, w, h, pad = 3) {
   if (!values || values.length < 2) return '';
-  const min = Math.min(...values), max = Math.max(...values);
+  const min = Math.min(...values),
+    max = Math.max(...values);
   const span = max - min || 1;
   const stepX = w / (values.length - 1);
   const usable = h - pad * 2;
   return values
-    .map((v, i) => `${(i * stepX).toFixed(1)},${(pad + usable - ((v - min) / span) * usable).toFixed(1)}`)
+    .map(
+      (v, i) =>
+        `${(i * stepX).toFixed(1)},${(pad + usable - ((v - min) / span) * usable).toFixed(1)}`
+    )
     .join(' ');
 }
 
