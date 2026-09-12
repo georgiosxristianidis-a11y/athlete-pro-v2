@@ -538,6 +538,16 @@ export const State = {
 };
 
 /**
+ * True while a live session holds logged sets in memory.
+ * Callers that would rebuild the plan (Home Go, type cards) must resume
+ * instead of clobbering — persistSession would then overwrite the snapshot.
+ * @returns {boolean}
+ */
+export function hasLiveSession() {
+  return State.phase === 'active';
+}
+
+/**
  * Pure helper — record a "set just became done" event against a block.
  * First call sets startedAt; every subsequent call advances endedAt. When the
  * user moves on to the next block, this block's endedAt naturally freezes at
