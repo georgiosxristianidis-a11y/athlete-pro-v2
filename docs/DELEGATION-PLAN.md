@@ -9,6 +9,10 @@
 > указано доказательство (`file:line`), у частичных — что именно осталось. `docs/DESIGN-SYSTEM.md`
 > пуст (0 байт с `92e29ac`) — ссылка переведена на живой спек `.claude/rules/design.md`.
 >
+> Ссылки сверены второй раз на базе `7c89255` (версия `1.27.99`), после влития полевой
+> аналитики, boot-trim и пачек HYG-6: вердикты держатся, сдвинулись только номера строк.
+> Номер строки здесь — ориентир на дату сверки, не якорь: он уезжает с каждым релизом.
+>
 > **Стек — Vanilla JS, без фреймворков.** Контракты компонентов из DESIGN-SYSTEM
 > (`<Button>`, Zustand, Framer Motion, Radix) — КОНЦЕПТУАЛЬНЫ. В этом коде «компонент» =
 > фабрика-функция + CSS-класс из токенов. **Никакого React/Vue/JSX не вводить.**
@@ -94,7 +98,7 @@
 | 2-3 | Единый слой форматирования: число/единицы/дата | P1 | M | 🔒 LEAD | `js/shared/format.js` | ✅ `a8c0a21` — `fmtVol/fmtWeight/fmtDuration/fmtDate`; дубль `fmtVol` (analytics.store+dashboard) устранён (re-export); 2-6 свипнет остальное |
 | 2-4 | Запрет будущих дат в Recent + валидация диапазонов | P1 | M | 🔒 LEAD | `js/analytics.view.js`, `js/dashboard.js` | ✅ `a8c0a21` — recent-фильтры клампят `[since, now]`; `renderRecent` дропает будущее, sort newest-first, cap 5 |
 | 2-5 | Различить SCORE vs DOTS (226==226) либо убрать дубль | P1 | M | 🔒 LEAD | `athlete-room.js`, `profile.view.js`, `passport-hero.js` | ✅ — Score=`athleteProScore` (composite, ведёт tier), DOTS=`dotsScore` (чистый IPF). Профиль-бенто тоже = чистый DOTS (336≠320) |
-| 2-6 | Единый формат чисел (488 vs 6.9k) | P2 | S | 🟩 GEMINI | через 2-3 форматтер | 🟡 частично (09-12) — `fmtVol/fmtWeight` разошлись по 10 модулям, но вне `js/shared/format.js` осталось 34 сырых `toFixed`/`toLocaleString`. Остаток — свипнуть их в форматтер |
+| 2-6 | Единый формат чисел (488 vs 6.9k) | P2 | S | 🟩 GEMINI | через 2-3 форматтер | 🟡 частично (09-12) — `fmtVol/fmtWeight` разошлись по 10 модулям, но вне `js/shared/format.js` осталось **38** сырых `toFixed`/`toLocaleString` (было 34 — полевые графики аналитики добавили четыре). Растёт быстрее, чем закрывается |
 | 2-7 | ~~Тесты на агрегаты и форматтер~~ | P1 | M | 🟦 SONNET | `test/*.test.js` | ✅ сверка 09-12 — `test/aggregates.test.js` + `test/format.test.js` на месте, форматтер покрыт |
 
 ---
@@ -104,8 +108,8 @@
 | # | Задача | P | Слож. | Кто | Файлы | Статус |
 |---|---|:--:|:--:|:--:|---|---|
 | 3-1 | Эмодзи из UI/кода вычищены | P2 | M | 🔒 LEAD | js/* | ✅ `7aadd1b` |
-| 3-2 | Единый stroke 1.5/2px на сетке 24×24, `fill=none` для неактивных | P2 | L | 🟩 GEMINI | `index.html` nav, `js/*` SVG | ⬜ — сверка 09-12: десять разных значений в ходу (`2`×61, `1.5`×42, `2.5`×29, плюс `1.6`/`1.8`/`2.2`/`1`/`1.1`/`0.8`/`0.7`). Карточка живая |
-| 3-3 | ~~Метафоры: Hypertrophy (map-pin→тело), Home (пятиугольник→house), AI-бабл («!»→chat/sparkle)~~ | P2 | M | 🟦 SONNET | `js/onboarding.js`, navbar, `js/claude.view.js` | ✅ сверка 09-12 — Home = дом (`index.html:506`); `map-pin` и «!»-бабл в коде не встречаются |
+| 3-2 | Единый stroke 1.5/2px на сетке 24×24, `fill=none` для неактивных | P2 | L | 🟩 GEMINI | `index.html` nav, `js/*` SVG | ⬜ — сверка 09-12: десять разных значений в ходу (`2`×61, `1.5`×43, `2.5`×30, плюс `1.6`/`1.8`/`2.2`/`1`/`1.1`/`0.8`/`0.7`). Карточка живая |
+| 3-3 | ~~Метафоры: Hypertrophy (map-pin→тело), Home (пятиугольник→house), AI-бабл («!»→chat/sparkle)~~ | P2 | M | 🟦 SONNET | `js/onboarding.js`, navbar, `js/claude.view.js` | ✅ сверка 09-12 — Home = дом (`index.html:502`); `map-pin` и «!»-бабл в коде не встречаются |
 | 3-4 | `currentColor` + прогон через SVGO, «тест 16px» | P2 | S | 🟩 GEMINI | весь SVG-набор | 🟡 частично (09-12) — `currentColor` в 23 модулях и в nav; прогон SVGO и «тест 16px» не подтверждены ничем в репозитории |
 
 ---
@@ -117,7 +121,7 @@
 | 4-1 | Vanilla-фабрики: `Button()`, `TextField()`, `NumberStepper()`, `Card()` из токенов | P2 | L | 🔒 LEAD | `js/ui/factory.js` + `css/base.css` | ✅ — 4 фабрики возвращают DOM-узлы (текст через `textContent` → ноль XSS-поверхности, без `esc()`). `Button()` эмитит канонические `.btn-*` (+новый `.btn-danger`); TextField/NumberStepper/Card на новых токен-классах `.ui-*`. SW→v48. Контракт для 4-2: `import { Button, TextField, NumberStepper, Card } from '../ui/factory.js'` |
 | 4-2 | Edit Plan: белые нативные инпуты/степперы → `TextField`/`NumberStepper` | P1 | M | 🟦 SONNET | `js/workout.view/modals.js` (**4-1✅ — разблокировано**) | ⬜ — сверка 09-12: семь нативных `<input>`, `js/ui/factory.js` в файл не импортирован. **Самая старшая из открытых (P1)** |
 | 4-3 | Унифицировать секцию CORE с карточками упражнений | P2 | M | 🟦 SONNET | `js/workout.view/render.js`, `css/workout.css` | ⬜ — сверка 09-12: `.core-item` держит собственный набор правил (`css/workout.css:900`), с карточкой упражнения не сведён |
-| 4-4 | Один empty-state + одна кнопка (Home == Analytics) | P2 | S | 🟩 GEMINI | `js/dashboard.js`, `js/analytics.view.js` | ⬜ — сверка 09-12: `.empty-state` в `dashboard.js:759` и `analytics.view.js:168`, второй тащит инлайн-стили |
+| 4-4 | Один empty-state + одна кнопка (Home == Analytics) | P2 | S | 🟩 GEMINI | `js/dashboard.js`, `js/analytics.view.js` | ⬜ — сверка 09-12: `.empty-state` в `dashboard.js:781` и `analytics.view.js:180`, второй тащит инлайн-стили |
 | 4-5 | Единый radius/высота кнопок по всему приложению | P2 | S | 🟩 GEMINI | `css/*` через токены | 🟡 частично (09-12) — в `css/base.css` 37 радиусов через `--r-*`, остался один сырой `4px` (`css/base.css:439`) |
 
 ---
@@ -128,8 +132,8 @@
 |---|---|:--:|:--:|:--:|---|---|
 | 5-1 | Компактный ввод сета (гигантские инпуты при 22 подходах) | P3 | M | 🟦 SONNET | `js/workout.view/render.js`, `css/workout.css` | ⬜ — сверка 09-12: `.set-row` получил дифференциал активной строки (SPACE-1), но компактного режима при длинном списке нет |
 | 5-2 | ~~Фикс text-overflow имён упражнений~~ | P3 | S | 🟩 GEMINI | `css/workout.css` | ✅ сверка 09-12 — `.exercise-name`: `nowrap` + `overflow:hidden` + `text-overflow:ellipsis` (`css/workout.css:349`) |
-| 5-3 | ~~Убрать нелогичный «X» с hero-молнии и у имени Gio~~ | P3 | S | 🟩 GEMINI | `js/dashboard.js`, `js/profile.*` | ✅ сверка 09-12 — hero переписан на label/greeting/date (`js/dashboard.js:178`), молнии и «X» в коде нет |
-| 5-4 | ~~Volume Trend: реальный график или честный empty~~ | P3 | M | 🟦 SONNET | `js/dashboard.js`, `js/analytics.view.js` | ✅ сверка 09-12 — живой sparkline за 30 дней (`#spark-container`, `js/dashboard.js:210`), не заглушка |
+| 5-3 | ~~Убрать нелогичный «X» с hero-молнии и у имени Gio~~ | P3 | S | 🟩 GEMINI | `js/dashboard.js`, `js/profile.*` | ✅ сверка 09-12 — hero переписан на label/greeting/date (`js/dashboard.js:191`), молнии и «X» в коде нет |
+| 5-4 | ~~Volume Trend: реальный график или честный empty~~ | P3 | M | 🟦 SONNET | `js/dashboard.js`, `js/analytics.view.js` | ✅ сверка 09-12 — живой sparkline за 30 дней (`#spark-container`, `js/dashboard.js:241`), движок вынесен в `js/shared/sparkline.js` |
 | 5-5 | ~~Микроанимации на motion-токенах + `prefers-reduced-motion`/`color-scheme`~~ | P3 | M | 🟦 SONNET | `css/base.css`, `js/shared/spring.js` | ✅ сверка 09-12 — восемь токенов `--ease-*` (`css/base.css:116`), `prefers-reduced-motion` в пяти CSS-файлах, `js/shared/spring.js` жив |
 | 5-6 | ~~Прогресс-бар онбординга: подсветка текущего шага (не все 6 зелёные)~~ | P2 | S | 🟩 GEMINI | `js/onboarding.js` | ✅ сверка 09-12 — онбординг переписан, шести-зелёного бара больше нет (шаги ведёт `canAdvanceFromStep`) |
 | 5-7 | Workout Dock переживает навигацию (in-app, без OS-PiP как основы) | P2 | L | 🔒 LEAD | `js/shared/dynamic-island.js`, `js/rest-timer.js`, `css/dynamic-island.css` | ✅ `abd660c` — rest-таймер встроен в остров (in-frame HUD: счётчик+ +15s/Skip, warning/done), убраны fixed `#rest-bar`/`#rest-modal` (вылезали за рамку на десктопе); PiP остаётся только для свёрнутого браузера |
