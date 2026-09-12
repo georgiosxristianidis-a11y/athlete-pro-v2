@@ -32,6 +32,8 @@ import {
   wireScrub,
   fmtMon,
   GOLD,
+  strengthIndexPlot,
+  valueBand,
 } from './analytics.strength-curves.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { on } from './events.js';
@@ -46,6 +48,7 @@ on('analytics:openExercise', (el) => {
   const name = el?.dataset?.exercise;
   if (name) openExerciseHistoryModal(name);
 });
+on('analytics:openIndex', () => openStrengthIndexModal());
 
 // PPL-цвет берётся из токенов темы — см. `js/shared/ppl-color.js` (DS-1).
 
@@ -608,6 +611,64 @@ function _renderORMList(orms) {
 }
 
 /**
+ * Open the Strength Index drill-down sheet (hero sparkline is 96×36 — unreadable
+ * as a graph on a phone, and the card itself had no tap target).
+ */
+function openStrengthIndexModal() {
+  const plot = strengthIndexPlot(_workoutsCache);
+  if (!plot) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay ex-history-overlay';
+  overlay.style.zIndex = '4000';
+
+  const gainTxt = `${plot.gain >= 0 ? '+' : ''}${plot.gain}%`;
+  overlay.innerHTML = `
+    <div class="modal-sheet ex-history-sheet" style="--sc:var(--c-accent)">
+      <div class="modal-handle"></div>
+      <div class="ex-history-head">
+        <div class="ex-head-info">
+          <div class="ex-history-title">${t('analytics.index_detail')}</div>
+          <span class="ex-type-pill" style="color:var(--c-accent);background:var(--c-accent-bg);border-color:var(--c-border-h)">${esc(gainTxt)}</span>
+        </div>
+        <button class="btn-icon-sm" id="idx-close" aria-label="${t('journal.close')}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="18" height="18">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="sh-score idx-sheet-score">${plot.score}<span class="sh-gain ${plot.gain >= 0 ? 'up' : 'down'}">${esc(gainTxt)}</span></div>
+      <div class="sh-cap idx-sheet-cap">${t('analytics.index_cap')}</div>
+      <div class="ex-chart-card chart-card">
+        <div class="ex-chart-title">${t('analytics.index_trend')}</div>
+        ${plot.html}
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('visible'));
+
+  const close = () => {
+    overlay.classList.remove('visible');
+    setTimeout(() => overlay.remove(), 300);
+  };
+  overlay.querySelector('#idx-close')?.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+
+  const chartCard = overlay.querySelector('.ex-chart-card');
+  if (chartCard) {
+    wireScrub(chartCard, plot.pts, {
+      viewW: plot.viewW,
+      viewH: plot.viewH,
+      format: (p) => ({ val: String(p.v), sub: fmtMon(p.t) }),
+    });
+  }
+  haptic(10);
+}
+
+/**
  * Open the detailed history and progression modal for a single exercise (AN-2).
  * @param {string} exerciseName
  */
@@ -638,16 +699,14 @@ export function openExerciseHistoryModal(exerciseName) {
       tN = history.pts[history.pts.length - 1].t,
       tr = tN - t0 || 1;
     const vs = history.pts.map((p) => p.v);
-    const vmin = Math.min(...vs),
-      vmax = Math.max(...vs),
-      vr = vmax - vmin || 1;
+    const { vmin, vr } = valueBand(vs);
     const X = (p) => padX + ((p.t - t0) / tr) * (W - 2 * padX);
     const Y = (p) => padTop + (1 - (p.v - vmin) / vr) * (H - padTop - padBot);
     history.pts.forEach((p) => ptsGeo.push({ x: X(p), y: Y(p), v: p.v, t: p.t }));
 
     const line = smoothPath(ptsGeo);
     const area = `${line} L ${ptsGeo[ptsGeo.length - 1].x.toFixed(1)},${H} L ${ptsGeo[0].x.toFixed(1)},${H} Z`;
-    const peakI = vs.indexOf(vmax);
+    const peakI = vs.indexOf(Math.max(...vs));
     const gid = `ex-chart-grad-${Date.now()}`;
 
     chartHtml = `
@@ -772,7 +831,7 @@ export function openExerciseHistoryModal(exerciseName) {
 
   const chartCard = overlay.querySelector('.ex-chart-card');
   if (chartCard && ptsGeo.length >= 2) {
-    wireScrub(chartCard, ptsGeo);
+    wireScrub(chartCard, ptsGeo, { viewW: 320, viewH: 110 });
   }
 
   haptic(10);
