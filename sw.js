@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-60058dd7';
+const CACHE_NAME = 'athlete-pro-v121-42a0df73';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -37,17 +37,13 @@ const ASSETS = [
   '/js/db/workouts.js',
   '/js/db.js',
   '/js/events.js',
-  '/js/features/pip.js',
   '/js/flags.js',
   '/js/island-profile.store.js',
   '/js/locale.store.js',
   '/js/privacy.store.js',
-  '/js/privacy.view.js',
   '/js/profile.store.js',
-  '/js/rest-timer.js',
   '/js/shared/ai-engine.js',
   '/js/shared/chamber-pill.js',
-  '/js/shared/confirm.js',
   '/js/shared/cryptoClient.js',
   '/js/shared/dynamic-island.js',
   '/js/shared/errors-ui.js',
@@ -67,8 +63,6 @@ const ASSETS = [
   '/js/strength-engine.js',
   '/js/theme-boot.js',
   '/js/timer.js',
-  '/js/ui/factory.js',
-  '/js/usage.js',
   '/js/version.js',
   '/js/workout.store.js',
   '/css/base.css',
@@ -91,6 +85,7 @@ const ASSETS_WARM = [
   '/js/body-stats.core.js',
   '/js/body-stats.js',
   '/js/claude.view.js',
+  '/js/features/pip.js',
   '/js/features/wake-lock.js',
   '/js/insights.engine.js',
   '/js/intel.engine.js',
@@ -102,6 +97,7 @@ const ASSETS_WARM = [
   '/js/journal.view.js',
   '/js/onboarding.js',
   '/js/plate-calc.js',
+  '/js/privacy.view.js',
   '/js/profile.js',
   '/js/profile.view/bento.js',
   '/js/profile.view/hexagon-radar.js',
@@ -110,10 +106,12 @@ const ASSETS_WARM = [
   '/js/profile.view/settings.js',
   '/js/profile.view.js',
   '/js/progressive-overload.js',
+  '/js/rest-timer.js',
   '/js/shared/ai-status.js',
   '/js/shared/air-markdown.js',
   '/js/shared/athlete-room.js',
   '/js/shared/block-ticks.js',
+  '/js/shared/confirm.js',
   '/js/shared/csv-export.js',
   '/js/shared/download.js',
   '/js/shared/field-shake.js',
@@ -131,9 +129,11 @@ const ASSETS_WARM = [
   '/js/sync.js',
   '/js/ui/drag-number.js',
   '/js/ui/drum-picker.js',
+  '/js/ui/factory.js',
   '/js/ui/gravity-submit.js',
   '/js/ui/receipt.js',
   '/js/ui/seg-pill.js',
+  '/js/usage.js',
   '/js/workers/crypto.worker.js',
   '/js/workout-ai.view.js',
   '/js/workout.view/handlers.js',

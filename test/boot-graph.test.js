@@ -1,6 +1,7 @@
 // @ts-check
 /**
- * BOOT-TRIM — Athlete Room, Integrity and panda stay off the first-frame graph.
+ * BOOT-TRIM — Athlete Room, Integrity, panda, privacy.view, rest-timer and
+ * pip stay off the first-frame graph.
  *
  * import-guard.test.js only checks that each modulepreload href exists on disk.
  * This file checks the inverse: the trimmed modules are not static imports of
@@ -42,8 +43,9 @@ function modulepreloadHrefs(html) {
 }
 
 const OFF_BOOT = {
-  app: ['athlete-room', 'integrity', 'panda-video', 'panda-mood'],
+  app: ['athlete-room', 'integrity', 'panda-video', 'panda-mood', 'privacy.view'],
   pandaHosts: ['panda-video', 'panda-mood'],
+  island: ['rest-timer', 'pip'],
   // strength-engine.js и profile.store.js сюда не входят намеренно: они
   // приезжают статическим импортом claude.store.js ← dashboard.js, то есть
   // сидят в первом кадре независимо от Athlete Room. Прелоад им положен —
@@ -55,13 +57,15 @@ const OFF_BOOT = {
     'js/shared/panda-mood.js',
     'js/shared/lift-map.js',
     'js/profile.view/lift-bars.js',
-  ],
-  keepPreload: [
-    'js/shared/dynamic-island.js',
+    'js/privacy.view.js',
     'js/rest-timer.js',
     'js/features/pip.js',
     'js/shared/confirm.js',
     'js/ui/factory.js',
+    'js/usage.js',
+  ],
+  keepPreload: [
+    'js/shared/dynamic-island.js',
     'js/shared/cryptoClient.js',
     'js/shared/chamber-pill.js',
     'js/db/core.js',
@@ -75,7 +79,7 @@ const OFF_BOOT = {
 };
 
 describe('BOOT-TRIM: static imports off the critical path', () => {
-  test('app.js has no static import of athlete-room / integrity / panda-*', () => {
+  test('app.js has no static import of athlete-room / integrity / panda-* / privacy.view', () => {
     const specs = staticSpecs(readText('js/app.js'));
     for (const needle of OFF_BOOT.app) {
       assert.ok(
@@ -93,6 +97,49 @@ describe('BOOT-TRIM: static imports off the critical path', () => {
         `dashboard.js still statically imports a module matching '${needle}'`
       );
     }
+  });
+
+  test('dynamic-island.js has no static import of rest-timer / pip', () => {
+    const specs = staticSpecs(readText('js/shared/dynamic-island.js'));
+    for (const needle of OFF_BOOT.island) {
+      assert.ok(
+        !specs.some((s) => s.includes(needle)),
+        `dynamic-island.js still statically imports a module matching '${needle}'`
+      );
+    }
+  });
+
+  /**
+   * Снятие статического импорта увело связь из-под парсера в рантайм:
+   * `window.RestTimer?.addTime()` на непоставленном глобале молча ничего не
+   * делает, и тест выше остаётся зелёным. Единственный, кто этот глобал
+   * ставит, — ленивый загрузчик `_loadWorkout()` в app.js. Уедет присваивание —
+   * кнопки отдыха на острове перестанут отвечать без единой ошибки в консоли.
+   */
+  test('кнопки острова через window.RestTimer держатся на присваивании в _loadWorkout', () => {
+    // Без вырезания комментариев гард зеленеет на закомментированной строке —
+    // проверено вручную: `// window.RestTimer = RestTimer;` проходил насквозь.
+    const code = (p) =>
+      readText(p)
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/(^|[^:])\/\/.*$/gm, '$1');
+
+    const island = code('js/shared/dynamic-island.js');
+    const app = code('js/app.js');
+
+    assert.match(
+      island,
+      /window\.RestTimer\?\./,
+      'остров зовёт RestTimer не через глобал — гард ниже проверяет не то'
+    );
+
+    const loader = app.match(/async function _loadWorkout\(\)[\s\S]*?\n\}/)?.[0];
+    assert.ok(loader, 'не нашёл _loadWorkout() в app.js — гард потерял якорь');
+    assert.match(
+      loader,
+      /^\s*window\.RestTimer\s*=\s*RestTimer/m,
+      'глобал window.RestTimer больше не ставится: тап по +15 с и по пропуску отдыха умрёт молча'
+    );
   });
 
   test('rest-timer.js has no static import of panda-*', () => {
