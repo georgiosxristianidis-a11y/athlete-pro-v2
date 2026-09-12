@@ -61,8 +61,15 @@ describe('Air Markdown — XSS', () => {
     // форматтером повторно, значит его обязан экранировать сам сборщик.
     const raw = '[WORKOUT_CARD]{"title":"<img src=x onerror=alert(1)>"}[/WORKOUT_CARD]';
     let received = null;
-    formatAirMarkdown(raw, undefined, (d) => { received = d; return ''; });
-    assert.equal(received.title, '<img src=x onerror=alert(1)>', 'сборщик должен получить сырые данные и сам их экранировать');
+    formatAirMarkdown(raw, undefined, (d) => {
+      received = d;
+      return '';
+    });
+    assert.equal(
+      received.title,
+      '<img src=x onerror=alert(1)>',
+      'сборщик должен получить сырые данные и сам их экранировать'
+    );
   });
 });
 
@@ -105,6 +112,30 @@ describe('Air Markdown — блоки', () => {
     const html = formatAirMarkdown('<thinking>план ответа</thinking>Ответ');
     assert.ok(!html.includes('план ответа'));
     assert.ok(html.includes('Ответ'));
+  });
+
+  test('незакрытый <thinking> во время стрима прячет хвост — следующий чанк дорисует', () => {
+    const html = formatAirMarkdown('<thinking>ещё считаю\n## Разбор\nСнизь объём');
+    assert.ok(!html.includes('Снизь'), 'хвост стрима не должен светиться до </thinking>');
+    assert.ok(!html.includes('ещё считаю'));
+  });
+
+  test('на финальном кадре незакрытый <thinking> не съедает готовый ответ', () => {
+    const raw = '<thinking>User ACWR is high after Push.\n## Разбор\nСнизь объём жима.';
+    const html = formatAirMarkdown(raw, undefined, undefined, { final: true });
+    assert.ok(html.includes('Снизь объём жима'), 'ответ после забытого </thinking> пропал');
+    assert.ok(!html.includes('<thinking'));
+  });
+
+  test('на финальном кадре закрытый <thinking> по-прежнему скрыт', () => {
+    const html = formatAirMarkdown(
+      '<thinking>план ответа</thinking>## Итог\nДелай разминку',
+      undefined,
+      undefined,
+      { final: true }
+    );
+    assert.ok(!html.includes('план ответа'));
+    assert.ok(html.includes('Делай разминку'));
   });
 });
 
@@ -183,7 +214,22 @@ describe('MD-1 — контракт формата в системном про�
     const start = COACH.indexOf('function _buildSystemPrompt');
     const builder = COACH.slice(start, COACH.indexOf('function _buildPlanGenerationPrompt'));
     assert.ok(start !== -1, 'якорь _buildSystemPrompt пропал');
-    assert.doesNotMatch(builder, /\bengine\b/, 'промпт стал зависеть от движка — контракт расходится');
+    assert.doesNotMatch(
+      builder,
+      /\bengine\b/,
+      'промпт стал зависеть от движка — контракт расходится'
+    );
+  });
+});
+
+describe('Air Markdown — финальный кадр со стороны view', () => {
+  const VIEW = fs.readFileSync(path.join(ROOT, 'js', 'intel.view.js'), 'utf8');
+
+  test('последняя перерисовка стрима передаёт final, иначе форматтер режет хвост', () => {
+    assert.ok(
+      /formatAirMarkdown\([\s\S]*?\{\s*final:\s*!withTail,?\s*\}/.test(VIEW),
+      'intel.view.js должен звать formatAirMarkdown(..., { final: !withTail })'
+    );
   });
 });
 
