@@ -89,6 +89,32 @@ test('P.A.N.D.A. Core SSE uses the carry-buffer parser, not per-chunk split', ()
   );
 });
 
+test('weekly report window uses timestamp, not the missing w.date field', () => {
+  const weekly = SRC.slice(
+    SRC.indexOf('async function generateWeekly'),
+    SRC.indexOf('function _renderReportOverlay')
+  );
+  assert.ok(weekly.includes('generateWeekly'), 'якорь generateWeekly пропал');
+  assert.match(
+    weekly,
+    /Number\(w\.timestamp\)\s*>=\s*sevenDaysAgo/,
+    'окно недели обязано сравнивать timestamp — иначе живая история не доезжает до коуча'
+  );
+  assert.equal(
+    /new Date\(\s*w\.date\s*\)/.test(weekly),
+    false,
+    'w.date не существует на WorkoutRecord: NaN > since отсекает каждую сессию'
+  );
+});
+
+test('WorkoutRecord has no date field — Date(undefined) drops the whole week', () => {
+  const w = { type: 'push', timestamp: Date.now() };
+  assert.equal(Number.isNaN(new Date(/** @type {any} */ (w).date).getTime()), true);
+  const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  assert.equal(new Date(/** @type {any} */ (w).date).getTime() > since, false);
+  assert.equal(Number(w.timestamp) >= since, true);
+});
+
 test("gemini-key is read only inside TTS — text requests use the selected engine's key", () => {
   assert.match(
     tts,
