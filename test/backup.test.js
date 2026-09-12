@@ -128,6 +128,9 @@ describe('backup module facade wiring', () => {
     assert.ok(LOCAL_BACKUP_KEYS.includes('ap-core-checklist'));
     assert.ok(LOCAL_BACKUP_KEYS.includes('ap-custom-workouts'));
     assert.ok(LOCAL_BACKUP_KEYS.includes('ap-theme'));
+    const bsSrc = readFileSync(path.join(ROOT, 'js/body-stats.js'), 'utf8');
+    assert.match(bsSrc, /BS_KEY = 'ap-bodystats'/);
+    assert.ok(LOCAL_BACKUP_KEYS.includes('ap-bodystats'));
     assert.equal(LOCAL_BACKUP_KEYS.includes('ap-device-id'), false);
     assert.equal(LOCAL_BACKUP_KEYS.includes('ap-active-session'), false);
   });
@@ -143,9 +146,14 @@ describe('LAUNCH-8 — restore on a wiped profile', () => {
     await DB.Settings.set('lang', 'ru');
     await DB.Settings.set('onboarding-complete', true);
     const planId = await DB.PlannedWorkouts.save('AI Push', { title: 'AI Push', day: 'push' });
+    const SAMPLE_BODYSTATS = [
+      { date: '2026-08-20', waist: 82, neck: 38, arm_l: 41 },
+      { date: '2026-07-01', waist: 86, neck: 39 },
+    ];
     localStorage.setItem('ap-custom-plan-A', JSON.stringify(SAMPLE_PLAN));
     localStorage.setItem('ap-week-mode', 'B');
     localStorage.setItem('ap-theme', 'light');
+    localStorage.setItem('ap-bodystats', JSON.stringify(SAMPLE_BODYSTATS));
     localStorage.setItem('ap-device-id', 'device-source');
 
     const json = await Backup.export();
@@ -155,6 +163,7 @@ describe('LAUNCH-8 — restore on a wiped profile', () => {
     assert.ok(Array.isArray(parsed.plans));
     assert.equal(typeof parsed.local, 'object');
     assert.equal(parsed.local['ap-custom-plan-A'], JSON.stringify(SAMPLE_PLAN));
+    assert.equal(parsed.local['ap-bodystats'], JSON.stringify(SAMPLE_BODYSTATS));
     assert.equal(parsed.local['ap-device-id'], undefined);
 
     ls.clear();
@@ -163,6 +172,7 @@ describe('LAUNCH-8 — restore on a wiped profile', () => {
     assert.equal((await DB.PlannedWorkouts.getAll()).length, 0);
     assert.equal(await DB.Settings.get('lang', null), null);
     assert.equal(localStorage.getItem('ap-custom-plan-A'), null);
+    assert.equal(localStorage.getItem('ap-bodystats'), null);
 
     localStorage.setItem('ap-device-id', 'device-target');
     await Backup.import(json);
@@ -186,6 +196,7 @@ describe('LAUNCH-8 — restore on a wiped profile', () => {
     assert.deepEqual(JSON.parse(localStorage.getItem('ap-custom-plan-A')), SAMPLE_PLAN);
     assert.equal(localStorage.getItem('ap-week-mode'), 'B');
     assert.equal(localStorage.getItem('ap-theme'), 'light');
+    assert.deepEqual(JSON.parse(localStorage.getItem('ap-bodystats')), SAMPLE_BODYSTATS);
     assert.equal(localStorage.getItem('ap-device-id'), 'device-target');
   });
 
