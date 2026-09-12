@@ -781,6 +781,16 @@ export function persistSession() {
 }
 
 /**
+ * Drop the crash-recovery snapshot. persistSession() is a no-op when phase
+ * is not 'active', so Discard used to leave ap-active-session in place and
+ * the next Train load / cold boot resurrected the session the user threw away.
+ * @returns {void}
+ */
+export function clearPersistedSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+/**
  * Check if user needs program generation (new user without custom plan).
  * @returns {boolean}
  */
