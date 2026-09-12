@@ -7,6 +7,7 @@ import {
   loadPlan,
   savePlan,
   buildSession,
+  hasLiveSession,
   persistSession,
   clearPersistedSession,
   getWeekMode,
@@ -316,6 +317,13 @@ export function _toggleUnilateral(ei) {
  * Второй движок снесён; типов ровно три.
  */
 export async function selectType(type) {
+  // Home "Go" (and any other caller) must not rebuild a live session —
+  // that drops every logged set in memory and in ap-active-session.
+  if (hasLiveSession()) {
+    await renderActive();
+    return;
+  }
+
   State.type = type;
 
   const [workouts, restDurRaw, keepAwake] = await Promise.all([
