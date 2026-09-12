@@ -1,5 +1,10 @@
 # Fit Elite — Roadmap
-Version: 1.0 | Generated: 2026-03-16
+Version: 1.0 | Generated: 2026-03-16 | Сверено с кодом: 2026-09-12
+
+> **Исторический документ.** Milestone 1.0 закрыт целиком — все четыре фазы и все
+> требования ARCH/PERF/DESIGN/AI выполнены (сверка 2026-09-12, доказательства в строках ниже).
+> Актуальный роадмап — `docs/ROADMAP_elite_athlete-pro.md`, очередь — `NEXT_SESSION.md`.
+> Держать здесь третью копию статуса нельзя: она протухнет первой.
 
 ---
 
@@ -60,8 +65,8 @@ Plans:
 **Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 03-01-PLAN.md — Create css/base.css with shared components, contrast fix, and focus-visible
-- [ ] 03-02-PLAN.md — Aria-labels on all icon buttons, breakpoint system, streak dot touch targets
+- [x] 03-01-PLAN.md — Create css/base.css with shared components, contrast fix, and focus-visible
+- [x] 03-02-PLAN.md — Aria-labels on all icon buttons, breakpoint system, streak dot touch targets
 
 **Tasks:**
 - Create css/base.css with canonical button, card, and input component styles; audit all 6 CSS files for token usage consistency
@@ -103,15 +108,15 @@ Plans:
 
 **Tasks:**
 - [x] ~~Adaptive load: after each completed workout, AI analyzes tonnage, fatigue scores, and RPE to recommend next-session weights and volume adjustments~~ ✅ DONE (AI-2)
-- [ ] AI program generation: on first use (or on request), AI generates a full PPL weekly schedule tailored to user profile, goals, and available equipment
-- [ ] In-workout dialog: AI coach accessible during active workout session — can answer questions, suggest modifications, and respond to RPE feedback in real time via SSE
-- [ ] Progressive overload engine: systematic recommendations for weight/rep increases based on historical 1RM trends and session performance
+- [x] ~~AI program generation: on first use (or on request), AI generates a full PPL weekly schedule tailored to user profile, goals, and available equipment~~ ✅ DONE (AI-1) — `POST /generate-plan` со схемой zod, `routes/coach.js:33`
+- [x] ~~In-workout dialog: AI coach accessible during active workout session — can answer questions, suggest modifications, and respond to RPE feedback in real time via SSE~~ ✅ DONE (AI-3) — `js/workout-ai.view.js`
+- [x] ~~Progressive overload engine: systematic recommendations for weight/rep increases based on historical 1RM trends and session performance~~ ✅ DONE (AI-4) — `js/progressive-overload.js`
 
 **Success criteria:**
 1. [x] ✅ Post-workout summary includes AI-generated load recommendations for the next session of the same type
-2. [ ] New users receive a generated PPL program within their first session without manual configuration
-3. [ ] AI chat is accessible and functional from within the active workout screen (not only from the AI panel)
-4. [ ] Progressive overload suggestions appear on the exercise selection screen based on 1RM history
+2. [x] ✅ New users receive a generated PPL program within their first session without manual configuration
+3. [x] ✅ AI chat is accessible and functional from within the active workout screen (not only from the AI panel)
+4. [x] ✅ Progressive overload suggestions appear on the exercise selection screen based on 1RM history
 
 **Implementation notes (AI-2):**
 - Hybrid approach: simple progression (+2.5kg) baseline + AI for notes/warnings

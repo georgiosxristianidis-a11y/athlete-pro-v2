@@ -1,5 +1,10 @@
 # Roadmap: Elite Evolution Plan
 
+> Составлен Gemini CLI в июне 2026. **Сверка с кодом 2026-09-12** — вычеркнуто то, что
+> к сентябрю уже стоит в `origin/main`. Живого осталось три пункта, и все три — про железо
+> (остров, пульс, часы). В `docs/ROADMAP_elite_athlete-pro.md` они не заведены: прежде чем
+> брать, решить, роадмап это или отказ.
+
 ## 1. Assessment of Initiatives
 
 | Task | Complexity | Potential | Token Cost | Time Est. |
@@ -15,21 +20,27 @@
 
 ## 2. Structural Phase Plan
 
-### Phase 5.6: Interactive Island Modes (UI/UX)
+### Phase 5.6: Interactive Island Modes (UI/UX) — открыта
 *Goal: Allow users to toggle between data density levels.*
-- [ ] **Logic:** Add state for 'display-mode' (ultra-min, mini, detail).
+- [ ] **Logic:** Add state for 'display-mode' (ultra-min, mini, detail). — `display-mode` в коде острова нет (09-12)
 - [ ] **UI:** Implement 3 distinct layouts in `dynamic-island.js`.
 - [ ] **Interaction:** Quick toggle gesture (e.g., swipe on island) to change modes.
 
-### Phase 6.1: Elite Data & Cloud Sync (Foundational)
-*Goal: Ensure device-to-device communication parity.*
-- [ ] **Supabase Sync V2:** Batching & Offline queues (Required for Watch sync).
-- [ ] **Settings Integration:** Live sync status on Profile page.
+> Осторожно: остров с июня переписан (линия ISL, rest-HUD внутри рамки). Планировать режимы
+> по этому тексту нельзя — сперва перечитать `js/shared/dynamic-island.js`.
 
-### Phase 6.5: Wear OS (Watch 5) - Prototype
+### Phase 6.1: Elite Data & Cloud Sync (Foundational) — ЗАКРЫТА (09-12)
+*Goal: Ensure device-to-device communication parity.*
+- [x] ~~**Supabase Sync V2:** Batching & Offline queues (Required for Watch sync).~~ — `js/sync.js`: очередь `ap-sync-queue`, дедуп по LWW, группировка по стору для батча
+- [x] ~~**Settings Integration:** Live sync status on Profile page.~~ — `js/profile.view/settings.js:82` (`syncStatus`, иконка `sync-connect-icon`, connect/disconnect)
+
+### Phase 6.5: Wear OS (Watch 5) - Prototype — открыта
 *Goal: Real-time biometric feedback in PiP.*
-- [ ] **HR Sync Research:** Prototype Web Bluetooth GATT reader for HR Service.
-- [ ] **Remote Bridge:** API for 'Next Set' trigger from external requests.
+- [ ] **HR Sync Research:** Prototype Web Bluetooth GATT reader for HR Service. — `navigator.bluetooth` в коде нет (09-12)
+- [ ] **Remote Bridge:** API for 'Next Set' trigger from external requests. — нет
+
+> Связано с решением DI-3 из `docs/DELEGATION-PLAN.md`: фейковый BPM в острове оставлен
+> декором (2026-06-15). Живой пульс этот декор заменит — не забыть снять.
 
 ---
 

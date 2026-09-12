@@ -1,7 +1,9 @@
 # Workspace Optimization Roadmap
 
 **Created:** 2026-04-25
-**Last updated:** 2026-04-25 (Phase 1 + 2.1 + 2.2 complete)
+**Last updated:** 2026-09-12 — сверка с кодом `origin/main`, закрытое вычеркнуто
+**Внимание:** каталог `.planning/` стоит в `.claudesignore` и `.cursorignore` — агенты его не
+читают. Всё живое отсюда надо переносить в `docs/` или `.claude/rules/`, иначе оно не работает.
 **Goal:** Premium / elite-tier organization of the codebase for fast AI-assisted edits with minimum token waste.
 **Why:** User runs Claude via subscription (no IDE plugins), so token economy matters. Smaller, well-structured files = fewer reads = lower cost per task.
 
@@ -13,9 +15,13 @@
 | 2.1 — `@ts-check` coverage | ✅ DONE | ~5 min | ~3k |
 | 2.2 — `types.d.ts` | ✅ DONE | ~5 min | ~9k |
 | **2.3 — Split `workout.view.js`** | ✅ DONE | — | — |
-| 2.4 — Inline-handler audit | pending | — | — |
-| 2.5 — Split `claude.view.js` (if painful) | deferred | — | — |
-| Phase 3 (premium tooling) | deferred | — | — |
+| 2.4 — Inline-handler audit | ✅ DONE (09-12) | — | — |
+| 2.5 — Split `claude.view.js` (if painful) | ✅ не нужен (09-12) | — | — |
+| Phase 3 (premium tooling) | 🟨 4 из 6 (09-12) | — | — |
+
+> **Сверка 2026-09-12.** 2.4 закрылась сама: `onclick=` в `js/` не осталось ни одного —
+> обработчики ушли на делегирование `data-action`. 2.5 отпала: `claude.view.js` = 410 строк,
+> порог 800 не перейдён. Из Phase 3 живыми остались только 3.5 и 3.6.
 
 ---
 
@@ -82,11 +88,15 @@ Approximate per-task cost (input + output combined):
 | 2.3c | → Extract `workout.view/drag.js` (_initDrag, _initPlanDrag) | — | S | no | 15m | low | ~150 lines |
 | 2.3d | → Extract `workout.view/handlers.js` (stepWeight, stepReps, toggleSet, etc.) | — | M | yes | 30m | mid | ~400 lines |
 | 2.3e | → `workout.view.js` becomes barrel: re-exports + init wiring | — | S | yes | 10m | low | ~200 lines, public API |
-| 2.4 | Inline-handler audit: list `onclick=` count per file | P2 | S | no | 5m | low | Decide if delegation refactor worth it |
-| 2.5 | Split `claude.view.js` (~700 lines) similarly if becomes painful | P2 | M | no | 45m | mid | Defer until Phase 2.3 lands |
+| ~~2.4~~ | ~~Inline-handler audit: list `onclick=` count per file~~ | P2 | S | no | 5m | low | ✅ 09-12 — `onclick=` в `js/` ноль, всё на `data-action` |
+| ~~2.5~~ | ~~Split `claude.view.js` (~700 lines) similarly if becomes painful~~ | P2 | M | no | 45m | mid | ✅ 09-12 — 410 строк, делить нечего |
 
 **Done criteria:**
-- ✓ No JS file > 800 lines
+- ✗ No JS file > 800 lines — **не выполнен (09-12):** семь файлов за порогом —
+  `dashboard.js` 1207, `shared/athlete-room.js` 1098, `intel.view.js` 1086,
+  `workout.store.js` 1072, `locale.store.js` 1061, `workout.view/handlers.js` 908,
+  `workout.view/modals.js` 822. Порог перерос сам проект, а не рефакторинг провалился:
+  словарь и стор режутся плохо. Критерий нужно либо переписать под реальность, либо снять.
 - ✓ AI can read 1 module = 1 concern (render only / modals only / handlers only)
 - ✓ `import` graph documented
 - ✓ All edits to `workout.view` happen in 1 of 4 small files, not the 2200-line monolith
@@ -102,17 +112,17 @@ Approximate per-task cost (input + output combined):
 
 | # | Task | Priority | Complexity | Critical | Wall time | Tokens | Notes |
 |---|---|:-:|:-:|:-:|:-:|:-:|---|
-| 3.1 | Add `package.json` script `npm run lint` (eslint via CLI) | P2 | S | no | 15m | low | Even without IDE plugin — CLI catches errors |
-| 3.2 | Add `npm run format` (prettier via CLI) | P2 | S | no | 15m | low | Run manually or via git pre-commit |
-| 3.3 | Pre-commit hook: lint + format on staged files | P2 | M | no | 30m | mid | husky + lint-staged. Optional |
-| 3.4 | Lighthouse CI in `package.json` | P2 | M | no | 45m | mid | `npm run perf` → reports. Catches perf regressions |
-| 3.5 | Storybook-lite: `/showcase` route showing all components isolated | P2 | L | no | 120m | high | Excellent for design system review. Single HTML file with all cards/buttons/badges |
-| 3.6 | Visual regression: Playwright screenshots of key screens | P2 | XL | no | 240m | high | Catches UI breaks. Setup-heavy; defer until 3.5 stable |
+| ~~3.1~~ | ~~Add `package.json` script `npm run lint`~~ | P2 | S | no | 15m | low | ✅ 09-12 — `npm run lint` есть, плюс `security:sast` |
+| ~~3.2~~ | ~~Add `npm run format` (prettier via CLI)~~ | P2 | S | no | 15m | low | ✅ 09-12 — `format` + `format:check` |
+| ~~3.3~~ | ~~Pre-commit hook: lint + format on staged files~~ | P2 | M | no | 30m | mid | ✅ 09-12 иначе, чем задумано — хук один, `.githooks/pre-push`, и он тяжелее: гейт + дрейф базы + донорские линии + защита `main` |
+| ~~3.4~~ | ~~Lighthouse CI in `package.json`~~ | P2 | M | no | 45m | mid | ✅ 09-12 — `npm run lhci` (гнать только из worktree) |
+| 3.5 | Storybook-lite: `/showcase` route showing all components isolated | P2 | L | no | 120m | high | ⬜ 09-12 — маршрута нет; в корне лежит `debug-storybook.log` от какого-то захода |
+| 3.6 | Visual regression: Playwright screenshots of key screens | P2 | XL | no | 240m | high | ⬜ 09-12 — визуальных спек в `test/e2e/` нет |
 
 **Done criteria:**
 - ✓ `npm run lint` exits 0
-- ✓ `/showcase` page renders all design tokens visually
-- ✓ Lighthouse score tracked over time
+- ✗ `/showcase` page renders all design tokens visually — не сделано
+- ✓ Lighthouse score tracked over time (`npm run lhci`)
 
 ---
 
