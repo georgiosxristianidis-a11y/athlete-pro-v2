@@ -531,10 +531,17 @@ window._obSetDob = (part, val) => {
 };
 
 window._obQuickStart = () => {
+  // Кнопка стоит на шаге 1, но добраться до неё можно и с заполненного шага 3:
+  // `ob:prev` возвращает назад и персистит черновик. Поэтому пол переживает
+  // Quick Start так же, как goal/exp, — иначе выбранная Female молча
+  // становится 'm' и Navy-формула считает процент жира по мужской ветке.
+  // dob/height/weight перетираются безусловно осознанно: dob собирается из трёх
+  // селектов и в промежутке лежит огрызком (`1990--`), метрики — недонабранным
+  // числом. Валидируемо-бинарен из отброшенных шагов только sex.
   _data = {
     goal: _data.goal || SKIP_PLACEHOLDERS.goal,
     exp: _data.exp || SKIP_PLACEHOLDERS.exp,
-    sex: SKIP_PLACEHOLDERS.sex,
+    sex: isSexChosen(_data.sex) ? _data.sex : SKIP_PLACEHOLDERS.sex,
     dob: SKIP_PLACEHOLDERS.dob,
     weight: SKIP_PLACEHOLDERS.weight,
     height: SKIP_PLACEHOLDERS.height,

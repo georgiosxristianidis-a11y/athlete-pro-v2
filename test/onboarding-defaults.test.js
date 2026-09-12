@@ -119,6 +119,45 @@ describe('F-7 sex is not chosen until the user taps', () => {
     await globalThis.window._obNext();
     assert.equal(snapshotOnboarding().step, 4);
   });
+
+  test('Quick Start keeps the sex already tapped on step 3', async () => {
+    globalThis.window._obSetData({ goal: 'strength' });
+    await globalThis.window._obNext();
+    globalThis.window._obSetData({ exp: 'beginner' });
+    await globalThis.window._obNext();
+    globalThis.window._obSetData({ sex: 'f', dob: '1990-05-15' });
+
+    // Кнопка Quick Start живёт на шаге 1 — сюда возвращаются «назад».
+    await globalThis.window._obPrev();
+    await globalThis.window._obPrev();
+    assert.equal(snapshotOnboarding().step, 1);
+
+    globalThis.window._obQuickStart();
+    const snap = snapshotOnboarding();
+    assert.equal(snap.data.sex, 'f', 'Female must survive Quick Start');
+    assert.equal(snap.data.goal, 'strength');
+    assert.equal(snap.data.dob, SKIP_PLACEHOLDERS.dob);
+
+    const save = DB.Metrics.save;
+    DB.Metrics.save = async () => {};
+    try {
+      await commitOnboarding();
+      assert.equal(await DB.Settings.get('profile.sex'), 'f');
+    } finally {
+      DB.Metrics.save = save;
+    }
+  });
+
+  test('Quick Start from a blank start still falls back to the placeholder', () => {
+    globalThis.window._obQuickStart();
+    assert.equal(snapshotOnboarding().data.sex, SKIP_PLACEHOLDERS.sex);
+  });
+
+  test('a tampered draft cannot smuggle a third sex through Quick Start', () => {
+    globalThis.window._obSetData({ sex: 'x' });
+    globalThis.window._obQuickStart();
+    assert.equal(snapshotOnboarding().data.sex, SKIP_PLACEHOLDERS.sex);
+  });
 });
 
 describe('F-8 privacy is not chosen until the user taps', () => {
