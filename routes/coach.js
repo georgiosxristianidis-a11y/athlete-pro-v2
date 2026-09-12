@@ -5,7 +5,7 @@ import { AIOrchestrator } from '../lib/aiOrchestrator.js';
 import { logInfo, logWarn } from '../lib/logger.js';
 import { asyncHandler } from '../lib/errors.js';
 import { stripSecrets } from '../js/shared/sync-secrets.js';
-import { DEFAULT_AI_ENGINE } from '../js/shared/ai-engine.js';
+import { DEFAULT_AI_ENGINE, keyLooksValid } from '../js/shared/ai-engine.js';
 import { z } from 'zod';
 
 const router = express.Router();
@@ -20,6 +20,20 @@ const _limitOpts = {
 };
 const coachLimiter = rateLimit({ ..._limitOpts, max: 10 });
 const apiLimiter   = rateLimit({ ..._limitOpts, max: 20 });
+
+/**
+ * BYOK, не похожий на ключ, до провайдера не доезжает. Сервер предпочитает
+ * `customKey` ключу окружения, поэтому половина строки в поле настроек
+ * превращала рабочий запрос в 400 API_KEY_INVALID — так недельный отчёт и
+ * падал в поле. Клиент отсекает это же в `aiAuth()`, но гейт на форму обязан
+ * стоять с обеих сторон: в маршруты ходят и мимо интерфейса.
+ * @param {string} engine
+ * @param {string|null|undefined} customKey
+ * @returns {string|undefined}
+ */
+function _safeCustomKey(engine, customKey) {
+  return customKey && keyLooksValid(engine, customKey) ? customKey : undefined;
+}
 
 const generatePlanSchema = z.object({
   workoutHistory: z.array(z.any()).optional().default([]),
@@ -163,6 +177,7 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
   // Клиент уже фильтрует (js/shared/sync-secrets.js), но дверь наружу закрывается
   // с обеих сторон: забытый call-site не должен открывать её заново.
   profile = stripSecrets(profile);
+  customKey = _safeCustomKey(engine, customKey);
 
   // Final sanitization to prevent Gemini 400 errors
   if (!Array.isArray(workouts)) workouts = [];
@@ -241,7 +256,8 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
   const { text, customKey } = parseResult.data;
 
   const { gemini } = await import('../lib/geminiClient.js');
-  const apiKey = customKey || gemini.apiKey;
+  // TTS прибит к Gemini, поэтому и форма ключа проверяется по нему.
+  const apiKey = _safeCustomKey('gemini', customKey) || gemini.apiKey;
   
   if (!apiKey || apiKey === 'dummy-key') {
     return res.status(500).json({ error: 'GOOGLE_GENERATIVE_AI_API_KEY is not configured.' });
@@ -288,7 +304,8 @@ router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = weeklyReportSchema.safeParse(req.body);
   if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { workouts, profile: rawProfile, engine, customKey } = parseResult.data;
+  const { workouts, profile: rawProfile, engine } = parseResult.data;
+  const customKey = _safeCustomKey(engine, parseResult.data.customKey);
   const profile = stripSecrets(rawProfile);
 
   logInfo(req, 'weekly_report_started', `Generating weekly report`);
@@ -307,21 +324,57 @@ If no workouts exist, set score to 0 and encourage them to start.`;
   const prompt = `Workouts (Last 7 Days): ${JSON.stringify(workouts)}
 Profile: ${JSON.stringify(profile)}`;
 
-  const content = await AIOrchestrator.generateJSON({
-    system,
-    prompt,
-    engine,
-    customKey
-  }, req);
-
+  // Вызов стоял ВНЕ try: try ловил только разбор JSON, а падение самого ИИ
+  // (сеть, 400 API_KEY_INVALID, лимит провайдера) уходило asyncHandler'ом в
+  // 500. Пользователь вместо отчёта получал пустой экран — при том что счёт
+  // и сводку по недельным цифрам можно отдать и без модели.
+  let content = null;
   try {
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    const report = jsonMatch ? JSON.parse(jsonMatch[0]) : { score: 0, summary: "Data unreadable. Push harder.", pros: [], cons: [] };
-    res.json({ success: true, report });
+    content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to parse AI report' });
+    logWarn(req, 'weekly_report_ai_failed', err?.message || String(err));
   }
+
+  let report = null;
+  if (content) {
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) report = JSON.parse(jsonMatch[0]);
+    } catch (err) {
+      logWarn(req, 'weekly_report_parse_failed', err?.message || String(err));
+    }
+  }
+
+  res.json({ success: true, report: report || _weeklyReportFallback(workouts), degraded: !report });
 }));
+
+/**
+ * Отчёт без модели. Считается по тем же семи дням, что ушли бы в промпт, —
+ * то есть это не заглушка «данные нечитаемы», а честный минимум: сколько
+ * тренировок, сколько тоннажа, и куда двигаться.
+ * @param {Array<any>} workouts
+ */
+function _weeklyReportFallback(workouts) {
+  const list = Array.isArray(workouts) ? workouts : [];
+  const sessions = list.length;
+  const tonnage = list.reduce((s, w) => s + (Number(w?.tonnage) || 0), 0);
+  if (!sessions) {
+    return {
+      score: 0,
+      summary: 'No sessions logged in the last 7 days. The coach is offline — start with one.',
+      pros: [],
+      cons: ['Zero sessions this week'],
+    };
+  }
+  // Три тренировки в неделю — целевая частота PPL; 100 за неё, дальше потолок.
+  const score = Math.min(100, Math.round((sessions / 3) * 100));
+  return {
+    score,
+    summary: `${sessions} session(s), ${Math.round(tonnage)} kg moved in the last 7 days. The coach is offline right now — these are your own numbers, not its read on them.`,
+    pros: [`${sessions} session(s) logged`],
+    cons: sessions < 3 ? ['Below three sessions this week'] : [],
+  };
+}
 
 const biometricsScanSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
@@ -337,7 +390,8 @@ router.post('/biometrics-scan', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = biometricsScanSchema.safeParse(req.body);
   if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { workouts, profile: rawProfile, engine, customKey } = parseResult.data;
+  const { workouts, profile: rawProfile, engine } = parseResult.data;
+  const customKey = _safeCustomKey(engine, parseResult.data.customKey);
   const profile = stripSecrets(rawProfile);
 
   const system = `You are "Athlete Pro Medical AI".
