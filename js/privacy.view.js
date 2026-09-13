@@ -18,7 +18,7 @@ import {
 } from './privacy.store.js';
 import { isUsageEnabled, setUsageEnabled, getUsageState } from './usage.js';
 import { t, isRu, getLang } from './locale.store.js';
-import { esc } from './shared/utils.js';
+import { esc, haptic } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
 import { on } from './events.js';
 
@@ -192,7 +192,7 @@ async function _setMode(mode) {
     window.Profile.load();
   }
   _flashStatusBar();
-  navigator.vibrate?.(10);
+  haptic(10);
 }
 
 async function _toggleAi() {
@@ -200,7 +200,7 @@ async function _toggleAi() {
   await setAiEnabled(!cur);
   const sw = document.getElementById('sw-privacy-ai');
   if (sw) sw.classList.toggle('on', !cur);
-  navigator.vibrate?.(8);
+  haptic(8);
 }
 
 async function _toggleUsage() {
@@ -208,7 +208,7 @@ async function _toggleUsage() {
   await setUsageEnabled(!cur);
   const sw = document.getElementById('sw-privacy-usage');
   if (sw) sw.classList.toggle('on', !cur);
-  navigator.vibrate?.(8);
+  haptic(8);
 }
 
 /* ════════════════════════════════════════════════════════

@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### DRUM-TICK + A3: haptic gate — единый вход для вибрации (1.27.106)
+
+`js/ui/drum-picker.js:175` звал `navigator.vibrate(4)` и переписывал классы активного
+элемента на каждом пересечении item во время живого инерционного скролла — единственное
+место, где горячий путь и нарушение Haptic Gate совпали в одной строке. Коалесцировано
+через `requestAnimationFrame`: `dirty`/`clientHeight` трипвайры BUG-DRUM-0 остаются
+синхронными на каждый scroll-тик, а тик (haptic + `_updateActive`) — не больше одного на
+кадр. Барабан по-прежнему отдаёт тактильный отклик на каждое пересечение, просто не чаще
+частоты кадра.
+
+Заодно (`A3`, тем же заходом, т.к. отдельная карточка переписала бы эту же строку не
+заметив scroll-обработчик) — прямой `navigator.vibrate` вычищен по всему `js/`: canonical
+`haptic()` из `js/shared/utils.js` (iOS-фолбэк на css-пульс, гейт по `_hasInteracted`)
+теперь единственный вход. Затронуты `profile.js`, `privacy.view.js`,
+`island-settings.view.js`, `plate-calc.js`, `workout.view/handlers.js`,
+`workout.view/modals.js`, `ui/gravity-submit.js`, `ui/drag-number.js`; мёртвая копия
+`_haptic()` в `workout.view/render.js` удалена (ни экспорта, ни вызова). Гард —
+`test/haptic-gate.test.js`, greps `js/**` (за вычетом `utils.js`) на голый
+`navigator.vibrate`, строки-комментарии вырезаются перед матчем.
+
+Карточки `DRUM-TICK` + `A3` (`docs/handoff/HANDOFF_cursor_arch_cards.md`, фаза 2, закрыты).
+
 ### MEASURE-1: протокол перф-замера в репозитории (1.27.105)
 
 `scripts/profile.mjs` был, а протокол его использования жил только в памяти агента —

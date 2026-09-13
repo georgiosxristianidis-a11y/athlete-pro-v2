@@ -23,7 +23,7 @@ import {
 } from '../workout.store.js';
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
-import { esc } from '../shared/utils.js';
+import { esc, haptic } from '../shared/utils.js';
 import { Spring } from '../shared/spring.js';
 import { confirmDialog } from '../shared/confirm.js';
 import { t } from '../locale.store.js';
@@ -40,10 +40,6 @@ import { syncDrumUI, initDrumPickers, flushDrum } from '../ui/drum-picker.js';
 let _restDuration = 90;
 let _focusEi = -1;
 let _tonnageAnim = null;
-
-function _haptic(ms = 10) {
-  if (navigator.vibrate) navigator.vibrate(ms);
-}
 
 /* ════════════════════════════════════════════════════════
    STEPPERS & INPUTS
@@ -134,7 +130,7 @@ export function commitVal(ei, si, type, val) {
    ════════════════════════════════════════════════════════ */
 
 export function setRPE(ei, si, val) {
-  _haptic(8);
+  haptic(8);
   const ex = State.plan[ei];
   if (!ex) return;
   const set = ex.sets[si];
@@ -359,7 +355,7 @@ export async function selectType(type) {
  * Show a context menu for exercise actions (Replace, DB, Copy).
  */
 export async function showExerciseMenu(ei) {
-  _haptic(10);
+  haptic(10);
   const ex = State.plan[ei];
   const _svgSwap = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>`;
   const _svgDumb = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="6.5" y1="12" x2="17.5" y2="12"/><rect x="3" y="9" width="3" height="6" rx="1"/><rect x="18" y="9" width="3" height="6" rx="1"/></svg>`;
@@ -602,7 +598,7 @@ export function _toggleCoreItem(day, idx) {
   const name = items[idx];
   const key = `${day}:${name}`;
   State.coreChecked[key] = !State.coreChecked[key];
-  _haptic(10);
+  haptic(10);
   const el = document.getElementById(`core-item-${idx}`);
   el?.classList.toggle('checked', State.coreChecked[key]);
 }
@@ -647,7 +643,7 @@ export async function _openFocus(ei) {
   overlay.id = 'focus-overlay-wrap';
   overlay.innerHTML = await renderFocusMode(ei);
   document.body.appendChild(overlay);
-  _haptic(30);
+  haptic(30);
 }
 
 export function _closeFocus() {
@@ -751,7 +747,7 @@ export function jumpToNextExercise() {
    ════════════════════════════════════════════════════════ */
 
 export function smartCopy(ei, si) {
-  _haptic(15);
+  haptic(15);
   const ex = State.plan[ei];
   const set = ex.sets[si];
   let source = [...ex.sets].reverse().find((s, idx) => ex.sets.length - 1 - idx < si && s.done);
@@ -768,7 +764,7 @@ export function smartCopy(ei, si) {
 }
 
 export async function smartCoach(ei, si) {
-  _haptic(20);
+  haptic(20);
   const ex = State.plan[ei];
   const set = ex.sets[si];
   const workouts = await DB.Workouts.getAll().catch(() => []);

@@ -1,5 +1,6 @@
 // @ts-check
 import { flag } from '../flags.js';
+import { haptic } from '../shared/utils.js';
 
 const ITEM_H  = 36;
 const VISIBLE = 3;
@@ -170,19 +171,29 @@ function _buildDrum(wrap) {
   _drums.set(key, d);
   _updateActive(d, initIdx);
 
-  /* Haptic + live highlight on each item crossing */
+  /* Haptic + live highlight on each item crossing, coalesced to one write per
+     frame (DRUM-TICK): a fling fires dozens of scroll events between paints,
+     and each one used to run a synchronous vibrate + class write. dirty/
+     clientHeight trust checks stay synchronous below — only the tick itself
+     is deferred. */
   let _hapticIdx = initIdx;
+  let _tickQueued = false;
   track.addEventListener('scroll', () => {
     // A hidden track only "scrolls" when the browser resets it (display:none
     // → scrollTop 0): that read is poison, drop trust instead of marking dirty.
     if (!track.clientHeight) { d.dirty = false; return; }
     if (!d.syncing) d.dirty = true;
-    const cur = Math.round(track.scrollTop / ITEM_H);
-    if (cur !== _hapticIdx) {
-      _hapticIdx = cur;
-      if (navigator.vibrate) navigator.vibrate(4);
-      _updateActive(d, cur);
-    }
+    if (_tickQueued) return;
+    _tickQueued = true;
+    requestAnimationFrame(() => {
+      _tickQueued = false;
+      const cur = Math.round(track.scrollTop / ITEM_H);
+      if (cur !== _hapticIdx) {
+        _hapticIdx = cur;
+        haptic(4);
+        _updateActive(d, cur);
+      }
+    });
   }, { passive: true });
 
   /* Settle: fire state update once scroll stops */

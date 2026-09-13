@@ -77,6 +77,17 @@ export function setupGlobals() {
   globalThis.window ??= {};
   // key present → drum-picker registers the controllable scrollend path
   if (!('onscrollend' in globalThis.window)) globalThis.window.onscrollend = null;
+  // DRUM-TICK pulled in shared/utils.js (haptic()), which attaches a
+  // pointerdown unlock listener to window at module load — this fake window
+  // needs to at least look like an EventTarget or the import throws.
+  if (typeof globalThis.window.addEventListener !== 'function') {
+    globalThis.window.addEventListener = () => {};
+    globalThis.window.removeEventListener = () => {};
+  }
+  // DRUM-TICK coalesces the scroll-tick haptic/highlight write through rAF —
+  // Node has no paint loop, so run it synchronously to keep the contract
+  // tests deterministic (one rAF per scroll tick here, same as one frame).
+  globalThis.requestAnimationFrame ??= (fn) => fn();
   if (!globalThis.navigator) globalThis.navigator = {};
   globalThis.ResizeObserver = class {
     constructor(cb) { this.cb = cb; roInstances.push(this); }

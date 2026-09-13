@@ -345,7 +345,7 @@ export const Profile = (() => {
         window.location.reload();
       }, 400);
     } else {
-      _haptic(40);
+      haptic(40);
       btn.classList.add('armed');
       _deleteTapTimer = setTimeout(() => {
         _deleteTapTimer = null;
@@ -571,7 +571,3 @@ export const Profile = (() => {
     deduplicateDB,
   };
 })();
-
-function _haptic(ms = 10) {
-  if (navigator.vibrate) navigator.vibrate(ms);
-}

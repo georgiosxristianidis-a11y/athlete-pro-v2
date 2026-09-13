@@ -5,7 +5,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { Toast } from '../shell.js';
-import { esc } from '../shared/utils.js';
+import { esc, haptic } from '../shared/utils.js';
 import { confirmDialog } from '../shared/confirm.js';
 import { mountSegPills } from '../ui/seg-pill.js';
 import { t } from '../locale.store.js';
@@ -41,10 +41,6 @@ import {
   PPL_HYBRID_PLAN,
 } from '../workout.store.js';
 import { svgArrow, renderActive } from './render.js';
-
-function _haptic(ms = 10) {
-  if (navigator.vibrate) navigator.vibrate(ms);
-}
 
 /** Numeric coercion for dataset indices — NaN-safe fallback avoids corrupting splice(). */
 function n(v, fallback = 0) {
@@ -310,7 +306,7 @@ export function toggleChecklist(i) {
   _checklistState[i] = !_checklistState[i];
   const item = document.getElementById(`chk-pre-${i}`);
   if (item) item.classList.toggle('checked', _checklistState[i]);
-  _haptic(8);
+  haptic(8);
 }
 
 export function _savePlanAndClose() {
@@ -413,7 +409,7 @@ function _initPlanDrag() {
       lastClientY = e.clientY;
       handle.setPointerCapture(e.pointerId);
       row.classList.add('plan-row-dragging');
-      _haptic(15);
+      haptic(15);
       cachedRects = [];
       list.querySelectorAll('.plan-row').forEach((other) => {
         if (other === row) return;
@@ -618,7 +614,7 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       // W-1: custom:true tells the caller this name is NOT in the library
       // and should be flagged so it's not aliased to a known lift.
       onSelect({ name: customName, custom: true });
-      _haptic(15);
+      haptic(15);
     }
   });
 
@@ -629,7 +625,7 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
     if (name) {
       overlay.remove();
       onSelect({ name, custom: false });
-      _haptic(15);
+      haptic(15);
     }
   });
 
@@ -794,7 +790,7 @@ export async function openReplaceExModal(ei) {
       overlay.remove();
       const nameEl = document.querySelector(`#ex-card-${ei} .exercise-name`);
       if (nameEl) nameEl.textContent = customName;
-      _haptic(15);
+      haptic(15);
       Toast.show(t('train.replace_with', { name: customName }), 'info');
     }
   });
@@ -809,7 +805,7 @@ export async function openReplaceExModal(ei) {
       overlay.remove();
       const nameEl = document.querySelector(`#ex-card-${ei} .exercise-name`);
       if (nameEl) nameEl.textContent = name;
-      _haptic(15);
+      haptic(15);
       Toast.show(t('train.replace_with', { name }), 'info');
     }
   });

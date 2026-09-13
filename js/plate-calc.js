@@ -1,5 +1,6 @@
 import { fmtWeight } from './shared/format.js';
 import { on } from './events.js';
+import { haptic } from './shared/utils.js';
 
 on('pc:setBar', (el) => window.PlateCalc.setBar(+el.dataset.w));
 on('pc:close',  () => window.PlateCalc.close());
@@ -103,7 +104,7 @@ export const PlateCalc = (() => {
 
   function stepWeight(delta) {
     _weight = Math.max(_barWeight, Math.round((_weight + delta) * 100) / 100);
-    navigator.vibrate?.([15]);
+    haptic([15]);
     _render();
   }
   function setBar(kg) {
@@ -127,7 +128,7 @@ export const PlateCalc = (() => {
     document.body.appendChild(_overlay);
     requestAnimationFrame(() => _overlay.classList.add('visible'));
     _render();
-    navigator.vibrate?.([20]);
+    haptic([20]);
   }
 
   function _build() {
