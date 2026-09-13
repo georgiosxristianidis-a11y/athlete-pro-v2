@@ -83,7 +83,6 @@ export const SCREEN_CSS = {
   's-train': ['css/workout.css', 'css/summary.css'],
   's-stats': ['css/analytics.css'],
   's-journal': ['css/journal.css'],
-  's-body': ['css/body-stats.css'],
   's-profile': ['css/profile.css'],
   's-intel': ['css/intel.css'],
   // Экран настроек Острова собран из карточек профиля (.profile-card).

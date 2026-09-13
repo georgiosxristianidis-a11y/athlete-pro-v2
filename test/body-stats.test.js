@@ -245,14 +245,14 @@ describe('view wiring', () => {
   });
 
   test('the re-render after save keeps the host it was mounted into', () => {
-    // The athlete room passes its own node; a bare renderBodyStats() used to
-    // fall back to #body-stats-root and silently leave stale values on screen.
+    // The athlete room passes its own node; a bare renderBodyStats() must
+    // reuse the last host, not silently leave stale values on screen.
     assert.match(
       src,
       /_root = root/,
       'хост не запоминается — ре-рендер в комнате атлета потеряет цель'
     );
-    assert.match(src, /targetEl \|\| _root \|\| document\.getElementById/);
+    assert.match(src, /targetEl \|\| _root;/);
   });
 
   test('an empty input means "leave as is", not "erase"', () => {

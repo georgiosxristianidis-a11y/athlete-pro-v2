@@ -8,8 +8,10 @@
  *
  * A new screen that is not one of the four gets its entry point from the
  * content it belongs to (Journal is reached from the Recent section header on
- * the dashboard) and MUST carry a back control — `s-body` is the counterexample
- * that proves it: it is registered in Nav and reachable from nowhere.
+ * the dashboard) and MUST carry a back control — `s-body` was the counterexample
+ * that proved it: registered in Nav, reachable from nowhere, so it was retired
+ * (A6-follow-up) in favor of the Athlete Room's Metrics tab, which already
+ * embeds the same view.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -63,13 +65,10 @@ test('journal: the dashboard carries the entry point into it', () => {
   assert.match(dash, /Nav\.go\('s-journal'\)/, 'обработчик не ведёт на экран журнала');
 });
 
-test('body (A6): the standalone screen keeps a way back', () => {
-  const view = fs.readFileSync(path.join(REPO_ROOT, 'js', 'body-stats.js'), 'utf8');
-  assert.match(
-    view,
-    /data-action="nav:back"/,
-    'Экран вне таб-бара обязан нести кнопку «назад», иначе он тупик (s-body).'
-  );
+test('body: s-body is fully retired, not a reachable dead end', () => {
+  assert.doesNotMatch(html, /id="s-body"/, 's-body должен быть удалён из index.html, не оставлен тупиком');
+  const app = fs.readFileSync(path.join(REPO_ROOT, 'js', 'app.js'), 'utf8');
+  assert.doesNotMatch(app, /Nav\.on\('s-body'/, "Nav не должен регистрировать мёртвый экран 's-body'");
 });
 
 test('intel (A7): closes through history, not a hard Nav.go home', () => {

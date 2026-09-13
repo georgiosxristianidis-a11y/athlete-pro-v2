@@ -237,7 +237,5 @@ interface Window {
   bsSetSex?: (sex: Sex) => void;
   _loadWorkout?: () => Promise<any>;
   _loadProfile?: () => Promise<any>;
-  _loadBodyStats?: () => Promise<any>;
   _planSetSearch?: (q: string) => void;
-  renderBodyStats?: () => void;
 }

@@ -67,10 +67,10 @@ function bsSave(data) {
 }
 
 /**
- * The screen lives in two hosts — the standalone `#body-stats-root` and the
- * Metrics tab of the athlete room, which passes its own node. A re-render after
- * save has no argument, so the last host is remembered here; without it the
- * athlete room silently kept showing pre-save values.
+ * The only host is the Metrics tab of the athlete room (`ar-body-stats-root`),
+ * which passes its own node. A re-render after save has no argument, so the
+ * last host is remembered here; without it the athlete room silently kept
+ * showing pre-save values.
  * @type {HTMLElement|null}
  */
 let _root = null;
@@ -79,7 +79,7 @@ let _root = null;
 
 /** @param {HTMLElement} [targetEl] */
 export async function renderBodyStats(targetEl) {
-  const root = targetEl || _root || document.getElementById('body-stats-root');
+  const root = targetEl || _root;
   if (!root) return;
   _root = root;
 
@@ -98,23 +98,10 @@ export async function renderBodyStats(targetEl) {
   const entries = enrichEntries(stored, { sex, heightCm });
   const latest = entries[0] || null;
 
-  // Standalone `s-body` is a dead end without its own way back (A6): reached
-  // from nowhere, off the tab bar. Embedded in the Athlete Room's Metrics tab
-  // (`ar-body-stats-root`) it has no history entry of its own — the tab strip
-  // already covers navigation there, so no back button.
-  const isStandalone = root.id === 'body-stats-root';
-
   root.innerHTML = `
     <div class="bs-wrap">
       <div class="bs-header">
         <div class="bs-title-group">
-          ${
-            isStandalone
-              ? `<button class="btn-icon-sm" data-action="nav:back" aria-label="${ru ? 'Назад' : 'Back'}">
-                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg>
-                 </button>`
-              : ''
-          }
           <h2 class="bs-title">${ru ? 'Замеры тела' : 'Body Measurements'}</h2>
         </div>
         <button class="btn-primary bs-add-btn" data-action="bs:edit">

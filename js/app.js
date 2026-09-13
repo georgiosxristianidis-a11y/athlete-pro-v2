@@ -49,13 +49,6 @@ async function _loadProfile() {
   return P;
 }
 
-async function _loadBodyStats() {
-  const mod = await import('./body-stats.js');
-  const fn = mod.renderBodyStats || mod.default || mod;
-  window.renderBodyStats = fn;
-  return fn;
-}
-
 async function _loadIntel() {
   if (window.IntelView) return window.IntelView;
   const { IntelView } = await import('./intel.view.js');
@@ -90,7 +83,6 @@ window.AthleteRoom = {
 };
 window._loadWorkout = _loadWorkout;
 window._loadProfile = _loadProfile;
-window._loadBodyStats = _loadBodyStats;
 window._loadIntel = _loadIntel;
 window._loadAthleteRoom = _loadAthleteRoom;
 
@@ -309,10 +301,6 @@ Nav.on('s-journal', async () => {
   const { Journal } = await import('./journal.view.js');
   window.Journal = Journal;
   await Journal.load();
-});
-Nav.on('s-body', async () => {
-  const renderBodyStats = await _loadBodyStats();
-  renderBodyStats();
 });
 Nav.on('s-profile', async () => {
   const Profile = await _loadProfile();
