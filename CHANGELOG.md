@@ -35,6 +35,28 @@ opacity/размер/background. `will-change` на нём — чистый ра
 Заодно снят ставший избыточным override `will-change: auto` на `.confirm-overlay`.
 PR [#356](https://github.com/georgiosxristianidis-a11y/athlete-pro-v2/pull/356).
 
+Карточка требовала в «Стоп» скриншот до/после и замер кадра по протоколу `MEASURE-1` —
+на момент PR протокол ещё не существовал, закрыто по `npm test` + `test/air-guard.test.js`
+вместо него. Функционально безопасно (air-guard кроет Tier-2 blur), но регрессия кадра, если
+она есть, замером не исключена — джанк на шторках/острове после 1.27.103 первым делом сюда.
+
+### `transition: all` вне зоны гарда PERF-2 (1.27.102)
+
+Гард `test/css-infinite-composite.test.js` смотрит только `css/**` и сам пишет в шапке, что
+инлайновые `<style>` в `js/` и `index.html` грепом не берутся. Три живых адреса сидели ровно
+там: `.nav-btn` (нижний таб-бар, самый тапаемый элемент приложения) и `#status-bar` в
+инлайн-блоке `index.html`, `js/features/pip.js`. Плюс два адреса в `js/onboarding.js`, которых
+не было в исходной разведке карточки.
+
+- везде заменены явными списками свойств (`color`/`transform`, `background-color`/`border-color`,
+  `box-shadow`) вместо `all`;
+- новый гард `test/perf-inline-transition.test.js` держит три поверхности —
+  `css/**`, инлайн `<style>` в `index.html`, `js/**` — на нуле, не путая скобки
+  `cubic-bezier(...)` с верхнеуровневыми запятыми; проверен на поломку (временный
+  `transition: all` красит тест).
+
+PR [#354](https://github.com/georgiosxristianidis-a11y/athlete-pro-v2/pull/354).
+
 ### Airgap закрывает отправку синка, а не только приём (1.27.101)
 
 Гейт приватности живёт в `safeFetch()`, а Supabase SDK ходит наружу своим `fetch` — мимо
