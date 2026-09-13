@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A6-follow-up: снос мёртвого экрана s-body (1.27.108)
+
+A6+A7 закрыл кнопку назад на стандалон-хосте `s-body`, но сама находка «точки входа нет
+ни одной» (`test/nav-law.test.js`) осталась отдельным пунктом. Проверка показала: контент
+не потерян — Body Metrics уже полностью встроен во вкладку «Замеры» Athlete Room
+(`ar-body-stats-root`, `js/shared/athlete-room.js:701`), куда ведёт `pp:openMetrics` из
+паспорта профиля (`js/profile.view/passport-hero.js:10`). Нового пути входа не строил —
+достаточный уже есть, `s-body` был чистым дублем без входа.
+
+Снесено: `Nav.on('s-body', …)` и `_loadBodyStats()` в `js/app.js`, запись `'s-body'` в
+`js/shared/lazy-css.js`, `<div id="s-body">`/`#body-stats-root` в `index.html`, ветка
+`isStandalone` (кнопка назад) и fallback на `#body-stats-root` в `js/body-stats.js` — экран
+теперь рендерится только в переданный узел. Типы `_loadBodyStats`/`renderBodyStats` убраны
+из `js/types.d.ts`.
+
+Гард `test/nav-law.test.js` теперь проверяет обратное — что `s-body` нет ни в разметке,
+ни в `Nav`, вместо теста на кнопку назад у экрана, которого больше нет.
+
 ### A6+A7: nav:back на Body и Intel (1.27.107)
 
 `s-body` (карточка A6) был тупиком — экран зарегистрирован в `Nav`, но без кнопки назад:

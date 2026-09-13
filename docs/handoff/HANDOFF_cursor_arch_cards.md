@@ -54,7 +54,8 @@
 | 4 | **A10** | средняя | backend | S | промпты в routes/coach |
 
 **Закрыто недавно (не брать):** BOOT-TRIM · A4 · A11 (airgap в sync) · F-7/F-8 · analytics field · HYG-6 ·
-GATE-WEEKLY · PERF-HIST · PERF-INLINE · PERF-BLUR · NAV-1 · MEASURE-1 · DRUM-TICK · A3 · A6+A7.
+GATE-WEEKLY · PERF-HIST · PERF-INLINE · PERF-BLUR · NAV-1 · MEASURE-1 · DRUM-TICK · A3 · A6+A7 ·
+A6-follow-up (снос `s-body`).
 
 **Не карточки агента (только Gio):** LAUNCH-10 поле · VOICE-2 поле · HYG-6 полевой хвост.
 
@@ -205,9 +206,14 @@ side-effect на `pointerdown`) валил их на загрузке; докр�
 'body-stats-root'`) — вложенный в Athlete Room `ar-body-stats-root` уже накрыт вкладочной
 навигацией, второй Back там был бы лишним. `intel:close` теперь `history.back()`; Intel
 открывается исключительно через `Nav.go('s-intel')` (`claude.view.js:302`), которая пишет
-history-запись, так что откат всегда попадает туда, откуда пришли. Точки входа в `s-body`
-по-прежнему нет ни одной (см. `test/nav-law.test.js` — старый комментарий про «reachable
-from nowhere» не про эту карточку) — вне scope, отдельная находка.
+history-запись, так что откат всегда попадает туда, откуда пришли.
+
+**Отдельная находка закрыта 14.09 (A6-follow-up).** У `s-body` не было ни одной точки
+входа — проверка показала, что Body Metrics уже полностью дублируется вкладкой «Замеры»
+Athlete Room (`ar-body-stats-root`, вход через `pp:openMetrics` из паспорта профиля).
+Стандалон-экран был чистым дублем, не забытым входом — снесён целиком (`Nav.on('s-body')`,
+`lazy-css`, `#s-body`/`#body-stats-root` в `index.html`, ветка `isStandalone` в
+`body-stats.js`). Гард `test/nav-law.test.js` теперь проверяет, что `s-body` отсутствует.
 
 ---
 
