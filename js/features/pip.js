@@ -166,7 +166,7 @@ export const PiP = (() => {
         border: 1px solid rgba(255,255,255,0.08);
         background: rgba(255,255,255,0.04);
         color: #fff; font-weight: 700; font-size: 13px;
-        cursor: pointer; transition: all 0.2s;
+        cursor: pointer;
       }
       .pip-btn-primary { background: #00e676; color: #000; border: none; }
     `;

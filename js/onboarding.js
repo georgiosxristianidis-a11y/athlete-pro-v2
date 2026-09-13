@@ -483,9 +483,9 @@ function _choiceCard(key, icon, label, sub, color) {
     _step === 1 ? _data.goal === key : _step === 2 ? _data.exp === key : _data.privacy === key;
   return `
     <button class="ob-card ${active ? 'active' : ''}" data-key="${key}" data-action="ob:select"
-            style="--active-c:${color}; position:relative; display:flex; align-items:center; text-align:left; gap:var(--sp-2); padding:var(--sp-3); background:var(--c-surface); border:1px solid ${active ? color : 'var(--c-border)'}; border-radius:var(--r-xl); cursor:pointer; width:100%; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow:hidden; z-index:1;">
+            style="--active-c:${color}; position:relative; display:flex; align-items:center; text-align:left; gap:var(--sp-2); padding:var(--sp-3); background:var(--c-surface); border:1px solid ${active ? color : 'var(--c-border)'}; border-radius:var(--r-xl); cursor:pointer; width:100%; transition:border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow:hidden; z-index:1;">
       ${active ? `<div style="position:absolute; inset:0; background:radial-gradient(circle at left, ${color}20 0%, transparent 80%); z-index:-1;"></div>` : ''}
-      <div style="width:44px; height:44px; border-radius:14px; background:${color}15; color:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow: ${active ? `0 0 16px ${color}40` : 'none'}; transition:all 0.3s ease;">
+      <div style="width:44px; height:44px; border-radius:14px; background:${color}15; color:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow: ${active ? `0 0 16px ${color}40` : 'none'}; transition:box-shadow 0.3s ease;">
         ${icon}
       </div>
       <div style="min-width:0; flex:1;">
@@ -612,9 +612,9 @@ const style = document.createElement('style');
 style.textContent = `
   .animate-in { animation: ob-fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) both; }
   @keyframes ob-fade-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-  .ob-btn-tab { background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-3); padding:var(--sp-1-5); font-size:var(--fs-3); font-weight:var(--fw-bold); cursor:pointer; font-family:inherit; transition:all 0.2s; }
+  .ob-btn-tab { background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-3); padding:var(--sp-1-5); font-size:var(--fs-3); font-weight:var(--fw-bold); cursor:pointer; font-family:inherit; transition:background-color 0.2s, border-color 0.2s, color 0.2s; }
   .ob-btn-tab.active { background:var(--c-accent-bg); border-color:var(--c-accent); color:var(--c-accent); }
-  .ob-fast-skip-btn { background:var(--c-surface); border:1px solid var(--c-border-h); color:var(--c-text-1); font-size:var(--fs-3); font-weight:var(--fw-md); cursor:pointer; min-height:44px; padding:var(--sp-1-5) var(--sp-3); border-radius:24px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:var(--sp-1); font-family:inherit; }
+  .ob-fast-skip-btn { background:var(--c-surface); border:1px solid var(--c-border-h); color:var(--c-text-1); font-size:var(--fs-3); font-weight:var(--fw-md); cursor:pointer; min-height:44px; padding:var(--sp-1-5) var(--sp-3); border-radius:24px; display:inline-flex; align-items:center; gap:var(--sp-1); font-family:inherit; }
   .ob-lang { display:flex; justify-content:flex-end; padding: 0 var(--sp-2); }
   .ob-lang-btn { min-height:44px; min-width:44px; padding:var(--sp-1) var(--sp-2); background:var(--c-bg-3); border:1px solid var(--c-border); font-size:var(--fs-2); font-weight:var(--fw-md); color:var(--c-text-3); cursor:pointer; font-family:inherit; }
   .ob-lang-btn:first-child { border-radius: var(--r-s) 0 0 var(--r-s); }
