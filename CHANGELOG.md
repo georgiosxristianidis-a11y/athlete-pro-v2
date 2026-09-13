@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Рендер Train читает историю раз на экран, а не на упражнение (1.27.102)
+
+`renderActive()` циклом строил карточки упражнений, и каждая уходила в `_computeCoachTarget` →
+`_getLastSessionWeight` → отдельный `DB.Workouts.getAll()` с `.reverse().filter()` поверх.
+Шесть упражнений в плане = шесть полных выгрузок истории подряд, цена растёт линейно с
+историей пользователя — режим «через полгода тупит», который на чистом телефоне не ловится.
+
+- история читается один раз в `renderActive()` и передаётся аргументом в `renderExerciseCard`
+  и цепочку коуч-таргета; `_getLastSessionWeight`/`_computeCoachTarget`/`_getLastSessionSummary`/
+  `_getExerciseHistory` стали синхронными, больше не тянут `getAll()` сами;
+- бут (`_checkBackupReminder`) проверял `workoutCount > 0` полным сканом истории — заменён на
+  `DB.Workouts.getLast(1)`, тот же вопрос одним чтением курсора;
+- кэша не заводили: `renderActive()` по-прежнему делает ровно одно свежее чтение на вызов, риск
+  протухания мимо `_triggerSync` (синк пишет `_putRaw`/`_delRaw` в обход фасада) не возникает.
+
+Карточка `PERF-HIST` (`docs/handoff/HANDOFF_cursor_arch_cards.md`), гард —
+`test/perf.test.js` (число вызовов `getAll()` в `render.js`, сигнатуры, `getLast(1)` в `app.js`).
+
 ### Airgap закрывает отправку синка, а не только приём (1.27.101)
 
 Гейт приватности живёт в `safeFetch()`, а Supabase SDK ходит наружу своим `fetch` — мимо
