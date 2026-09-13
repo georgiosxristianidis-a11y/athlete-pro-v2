@@ -242,6 +242,10 @@ button.pref-row-icon:active,
 .engine-toggle-btn:active {
   transform: scale(var(--press-scale));
 }
+.engine-toggle-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 
 /* Claude Active State (Warm Amber/Orange Glow) */
 .engine-toggle-btn.active.claude-active {
