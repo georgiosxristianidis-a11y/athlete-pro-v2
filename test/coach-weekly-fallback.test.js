@@ -14,13 +14,14 @@
  * провайдера. Гейт на форму ключа обязан стоять с обеих сторон — клиент
  * отсекает в `aiAuth()`, но в маршруты ходят и мимо интерфейса.
  */
-import { describe, test, before, after } from 'node:test';
+import { describe, test, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { startServer } from '../server.js';
+import { AIOrchestrator } from '../lib/aiOrchestrator.js';
 import { keyLooksValid } from '../js/shared/ai-engine.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -31,6 +32,7 @@ const code = (rel) =>
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 let server, baseUrl;
+const realGenerateJSON = AIOrchestrator.generateJSON;
 
 before(async () => {
   server = await startServer(0);
@@ -39,6 +41,21 @@ before(async () => {
 });
 
 after(() => new Promise((resolve) => server.close(resolve)));
+
+// Stub must not leak: with a live key in .env, generateJSON would hit Gemini
+// and the fallback asserts (degraded / local score) would fail or take ~17s.
+afterEach(() => {
+  AIOrchestrator.generateJSON = realGenerateJSON;
+});
+
+/** Force the weekly-report catch path without a network round-trip. */
+function stubProviderFailure() {
+  AIOrchestrator.generateJSON = async () => {
+    const err = new Error('forced provider failure for fallback test');
+    err.code = 'AI_TEST_STUB';
+    throw err;
+  };
+}
 
 const postWeekly = (body) =>
   fetch(`${baseUrl}/api/coach/weekly-report`, {
@@ -49,6 +66,7 @@ const postWeekly = (body) =>
 
 describe('/weekly-report — отчёт вместо 500, когда ИИ недоступен', () => {
   test('падение модели отдаёт отчёт, а не пятисотку', async () => {
+    stubProviderFailure();
     const res = await postWeekly({
       workouts: [
         { type: 'push', tonnage: 5200, timestamp: Date.now() },
@@ -67,14 +85,16 @@ describe('/weekly-report — отчёт вместо 500, когда ИИ нед
   });
 
   test('запасной отчёт честно помечен degraded', async () => {
+    stubProviderFailure();
     const res = await postWeekly({ workouts: [{ type: 'push', tonnage: 1000 }], profile: {} });
     const body = await res.json();
-    // В тестовой среде ключа провайдера нет, значит путь всегда запасной.
+    // Stub forces the catch path even when .env has a live provider key.
     assert.equal(body.degraded, true, 'запасной отчёт выдаёт себя за ответ модели');
     assert.match(body.report.summary, /coach is offline/i);
   });
 
   test('пустая неделя — нулевой счёт, а не выдуманный', async () => {
+    stubProviderFailure();
     const res = await postWeekly({ workouts: [], profile: {} });
     const body = await res.json();
     assert.equal(body.report.score, 0);
@@ -82,6 +102,7 @@ describe('/weekly-report — отчёт вместо 500, когда ИИ нед
   });
 
   test('счёт считается по своим же цифрам, а не берётся с потолка', async () => {
+    stubProviderFailure();
     const three = await (
       await postWeekly({ workouts: [{ tonnage: 1 }, { tonnage: 1 }, { tonnage: 1 }] })
     ).json();
