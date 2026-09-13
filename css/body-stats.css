@@ -53,6 +53,12 @@
   gap: var(--sp-2);
   margin-bottom: var(--sp-1);
 }
+.bs-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
 .bs-title {
   font-size: var(--fs-4);
   font-weight: var(--fw-black);
