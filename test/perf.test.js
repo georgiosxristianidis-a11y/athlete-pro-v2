@@ -55,4 +55,34 @@ describe('Phase 2 — Performance post-conditions', () => {
     );
   });
 
+  test('PERF-HIST: render.js reads workout history once per render, not once per exercise', () => {
+    const src = readText('js/workout.view/render.js');
+    const calls = (src.match(/DB\.Workouts\.getAll\(\)/g) || []).length;
+    assert.equal(
+      calls,
+      1,
+      'render.js should call DB.Workouts.getAll() exactly once (in renderActive) — ' +
+        '_getLastSessionWeight/_computeCoachTarget/_getLastSessionSummary/_getExerciseHistory ' +
+        'must take the history as an argument instead of fetching it themselves'
+    );
+  });
+
+  test('PERF-HIST: renderExerciseCard and the coach-target chain take workouts as an argument', () => {
+    const src = readText('js/workout.view/render.js');
+    assert.match(src, /export async function renderExerciseCard\(ex, ei, workouts\)/);
+    assert.match(src, /_computeCoachTarget\(ex\.name, workouts\)/);
+  });
+
+  test('PERF-HIST: boot backup-reminder check does not read the full workout history just to test count > 0', () => {
+    const src = readText('js/app.js');
+    assert.ok(
+      !src.includes('DB.Workouts.getAll()'),
+      'boot backup-reminder still does a full table scan — shouldRemindBackup only needs workoutCount > 0'
+    );
+    assert.ok(
+      src.includes('DB.Workouts.getLast(1)'),
+      'boot backup-reminder should use DB.Workouts.getLast(1) — a single cursor hit instead of getAll()'
+    );
+  });
+
 });

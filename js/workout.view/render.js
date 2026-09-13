@@ -125,24 +125,26 @@ function _haptic(ms = 10) {
    DB HELPERS
    ════════════════════════════════════════════════════════ */
 
-export async function _getLastSessionWeight(exerciseName) {
-  const workouts = await DB.Workouts.getAll();
+/**
+ * @param {string} exerciseName
+ * @param {import('../db.js').WorkoutRecord[]} workouts — caller-fetched, one read for the whole render
+ */
+export function _getLastSessionWeight(exerciseName, workouts) {
   const last = latestWorkoutForNames(workouts, [exerciseName]);
   const ex = last?.exercises?.find((e) => e.name === exerciseName);
   return ex?.sets?.[0]?.weight || 0;
 }
 
-export async function _computeCoachTarget(exerciseName) {
-  const last = await _getLastSessionWeight(exerciseName);
+export function _computeCoachTarget(exerciseName, workouts) {
+  const last = _getLastSessionWeight(exerciseName, workouts);
   if (!last || last <= 0) return null;
   const raw = last * 1.025;
   const target = Math.round(raw / 2.5) * 2.5;
   return { target, last };
 }
 
-export async function _getLastSessionSummary(exerciseName) {
+export function _getLastSessionSummary(exerciseName, workouts) {
   try {
-    const workouts = await DB.Workouts.getAll();
     const last = latestWorkoutForNames(workouts, [exerciseName]);
     const ex = last?.exercises?.find((e) => e.name === exerciseName);
     const sets = (ex?.sets || []).filter((s) => s.done && s.reps);
@@ -153,8 +155,7 @@ export async function _getLastSessionSummary(exerciseName) {
   }
 }
 
-export async function _getExerciseHistory(exerciseName) {
-  const workouts = await DB.Workouts.getAll();
+export function _getExerciseHistory(exerciseName, workouts) {
   return workouts
     .filter((w) => (w.exercises || []).some((e) => e.name === exerciseName))
     .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
@@ -356,6 +357,9 @@ export async function renderActive() {
       ${await (async () => {
         let currentBlock = '';
         const cards = [];
+        // Один вызов на весь экран — раньше renderExerciseCard тянул это
+        // сам, N упражнений = N чтений всей истории (PERF-HIST).
+        const workouts = await DB.Workouts.getAll();
 
         // Номер блока больше не пишется словом: римскую цифру заменил ряд
         // полосок (blockTicks) — позиция читается взглядом, без перевода
@@ -389,7 +393,7 @@ export async function renderActive() {
             `);
           }
 
-          cards.push(await renderExerciseCard(ex, ei));
+          cards.push(await renderExerciseCard(ex, ei, workouts));
         }
         return cards.join('');
       })()}
@@ -435,10 +439,13 @@ async function getMuscleBadge(exerciseName) {
   return `<span class="muscle-badge ${normalized}">${muscle.toUpperCase()}</span>`;
 }
 
-export async function renderExerciseCard(ex, ei) {
+/**
+ * @param {import('../db.js').WorkoutRecord[]} workouts — full history, fetched once by renderActive()
+ */
+export async function renderExerciseCard(ex, ei, workouts) {
   const doneSets = ex.sets.filter((s) => s.done).length;
   const setRows = await Promise.all(ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)));
-  const coach = await _computeCoachTarget(ex.name);
+  const coach = _computeCoachTarget(ex.name, workouts);
   const muscleBadge = await getMuscleBadge(ex.name);
 
   const firstUndoneIdx = ex.sets.findIndex((s) => !s.done);

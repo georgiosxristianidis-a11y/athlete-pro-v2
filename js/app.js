@@ -202,7 +202,9 @@ async function _checkBackupReminder() {
     const [lastExportAt, lastRemindAt, workouts] = await Promise.all([
       DB.Settings.get(K_LAST_EXPORT, 0),
       DB.Settings.get(K_LAST_REMIND, 0),
-      DB.Workouts.getAll(),
+      // shouldRemindBackup only checks workoutCount > 0 — no need for the
+      // full history read (PERF-HIST): one cursor hit is enough.
+      DB.Workouts.getLast(1),
     ]);
     if (
       !shouldRemindBackup({
