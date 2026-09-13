@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Карточка `PERF-HIST` (`docs/handoff/HANDOFF_cursor_arch_cards.md`), гард —
 `test/perf.test.js` (число вызовов `getAll()` в `render.js`, сигнатуры, `getLast(1)` в `app.js`).
 
+### PERF-BLUR: снят will-change: backdrop-filter в четырёх местах (1.27.103)
+
+`.modal-overlay`, `.modal-sheet`/`.claude-sheet`, `.ar-crop-modal`, `.island` держали
+composited-слой под blur постоянно, хотя сам blur статичен — анимируются только
+opacity/размер/background. `will-change` на нём — чистый расход GPU/батареи без пользы.
+Заодно снят ставший избыточным override `will-change: auto` на `.confirm-overlay`.
+PR [#356](https://github.com/georgiosxristianidis-a11y/athlete-pro-v2/pull/356).
+
 ### Airgap закрывает отправку синка, а не только приём (1.27.101)
 
 Гейт приватности живёт в `safeFetch()`, а Supabase SDK ходит наружу своим `fetch` — мимо
