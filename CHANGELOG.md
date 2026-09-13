@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### MEASURE-1: протокол перф-замера в репозитории (1.27.105)
+
+`scripts/profile.mjs` был, а протокол его использования жил только в памяти агента —
+каждая перф-карточка мерила заново, ловя одни и те же четыре ловушки (CPU-throttle не под
+целевое устройство, headless-сдвиг ~2.6 с на этой машине, немой онбординг без сида IDB,
+`startPreciseCoverage` искажает тайминги). Протокол на 10 строк лёг в
+`.claude/rules/architecture.md` § «Перф-замер (MEASURE-1)», файл добавлен в `paths: scripts/**`.
+
+Валидация — прогон `PERF-HIST` до/после по протоколу (`--cpu=1 --coverage=0 --seed=120`,
+worktree на `246ebbf` вs `d700b9c`): Train tap→paint 22 → 15 ms (дельта −7 ms, направление
+совпадает с фиксом), Stats 23→11 ms, p95 скролла 22.8→18.3 ms. Cold FCP/LCP не сдвинулись
+за пределы шума — ожидаемо, фикс не трогал бут. Абсолютные headless-числа в отчёты не идут,
+только дельты; `PERF_PROFILE.json` добавлен в `.gitignore`.
+
+Карточка `MEASURE-1` (`docs/handoff/HANDOFF_cursor_arch_cards.md`, фаза 0, закрыта).
+
 ### NAV-1: быстрая серия тапов больше не теряет последний переход (1.27.105)
 
 `js/shell.js:36` сравнивал новый id с `_current`, который двигался только внутри

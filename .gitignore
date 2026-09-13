@@ -112,3 +112,4 @@ scripts/_poc_*.py
 scripts/phase-verify.js
 scripts/verify-phase4.js
 scripts/version-manager.js
+/PERF_PROFILE.json
