@@ -9,30 +9,35 @@
 > **Пересверка на `1.27.99`** (после влития #314 полевой аналитики, #328 boot-trim,
 > #297 weekly-fallback и пачек HYG-6 A/B/C). Три правки по факту кода, все вниз по тексту
 > помечены «09-12»: хвост A14 закрыт, арифметика §1 не сходилась, A11 опаснее, чем стояло.
+>
+> **Пересчёт под закрытую A11 (09-13, `1.27.101`).** PR #345 закрыл гейт приватности на всех
+> четырёх выходах в сеть — A11 первой из «open» перешла в `done`. Архитектура 66 → **68.5%**,
+> долг 12 → **18%**, слой sync 60 → **85%**. Остаточный риск вынесен в §5: барьер не общий,
+> он держится на ручной проверке в каждой функции.
 
 ## Сводка
 
 | Метрика | Значение | Как читать |
 |---|---|---|
-| **Архитектура в целом** | **66%** | Зрелость слоёв (ниже). Не «сколько фич». |
-| **Долг аудита закрыт** | **12%** | 1 `done` + 2 `partial` из 17 (A4 + A14/A15). |
+| **Архитектура в целом** | **68.5%** | Зрелость слоёв (ниже). Не «сколько фич». |
+| **Долг аудита закрыт** | **18%** | 2 `done` + 2 `partial` из 17 (A4/A11 + A14/A15). |
 | **Этап 2 роадмапа** (`ROADMAP` §2) | **~55%** | Store/View + нарезка монолитов. |
 | **Этап 3 роадмапа** (`ROADMAP` §3) | **~70%** | Thin `server.js` есть; промпты/auth — нет. |
 | **LAUNCH-код** | **~97%** | Код трека влит; осталось поле Gio. |
 | **BOOT-TRIM** | **закрыт** | PR #321 + #328 · `test/boot-graph.test.js` |
 
 > **Поправка арифметики (09-12).** Стояло «60%» при том, что сумма вкладов в §1 давала 65.0 —
-> итог не пересчитывали после правок весов, и скоркард занижал себя на пять пунктов. Сейчас
-> 66.0: +1 за `privacy.view` с бута (98→100% по boot graph, 85→95% по Privacy), −0.5 за
+> итог не пересчитывали после правок весов, и скоркард занижал себя на пять пунктов. Тогда
+> вышло 66.0: +1 за `privacy.view` с бута (98→100% по boot graph, 85→95% по Privacy), −0.5 за
 > честную оценку sync (65→60%, см. A11). Итог обязан равняться сумме столбца «Вклад» —
-> если не равен, верить столбцу, а не шапке.
+> если не равен, верить столбцу, а не шапке. Сейчас там 68.5 (sync 60→85 за A11).
 
 Пересчёт: при закрытии пункта меняй статус в таблицах → пересчитай две верхние строки.
 Формулы внизу файла.
 
 ---
 
-## 1. Зрелость слоёв (→ 60%)
+## 1. Зрелость слоёв (→ 68.5%)
 
 Веса фиксированы. «Done%» — экспертная оценка по коду на дату замера.
 
@@ -43,10 +48,10 @@
 | Навигация / shell | 10% | 85% | 8.5 | 4 вкладки + overlay registry; `s-body` без `nav:back` |
 | IndexedDB / data | 15% | 90% | 13.5 | `js/db/*` v4, facade, миграции, soft-delete workouts |
 | Backend wiring | 10% | 75% | 7.5 | Thin `server.js`; жир в `routes/coach.js` |
-| Sync / privacy enforcement | 10% | 60% | 6.0 | `safeFetch` + LWW; airgap только в `pull()`; очередь `push`→`process()` бьёт в Supabase SDK напрямую, мимо `safeFetch` |
+| Sync / privacy enforcement | 10% | 85% | 8.5 | `safeFetch` + LWW; airgap закрыт на всех четырёх выходах — `process()`, `pull()`, keep-alive, `signIn()` (#345, `_netBlocked()`), поведенческий гард `test/sync-privacy-gate.test.js`. Не 100%: барьер не общий, см. §5 |
 | PWA / SW / boot graph | 5% | 100% | 5.0 | `build:sw`, two-phase; с бута сняты Athlete Room / Integrity / panda (#321) и `privacy.view` / `rest-timer` / `pip` (#328) |
 | Контракты / Integrity | 5% | 15% | 0.75 | `integrity.js` жив, **импорта и вызова нет** (снят с бута) |
-| **Итого** | 100% | | **66.0** | сумма столбца «Вклад» |
+| **Итого** | 100% | | **68.5** | сумма столбца «Вклад» |
 
 ### Store/View по экранам (среднее → 55%)
 
@@ -95,10 +100,11 @@
 | **BOOT-TRIM, второй заход** — `privacy.view` / `rest-timer` / `pip` с критического пути | PR #328 · 1.27.99 | `app.js` держит только `privacy.store`; `rest-timer` ушёл в динамический `import()` — закрывает хвост A14 по privacy |
 | Полевая аналитика — период 7/30/90, тап по индексу, монотонные кривые | PR #314 · 1.27.99 | `test/analytics-charts.test.js`; движок sparkline вынесен в `js/shared/sparkline.js` |
 | Недельный отчёт переживает падение ИИ; огрызок BYOK не уезжает | PR #297 · 1.27.99 | `test/coach-weekly-fallback.test.js` — **но гард зелёный только без ключа провайдера, см. §7** |
+| **A11** — airgap закрывает отправку синка, а не только приём | PR #345 · 1.27.101 | `_netBlocked()` на `process`/`pull`/keep-alive/`signIn`; `test/sync-privacy-gate.test.js`. Ломался не дефолт, а **отзыв согласия**: вошёл в Cloud → переключился в airgap → сессия жива → очередь продолжала отгружать. Очередь при этом не выбрасывается — вернулся в Cloud, накопленное доезжает |
 
 ---
 
-## 3. Долг аудита — backlog (→ 12% закрыто)
+## 3. Долг аудита — backlog (→ 18% закрыто)
 
 Статусы: `open` · `partial` · `done`. Считать «закрытым» только `done`.
 
@@ -114,7 +120,7 @@
 | A8 | Тонкий `dashboard.store` (read-модель) | **open** | нет `js/dashboard.store.js` | Сначала данные дома, потом нарезка HTML |
 | A9 | Intel: сеть/DB из view → store/engine | **open** | `intel.view.js` | Вынести fetch/SSE/planned |
 | A10 | Промпты коуча в `lib/prompts/` | **open** | `routes/coach.js` `_buildSystemPrompt` | Не менять SSE; только вынести строки |
-| A11 | Airgap-гейт в `SyncManager.process()` / `push` | **open** | `sync.js:52` — `push()` кладёт в очередь и дёргает `process()` без проверки режима; airgap стоит только в `pull()` (`:258`). **Хуже, чем выглядело (09-12):** `process()` шлёт через `supabase.from(table).upsert` напрямую, `safeFetch` его не прикрывает — в airgap данные всё равно уедут при живой сессии Supabase. Плюс комментарий на `:258` ссылается на «push privacy gate», которого нет | Как у `pull`; severity — приватность, не гигиена |
+| A11 | Airgap-гейт в `SyncManager.process()` / `push` | **done** (09-13) | `_netBlocked()` в `js/sync.js` закрывает `process()`, `pull()`, keep-alive и `signIn()`; гард `test/sync-privacy-gate.test.js` шпионит по объекту `supabase`, а не по исходнику. PR #345 · `7b8304e` · 1.27.101 | — |
 | A12 | Снять Firebase-призрак (CSP + endpoint) | **open** | `routes/integrations.js` `/firebase-config`; smoke ждёт endpoint | Отдельный PR + smoke |
 | A13 | Профиль: один владелец экрана | **open** | `profile.js` + store + view | Не одним PR с A8 |
 | A14 | Athlete Room / Island не на critical path | **partial** | Комната lazy (#321); `privacy.view` с бута снят (#328, `app.js` импортирует только `privacy.store`). Island **всё ещё eager**: static import `app.js:14` + `modulepreload` в `index.html:111` | Остался один Island. Отдельная карточка — снимать вместе с `dynamic-island.css` |
@@ -122,9 +128,9 @@
 | A16 | Мёртвый `lib/tokenUsage.js` | **open** | нет импортеров | Удалить или подключить |
 | A17 | `longTermStats` в схеме без использования | **open** | `coach.js` принимает и передаёт в `_buildSystemPrompt`, в шаблон **не попадает** | Убрать поле или прокинуть в prompt |
 
-**Чистый `done`: 1/17 (A4).**  
+**Чистый `done`: 2/17 (A4, A11).**  
 **Partial: A14, A15.**  
-**12%** = `(1 + 0.5×2) / 17`.
+**18%** = `(2 + 0.5×2) / 17` = 17.6, округление вверх.
 
 Продуктовые закрытия (F-7/F-8, motion, analytics field, BOOT-TRIM) в A1–A17 не входят, кроме пересечения A14.
 
@@ -140,8 +146,8 @@
 2. **A1** — `completeSession` в store *(M, главный флоу)*
 3. **A3** — haptic gate, файл за файлом *(S–M)*
 4. **A6 + A7** — `nav:back` body + Intel *(S)*
-5. **хвост A14** — `privacy.view` с бута *(S; не вместе с Island)*
-6. **A11** — airgap в `push`/`process()` *(S, privacy)*
+5. ~~**хвост A14** — `privacy.view` с бута~~ ✅ #328; из A14 остался Island — отдельной карточкой
+6. ~~**A11** — airgap в `push`/`process()`~~ ✅ #345 · 1.27.101
 7. **A5** — константы блоков без DOM-модуля *(S)*
 8. **A8** — `dashboard.store` read-модель *(M)*
 9. **A10 / A12 / A16 / A17** — backend hygiene *(S)*
@@ -160,7 +166,7 @@ React / бандлер / TypeScript-миграция — **не брать**.
 | Симметрия Store/View | Сторы чистые; данные пишут views → новый код копирует гибрид |
 | Доменный API сессии | Complete/cancel размазаны; тесты бьют UI |
 | Контракт-first | Integrity снят с бута и не вызывается — канон в `architecture.md` врёт |
-| Privacy enforcement = политика | `pull` знает airgap; очередь `push`/`process` — слабее |
+| Privacy enforcement = политика, а не барьер | A11 закрыта, но способом «проверка в каждой функции»: `safeFetch()` прикрывает общий `fetch`, а Supabase SDK ходит своим — под него подложить обёртку нельзя, поэтому `_netBlocked()` стоит вручную на четырёх точках. Пятая появится молча: новая функция с сетью в `sync.js` попадёт наружу в airgap, и гард #345 её не увидит — он перечисляет вызовы поимённо. Настоящее закрытие — один барьер на выходе модуля |
 | Промпты ≠ транспорт | Этап 6 роадмапа упирается в `routes/coach.js` |
 
 Не долг и не опция: React (и другие UI-фреймворки) — **не ставить**; стек остаётся Vanilla JS.
@@ -207,7 +213,8 @@ React / бандлер / TypeScript-миграция — **не брать**.
 | `.claude/rules/architecture.md` | Канон Store/View |
 | `docs/ROADMAP_elite_athlete-pro.md` | Этапы 1–8 (aspirational) |
 | `docs/THREAT_MODEL.md` | Следующая фаза аудита — безопасность |
-| `docs/handoff/HANDOFF_launch_track.md` | LAUNCH / поле / BOOT-TRIM |
+| `docs/handoff/HANDOFF_launch_track.md` | LAUNCH / поле / BOOT-TRIM / AI-1 |
+| `docs/handoff/HANDOFF_cursor_arch_cards.md` | Открытые карточки Cursor с метками приоритета |
 | `docs/LAUNCH_CHECKLIST.md` | Gio gate |
 | `docs/DELEGATION-PLAN.md` | Другая очередь (UI/токены/фазы 0–5) — не путать |
 | `npm run scorecard` | Другой scorecard — агенты/PR, не архитектура |
