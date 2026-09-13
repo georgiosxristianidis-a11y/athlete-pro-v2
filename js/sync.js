@@ -33,6 +33,21 @@ export const SyncManager = (() => {
 
   /** @typedef {{ store: string, data: any, timestamp: number, retry: number }} SyncTask */
 
+  /**
+   * Дверь наружу у этого модуля одна — Supabase SDK, и ходит он своим `fetch`,
+   * мимо `safeFetch()` из privacy.store.js. Общий барьер приватности сюда не
+   * достаёт, поэтому режим спрашивается здесь, на входе в каждую функцию,
+   * которая трогает сеть: process(), pull(), keep-alive, signIn().
+   *
+   * Гейт закрывает ОТПРАВКУ, а не запись в очередь: локальный журнал в
+   * localStorage продолжает вестись (push ниже), и при возврате в Cloud
+   * накопленное доезжает. Выбросить задачи было бы потерей данных, а не
+   * приватностью — наружу они всё равно не уходят, пока режим airgap.
+   */
+  function _netBlocked() {
+    return getPrivacyMode() === 'airgap';
+  }
+
   // ── Key extractor per store (for LWW deduplication) ─────────────────────
   function _recordKey(store, data) {
     if (store === 'workouts')    return `workouts::${data.id ?? data.timestamp}`;
@@ -83,6 +98,7 @@ export const SyncManager = (() => {
    * Process all pending tasks in the queue with LWW conflict resolution.
    */
   async function process() {
+    if (_netBlocked()) return;   // до supabase.auth.getUser(): он сам по себе запрос наружу
     if (_processing || !navigator.onLine) return;
 
     const tasks = _loadQueue();
@@ -255,7 +271,7 @@ export const SyncManager = (() => {
    * Gated identically to push (skipped in air-gapped mode) and requires auth.
    */
   async function pull() {
-    if (getPrivacyMode() === 'airgap') return;     // mirror the push privacy gate
+    if (_netBlocked()) return;     // тот же гейт, что и на push-половине
     if (_pulling || !navigator.onLine) return;
 
     let user = null;
@@ -326,6 +342,11 @@ export const SyncManager = (() => {
   function _startKeepAlive() {
     if (_keepAliveTimer) return;
     _keepAliveTimer = setInterval(async () => {
+      // Режим спрашивается на каждом тике, а не при заводе таймера: пользователь
+      // переключается в airgap с живым таймером, и refreshSession продолжал бы
+      // стучаться в Supabase каждые 10 минут. Таймер при этом не гасим — вернулся
+      // в Cloud, и следующий же тик работает без перезахода.
+      if (_netBlocked()) return;
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
@@ -381,6 +402,9 @@ export const SyncManager = (() => {
   }
 
   async function signIn() {
+    // Анонимная сессия — это и есть право возить данные. В airgap движок не
+    // выдаёт его себе сам: сперва осознанная смена режима в настройках.
+    if (_netBlocked()) return null;
     try {
       _status = 'syncing';
       _updateUI();
