@@ -31,7 +31,7 @@
 |---|---|---|
 | **0 — вернуть измеримость** | `MEASURE-1` закрыта | `GATE-WEEKLY` закрыт (PR#351 — стаб `generateJSON` в `coach-weekly-fallback.test.js`). Протокол замера теперь в репо, фаза выполнена |
 | **1 — кадр и отзыв** | `MOTION-FIX` | `PERF-HIST`/`PERF-INLINE`/`PERF-BLUR` закрыты — фаза выполнена. `MOTION-FIX` ждёт LAUNCH-10 |
-| **2 — стабильность ввода** | `DRUM-TICK` (+`A3` тем же заходом) · `A6+A7` | `NAV-1` закрыта. Тап и жест доходят до приложения ровно один раз и туда, куда просили |
+| **2 — стабильность ввода** | `DRUM-TICK`+`A3` закрыты · `A6+A7` | `NAV-1` закрыта. Тап и жест доходят до приложения ровно один раз и туда, куда просили |
 | **3 — архитектура под рост** | `A1` → `A8` → правило `A15` → `A2` → `A5` → `A9`/`A13` | Берётся, когда кадр уже ровный. `A8` добивает `PERF-HIST` на Home |
 | **4 — гигиена и поверхность** | `A14-хвост` · `A12` · `A16+A17` · `A10` | Ни кадра, ни стабильности — чистка |
 | **вне фаз** | `AI-1` | Блокер раздачи ссылки. Кадра не касается, но держится первым |
@@ -41,8 +41,6 @@
 | Фаза | ID | Важность | Тип | Размер | Одной строкой |
 |---|---|---|---|---|---|
 | — | **AI-1** | блокер (до ссылки) | дыра · UX · backend | S–M | Anthropic в UI → 500 |
-| 2 | **DRUM-TICK** | средняя | скорость · закон | S | haptic на каждый тик скролла барабана |
-| 2 | **A3** | средняя | качество · закон | S–M | vibrate в обход haptic() |
 | 2 | **A6+A7** | средняя | UX · дыра | S | body/Intel без нормального Back |
 | 3 | **A1** | высокая | качество · архитектура | M | completeSession в handlers |
 | 3 | **A8** | высокая (рост) | качество · скорость | M | нет dashboard.store |
@@ -57,7 +55,7 @@
 | 4 | **A10** | средняя | backend | S | промпты в routes/coach |
 
 **Закрыто недавно (не брать):** BOOT-TRIM · A4 · A11 (airgap в sync) · F-7/F-8 · analytics field · HYG-6 ·
-GATE-WEEKLY · PERF-HIST · PERF-INLINE · PERF-BLUR · NAV-1 · MEASURE-1.
+GATE-WEEKLY · PERF-HIST · PERF-INLINE · PERF-BLUR · NAV-1 · MEASURE-1 · DRUM-TICK · A3.
 
 **Не карточки агента (только Gio):** LAUNCH-10 поле · VOICE-2 поле · HYG-6 полевой хвост.
 
@@ -126,6 +124,14 @@ BUG-DRUM-0 (скрытый барабан обнуляет `scrollTop`), а не
 **Стоп.** Ноль прямых `navigator.vibrate` в файле; на один кадр не больше одной записи
 классов; барабан по-прежнему отдаёт тик на каждое пересечение (тактильность не теряем).
 
+**Стоп — закрыто 13.09.** `dirty`/`clientHeight` трипвайры остались синхронными на каждый
+scroll-тик; сам тик (haptic + `_updateActive`) заведён через `requestAnimationFrame` — не
+больше одной записи на кадр. Тестовые харнессы (`test/drum-harness.js`, `test/drum-init.test.js`)
+держали `window` без `addEventListener` — импорт `haptic()` из `shared/utils.js` (модульный
+side-effect на `pointerdown`) валил их на загрузке; докручены no-op стабы
+`addEventListener`/`removeEventListener` + синхронный `requestAnimationFrame`. Полный
+прогон `test/drum-contract.test.js` + `test/drum-init.test.js` зелёный (32/32).
+
 ---
 
 ### A2 — живой Integrity.check после lazy load
@@ -168,6 +174,18 @@ BUG-DRUM-0 (скрытый барабан обнуляет `scrollTop`), а не
 **Где.** grep `navigator.vibrate` под `js/` · заменить на `haptic()`.
 
 **Стоп.** Ноль прямых вызовов вне `utils.js`; опционально тест-гард.
+
+**Стоп — закрыто 13.09.** Прямой `navigator.vibrate` вычищен из `profile.js`,
+`privacy.view.js`, `island-settings.view.js`, `plate-calc.js`, `workout.view/handlers.js`,
+`workout.view/modals.js`, `ui/gravity-submit.js`, `ui/drag-number.js`, `ui/drum-picker.js`
+(последний — тем же заходом, что `DRUM-TICK`); мёртвая копия `_haptic()` в
+`workout.view/render.js` удалена. Тест-гард — `test/haptic-gate.test.js`: greps
+`js/*.js` + `js/**/*.js` (оба паттерна — `git ls-files` матчит только вложенные пути на
+одном `**`, топ-уровневые файлы `js/` иначе проходят мимо гарда молча) за вычетом
+`shared/utils.js`, строки-комментарии вырезаются перед матчем (иначе комментарий в
+`intel.view.js`, упоминающий `navigator.vibrate`, красит гард на прозе). Ловушку и починку
+проверял искусственным нарушением до и после — гард действительно падает и действительно
+зеленеет обратно.
 
 ---
 

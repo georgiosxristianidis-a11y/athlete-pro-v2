@@ -14,15 +14,12 @@
      long press    → copy reps from previous set
    ════════════════════════════════════════════════════════ */
 
+import { haptic } from '../shared/utils.js';
+
 const PX_PER_WEIGHT = 8;   // pixels of drag per 2.5 kg step
 const PX_PER_REPS   = 14;  // pixels of drag per 1 rep step
 const DBL_TAP_MS    = 280; // double-tap window
 const LONG_PRESS_MS = 600;
-
-function _haptic(pattern) {
-  if (!navigator.vibrate) return;
-  navigator.vibrate(pattern);
-}
 
 export function initDragNumbers() {
   document.querySelectorAll('.stepper-val[data-type]').forEach(el => {
@@ -61,7 +58,7 @@ function _attach(el) {
         const curReps  = parseInt(el.textContent) || 0;
         const diff = prevReps - curReps;
         if (diff !== 0) window.Workout?.stepReps(ei, si, diff, true);
-        _haptic([10, 30, 10]);
+        haptic([10, 30, 10]);
       }, LONG_PRESS_MS);
     }
   });
@@ -87,10 +84,10 @@ function _attach(el) {
     // Haptic: deeper on round numbers (weight only)
     if (type === 'w') {
       const next = (parseFloat(el.textContent) || 0) + delta;
-      _haptic(next > 0 && next % 10 === 0 ? 15 : 5);
+      haptic(next > 0 && next % 10 === 0 ? 15 : 5);
       window.Workout?.stepWeight(ei, si, delta, true);
     } else {
-      _haptic(5);
+      haptic(5);
       window.Workout?.stepReps(ei, si, newSteps, true);
     }
   });
@@ -111,7 +108,7 @@ function _attach(el) {
         window.Workout?.editVal('r', ei, si);
       } else {
         // Single tap: +1 immediately
-        _haptic(10);
+        haptic(10);
         window.Workout?.stepReps(ei, si, 1);
       }
     } else {

@@ -51,7 +51,10 @@ globalThis.document = {
 };
 // window / navigator are read-only in Node 22 — use defineProperty
 Object.defineProperty(globalThis, 'window', {
-  value: {},           // no onscrollend → fallback scroll path
+  // no onscrollend → fallback scroll path. addEventListener/removeEventListener
+  // are no-ops: shared/utils.js (haptic(), pulled in by drum-picker.js since
+  // DRUM-TICK) attaches a pointerdown unlock listener at module load.
+  value: { addEventListener() {}, removeEventListener() {} },
   writable: true, configurable: true,
 });
 Object.defineProperty(globalThis, 'navigator', {

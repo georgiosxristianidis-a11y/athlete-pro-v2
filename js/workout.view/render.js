@@ -115,10 +115,6 @@ export function typeIcon(type, color) {
 // merge of the 2-6 format.js delegation — caused stack overflow on render).
 export { fmtVol };
 
-function _haptic(ms = 10) {
-  if (navigator.vibrate) navigator.vibrate(ms);
-}
-
 // BUG-2 resolved: state lives in State.coreChecked (workout.store.js)
 
 /* ════════════════════════════════════════════════════════

@@ -13,13 +13,14 @@ import { isRu } from './locale.store.js';
 import { flag } from './flags.js';
 import { getIslandProfile, setIslandProfile } from './island-profile.store.js';
 import { on } from './events.js';
+import { haptic } from './shared/utils.js';
 
 // Profile switch → persist + re-render this screen and the live island.
 on('island:setProfile', (el) => {
   setIslandProfile(el.dataset.profile);
   loadIslandSettings();
   window.DynamicIsland?.update();
-  navigator.vibrate?.(8);
+  haptic(8);
 });
 
 const PROFILES = [

@@ -9,10 +9,10 @@
    Cancel    : spring back to y=0
    ════════════════════════════════════════════════════════ */
 
+import { haptic } from '../shared/utils.js';
+
 const THRESHOLD  = 52;
 const HINT_PX    = 30;
-
-function _haptic(p) { if (navigator.vibrate) navigator.vibrate(p); }
 
 // Elements that own their own touch handling — skip gravity on them
 const SKIP_SELECTOR = '.stepper-val, .stepper-btn, .set-check, input, button';
@@ -54,7 +54,7 @@ function _attachRow(row) {
 
     if (!hintFired && dy >= HINT_PX) {
       hintFired = true;
-      _haptic(6);
+      haptic(6);
     }
   });
 
@@ -79,7 +79,7 @@ function _attachRow(row) {
 }
 
 function _commit(row, ei, si) {
-  _haptic([10, 30, 10]);
+  haptic([10, 30, 10]);
   row.style.transition = 'transform 0.18s ease-in, opacity 0.18s ease-in';
   row.style.transform  = 'translateY(64px)';
   row.style.opacity    = '0';
