@@ -8,6 +8,8 @@ import { ensureScreenCss } from './shared/lazy-css.js';
    ════════════════════════════════════════════════════════ */
 
 let _current = 's-home';
+/** Хвост очереди переходов — последний запрошенный id, а не то, что уже в DOM. */
+let _lastRequested = 's-home';
 const _handlers = {};
 let _transitionQueue = Promise.resolve();
 
@@ -33,16 +35,19 @@ function on(id, fn) {
  * @returns {Promise<void>}
  */
 async function go(id, opts = {}) {
-  if (id === _current && !opts.force) return;
+  if (id === _lastRequested && !opts.force) return;
+  _lastRequested = id;
   haptic(10);
   if (!opts.fromPop && history.state?.screen !== id) {
     history.pushState({ screen: id }, '');
   }
 
-  // Стили экрана — ДО показа, иначе экран моргнёт нестилизованным (LOAD-1).
-  // Здесь, а не внутри performNav: startViewTransition снимает снимок
-  // страницы сразу, ждать загрузку внутри колбэка уже поздно.
-  await ensureScreenCss(id);
+  // Стили экрана — запрос сразу (параллельно с очередью), ждём его ниже, ДО
+  // показа (LOAD-1). Не await здесь: разные экраны резолвят ensureScreenCss за
+  // разное число microtask-тиков (s-home — сразу, ленивые — через Promise.all),
+  // и await перед постановкой в очередь переставлял бы порядок тапов местами
+  // (NAV-1). Место в очереди бронируем синхронно, ниже.
+  const cssReady = ensureScreenCss(id);
 
   const performNav = async () => {
     const prev = document.getElementById(_current);
@@ -67,7 +72,11 @@ async function go(id, opts = {}) {
   // Serialize transitions: startViewTransition aborts if a previous one is
   // still running, which desyncs .out/.active classes across screens on
   // rapid/overlapping go() calls (e.g. boot-time navigation chains).
-  const run = () => {
+  const run = async () => {
+    // ДО показа, иначе экран моргнёт нестилизованным (LOAD-1). Здесь, а не
+    // внутри performNav: startViewTransition снимает снимок страницы сразу,
+    // ждать загрузку внутри колбэка уже поздно.
+    await cssReady;
     if (!document.startViewTransition) return performNav();
     const transition = document.startViewTransition(() => performNav());
     // Браузер вправе пропустить анимацию (страница скрыта, предыдущая транзиция
