@@ -22,6 +22,7 @@ import {
   setEngine,
   commitKey,
   normalizeEngine,
+  fabKeyState,
 } from './ai-settings.store.js';
 
 on('ai:openSettings', () => openAiSettings());
@@ -103,7 +104,7 @@ export function setKeyConn(state, extra = {}) {
 export async function patchAiStatus(settings) {
   try {
     const probed = await probeAiStatus();
-    _serverStatus = { gemini: !!probed.gemini, anthropic: !!probed.anthropic };
+    _serverStatus = { gemini: !!probed.gemini, anthropic: !!probed.anthropic, source: probed.source };
     const currentEngine = settings['ai-engine'] || DEFAULT_AI_ENGINE;
     const geminiActive = probed.gemini || !!settings['gemini-key'];
     const anthropicActive = probed.anthropic || !!settings['anthropic-key'];
@@ -111,6 +112,17 @@ export async function patchAiStatus(settings) {
     const anthropicEl = document.getElementById('ai-status-anthropic');
     if (anthropicEl) {
       anthropicEl.className = `ai-indicator ${anthropicActive ? (currentEngine === 'anthropic' ? 'active' : 'ready') : 'missing'}`;
+    }
+    // AI-1: движок без ключа нигде (сервер и BYOK) не выбираем — иначе любое
+    // действие коуча даёт 500 NO_API_KEY. Airgap/ai-off сюда не попадают:
+    // fabKeyState для них возвращает 'airgap', не 'missing'.
+    const anthropicBtn = /** @type {HTMLButtonElement|null} */ (
+      document.getElementById('engine-btn-anthropic')
+    );
+    if (anthropicBtn) {
+      const noKey = fabKeyState(_serverStatus, !!settings['anthropic-key'], 'anthropic') === 'missing';
+      anthropicBtn.disabled = noKey;
+      anthropicBtn.title = noKey ? t('settings.engine_no_key') : '';
     }
     const geminiEl = document.getElementById('ai-status-gemini');
     if (geminiEl) {
@@ -136,6 +148,7 @@ export function renderEngineAndKey(settings, serverStatus = {}) {
   const geminiActive = !!(serverStatus.gemini || hasLocalGemini);
   const anthropicActive = !!(serverStatus.anthropic || hasLocalAnthropic);
 
+  const anthropicNoKey = fabKeyState(serverStatus, hasLocalAnthropic, 'anthropic') === 'missing';
   const isGem = currentEngine === 'gemini';
   const keyId = isGem ? 'gemini-key' : 'anthropic-key';
   const val = settings[keyId] || '';
@@ -164,7 +177,9 @@ export function renderEngineAndKey(settings, serverStatus = {}) {
   return `
         <div class="engine-toggle-grid">
           <button class="engine-toggle-btn claude-active ${currentEngine === 'anthropic' ? 'active' : ''}"
-                  data-action="ai:setEngine" data-engine="anthropic">
+                  id="engine-btn-anthropic"
+                  data-action="ai:setEngine" data-engine="anthropic"
+                  ${anthropicNoKey ? `disabled title="${esc(t('settings.engine_no_key'))}"` : ''}>
             <span class="ai-indicator ${anthropicActive ? (currentEngine === 'anthropic' ? 'active' : 'ready') : 'missing'}" id="ai-status-anthropic"></span>
             ${t('settings.engine_claude')}
           </button>
