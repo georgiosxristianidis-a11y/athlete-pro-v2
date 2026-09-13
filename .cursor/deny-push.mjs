@@ -8,7 +8,8 @@
  *
  * Контракт Cursor: на stdin JSON с полем `command`, на stdout
  * `{"permission":"allow"|"deny"|"ask","user_message":"..."}`. Ненулевой выход 2 равен `deny`.
- * Дублируем `userMessage` для тестов AGENT-9. Дневной обход: `CURSOR_HOOK_OFF=1`.
+ * Дублируем `userMessage` для тестов AGENT-9.
+ * Дневной обход: `CURSOR_HOOK_OFF=1` или файл `.cursor/day-ok` (не коммитить).
  *
  * Fail-closed: строку не удалось разобрать — запрет. Ночь, вставшая на разборе,
  * чинится утром; ветка, уехавшая в публичный remote, — нет. Падение самого хука
@@ -18,6 +19,12 @@
  * интерпретатор дотянется до git в обход разбора — это защита от случайной публикации,
  * не песочница. Инлайн `node -e` закрыт, чужой `npm run <script>` — нет.
  */
+
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const DAY_OK = path.join(path.dirname(fileURLToPath(import.meta.url)), 'day-ok');
 
 /** Каждая команда судится отдельно: `git stash push && git push` — две разные строки. */
 function segments(command) {
@@ -237,9 +244,11 @@ function verdict(permission, why) {
 }
 
 function decide(command) {
-  // Дневной обход для LEAD в агент-шелле: $env:CURSOR_HOOK_OFF='1' (PowerShell).
-  // Ночной прогон переменную не ставит — пуш по-прежнему режется.
-  if (process.env.CURSOR_HOOK_OFF === '1') {
+  // Дневной обход для LEAD:
+  // 1) env CURSOR_HOOK_OFF=1 на процессе хука (редко),
+  // 2) файл `.cursor/day-ok` (создал — пуш/PR можно; не коммитить).
+  // Ночной прогон файл не кладёт — пуш по-прежнему режется.
+  if (process.env.CURSOR_HOOK_OFF === '1' || existsSync(DAY_OK)) {
     return verdict('allow');
   }
   if (typeof command !== 'string' || command.length === 0) {
