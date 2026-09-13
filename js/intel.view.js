@@ -14,7 +14,11 @@ import { safeFetch } from './privacy.store.js';
 import { appendSseChunk, parseSseDataLine } from './shared/sse.js';
 import { startVoiceWave, stopVoiceWave } from './intel.voice-wave.js';
 
-on('intel:close', () => window.Nav.go('s-home'));
+// A7: was a hard Nav.go('s-home') — broke "where I came from" whenever Intel
+// was opened from anywhere but Home. Intel is only ever entered via
+// Nav.go('s-intel') (claude.view.js), which pushes a history entry, so back()
+// always lands on the actual previous screen.
+on('intel:close', () => history.back());
 on('intel:toggleLogs', (el) => {
   const box = el.closest('.intel-logs');
   if (!box) return;

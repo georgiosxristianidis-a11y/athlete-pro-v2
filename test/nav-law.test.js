@@ -62,3 +62,21 @@ test('journal: the dashboard carries the entry point into it', () => {
   assert.match(dash, /on\('dash:openJournal'/, 'кнопка входа есть, а обработчика нет');
   assert.match(dash, /Nav\.go\('s-journal'\)/, 'обработчик не ведёт на экран журнала');
 });
+
+test('body (A6): the standalone screen keeps a way back', () => {
+  const view = fs.readFileSync(path.join(REPO_ROOT, 'js', 'body-stats.js'), 'utf8');
+  assert.match(
+    view,
+    /data-action="nav:back"/,
+    'Экран вне таб-бара обязан нести кнопку «назад», иначе он тупик (s-body).'
+  );
+});
+
+test('intel (A7): closes through history, not a hard Nav.go home', () => {
+  const view = fs.readFileSync(path.join(REPO_ROOT, 'js', 'intel.view.js'), 'utf8');
+  assert.match(
+    view,
+    /on\('intel:close',\s*\(\)\s*=>\s*history\.back\(\)\)/,
+    "intel:close обязан звать history.back(), а не жёсткий Nav.go('s-home') — иначе теряется «откуда пришёл»."
+  );
+});

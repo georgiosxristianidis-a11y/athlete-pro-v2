@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A6+A7: nav:back на Body и Intel (1.27.107)
+
+`s-body` (карточка A6) был тупиком — экран зарегистрирован в `Nav`, но без кнопки назад:
+если открыт (сейчас неоткуда, кроме будущей точки входа), пользователь остаётся без выхода.
+Стандалон-хост (`#body-stats-root`) теперь получает `data-action="nav:back"` в заголовке;
+вложенный в Athlete Room хост (`#ar-body-stats-root`) — нет, у него уже есть своя вкладочная
+навигация, различаются по `root.id`.
+
+`intel.view.js:17` (карточка A7) закрывал экран жёстким `Nav.go('s-home')` независимо от
+того, откуда пришли. Intel открывается только через `Nav.go('s-intel')`
+(`claude.view.js:302`), которая пишет запись в history — заменено на `history.back()`.
+
+Гард — `test/nav-law.test.js` (два новых теста, по образцу существующего для Journal),
+проверен искусственным нарушением до/после.
+
+Карточки `A6+A7` (`docs/handoff/HANDOFF_cursor_arch_cards.md`, фаза 2, закрыты).
+
 ### DRUM-TICK + A3: haptic gate — единый вход для вибрации (1.27.106)
 
 `js/ui/drum-picker.js:175` звал `navigator.vibrate(4)` и переписывал классы активного
