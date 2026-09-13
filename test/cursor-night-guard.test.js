@@ -114,7 +114,8 @@ for (const command of DENIED) {
   test(`ночной хук запрещает: ${command}`, () => {
     const verdict = ask(JSON.stringify({ command }));
     assert.equal(verdict.permission, 'deny');
-    assert.ok(verdict.userMessage?.length > 0, 'отказ обязан объяснять причину');
+    const why = verdict.user_message || verdict.userMessage;
+    assert.ok(why?.length > 0, 'отказ обязан объяснять причину (user_message)');
   });
 }
 
@@ -128,6 +129,12 @@ test('нечитаемый вход закрывает, а не открывае
   assert.equal(ask('').permission, 'deny');
   assert.equal(ask('not json').permission, 'deny');
   assert.equal(ask(JSON.stringify({})).permission, 'deny');
+});
+
+test('BOM перед JSON не валит разбор (Windows Cursor)', () => {
+  const bom = '\uFEFF';
+  assert.equal(ask(`${bom}${JSON.stringify({ command: 'git status' })}`).permission, 'allow');
+  assert.equal(ask(`${bom}${bom}${JSON.stringify({ command: 'git push' })}`).permission, 'deny');
 });
 
 test('hooks.json закрывается на падении хука, а не открывается', () => {

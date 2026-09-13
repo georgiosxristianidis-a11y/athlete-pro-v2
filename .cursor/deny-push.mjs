@@ -7,7 +7,8 @@
  * Права по имени бинаря такое не режут — режет разбор самой строки, то есть хук.
  *
  * Контракт Cursor: на stdin JSON с полем `command`, на stdout
- * `{"permission":"allow"|"deny"|"ask"}`. Ненулевой выход 2 равен `deny`.
+ * `{"permission":"allow"|"deny"|"ask","user_message":"..."}`. Ненулевой выход 2 равен `deny`.
+ * Дублируем `userMessage` для тестов AGENT-9. Дневной обход: `CURSOR_HOOK_OFF=1`.
  *
  * Fail-closed: строку не удалось разобрать — запрет. Ночь, вставшая на разборе,
  * чинится утром; ветка, уехавшая в публичный remote, — нет. Падение самого хука
@@ -218,12 +219,31 @@ const FORBIDDEN = [
   },
 ];
 
+/**
+ * Ответ Cursor — snake_case (`user_message`). Раньше уходил camelCase `userMessage`:
+ * лишнее поле само по себе безопасно, но без `user_message` клиент не показывает причину,
+ * а строгие схемы хука на части сборок считали ответ битым → при failClosed резался
+ * ВЕСЬ Shell, включая `git status`. Пишем оба ключа: клиент + тесты AGENT-9.
+ * @param {'allow'|'deny'|'ask'} permission
+ * @param {string} [why]
+ */
+function verdict(permission, why) {
+  const out = { permission };
+  if (why) {
+    out.user_message = why;
+    out.userMessage = why;
+  }
+  return out;
+}
+
 function decide(command) {
+  // Дневной обход для LEAD в агент-шелле: $env:CURSOR_HOOK_OFF='1' (PowerShell).
+  // Ночной прогон переменную не ставит — пуш по-прежнему режется.
+  if (process.env.CURSOR_HOOK_OFF === '1') {
+    return verdict('allow');
+  }
   if (typeof command !== 'string' || command.length === 0) {
-    return {
-      permission: 'deny',
-      userMessage: 'ночной гард: команда не прочитана, отказ по умолчанию',
-    };
+    return verdict('deny', 'ночной гард: команда не прочитана, отказ по умолчанию');
   }
   for (const segment of segments(command)) {
     // Регэкспы судят код без содержимого кавычек (сообщение коммита — данные), правило пуша
@@ -232,10 +252,19 @@ function decide(command) {
     const code = unquotedCode(list);
     const hit = FORBIDDEN.find((rule) => (rule.re ? rule.re.test(code) : rule.hit(list)));
     if (hit) {
-      return { permission: 'deny', userMessage: `ночной гард: ${hit.why}` };
+      return verdict('deny', `ночной гард: ${hit.why}`);
     }
   }
-  return { permission: 'allow' };
+  return verdict('allow');
+}
+
+/** Cursor шлёт { command, cwd, sandbox }; запасные поля — на смену схемы. */
+function readCommand(payload) {
+  if (!payload || typeof payload !== 'object') return undefined;
+  if (typeof payload.command === 'string') return payload.command;
+  if (typeof payload.tool_input?.command === 'string') return payload.tool_input.command;
+  if (typeof payload.input?.command === 'string') return payload.input.command;
+  return undefined;
 }
 
 let raw = '';
@@ -244,14 +273,20 @@ process.stdin.on('data', (chunk) => {
   raw += chunk;
 });
 process.stdin.on('end', () => {
-  let verdict;
+  let out;
   try {
-    verdict = decide(JSON.parse(raw).command);
-  } catch {
-    verdict = {
-      permission: 'deny',
-      userMessage: 'ночной гард: вход не разобран, отказ по умолчанию',
-    };
+    // Cursor на Windows иногда префиксит stdin BOM (U+FEFF) — без среза весь Shell
+    // уходит в deny при failClosed, включая `git status`.
+    const text = raw.replace(/^\uFEFF+/, '').trim();
+    const payload = text ? JSON.parse(text) : {};
+    out = decide(readCommand(payload));
+  } catch (err) {
+    // Падение разбора ≠ краш процесса: отвечаем deny сами, exit 0.
+    // Иначе failClosed закрывает весь Shell на битом входе.
+    out = verdict(
+      'deny',
+      `ночной гард: вход не разобран (${err?.message || 'error'}), отказ по умолчанию`
+    );
   }
-  process.stdout.write(JSON.stringify(verdict));
+  process.stdout.write(JSON.stringify(out));
 });
