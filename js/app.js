@@ -32,6 +32,8 @@ async function _loadWorkout() {
   window.Workout = W;
   window.RestTimer = RestTimer;
   window.PlateCalc = PlateCalc;
+  const { Integrity } = await import('./shared/integrity.js');
+  Integrity.check();
   return W;
 }
 
@@ -46,6 +48,8 @@ async function _loadProfile() {
   window.Profile = P;
   window.SupabaseCheck = SupabaseCheck;
   window.ProfileView = { renderProfile };
+  const { Integrity } = await import('./shared/integrity.js');
+  Integrity.check();
   return P;
 }
 
@@ -63,6 +67,8 @@ async function _loadAthleteRoom() {
   const { AthleteRoom } = await import('./shared/athlete-room.js');
   _athleteRoomMod = AthleteRoom;
   window.AthleteRoom = AthleteRoom;
+  const { Integrity } = await import('./shared/integrity.js');
+  Integrity.check();
   return AthleteRoom;
 }
 
@@ -250,9 +256,11 @@ openDB()
 
       /* ── Claude FAB (lazy-loaded) ── */
       Promise.all([import('./claude.view.js'), ensureCss('css/claude.css')]).then(
-        ([{ Claude }]) => {
+        async ([{ Claude }]) => {
           window.Claude = Claude;
           Claude.renderFAB();
+          const { Integrity } = await import('./shared/integrity.js');
+          Integrity.check();
         }
       );
 
@@ -295,6 +303,8 @@ Nav.on('s-train', async () => {
 Nav.on('s-stats', async () => {
   const { Analytics } = await import('./analytics.view.js');
   window.Analytics = Analytics;
+  const { Integrity } = await import('./shared/integrity.js');
+  Integrity.check();
   await Analytics.load();
 });
 Nav.on('s-journal', async () => {
