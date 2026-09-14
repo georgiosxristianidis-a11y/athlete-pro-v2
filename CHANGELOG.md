@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A1: completeSession → workout.store (1.27.109)
+
+Живая сессия жила в `workout.store`, а финальная запись в IDB — в `handlers.js` (view):
+эталон Store/View был перевёрнут на главном флоу зала, и новый код рисковал копировать
+гибрид. Новый `persistFinalSession(state, summaryData, duration)` в `workout.store.js`
+берёт сборку строки сессии + `DB.Workouts.save` + `DB.Events.log('workout_complete')` +
+цикл `DB.OneRM.update` по лучшему завершённому подходу на упражнение — весь блок, который
+раньше жил в приватном `_persistFinalSession` `handlers.js`. Handlers теперь только
+оркестрируют UI: idempotency-гвард на двойной тап по кнопке подтверждения, счётчик
+`usage.js`, `clearPersistedSession`, `DynamicIsland.hide`, `releaseWakeLock`, `Timer.reset`,
+тост, ре-рендер экрана выбора.
+
+Юнит без DOM — `test/persist-final-session.test.js` (`fake-indexeddb/auto`, 8 тестов):
+форма сохранённой строки, Camera 4 (`noDb`) никогда не попадает в запись и не получает
+1RM, `tag` переживает сессию только когда он был, `prs`/`blockTimings` совпадают с тем, что
+уже показал summary-модал, `workout_complete` в Events несёт тип и тоннаж. `npm test` —
+1275/1275.
+
+Заодно поймано: `docs/ARCHITECTURE_SCORECARD.md` §3 не подтягивался за закрытием `A3`/
+`A6+A7` фазы 2 (13.09) — карточки там числились «open» ещё сутки. Поправлено тем же PR:
+архитектура 68.5→69.0%, долг аудита 18→42% (A1/A3/A4/A6/A7/A11 done; A14/A15 partial).
+
+Карточка `A1` (`docs/handoff/HANDOFF_cursor_arch_cards.md`, фаза 3, закрыта).
+
 ### A6-follow-up: снос мёртвого экрана s-body (1.27.108)
 
 A6+A7 закрыл кнопку назад на стандалон-хосте `s-body`, но сама находка «точки входа нет
