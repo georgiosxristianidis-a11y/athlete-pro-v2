@@ -9,6 +9,7 @@ import {
   buildSession,
   hasLiveSession,
   persistSession,
+  persistFinalSession,
   clearPersistedSession,
   getWeekMode,
   setWeekMode,
@@ -472,22 +473,9 @@ export async function completeSession() {
 }
 
 /**
- * Persist the finalised session. Takes the already-built summaryData so the
- * saved row shares a single source of truth with the report shown to the
- * user — same tonnage, same PR list, no chance of UI/DB drift.
- *
- * Schema additions (W-2-D-1):
- *   • exercise.block        — chamber id ('power'|'shape'|… or 'custom' for
- *                             W-1 ad-hoc additions); enables future per-block
- *                             analytics on Dashboard / Stats.
- *   • exercise.isAdded      — true for W-1 live additions (vs programmed).
- *   • exercise.custom       — true when the name was not in the library.
- *   • session.prs           — list from buildSessionSummary; lets Recent
- *                             sessions show "★ 1 PR" without re-deriving.
- *   • session.blockTimings  — per-chamber durations; opens trend analytics.
- *
- * Camera 4 (noDb:true) is still filtered out at the gate — it never enters
- * IDB and thus never skews tonnage / aggregate analytics.
+ * Save the finalised session (A1: persistence itself now lives in
+ * workout.store.js — this is UI orchestration only: idempotency guard,
+ * usage counter, cleanup, toast, re-render).
  */
 let _saving = false;
 async function _executeFinalSave(summaryData, duration) {
@@ -503,57 +491,13 @@ async function _executeFinalSave(summaryData, duration) {
 }
 
 async function _persistFinalSession(summaryData, duration) {
-  const session = {
-    type: State.type,
-    planId: null,
-    timestamp: State.startedAt || Date.now(),
-    duration,
-    tonnage: summaryData.totalTonnage,
-    sessionRpe: summaryData.sessionRpe ?? null,
-    exercises: State.plan
-      .filter((ex) => !ex.noDb)
-      .map((ex) => ({
-        name: ex.name,
-        block: ex.block || null,
-        isAdded: !!ex.isAdded,
-        custom: !!ex.custom,
-        // ABBR-1 п.2 доп.: тег теперь виден и в TXT/CSV-экспорте, значит
-        // должен пережить сессию в истории — иначе экспорт (читает
-        // DB.Workouts, не State.plan) его никогда не увидит.
-        ...(ex.tag ? { tag: ex.tag } : {}),
-        sets: ex.sets.map((s) => ({
-          weight: s.weight,
-          reps: s.reps,
-          done: s.done,
-        })),
-      })),
-    prs: summaryData.prs,
-    blockTimings: State.blockTimings || {},
-  };
-
-  await DB.Workouts.save(session);
-
-  // Log event
-  await DB.Events.log('workout_complete', { type: State.type, tonnage: summaryData.totalTonnage });
+  await persistFinalSession(State, summaryData, duration);
 
   // Счётчик установок (флаг 'usage-stats', ON) — только тип сплита, без
   // тоннажа и упражнений. Не в await: сохранение сессии не ждёт статистику.
   import('../usage.js')
     .then(({ trackUsage }) => trackUsage('workout_completed', { type: State.type }))
     .catch(() => {});
-
-  // Update OneRMs (also covers W-1 live additions — new exercise names get a
-  // fresh OneRM record from this point on; isAdded:true is preserved in
-  // session.exercises so future analytics can separate the two streams).
-  for (const ex of State.plan) {
-    if (ex.noDb) continue;
-    const bestSet = ex.sets
-      .filter((s) => s.done && s.weight && s.reps)
-      .sort((a, b) => b.weight - a.weight)[0];
-    if (bestSet) {
-      await DB.OneRM.update(ex.name, bestSet.weight, bestSet.reps);
-    }
-  }
 
   // Cleanup
   clearPersistedSession();

@@ -2,19 +2,21 @@
 
 > Проф-метрики фазы «Архитектура». Не роутер задач (тот — `NEXT_SESSION.md`).
 > Карточки Cursor с метками — `docs/handoff/HANDOFF_cursor_arch_cards.md`.
-> Обновлено: **2026-09-13** · база замера: `1.27.101` · дерево: `main`
+> Обновлено: **2026-09-14** · база замера: `1.27.109` · дерево: `main`
 > Источник аудита: сессия 2026-08-31 (Store/View × backend × data × sync).
 >
 > **Пересчёт под закрытую A11 (09-13).** PR #345: `_netBlocked()` на process/pull/keep-alive/signIn.
-> Архитектура **68.5%**, долг **18%**. Карточки для сортировки — handoff Cursor.
+> **Пересчёт под A1/A3/A6/A7 (09-14).** §3 не подтягивался за фазой 2 перф-трека (A3/A6/A7
+> закрыты 13.09, статус тут остался «open») — поймано при закрытии A1, поправлено тем же
+> заходом. Архитектура **69.0%**, долг **42%**. Карточки для сортировки — handoff Cursor.
 
 ## Сводка
 
 | Метрика | Значение | Как читать |
 |---|---|---|
-| **Архитектура в целом** | **68.5%** | Зрелость слоёв (ниже). Не «сколько фич». |
-| **Долг аудита закрыт** | **18%** | 2 `done` + 2 `partial` из 17 (A4/A11 + A14/A15). |
-| **Этап 2 роадмапа** (`ROADMAP` §2) | **~55%** | Store/View + нарезка монолитов. |
+| **Архитектура в целом** | **69.0%** | Зрелость слоёв (ниже). Не «сколько фич». |
+| **Долг аудита закрыт** | **42%** | 6 `done` + 2 `partial` из 17 (A1/A3/A4/A6/A7/A11 + A14/A15). |
+| **Этап 2 роадмапа** (`ROADMAP` §2) | **~56%** | Store/View + нарезка монолитов. |
 | **Этап 3 роадмапа** (`ROADMAP` §3) | **~70%** | Thin `server.js` есть; промпты/auth — нет. |
 | **LAUNCH-код** | **~97%** | Код трека влит; осталось поле Gio + **AI-1**. |
 | **BOOT-TRIM** | **закрыт** | PR #321 + #328 · `test/boot-graph.test.js` |
@@ -36,23 +38,23 @@
 
 | Слой | Вес | Done% | Вклад | Доказательство |
 |---|---:|---:|---:|---|
-| Store/View по поверхностям | 30% | 55% | 16.5 | Journal эталон; Dashboard/Intel/Onboarding гибриды; A4 закрыт |
+| Store/View по поверхностям | 30% | 56.5% | 16.95 | Journal эталон; Dashboard/Intel/Onboarding гибриды; A1/A4 закрыты |
 | Нарезка монолитов | 15% | 55% | 8.25 | `workout.view/*` да; `dashboard.js` монолит нет |
-| Навигация / shell | 10% | 85% | 8.5 | 4 вкладки + overlay registry; `s-body` без `nav:back` |
+| Навигация / shell | 10% | 85% | 8.5 | 4 вкладки + overlay registry; A6/A7/NAV-1 закрыты — `s-body` снесён (не просто чинён, follow-up 1.27.108) |
 | IndexedDB / data | 15% | 90% | 13.5 | `js/db/*` v4, facade, миграции, soft-delete workouts |
 | Backend wiring | 10% | 75% | 7.5 | Thin `server.js`; жир в `routes/coach.js` |
 | Sync / privacy enforcement | 10% | 85% | 8.5 | `safeFetch` + LWW; airgap закрыт на всех четырёх выходах — `process()`, `pull()`, keep-alive, `signIn()` (#345, `_netBlocked()`), поведенческий гард `test/sync-privacy-gate.test.js`. Не 100%: барьер не общий, см. §5 |
 | PWA / SW / boot graph | 5% | 100% | 5.0 | `build:sw`, two-phase; с бута сняты Athlete Room / Integrity / panda (#321) и `privacy.view` / `rest-timer` / `pip` (#328) |
 | Контракты / Integrity | 5% | 15% | 0.75 | `integrity.js` жив, **импорта и вызова нет** (снят с бута) |
-| **Итого** | 100% | | **68.5** | сумма столбца «Вклад» |
+| **Итого** | 100% | | **68.95 ≈ 69.0** | сумма столбца «Вклад» |
 
-### Store/View по экранам (среднее → 55%)
+### Store/View по экранам (среднее → 56.5%)
 
 | Поверхность | % | Статус |
 |---|---:|---|
 | Journal | 100 | Закон: store без DOM, view без `DB` |
 | Privacy | 95 | Store владеет режимом; view — export/wipe; **с бута снят (#328)** — `app.js` держит только `privacy.store` |
-| Workout | 70 | Store + `workout.view/*`; A4 закрыт; `completeSession` всё ещё в handlers |
+| Workout | 85 | Store + `workout.view/*`; A1/A4 закрыты — `completeSession` персистит через `workout.store.js`, handlers только UI/тосты; A5 (`BLOCK_NAMES_EN` DOM-adjacent импорт) ещё открыт |
 | Body stats | 60 | `.core` чистый; часть метрик в view / localStorage |
 | Analytics | 55 | Store ок; view пишет/удаляет workouts |
 | Claude FAB | 55 | Толстый store; view читает Settings |
@@ -104,13 +106,13 @@
 
 | # | Пункт | Статус | Где смотреть (2026-09-13) | Next |
 |---|---|---|---|---|
-| A1 | `completeSession` → `workout.store` | **open** | `handlers.js:446` → `_persistFinalSession` → `DB.Workouts.save` | Persist финала в store; handlers только UI |
+| A1 | `completeSession` → `workout.store` | **done** (09-14) | `workout.store.js` — `persistFinalSession()`; `handlers.js` больше не импортирует `DB.Workouts`/`DB.Events`/`DB.OneRM` для complete; юнит `test/persist-final-session.test.js` без DOM (fake-indexeddb). PR — см. хендофф Cursor · 1.27.109 | — |
 | A2 | Вызвать `Integrity.check` после lazy load | **open** | `js/shared/integrity.js` жив; **нет импорта в `app.js`** | Вернуть точечный import + вызов после lazy Workout/Profile/Analytics/Claude |
-| A3 | Единый Haptic Gate | **open** | `navigator.vibrate` в handlers/modals/render/profile/privacy/drum/… | Заменить на `haptic()` из `utils.js` |
+| A3 | Единый Haptic Gate | **done** (13.09) | Прямой `navigator.vibrate` вычищен по всему `js/`; `haptic()` из `utils.js` единственный вход; гард `test/haptic-gate.test.js`. 1.27.106 | — |
 | A4 | Утечка `setInterval` + `console.log` в `Workout.load` | **done** | `workout.view.js` — `_startStaleCleanup` / `_stopStaleCleanup` | — |
 | A5 | `BLOCK_NAMES_EN` вне `chamber-pill.js` | **open** | `workout.store.js:7` | Константы в нейтральный модуль |
-| A6 | `nav:back` на `s-body` | **open** | `body-stats.js` — нет `nav:back` | Кнопка назад по закону навигации |
-| A7 | Intel закрывается через history, не hard `s-home` | **open** | `intel.view.js:17` — `intel:close` → `Nav.go('s-home')` | `Nav.back` / `nav:back` |
+| A6 | `nav:back` на `s-body` | **done** (13.09) | Кнопка назад заведена, затем follow-up (14.09) вовсе снёс мёртвый `s-body` — контент уже был во вкладке «Замеры» Athlete Room. Гард `test/nav-law.test.js`. 1.27.107→1.27.108 | — |
+| A7 | Intel закрывается через history, не hard `s-home` | **done** (13.09) | `intel.view.js` — `intel:close` теперь через `history.back()`, не hard `Nav.go('s-home')`. Гард `test/nav-law.test.js`. 1.27.107 | — |
 | A8 | Тонкий `dashboard.store` (read-модель) | **open** | нет `js/dashboard.store.js` | Сначала данные дома, потом нарезка HTML |
 | A9 | Intel: сеть/DB из view → store/engine | **open** | `intel.view.js` | Вынести fetch/SSE/planned |
 | A10 | Промпты коуча в `lib/prompts/` | **open** | `routes/coach.js` `_buildSystemPrompt` | Не менять SSE; только вынести строки |
@@ -122,9 +124,9 @@
 | A16 | Мёртвый `lib/tokenUsage.js` | **open** | нет импортеров | Удалить или подключить |
 | A17 | `longTermStats` в схеме без использования | **open** | `coach.js` принимает и передаёт в `_buildSystemPrompt`, в шаблон **не попадает** | Убрать поле или прокинуть в prompt |
 
-**Чистый `done`: 2/17 (A4, A11).**  
+**Чистый `done`: 6/17 (A1, A3, A4, A6, A7, A11).**  
 **Partial: A14, A15.**  
-**18%** = `(2 + 0.5×2) / 17` = 17.6, округление вверх.
+**42%** = `(6 + 0.5×2) / 17` = 41.2, округление вверх.
 
 Продуктовые закрытия (F-7/F-8, motion, analytics field, BOOT-TRIM) в A1–A17 не входят, кроме пересечения A14.
 

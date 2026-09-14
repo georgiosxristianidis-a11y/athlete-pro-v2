@@ -1,7 +1,7 @@
 # HANDOFF — карточки архитектуры, скорости и долга
 
 > От: **Cursor** (A1–A17, AI-1, GATE-WEEKLY) + **Claude** (фазы и перф-карточки, 13.09)
-> Обновлено **2026-09-13** · сверка с кодом `1.27.105`.
+> Обновлено **2026-09-14** · сверка с кодом `1.27.109`.
 > Метрики и формулы — `docs/ARCHITECTURE_SCORECARD.md`. Роутер — `NEXT_SESSION.md`.
 > LAUNCH-поле и AI-1 — в `HANDOFF_launch_track.md` (не дублировать здесь).
 >
@@ -32,7 +32,7 @@
 | **0 — вернуть измеримость** | `MEASURE-1` закрыта | `GATE-WEEKLY` закрыт (PR#351 — стаб `generateJSON` в `coach-weekly-fallback.test.js`). Протокол замера теперь в репо, фаза выполнена |
 | **1 — кадр и отзыв** | `MOTION-FIX` | `PERF-HIST`/`PERF-INLINE`/`PERF-BLUR` закрыты — фаза выполнена. `MOTION-FIX` ждёт LAUNCH-10 |
 | **2 — стабильность ввода** | закрыта целиком (`NAV-1` · `DRUM-TICK`+`A3` · `A6+A7`) | Тап и жест доходят до приложения ровно один раз и туда, куда просили |
-| **3 — архитектура под рост** | `A1` → `A8` → правило `A15` → `A2` → `A5` → `A9`/`A13` | Берётся, когда кадр уже ровный. `A8` добивает `PERF-HIST` на Home |
+| **3 — архитектура под рост** | `A1` закрыта → `A8` → правило `A15` → `A2` → `A5` → `A9`/`A13` | Берётся, когда кадр уже ровный. `A8` добивает `PERF-HIST` на Home |
 | **4 — гигиена и поверхность** | `A14-хвост` · `A12` · `A16+A17` · `A10` | Ни кадра, ни стабильности — чистка |
 | **вне фаз** | `AI-1` | Блокер раздачи ссылки. Кадра не касается, но держится первым |
 
@@ -41,7 +41,6 @@
 | Фаза | ID | Важность | Тип | Размер | Одной строкой |
 |---|---|---|---|---|---|
 | — | **AI-1** | блокер (до ссылки) | дыра · UX · backend | S–M | Anthropic в UI → 500 |
-| 3 | **A1** | высокая | качество · архитектура | M | completeSession в handlers |
 | 3 | **A8** | высокая (рост) | качество · скорость | M | нет dashboard.store |
 | 3 | **A15** | высокая (рост) | качество | L | views пишут в IDB |
 | 3 | **A2** | средняя | контракт · качество | S | Integrity есть, не зовут |
@@ -55,7 +54,7 @@
 
 **Закрыто недавно (не брать):** BOOT-TRIM · A4 · A11 (airgap в sync) · F-7/F-8 · analytics field · HYG-6 ·
 GATE-WEEKLY · PERF-HIST · PERF-INLINE · PERF-BLUR · NAV-1 · MEASURE-1 · DRUM-TICK · A3 · A6+A7 ·
-A6-follow-up (снос `s-body`).
+A6-follow-up (снос `s-body`) · A1 (completeSession → workout.store, 14.09).
 
 **Не карточки агента (только Gio):** LAUNCH-10 поле · VOICE-2 поле · HYG-6 полевой хвост.
 
@@ -161,6 +160,19 @@ side-effect на `pointerdown`) валил их на загрузке; докр�
 **Где.** `js/workout.view/handlers.js` (`completeSession` → `DB.Workouts.save`) · цель: persist в `workout.store.js`, handlers только UI/тосты.
 
 **Стоп.** Store пишет workout; handlers не импортируют `DB.Workouts` для complete; зелёный unit на persist без DOM.
+
+**Стоп — закрыто 14.09.** Новый `persistFinalSession(state, summaryData, duration)` в
+`workout.store.js` берёт весь блок сборки `session` + `DB.Workouts.save` + `DB.Events.log`
++ цикл `DB.OneRM.update` — ровно то, что раньше жило в `handlers.js` под приватным
+`_persistFinalSession`. `handlers.js` теперь только зовёт store-функцию и делает UI-хвост:
+idempotency-гвард на двойной тап, счётчик `usage.js`, `clearPersistedSession`,
+`DynamicIsland.hide`, `releaseWakeLock`, `Timer.reset`, тост, ре-рендер `renderSelect`.
+Остальные `DB.Workouts.getAll()` в handlers.js (превью на экране выбора, история) не
+трогал — карточка про **complete**, не про весь файл. Юнит без DOM —
+`test/persist-final-session.test.js` (8 тестов, `fake-indexeddb/auto`): форма сохранённой
+строки, фильтр Camera 4 (`noDb`), перенос `tag`, `prs`/`blockTimings` из summary, запись
+`workout_complete` в Events, обновление 1RM только по лучшему завершённому подходу.
+`npm test` — 1275/1275.
 
 ---
 
@@ -341,7 +353,9 @@ timer, handlers, island-settings), и сегодня объект существ
 ## Связь с метриками
 
 После закрытия карточки: обновить строку в `docs/ARCHITECTURE_SCORECARD.md` §3 → пересчитать шапку.
-На 2026-09-13: архитектура **68.5%**, долг аудита **18%** (A4+A11 done; A14/A15 partial).
+На 2026-09-14: архитектура **69.0%**, долг аудита **42%** (A1/A3/A4/A6/A7/A11 done; A14/A15
+partial). §3 не подтягивался за фазой 2 (A3/A6/A7) до этой сессии — поймано и поправлено
+заодно с A1.
 
 Перф-карточки (`MEASURE-1`, `PERF-HIST`, `PERF-INLINE`, `PERF-BLUR`, `NAV-1`, `DRUM-TICK`)
 в долг аудита A1–A17 **не входят** и знаменатель 17 не меняют — они из другого замера
