@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-a814523a';
+const CACHE_NAME = 'athlete-pro-v121-8b1b30ff';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -26,6 +26,7 @@ const ASSETS = [
   '/js/boot.js',
   '/js/claude.store.js',
   '/js/dashboard.js',
+  '/js/dashboard.store.js',
   '/js/db/backup.js',
   '/js/db/core.js',
   '/js/db/events.js',

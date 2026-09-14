@@ -3,7 +3,8 @@
    dashboard.js — Athlete Pro  |  Dashboard home screen
    ════════════════════════════════════════════════ */
 
-import { DB, weeklyVolumeFrom, monthlyVolumeFrom, weeklyCountFrom, pplTonnageFrom } from './db.js';
+import { DB } from './db.js';
+import { getVolumeSummary, getNextType, computeStreak } from './dashboard.store.js';
 import {
   generateSparkline,
   generateSparklineMulti,
@@ -617,21 +618,7 @@ export const Dashboard = (() => {
       cells.push(d);
     }
 
-    const workedDays = {};
-    workouts.forEach((w) => {
-      const d = new Date(w.timestamp);
-      d.setHours(0, 0, 0, 0);
-      workedDays[d.getTime()] = w.type;
-    });
-
-    let streak = 0;
-    for (let i = 0; i <= 30; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      d.setHours(0, 0, 0, 0);
-      if (workedDays[d.getTime()]) streak++;
-      else if (i > 0) break;
-    }
+    const { streak, workedDays } = computeStreak(workouts);
 
     const el = document.getElementById('streak-count');
     if (el) el.textContent = t('dash.streak', { n: streak });
@@ -639,7 +626,7 @@ export const Dashboard = (() => {
     strip.innerHTML = cells
       .map((d) => {
         const isToday = d.getTime() === today.getTime();
-        const type = workedDays[d.getTime()];
+        const type = workedDays.get(d.getTime());
         const hasWork = !!type;
         const color = TYPE_COLOR[type] || '';
         const dayName = days[(d.getDay() + 6) % 7];
@@ -915,9 +902,7 @@ export const Dashboard = (() => {
     _pandaGreet(allWorkouts);
 
     // Determine nextType based on last workout (DB already sorted)
-    const lastWorkout = allWorkouts[0];
-    const lastType = lastWorkout?.type || 'legs';
-    const nextType = { push: 'pull', pull: 'legs', legs: 'push' }[lastType] || 'push';
+    const nextType = getNextType(allWorkouts);
 
     // Build full dashboard frame if needed
     if (!document.getElementById('dash-greeting-label')) {
@@ -935,10 +920,7 @@ export const Dashboard = (() => {
         day: 'numeric',
       });
 
-    const weekVol = weeklyVolumeFrom(allWorkouts);
-    const monthVol = monthlyVolumeFrom(allWorkouts);
-    const weekCount = weeklyCountFrom(allWorkouts);
-    const ppl = pplTonnageFrom(allWorkouts);
+    const { weekVol, monthVol, weekCount, ppl } = getVolumeSummary(allWorkouts);
 
     // Stats — remove skeleton class before populating
     const wv = document.getElementById('dash-vol-week');
