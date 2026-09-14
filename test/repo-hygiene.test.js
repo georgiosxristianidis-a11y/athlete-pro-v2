@@ -52,8 +52,13 @@ const ROOT_DOCS_ALLOWED = new Set([
  * ceiling moved by the work it measures stops being a decision anyone makes.
  * Headroom is ~11%: still an order of magnitude below the vendored tree this
  * number exists to catch.
+ *
+ * Raised to 480 in its own PR (14.09) for the same reason: main sat at
+ * 450/450, zero headroom, so the very next PR to add any file (A8, adding
+ * dashboard.store.js + its test) broke this line instead of being a decision
+ * anyone made about the ceiling.
  */
-const MAX_TRACKED_FILES = 450;
+const MAX_TRACKED_FILES = 480;
 
 /** Binaries belong in assets/ (and only there). */
 const MAX_FILE_BYTES = 1024 * 1024;
