@@ -4,7 +4,6 @@
    Charts, calendar heatmap, DOM rendering
    ════════════════════════════════════════════════════════ */
 
-import { DB } from './db.js';
 import { esc, haptic } from './shared/utils.js';
 import { Spring } from './shared/spring.js';
 import {
@@ -13,6 +12,7 @@ import {
   calNext as storeNext,
   calendarDayMarkers,
   applyCalendarTypeTap,
+  removeCalendarEntry,
   fetchAllData,
   fetchWeeklyTrend,
   fmtVol,
@@ -493,7 +493,7 @@ export function calDayClick(year, month, day, existingType, existingId) {
   });
 
   overlay.querySelector('#cal-pick-rm')?.addEventListener('click', async () => {
-    if (existingId) await DB.Workouts.deleteById(existingId);
+    await removeCalendarEntry(existingId);
     close();
     load();
     document.dispatchEvent(new CustomEvent('ap-sync-status', { detail: { force: true } }));

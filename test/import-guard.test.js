@@ -90,3 +90,81 @@ describe('static guard: modulepreload targets in index.html', () => {
     });
   }
 });
+
+/**
+ * A15 — views не зовут `DB.*` напрямую, только через свой `*.store.js`.
+ *
+ * Правило закреплено в `.claude/rules/architecture.md` (Store/View pattern).
+ * Массовая миграция долга — отдельными PR по поверхности (см.
+ * `docs/handoff/HANDOFF_cursor_arch_cards.md` § A15), этот гард только не даёт
+ * долгу расти: baseline ниже — точная фотография на момент правила, новый
+ * прямой вызов `DB.*` в уже размеченном файле красит тест, новый view-файл
+ * с прямым вызовом красит его с нуля.
+ *
+ * Снизить число в BASELINE можно после миграции — тест это разрешает
+ * (`<=`), поднять число без миграции — нет.
+ */
+describe('A15: views не зовут DB.* напрямую (кроме store)', () => {
+  const JS_ROOT = path.join(ROOT, 'js');
+
+  /** view-файл в терминах A15: `*.view.js`, что-то внутри `*.view/`, и легаси-гибрид `profile.js`. */
+  function isViewFile(relPosix) {
+    if (relPosix === 'js/profile.js') return true;
+    if (/\.view\//.test(relPosix)) return true;
+    if (/\.view\.js$/.test(relPosix)) return true;
+    return false;
+  }
+
+  function walkJs(dir, out) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) { walkJs(full, out); continue; }
+      if (entry.name.endsWith('.js')) out.push(full);
+    }
+    return out;
+  }
+
+  function countDbCalls(src) {
+    return (src.match(/\bDB\.[A-Za-z]/g) || []).length;
+  }
+
+  /** Долг на дату правила (14.09.2026) — не расти. Понижается миграцией по поверхности. */
+  const BASELINE = {
+    'js/ai-settings.view.js': 3,
+    'js/claude.view.js': 5,
+    'js/intel.view.js': 11,
+    'js/privacy.view.js': 6,
+    'js/profile.js': 39,
+    'js/profile.view/settings.js': 1,
+    'js/profile.view.js': 6,
+    'js/workout-ai.view.js': 3,
+    'js/workout.view/handlers.js': 4,
+    'js/workout.view/render.js': 2,
+  };
+
+  const files = walkJs(JS_ROOT, [])
+    .map((f) => path.relative(ROOT, f).split(path.sep).join('/'))
+    .filter(isViewFile);
+
+  test('sanity: список view-файлов не пуст', () => {
+    assert.ok(files.length > 0, 'isViewFile не нашёл ни одного файла — паттерн протух?');
+  });
+
+  test('sanity: baseline покрывает те же файлы, что реально существуют', () => {
+    const missing = Object.keys(BASELINE).filter((f) => !files.includes(f));
+    assert.deepEqual(missing, [], 'baseline ссылается на файл, которого нет: ' + missing.join(', '));
+  });
+
+  for (const rel of files) {
+    const allowed = BASELINE[rel] ?? 0;
+    test(`${rel}: прямых DB.* не больше baseline (${allowed})`, () => {
+      const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+      const count = countDbCalls(src);
+      assert.ok(
+        count <= allowed,
+        `${rel} зовёт DB.* ${count} раз(а), baseline — ${allowed}. ` +
+        'Новый вызов из view — перенести логику в *.store.js и звать его оттуда.',
+      );
+    });
+  }
+});

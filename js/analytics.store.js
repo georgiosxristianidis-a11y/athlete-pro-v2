@@ -131,6 +131,12 @@ export async function applyCalendarTypeTap({ existingId, type, timestamp }) {
   return { action: 'create', id };
 }
 
+/** Remove a logged workout from the calendar day picker. */
+export async function removeCalendarEntry(existingId) {
+  if (existingId == null || existingId === '') return;
+  await DB.Workouts.deleteById(existingId);
+}
+
 /* ══════════════════════════════════════════════
    PERIOD SELECTOR (AN-1)
    Rolling windows, not calendar-aligned — a calendar week/month would
