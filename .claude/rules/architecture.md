@@ -16,7 +16,10 @@ paths:
 **Store/View pattern** — каждый модуль разделён:
 
 - `*.store.js` — state, data, business logic (ноль обращений к DOM)
-- `*.view.js` — DOM, events, UI
+- `*.view.js` — DOM, events, UI. **Не зовёт `DB.*` напрямую** — читает/пишет
+  через функции своего `*.store.js` (A15). Долг существующих файлов — сторожит
+  `test/import-guard.test.js` (baseline, не даёт расти); массовая миграция —
+  отдельными PR по поверхности, не одним
 
 **Backend**: `server.js` (helmet+CSP, compression, rate-limit, zod) → `routes/coach.js` + `routes/integrations.js` → `lib/aiOrchestrator.js`
 
