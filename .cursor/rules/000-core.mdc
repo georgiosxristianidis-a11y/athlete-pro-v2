@@ -21,7 +21,8 @@ alwaysApply: true
 ## Пять правил, которые роняют гейт чаще прочих
 
 1. **База — только `origin/main`**, работа в своей ветке, влитие только через PR.
-   `git fetch origin && git checkout -b <ветка> origin/main`.
+   `git fetch origin && git checkout -b cursor/<карточка>-<слова> origin/main` — префикс
+   сверяет с трейлером `scripts/check-branch-prefix.mjs` (pre-push и CI): ветка в claude/ — блок.
 2. **Цвет и типографика — только токены** `css/base.css :root`. Сырой hex, сырые px в
    `font-size`, цифры в `font-weight` — запрещены (`.claude/rules/design.md`).
 3. **`esc()` из `js/shared/utils.js`** для любого `innerHTML` с данными.

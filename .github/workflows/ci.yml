@@ -69,6 +69,16 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Префикс ветки называет инструмент (AGENT-8). Шаг внутри обязательного
+      # job `test`, а не отдельным job-ом: новый job обязательным чеком не
+      # станет, пока его не включат в настройках GitHub, а пропущенный
+      # обязательный чек GitHub засчитывает как успешный.
+      # `GITHUB_HEAD_REF` здесь единственный источник имени: на PR checkout
+      # стоит на merge-коммите, detached, и из git имя ветки не добыть.
+      - name: Префикс ветки называет инструмент
+        if: github.event_name == 'pull_request'
+        run: node scripts/check-branch-prefix.mjs
+
       # Format check removed: the codebase predates prettier and a whole-repo
       # reformat is a separate decision. Run `npm run format` locally per-file.
 
