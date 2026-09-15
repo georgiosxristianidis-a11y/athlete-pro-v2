@@ -19,6 +19,7 @@
     "inventory": "node scripts/branch-inventory.mjs",
     "scorecard": "node scripts/agent-scorecard.mjs",
     "brief:gate": "node scripts/check-brief-gate.mjs",
+    "prefix:check": "node scripts/check-branch-prefix.mjs",
     "docs:budget": "node scripts/check-docs-budget.mjs",
     "tokens": "node scripts/token-economy.mjs",
     "memory:ttl": "node scripts/memory-ttl.mjs",

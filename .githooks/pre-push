@@ -29,6 +29,7 @@ push_refs=$(cat)
 pushes_to_main=0
 refs_seen=0
 deletes_seen=0
+target_branches=''
 if [ -n "$push_refs" ]; then
   while read -r local_ref local_sha remote_ref remote_sha; do
     [ -z "$remote_ref" ] && continue
@@ -37,7 +38,14 @@ if [ -n "$push_refs" ]; then
       pushes_to_main=1
     fi
     case "$local_sha" in
-      '' | *[!0]*) ;;
+      '' | *[!0]*)
+        # Живой (не удаляющий) пуш — целевое имя ветки пойдёт гарду префикса
+        # (AGENT-8). Судим по той же ЦЕЛЕВОЙ стороне, что и Main Block:
+        # `git push origin HEAD:cursor/x` называет ветку именно здесь.
+        case "$remote_ref" in
+          refs/heads/*) target_branches="$target_branches ${remote_ref#refs/heads/}" ;;
+        esac
+        ;;
       *) deletes_seen=$((deletes_seen + 1)) ;;
     esac
   done <<PUSH_REFS
@@ -88,6 +96,19 @@ fi
 node scripts/check-branch-drift.mjs
 if [ $? -ne 0 ]; then
   exit 1
+fi
+
+# 0b. Префикс ветки называет инструмент (AGENT-8). Дёшево и без сети: гард
+# читает трейлеры коммитов ветки и сверяет их с ИМЕНЕМ, под которым работа
+# уезжает на origin. Стоит после дрейфа сознательно — дрейф отвечает на вопрос
+# «этот код вообще про сегодняшний main?», и он важнее гигиены имени.
+# Скрипта нет = чекаут старше гарда; здесь это не блок, в отличие от дрейфа:
+# неверное имя ветки переименовывается, а работа по протухшей базе — нет.
+if [ -f scripts/check-branch-prefix.mjs ]; then
+  node scripts/check-branch-prefix.mjs $target_branches
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
 fi
 
 echo "🔒 [GIO Security] Running pre-push SCA check..."
