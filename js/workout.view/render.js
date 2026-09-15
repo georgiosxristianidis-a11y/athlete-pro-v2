@@ -30,6 +30,7 @@ import { blockLabel } from '../shared/chamber-pill.js';
 import { on } from '../events.js';
 import { pplColor, isPplType, PPL_TYPES } from '../shared/ppl-color.js';
 import { t, isRu } from '../locale.store.js';
+import { exerciseLabel } from '../shared/exercise-label.js';
 
 function sessionTypeLabel(type) {
   if (type === 'push' || type === 'pull' || type === 'legs') {
@@ -435,6 +436,14 @@ async function getMuscleBadge(exerciseName) {
   return `<span class="muscle-badge ${normalized}">${muscle.toUpperCase()}</span>`;
 }
 
+/** EX-RU-1 — RU display name for the active-workout exercise card. `ex.name`
+ * (plan/history/1RM key) is untouched; this is presentation only. */
+async function getDisplayName(exerciseName) {
+  if (!isRu()) return exerciseName;
+  const lib = await getExerciseLibrary().catch(() => []);
+  return exerciseLabel(exerciseName, { library: lib, lang: 'ru' });
+}
+
 /**
  * @param {import('../db.js').WorkoutRecord[]} workouts — full history, fetched once by renderActive()
  */
@@ -443,6 +452,7 @@ export async function renderExerciseCard(ex, ei, workouts) {
   const setRows = await Promise.all(ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)));
   const coach = _computeCoachTarget(ex.name, workouts);
   const muscleBadge = await getMuscleBadge(ex.name);
+  const displayName = await getDisplayName(ex.name);
 
   const firstUndoneIdx = ex.sets.findIndex((s) => !s.done);
   const targetSi = firstUndoneIdx === -1 ? 0 : firstUndoneIdx;
@@ -456,7 +466,7 @@ export async function renderExerciseCard(ex, ei, workouts) {
         <div class="exercise-icon"><span class="ex-num">${ei + 1}</span></div>
         <div class="exercise-info">
           <div class="exercise-name">
-            ${esc(ex.name)}${muscleBadge}
+            ${esc(displayName)}${muscleBadge}
             ${coach ? `<span class="coach-pill">${coach.target}<span class="coach-pill-unit">kg</span></span>` : ''}
           </div>
         </div>
