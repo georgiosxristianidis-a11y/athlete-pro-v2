@@ -68,6 +68,7 @@ const OFF_BOOT = {
     'js/shared/dynamic-island.js',
     'js/shared/cryptoClient.js',
     'js/shared/chamber-pill.js',
+    'js/shared/block-names.js',
     'js/db/core.js',
     'js/shared/sparkline.js',
     'js/claude.store.js',

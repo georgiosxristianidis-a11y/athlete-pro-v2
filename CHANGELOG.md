@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A5: BLOCK_NAMES_EN вне chamber-pill (1.27.115)
+
+`workout.store.js` импортировал `chamber-pill.js` ради констант `BLOCK_NAMES_EN` — файл
+рендерит `innerHTML`, store не должен тянуть DOM-adjacent модуль. Константы (`BLOCK_NAMES`,
+`blockLabel`, `BLOCK_NAMES_EN`) переехали в новый `js/shared/block-names.js` (ноль DOM);
+`chamber-pill.js` реэкспортирует их для старых вызовов.
+
 ### AI-1: движок Anthropic нельзя выбрать без ключа (1.27.114)
 
 `js/ai-settings.view.js` рисовал переключатель Claude/Gemini одинаково кликабельным вне

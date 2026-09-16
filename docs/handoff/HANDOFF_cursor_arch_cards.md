@@ -32,7 +32,7 @@
 | **0 — вернуть измеримость** | `MEASURE-1` закрыта | `GATE-WEEKLY` закрыт (PR#351 — стаб `generateJSON` в `coach-weekly-fallback.test.js`). Протокол замера теперь в репо, фаза выполнена |
 | **1 — кадр и отзыв** | `MOTION-FIX` | `PERF-HIST`/`PERF-INLINE`/`PERF-BLUR` закрыты — фаза выполнена. `MOTION-FIX` ждёт LAUNCH-10 |
 | **2 — стабильность ввода** | закрыта целиком (`NAV-1` · `DRUM-TICK`+`A3` · `A6+A7`) | Тап и жест доходят до приложения ровно один раз и туда, куда просили |
-| **3 — архитектура под рост** | `A1`+`A8` закрыты, `A15` правило заведено (14.09, миграция продолжается) → `A2` → `A5` → `A9`/`A13` | Берётся, когда кадр уже ровный |
+| **3 — архитектура под рост** | `A1`+`A8`+`A2`+`A5` закрыты, `A15` правило заведено (14.09, миграция продолжается) → `A9`/`A13` | Берётся, когда кадр уже ровный |
 | **4 — гигиена и поверхность** | `A14-хвост` · `A12` · `A16+A17` · `A10` | Ни кадра, ни стабильности — чистка |
 | **вне фаз** | `AI-1` закрыта | Блокер раздачи ссылки снят — движок без ключа теперь `disabled` в UI |
 
@@ -42,7 +42,6 @@
 |---|---|---|---|---|---|
 | 3 | **A15** | высокая (рост) | качество | L | views пишут в IDB |
 | 3 | **A2** | средняя | контракт · качество | S | Integrity есть, не зовут |
-| 3 | **A5** | низкая | качество | S | store тянет DOM-модуль |
 | 3 | **A9** | высокая (рост) | качество | L | intel.view бог |
 | 3 | **A13** | средняя (рост) | качество | L | profile три слоя |
 | 4 | **A14-хвост** | средняя | скорость | S | Island ещё на critical path |
@@ -53,7 +52,8 @@
 **Закрыто недавно (не брать):** BOOT-TRIM · A4 · A11 (airgap в sync) · F-7/F-8 · analytics field · HYG-6 ·
 GATE-WEEKLY · PERF-HIST · PERF-INLINE · PERF-BLUR · NAV-1 · MEASURE-1 · DRUM-TICK · A3 · A6+A7 ·
 A6-follow-up (снос `s-body`) · A1 (completeSession → workout.store, 14.09) ·
-A8 (dashboard.store read-модель, 14.09) · AI-1.
+A8 (dashboard.store read-модель, 14.09) · AI-1 · A2 (Integrity.check, 15.09) ·
+A5 (block-names.js, 16.09).
 
 **Не карточки агента (только Gio):** LAUNCH-10 поле · VOICE-2 поле · HYG-6 полевой хвост.
 
@@ -263,6 +263,16 @@ timer, handlers, island-settings), и сегодня объект существ
 **Почему важно.** Мелочь, от которой гниёт «store = zero DOM».
 
 **Где.** `js/workout.store.js:7` · вынести константы в нейтральный модуль.
+
+**Стоп — закрыто 16.09.** `BLOCK_NAMES`/`blockLabel`/`BLOCK_NAMES_EN` переехали в новый
+`js/shared/block-names.js` (ноль DOM). `chamber-pill.js` реэкспортирует их для старых
+импортов (`render.js`, `summary.js`, `test/hybrid-preset.test.js`) — переписывать вызовы
+не требовалось. `workout.store.js:7` теперь берёт константы напрямую из `block-names.js`,
+`chamber-pill.js` в графе store больше не участвует. Модуль статически висит в первом
+кадре (транзитив `workout.store.js`) — добавлен `modulepreload` в `index.html` рядом с
+`chamber-pill.js`, иначе `test/boot-graph.test.js` красил на «ушёл в ASSETS_WARM мимо
+install-фазы»; `keepPreload` в тесте и `sw.js` (`npm run build:sw`) обновлены. `npm test`
+1345/1345.
 
 ---
 

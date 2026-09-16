@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-c1161b17';
+const CACHE_NAME = 'athlete-pro-v121-e9bcb708';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -44,6 +44,7 @@ const ASSETS = [
   '/js/privacy.store.js',
   '/js/profile.store.js',
   '/js/shared/ai-engine.js',
+  '/js/shared/block-names.js',
   '/js/shared/chamber-pill.js',
   '/js/shared/cryptoClient.js',
   '/js/shared/dynamic-island.js',
