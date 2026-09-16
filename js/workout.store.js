@@ -4,7 +4,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
-import { BLOCK_NAMES_EN } from './shared/chamber-pill.js';
+import { BLOCK_NAMES_EN } from './shared/block-names.js';
 
 export const SESSION_KEY = 'ap-active-session';
 export const PLAN_KEY = 'ap-custom-plan';        // legacy — migrated → PLAN_KEY_A on first load
