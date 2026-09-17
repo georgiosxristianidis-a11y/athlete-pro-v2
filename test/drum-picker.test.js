@@ -26,25 +26,25 @@ for (const mode of ['legacy', 'virtual', 'window']) {
   const base = GUARD_BASE[mode];
 
   test(`${label} repro BUG-DRUM-0: flushDrum after hide→reshow must not zero the weight`, async () => {
-    const { track, stepWeight, flushDrum } = await buildDrum(base + 0, { mode });
+    const { track, setWeight, flushDrum } = await buildDrum(base + 0, { mode });
     assert.equal(track.scrollTop, 72 * ITEM_H); // sanity: built at 180 kg
 
     track.hide();   // .set-done → display:none → scrollTop lost
     track.show();   // un-check / card expand → laid out again at scrollTop 0
 
     flushDrum('w', base + 0, 0); // tap set-check
-    // Pre-fix: stepWeight(ei, 0, -180) — the phantom that logs «0×1»
-    assert.deepEqual(stepWeight.calls, []);
+    // Pre-fix: a phantom commit at idx 0 — the «0×1» log
+    assert.deepEqual(setWeight.calls, []);
   });
 
   test(`${label} repro BUG-DRUM-0: drum built without layout must not flush a phantom delta`, async () => {
     // renderActive on a hidden screen / collapsed card: scrollTop write dropped
-    const { track, stepWeight, flushDrum } = await buildDrum(base + 1, { hidden: true, mode });
+    const { track, setWeight, flushDrum } = await buildDrum(base + 1, { hidden: true, mode });
     track.show();
     assert.equal(track.scrollTop, 0); // browser kept the dropped write
 
     flushDrum('w', base + 1, 0);
-    assert.deepEqual(stepWeight.calls, []);
+    assert.deepEqual(setWeight.calls, []);
   });
 
   test(`${label} reshow heals the drum position from state (lastIdx)`, async () => {
@@ -56,26 +56,26 @@ for (const mode of ['legacy', 'virtual', 'window']) {
   });
 
   test(`${label} genuine quick tap still flushes the in-flight scroll`, async () => {
-    const { track, stepWeight, flushDrum } = await buildDrum(base + 3, { mode });
+    const { track, setWeight, flushDrum } = await buildDrum(base + 3, { mode });
     track.userScrollTo(74 * ITEM_H); // user scrolls 180 → 185
     flushDrum('w', base + 3, 0);     // taps check before settle
-    assert.deepEqual(stepWeight.calls, [[base + 3, 0, 5]]);
+    assert.deepEqual(setWeight.calls, [[base + 3, 0, 185]]);
     // and the flush is one-shot: a second tap must not re-apply it
     flushDrum('w', base + 3, 0);
-    assert.deepEqual(stepWeight.calls, [[base + 3, 0, 5]]);
+    assert.deepEqual(setWeight.calls, [[base + 3, 0, 185]]);
   });
 
   test(`${label} scrollend settle still commits a genuine user scroll`, async () => {
-    const { track, stepWeight } = await buildDrum(base + 4, { mode });
+    const { track, setWeight } = await buildDrum(base + 4, { mode });
     track.userScrollTo(70 * ITEM_H); // 180 → 175
     track.fire('scrollend');
-    assert.deepEqual(stepWeight.calls, [[base + 4, 0, -5, true]]);
+    assert.deepEqual(setWeight.calls, [[base + 4, 0, 175]]);
   });
 
   test(`${label} fd99a2e guard holds: stray scrollend while hidden stays silent`, async () => {
-    const { track, stepWeight } = await buildDrum(base + 5, { mode });
+    const { track, setWeight } = await buildDrum(base + 5, { mode });
     track.hide(); // fires stray scroll + scrollend at scrollTop 0
-    assert.deepEqual(stepWeight.calls, []);
+    assert.deepEqual(setWeight.calls, []);
   });
 }
 
