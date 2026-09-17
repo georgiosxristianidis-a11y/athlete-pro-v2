@@ -134,12 +134,17 @@ export async function buildDrum(ei, { hidden = false, value = '180', mode = 'leg
     dataset: { type, ei: String(ei), si, value },
     querySelector: () => track,
   };
+  // BUG-DRUM-OFFGRID: коммит барабана — setWeight/setReps (абсолютное значение
+  // узла). step* остаются в моке: ими ходят фокус-режим и drag-number, и мы
+  // проверяем, что барабан их больше НЕ трогает.
   const stepWeight = spy();
   const stepReps = spy();
-  globalThis.window.Workout = { stepWeight, stepReps };
+  const setWeight = spy();
+  const setReps = spy();
+  globalThis.window.Workout = { stepWeight, stepReps, setWeight, setReps };
   globalThis.document._wraps.push(wrap);
   initDrumPickers();
-  return { track, stepWeight, stepReps, flushDrum, syncDrumUI, initDrumPickers };
+  return { track, stepWeight, stepReps, setWeight, setReps, flushDrum, syncDrumUI, initDrumPickers };
 }
 
 export const countItems = (track) =>

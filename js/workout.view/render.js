@@ -20,6 +20,7 @@ import {
   loadCoreChecklist,
   getExerciseLibrary,
   resolveMuscleGroup,
+  weightStep,
 } from '../workout.store.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
@@ -505,7 +506,9 @@ export async function renderSetRow(ex, ei, set, si) {
   const firstUndoneIdx = ex.sets.findIndex((s) => !s.done);
   const isActive = !set.done && si === firstUndoneIdx;
   const isBW = ex.isBW || false;
-  const step = ex.isUnilateral ? 2 : 2.5;
+  // Шаг сетки — единый источник (weightStep): по нему же считают автобамп,
+  // Турбо и фокус-режим, иначе вес уезжает между узлами барабана.
+  const step = weightStep(ex);
   // Reps drum cap (field request 2026-07-08): strength work never needs the
   // full 50-item wheel — 20 covers it and shortens the scroll. Core/abs work
   // is the exception (high-rep sets, Plank logs seconds) — 90 there.

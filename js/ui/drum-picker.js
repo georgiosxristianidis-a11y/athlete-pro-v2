@@ -61,11 +61,20 @@ export function flushDrum(type, ei, si) {
   if (_healIfOutsideWindow(d, rawIdx)) return;
   const newIdx = Math.max(0, Math.min(d.count - 1, rawIdx));
   if (newIdx === d.lastIdx) return;
-  const diff  = newIdx - d.lastIdx;
   d.lastIdx   = newIdx;
-  const delta = diff * d.step;
-  if (type === 'w') window.Workout?.stepWeight(ei, si, delta);
-  else              window.Workout?.stepReps(ei, si, diff);
+  _commit(d, ei, si, newIdx);
+}
+
+/* BUG-DRUM-OFFGRID: коммитим АБСОЛЮТНОЕ значение узла, а не дельту индексов.
+   Дельта верна, только если State уже лежит на сетке барабана; вне-сеточный
+   вес (13 кг при шаге 2) рисуется соседним узлом, и прокрутка с «14» на «20»
+   прибавляла 3 шага к 13, а не садилась на 20 — в лог уходило 19. С
+   абсолютным значением показанное и записанное совпадают по определению,
+   а любой прежний сдвиг гасится первой же прокруткой. */
+function _commit(d, ei, si, idx) {
+  const value = +(d.min + idx * d.step).toFixed(2);
+  if (d.type === 'w') window.Workout?.setWeight(ei, si, value);
+  else                window.Workout?.setReps(ei, si, value);
 }
 
 /* Shared corruption tripwire for flushDrum/onSettle: scrollTop resolves to an
@@ -215,11 +224,8 @@ function _buildDrum(wrap) {
     if (_healIfOutsideWindow(d, rawIdx)) return;
     const newIdx = Math.max(0, Math.min(count - 1, rawIdx));
     if (newIdx === d.lastIdx) return;
-    const diff  = newIdx - d.lastIdx;
     d.lastIdx   = newIdx;
-    const delta = diff * step;
-    if (type === 'w') window.Workout?.stepWeight(ei, si, delta, true);
-    else              window.Workout?.stepReps(ei, si, diff, true);
+    _commit(d, ei, si, newIdx);
     // DRUM-PERF-2: the drum is at rest on a committed snap point — the only
     // moment a window rebuild is snap-safe. Re-apply the active highlight:
     // the rebuild created fresh nodes and no further scroll tick will come.

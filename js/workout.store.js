@@ -673,15 +673,78 @@ export function saveCoreChecklist(day, items) {
   } catch { /* storage full or unavailable */ }
 }
 
+/* ════════════════════════════════════════════════════════
+   WEIGHT GRID (BUG-DRUM-OFFGRID, поле 2026-09-16)
+   ════════════════════════════════════════════════════════
+   Единственный ввод веса — барабан, и он ходит по сетке `min + i*step`:
+   2 кг у гантельных (isUnilateral), 2.5 кг у остальных. Любой вес МИМО этой
+   сетки барабан показать не может — он садится на ближайший индекс и врёт:
+   State 13 кг рисуется как «14», 16.5 как «16». Раньше вне-сеточные веса
+   рождались в трёх местах (+2.5 автобампа и Турбо независимо от шага
+   упражнения, смена isUnilateral на лету), а коммит барабана был
+   ОТНОСИТЕЛЬНЫМ (value + diff*step) — сдвиг не гасился прокруткой, а ехал
+   дальше и уходил в историю, откуда автобамп тянул его в следующую сессию.
+   Отсюда полевой симптом «выставил 20 — записалось 19».
+   Лечится с двух концов: шаг берётся из упражнения (weightStep), а всё, что
+   попадает в сеты, садится на сетку (snapWeight). Барабан с этого же PR
+   коммитит абсолютное значение — что показано, то и записано. */
+
+/**
+ * Шаг сетки веса для упражнения. Гантельные (isUnilateral) ходят по 2 кг,
+ * штанга/тренажёр — по 2.5. Тот же шаг рисует барабан в renderSetRow.
+ * @param {{isUnilateral?: boolean}} [ex]
+ * @returns {number}
+ */
+export function weightStep(ex) {
+  return ex?.isUnilateral ? 2 : 2.5;
+}
+
+/**
+ * Посадить вес на ближайший узел сетки барабана. 0 (и bodyweight) остаётся 0.
+ * @param {number} w
+ * @param {number} step
+ * @returns {number}
+ */
+export function snapWeight(w, step) {
+  const n = Number(w);
+  if (!isFinite(n) || n <= 0) return 0;
+  if (!(step > 0)) return n;
+  return +(Math.round(n / step) * step).toFixed(2);
+}
+
+/**
+ * Привести веса незакрытых сетов к сетке их упражнения. Закрытые сеты — уже
+ * факт тренировки, их не трогаем: показанное в них значение живёт в
+ * `.set-done-summary`, а не на барабане, и врать не может.
+ * @param {Array<{isUnilateral?: boolean, sets?: Array<{weight?: number, done?: boolean}>}>} plan
+ * @returns {number} сколько сетов пришлось подвинуть
+ */
+export function snapPlanWeights(plan) {
+  let moved = 0;
+  for (const ex of plan || []) {
+    const step = weightStep(ex);
+    for (const set of ex?.sets || []) {
+      if (set.done) continue;
+      const snapped = snapWeight(set.weight, step);
+      if (snapped !== set.weight) { set.weight = snapped; moved++; }
+    }
+  }
+  return moved;
+}
+
 /**
  * Smart-progression rule: if last session's TOP set hit target reps with ≥1 rep
- * in reserve (rpe ≤ 8) — bump weight by 2.5kg next time.
- * Falls back to last weight if no progression conditions met.
+ * in reserve (rpe ≤ 8) — bump weight by one grid step next time.
+ * Falls back to last weight if no progression conditions met. Both branches
+ * return a value ON the drum's grid: история могла прийти вне сетки (старый
+ * плоский +2.5, ручная правка, смена isUnilateral), и без snap барабан снова
+ * показал бы не то, что лежит в State.
  * @param {{weight:number,reps:number,rpe:number|null,done:boolean}[]} lastSets
  * @param {number} targetReps — the plan's prescribed reps
+ * @param {number} step — grid step of this exercise (weightStep)
  * @returns {{weight:number, autoBumped:boolean}|null}
  */
-function _smartNextWeight(lastSets, targetReps) {
+function _smartNextWeight(lastSets, targetReps, step) {
   const completed = lastSets.filter(s => s.done && s.weight > 0);
   if (!completed.length) return null;
   // Top set = highest weight set that was completed
@@ -689,10 +752,10 @@ function _smartNextWeight(lastSets, targetReps) {
   const hitTarget = top.reps >= targetReps;
   const easyEffort = top.rpe == null ? hitTarget : top.rpe <= 8;
   if (hitTarget && easyEffort) {
-    return { weight: Math.round((top.weight + 2.5) * 10) / 10, autoBumped: true };
+    return { weight: snapWeight(top.weight + step, step), autoBumped: true };
   }
   // Otherwise repeat last weight
-  return { weight: top.weight, autoBumped: false };
+  return { weight: snapWeight(top.weight, step), autoBumped: false };
 }
 
 /**
@@ -765,7 +828,7 @@ export function buildSession(type, opts = {}) {
       const last = latestWorkoutForNames(workouts, names);
       const lastEx = last?.exercises?.find(e => names.includes(e.name));
       if (lastEx?.sets?.length) {
-        const next = _smartNextWeight(lastEx.sets, ex.reps);
+        const next = _smartNextWeight(lastEx.sets, ex.reps, weightStep(ex));
         if (next) {
           weight = next.weight;
           bumped = autoProgress && next.autoBumped;
@@ -784,7 +847,12 @@ export function buildSession(type, opts = {}) {
       // наоборот: alias только для поиска, tag только для показа.
       ...(ex.tag ? { tag: ex.tag } : {}),
       sets: Array.from({ length: ex.sets }, () => ({
-        weight: autoProgress ? weight : (workouts.length ? weight : ex.weight),
+        // Сетка барабана — последняя инстанция: вес из редактора плана тоже
+        // мог остаться вне её шага (план правится числом, барабан — шагом).
+        weight: snapWeight(
+          autoProgress ? weight : (workouts.length ? weight : ex.weight),
+          weightStep(ex),
+        ),
         reps: ex.reps,
         done: false,
       })),
@@ -878,6 +946,11 @@ export function tryRestoreSession() {
     }
     State.type = s.type;
     State.plan = s.plan;
+    // Сессия могла быть сохранена ДО фикса сетки (или пережить смену
+    // isUnilateral): вне-сеточный вес барабан покажет соседним узлом.
+    // Ставим незакрытые сеты на сетку при восстановлении, чтобы показанное
+    // значение совпало с тем, что уйдёт в лог.
+    snapPlanWeights(State.plan);
     State.startedAt = s.startedAt;
     State.blockTimings = s.blockTimings || {};
     State.phase = 'active';

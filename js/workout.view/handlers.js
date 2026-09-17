@@ -21,6 +21,9 @@ import {
   recordBlockTiming,
   getExerciseLibrary,
   isBodyweightExercise,
+  weightStep,
+  snapWeight,
+  snapPlanWeights,
 } from '../workout.store.js';
 import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
 import { RestTimer } from '../rest-timer.js';
@@ -65,8 +68,42 @@ export function stepWeight(ei, si, delta) {
   if (!ex) return;
   const set = ex.sets[si];
   if (!set) return;
-  set.weight = Math.max(0, (set.weight || 0) + delta);
+  // Шаг всегда садится на сетку упражнения: дельта могла прийти чужим шагом
+  // (Турбо/фокус-режим), и +2.5 к гантельным 14 кг оставляло 16.5 — значение,
+  // которого на барабане нет и которое он покажет как «16» (BUG-DRUM-OFFGRID).
+  setWeight(ei, si, snapWeight(Math.max(0, (set.weight || 0) + delta), weightStep(ex)));
+}
+
+/**
+ * Абсолютная запись веса — контракт барабана (что показано, то и записано).
+ * @param {number} ei @param {number} si @param {number} w
+ */
+export function setWeight(ei, si, w) {
+  const ex = State.plan[ei];
+  if (!ex) return;
+  const set = ex.sets[si];
+  if (!set) return;
+  const val = Math.max(0, Number(w) || 0);
+  if (val === set.weight) return;
+  set.weight = val;
   _updateStepperUI('w', ei, si, set.weight, set.weight <= 0, true);
+  _updateLiveStats();
+  persistSession();
+}
+
+/**
+ * Абсолютная запись повторов — второй половине барабана нужен тот же контракт.
+ * @param {number} ei @param {number} si @param {number} r
+ */
+export function setReps(ei, si, r) {
+  const ex = State.plan[ei];
+  if (!ex) return;
+  const set = ex.sets[si];
+  if (!set) return;
+  const val = Math.max(1, Math.round(Number(r) || 0));
+  if (val === set.reps) return;
+  set.reps = val;
+  _updateStepperUI('r', ei, si, set.reps, set.reps <= 1, true);
   _updateLiveStats();
   persistSession();
 }
@@ -299,6 +336,10 @@ export function _toggleUnilateral(ei) {
   const ex = State.plan[ei];
   if (!ex) return;
   ex.isUnilateral = !ex.isUnilateral;
+  // Тумблер меняет шаг сетки 2.5 ↔ 2, и веса, набранные прежним шагом, после
+  // него оказываются между узлами — барабан показал бы соседний узел, а в лог
+  // ушло бы старое число. Ставим незакрытые сеты на новую сетку сразу.
+  snapPlanWeights([ex]);
   persistSession();
   renderActive();
   Toast.show(ex.isUnilateral ? 'Dumbbells: 2x Volume' : 'Standard: 1x Volume', 'info');
@@ -607,7 +648,11 @@ export function _focusStepW(delta) {
   const ex = State.plan[_focusEi];
   const firstUndone = ex?.sets.find((s) => !s.done);
   if (!firstUndone) return;
-  firstUndone.weight = Math.max(0, (firstUndone.weight || 0) + delta);
+  // Кнопки фокус-режима подписаны ±2.5, но ходить обязаны шагом упражнения —
+  // иначе гантельный сет уезжает мимо сетки барабана (BUG-DRUM-OFFGRID).
+  const step = weightStep(ex);
+  const dir = delta < 0 ? -step : step;
+  firstUndone.weight = snapWeight(Math.max(0, (firstUndone.weight || 0) + dir), step);
   _refreshFocusUI();
 }
 
@@ -721,11 +766,15 @@ export async function smartCoach(ei, si) {
     return;
   }
   const lastWeight = Math.max(...lastEx.sets.map((s) => s.weight));
-  set.weight = lastWeight + 2.5;
+  const step = weightStep(ex);
+  // Турбо прибавляет ОДИН шаг сетки этого упражнения, а не плоские 2.5 кг:
+  // на гантельных (шаг 2) плоский бамп уводил вес мимо барабана.
+  set.weight = snapWeight(lastWeight + step, step);
   _updateStepperUI('w', ei, si, set.weight, set.weight <= 0, true);
   _updateLiveStats();
   persistSession();
-  Toast.show(t('train.turbo'), 'success');
+  // Toast сам экранирует (escHtml в shell.js) — второй esc() дал бы &amp;.
+  Toast.show(t('train.turbo', { n: String(step) }), 'success');
 }
 
 /* ════════════════════════════════════════════════════════
