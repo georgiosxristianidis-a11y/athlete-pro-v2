@@ -6,6 +6,10 @@
  * summary and biometrics all sent engine:'gemini' and read only gemini-key.
  * TTS stays on Gemini on purpose (routes/coach.js is pinned to gemini-tts).
  * This file keeps the wiring from sliding back to those three literals.
+ *
+ * A9 (17.09): сеть и DB переехали из `intel.view.js` в `intel.store.js`.
+ * Якоря идут за кодом — проверки те же, адрес другой; сверх них добавлена
+ * та, что раньше была не нужна: view не имеет права трогать сеть вообще.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,17 +18,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SRC = fs.readFileSync(path.join(ROOT, 'js', 'intel.view.js'), 'utf8');
+const VIEW = fs.readFileSync(path.join(ROOT, 'js', 'intel.view.js'), 'utf8');
+const SRC = fs.readFileSync(path.join(ROOT, 'js', 'intel.store.js'), 'utf8');
 
-const ttsStart = SRC.indexOf('async function speakText');
-const ttsEnd = SRC.indexOf('function pcmToWav');
-assert.ok(ttsStart !== -1 && ttsEnd > ttsStart, 'speakText / pcmToWav anchors missing');
+const ttsStart = SRC.indexOf('export async function synthesizeSpeech');
+const ttsEnd = SRC.indexOf('export function pcmToWav');
+assert.ok(ttsStart !== -1 && ttsEnd > ttsStart, 'synthesizeSpeech / pcmToWav anchors missing');
 const tts = SRC.slice(ttsStart, ttsEnd);
-const rest = SRC.slice(0, ttsStart) + SRC.slice(ttsEnd);
+const rest = SRC.slice(0, ttsStart) + SRC.slice(ttsEnd) + VIEW;
 
-test("intel.view.js has no literal engine: 'gemini' — requests go through aiAuth()", () => {
+test("intel.store.js has no literal engine: 'gemini' — requests go through aiAuth()", () => {
   assert.equal(
-    /engine:\s*['"]gemini['"]/.test(SRC),
+    /engine:\s*['"]gemini['"]/.test(SRC + VIEW),
     false,
     'литерал engine: gemini вернулся — выбранный движок снова не действует'
   );
@@ -53,10 +58,10 @@ test('P.A.N.D.A. Core coach requests go through safeFetch kind=ai, not raw fetch
   assert.match(
     SRC,
     /import\s*\{[^}]*\bsafeFetch\b[^}]*\}\s*from\s*['"]\.\/privacy\.store\.js['"]/,
-    'intel.view.js must import safeFetch — raw fetch bypasses the AI privacy gate'
+    'intel.store.js must import safeFetch — raw fetch bypasses the AI privacy gate'
   );
   assert.equal(
-    /(?<!safe)fetch\(\s*['"`]\/api\/coach/.test(SRC),
+    /(?<!safe)fetch\(\s*['"`]\/api\/coach/.test(SRC + VIEW),
     false,
     'raw fetch(/api/coach…) leaks workouts after the user turns AI off'
   );
@@ -75,15 +80,32 @@ test('P.A.N.D.A. Core coach requests go through safeFetch kind=ai, not raw fetch
   }
 });
 
+/* A9: у экрана больше нет своего выхода в сеть. Проверка не про стиль —
+   ровно этот путь (view со своим fetch) обходит и privacy-ворота, и
+   единственное место, где тело запроса чистится stripSecrets. */
+test('intel.view.js не ходит в сеть и в базу сам — только через стор', () => {
+  assert.equal(
+    /\bfetch\(/.test(VIEW),
+    false,
+    'в view вернулся сетевой вызов — privacy-ворота обходятся мимо стора'
+  );
+  assert.equal(
+    /\bDB\.[A-Za-z]/.test(VIEW),
+    false,
+    'в view вернулся прямой DB.* — это долг A15, из которого A9 экран и вытащил'
+  );
+});
+
 test('P.A.N.D.A. Core SSE uses the carry-buffer parser, not per-chunk split', () => {
   assert.match(SRC, /appendSseChunk/);
   assert.match(SRC, /parseSseDataLine/);
-  const submit = SRC.slice(
-    SRC.indexOf('async function submit'),
-    SRC.indexOf('function _clearImage')
+  const stream = SRC.slice(
+    SRC.indexOf('export async function streamCoachReply'),
+    SRC.indexOf('export async function getAutoSpeech')
   );
+  assert.ok(stream.includes('streamCoachReply'), 'якорь streamCoachReply пропал');
   assert.equal(
-    submit.includes("chunk.split('\\n')"),
+    stream.includes("chunk.split('\\n')"),
     false,
     'naive per-chunk split вернулся — разорванный SSE-кадр снова теряет текст'
   );
@@ -91,10 +113,10 @@ test('P.A.N.D.A. Core SSE uses the carry-buffer parser, not per-chunk split', ()
 
 test('weekly report window uses timestamp, not the missing w.date field', () => {
   const weekly = SRC.slice(
-    SRC.indexOf('async function generateWeekly'),
-    SRC.indexOf('function _renderReportOverlay')
+    SRC.indexOf('export async function fetchWeeklyReport'),
+    SRC.indexOf('export async function fetchBiometricsScan')
   );
-  assert.ok(weekly.includes('generateWeekly'), 'якорь generateWeekly пропал');
+  assert.ok(weekly.includes('fetchWeeklyReport'), 'якорь fetchWeeklyReport пропал');
   assert.match(
     weekly,
     /Number\(w\.timestamp\)\s*>=\s*sevenDaysAgo/,
@@ -124,6 +146,19 @@ test("gemini-key is read only inside TTS — text requests use the selected engi
   assert.equal(
     rest.includes("'gemini-key'") || rest.includes('"gemini-key"'),
     false,
-    'чтение gemini-key вне speakText — снова игнорируется ключ выбранного движка'
+    'чтение gemini-key вне synthesizeSpeech — снова игнорируется ключ выбранного движка'
+  );
+});
+
+/* Профиль уходит на сервер из трёх мест. stripSecrets стоял в каждом из них
+   поимённо — после переезда стало одно место, и проверка держит именно его:
+   сырой Settings.getAll() в теле запроса — это чужой BYOK-ключ на сервере. */
+test('профиль для коуча всегда чистится stripSecrets', () => {
+  const raw = SRC.match(/DB\.Settings\.getAll\(\)/g) || [];
+  assert.equal(raw.length, 1, 'чтений настроек целиком стало больше одного — расходятся правды');
+  assert.match(
+    SRC,
+    /stripSecrets\(await DB\.Settings\.getAll\(\)\)/,
+    'настройки уходят в тело запроса сырыми — вместе с BYOK-ключами'
   );
 });

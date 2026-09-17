@@ -1,17 +1,22 @@
 // @ts-check
-import { IntelStore } from './intel.store.js';
+// A9: экран больше не знает ни про IndexedDB, ни про сеть — всё это живёт
+// в `intel.store.js`. Здесь остаются DOM, события и человеческий текст.
+import {
+  IntelStore,
+  probeKeyState,
+  streamCoachReply,
+  getAutoSpeech,
+  synthesizeSpeech,
+  fetchWeeklyReport,
+  fetchBiometricsScan,
+  savePlannedWorkout,
+} from './intel.store.js';
 import { esc, haptic } from './shared/utils.js';
 import { formatAirMarkdown } from './shared/air-markdown.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { isRu } from './locale.store.js';
-import { stripSecrets } from './shared/sync-secrets.js';
-import { DB } from './db.js';
 import { on, onChange, onKeydown } from './events.js';
-import { probeAiStatus } from './shared/ai-status.js';
-import { getTone, aiAuth } from './ai-settings.store.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
-import { safeFetch } from './privacy.store.js';
-import { appendSseChunk, parseSseDataLine } from './shared/sse.js';
 import { startVoiceWave, stopVoiceWave } from './intel.voice-wave.js';
 
 // A7: was a hard Nav.go('s-home') — broke "where I came from" whenever Intel
@@ -158,17 +163,9 @@ export const IntelView = (() => {
   }
 
   async function _checkApiKey() {
-    const { engine, customKey } = await aiAuth();
-    _hasValidKey = !!customKey && customKey.trim().length > 10;
-    _keySource = 'local';
-
-    if (_hasValidKey) return;
-
-    const probed = await probeAiStatus();
-    _keySource = probed.source;
-    if (probed.source === 'server') {
-      _hasValidKey = engine === 'gemini' ? !!probed.gemini : !!probed.anthropic;
-    }
+    const state = await probeKeyState();
+    _hasValidKey = state.hasValidKey;
+    _keySource = state.source;
   }
 
   /** Патч индикатора в шапке без IntelView.load() — load() стирает ленту ответов. */
@@ -476,79 +473,21 @@ export const IntelView = (() => {
     _setBusy(true);
 
     try {
-      const { DB } = await import('./db.js');
-      const workouts = await DB.Workouts.getLast(5);
-      const profile = stripSecrets(await DB.Settings.getAll());
-      const topLifts = await DB.OneRM.getAll();
-
-      const response = await safeFetch(
-        '/api/coach',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: [{ role: 'user', content: text }],
-            images: image ? [image] : [],
-            workouts,
-            profile,
-            topLifts,
-            ...(await aiAuth()),
-            tone: await getTone(),
-          }),
+      let firstToken = true;
+      const fullText = await streamCoachReply({
+        text,
+        image,
+        onText: (_chunk, full) => {
+          // Тычок — один, на первом токене. Вибрация на КАЖДЫЙ чанк
+          // (так было раньше) — это сотни вызовов navigator.vibrate
+          // за ответ, и каждый из них синхронный.
+          if (firstToken) {
+            haptic(2);
+            firstToken = false;
+          }
+          if (feedbackText) _renderStream(feedbackText, full, L, true);
         },
-        'ai'
-      );
-
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.error || `HTTP ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let sseBuf = '';
-      let fullText = '';
-
-      if (reader) {
-        outer: while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            if (sseBuf) {
-              const flushed = appendSseChunk(sseBuf, '\n');
-              sseBuf = '';
-              for (const line of flushed.lines) {
-                const ev = parseSseDataLine(line);
-                if (!ev) continue;
-                if (ev.done) break outer;
-                if (ev.error) throw new Error(ev.error);
-                if (ev.text) {
-                  if (!fullText) haptic(2);
-                  fullText += ev.text;
-                }
-              }
-            }
-            break;
-          }
-
-          const { buffer, lines } = appendSseChunk(sseBuf, decoder.decode(value, { stream: true }));
-          sseBuf = buffer;
-
-          for (const line of lines) {
-            const ev = parseSseDataLine(line);
-            if (!ev) continue;
-            if (ev.done) break outer;
-            if (ev.error) throw new Error(ev.error);
-            if (ev.text) {
-              // Тычок — один, на первом токене. Вибрация на КАЖДЫЙ чанк
-              // (так было раньше) — это сотни вызовов navigator.vibrate
-              // за ответ, и каждый из них синхронный.
-              if (!fullText) haptic(2);
-              fullText += ev.text;
-              if (feedbackText) _renderStream(feedbackText, fullText, L, true);
-            }
-          }
-        }
-      }
+      });
 
       // Хвостовые точки снимаем вместе с последней перерисовкой.
       if (feedbackText) {
@@ -571,7 +510,7 @@ export const IntelView = (() => {
 
       // Auto-Speech. Волна идёт в слот ЭТОЙ карточки: лента растёт сверху,
       // и общий поиск по экрану нашёл бы слот соседней реплики.
-      const autoSpeech = await DB.Settings.get('ai-auto-speech', true);
+      const autoSpeech = await getAutoSpeech();
       if (autoSpeech && feedbackText) {
         const textToSpeak = feedbackText.innerText.trim();
         if (textToSpeak) speakText(textToSpeak, feedbackEl.querySelector('.intel-voice-slot'));
@@ -622,34 +561,9 @@ export const IntelView = (() => {
     let audioUrl = '';
 
     try {
-      // Voice is Gemini-only: routes/coach.js pins gemini-2.5-flash-preview-tts.
-      // Ключа может не быть вовсе (движок anthropic, BYOK не заведён) — тогда
-      // DB.Settings.get отдаёт null, а ttsSchema валидирует customKey как строку:
-      // null роняет запрос в 400 ещё до того, как сервер попробует свой ключ из
-      // окружения. Нет ключа — поля в теле быть не должно, JSON.stringify
-      // выбрасывает undefined сам.
-      const geminiKey = await DB.Settings.get('gemini-key');
-
-      const response = await safeFetch(
-        '/api/coach/tts',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: textToSpeak,
-            customKey: geminiKey ? String(geminiKey) : undefined,
-          }),
-        },
-        'ai'
-      );
-
-      if (!response.ok) throw new Error('Voice sync failed');
-
-      const result = await response.json();
-      const pcmData = result.audioBase64;
-      if (!pcmData) throw new Error('Audio data not found');
-
-      const audioBlob = pcmToWav(pcmData, 24000);
+      // Ключ, запрос и разбор PCM — за стором (A9). Экрану остаётся то, чего
+      // стор не умеет: элемент <audio>, блоб-ссылка и волна.
+      const audioBlob = await synthesizeSpeech(textToSpeak);
       audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       // Конец, сбой и провал play() — один выход: флаг снят, волна снята,
@@ -684,61 +598,12 @@ export const IntelView = (() => {
     }
   }
 
-  function pcmToWav(base64Pcm, sampleRate) {
-    const pcmBuffer = Uint8Array.from(atob(base64Pcm), (c) => c.charCodeAt(0)).buffer;
-    const wavBuffer = new ArrayBuffer(44 + pcmBuffer.byteLength);
-    const view = new DataView(wavBuffer);
-    const writeString = (offset, string) => {
-      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
-    };
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + pcmBuffer.byteLength, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, pcmBuffer.byteLength, true);
-    new Uint8Array(wavBuffer).set(new Uint8Array(pcmBuffer), 44);
-    return new Blob([wavBuffer], { type: 'audio/wav' });
-  }
-
   async function generateWeekly() {
     IntelStore.addLog('SYS', 'Computing weekly intelligence...');
     IntelStore.setStatus('COMPUTING INTEL...');
 
     try {
-      const { DB } = await import('./db.js');
-      const workouts = await DB.Workouts.getAll();
-      // Filter for last 7 days. WorkoutRecord carries `timestamp` (epoch ms);
-      // `w.date` does not exist — new Date(undefined) is NaN and the predicate
-      // is always false, so the coach received an empty week on every tap.
-      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const recentWorkouts = workouts.filter((w) => Number(w.timestamp) >= sevenDaysAgo);
-      const profile = stripSecrets(await DB.Settings.getAll());
-
-      const response = await safeFetch(
-        '/api/coach/weekly-report',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            workouts: recentWorkouts,
-            profile,
-            ...(await aiAuth()),
-          }),
-        },
-        'ai'
-      );
-
-      if (!response.ok) throw new Error('Report generation failed');
-
-      const { report } = await response.json();
+      const report = await fetchWeeklyReport();
 
       IntelStore.addLog('AI', `Weekly report generated. Performance Score: ${report.score}`);
       IntelStore.setStatus('SYSTEM STANDBY');
@@ -861,34 +726,8 @@ export const IntelView = (() => {
     }, 400);
 
     try {
-      const workouts = await DB.Workouts.getLast(10);
-      const profile = stripSecrets(await DB.Settings.getAll());
-
-      const response = await safeFetch(
-        '/api/coach/biometrics-scan',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            workouts,
-            profile,
-            ...(await aiAuth()),
-          }),
-        },
-        'ai'
-      );
-
+      const { report, readiness } = await fetchBiometricsScan();
       clearInterval(logInterval);
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.error || `HTTP ${response.status}`);
-      }
-
-      const { report } = await response.json();
-      const readiness = Math.max(
-        0,
-        100 - Math.round((report.cnsFatigue + report.muscleDamage) / 2)
-      );
 
       overlay.innerHTML = _buildBiometricReport(report, readiness, L);
       haptic(50);
@@ -1073,7 +912,7 @@ export const IntelView = (() => {
     const data = id && _workoutCards.get(id);
     if (!data) return;
     haptic(10);
-    await DB.PlannedWorkouts.save(data.title || 'Workout', data);
+    await savePlannedWorkout(data);
     IntelStore.addLog('SYS', `Workout saved: ${data.title || 'Workout'}`);
     btn.disabled = true;
     btn.textContent = _copy().saved;

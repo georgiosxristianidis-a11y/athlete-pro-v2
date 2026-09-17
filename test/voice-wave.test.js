@@ -286,9 +286,11 @@ test('движение отключается при prefers-reduced-motion', ()
 /* ── Проводка в экране ── */
 
 test('speakText снимает волну и отзывает блоб на КАЖДОМ выходе', () => {
+  /* A9 увёл синтез (ключ, запрос, PCM→WAV) в `intel.store.js`; в экране
+     осталась ровно эта функция, и следующая за ней — generateWeekly. */
   const start = VIEW_SRC.indexOf('async function speakText');
-  const end = VIEW_SRC.indexOf('function pcmToWav');
-  assert.ok(start !== -1 && end > start, 'якоря speakText / pcmToWav пропали');
+  const end = VIEW_SRC.indexOf('async function generateWeekly');
+  assert.ok(start !== -1 && end > start, 'якоря speakText / generateWeekly пропали');
   const speak = VIEW_SRC.slice(start, end);
 
   assert.match(speak, /startVoiceWave\(audio,/, 'волна больше не стартует вместе с озвучкой');
