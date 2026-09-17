@@ -132,7 +132,8 @@ describe('A15: views не зовут DB.* напрямую (кроме store)', 
   const BASELINE = {
     'js/ai-settings.view.js': 3,
     'js/claude.view.js': 5,
-    'js/intel.view.js': 11,
+    // A9 (17.09): 11 → 0, экран ходит в базу только через js/intel.store.js.
+    'js/intel.view.js': 0,
     'js/privacy.view.js': 6,
     'js/profile.js': 39,
     'js/profile.view/settings.js': 1,

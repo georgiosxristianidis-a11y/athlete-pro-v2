@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A9: сеть и IndexedDB экрана Intel — в стор (1.27.117)
+
+`intel.view.js` был вторым dashboard: экран сам читал историю и настройки, сам собирал тело
+запроса к коучу, сам разбирал кадры SSE, сам синтезировал речь и сам писал план в базу.
+Семь операций переехали в `js/intel.store.js` — `streamCoachReply` (чтение истории + запрос +
+разбор SSE, текст отдаётся наружу колбэком), `synthesizeSpeech` (ключ, запрос TTS, PCM→WAV),
+`fetchWeeklyReport` (включая окно последних семи дней), `fetchBiometricsScan` (включая расчёт
+готовности), `savePlannedWorkout`, `probeKeyState`, `getAutoSpeech`. Экран остался с DOM:
+1102 → 941 строки, прямых `DB.*` 11 → 0 (baseline A15), `fetch` — ноль.
+
+Поведение не менялось: тот же порядок запросов, те же тексты ошибок через `toUserMessage`,
+тот же один тычок вибрации на первом токене, тот же порядок «сперва граф волны, потом
+`play()`» (мина VOICE-1). Гарды `test/intel-engine-wiring.test.js` переехали на стор вместе
+с кодом и проверены поломкой кода, а не зелёным прогоном; сверх прежних добавлены два —
+экран не имеет права на свой `fetch`/`DB.*` и профиль уходит на сервер только через
+`stripSecrets`.
+
 ### A5: BLOCK_NAMES_EN вне chamber-pill (1.27.115)
 
 `workout.store.js` импортировал `chamber-pill.js` ради констант `BLOCK_NAMES_EN` — файл
