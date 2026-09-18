@@ -35,7 +35,7 @@
     "@anthropic-ai/sdk": "^0.124.0",
     "@google/genai": "^2.21.0",
     "@supabase/supabase-js": "^2.116.0",
-    "compression": "^1.8.1",
+    "compression": "^1.8.2",
     "cors": "^2.8.6",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
