@@ -2,7 +2,7 @@
 
 > Проф-метрики фазы «Архитектура». Не роутер задач (тот — `NEXT_SESSION.md`).
 > Карточки Cursor с метками — `docs/handoff/HANDOFF_cursor_arch_cards.md`.
-> Обновлено: **2026-09-16** · база замера: `1.27.115` · дерево: `main`
+> Обновлено: **2026-09-18** · база замера: `1.27.119` · дерево: `main`
 > Источник аудита: сессия 2026-08-31 (Store/View × backend × data × sync).
 >
 > **Пересчёт под закрытую A11 (09-13).** PR #345: `_netBlocked()` на process/pull/keep-alive/signIn.
@@ -15,13 +15,16 @@
 > **Пересчёт под A9 (09-17).** Intel перестал быть гибридом: сеть, SSE и IDB ушли в
 > `intel.store.js`, экран поднялся 25 → 85. Архитектура **74.3%**, долг **65%**. Карточки для
 > сортировки — handoff Cursor.
+> **Пересчёт под A13 (09-18).** Профиль повторил путь Intel: 46 прямых `DB.*` на трёх файлах
+> экрана → 0, всё через `profile.store.js`; поверхность 40 → 85. Архитектура **75.7%**,
+> долг **71%**.
 
 ## Сводка
 
 | Метрика | Значение | Как читать |
 |---|---|---|
-| **Архитектура в целом** | **74.3%** | Зрелость слоёв (ниже). Не «сколько фич». |
-| **Долг аудита закрыт** | **65%** | 10 `done` + 2 `partial` из 17 (A1/A2/A3/A4/A6/A7/A8/A9/A11/A5 + A14/A15). |
+| **Архитектура в целом** | **75.7%** | Зрелость слоёв (ниже). Не «сколько фич». |
+| **Долг аудита закрыт** | **71%** | 11 `done` + 2 `partial` из 17 (A1/A2/A3/A4/A6/A7/A8/A9/A11/A5/A13 + A14/A15). |
 | **Этап 2 роадмапа** (`ROADMAP` §2) | **~56%** | Store/View + нарезка монолитов. |
 | **Этап 3 роадмапа** (`ROADMAP` §3) | **~70%** | Thin `server.js` есть; промпты/auth — нет. |
 | **LAUNCH-код** | **~97%** | Код трека влит; осталось поле Gio + **AI-1**. |
@@ -38,13 +41,13 @@
 
 ---
 
-## 1. Зрелость слоёв (→ 74.3%)
+## 1. Зрелость слоёв (→ 75.7%)
 
 Веса фиксированы. «Done%» — экспертная оценка по коду на дату замера.
 
 | Слой | Вес | Done% | Вклад | Доказательство |
 |---|---:|---:|---:|---|
-| Store/View по поверхностям | 30% | 63.5% | 19.05 | Journal эталон; Onboarding гибрид, Intel им быть перестал (A9, 17.09); A1/A4/A5/A9 закрыты, A8 частично (read-модель) |
+| Store/View по поверхностям | 30% | 68.0% | 20.40 | Journal эталон; Onboarding гибрид, Intel и Profile им быть перестали (A9 17.09, A13 18.09); A1/A4/A5/A9/A13 закрыты, A8 частично (read-модель) |
 | Нарезка монолитов | 15% | 55% | 8.25 | `workout.view/*` да; `dashboard.js` монолит нет |
 | Навигация / shell | 10% | 85% | 8.5 | 4 вкладки + overlay registry; A6/A7/NAV-1 закрыты — `s-body` снесён (не просто чинён, follow-up 1.27.108) |
 | IndexedDB / data | 15% | 90% | 13.5 | `js/db/*` v4, facade, миграции, soft-delete workouts |
@@ -52,9 +55,9 @@
 | Sync / privacy enforcement | 10% | 85% | 8.5 | `safeFetch` + LWW; airgap закрыт на всех четырёх выходах — `process()`, `pull()`, keep-alive, `signIn()` (#345, `_netBlocked()`), поведенческий гард `test/sync-privacy-gate.test.js`. Не 100%: барьер не общий, см. §5 |
 | PWA / SW / boot graph | 5% | 100% | 5.0 | `build:sw`, two-phase; с бута сняты Athlete Room / Integrity / panda (#321) и `privacy.view` / `rest-timer` / `pip` (#328) |
 | Контракты / Integrity | 5% | 80% | 4.0 | `integrity.js` жив, A2 (14.09): `Integrity.check()` зовётся после каждого lazy load (Workout/Profile/Analytics/Claude/Athlete Room, `js/app.js`). Не 100%: сам гард best-effort, не покрывает все контракты исчерпывающе |
-| **Итого** | 100% | | **74.30 ≈ 74.3** | сумма столбца «Вклад» |
+| **Итого** | 100% | | **75.65 ≈ 75.7** | сумма столбца «Вклад» |
 
-### Store/View по экранам (среднее → 63.5%)
+### Store/View по экранам (среднее → 68.0%)
 
 | Поверхность | % | Статус |
 |---|---:|---|
@@ -64,7 +67,7 @@
 | Body stats | 60 | `.core` чистый; часть метрик в view / localStorage |
 | Analytics | 55 | Store ок; view пишет/удаляет workouts |
 | Claude FAB | 55 | Толстый store; view читает Settings |
-| Profile | 40 | Три слоя (`profile.js` / `.store` / `.view`), экран-гибрид |
+| Profile | 85 | A13 (18.09): настройки, маскот, паспорт, бэкап и удаление в `profile.store.js`; во всех трёх файлах экрана ноль `DB.*`. Не 100 — `profile.js` всё ещё держит разметку экрана рядом с хендлерами настроек |
 | Onboarding | 35 | F-7/F-8 закрыты; всё ещё один гибрид-файл |
 | Intel | 85 | A9 (17.09): сеть, SSE, IDB и окно недели в `intel.store.js`; view без единого `DB.*` и `fetch`. Не 100 — разметка отчёта и виджетов всё ещё в экране |
 | Dashboard / Home | 20 | `dashboard.store.js` — тоннаж/streak/next-type (zero DOM, A8); рендер/HTML ещё в `dashboard.js` |
@@ -105,7 +108,7 @@
 
 ---
 
-## 3. Долг аудита — backlog (→ 65% закрыто)
+## 3. Долг аудита — backlog (→ 71% закрыто)
 
 Статусы: `open` · `partial` · `done`. Считать «закрытым» только `done`.
 Карточки с пояснениями — `docs/handoff/HANDOFF_cursor_arch_cards.md`.
@@ -124,15 +127,15 @@
 | A10 | Промпты коуча в `lib/prompts/` | **open** | `routes/coach.js` `_buildSystemPrompt` | Не менять SSE; только вынести строки |
 | A11 | Airgap-гейт в `SyncManager.process()` / `push` | **done** (09-13) | `_netBlocked()` в `js/sync.js` закрывает `process()`, `pull()`, keep-alive и `signIn()`; гард `test/sync-privacy-gate.test.js` шпионит по объекту `supabase`, а не по исходнику. PR #345 · `7b8304e` · 1.27.101 | — |
 | A12 | Снять Firebase-призрак (CSP + endpoint) | **open** | `routes/integrations.js` `/firebase-config`; smoke ждёт endpoint | Отдельный PR + smoke |
-| A13 | Профиль: один владелец экрана | **open** | `profile.js` + store + view | **Следующая по фазе 3** — A9 закрыт (17.09); 39 прямых `DB.*` в `profile.js` |
+| A13 | Профиль: один владелец экрана | **done** (18.09) | `js/profile.store.js` — `getAllSettings`/`getStoredLang`/`adjustRestDuration`/`toggle*Pref`/`getNotifyRest`+`setNotifyRest`/`togglePandaHidden`+`revealMascot`/`loadPassportSources`/`getAvatarAppearance`/`exportBackupJson`+`saveLastExportAt`/`importBackupJson`/`deleteAllUserData`/`getAllWorkouts`/`deduplicateWorkouts`/`getGymPlace`+`saveGymPlace`/`loadTxtExportSources`; baseline A15 39 → 0 (`profile.js`), 6 → 0 (`profile.view.js`), 1 → 0 (`profile.view/settings.js`). Гард удаления переехал на стор, новый `test/profile-store.test.js`. 1.27.119 | — |
 | A14 | Athlete Room / Island не на critical path | **partial** | Комната lazy (#321); `privacy.view` с бута снят (#328, `app.js` импортирует только `privacy.store`). Island **всё ещё eager**: static import `app.js:14` + `modulepreload` в `index.html:111` | Остался один Island. Отдельная карточка — снимать вместе с `dynamic-island.css` |
-| A15 | Views не пишут в IDB напрямую (кроме store) | **partial** (17.09) | правило в `architecture.md` + `test/import-guard.test.js`; мигрированы `analytics.view.js::removeCalendarEntry` (14.09) и весь `intel.view.js` (17.09, A9: 11 → 0) — остальные поверхности (profile/claude/privacy/workout) ещё прямые | Следующая поверхность — `profile.js` по A13 |
+| A15 | Views не пишут в IDB напрямую (кроме store) | **partial** (18.09) | правило в `architecture.md` + `test/import-guard.test.js`; мигрированы `analytics.view.js::removeCalendarEntry` (14.09), весь `intel.view.js` (17.09, A9: 11 → 0) и экран профиля (18.09, A13: 46 → 0 на трёх файлах) — остальные поверхности (claude/privacy/workout/ai-settings) ещё прямые. Гард с 18.09 режет комментарии: JSDoc больше не считается вызовом | Следующая поверхность — `claude.view.js` (5) или `privacy.view.js` (6) |
 | A16 | Мёртвый `lib/tokenUsage.js` | **open** | нет импортеров | Удалить или подключить |
 | A17 | `longTermStats` в схеме без использования | **open** | `coach.js` принимает и передаёт в `_buildSystemPrompt`, в шаблон **не попадает** | Убрать поле или прокинуть в prompt |
 
-**Чистый `done`: 10/17 (A1, A2, A3, A4, A5, A6, A7, A8, A9, A11).**  
+**Чистый `done`: 11/17 (A1, A2, A3, A4, A5, A6, A7, A8, A9, A11, A13).**  
 **Partial: A14, A15.**  
-**65%** = `(10 + 0.5×2) / 17` = 64.7, округление вверх.
+**71%** = `(11 + 0.5×2) / 17` = 70.6, округление вверх.
 
 Продуктовые закрытия (F-7/F-8, motion, analytics field, BOOT-TRIM) в A1–A17 не входят, кроме пересечения A14.
 
