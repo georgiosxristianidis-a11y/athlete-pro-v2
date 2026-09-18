@@ -107,7 +107,7 @@ describe('static guard: modulepreload targets in index.html', () => {
 describe('A15: views не зовут DB.* напрямую (кроме store)', () => {
   const JS_ROOT = path.join(ROOT, 'js');
 
-  /** view-файл в терминах A15: `*.view.js`, что-то внутри `*.view/`, и легаси-гибрид `profile.js`. */
+  /** view-файл в терминах A15: `*.view.js`, что-то внутри `*.view/`, и владелец экрана `profile.js`. */
   function isViewFile(relPosix) {
     if (relPosix === 'js/profile.js') return true;
     if (/\.view\//.test(relPosix)) return true;
@@ -124,8 +124,15 @@ describe('A15: views не зовут DB.* напрямую (кроме store)', 
     return out;
   }
 
+  /**
+   * Комментарии вырезаем той же функцией, что и выше: `@param {Object} settings
+   * - All settings from DB.Settings.getAll()` — документация, а не вызов, и без
+   * стрипа она держала `profile.view/settings.js` на baseline 1 навсегда.
+   * Обратную ошибку (гард зеленеет на закомментированном коде) это не вносит:
+   * закомментированный `DB.*` и есть отсутствие вызова.
+   */
   function countDbCalls(src) {
-    return (src.match(/\bDB\.[A-Za-z]/g) || []).length;
+    return (stripComments(src).match(/\bDB\.[A-Za-z]/g) || []).length;
   }
 
   /** Долг на дату правила (14.09.2026) — не расти. Понижается миграцией по поверхности. */
@@ -135,9 +142,11 @@ describe('A15: views не зовут DB.* напрямую (кроме store)', 
     // A9 (17.09): 11 → 0, экран ходит в базу только через js/intel.store.js.
     'js/intel.view.js': 0,
     'js/privacy.view.js': 6,
-    'js/profile.js': 39,
-    'js/profile.view/settings.js': 1,
-    'js/profile.view.js': 6,
+    // A13 (18.09): 39 → 0 — экран профиля ходит в базу только через
+    // js/profile.store.js. Вместе с ним 0 получили оба его view-файла.
+    'js/profile.js': 0,
+    'js/profile.view/settings.js': 0,
+    'js/profile.view.js': 0,
     'js/workout-ai.view.js': 3,
     'js/workout.view/handlers.js': 4,
     'js/workout.view/render.js': 2,

@@ -3,8 +3,29 @@
    profile.js — Athlete Pro  |  Profile: settings, metrics, data management
    ════════════════════════════════════════════════════════ */
 
-import { DB } from './db.js';
-import { K_LAST_EXPORT } from './db/backup.js';
+import {
+  getAllSettings,
+  getStoredLang,
+  adjustRestDuration,
+  setWeightUnit,
+  toggleHapticPref,
+  toggleAutoProgressPref,
+  toggleKeepAwakePref,
+  getNotifyRest,
+  setNotifyRest,
+  togglePandaHidden,
+  revealMascot,
+  exportBackupJson,
+  saveLastExportAt,
+  importBackupJson,
+  deleteAllUserData,
+  getAllWorkouts,
+  deduplicateWorkouts,
+  getGymPlace,
+  saveGymPlace,
+  loadTxtExportSources,
+  computeAge,
+} from './profile.store.js';
 import { t, getLang } from './locale.store.js';
 import { renderProfile } from './profile.view.js';
 import { renderSettings, backupSubLabel, backupMetaLabel } from './profile.view/settings.js';
@@ -37,7 +58,7 @@ export const Profile = (() => {
     if (!screen) return;
 
     try {
-      const [syncStatus, settings] = await Promise.all([_syncStatus(), DB.Settings.getAll()]);
+      const [syncStatus, settings] = await Promise.all([_syncStatus(), getAllSettings()]);
       const lang = getLang() || 'en';
 
       screen.innerHTML = `
@@ -110,12 +131,12 @@ export const Profile = (() => {
   async function _refreshSettings() {
     const block = document.getElementById('profile-settings-block');
     if (!block) return;
-    const [syncStatus, settings, langRaw] = await Promise.all([
+    const [syncStatus, settings, lang] = await Promise.all([
       _syncStatus(),
-      DB.Settings.getAll(),
-      DB.Settings.get('lang', 'en'),
+      getAllSettings(),
+      getStoredLang(),
     ]);
-    block.innerHTML = renderSettings(settings, langRaw || 'en', syncStatus);
+    block.innerHTML = renderSettings(settings, lang, syncStatus);
   }
 
   /** Re-render the passport only — for actions that change workouts, not settings. */
@@ -124,7 +145,7 @@ export const Profile = (() => {
     if (!el) return Promise.resolve();
     const done = lang
       ? renderProfile(el, lang)
-      : DB.Settings.get('lang', 'en').then((l) => renderProfile(el, l || 'en'));
+      : getStoredLang().then((l) => renderProfile(el, l));
     return done.catch(console.error);
   }
 
@@ -132,7 +153,7 @@ export const Profile = (() => {
      still updates blocks in place instead of replacing the screen, which is
      what kept the passport alive. */
   async function _refreshLangDependent() {
-    const lang = (await DB.Settings.get('lang', 'en')) || 'en';
+    const lang = await getStoredLang();
 
     const title = document.getElementById('profile-title');
     if (title) title.textContent = t('profile.title');
@@ -215,36 +236,27 @@ export const Profile = (() => {
   }
 
   async function adjustRest(delta) {
-    const current = parseInt((await DB.Settings.get('rest-duration')) || 90);
-    const next = Math.max(15, Math.min(300, current + delta));
-    await DB.Settings.set('rest-duration', next);
+    await adjustRestDuration(delta);
     _refreshSettings();
   }
 
   async function setUnit(unit) {
-    await DB.Settings.set('weight-unit', unit);
+    await setWeightUnit(unit);
     _refreshSettings();
   }
 
   async function toggleHaptic() {
-    const current = await DB.Settings.get('haptic', 'on');
-    const next = current === 'off' ? 'on' : 'off';
-    await DB.Settings.set('haptic', next);
+    await toggleHapticPref();
     _refreshSettings();
   }
 
   async function toggleAutoProgress() {
-    const current = await DB.Settings.get('auto-progress', 'on');
-    const next = current === 'off' ? 'on' : 'off';
-    await DB.Settings.set('auto-progress', next);
+    await toggleAutoProgressPref();
     _refreshSettings();
   }
 
   async function togglePanda() {
-    const current = await DB.Settings.get('ai-panda-hidden', false);
-    const next = !current;
-    await DB.Settings.set('ai-panda-hidden', next);
-    await DB.Settings.set('show-mascot', next ? 'off' : 'on');
+    const next = await togglePandaHidden();
 
     const { Claude } = await import('./claude.view.js');
     if (next) {
@@ -263,8 +275,7 @@ export const Profile = (() => {
     setFlag('fab-video', next);
     if (next) {
       // маскот/FAB должны быть видимы, иначе включение «в пустоту»
-      await DB.Settings.set('ai-panda-hidden', false);
-      await DB.Settings.set('show-mascot', 'on');
+      await revealMascot();
     }
     // применить вживую: пересобрать FAB под новый флаг
     const { Claude } = await import('./claude.view.js');
@@ -285,8 +296,7 @@ export const Profile = (() => {
     setFlag('panda-moods', next);
     if (next) {
       setFlag('fab-video', true);
-      await DB.Settings.set('ai-panda-hidden', false);
-      await DB.Settings.set('show-mascot', 'on');
+      await revealMascot();
     }
     const { Claude } = await import('./claude.view.js');
     document.getElementById('claude-fab-container')?.remove();
@@ -296,11 +306,11 @@ export const Profile = (() => {
   }
 
   async function exportData() {
-    const json = await DB.Backup.export();
+    const json = await exportBackupJson();
     const { downloadText, exportFilename } = await import('./shared/download.js');
     downloadText(json, exportFilename('backup', 'json'), 'application/json');
     const now = Date.now();
-    await DB.Settings.set(K_LAST_EXPORT, now);
+    await saveLastExportAt(now);
     Toast.show(t('backup.done'), 'success');
     // Refresh the date in place — no full re-render (export can be triggered
     // from the reminder toast while another screen is active). Дата живёт в
@@ -321,7 +331,7 @@ export const Profile = (() => {
     if (!file) return;
     try {
       const text = await file.text();
-      await DB.Backup.import(text);
+      await importBackupJson(text);
       Toast.show(t('profile.import_ok'), 'success');
       // Import can rewrite everything — settings, workouts, language. This is
       // the one case where a full rebuild is the honest answer; it's rare and
@@ -341,7 +351,7 @@ export const Profile = (() => {
       _deleteTapTimer = null;
       btn.classList.add('slide-out');
       setTimeout(async () => {
-        await DB.deleteAllUserData();
+        await deleteAllUserData();
         window.location.reload();
       }, 400);
     } else {
@@ -355,9 +365,7 @@ export const Profile = (() => {
   }
 
   async function toggleKeepAwake() {
-    const current = await DB.Settings.get('keep-awake', 'on'); // BG-1: default ON (opt-out)
-    const next = current === 'off' ? 'on' : 'off';
-    await DB.Settings.set('keep-awake', next);
+    await toggleKeepAwakePref(); // BG-1: default ON (opt-out)
     _refreshSettings();
   }
 
@@ -373,12 +381,10 @@ export const Profile = (() => {
   async function toggleNotify() {
     const supported = typeof Notification !== 'undefined';
     const isOn =
-      (await DB.Settings.get('notify-rest', 'off')) === 'on' &&
-      supported &&
-      Notification.permission === 'granted';
+      (await getNotifyRest()) === 'on' && supported && Notification.permission === 'granted';
 
     if (isOn) {
-      await DB.Settings.set('notify-rest', 'off');
+      await setNotifyRest('off');
       Toast.show(t('settings.notify_off'), 'info');
       return _refreshSettings();
     }
@@ -392,12 +398,12 @@ export const Profile = (() => {
     if (perm === 'default') perm = await Notification.requestPermission().catch(() => 'denied');
     if (perm !== 'granted') {
       // Настройку не включаем: иначе тумблер горел бы при глухом разрешении.
-      await DB.Settings.set('notify-rest', 'off');
+      await setNotifyRest('off');
       Toast.show(t('settings.notify_denied'), 'error');
       return _refreshSettings();
     }
 
-    await DB.Settings.set('notify-rest', 'on');
+    await setNotifyRest('on');
     haptic(10);
     Toast.show(t('settings.notify_on'), 'success');
     return _refreshSettings();
@@ -412,7 +418,7 @@ export const Profile = (() => {
   async function exportCsv() {
     const { workoutsToCsv, downloadCsv } = await import('./shared/csv-export.js');
     const { exportFilename } = await import('./shared/download.js');
-    const workouts = await DB.Workouts.getAll();
+    const workouts = await getAllWorkouts();
     downloadCsv(workoutsToCsv(workouts), exportFilename('workouts', 'csv'));
   }
 
@@ -425,10 +431,7 @@ export const Profile = (() => {
      один раз (дальше подставляются молча из настроек), потому что журнал
      обычно уезжает тренеру, и «где это было» — часть ответа. */
   async function exportTxt() {
-    const [gymSaved, countrySaved] = await Promise.all([
-      DB.Settings.get('gym-name', ''),
-      DB.Settings.get('gym-country', ''),
-    ]);
+    const { gym: gymSaved, country: countrySaved } = await getGymPlace();
 
     // Спрашиваем, пока место не заполнено. Заполнено — не мешаем: менять
     // можно, стерев значение (следующий экспорт снова спросит).
@@ -447,23 +450,13 @@ export const Profile = (() => {
       });
       if (!res) return; // отмена — файл не создаём
       place = res;
-      await Promise.all([
-        DB.Settings.set('gym-name', place.gym || ''),
-        DB.Settings.set('gym-country', place.country || ''),
-      ]);
+      await saveGymPlace(place);
     }
 
     const { workoutsToTxt } = await import('./shared/txt-export.js');
     const { downloadText, exportFilename } = await import('./shared/download.js');
-    const { loadProfile, computeAge } = await import('./profile.store.js');
 
-    const [workouts, orms, customName, profile, metrics] = await Promise.all([
-      DB.Workouts.getAll(),
-      DB.OneRM.getAll().catch(() => []),
-      DB.Settings.get('athlete-name', ''),
-      loadProfile().catch(() => null),
-      DB.Metrics.latest().catch(() => null),
-    ]);
+    const { workouts, orms, customName, profile, metrics } = await loadTxtExportSources();
 
     const lang = getLang() === 'ru' ? 'ru' : 'en';
     const txt = workoutsToTxt(workouts, {
@@ -475,7 +468,7 @@ export const Profile = (() => {
         gym: place.gym,
         country: place.country,
       },
-      records: (orms || []).map((r) => ({ name: r.id, value: Number(r.value) || 0 })),
+      records: orms.map((r) => ({ name: r.id, value: Number(r.value) || 0 })),
     });
     downloadText(txt, exportFilename('log', 'txt'));
     Toast.show(t('data.export_txt_done'), 'success');
@@ -494,7 +487,7 @@ export const Profile = (() => {
 
   async function deduplicateDB() {
     const { t } = await import('./locale.store.js');
-    const removed = await DB.Workouts.deduplicate();
+    const removed = await deduplicateWorkouts();
     Toast.show(t('data.dedup_done', { n: removed }), removed > 0 ? 'success' : 'info');
     // Dedup changes workouts, not settings — only the passport is stale.
     _refreshPassport();

@@ -135,8 +135,12 @@ describe('удаление всех данных — контракт localStora
     assert.equal(ls.size, 0);
   });
 
+  /* A13 (18.09): вызов из профиля переехал в `js/profile.store.js` — экран
+     в базу больше не ходит (baseline A15 в test/import-guard.test.js). Гард
+     идёт за кодом: сторожим тот файл, где вызов живёт сейчас, и отдельно —
+     что кнопка экрана до него дотягивается. */
   test('оба пользовательских пути удаления зовут deleteAllUserData, не clearAll', () => {
-    for (const rel of ['js/privacy.view.js', 'js/profile.js']) {
+    for (const rel of ['js/privacy.view.js', 'js/profile.store.js']) {
       const src = code(rel);
       assert.match(
         src,
@@ -149,5 +153,20 @@ describe('удаление всех данных — контракт localStora
         `${rel} вернулся к IDB-only очистке: localStorage останется нетронутым`
       );
     }
+  });
+
+  test('кнопка «Clear All Data» на экране профиля дотягивается до этого пути', () => {
+    const src = code('js/profile.js');
+    const imported = src.match(/import\s*\{([\s\S]*?)\}\s*from '\.\/profile\.store\.js'/)?.[1] || '';
+    assert.match(
+      imported,
+      /\bdeleteAllUserData\b/,
+      'js/profile.js больше не берёт deleteAllUserData из стора — путь удаления оборвался'
+    );
+    assert.match(
+      src,
+      /await deleteAllUserData\(\)/,
+      'clearAllData() экрана не зовёт удаление: второй тап по кнопке перезагрузит страницу впустую'
+    );
   });
 });
