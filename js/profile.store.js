@@ -5,9 +5,16 @@
    Storage: DB.Settings (key/value, IndexedDB).
    Schema namespaced under 'profile.*'.
    Computed fields (BMI, FFMI, age, LBM) derived on read.
+
+   A13 (18.09): единственный вход в IndexedDB для экрана профиля.
+   `js/profile.js` владеет экраном и DOM, `js/profile.view*` — разметкой;
+   ни один из них не зовёт `DB.*` (baseline A15 в test/import-guard.test.js).
+   Ниже профиля лежат три секции того же экрана: настройки приложения,
+   маскот и управление данными — их ключи живут в том же key/value-сторе.
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
+import { K_LAST_EXPORT } from './db/backup.js';
 
 const KEYS = {
   name: 'profile.name',
@@ -177,4 +184,199 @@ export async function getSealedEnvelope() {
 
 export async function clearSealedEnvelope() {
   return DB.Settings.set(KEYS.sealedEnvelope, null);
+}
+
+/* ════════════════════════════════════════════════════════
+   APP SETTINGS — тумблеры экрана профиля (A13)
+   ────────────────────────────────────────────────────────
+   Настройки приложения лежат в том же key/value-сторе, что профиль, и
+   рисуются на том же экране. Экран получает готовый снимок и зовёт
+   именованный тумблер; ключей он больше не знает.
+   ════════════════════════════════════════════════════════ */
+
+/**
+ * Снимок всех настроек для рендера экрана.
+ * Наружу не уходит: profile.js рисует им UI, а не шлёт в запрос —
+ * снимок содержит BYOK-ключи (см. test/perimeter-guard.test.js).
+ * @returns {Promise<Record<string, any>>}
+ */
+export async function getAllSettings() {
+  return DB.Settings.getAll();
+}
+
+/** Язык интерфейса, как он лежит в базе. Фолбэк 'en' — здесь, не у вызывающего.
+ *  @returns {Promise<string>} */
+export async function getStoredLang() {
+  return (await DB.Settings.get('lang', 'en')) || 'en';
+}
+
+/** on/off тумблер настройки. Дефолт ON (opt-out), возвращает новое значение.
+ *  @param {string} key @returns {Promise<'on'|'off'>} */
+async function _toggleOnOff(key) {
+  const current = await DB.Settings.get(key, 'on');
+  const next = current === 'off' ? 'on' : 'off';
+  await DB.Settings.set(key, next);
+  return next;
+}
+
+/** Длительность отдыха, шаг от кнопок ±. Границы 15..300 с — здесь, не в UI.
+ *  @param {number} delta @returns {Promise<number>} новая длительность */
+export async function adjustRestDuration(delta) {
+  const current = parseInt((await DB.Settings.get('rest-duration')) || 90);
+  const next = Math.max(15, Math.min(300, current + delta));
+  await DB.Settings.set('rest-duration', next);
+  return next;
+}
+
+/** @param {string} unit */
+export async function setWeightUnit(unit) {
+  await DB.Settings.set('weight-unit', unit);
+}
+
+export async function toggleHapticPref() {
+  return _toggleOnOff('haptic');
+}
+
+export async function toggleAutoProgressPref() {
+  return _toggleOnOff('auto-progress');
+}
+
+/** BG-1: дефолт ON (opt-out) — держится в `_toggleOnOff`. */
+export async function toggleKeepAwakePref() {
+  return _toggleOnOff('keep-awake');
+}
+
+/** @returns {Promise<'on'|'off'>} */
+export async function getNotifyRest() {
+  return (await DB.Settings.get('notify-rest', 'off')) === 'on' ? 'on' : 'off';
+}
+
+/** @param {'on'|'off'} value */
+export async function setNotifyRest(value) {
+  await DB.Settings.set('notify-rest', value);
+}
+
+/* ════════════════════════════════════════════════════════
+   MASCOT — видимость панды
+   ────────────────────────────────────────────────────────
+   Две записи на одно состояние: 'ai-panda-hidden' читает FAB,
+   'show-mascot' — пустой Home. Пара обязана меняться вместе, поэтому
+   живёт функцией здесь, а не двумя `set` на каждом тумблере экрана.
+   ════════════════════════════════════════════════════════ */
+
+/** @returns {Promise<boolean>} новое состояние «панда скрыта» */
+export async function togglePandaHidden() {
+  const current = await DB.Settings.get('ai-panda-hidden', false);
+  const next = !current;
+  await DB.Settings.set('ai-panda-hidden', next);
+  await DB.Settings.set('show-mascot', next ? 'off' : 'on');
+  return next;
+}
+
+/** Показать маскота: включение живой панды и мимик иначе шло бы «в пустоту». */
+export async function revealMascot() {
+  await DB.Settings.set('ai-panda-hidden', false);
+  await DB.Settings.set('show-mascot', 'on');
+}
+
+/* ════════════════════════════════════════════════════════
+   PASSPORT — данные под hero, бенто и радар
+   ════════════════════════════════════════════════════════ */
+
+/**
+ * Всё, что паспорту нужно из базы, одним заходом.
+ * Маппинг 1RM (`mapOneRMs`) остаётся во view намеренно: `js/shared/lift-map.js`
+ * снят с бут-графа (BOOT-TRIM), а этот стор в первом кадре — статический импорт
+ * вернул бы модуль в install-фазу прекеша.
+ * @returns {Promise<{ profile: ProfileData, workouts: any[], latestMetrics: any, oneRMsRaw: any[] }>}
+ */
+export async function loadPassportSources() {
+  const [profile, workouts, latestMetrics, oneRMsRaw] = await Promise.all([
+    loadProfile(),
+    DB.Workouts.getAll(),
+    DB.Metrics.latest(),
+    DB.OneRM.getAll(),
+  ]);
+  return { profile, workouts, latestMetrics, oneRMsRaw };
+}
+
+/** Фото и индекс палитры аватара (Athlete Room).
+ *  @returns {Promise<{ photo: string|null, colorIdx: number }>} */
+export async function getAvatarAppearance() {
+  const [photo, colorIdxRaw] = await Promise.all([
+    DB.Settings.get('athlete-photo', null),
+    DB.Settings.get('avatar-color', '0'),
+  ]);
+  return { photo, colorIdx: parseInt(colorIdxRaw) || 0 };
+}
+
+/* ════════════════════════════════════════════════════════
+   DATA — бэкап, экспорт, удаление
+   ════════════════════════════════════════════════════════ */
+
+/** @returns {Promise<string>} JSON бэкапа */
+export async function exportBackupJson() {
+  return DB.Backup.export();
+}
+
+/** Дата последнего JSON-бэкапа — её же читает напоминалка в app.js.
+ *  @param {number} ts */
+export async function saveLastExportAt(ts) {
+  await DB.Settings.set(K_LAST_EXPORT, ts);
+}
+
+/** @param {string} text */
+export async function importBackupJson(text) {
+  await DB.Backup.import(text);
+}
+
+/** Пользовательское «удалить все мои данные»: мимо `DB.clearAll()` —
+ *  тот не трогает localStorage, и курсор синка утянул бы историю назад
+ *  (гард test/clear-all-local.test.js). */
+export async function deleteAllUserData() {
+  await DB.deleteAllUserData();
+}
+
+/** @returns {Promise<any[]>} */
+export async function getAllWorkouts() {
+  return DB.Workouts.getAll();
+}
+
+/** @returns {Promise<number>} сколько дублей убрано */
+export async function deduplicateWorkouts() {
+  return DB.Workouts.deduplicate();
+}
+
+/** Место тренировок для шапки TXT-журнала.
+ *  @returns {Promise<{ gym: string, country: string }>} */
+export async function getGymPlace() {
+  const [gym, country] = await Promise.all([
+    DB.Settings.get('gym-name', ''),
+    DB.Settings.get('gym-country', ''),
+  ]);
+  return { gym: gym || '', country: country || '' };
+}
+
+/** @param {{ gym?: string, country?: string }} place */
+export async function saveGymPlace(place) {
+  await Promise.all([
+    DB.Settings.set('gym-name', place.gym || ''),
+    DB.Settings.set('gym-country', place.country || ''),
+  ]);
+}
+
+/**
+ * Источники TXT-журнала. Отказ любого необязательного куска не ломает выгрузку:
+ * рекорды, профиль и вес падают в пустоту, журнал уезжает без них.
+ * @returns {Promise<{ workouts: any[], orms: any[], customName: string, profile: ProfileData|null, metrics: any }>}
+ */
+export async function loadTxtExportSources() {
+  const [workouts, orms, customName, profile, metrics] = await Promise.all([
+    DB.Workouts.getAll(),
+    DB.OneRM.getAll().catch(() => []),
+    DB.Settings.get('athlete-name', ''),
+    loadProfile().catch(() => null),
+    DB.Metrics.latest().catch(() => null),
+  ]);
+  return { workouts, orms: orms || [], customName: customName || '', profile, metrics };
 }
