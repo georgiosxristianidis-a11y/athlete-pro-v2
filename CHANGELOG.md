@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A13: профиль перестал быть гибридом — IndexedDB только через стор (1.27.119)
+
+`profile.js` владел экраном, DOM и одновременно схемой хранилища: 39 прямых `DB.*`, ещё 6 в
+`profile.view.js`. Настройки приложения, маскот, бэкап и удаление данных лежат на этом экране,
+поэтому ключи вроде `rest-duration`, `show-mascot` и `gym-name` знал именно тот файл, который
+рисует разметку.
+
+Перенос по образцу A9 — всё в `js/profile.store.js`: снимок настроек и язык (`getAllSettings`,
+`getStoredLang`), тумблеры с их дефолтами и границами (`adjustRestDuration` держит 15..300,
+`toggleHapticPref` / `toggleAutoProgressPref` / `toggleKeepAwakePref` — дефолт ON,
+`getNotifyRest` / `setNotifyRest`), пара ключей маскота одной функцией (`togglePandaHidden`,
+`revealMascot` — раньше два `set` дублировались на трёх тумблерах), источники паспорта и
+аватара (`loadPassportSources`, `getAvatarAppearance`), данные (`exportBackupJson`,
+`saveLastExportAt`, `importBackupJson`, `deleteAllUserData`, `getAllWorkouts`,
+`deduplicateWorkouts`, `getGymPlace` / `saveGymPlace`, `loadTxtExportSources`).
+
+Поведение не менялось: тот же порядок операций и тех же `Promise.all`, те же тексты тостов,
+тот же haptic; `exportTxt` перестал импортировать стор динамически — он теперь статический.
+`mapOneRMs` осознанно остался во view: `js/shared/lift-map.js` снят с бут-графа (BOOT-TRIM), а
+стор сидит в первом кадре — статический импорт вернул бы модуль в install-фазу прекеша.
+
+baseline A15: `profile.js` 39 → 0, `profile.view.js` 6 → 0, `profile.view/settings.js` 1 → 0.
+Последний был ложным срабатыванием на JSDoc-строке — гард теперь режет комментарии тем же
+`stripComments`, которым выше чистит динамические импорты (на остальных девяти файлах baseline
+счёт не изменился, проверено). Гард удаления данных `test/clear-all-local.test.js` переехал за
+кодом на стор и получил вторую проверку: кнопка экрана обязана дотягиваться до этого пути.
+Новый `test/profile-store.test.js` (12 кейсов) держит дефолты, границы и парные записи — обе
+поломки (снятый clamp, потерянный `show-mascot`) красят его.
+
 ### Вес садится на сетку барабана — «выставил 20, записалось 19» (1.27.118)
 
 Полевой баг: выставляешь в тренировке 20 кг, в лог уходит 19 или 17. Прямого ввода веса
