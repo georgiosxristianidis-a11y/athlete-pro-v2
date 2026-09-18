@@ -32,7 +32,7 @@
     "build": "npm run build:sw"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.124.0",
+    "@anthropic-ai/sdk": "^0.126.0",
     "@google/genai": "^2.21.0",
     "@supabase/supabase-js": "^2.116.0",
     "compression": "^1.8.1",
