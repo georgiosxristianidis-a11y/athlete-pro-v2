@@ -390,3 +390,64 @@ test('pre-push смотрит production-зависимости, CI — все',
   await run({ argv: ['--retries=0'], env: {}, out: sink().out, audit: ci.audit });
   assert.equal(ci.calls[0].omitDev, false);
 });
+
+// --- Слой 3: повтор судит по причине, а не по факту отказа ------------------
+//
+// Появилось вместе со снятием `ping` из `.githooks/pre-push`. Пинг был ложным
+// признаком доступности АУДИТА — ICMP отвечал 19.09 ровно в тот день, когда
+// эндпоинт был мёртв, — но одну полезную работу делал: отсекал оффлайн за две
+// секунды. Без него мёртвая сеть стоила 8.9 с вместо 2 с: npm падал мгновенно, а
+// гард трижды ждал по 2.5 с того, чего не будет.
+//
+// Разделение простое: «до хоста не дошли» (нет DNS, нет маршрута, соединение
+// отвергнуто) повтором не лечится; «канал живой, но сорвался» — лечится.
+
+/** Оборванный сокет на живом канале: ретрай тут осмыслен. */
+const NETWORK_FLAKY = {
+  code: 1,
+  stdout: JSON.stringify({
+    message:
+      'request to https://registry.npmjs.org/-/npm/v1/security/audits/quick failed, reason: socket hang up',
+    error: { summary: '', detail: '' },
+  }),
+  stderr: 'npm error code ECONNRESET\nnpm error audit endpoint returned an error',
+};
+
+test('оффлайн не ретраится — ждать DNS и маршрут нечего', async () => {
+  const { lines, out } = sink();
+  const { audit, calls } = fakeAudit(NETWORK_DEAD);
+  const code = await run({
+    argv: ['--omit-dev', '--retries=2', '--retry-delay=0', '--on-unavailable=signal'],
+    env: {},
+    out,
+    audit,
+  });
+  assert.equal(calls.length, 1, 'baseline: было три попытки и 8.9 с на мёртвой сети');
+  assert.equal(code, EXIT.UNAVAILABLE, 'отказ проверки остаётся отказом — молчать он не начинает');
+  assert.match(lines.join('\n'), /\[SCA Skip\] Проверка НЕ выполнена/);
+});
+
+test('сорванный сокет на живом канале — ретраится', async () => {
+  const { audit, calls } = fakeAudit([NETWORK_FLAKY, CLEAN_REPORT]);
+  const code = await run({
+    argv: ['--retries=2', '--retry-delay=0'],
+    env: {},
+    out: sink().out,
+    audit,
+  });
+  assert.equal(calls.length, 2, 'ECONNRESET — не оффлайн: канал был, ответ сорвался');
+  assert.equal(code, EXIT.CLEAN);
+});
+
+test('classify кладёт сетевой код полем, а не только в текст', () => {
+  const dead = classify(NETWORK_DEAD);
+  assert.equal(dead.outcome, OUTCOME.UNAVAILABLE);
+  assert.equal(dead.reason, REASON.NETWORK);
+  assert.equal(
+    dead.code,
+    'ECONNREFUSED',
+    'решение о повторе судит по полю: разбирать свою же строку регекспом — второй источник правды'
+  );
+  assert.equal(classify(NETWORK_FLAKY).code, 'ECONNRESET');
+  assert.equal(classify(ENDPOINT_400).code, undefined, 'у отказа сервера сетевого кода нет');
+});

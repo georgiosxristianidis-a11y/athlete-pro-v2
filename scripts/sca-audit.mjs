@@ -66,15 +66,26 @@ export const REASON = {
 
 const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
-/** Сетевые коды npm/undici: ответа не было вовсе. */
+/**
+ * Коды, означающие «сети нет вовсе»: до хоста не дошли — не дозвонились, не
+ * разрешили имя, не нашли маршрут. Повтором не лечатся: за 2.5 с ни DNS, ни
+ * маршрут не появятся, а пуш ждёт живой человек.
+ *
+ * Разделение появилось вместе со снятием пинга из `.githooks/pre-push`. Пинг был
+ * ложным признаком доступности АУДИТА (ICMP отвечал в день, когда эндпоинт был
+ * мёртв), но одну полезную работу делал — отсекал оффлайн за две секунды. Её и
+ * возвращает этот список, только по настоящему ответу npm, а не по ICMP.
+ */
+export const OFFLINE_CODES = ['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ENETUNREACH', 'EHOSTUNREACH'];
+
+/**
+ * Сетевые коды npm/undici: ответа не было вовсе. Всё, что не в OFFLINE_CODES, —
+ * сбой на живом канале (оборванный сокет, таймаут), он повтор оправдывает.
+ */
 const NETWORK_CODES = [
-  'ENOTFOUND',
-  'EAI_AGAIN',
-  'ECONNREFUSED',
+  ...OFFLINE_CODES,
   'ECONNRESET',
   'ETIMEDOUT',
-  'ENETUNREACH',
-  'EHOSTUNREACH',
   'ERR_SOCKET_CONNECTION_TIMEOUT',
   'FETCH_ERROR',
 ];
@@ -168,6 +179,10 @@ export function classify(result) {
     return {
       outcome: OUTCOME.UNAVAILABLE,
       reason: REASON.NETWORK,
+      // Код кладём полем, а не только в текст: решение о повторе судит по нему,
+      // и разбирать собственную строку обратно регекспом было бы вторым
+      // источником правды.
+      code: network,
       detail: `до registry не дозвонились (${network})`,
     };
   }
@@ -276,9 +291,12 @@ export async function run(opts = {}) {
   for (let attempt = 0; attempt <= cfg.retries; attempt++) {
     verdict = classify(await audit({ omitDev: cfg.omitDev }));
     // Ретраим только отказ проверки: находка и чистый отчёт — окончательные ответы.
-    // Отсутствие лока повтором не лечится.
+    // Отсутствие лока повтором не лечится. Оффлайн — тоже: нет DNS или маршрута,
+    // и за 2.5 с они не появятся, а пуша ждёт человек (см. OFFLINE_CODES).
     const retryable =
-      verdict.outcome === OUTCOME.UNAVAILABLE && verdict.reason !== REASON.NO_LOCKFILE;
+      verdict.outcome === OUTCOME.UNAVAILABLE &&
+      verdict.reason !== REASON.NO_LOCKFILE &&
+      !OFFLINE_CODES.includes(verdict.code);
     if (!retryable || attempt === cfg.retries) break;
     out.log(`[SCA] ${verdict.detail} — повтор ${attempt + 1}/${cfg.retries}...`);
     if (cfg.retryDelay) await sleep(cfg.retryDelay);
