@@ -24,7 +24,7 @@ description: Протокол security-auditor — уязвимости, сек�
 | Injection (A03) | `child_process` / шаблон SQL в `scripts/`, `server.js`, `routes/` |
 | Design (A04) | дорогой маршрут без лимитера: `express-rate-limit` стоит в `server.js`, `routes/coach.js`, `routes/integrations.js` — новый ИИ- или verify-эндпоинт без него это находка. `trust proxy` = 1 обязателен, иначе лимитер считает IP балансировщика, а не клиента |
 | Misconfig (A05) | CSP/helmet в `server.js`, CORS `*`, debug в проде |
-| Deps (A06) | `npm audit --omit=dev` — блок только High/Critical production (как pre-push) |
+| Deps (A06) | `node scripts/sca-audit.mjs --omit-dev` — блок только High/Critical production (как pre-push). Голый `npm audit` для вердикта не годится: ненулевой код у него значит и находку, и отказ эндпоинта (инцидент 2026-09-19), гард эти исходы различает |
 | Auth (A07) | ключи провайдеров, пароль в query, JWT `alg=none` |
 | Integrity (A08) | импорт бэкапа `js/db/backup.js`, merge `js/shared/sync-merge.js` (prototype pollution — структурно, не фильтром), политика кэша `sw.js` |
 | Logging (A09) | password/token/weight в логах |

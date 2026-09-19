@@ -24,7 +24,7 @@
     "tokens": "node scripts/token-economy.mjs",
     "memory:ttl": "node scripts/memory-ttl.mjs",
     "smoke:prod": "node scripts/smoke-prod.mjs",
-    "security:audit": "npm audit --audit-level=high",
+    "security:audit": "node scripts/sca-audit.mjs --retries=3",
     "security:sast": "npm run lint",
     "security:check": "npm run security:audit && npm run security:sast",
     "postinstall": "node scripts/fix-hooks-path.mjs || exit 0",

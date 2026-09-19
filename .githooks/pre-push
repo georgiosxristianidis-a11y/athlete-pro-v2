@@ -113,29 +113,50 @@ fi
 
 echo "🔒 [GIO Security] Running pre-push SCA check..."
 
-# 1. Check Airgap mode (Ping registry.npmjs.org)
+# 1. SCA. Вердикт выносит scripts/sca-audit.mjs (AGENT-10): он отличает НАХОДКУ
+# (блок) от ОТКАЗА ПРОВЕРКИ (громкий пропуск). Раньше здесь стоял голый
+# `npm audit --omit=dev --audit-level=high`, и ЛЮБОЙ ненулевой код читался как
+# «найдены уязвимости». 2026-09-19 этим кодом был 400 от registry — bulk-эндпоинт
+# отдавал 503, npm падал на отставной quick, — и хук резал каждый пуш в проекте
+# с текстом про несуществующие уязвимости. Цена такого блока — привычка тянуться
+# к `--no-verify`, который снимает разом все четыре гарда этого файла.
+#
+# Пропуск проверки помечается переменной, а не выходом: он обязан прозвучать в
+# конце, когда остальной вывод push уже уехал вверх.
+sca_skipped=''
+
+# Быстрая отсечка мёртвой сети: пинг дешевле, чем npm audit с ретраями.
 # -c 1 means 1 packet, -W 2 means 2 seconds timeout. On Windows it's -n 1 -w 2000
+# Раньше эта ветка делала `exit 0` — и заодно уносила SAST ниже по файлу: оффлайн
+# означал «ни одной проверки», причём молча. Теперь она только помечает пропуск.
 ping -n 1 -w 2000 registry.npmjs.org > /dev/null 2>&1
 
 if [ $? -ne 0 ]; then
-  echo "⚠️  [Airgap Mode] Network unreachable. Skipping npm audit to prevent block."
-  exit 0
+  sca_skipped='сеть до registry.npmjs.org недоступна'
+  echo "[SCA Skip] Проверка НЕ выполнена: $sca_skipped."
+  echo "   Это отказ проверки, а не чистый результат: уязвимости остались непроверенными."
+elif [ ! -f scripts/sca-audit.mjs ]; then
+  # Чекаут старше гарда. Не блок: имя пропуска называется вслух, а качество кода
+  # доберёт тот же гард в обязательном job `test`.
+  sca_skipped='scripts/sca-audit.mjs нет в этом чекауте'
+  echo "[SCA Skip] Проверка НЕ выполнена: $sca_skipped."
+else
+  # 2. Production-зависимости, как было. Дев-цепочку (stylelint → postcss) ловит
+  # шаг `Security audit (high+)` в CI — он гоняет тот же скрипт без --omit-dev.
+  #
+  # `--on-unavailable=signal`: отказ проверки обязан отличаться от чистого отчёта
+  # КОДОМ, иначе хук заканчивает бодрым «Security Pass» на непроведённой проверке
+  # (поймано живым прогоном этой же карточки). 3 = не проверено, 1 = находка.
+  node scripts/sca-audit.mjs --omit-dev --on-unavailable=signal
+  sca_code=$?
+  if [ $sca_code -eq 3 ]; then
+    # Точную причину гард уже назвал строкой выше — пересказывать её здесь
+    # значило бы заводить второй источник правды, который разъедется первым же.
+    sca_skipped='причина названа выше'
+  elif [ $sca_code -ne 0 ]; then
+    exit $sca_code
+  fi
 fi
-
-# 2. Run SCA on production dependencies only, tracking High/Critical
-echo "📡 Network active. Scanning for High/Critical vulnerabilities..."
-
-# npm audit --omit=dev --audit-level=high
-npm audit --omit=dev --audit-level=high
-
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "❌ [SCA Block] Push rejected! High or Critical vulnerabilities found in production dependencies."
-  echo "Please run 'npm audit fix' or update the affected packages before pushing."
-  exit 1
-fi
-
-echo "✅ [SCA Pass] No high/critical vulnerabilities found."
 
 echo "🔍 Running Static Analysis (SAST)..."
 npm run lint -- --cache
@@ -144,5 +165,9 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "✅ [Security Pass] Pushing..."
+if [ -n "$sca_skipped" ]; then
+  echo "[Security Pass] SAST пройден. Напоминание: SCA в этом пуше НЕ выполнен ($sca_skipped)."
+else
+  echo "✅ [Security Pass] Pushing..."
+fi
 exit 0
