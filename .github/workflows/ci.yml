@@ -85,6 +85,14 @@ jobs:
       - name: Unit & integration tests
         run: npm test
 
+      # Вердикт выносит scripts/sca-audit.mjs (AGENT-10), а не код возврата
+      # `npm audit`: у него ненулевой код значит и находку, и отказ сервиса.
+      # 2026-09-19 registry отдавал 503 на bulk-эндпоинт — шаг краснел у всех
+      # веток сразу, то есть мёрж был закрыт по всему репозиторию (PR #393).
+      # Теперь отказ проверки = ретраи, затем `::warning` в аннотациях при
+      # зелёном шаге; находка по-прежнему красит чек. Здесь гоняется БЕЗ
+      # --omit-dev: дев-цепочку (stylelint → postcss, кейс nanoid) ловит только
+      # этот слой, pre-push смотрит production-зависимости.
       - name: Security audit (high+)
         run: npm run security:audit
 
