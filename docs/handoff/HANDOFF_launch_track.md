@@ -809,8 +809,15 @@ remote.origin.url` → `C:/PROJECTS/athlete-pro/.git/config`), один на в�
 
 ### AGENT-10 — SCA-гард красит отказ инструмента как находку
 
-**ЦЕЛЬ.** `pre-push` отличает «уязвимости найдены» от «audit не смог отработать» и во втором
-случае пропускает пуш так же, как уже пропускает его в airgap.
+**ЦЕЛЬ.** `pre-push` **и CI** отличают «уязвимости найдены» от «audit не смог отработать» и во
+втором случае пропускают, как `pre-push` уже пропускает в airgap.
+
+**Мест два, а не одно — и второе дороже.** Кроме хука тот же `npm audit` стоит шагом
+«Security audit (high+)» в `.github/workflows/ci.yml:88` (`npm run security:audit`) внутри job
+`test`, а `test` — required-чек. Пока эндпоинт отвечает 400, красным становится **любой** PR:
+19.09 так упали разом `claude/changelog-deps-batch` и `claude/router-priority-stability`,
+при зелёных `drift` и `e2e`. Очередь встаёт целиком, и по логу это читается как «тесты
+упали», хотя юнит-сюита в тот же прогон зелёная.
 
 **Найдено 19.09,** на пуше правки одного `CHANGELOG.md`: хук отбил push сообщением
 «High or Critical vulnerabilities found in production dependencies». Уязвимостей не было —
