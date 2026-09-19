@@ -113,30 +113,34 @@ fi
 
 echo "🔒 [GIO Security] Running pre-push SCA check..."
 
-# 1. Check Airgap mode (Ping registry.npmjs.org)
-# -c 1 means 1 packet, -W 2 means 2 seconds timeout. On Windows it's -n 1 -w 2000
-ping -n 1 -w 2000 registry.npmjs.org > /dev/null 2>&1
-
-if [ $? -ne 0 ]; then
-  echo "⚠️  [Airgap Mode] Network unreachable. Skipping npm audit to prevent block."
-  exit 0
+# 1. SCA (карточка SCA-1). Вердикт выносит scripts/check-sca.mjs, а не код выхода
+# `npm audit`: у того один ненулевой код на «нашёл уязвимости» и на «не смог
+# проверить». 2026-09-19 реестр отвечал 503 на bulk и 400 на legacy-эндпоинт, и
+# хук печатал «High or Critical vulnerabilities found» там, где находок не было
+# ни одной.
+#
+# Пинга здесь больше нет, хотя airgap-режим остался. Причин две.
+# Во-первых, ICMP отвечал на registry.npmjs.org ровно в тот день, когда HTTPS-
+# аудит был мёртв: живой пинг доказывал не то, что проверяли. Единственный
+# честный источник «доступен ли аудит» — сама попытка аудита, и гард судит по
+# её содержимому (потолок ожидания — свой, внутри скрипта).
+# Во-вторых, ветка airgap делала `exit 0` на весь хук — то есть обрыв сети
+# молча снимал ещё и SAST, которому сеть не нужна вовсе. Недоступность реестра
+# не повод не запускать eslint.
+if [ -f scripts/check-sca.mjs ]; then
+  node scripts/check-sca.mjs --omit-dev
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+else
+  # Чекаут старше гарда. Не блок (в отличие от дрейфа), но и не молчком:
+  # «SCA не выполнен» обязано быть видно, иначе пуш выглядит проверенным.
+  echo "⚠️  [SCA Skip] scripts/check-sca.mjs не найден — SCA не выполнен."
+  echo "   Чекаут старше гарда: git fetch origin && git rebase origin/main"
 fi
 
-# 2. Run SCA on production dependencies only, tracking High/Critical
-echo "📡 Network active. Scanning for High/Critical vulnerabilities..."
-
-# npm audit --omit=dev --audit-level=high
-npm audit --omit=dev --audit-level=high
-
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "❌ [SCA Block] Push rejected! High or Critical vulnerabilities found in production dependencies."
-  echo "Please run 'npm audit fix' or update the affected packages before pushing."
-  exit 1
-fi
-
-echo "✅ [SCA Pass] No high/critical vulnerabilities found."
-
+# 2. SAST. Сети не требует и бежит ВСЕГДА — в том числе когда SCA выше не
+# состоялся.
 echo "🔍 Running Static Analysis (SAST)..."
 npm run lint -- --cache
 if [ $? -ne 0 ]; then

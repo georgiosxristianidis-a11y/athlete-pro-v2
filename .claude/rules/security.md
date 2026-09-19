@@ -24,7 +24,7 @@ description: Протокол security-auditor — уязвимости, сек�
 | Injection (A03) | `child_process` / шаблон SQL в `scripts/`, `server.js`, `routes/` |
 | Design (A04) | дорогой маршрут без лимитера: `express-rate-limit` стоит в `server.js`, `routes/coach.js`, `routes/integrations.js` — новый ИИ- или verify-эндпоинт без него это находка. `trust proxy` = 1 обязателен, иначе лимитер считает IP балансировщика, а не клиента |
 | Misconfig (A05) | CSP/helmet в `server.js`, CORS `*`, debug в проде |
-| Deps (A06) | `npm audit --omit=dev` — блок только High/Critical production (как pre-push) |
+| Deps (A06) | `scripts/check-sca.mjs` — блок только High/Critical (pre-push без dev, CI с dev). Голый `npm audit` в гардах не звать: у него один ненулевой код на «нашёл» и на «не смог проверить», и авария audit-эндпоинта реестра 19.09 прочиталась как находка — с заморозкой мёржей во всём репо. Гард судит по содержимому отчёта: нет `metadata.vulnerabilities` = проверки не было, вердикт `[SCA Unknown]`, не блок (жёсткий режим — `SCA_STRICT=1`) |
 | Auth (A07) | ключи провайдеров, пароль в query, JWT `alg=none` |
 | Integrity (A08) | импорт бэкапа `js/db/backup.js`, merge `js/shared/sync-merge.js` (prototype pollution — структурно, не фильтром), политика кэша `sw.js` |
 | Logging (A09) | password/token/weight в логах |
