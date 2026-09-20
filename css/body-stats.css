@@ -365,6 +365,9 @@
 }
 .modal-overlay.bs-overlay .modal-sheet {
   animation: none;
+  /* Лист едет на decel, без перелёта — запас `--sheet-tail` из base.css (MO-1)
+     здесь только съел бы 32 px нижнего отступа под краем экрана. */
+  --sheet-tail: 0px;
   transform: translateY(100%);
   transition: transform 0.26s var(--ease-decel);
   max-height: 90vh;
