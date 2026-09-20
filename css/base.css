@@ -1407,33 +1407,22 @@ button:focus-visible {
 
 /* ════════════════════════════════════════════════
    AIR (Tier 1) — shared segment/tab plate
-   Applied to: week-segment, plan-tabs, stats-subnav,
-   bs-sex-segment, bs-tab-bar.
+   Applied to: week-segment, plan-tabs, bs-tab-bar.
    ════════════════════════════════════════════════ */
 .week-segment,
-.bs-sex-segment,
-.stats-subnav,
 .bs-tab-bar,
 .plan-tabs {
   background: var(--c-bg-2);
   border: 1px solid var(--c-border);
 }
 .week-seg-btn.active,
-.bs-sex-btn.active,
-.stats-subnav-btn.active,
 .bs-tab.active,
 .plan-tab.active {
   background: var(--c-chrome-t);
   border: 1px solid var(--c-border-h);
 }
 .week-seg-btn.active {
-  background: rgba(0, 230, 118, 0.12);
   color: var(--c-text-1);
-  text-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
-}
-.week-segment .week-seg-btn:nth-child(2).active {
-  background: rgba(139, 92, 246, 0.14);
-  text-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
 }
 
 /* Segmented pill glide — compositor-only (translateX + scaleX), not left/width */
