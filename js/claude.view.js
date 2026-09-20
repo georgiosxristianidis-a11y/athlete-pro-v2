@@ -1,6 +1,11 @@
 // @ts-check
-import { COMPUTE_REST_HOURS, Heatmap, MUSCLE_MAP } from './claude.store.js';
-import { DB } from './db.js';
+import {
+  COMPUTE_REST_HOURS,
+  Heatmap,
+  MUSCLE_MAP,
+  getPandaHidden,
+  hideMascot,
+} from './claude.store.js';
 import { esc, haptic, listenerGroup } from './shared/utils.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { State as WorkoutState } from './workout.store.js';
@@ -10,7 +15,7 @@ import { flag } from './flags.js';
 import { t } from './locale.store.js';
 import { probeAiStatus } from './shared/ai-status.js';
 import { onPrivacyChange } from './privacy.store.js';
-import { fabGlowClass, fabKeyState, getEngine, keyField } from './ai-settings.store.js';
+import { fabGlowClass, fabKeyState, getEngine, hasLocalKey, setEngine } from './ai-settings.store.js';
 import {
   initPandaVideo,
   togglePandaSound,
@@ -72,8 +77,7 @@ export const Claude = (() => {
 
   async function _fabVisual() {
     const engine = await getEngine();
-    const localRaw = await DB.Settings.get(keyField(engine)).catch(() => '');
-    const state = fabKeyState(await _probedStatus(), !!String(localRaw || '').trim(), engine);
+    const state = fabKeyState(await _probedStatus(), await hasLocalKey(engine), engine);
     return { engine, state, glow: fabGlowClass(state, engine) };
   }
 
@@ -106,7 +110,7 @@ export const Claude = (() => {
    * Render the persistent AI Panda assistant button.
    */
   async function renderFAB() {
-    const isHidden = await DB.Settings.get('ai-panda-hidden', false);
+    const isHidden = await getPandaHidden();
     if (isHidden) return;
     _bindFabReactivity();
     if (document.getElementById('claude-fab-container')) {
@@ -289,8 +293,7 @@ export const Claude = (() => {
       el.style.opacity = '0';
       setTimeout(() => el.remove(), 400);
     }
-    await DB.Settings.set('ai-panda-hidden', true);
-    await DB.Settings.set('show-mascot', 'off');
+    await hideMascot();
     Toast.show(t('claude.hidden'), 'info');
   }
 
@@ -387,7 +390,14 @@ export const Claude = (() => {
 
   async function _toggleEngine() {
     const isGem = (await getEngine()) === 'gemini';
-    await DB.Settings.set('ai-engine', isGem ? 'anthropic' : 'gemini');
+    // Через стор, а не `DB.Settings.set` напрямую: там airgap-стоп (в этом
+    // режиме движок не переключается вовсе) и событие 'ap-ai-engine', на
+    // которое подписан сам FAB (`_fabOn.add`). Прямая запись обходила оба.
+    const res = await setEngine(isGem ? 'anthropic' : 'gemini');
+    if (!res.ok) {
+      Toast.show(t('profile.ai_airgap'), 'error');
+      return;
+    }
     haptic(10);
     close();
     setTimeout(renderFAB, 100);

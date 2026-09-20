@@ -264,12 +264,16 @@ export async function setNotifyRest(value) {
    живёт функцией здесь, а не двумя `set` на каждом тумблере экрана.
    ════════════════════════════════════════════════════════ */
 
+/** @returns {Promise<boolean>} скрыта ли панда сейчас */
+export async function getPandaHidden() {
+  return !!(await DB.Settings.get('ai-panda-hidden', false));
+}
+
 /** @returns {Promise<boolean>} новое состояние «панда скрыта» */
 export async function togglePandaHidden() {
-  const current = await DB.Settings.get('ai-panda-hidden', false);
-  const next = !current;
-  await DB.Settings.set('ai-panda-hidden', next);
-  await DB.Settings.set('show-mascot', next ? 'off' : 'on');
+  const next = !(await getPandaHidden());
+  if (next) await hideMascot();
+  else await revealMascot();
   return next;
 }
 
@@ -277,6 +281,15 @@ export async function togglePandaHidden() {
 export async function revealMascot() {
   await DB.Settings.set('ai-panda-hidden', false);
   await DB.Settings.set('show-mascot', 'on');
+}
+
+/**
+ * Спрятать маскота. Вторая половина пары — крестик на FAB (`claude.view.js`)
+ * раньше писал оба ключа сам, мимо владельца пары.
+ */
+export async function hideMascot() {
+  await DB.Settings.set('ai-panda-hidden', true);
+  await DB.Settings.set('show-mascot', 'off');
 }
 
 /* ════════════════════════════════════════════════════════

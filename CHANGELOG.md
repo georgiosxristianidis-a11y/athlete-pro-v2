@@ -9,6 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A15 (claude): экран FAB больше не ходит в IndexedDB (1.27.120)
+
+Четвёртая поверхность миграции A15 после analytics · intel · profile. `js/claude.view.js` —
+прямых `DB.*` 5 → 0, baseline в `test/import-guard.test.js` опущен до нуля.
+
+Перенос нашёл две вещи сверх долга — обе латентные, в поле ни одна не горела, и раздувать
+их до «дефектов в проде» нечестно.
+
+Первая: крестик на панде писал пару ключей `ai-panda-hidden` + `show-mascot` сам, мимо
+владельца пары в `js/profile.store.js`. **Обе половины писались верно** — сломано ничего не
+было; цена в том, что запись существовала в трёх местах (`profile.store.js`, `claude.view.js`,
+`dashboard.js:497` — последний пишет только `show-mascot`), и правка пары обязана была найти
+все три. Теперь `hideMascot()` стоит рядом с `revealMascot()`, `togglePandaHidden()`
+делегирует обеим, view зовёт через реэкспорт из `js/claude.store.js` (новых рёбер в бут-графе
+нет — `claude.store.js` и так импортирует `profile.store.js`). `dashboard.js` не трогал: это
+поверхность dashboard, не claude, и по одной за PR.
+
+Вторая: `_toggleEngine()` писал `ai-engine` прямым `DB.Settings.set` в обход `setEngine()` —
+мимо airgap-стопа и без события `ap-ai-engine`, на которое подписан сам FAB. Это настоящая
+дыра, но **недостижимая**: у функции нет ни одного вызывающего (греп `toggleEngine` по
+репозиторию — только объявление и строка экспорта на `window.Claude`; живой путь —
+`ai:setEngine` в `ai-settings.view.js`). Путь вылечен здесь, снос дубля заведён карточкой
+`A18` в хендоффе.
+
+Чтение ключа BYOK для индикатора переехало в `hasLocalKey(engine)` в `js/ai-settings.store.js`:
+наружу уходит булево, а не строка ключа.
+
+`test/claude-store.test.js` — 10 проверок на `fake-indexeddb` без DOM: слот ключа принадлежит
+своему движку, пробелы ключом не считаются, `hideMascot()` пишет обе половины пары, тумблер
+профиля после крестика возвращает маскота целиком, airgap не пускает смену движка, смена
+движка рождает `ap-ai-engine`. Оба гарда прогнаны на поломку — ломаются и зеленеют обратно.
+`npm test` 1409/1409.
+
 ### AGENT-10 добавка: пинг снят, стык «хук × гард» под гейтом
 
 Из `.githooks/pre-push` убран `ping registry.npmjs.org`. Как признак доступности аудита он

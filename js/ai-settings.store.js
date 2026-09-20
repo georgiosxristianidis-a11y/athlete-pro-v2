@@ -119,6 +119,18 @@ export function fabGlowClass(state, engine) {
   return '';
 }
 
+/**
+ * Есть ли у движка сохранённый локально BYOK-ключ.
+ * FAB рисует индикатор по факту «ключ непустой» — сам ключ во view не уезжает,
+ * поэтому наружу отдаётся булево, а не строка.
+ * @param {string} [engine]
+ * @returns {Promise<boolean>}
+ */
+export async function hasLocalKey(engine) {
+  const raw = await DB.Settings.get(keyField(engine)).catch(() => '');
+  return !!String(raw || '').trim();
+}
+
 /** Тон коуча, 0 (терапевт) .. 100 (Гоггинс). Дефолт — нейтрально. */
 export function getTone() {
   return DB.Settings.get('intel-tone', 50);
