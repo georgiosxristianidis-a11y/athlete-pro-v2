@@ -122,6 +122,54 @@
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1); /* Smooth ease-out */
   --ease-position: cubic-bezier(0.2, 0, 0.2, 1); /* Position (island) */
 
+  /* ── Упругость на linear() (MO-1) ──
+     Затухающее колебание вместо единственного отскока, который даёт
+     cubic-bezier: после перелёта кривая уходит ЗА цель, возвращается чуть
+     ниже и садится. Точки — сэмплы затухающей пружины (ζ = 0.72 и 0.60,
+     порог оседания 0.4 %), шаг по времени равномерный, поэтому проценты не
+     нужны. Цифра в имени — сила перелёта, её выбирать по размеру поверхности:
+     9 % на листе это рывок в 60 px и щель под ним, на тосте — полтора пикселя.
+     Шаг сэмпла ~20 мс — меньше кадра; точек взято ровно столько, сколько нужно
+     форме, остальное растит файл. Легаси-кривые выше живы, это не замена.
+     Движок без linear() (Safari < 17.4) отбрасывает декларацию целиком —
+     элемент появляется без анимации, поведение не ломается. */
+  --ease-spring-1: linear(
+    0,
+    0.128,
+    0.379,
+    0.626,
+    0.817,
+    0.94,
+    1.007,
+    1.034,
+    1.038,
+    1.031,
+    1.021,
+    1.012,
+    1.006,
+    1.001,
+    1
+  ); /* мягкая: перелёт ~4 %, крупные поверхности */
+  --ease-spring-2: linear(
+    0,
+    0.139,
+    0.42,
+    0.701,
+    0.912,
+    1.037,
+    1.089,
+    1.092,
+    1.071,
+    1.043,
+    1.019,
+    1.002,
+    0.994,
+    0.991,
+    0.992,
+    0.994,
+    1
+  ); /* выраженная: перелёт ~9 % + откат, мелкие элементы */
+
   /* Premium Neon Glow Shadows */
   --glow-accent-md: 0 0 20px rgba(0, 230, 118, 0.5);
   --glow-amber-md: 0 0 18px rgba(255, 179, 0, 0.45);
@@ -850,10 +898,14 @@
   letter-spacing: 0.06em;
   color: var(--c-text-3);
 }
+/* Упругость карточке дана на ВОЗВРАТЕ из нажатия, а не на появлении: входная
+   анимация на общем `.ui-card` проигрывалась бы заново при каждой перерисовке
+   списка (полный innerHTML — обычный путь рендера), то есть мельтешила бы на
+   ровном месте. Проявление списков — своя карточка, MO-3. */
 .ui-card.is-interactive {
   cursor: pointer;
   transition:
-    transform var(--t-fast),
+    transform 0.26s var(--ease-spring-2),
     background var(--t-fast),
     border-color var(--t-fast);
   -webkit-tap-highlight-color: transparent;
@@ -863,6 +915,9 @@
   border-color: var(--c-border-h);
 }
 .ui-card.is-interactive:active {
+  /* Нажатие — мгновенный отклик по прежней кривой; пружина играет на отпускании,
+     когда правило снимается и в силу вступает transition выше. */
+  transition: transform var(--t-fast);
   transform: scale(var(--press-scale));
 }
 
@@ -898,13 +953,21 @@
 /* Стекло листа (фон, blur, hairline-подсветка) объявлено ОДИН раз — ниже,
    общим правилом `.modal-sheet, .claude-sheet`. Здесь только геометрия. */
 .modal-sheet {
+  /* Запас под перелёт пружины. Лист прижат к низу, а --ease-spring-1 уводит его
+     на ~4 % высоты ВЫШЕ конечной позиции — без продолжения снизу в этот момент
+     между листом и краем экрана видна щель с затемнением. Хвост живёт за краем
+     (отрицательный margin), внутренний отступ и max-height его компенсируют:
+     видимая геометрия листа та же, что была до MO-1. Там, где лист едет на
+     transition без перелёта (confirm, bs-overlay), хвост гасится в ноль. */
+  --sheet-tail: 32px;
   width: 100%;
   border-radius: var(--r-xxl) var(--r-xxl) 0 0;
   border-top: 1px solid var(--c-border);
-  padding: var(--sp-3) calc(var(--sp-2) + var(--safe-right)) calc(var(--sp-3) + var(--safe-bottom))
-    calc(var(--sp-2) + var(--safe-left));
-  animation: sheet-in 0.26s var(--ease-pop) forwards;
-  max-height: 88vh;
+  padding: var(--sp-3) calc(var(--sp-2) + var(--safe-right))
+    calc(var(--sp-3) + var(--safe-bottom) + var(--sheet-tail)) calc(var(--sp-2) + var(--safe-left));
+  margin-bottom: calc(-1 * var(--sheet-tail));
+  animation: sheet-in 0.3s var(--ease-spring-1) forwards;
+  max-height: calc(88vh + var(--sheet-tail));
   overflow-y: auto;
 }
 @keyframes sheet-in {
@@ -953,6 +1016,9 @@
 }
 .modal-overlay.confirm-overlay .modal-sheet {
   animation: none;
+  /* Перелёта здесь нет — decel садится в позицию, значит и хвост не нужен.
+     К тому же `.confirm-sheet { margin: 0 auto }` ниже перебил бы его margin. */
+  --sheet-tail: 0px;
   transform: translateY(100%);
   transition: transform 0.26s var(--ease-decel);
 }
@@ -1160,7 +1226,9 @@ button:focus-visible {
   max-width: 100%;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   pointer-events: auto;
-  animation: toast-in 0.24s var(--ease-pop) forwards;
+  /* Вход на выраженной пружине: тост едет 14 px, перелёт в 9 % это полтора
+     пикселя и scale 1.004 — колебание читается как упругость, а не как рывок. */
+  animation: toast-in 0.28s var(--ease-spring-2) forwards;
 }
 
 .toast.out {
