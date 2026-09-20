@@ -7,7 +7,7 @@
 import { Toast } from '../shell.js';
 import { esc, haptic } from '../shared/utils.js';
 import { confirmDialog } from '../shared/confirm.js';
-import { mountSegPills } from '../ui/seg-pill.js';
+import { mountSegPills, syncSegPill } from '../ui/seg-pill.js';
 import { t, isRu } from '../locale.store.js';
 import { on, onChange, onInput } from '../events.js';
 import { exerciseLabel } from '../shared/exercise-label.js';
@@ -154,7 +154,12 @@ export function openPlanEditor() {
 
   let searchQuery = '';
 
-  function render() {
+  /**
+   * Шапка модалки строится ОДИН раз. Полный re-render на каждый клик вкладки,
+   * клик недели и каждый символ поиска пересоздавал хост пилюли — глайд ехал
+   * от `translateX(0)`, а при наборе дёргался от левого края (MOTION-FIX).
+   */
+  function renderShell() {
     overlay.innerHTML = `
       <div class="modal-sheet">
         <div class="modal-handle"></div>
@@ -214,9 +219,7 @@ export function openPlanEditor() {
             )
             .join('')}
         </div>
-        <div class="plan-list" id="plan-list">
-          ${tabContent(activeTab)}
-        </div>
+        <div class="plan-list" id="plan-list"></div>
         <button class="btn btn-primary" id="plan-save-btn" style="margin-top:var(--sp-2)"
                 data-action="wo:planSave">
           <span class="morph-swap">
@@ -226,12 +229,43 @@ export function openPlanEditor() {
           ${esc(t('train.save_plan'))}
         </button>
       </div>`;
-    requestAnimationFrame(() => mountSegPills(overlay));
   }
 
-  render();
-  requestAnimationFrame(_initPlanDrag);
+  /** Перерисовывает только список упражнений — шапка и поле поиска живут своей жизнью. */
+  function renderList() {
+    const list = overlay.querySelector('#plan-list');
+    if (!list) return;
+    list.innerHTML = tabContent(activeTab);
+    _initPlanDrag(/** @type {HTMLElement} */ (list));
+  }
+
+  /** Активные состояния в шапке + пересчёт пилюли на пережившем рендер хосте. */
+  function syncHeader() {
+    const weekHost = /** @type {HTMLElement} */ (overlay.querySelector('.week-segment'));
+    weekHost?.querySelectorAll('.week-seg-btn').forEach((btn) => {
+      const on = /** @type {HTMLElement} */ (btn).dataset.week === activeWeek;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', String(on));
+    });
+
+    const hint = overlay.querySelector('.plan-week-hint');
+    if (hint) {
+      hint.textContent = activeWeek === 'A' ? t('train.week_hint_a') : t('train.week_hint_b');
+    }
+
+    const tabsHost = /** @type {HTMLElement} */ (overlay.querySelector('.plan-tabs'));
+    tabsHost?.querySelectorAll('.plan-tab').forEach((btn) => {
+      btn.classList.toggle('active', /** @type {HTMLElement} */ (btn).dataset.type === activeTab);
+    });
+
+    if (weekHost?._segPill) syncSegPill(weekHost);
+    if (tabsHost?._segPill) syncSegPill(tabsHost);
+  }
+
+  renderShell();
   document.body.appendChild(overlay);
+  renderList();
+  requestAnimationFrame(() => mountSegPills(overlay));
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) _closePlanEditor();
   });
@@ -240,17 +274,17 @@ export function openPlanEditor() {
   _planEditorActiveWeek = () => activeWeek;
   _planEditorSetTab = (t) => {
     activeTab = t;
-    render();
-    requestAnimationFrame(_initPlanDrag);
+    syncHeader();
+    renderList();
   };
   _planEditorSetWeek = (w) => {
     activeWeek = w;
-    render();
-    requestAnimationFrame(_initPlanDrag);
+    syncHeader();
+    renderList();
   };
   window._planSetSearch = (q) => {
     searchQuery = q;
-    render();
+    renderList();
   };
 }
 
@@ -374,8 +408,9 @@ export function _deletePlanEx(type, i) {
 }
 
 /* ── Drag-and-drop for plan editor (co-located: uses closure vars above) ── */
-function _initPlanDrag() {
-  const list = document.getElementById('plan-list');
+/** @param {HTMLElement} [listEl] список; без аргумента — ищется в документе */
+function _initPlanDrag(listEl) {
+  const list = listEl || document.getElementById('plan-list');
   if (!list) return;
 
   list.querySelectorAll('.plan-row').forEach((row) => {

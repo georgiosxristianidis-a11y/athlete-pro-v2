@@ -334,10 +334,7 @@ export const AthleteRoom = (() => {
     await switchTab(activeTab, ctx);
     _nextFrame(() => {
       const bar = _overlay?.querySelector('.bs-tab-bar');
-      if (bar) {
-        delete bar.dataset.segPillInit;
-        initSegPill(bar);
-      }
+      if (bar) initSegPill(bar);
     });
   }
 
