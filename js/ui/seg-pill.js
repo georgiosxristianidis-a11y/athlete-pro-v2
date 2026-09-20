@@ -9,15 +9,45 @@ const nextFrame =
     : (fn) => setTimeout(fn, 0);
 
 /**
+ * Снимает обвязку пилюли с хоста: ResizeObserver, click-listener и сам
+ * `<span class="seg-pill">`. Вызывается перед повторным монтажом — без неё
+ * второй `initSegPill` на живом хосте пришивал вторую пилюлю, второй listener
+ * и второй RO, а прежний не отключался (MOTION-FIX).
+ *
+ * @param {HTMLElement} host
+ */
+export function destroySegPill(host) {
+  if (!host) return;
+  host._segPillRO?.disconnect();
+  host._segPillRO = null;
+  host._segPillAbort?.abort();
+  host._segPillAbort = null;
+  host._segPill?.remove();
+  host._segPill = null;
+  delete host.dataset.segPillInit;
+}
+
+/**
  * Sliding highlight for segmented controls — GPU-only (translateX + scaleX).
  * Host gets `.seg-pill-host`; pill width updates instantly, position morphs on compositor.
+ *
+ * Идемпотентна: на живом хосте со своей пилюлёй повторный вызов только
+ * пересчитывает позицию, на хосте после innerHTML — пересобирает обвязку.
  *
  * @param {HTMLElement} host
  * @param {SegPillOpts} [opts]
  * @returns {() => void}
  */
 export function initSegPill(host, opts = {}) {
-  if (!host || host.dataset.segPillInit) return () => syncSegPill(host, opts);
+  if (!host) return () => {};
+  const sync = () => syncSegPill(host, opts);
+
+  if (host.dataset.segPillInit === '1' && host._segPill && host.contains(host._segPill)) {
+    nextFrame(sync);
+    return sync;
+  }
+
+  destroySegPill(host);
   host.dataset.segPillInit = '1';
   host.classList.add('seg-pill-host');
 
@@ -27,18 +57,24 @@ export function initSegPill(host, opts = {}) {
   host.append(pill);
   host._segPill = pill;
 
-  const btnSelector = opts.btnSelector || DEFAULT_BTN;
-  const sync = () => syncSegPill(host, opts);
+  const ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  host._segPillAbort = ac;
 
-  host.addEventListener('click', (e) => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest?.('button');
-    if (btn && host.contains(btn)) nextFrame(sync);
-  });
+  host.addEventListener(
+    'click',
+    (e) => {
+      const btn = /** @type {HTMLElement} */ (e.target).closest?.('button');
+      if (btn && host.contains(btn)) nextFrame(sync);
+    },
+    ac ? { signal: ac.signal } : undefined
+  );
 
+  // RO наблюдает только хост. Кнопки переживают не каждый рендер: наблюдение за
+  // ними оставляло записи на мёртвых узлах, а ширину кнопки всё равно ловит
+  // явный sync после смены активной.
   if (typeof ResizeObserver !== 'undefined') {
     const ro = new ResizeObserver(() => sync());
     ro.observe(host);
-    host.querySelectorAll(btnSelector).forEach((b) => ro.observe(b));
     host._segPillRO = ro;
   }
 
@@ -92,8 +128,7 @@ export function syncSegPill(host, opts = {}) {
 
 /** @param {ParentNode} [root] */
 export function mountSegPills(root = document) {
-  root.querySelectorAll('.week-segment, .bs-tab-bar, .plan-tabs').forEach((host) => {
-    delete (/** @type {HTMLElement} */ (host).dataset.segPillInit);
-    initSegPill(/** @type {HTMLElement} */ (host));
-  });
+  root
+    .querySelectorAll('.week-segment, .bs-tab-bar, .plan-tabs')
+    .forEach((host) => initSegPill(/** @type {HTMLElement} */ (host)));
 }

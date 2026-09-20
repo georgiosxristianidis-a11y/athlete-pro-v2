@@ -119,10 +119,22 @@ export function stepReps(ei, si, delta) {
   persistSession();
 }
 
+/**
+ * Ретриггер `stepper-bump` без forced sync layout: `void offsetWidth` стоил
+ * пересчёта лейаута на КАЖДЫЙ тап степпера на горячем пути Train live
+ * (MOTION-FIX). Живая анимация перематывается через WAAPI, мёртвая заводится
+ * классом. На движке без `getAnimations` остаётся прежнее поведение.
+ */
 function _bumpStepperVal(valEl) {
   if (!valEl) return;
-  valEl.classList.remove('bump');
-  void valEl.offsetWidth;
+  const running = (valEl.getAnimations?.() || []).filter((a) => a.animationName === 'stepper-bump');
+  if (running.length) {
+    for (const anim of running) {
+      anim.cancel();
+      anim.play();
+    }
+    return;
+  }
   valEl.classList.add('bump');
   valEl.addEventListener('animationend', () => valEl.classList.remove('bump'), { once: true });
 }
