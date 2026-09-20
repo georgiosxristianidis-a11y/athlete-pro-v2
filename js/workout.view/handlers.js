@@ -742,7 +742,11 @@ export function smartCopy(ei, si) {
   let source = [...ex.sets].reverse().find((s, idx) => ex.sets.length - 1 - idx < si && s.done);
   if (!source && si > 0) source = ex.sets[si - 1];
   if (source) {
-    set.weight = source.weight;
+    // Источник копии — закрытый сет, а закрытые сеты снап НЕ трогает (это факт
+    // тренировки). Сессия, восстановленная с весом до фикса сетки, держит там
+    // вне-сеточное число — копия без snap вернула бы его в живой сет, и барабан
+    // снова показал бы соседний узел: «выставил 20, записалось 20.5».
+    set.weight = snapWeight(source.weight, weightStep(ex));
     set.reps = source.reps;
     _updateStepperUI('w', ei, si, set.weight, set.weight <= 0, true);
     _updateStepperUI('r', ei, si, set.reps, set.reps <= 1, true);
