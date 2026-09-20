@@ -13,9 +13,14 @@
 // живёт в test/drum-contract.test.js.
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   buildSession, weightStep, snapWeight, snapPlanWeights,
 } from '../js/workout.store.js';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function mockStorage() {
   const m = new Map();
@@ -122,4 +127,59 @@ test('каждый сет каждой сессии рождается на се
       }
     }
   }
+});
+
+/* ── Структурный гард: каждый вход записи веса проходит через сетку ─────────
+   Полевое уточнение 2026-09-20 (Gio): симптом зеркальный — «указываю 20, а
+   рядом с галочкой и в статистике 21 или 20.5». Это то же округление к узлу,
+   только State ВЫШЕ показанного: 21/2.5 = 8.4 и 20.5/2.5 = 8.2 — оба садятся
+   на узел 8, то есть «20». Значит гард обязан стеречь не одну функцию, а все
+   входы записи в handlers.js: стоит одному писать сырое число — симптом
+   возвращается на любом весе, что выше, что ниже. */
+
+/** Исходник без комментариев: гард на регекспе обязан зеленеть на коде,
+ *  а не на тексте примечаний рядом с ним. */
+function stripComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
+function sliceFn(src, startNeedle, endNeedle) {
+  const start = src.indexOf(startNeedle);
+  assert.ok(start !== -1, `не найдено начало ${startNeedle}`);
+  const end = src.indexOf(endNeedle, start + startNeedle.length);
+  assert.ok(end > start, `не найден конец ${endNeedle} после ${startNeedle}`);
+  return src.slice(start, end);
+}
+
+const HANDLERS = () =>
+  stripComments(fs.readFileSync(path.join(ROOT, 'js', 'workout.view', 'handlers.js'), 'utf8'));
+
+test('smartCopy сажает копию на сетку — источник это закрытый сет, а его снап не трогает', () => {
+  const fn = sliceFn(HANDLERS(), 'export function smartCopy', 'export async function smartCoach');
+  assert.match(fn, /set\.weight\s*=\s*snapWeight\(/,
+    'копия веса из закрытого сета обязана пройти snapWeight');
+  assert.match(fn, /weightStep\(ex\)/, 'шаг берётся у упражнения, не константой');
+});
+
+test('Турбо и фокус-режим ходят шагом упражнения, а не плоскими 2.5', () => {
+  const src = HANDLERS();
+  const coach = sliceFn(src, 'export async function smartCoach', 'export function toggleCard');
+  assert.match(coach, /weightStep\(ex\)/);
+  assert.doesNotMatch(coach, /lastWeight\s*\+\s*2\.5/, 'плоский +2.5 вернулся в Турбо');
+  const focus = sliceFn(src, 'export function _focusStepW', 'export function _focusStepR');
+  assert.match(focus, /snapWeight\(/);
+  assert.match(focus, /weightStep\(ex\)/);
+});
+
+test('в handlers.js не осталось сырых присваиваний веса мимо сетки', () => {
+  const src = HANDLERS();
+  // Разрешены ровно три: setWeight — абсолютное значение узла от барабана;
+  // syncDrum — отражение уже записанного числа; snapWeight-обёртки.
+  const raw = [...src.matchAll(/\bset\.weight\s*=\s*([^;\n]+)/g)]
+    .map((m) => m[1].trim())
+    .filter((rhs) => !/^snapWeight\(/.test(rhs))
+    .filter((rhs) => !/^val$/.test(rhs))                 // setWeight: уже узел сетки
+    .filter((rhs) => !/^parseFloat\(val\)$/.test(rhs))   // syncDrum: отражение State
+    .filter((rhs) => !/^isNaN\(num\)/.test(rhs));        // commitVal: путь без разметки
+  assert.deepEqual(raw, [], `сырое присваивание веса: ${raw.join(' | ')}`);
 });
