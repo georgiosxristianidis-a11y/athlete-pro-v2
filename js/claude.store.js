@@ -10,6 +10,13 @@ import { loadProfile, computeAge } from './profile.store.js';
 import { athleteProScore } from './strength-engine.js';
 import { DEFAULT_AI_ENGINE } from './shared/ai-engine.js';
 
+/**
+ * Видимость маскота — пара ключей (`ai-panda-hidden` + `show-mascot`), и
+ * владелец пары один: `profile.store.js` (A13). Здесь только адрес для экрана
+ * FAB, чтобы view читал через свой стор и не знал про вторую половину пары.
+ */
+export { getPandaHidden, hideMascot } from './profile.store.js';
+
 export const COMPUTE_REST_HOURS = 72; // Standard window for fatigue decay
 
 /* ══════════════════════════════════════════════
