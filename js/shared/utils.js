@@ -176,3 +176,17 @@ export const readDobFromSelects = (idPrefix) => {
   if (!y && !m && !d) return '';
   return `${y}-${m}-${d}`;
 };
+
+/**
+ * Выход оверлея с рецептом `.sd-overlay` (base.css, MO-2): ставит `data-closing`,
+ * ждёт конец transition/animation и убирает узел. Без анимаций (старый движок,
+ * reduced-motion) getAnimations() пуст — узел уходит сразу.
+ * @param {HTMLElement} el
+ */
+export const dismissOverlay = (el) => {
+  if (el.hasAttribute('data-closing')) return;
+  el.setAttribute('data-closing', '');
+  Promise.allSettled(el.getAnimations({ subtree: true }).map((a) => a.finished)).then(() =>
+    el.remove()
+  );
+};

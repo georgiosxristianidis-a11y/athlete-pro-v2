@@ -4,7 +4,7 @@
    Charts, calendar heatmap, DOM rendering
    ════════════════════════════════════════════════════════ */
 
-import { esc, haptic } from './shared/utils.js';
+import { esc, haptic, dismissOverlay } from './shared/utils.js';
 import { Spring } from './shared/spring.js';
 import {
   CalState,
@@ -258,7 +258,7 @@ function _fmtDateInput(ms) {
 
 function _openPeriodSheet() {
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
+  overlay.className = 'modal-overlay sd-overlay';
   overlay.style.zIndex = '4000';
 
   const now = Date.now();
@@ -311,12 +311,8 @@ function _openPeriodSheet() {
     </div>`;
 
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('visible'));
 
-  const close = () => {
-    overlay.classList.remove('visible');
-    setTimeout(() => overlay.remove(), 300);
-  };
+  const close = () => dismissOverlay(overlay);
 
   const customFields = overlay.querySelector('#an-period-custom-fields');
   if (_period === 'custom') customFields.hidden = false;
