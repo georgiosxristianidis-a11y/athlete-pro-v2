@@ -21,7 +21,7 @@ is bring-your-own-key.
 - Dynamic Island status bar: live session tracking, rest timer, sync indicator
 - Analytics: 1RM estimation, DOTS score, PR history, muscle fatigue heatmap
 - Cycle plans with exercise aliasing (rename lifts without losing weight history)
-- Body stats, plate calculator, 3-step onboarding with fast skip
+- Body stats, 3-step onboarding with fast skip
 - Installable PWA: Service Worker precache, self-hosted fonts, works fully offline
 
 ## Quick Start
