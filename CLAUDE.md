@@ -4,7 +4,7 @@
 
 ## Multi-Agent Protocol
 
-- **База — только `origin/main`.** `git fetch origin && git checkout -b <инструмент>/<карточка> origin/main`; долгоживущего trunk нет (O-3). Префикс (cursor/ · claude/) обязан совпадать с трейлером коммитов — гард `scripts/check-branch-prefix.mjs`, обход `PREFIX_OK=1`.
+- **База — только `origin/main`.** `git fetch origin && git checkout -b <инструмент>/<карточка> origin/main`; долгоживущего trunk нет (O-3). Префикс claude/ обязан совпадать с трейлером коммитов (cursor/ отключён 20.09 — блок) — гард `scripts/check-branch-prefix.mjs`, обход `PREFIX_OK=1`.
 - **Хендофф** — `NEXT_SESSION.md`, читать первым. Незакоммиченные диффы — возможно живой WIP другого агента, сверяться, не откатывать вслепую.
 - **Декомиссия инфры = чеклист 4 мест:** правила/доки · ветки/worktree · remote · GitHub · Vercel. Закрыть 3 из 4 = мина. Дефолт-ветку сторожит `preflight`.
 - **Дрейф базы** — `scripts/check-branch-drift.mjs` (pre-push + job `drift` в CI), блокирует пересечение по файлам, не отставание. Обход: `DRIFT_OK=1 git push`.
@@ -50,7 +50,7 @@
 
 ## Architecture · Design
 
-Оба спека — в `.claude/rules/`, грузятся по путям (Cursor — через `.cursor/rules/*.mdc`):
+Оба спека — в `.claude/rules/`, грузятся по путям:
 
 - **`architecture.md`** — Store/View, бэкенд-цепочка, навигация, ключевые файлы, конвенции кода.
 - **`design.md`** — палитра BRAND/SEMANTIC, PPL-закон, шкала `--fs-*`/`--fw-*`, glass-hairlines. Железное: цвета и типографика только через токены `css/base.css :root`, сырые hex/px/веса запрещены.

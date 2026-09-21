@@ -29,6 +29,7 @@ import {
   executorOf,
   formatFailure,
   isExempt,
+  retiredVerdict,
   run,
   shortBranch,
   verdict,
@@ -161,18 +162,31 @@ test('проводка: ветка Cursor под именем claude/* — от�
   assert.match(text, /Prefix Block/);
 });
 
-test('проводка: та же работа под своим именем — проход', () => {
+test('CURSOR-OFF: новая ветка cursor/* — блок, claude/* и чужие — проход', () => {
+  assert.equal(retiredVerdict('cursor/x').ok, false);
+  assert.equal(retiredVerdict('refs/heads/cursor/x').code, 'retired');
+  assert.equal(retiredVerdict('claude/x').ok, true);
+  assert.equal(retiredVerdict('dependabot/npm_and_yarn/vite-7.1.9').ok, true);
+  assert.equal(retiredVerdict('main').ok, true);
+});
+
+test('CURSOR-OFF: сообщение отказа называет переименование в claude/ и обход', () => {
+  const text = formatFailure('cursor/x', retiredVerdict('cursor/x')).join('\n');
+  assert.match(text, /git branch -m claude\//);
+  assert.match(text, /PREFIX_OK=1/);
+});
+
+test('проводка CURSOR-OFF: ветка cursor/* с трейлером Cursor — отказ, обход PREFIX_OK=1 работает', () => {
   const { work, g } = makeRepo();
   branchWith(g, work, 'cursor/launch-5-dashboard-i18n', [CURSOR, CURSOR]);
 
-  assert.equal(runIn(work, { argv: ['cursor/launch-5-dashboard-i18n'] }).code, 0);
-});
-
-test('проводка: LEAD добил ветку Cursor — владелец не меняется, имя остаётся cursor/*', () => {
-  const { work, g } = makeRepo();
-  branchWith(g, work, 'cursor/launch-9-f11', [CURSOR, CLAUDE, CLAUDE]);
-
-  assert.equal(runIn(work, { argv: ['cursor/launch-9-f11'] }).code, 0);
+  const blocked = runIn(work, { argv: ['cursor/launch-5-dashboard-i18n'] });
+  assert.equal(blocked.code, 1);
+  assert.match(blocked.text, /отключён/);
+  assert.equal(
+    runIn(work, { argv: ['cursor/launch-5-dashboard-i18n'], env: { PREFIX_OK: '1' } }).code,
+    0
+  );
 });
 
 test('проводка: коммиты, уже влитые в main, владельца ветке не назначают', () => {

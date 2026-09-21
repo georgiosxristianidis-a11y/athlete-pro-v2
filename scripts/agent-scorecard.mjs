@@ -13,7 +13,7 @@
  *
  * The commit trailer is still what says *who*: `Co-Authored-By: <name>` is
  * already written by Claude on every commit and survives rebase-merge intact.
- * Cursor gets its own line — see `.cursor/rules/000-core.mdc`.
+ * Cursor gets its own line for history only: retired 2026-09-20 (CURSOR-OFF).
  *
  * Attribution inside a PR (AGENT-6): the first commit with a known trailer is
  * the executor. Later commits signed by a different tool are the acceptance
