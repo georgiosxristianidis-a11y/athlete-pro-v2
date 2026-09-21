@@ -321,23 +321,11 @@ HTML не резал — нарезка шаблона остаётся след
 
 ---
 
-### CURSOR-OFF — декомиссия Cursor из контура
-**от:** Claude · **Фаза 4** · **важность:** высокая (гниёт молча) · **тип:** гигиена · инструмент · **размер:** M
+### CURSOR-OFF — декомиссия Cursor из контура — ЗАКРЫТА В РЕПО (21.09)
 
-**Решение Gio 20.09.** Cursor отключён. Дальше LEAD — единственный оркестратор, и за Cursor остаются хвосты, которые надо перепроверять, а не наследовать на веру.
+Решение Gio 20.09: Cursor отключён. Сделано: `.cursor/`, `.cursorignore`, `test/cursor-night-guard.test.js` удалены (AGENT-9 снята); гард префикса блокирует новые `cursor/*` (`retiredVerdict`), `cursor` в `TOOLS` scorecard оставлен ради истории; правила, `agent-rules-parity`, eslint, скилл `agent-brief` вычищены.
 
-**Почему высокая, хотя это «всего лишь уборка».** Ревью Cursor уже сейчас мертво и при этом выглядит зелёно-нейтральным: `Cursor Bugbot` — «Bugbot run failed», `Cursor Security Agent` — «Usage-based pricing required». Это тот же класс, что «Actions встали — зелёный PR ничего не значит»: чек в списке есть, вердикта нет, читается как «чисто». Сколько PR прошло мимо них — не считано.
-
-**Чеклист четырёх мест — закрыть 3 из 4 это мина:**
-
-1. **Правила и доки.** `CLAUDE.md` § Multi-Agent (префиксы `cursor/`, «вливает LEAD после гейта», «Cursor исполняет»), `.cursor/rules/*.mdc`, имя `docs/handoff/HANDOFF_cursor_arch_cards.md` — файл живой, переименование отдельным шагом, чтобы не порвать ссылки.
-2. **Гарды на коде.** `scripts/agent-scorecard.mjs` — таблица `TOOLS`/трейлеры; `scripts/check-branch-prefix.mjs` берёт `PREFIXES` оттуда же. Убрать `cursor` из `TOOLS` = ветки `cursor/*` станут «без владельца». Проверить, не осталось ли живых `cursor/*` ДО правки (`git ls-remote --heads origin 'cursor/*'`).
-3. **GitHub.** Снять приложения Cursor (Bugbot, Security Reviewer, Approval Router) из репозитория, иначе `neutral`-чеки останутся висеть вечно. Проверка: `gh api repos/:owner/:repo/commits/<sha>/check-runs` на первом же PR после — имён Cursor быть не должно.
-4. **Vercel.** Проверить, нет ли интеграции Cursor в проекте `gio-g7/athlete-pro-v7`.
-
-**Стоп.** Все четыре пункта закрыты и каждый подтверждён командой, а не просмотром UI. Ветка `cursor/*` больше не заводится; новый PR приходит без Cursor-чеков; `npm run preflight` и `npm run scorecard` чисты.
-
-**Не трогать.** Трейлеры `Co-Authored-By` в УЖЕ влитых коммитах — история авторства, переписывать её нечем и незачем. Гард префикса не сносить целиком: `claude/` остаётся, и он же ловит ветки без владельца.
+**Остаётся за Gio (места 3-4 чеклиста):** снять приложения Cursor (Bugbot, Security Reviewer, Approval Router) в настройках GitHub; проверить Vercel `gio-g7/athlete-pro-v7`. Подтверждение — `gh api repos/:owner/:repo/commits/<sha>/check-runs` на первом PR после: имён `cursor` нет.
 
 ---
 

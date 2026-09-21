@@ -30,10 +30,6 @@ const RULE_FILES = [
   '.claude/rules/architecture.md',
   '.claude/rules/design.md',
   '.claude/rules/security.md',
-  '.cursor/rules/000-core.mdc',
-  '.cursor/rules/architecture.mdc',
-  '.cursor/rules/design.mdc',
-  '.cursor/rules/security-auditor.mdc',
 ];
 
 /** Extensions that make a backticked token a claim about a file in this repo. */
@@ -157,24 +153,6 @@ test('agent rules: every function named in the rules is findable in the source',
     `Rules name functions the codebase does not have (this is the bsEsc() case):\n  ` +
       `${missing.join('\n  ')}`
   );
-});
-
-test('agent rules: the Cursor adapter stays a pointer, not a copy', () => {
-  for (const file of RULE_FILES.filter((f) => f.startsWith('.cursor/'))) {
-    const text = readFileSync(path.join(REPO_ROOT, file), 'utf8');
-    const lines = text.split('\n').length;
-
-    assert.ok(
-      lines <= 60,
-      `${file} is ${lines} lines. The adapter points at .claude/rules/*; a copy ` +
-        `drifts from the canon on its first edit — that is exactly how ` +
-        `.cursorrules died.`
-    );
-    assert.ok(
-      /\.claude\/rules\/|CLAUDE\.md/.test(text),
-      `${file} names no canonical rule file, so it is not a pointer.`
-    );
-  }
 });
 
 test('agent rules: no raw hex colours prescribed anywhere in the rules', () => {

@@ -22,6 +22,10 @@
 // прочая автоматика, у которой владельца-инструмента нет. Такую ветку считает
 // графа `unsigned` у scorecard — это вопрос карточки AGENT-4, не этого гарда.
 //
+// Cursor отключён Gio 20.09 (CURSOR-OFF): имя `cursor/*` для НОВОЙ ветки — блок
+// (`retiredVerdict`). Трейлер Cursor в `TOOLS` scorecard остаётся: история влитых
+// PR читается, переписывать её нечем.
+//
 // Осознанный обход: PREFIX_OK=1 git push.
 //
 // Слоёв два, намеренно: pre-push (ловит до пуша, судит по ЦЕЛЕВОЙ стороне
@@ -39,6 +43,22 @@ export const BYPASS_ENV = 'PREFIX_OK';
 
 /** Инструменты, у которых есть своя ветка. Источник один — таблица трейлеров scorecard. */
 export const PREFIXES = TOOLS.map((t) => t.tool);
+
+/** Отключённые инструменты: их прежние коммиты читаются, новых веток под ними нет. */
+export const RETIRED = ['cursor'];
+
+/**
+ * Ветка под именем отключённого инструмента. Судится по имени, не по трейлеру:
+ * `cursor/*` больше некому вести, значит такое имя — либо забытая старая ветка,
+ * либо сбой брифа.
+ * @returns {{ ok: boolean, code: string, expected?: string, actual?: string }}
+ */
+export function retiredVerdict(branch) {
+  const short = shortBranch(branch);
+  const hit = RETIRED.find((p) => short.startsWith(`${p}/`));
+  if (!hit || isExempt(short)) return { ok: true, code: 'active' };
+  return { ok: false, code: 'retired', expected: 'claude/', actual: `${hit}/` };
+}
 
 /**
  * Ветки, которых гард не касается вовсе: не работа инструмента, а сам ствол
@@ -142,6 +162,12 @@ export function branchesToCheck(argv, env = process.env, opts = {}) {
 
 export function formatFailure(branch, v) {
   const lines = [`❌ [Prefix Block] Ветка «${branch}» не называет инструмент, который её ведёт.`];
+  if (v.code === 'retired') {
+    lines.push(`   Инструмент ${v.actual.slice(0, -1)} отключён (CURSOR-OFF), новых веток под ним нет.`);
+    lines.push(`   Переименовать: git branch -m ${v.expected}<карточка>-<слова>`);
+    lines.push(`   Осознанный обход: ${BYPASS_ENV}=1 git push`);
+    return lines;
+  }
   lines.push(
     v.code === 'wrong-tool'
       ? `   Трейлер коммитов говорит ${v.expected.slice(0, -1)}, имя ветки — ${v.actual}.`
@@ -170,7 +196,8 @@ export function run(opts = {}) {
 
   let failed = 0;
   for (const branch of branches) {
-    const v = verdict(branch, executorOf(commitBodies(branch, gitOpts)));
+    const retired = retiredVerdict(branch);
+    const v = retired.ok ? verdict(branch, executorOf(commitBodies(branch, gitOpts))) : retired;
     if (v.ok) continue;
     failed++;
     for (const line of formatFailure(branch, v)) out.error(line);

@@ -1,6 +1,6 @@
 # GEMINI.md — AI Assistant Guidelines
 
-> ⚠️ This file contains behavioral rules for all AI Assistants (Gemini, Claude, Cursor) working on the Athlete Pro codebase.
+> ⚠️ This file contains behavioral rules for all AI Assistants (Gemini, Claude) working on the Athlete Pro codebase.
 
 ## Karpathy Guidelines (Derived from Andrej Karpathy)
 
