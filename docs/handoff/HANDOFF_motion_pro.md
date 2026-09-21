@@ -76,7 +76,7 @@ Safari 17.4+/18. Все четыре — прогрессивное улучше
 
 ---
 
-### MO-2 — `@starting-style`: эталон на листе периода · сделана (1.27.125), ждёт поля
+### MO-2 — `@starting-style`: эталон на листе периода · сделана (1.27.126), ждёт поля
 
 Рецепт `.modal-overlay.sd-overlay` в `base.css`, хелпер `dismissOverlay` в `utils.js`, эталон —
 `_openPeriodSheet` (`js/analytics.view.js`). Скраб `currentTime` в превью: вход 180/300 мс с
