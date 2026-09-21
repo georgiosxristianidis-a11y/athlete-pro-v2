@@ -379,6 +379,20 @@ function _coachFetchErrorMessage(err, status, bodyError) {
 }
 
 /**
+ * Short diagnostic code shown after the coach error text, so a field report
+ * ("Can't reach the server") says which layer failed.
+ * @param {Error & {status?: number, code?: string}} err
+ * @returns {string}
+ */
+function _coachErrorCode(err) {
+  if (err?.status) return `HTTP ${err.status}`;
+  if (err?.name === 'AbortError') return 'TIMEOUT';
+  if (err?.name === 'PrivacyBlockedError') return `BLOCKED ${err.code || ''}`.trim();
+  if (err?.code === 'STREAM') return 'STREAM';
+  return `NET ${err?.name || 'Error'}: ${String(err?.message || '').slice(0, 60)}`;
+}
+
+/**
  * Render local insights as a markdown-ish text block for the chat UI.
  * @param {Array<{title:string, body:string, action?:string}>} insights
  * @param {'cloud'|'anon'|'airgap'} mode
@@ -522,7 +536,7 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
         errJson.error
       );
       const ref = errJson.requestId ? ` Ref: ${errJson.requestId}` : '';
-      throw Object.assign(new Error(hint + ref), { requestId: errJson.requestId });
+      throw Object.assign(new Error(hint + ref), { requestId: errJson.requestId, status: response.status });
     }
 
     if (!response.body) {
@@ -552,7 +566,7 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
           const { text, error, requestId: rid } = payload;
           if (error) {
             const ref = rid ? ` Ref: ${rid}` : '';
-            throw new Error(error + ref);
+            throw Object.assign(new Error(error + ref), { code: 'STREAM' });
           }
           if (text) {
             aiText += text;
@@ -577,7 +591,7 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
     onDone(aiText);
   } catch (err) {
     const base = _coachFetchErrorMessage(err, undefined, err.message);
-    onError(base);
+    onError(`${base} [${_coachErrorCode(err)}]`);
   } finally {
     clearTimeout(timeoutId);
     _streaming = false;
