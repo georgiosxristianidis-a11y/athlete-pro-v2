@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### MOTION-FIX/B2: `.privacy-segment` на глайд-пилюле (1.27.127)
+- Оба живых сегмента экрана острова (режим приватности, профиль острова) подключены к `seg-pill`: `mountSegPills` знает `.privacy-segment`, `syncSegPill` — третья ветка по `dataset.mode` (`seg-pill--airgap` / `--anon`, профиль и Cloud нейтральны). Инсет `--seg-pill-inset: 4px`, радиус пилюли `--r-s`, `:active` активной кнопки приседает и подложка (`scale` + `:has`).
+- Закон 6 из Motion: `_setMode` переносит живой хост в новую карточку, `island:setProfile` правит классы и описание на месте вместо `loadIslandSettings()`. Проверено в превью: `sameNode: true`, одна пилюля, `--pill-x` 4 → 110 px. Полевого прогона на Android нет.
+
 ### MO-2: @starting-style, эталон на листе периода (1.27.126)
 - Рецепт `.modal-overlay.sd-overlay` в `css/base.css`: вход на `@starting-style` (лист на пружине), выход по `data-closing` (140 мс, `--ease-exit`), уход узла по `getAnimations()`, не по таймеру. Хелпер `dismissOverlay` в `js/shared/utils.js`
 - Эталон — `_openPeriodSheet` в `js/analytics.view.js`: `rAF` и `.visible` ушли. Карточка планировала `plate-calc`, но у него нет вызова `open()` и нет `.pc-*` стилей — не оформлен и недостижим

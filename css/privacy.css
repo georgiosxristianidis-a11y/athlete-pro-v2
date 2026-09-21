@@ -116,6 +116,32 @@
   text-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
 }
 
+/* Глайд-пилюля (seg-pill): подложку рисует она, у активной кнопки фон снимается.
+   Инсет = padding контейнера, радиус пилюли = радиус кнопок. */
+.privacy-segment.seg-pill-host {
+  --seg-pill-inset: 4px;
+}
+.privacy-segment.seg-pill-host .seg-pill {
+  border-radius: var(--r-s);
+  transition: transform var(--t-normal), scale var(--t-fast);
+}
+.privacy-segment.seg-pill-host .privacy-seg-btn.active {
+  background: transparent;
+  box-shadow: none;
+}
+.privacy-segment.seg-pill-host .seg-pill--airgap {
+  background: var(--c-accent-bg);
+  border-color: color-mix(in srgb, var(--c-accent) 20%, transparent);
+}
+.privacy-segment.seg-pill-host .seg-pill--anon {
+  background: var(--c-secondary-bg);
+  border-color: color-mix(in srgb, var(--c-secondary) 20%, transparent);
+}
+/* Нажатие на активную кнопку: подложка приседает вместе с ней. */
+.privacy-segment.seg-pill-host:has(.privacy-seg-btn.active:active) .seg-pill {
+  scale: var(--press-scale);
+}
+
 .privacy-desc {
   font-size: var(--fs-2);
   color: var(--c-text-2);

@@ -11,6 +11,7 @@
 import { renderPrivacyCard } from './privacy.view.js';
 import { isRu } from './locale.store.js';
 import { flag } from './flags.js';
+import { initSegPill, mountSegPills } from './ui/seg-pill.js';
 import { getIslandProfile, setIslandProfile } from './island-profile.store.js';
 import { on } from './events.js';
 import { haptic } from './shared/utils.js';
@@ -18,7 +19,7 @@ import { haptic } from './shared/utils.js';
 // Profile switch → persist + re-render this screen and the live island.
 on('island:setProfile', (el) => {
   setIslandProfile(el.dataset.profile);
-  loadIslandSettings();
+  syncProfileCard(el.dataset.profile);
   window.DynamicIsland?.update();
   haptic(8);
 });
@@ -55,6 +56,21 @@ function renderProfileCard(ru) {
   `;
 }
 
+/** Правит живую карточку профиля на месте: хост пилюли не пересоздаётся (design.md § Motion, п. 6). */
+function syncProfileCard(id) {
+  const seg = document.querySelector('.privacy-segment [data-profile]')?.parentElement;
+  if (!seg) return loadIslandSettings();
+  seg.querySelectorAll('[data-profile]').forEach((b) => {
+    const on = b.dataset.profile === id;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  const p = PROFILES.find((x) => x.id === id) || PROFILES[0];
+  const desc = seg.nextElementSibling;
+  if (desc) desc.textContent = isRu() ? p.descRu : p.descEn;
+  initSegPill(seg);
+}
+
 /**
  * Render the Island Settings screen into #s-island-settings.
  */
@@ -80,4 +96,5 @@ export function loadIslandSettings() {
     ${renderProfileCard(ru)}
     ${renderPrivacyCard()}
   `;
+  mountSegPills(screen);
 }

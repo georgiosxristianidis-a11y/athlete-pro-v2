@@ -112,7 +112,13 @@ export function syncSegPill(host, opts = {}) {
     host.style.setProperty('--pill-sx', '1');
   }
 
-  pill.classList.remove('seg-pill--push', 'seg-pill--pull', 'seg-pill--legs');
+  pill.classList.remove(
+    'seg-pill--push',
+    'seg-pill--pull',
+    'seg-pill--legs',
+    'seg-pill--airgap',
+    'seg-pill--anon'
+  );
 
   if (host.classList.contains('week-segment')) {
     const idx = buttons.indexOf(active);
@@ -123,12 +129,17 @@ export function syncSegPill(host, opts = {}) {
     pill.classList.toggle('seg-pill--push', type === 'push');
     pill.classList.toggle('seg-pill--pull', type === 'pull');
     pill.classList.toggle('seg-pill--legs', type === 'legs');
+  } else if (host.classList.contains('privacy-segment')) {
+    // Режим приватности красит подложку; профиль острова (data-profile) остаётся нейтральным.
+    const mode = active.dataset.mode;
+    pill.classList.toggle('seg-pill--airgap', mode === 'airgap');
+    pill.classList.toggle('seg-pill--anon', mode === 'anon');
   }
 }
 
 /** @param {ParentNode} [root] */
 export function mountSegPills(root = document) {
   root
-    .querySelectorAll('.week-segment, .bs-tab-bar, .plan-tabs')
+    .querySelectorAll('.week-segment, .bs-tab-bar, .plan-tabs, .privacy-segment')
     .forEach((host) => initSegPill(/** @type {HTMLElement} */ (host)));
 }
