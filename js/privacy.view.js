@@ -21,6 +21,7 @@ import { t, isRu, getLang } from './locale.store.js';
 import { esc, haptic } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
 import { on } from './events.js';
+import { initSegPill } from './ui/seg-pill.js';
 
 on('privacy:setMode', (el) => _setMode(el.dataset.mode));
 on('privacy:toggleAi', () => _toggleAi());
@@ -185,6 +186,18 @@ async function _setMode(mode) {
     wrap.innerHTML = renderPrivacyCard().trim();
     const newNodes = Array.from(wrap.content.children);
     if (newNodes.length >= 2) {
+      // Хост пилюли переживает рендер: иначе глайд едет от нуля (design.md § Motion, п. 6).
+      const liveSeg = cardEl.querySelector('.privacy-segment');
+      const newSeg = newNodes[1].querySelector('.privacy-segment');
+      if (liveSeg && newSeg) {
+        liveSeg.querySelectorAll('.privacy-seg-btn').forEach((b) => {
+          const on = b.dataset.mode === mode;
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-selected', String(on));
+        });
+        newSeg.replaceWith(liveSeg);
+        initSegPill(liveSeg);
+      }
       cardEl.replaceWith(newNodes[1]);
       sectionHeader.replaceWith(newNodes[0]);
     }
