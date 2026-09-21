@@ -978,6 +978,39 @@
     transform: translateY(0);
   }
 }
+/* MO-2 — вход и выход листа средствами CSS, без rAF и класса `.visible`.
+   Вход: @starting-style задаёт кадр «до» — transition едет к базовому стилю сам.
+   Выход: атрибут `data-closing` (dismissOverlay в utils.js) переводит в конечное
+   состояние и ждёт getAnimations(), а не таймер. Кривая берётся у целевого
+   состояния: вход на пружине, выход на --ease-exit, без отскока (закон Motion п. 7).
+   `allow-discrete` не нужен — display не меняется, узел уходит из DOM целиком.
+   Старый движок без @starting-style: лист появляется сразу, выход по-прежнему
+   плавный. Сюда — только холодные оверлеи без фокус-трапа. */
+.modal-overlay.sd-overlay {
+  animation: none;
+  transition: opacity var(--t-enter);
+}
+.modal-overlay.sd-overlay .modal-sheet {
+  animation: none;
+  transition: transform 0.3s var(--ease-spring-1);
+}
+@starting-style {
+  .modal-overlay.sd-overlay {
+    opacity: 0;
+  }
+  .modal-overlay.sd-overlay .modal-sheet {
+    transform: translateY(100%);
+  }
+}
+.modal-overlay.sd-overlay[data-closing] {
+  opacity: 0;
+  transition: opacity var(--t-exit);
+  pointer-events: none;
+}
+.modal-overlay.sd-overlay[data-closing] .modal-sheet {
+  transform: translateY(100%);
+  transition: transform var(--t-exit);
+}
 .modal-handle {
   width: 36px;
   height: 4px;

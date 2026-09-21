@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### MO-2: @starting-style, эталон на листе периода (1.27.125)
+- Рецепт `.modal-overlay.sd-overlay` в `css/base.css`: вход на `@starting-style` (лист на пружине), выход по `data-closing` (140 мс, `--ease-exit`), уход узла по `getAnimations()`, не по таймеру. Хелпер `dismissOverlay` в `js/shared/utils.js`
+- Эталон — `_openPeriodSheet` в `js/analytics.view.js`: `rAF` и `.visible` ушли. Карточка планировала `plate-calc`, но у него нет вызова `open()` и нет `.pc-*` стилей — не оформлен и недостижим
+- `allow-discrete` не понадобился: `display` не меняется, узел удаляется целиком
+
 ### MO-1: упругость на linear() (1.27.123)
 
 Кривые `--ease-spring-1` / `--ease-spring-2` в `css/base.css :root` — сэмплы затухающей
