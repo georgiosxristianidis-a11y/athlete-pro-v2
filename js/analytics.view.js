@@ -427,7 +427,7 @@ export function calDayClick(year, month, day, existingType, existingId) {
   const dateLabel = `${day} ${monthNames[month]} ${year}`;
 
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
+  overlay.className = 'modal-overlay sd-overlay';
   overlay.style.zIndex = '4000';
 
   const removeBtn = existingType
@@ -467,12 +467,8 @@ export function calDayClick(year, month, day, existingType, existingId) {
     </div>`;
 
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('visible'));
 
-  const close = () => {
-    overlay.classList.remove('visible');
-    setTimeout(() => overlay.remove(), 300);
-  };
+  const close = () => dismissOverlay(overlay);
 
   overlay.querySelectorAll('[data-type]').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -615,7 +611,7 @@ function openStrengthIndexModal() {
   if (!plot) return;
 
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay ex-history-overlay';
+  overlay.className = 'modal-overlay sd-overlay ex-history-overlay';
   overlay.style.zIndex = '4000';
 
   const gainTxt = `${plot.gain >= 0 ? '+' : ''}${plot.gain}%`;
@@ -642,12 +638,8 @@ function openStrengthIndexModal() {
     </div>`;
 
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('visible'));
 
-  const close = () => {
-    overlay.classList.remove('visible');
-    setTimeout(() => overlay.remove(), 300);
-  };
+  const close = () => dismissOverlay(overlay);
   overlay.querySelector('#idx-close')?.addEventListener('click', close);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) close();
@@ -674,7 +666,7 @@ export function openExerciseHistoryModal(exerciseName) {
   const color = pplColor(history.type);
 
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay ex-history-overlay';
+  overlay.className = 'modal-overlay sd-overlay ex-history-overlay';
   overlay.style.zIndex = '4000';
 
   const typeName = history.type.charAt(0).toUpperCase() + history.type.slice(1);
@@ -813,12 +805,8 @@ export function openExerciseHistoryModal(exerciseName) {
     </div>`;
 
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('visible'));
 
-  const close = () => {
-    overlay.classList.remove('visible');
-    setTimeout(() => overlay.remove(), 300);
-  };
+  const close = () => dismissOverlay(overlay);
 
   overlay.querySelector('#ex-history-close')?.addEventListener('click', close);
   overlay.addEventListener('click', (e) => {

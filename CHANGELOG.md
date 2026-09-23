@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### MO-2b/1: Аналитика на `.sd-overlay` — календарь, индекс силы, история упражнения (1.27.128)
+- Три оверлея `js/analytics.view.js` переведены на рецепт MO-2. Старая схема была мертва: правила `.modal-overlay.visible` нет, поэтому «закрыть» давало 300 мс замершего листа, который ловил тапы, и обрыв. По коду `applyCalendarTypeTap` второй тап по пустому дню в этом окне создавал вторую запись (живьём не воспроизводилось). Теперь выход 140 мс, `pointer-events: none` с первого кадра. Не закрыто: тап, пока идёт запись в IDB до `close()`
+- `.ex-history-sheet`: вернули `--sheet-tail` в `padding-bottom` и `max-height`. После MO-1 весь нижний отступ листа уходил под край экрана — замер в превью: зазор под последней строкой 0 px, стало 32
+- Гарды: `test/sd-overlay.test.js` (хелпер, список мигрированных файлов, хвост у модификаторов листа) и e2e `MO-2b exercise history sheet`. На коде базы оба красные. WebKit локально не гонялся — сигнал из CI
+
 ### MOTION-FIX/B2: `.privacy-segment` на глайд-пилюле (1.27.127)
 - Оба живых сегмента экрана острова (режим приватности, профиль острова) подключены к `seg-pill`: `mountSegPills` знает `.privacy-segment`, `syncSegPill` — третья ветка по `dataset.mode` (`seg-pill--airgap` / `--anon`, профиль и Cloud нейтральны). Инсет `--seg-pill-inset: 4px`, радиус пилюли `--r-s`, `:active` активной кнопки приседает и подложка (`scale` + `:has`).
 - Закон 6 из Motion: `_setMode` переносит живой хост в новую карточку, `island:setProfile` правит классы и описание на месте вместо `loadIslandSettings()`. Проверено в превью: `sameNode: true`, одна пилюля, `--pill-x` 4 → 110 px. Полевого прогона на Android нет.
