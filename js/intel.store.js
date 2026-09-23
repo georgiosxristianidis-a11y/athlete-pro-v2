@@ -208,10 +208,13 @@ export async function streamCoachReply({ text, image = null, onText }) {
 
 /**
  * Озвучивать ли ответ сразу — настройка, а не состояние экрана.
+ * CORE-2: дефолт был true при полном отсутствии тумблера в UI, писавшего
+ * ключ, — выключить озвучку было нельзя нигде, и каждый ответ коуча платил
+ * вторым вызовом TTS без согласия. Дефолт OFF, пока тумблер не заведён.
  * @returns {Promise<boolean>}
  */
 export async function getAutoSpeech() {
-  return !!(await DB.Settings.get('ai-auto-speech', true));
+  return !!(await DB.Settings.get('ai-auto-speech', false));
 }
 
 /**

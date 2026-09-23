@@ -6,11 +6,14 @@ import { logInfo, logWarn } from '../lib/logger.js';
 import { asyncHandler } from '../lib/errors.js';
 import { stripSecrets } from '../js/shared/sync-secrets.js';
 import { DEFAULT_AI_ENGINE, keyLooksValid } from '../js/shared/ai-engine.js';
+import { sharedRateLimitStore } from '../lib/rateLimitStore.js';
 import { z } from 'zod';
 
 const router = express.Router();
 
 // ── Rate limiters ────────────────────────────────────────────────────────────
+// CORE-2: свой store на каждый лимитер — иначе разные маршруты делят один
+// счётчик в общем хранилище. undefined → дефолтный MemoryStore.
 const _limitOpts = {
   windowMs: 60 * 1000,
   standardHeaders: true,
@@ -18,8 +21,8 @@ const _limitOpts = {
   handler: (req, res) =>
     res.status(429).json({ error: 'Too many requests — please slow down.', requestId: req.correlationId }),
 };
-const coachLimiter = rateLimit({ ..._limitOpts, max: 10 });
-const apiLimiter   = rateLimit({ ..._limitOpts, max: 20 });
+const coachLimiter = rateLimit({ ..._limitOpts, max: 10, store: sharedRateLimitStore('rl:coach:') });
+const apiLimiter   = rateLimit({ ..._limitOpts, max: 20, store: sharedRateLimitStore('rl:api:') });
 
 /**
  * BYOK, не похожий на ключ, до провайдера не доезжает. Сервер предпочитает
@@ -40,7 +43,7 @@ const generatePlanSchema = z.object({
   oneRMs: z.array(z.any()).optional().default([]),
   goals: z.string().optional().default('strength'),
   experience: z.string().optional().default('intermediate'),
-  engine: z.string().optional().default(DEFAULT_AI_ENGINE)
+  engine: z.enum(['gemini', 'anthropic']).optional().default(DEFAULT_AI_ENGINE)
 });
 
 /* ── POST /generate-plan ── */
@@ -71,7 +74,7 @@ router.post('/generate-plan', apiLimiter, asyncHandler(async (req, res) => {
       system,
       prompt: 'Generate a highly personalized 3-day PPL rotation. Return JSON only.',
       engine
-    }, req);
+    }, req, res);
   } catch (err) {
     // Offline-first contract: degrade to default plan instead of erroring
     logWarn(req, 'plan_generation_fallback', err.message, { code: err.code });
@@ -92,7 +95,7 @@ const recommendationsSchema = z.object({
   fatigue: z.any().optional().default({}),
   topLifts: z.array(z.any()).optional().default([]),
   nextSessionPlan: z.array(z.any()).min(1, 'nextSessionPlan is required'),
-  engine: z.string().optional().default(DEFAULT_AI_ENGINE)
+  engine: z.enum(['gemini', 'anthropic']).optional().default(DEFAULT_AI_ENGINE)
 });
 
 /* ── POST /recommendations ── */
@@ -109,7 +112,7 @@ router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
       system,
       prompt: 'Generate weight recommendations for the next session. Return JSON only.',
       engine
-    }, req);
+    }, req, res);
   } catch (err) {
     // Offline-first contract: maintain current weights instead of erroring
     logWarn(req, 'recommendations_fallback', err.message, { code: err.code });
@@ -150,7 +153,7 @@ export const coachSchema = z.object({
   images: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
   longTermStats: z.any().optional().default({}),
-  engine: z.string().optional().default(DEFAULT_AI_ENGINE),
+  engine: z.enum(['gemini', 'anthropic']).optional().default(DEFAULT_AI_ENGINE),
   customKey: z.string().optional(),
   tone: z.coerce.number().min(0).max(100).optional().default(50)
 });
@@ -213,7 +216,7 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
       engine,
       customKey,
       onChunk: (text) => { if (canWrite()) res.write(`data: ${JSON.stringify({ text })}\n\n`); }
-    }, req);
+    }, req, res);
 
     if (canWrite()) res.write('data: [DONE]\n\n');
   } catch (err) {
@@ -243,8 +246,13 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
    это null, и он доезжает в теле запроса. При `optional()` такой запрос падал
    400-м на входе, так и не дав серверу взять собственный ключ из окружения —
    озвучка молчала у всех, кто не завёл свой ключ Gemini. */
+// CORE-2: без .max() озвучка каждого символа — второй платный вызов после
+// текстового ответа, ничем не ограниченный по длине (auto-speech ON читает
+// целиком, произвольно длинный ответ модели).
+const TTS_MAX_TEXT_LEN = 2000;
+
 export const ttsSchema = z.object({
-  text: z.string().min(1, 'text is required'),
+  text: z.string().min(1, 'text is required').max(TTS_MAX_TEXT_LEN),
   customKey: z.string().nullish()
 });
 
@@ -263,9 +271,11 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
     return res.status(500).json({ error: 'GOOGLE_GENERATIVE_AI_API_KEY is not configured.' });
   }
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+  // CORE-2: ключ в заголовке, не в query — тот же паттерн, что уже верно
+  // делает /verify-key. URL с ?key= оседает в логах прокси/сервера открытым текстом.
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
       contents: [{ parts: [{ text: `Скажи мотивирующим и суровым голосом тренера: ${text}` }] }],
       generationConfig: { 
@@ -295,7 +305,7 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
 const weeklyReportSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
-  engine: z.string().optional().default(DEFAULT_AI_ENGINE),
+  engine: z.enum(['gemini', 'anthropic']).optional().default(DEFAULT_AI_ENGINE),
   customKey: z.string().optional()
 });
 
@@ -330,7 +340,7 @@ Profile: ${JSON.stringify(profile)}`;
   // и сводку по недельным цифрам можно отдать и без модели.
   let content = null;
   try {
-    content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req);
+    content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req, res);
   } catch (err) {
     logWarn(req, 'weekly_report_ai_failed', err?.message || String(err));
   }
@@ -405,7 +415,7 @@ function _weeklyReportFallback(workouts) {
 const biometricsScanSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
-  engine: z.string().optional().default(DEFAULT_AI_ENGINE),
+  engine: z.enum(['gemini', 'anthropic']).optional().default(DEFAULT_AI_ENGINE),
   customKey: z.string().optional()
 });
 
@@ -435,7 +445,7 @@ Profile: ${JSON.stringify(profile)}`;
 
   let content;
   try {
-    content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req);
+    content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req, res);
   } catch (err) {
     logWarn(req, 'biometrics_scan_fallback', err.message, { code: err.code });
     return res.json({

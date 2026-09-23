@@ -3,6 +3,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { logInfo } from '../lib/logger.js';
+import { sharedRateLimitStore, rateLimitMode } from '../lib/rateLimitStore.js';
 const router = express.Router();
 
 /* ── GET /supabase-status — proxy health check (avoids browser CORS) ── */
@@ -65,11 +66,17 @@ router.get('/ai-status', (req, res) => {
   const hasGemini = !!geminiKey && !geminiKey.includes('your-') && geminiKey.length > 10;
   const hasAnthropic = !!anthropicKey && !anthropicKey.includes('your-') && anthropicKey.length > 10;
 
-  logInfo(req, 'ai-status', 'API key availability checked', { gemini: hasGemini, anthropic: hasAnthropic });
+  // CORE-2: режим лимитера виден снаружи, а не молчит — если KV/Upstash не
+  // настроены, дневная квота на серверном ключе держится только `MemoryStore`
+  // (лимит одного serverless-инстанса), и это должно быть видно, не открыто заново молча.
+  const limiter = rateLimitMode();
+
+  logInfo(req, 'ai-status', 'API key availability checked', { gemini: hasGemini, anthropic: hasAnthropic, limiter });
 
   res.json({
     gemini: hasGemini,
-    anthropic: hasAnthropic
+    anthropic: hasAnthropic,
+    limiter
   });
 });
 
@@ -90,6 +97,7 @@ const verifyKeyLimiter = rateLimit({
   max: 12,
   standardHeaders: true,
   legacyHeaders: false,
+  store: sharedRateLimitStore('rl:verify:'),
   handler: (req, res) =>
     res.status(429).json({ ok: false, reason: 'rate_limited', requestId: req.correlationId }),
 });

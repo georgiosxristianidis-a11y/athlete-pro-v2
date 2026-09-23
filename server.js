@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { correlationMiddleware, logWarn } from './lib/logger.js';
+import { sharedRateLimitStore } from './lib/rateLimitStore.js';
 
 import coachRouter from './routes/coach.js';
 import integrationsRouter from './routes/integrations.js';
@@ -64,6 +65,9 @@ const globalApiLimiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
+  // CORE-2: общее хранилище, если задано (KV/Upstash) — иначе дефолтный
+  // MemoryStore express-rate-limit (лимит одного инстанса, не пользователя).
+  store: sharedRateLimitStore('rl:global:'),
   handler: (req, res) => res.status(429).json({ error: 'Too many requests, please try again later.' })
 });
 

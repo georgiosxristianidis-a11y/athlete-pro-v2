@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CORE-2: открытый счёт на серверном ключе, отмена апстрима мертва (1.27.130)
+- **Лимитер на общем хранилище.** `lib/rateLimitStore.js` — `Store` express-rate-limit поверх `@upstash/redis` (общий REST-контракт с Vercel KV), вплетён во все 4 лимитера (`server.js`, `routes/coach.js` ×2, `routes/integrations.js`). Без `KV_REST_API_URL`/`UPSTASH_REDIS_REST_URL` — честный fallback на `MemoryStore` с громким `console.warn`; режим виден в `/api/ai-status.limiter` ('shared' | 'memory'), не молчит.
+- **Потолок ответа.** `maxOutputTokens` у Gemini в стриме и `generateJSON` (`lib/aiOrchestrator.js`) — не было вовсе, у Anthropic 1024/1500 уже стояли.
+- **TTS.** `.max(2000)` на `text` (`routes/coach.js`) — второй платный вызов после и так неограниченного текста. Ключ Gemini уходит заголовком `x-goog-api-key`, не `?key=` в URL (оседало в логах прокси). `ai-auto-speech` дефолт OFF (`js/intel.store.js`) — тумблера в UI нет, выключить было нельзя нигде.
+- **Отмена — настоящая, не декоративная.** `req.on('close')` заменён на `res.on('close')`: на Node 22 событие у REQUEST стреляет до входа в хендлер (лимитер асинхронный) — разрыв клиента никогда не долетал до контроллера, апстрим догенерировал ответ полностью. `_readGeminiStream` — идле-таймаут на весь цикл чтения (было — только первый байт). `generateJSON` получил и таймаут, и отмену — не было ни того, ни другого.
+- `engine: z.string()` → `z.enum(['gemini', 'anthropic'])` на всех 5 схем `routes/coach.js` — не-провайдер тихо уезжал в Anthropic.
+- Гарды: `test/rate-limit-store.test.js`, `test/coach-cancel.test.js` (реальный `streamResponse` через `startServer(0)` + фейковый `gemini.client`, живой `req.destroy()` — не стаб оркестратора), `test/coach-tts-header.test.js`, доп. кейсы в `test/coach-validate.test.js` — 14 новых, все красные без фикса.
+- Не трогали: промпты, формат ответа, кадры SSE, `compression` (`CORE-3`). Число дневной квоты и настройка KV/Upstash — за Gio (решение 23.09, вариант A).
+
 ### CORE-1: XSS в HUD ядра + слив профиля целиком в промпт (1.27.129)
 - **XSS.** `_buildReadinessWidget`/`_renderReportOverlay` (`js/intel.view.js`) клали поля JSON от модели (`goal`, `index`…`cns`, `score`) в `innerHTML` без `esc()`/клэмпа. Проверено в браузере: HTML в `goal` исполнял скрипт через `<iframe srcdoc>` (same-origin → IndexedDB с BYOK-ключами, вывоз через `connect-src`). Фикс: виджет клэмпит числа 0–100, `esc()` на `goal`; оверлей клэмпит `score`.
 - **Слив профиля.** `_coachProfile()` (`js/intel.store.js`) отдавала `stripSecrets(DB.Settings.getAll())` — весь стор минус ключи, включая `athlete-photo` (base64-фото), `privacy.audit`, `ap-usage-queue`. Фикс: белый список через `loadProfile()` (name/age/sex/goal/equipment/experienceYears/injuries/limitationsText/mode/timeMin). Заодно чинит `profile.goal` — раньше сервер читал `.goal` из ключа, хранившегося как `'profile.goal'`, цель всегда была `General Health`.
