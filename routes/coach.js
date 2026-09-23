@@ -338,8 +338,7 @@ Profile: ${JSON.stringify(profile)}`;
   let report = null;
   if (content) {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) report = JSON.parse(jsonMatch[0]);
+      report = _parseWeeklyReport(content);
     } catch (err) {
       logWarn(req, 'weekly_report_parse_failed', err?.message || String(err));
     }
@@ -347,6 +346,33 @@ Profile: ${JSON.stringify(profile)}`;
 
   res.json({ success: true, report: report || _weeklyReportFallback(workouts), degraded: !report });
 }));
+
+/**
+ * Ответ модели идёт прямо в DOM (`_renderReportOverlay`, CORE-1): без формы
+ * `score` был числом только по названию поля — модель отвечает JSON, но
+ * ничего не проверяет, что `score` действительно число, а `pros`/`cons`
+ * действительно массивы строк разумной длины. Схема зеркалит
+ * `_parseBiometricsReport` — тот же приём для того же класса ответа.
+ * @param {string} content
+ * @returns {{score:number,summary:string,pros:string[],cons:string[]}|null}
+ */
+function _parseWeeklyReport(content) {
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return null;
+  const raw = JSON.parse(jsonMatch[0]);
+  const clamp = (n) => Math.max(0, Math.min(100, Number.isFinite(+n) ? Math.round(+n) : 0));
+  const strings = (arr) =>
+    (Array.isArray(arr) ? arr : [])
+      .filter((s) => typeof s === 'string')
+      .slice(0, 10)
+      .map((s) => s.slice(0, 200));
+  return {
+    score: clamp(raw.score),
+    summary: typeof raw.summary === 'string' ? raw.summary.slice(0, 500) : '',
+    pros: strings(raw.pros),
+    cons: strings(raw.cons),
+  };
+}
 
 /**
  * Отчёт без модели. Считается по тем же семи дням, что ушли бы в промпт, —

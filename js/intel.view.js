@@ -619,8 +619,15 @@ export const IntelView = (() => {
     }
   }
 
-  /** @returns {HTMLElement} оверлей — из него берётся слот волны для озвучки */
+  /**
+   * @returns {HTMLElement} оверлей — из него берётся слот волны для озвучки
+   *
+   * `report` доезжает от сервера уже провалидированным (`_parseWeeklyReport`
+   * в `routes/coach.js`, CORE-1), но `score` шёл сюда сырым числом мимо
+   * `esc()` — единственное поле карточки без экранирования.
+   */
   function _renderReportOverlay(report) {
+    const score = Math.max(0, Math.min(100, Number.isFinite(+report.score) ? Math.round(+report.score) : 0));
     const overlay = document.createElement('div');
     overlay.className = 'intel-report-overlay animate-in fade-in duration-500';
     /* Гуттер до края экрана, а не ритм блока: --side-padding — узаконенное
@@ -634,7 +641,7 @@ export const IntelView = (() => {
         <div style="text-align:center; margin-bottom:var(--sp-4);">
            <h2 style="font-family:var(--font-intel); font-size:var(--fs-5); font-style:italic; color:var(--c-text-1); text-transform:uppercase; margin-bottom:var(--sp-2);">Weekly Intel</h2>
            <div style="display:flex; flex-direction:column; align-items:center;">
-             <span style="font-size:var(--fs-6); font-weight:var(--fw-black); color:var(--c-intel); text-shadow:0 0 20px rgba(0,209,255,0.4); line-height:1;">${report.score}</span>
+             <span style="font-size:var(--fs-6); font-weight:var(--fw-black); color:var(--c-intel); text-shadow:0 0 20px rgba(0,209,255,0.4); line-height:1;">${score}</span>
              <span style="font-size:var(--fs-1); font-weight:var(--fw-black); color:var(--c-text-3); text-transform:uppercase; letter-spacing:0.5em; margin-top:var(--sp-1);">Performance Score</span>
              <span class="intel-voice-slot"></span>
            </div>
@@ -777,7 +784,25 @@ export const IntelView = (() => {
   const openSettings = openAiSettings;
   const saveSettings = closeAiSettings;
 
-  function _buildReadinessWidget(data) {
+  /**
+   * Виджет собирается из JSON, который модель кладёт прямо в ответ (CORE-1):
+   * `data` не проходит ни одной схемы прежде, чем попасть сюда через
+   * `formatAirMarkdown` → `buildWidget`. Без клэмпа/esc() число превращается в
+   * произвольный текст inline-style (`width:${val}%`), а `data.goal` — в
+   * прямую HTML-инъекцию (виджет уходит в `innerHTML` необработанным).
+   */
+  function _buildReadinessWidget(rawData) {
+    const clamp = (n) => Math.max(0, Math.min(100, Number.isFinite(+n) ? Math.round(+n) : 0));
+    const data = {
+      index: clamp(rawData?.index),
+      recovery: clamp(rawData?.recovery),
+      acwr: clamp(rawData?.acwr),
+      sleep: clamp(rawData?.sleep),
+      monotony: clamp(rawData?.monotony),
+      density: clamp(rawData?.density),
+      cns: clamp(rawData?.cns),
+      goal: esc(typeof rawData?.goal === 'string' ? rawData.goal.slice(0, 200) : ''),
+    };
     const getColor = (val) => {
       if (val >= 90) return 'var(--c-accent)'; // Green (Отлично)
       if (val >= 70) return 'var(--c-warning)'; // Yellow (Хорошо)

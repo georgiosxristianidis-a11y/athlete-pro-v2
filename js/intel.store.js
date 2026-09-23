@@ -2,7 +2,7 @@
 
 import { DB } from './db.js';
 import { readiness } from './intel.engine.js';
-import { stripSecrets } from './shared/sync-secrets.js';
+import { loadProfile, computeAge } from './profile.store.js';
 import { safeFetch } from './privacy.store.js';
 import { aiAuth, getTone } from './ai-settings.store.js';
 import { probeAiStatus } from './shared/ai-status.js';
@@ -77,13 +77,32 @@ export const IntelStore = (() => {
    ════════════════════════════════════════════════════════════════════ */
 
 /**
- * Профиль для коуча — всегда через `stripSecrets`. Настройки лежат одной
- * пачкой вместе с BYOK-ключами, и сырой `Settings.getAll()` в теле запроса
- * отправил бы чужой ключ на сервер.
+ * Профиль для коуча — белый список, не снимок стора (CORE-1). Сырой
+ * Сырой снимок всего хранилища `Settings` уезжал в промпт целиком: BYOK-ключи
+ * (тогда закрывал `stripSecrets`), но заодно и `athlete-photo` (JPEG аватара в base64),
+ * `privacy.audit`, `ap-usage-queue` и прочие ключи, которым в тексте запроса
+ * к провайдеру делать нечего. Заодно чинит `profile.goal`: `getAll()` отдаёт
+ * ключи в НАМЕРЕННО плоском виде хранилища (буквально `'profile.goal'`), а
+ * сервер (`routes/coach.js`) читал `profile.goal` как вложенное поле —
+ * промпт получал `undefined`, коуч работал с целью `General Health` всегда.
+ * `loadProfile()` — уже развёрнутый объект, тот же источник, что у
+ * `js/claude.store.js`.
  * @returns {Promise<object>}
  */
 async function _coachProfile() {
-  return stripSecrets(await DB.Settings.getAll());
+  const p = await loadProfile();
+  return {
+    name: p.name,
+    age: computeAge(p.dob),
+    sex: p.sex,
+    goal: p.goal,
+    equipment: p.equipment,
+    experienceYears: p.experienceYears,
+    injuries: p.injuries,
+    limitationsText: p.limitationsText,
+    mode: p.mode,
+    timeMin: p.timeMin,
+  };
 }
 
 /**
