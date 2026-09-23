@@ -321,13 +321,13 @@ HTML не резал — нарезка шаблона остаётся след
 
 ---
 
-### CURSOR-OFF — декомиссия Cursor из контура — ЗАКРЫТА В РЕПО (21.09)
+### CURSOR-OFF — декомиссия Cursor из контура — ЗАКРЫТА (23.09), место 4 за Gio
 
 Решение Gio 20.09: Cursor отключён. Сделано: `.cursor/`, `.cursorignore`, `test/cursor-night-guard.test.js` удалены (AGENT-9 снята); гард префикса блокирует новые `cursor/*` (`retiredVerdict`), `cursor` в `TOOLS` scorecard оставлен ради истории; правила, `agent-rules-parity`, eslint, скилл `agent-brief` вычищены.
 
-**Остаётся за Gio (места 3-4 чеклиста):** снять приложения Cursor (Bugbot, Security Reviewer, Approval Router) в настройках GitHub; проверить Vercel `gio-g7/athlete-pro-v7`. Подтверждение — `gh api repos/:owner/:repo/commits/<sha>/check-runs` на первом PR после: имён `cursor` нет.
+**Место 3 закрыто 23.09.** Аномалия из предыдущей сессии (Bugbot срабатывал `skipping` на каждый PR после отключения репозиторного контура) подтверждена и закрыта: Gio снял GitHub App в Settings → Applications. Подтверждение — PR #425 (до снятия) нёс строки `cursor` в `gh pr checks` («skipping»), PR #426 (после) их не несёт вовсе.
 
-**Подтверждённая аномалия (23.09).** Место 3 не закрыто: Bugbot срабатывает на каждый PR и после отключения репозиторного контура — тратит квоту Cursor на неотключённом GitHub App, дав `neutral`-чек ровно как описано в шапке карточки. Место 4 (Vercel) не проверено. Снятие приложений — настройки аккаунта GitHub, вне доступа агента; сделать может только Gio: Settings → Applications (или Repo → Settings → Integrations) → удалить Cursor Bugbot / Security Reviewer / Approval Router.
+**Место 4 остаётся за Gio:** проверить интеграцию Cursor в Vercel `gio-g7/athlete-pro-v7`.
 
 ---
 
