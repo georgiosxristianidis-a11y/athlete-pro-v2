@@ -120,6 +120,28 @@ describe('coachSchema — context fields and defaults', () => {
   });
 });
 
+/* CORE-2: `engine: z.string()` пускал что угодно — не-'gemini' уходило в
+   ветку Anthropic независимо от значения (`isGemini = engine === 'gemini'`),
+   а `keyLooksValid` нормализует неизвестное имя обратно в gemini. Сегодня без
+   `ANTHROPIC_API_KEY` на Vercel (AI-1) это 500, а не счёт — но схема не
+   должна полагаться на то, что у соседнего провайдера просто нет ключа. */
+describe('coachSchema — engine ограничен списком провайдеров', () => {
+  test("engine: 'gemini' и 'anthropic' — приняты", () => {
+    assert.equal(parse({ messages: [validMsg], engine: 'gemini' }).success, true);
+    assert.equal(parse({ messages: [validMsg], engine: 'anthropic' }).success, true);
+  });
+
+  test('engine: произвольная строка — отвергнута, не тихо нормализована', () => {
+    assert.equal(parse({ messages: [validMsg], engine: 'openai' }).success, false);
+  });
+
+  test('engine отсутствует — дефолт gemini, как раньше', () => {
+    const r = parse({ messages: [validMsg] });
+    assert.equal(r.success, true);
+    assert.equal(r.data.engine, 'gemini');
+  });
+});
+
 /* Карточка VOICE-1. «Ключа нет» приезжает с фронта как null — DB.Settings.get
    отдаёт именно его, а не undefined. При `customKey: z.string().optional()`
    схема резала такой запрос 400-м, и озвучка молчала даже там, где серверный
@@ -149,5 +171,19 @@ describe('ttsSchema — customKey отсутствует', () => {
 
   test('пустой text → отвергнут', () => {
     assert.equal(parseTts({ text: '' }).success, false);
+  });
+});
+
+/* CORE-2: без .max() озвучка любой длины — второй платный вызов TTS без
+   потолка после и так неограниченного текстового ответа. */
+describe('ttsSchema — text ограничен длиной (CORE-2)', () => {
+  const parseTts = (body) => ttsSchema.safeParse(body);
+
+  test('2000 символов — приняты (граница)', () => {
+    assert.equal(parseTts({ text: 'a'.repeat(2000) }).success, true);
+  });
+
+  test('2001 символ — отвергнут', () => {
+    assert.equal(parseTts({ text: 'a'.repeat(2001) }).success, false);
   });
 });
