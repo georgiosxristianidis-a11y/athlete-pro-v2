@@ -344,3 +344,46 @@ test.describe('F-10 Athlete Room Back', () => {
     await expect(page.locator('#s-train')).not.toHaveClass(/active/);
   });
 });
+
+// ─── MO-2b: лист истории упражнения на .sd-overlay ────────────────────────
+// Рецепт MO-2 в реальном движке (unit-гард test/sd-overlay.test.js видит только
+// исходник). WebKit здесь — единственный сигнал, что @starting-style ведёт вход
+// в Safari. До 1.27.128 лист входил на @keyframes, выход был 300 мс замершего
+// листа, ловящего тапы, а нижний отступ уходил под край экрана.
+test.describe('MO-2b exercise history sheet', () => {
+  test('entry on transitions, bottom padding above the edge, closing sheet lets taps through', async ({ page }) => {
+    await openApp(page);
+    await page.locator('button[data-s="s-stats"]').click();
+    await expect(page.locator('#s-stats')).toHaveClass(/active/, { timeout: 5000 });
+
+    const entry = await page.evaluate(async () => {
+      const { openExerciseHistoryModal } = await import('/js/analytics.view.js');
+      openExerciseHistoryModal('Bench Press');
+      const ov = /** @type {HTMLElement} */ (document.querySelector('.ex-history-overlay'));
+      const anims = ov.getAnimations({ subtree: true });
+      const kinds = anims.map((a) => ('transitionProperty' in a ? a.transitionProperty : 'keyframes'));
+      await Promise.all(anims.map((a) => a.finished));
+      const sheet = /** @type {HTMLElement} */ (ov.querySelector('.modal-sheet'));
+      sheet.scrollTop = sheet.scrollHeight;
+      const lastBottom = /** @type {Element} */ (sheet.lastElementChild).getBoundingClientRect().bottom;
+      return { kinds: kinds.sort(), gap: window.innerHeight - lastBottom };
+    });
+    expect(entry.kinds).toEqual(['opacity', 'transform']);
+    expect(entry.gap).toBeGreaterThanOrEqual(31);
+
+    // Клик и замер в одном синхронном кадре: выход длится 140 мс, раунд-трип
+    // Playwright между ними дал бы флак.
+    const closing = await page.evaluate(() => {
+      const ov = /** @type {HTMLElement} */ (document.querySelector('.ex-history-overlay'));
+      /** @type {HTMLElement} */ (ov.querySelector('#ex-history-close')).click();
+      const hit = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 40);
+      return {
+        closing: ov.hasAttribute('data-closing'),
+        stillMounted: ov.isConnected,
+        catchesTap: !!hit && ov.contains(hit),
+      };
+    });
+    expect(closing).toEqual({ closing: true, stillMounted: true, catchesTap: false });
+    await expect(page.locator('.ex-history-overlay')).toHaveCount(0, { timeout: 2000 });
+  });
+});

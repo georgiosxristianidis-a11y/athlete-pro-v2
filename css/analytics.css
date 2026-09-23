@@ -651,10 +651,13 @@
 }
 
 /* ── Exercise History Modal (AN-2) ── */
+/* Хвост `--sheet-tail` (base.css, MO-1) живёт под краем экрана: без него в
+   padding-bottom весь нижний отступ уходит за край и последняя сессия
+   упирается в кромку. max-height — та же поправка, что у базового листа. */
 .ex-history-sheet {
-  max-height: 90vh;
+  max-height: calc(90vh + var(--sheet-tail));
   overflow-y: auto;
-  padding-bottom: calc(var(--sp-4) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--sp-4) + var(--safe-bottom) + var(--sheet-tail));
 }
 .ex-history-head {
   display: flex;
