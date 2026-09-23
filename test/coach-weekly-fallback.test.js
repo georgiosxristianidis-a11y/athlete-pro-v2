@@ -161,3 +161,57 @@ describe('форма BYOK — гейт с обеих сторон', () => {
     }
   });
 });
+
+/* CORE-1 (23.09): report из модели уезжал JSON.parse'ом прямо в ответ клиенту,
+   а клиент кладёт report.score/summary/pros/cons в innerHTML без формы —
+   до фикса score мог быть строкой с разметкой, а pros/cons чем угодно, что
+   провайдер решит вернуть. _parseWeeklyReport — та же схема, что уже
+   защищает /biometrics-scan (_parseBiometricsReport). */
+describe('/weekly-report — форма отчёта, а не доверие к JSON модели (CORE-1)', () => {
+  function stubProviderReturns(json) {
+    AIOrchestrator.generateJSON = async () => JSON.stringify(json);
+  }
+
+  test('score выше 100 — клэмп до 100, не проходит как есть', async () => {
+    stubProviderReturns({ score: 150, summary: 'ok', pros: [], cons: [] });
+    const body = await (await postWeekly({ workouts: [], profile: {} })).json();
+    assert.equal(body.report.score, 100);
+  });
+
+  test('score с разметкой вместо числа — безопасный 0, не сырая строка в DOM', async () => {
+    stubProviderReturns({ score: '100<img src=x onerror=alert(1)>', summary: 'ok', pros: [], cons: [] });
+    const body = await (await postWeekly({ workouts: [], profile: {} })).json();
+    assert.equal(body.report.score, 0);
+  });
+
+  test('summary режется до 500 символов, не-строка — пустая строка', async () => {
+    stubProviderReturns({ score: 10, summary: 'x'.repeat(900), pros: [], cons: [] });
+    const body = await (await postWeekly({ workouts: [], profile: {} })).json();
+    assert.equal(body.report.summary.length, 500);
+  });
+
+  test('pros/cons: не-массив и не-строки внутри — отфильтрованы, не 500', async () => {
+    stubProviderReturns({
+      score: 10,
+      summary: 'ok',
+      pros: ['<script>alert(1)</script>', 123, null, 'fine'],
+      cons: 'not-an-array',
+    });
+    const res = await postWeekly({ workouts: [], profile: {} });
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.deepEqual(body.report.pros, ['<script>alert(1)</script>', 'fine']);
+    assert.deepEqual(body.report.cons, []);
+  });
+
+  test('pros длиннее 10 элементов — обрезка, не безлимитный список в DOM', async () => {
+    stubProviderReturns({
+      score: 10,
+      summary: 'ok',
+      pros: Array.from({ length: 20 }, (_, i) => `p${i}`),
+      cons: [],
+    });
+    const body = await (await postWeekly({ workouts: [], profile: {} })).json();
+    assert.equal(body.report.pros.length, 10);
+  });
+});

@@ -150,15 +150,59 @@ test("gemini-key is read only inside TTS — text requests use the selected engi
   );
 });
 
-/* Профиль уходит на сервер из трёх мест. stripSecrets стоял в каждом из них
-   поимённо — после переезда стало одно место, и проверка держит именно его:
-   сырой Settings.getAll() в теле запроса — это чужой BYOK-ключ на сервере. */
-test('профиль для коуча всегда чистится stripSecrets', () => {
+/* Профиль уходит на сервер из трёх мест через одну функцию, _coachProfile().
+   CORE-1 (23.09): сырой DB.Settings.getAll() отдавал стор целиком — вместе с
+   BYOK-ключами (тогда закрывал stripSecrets), но и с athlete-photo, privacy.*,
+   ap-*, которым в промпте делать нечего. Проверка держит две вещи разом:
+   источник — белый список через loadProfile(), а не снимок стора, и что
+   вызов ровно один — иначе три места на сервере снова разойдутся. */
+test('профиль для коуча — белый список через loadProfile(), не снимок стора', () => {
   const raw = SRC.match(/DB\.Settings\.getAll\(\)/g) || [];
-  assert.equal(raw.length, 1, 'чтений настроек целиком стало больше одного — расходятся правды');
-  assert.match(
-    SRC,
-    /stripSecrets\(await DB\.Settings\.getAll\(\)\)/,
-    'настройки уходят в тело запроса сырыми — вместе с BYOK-ключами'
-  );
+  assert.equal(raw.length, 0, 'вернулось чтение настроек целиком — снова уедет athlete-photo/privacy.*');
+  const calls = SRC.match(/_coachProfile\(\)/g) || [];
+  assert.equal(calls.length, 4, 'ожидаются определение + 3 места (chat/weekly/biometrics)');
+  const fn = SRC.slice(SRC.indexOf('async function _coachProfile'), SRC.indexOf('async function _coachProfile') + 400);
+  assert.match(fn, /loadProfile\(\)/, '_coachProfile обязан читать через profile.store.js, не сырой Settings');
+  for (const leak of ['athlete-photo', 'privacy.audit', 'ap-usage-queue']) {
+    assert.equal(fn.includes(leak), false, `${leak} не должен упоминаться в белом списке`);
+  }
+});
+
+/* Виджет готовности собирается из JSON, который модель кладёт прямо в поток
+   (CORE-1): формат ловится regex'ом в air-markdown.js и JSON.parse'ится без
+   единой проверки схемы. buildWidget(data) — единственный барьер до
+   innerHTML. До фикса data.goal шёл в разметку без esc(), а числовые поля —
+   без клэмпа (значение ломало inline-style width:${val}%). */
+test('_buildReadinessWidget клэмпит числа и экранирует goal (CORE-1)', () => {
+  const start = VIEW.indexOf('function _buildReadinessWidget');
+  const end = VIEW.indexOf('function playAudio');
+  assert.ok(start !== -1 && end > start, 'якорь _buildReadinessWidget пропал');
+  const fn = VIEW.slice(start, end);
+
+  assert.match(fn, /esc\(typeof rawData\?\.goal/, 'data.goal обязан идти через esc() — свободная строка от модели в innerHTML');
+  for (const field of ['index', 'recovery', 'acwr', 'sleep', 'monotony', 'density', 'cns']) {
+    assert.match(
+      fn,
+      new RegExp(`${field}:\\s*clamp\\(rawData\\?\\.${field}\\)`),
+      `data.${field} обязан идти через clamp — иначе рвёт inline-style width:\${val}%`
+    );
+  }
+  // Дальше в шаблоне используются уже клэмпнутые/экранированные поля, не rawData.*
+  const template = fn.slice(fn.indexOf('return `'));
+  assert.equal(/rawData\./.test(template), false, 'шаблон читает rawData напрямую в обход clamp/esc');
+});
+
+/* report.score в оверлее недельного отчёта — до фикса единственное поле
+   карточки без esc()/клэмпа: summary/pros/cons уже шли через esc(). Сервер
+   теперь тоже валидирует (_parseWeeklyReport, routes/coach.js), но клиент не
+   имеет права полагаться на чужую валидацию как на единственный барьер. */
+test('_renderReportOverlay клэмпит report.score перед вставкой в innerHTML (CORE-1)', () => {
+  const start = VIEW.indexOf('function _renderReportOverlay');
+  const end = VIEW.indexOf('function createWorkout');
+  assert.ok(start !== -1 && end > start, 'якорь _renderReportOverlay пропал');
+  const fn = VIEW.slice(start, end);
+
+  assert.match(fn, /const score = Math\.max\(0, Math\.min\(100,/, 'score обязан идти через клэмп 0-100');
+  assert.equal(/\$\{report\.score\}/.test(fn), false, 'report.score снова вставляется в шаблон сырым');
+  assert.match(fn, /\$\{score\}/, 'клэмпнутая переменная score не используется в шаблоне');
 });

@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CORE-1: XSS в HUD ядра + слив профиля целиком в промпт (1.27.129)
+- **XSS.** `_buildReadinessWidget`/`_renderReportOverlay` (`js/intel.view.js`) клали поля JSON от модели (`goal`, `index`…`cns`, `score`) в `innerHTML` без `esc()`/клэмпа. Проверено в браузере: HTML в `goal` исполнял скрипт через `<iframe srcdoc>` (same-origin → IndexedDB с BYOK-ключами, вывоз через `connect-src`). Фикс: виджет клэмпит числа 0–100, `esc()` на `goal`; оверлей клэмпит `score`.
+- **Слив профиля.** `_coachProfile()` (`js/intel.store.js`) отдавала `stripSecrets(DB.Settings.getAll())` — весь стор минус ключи, включая `athlete-photo` (base64-фото), `privacy.audit`, `ap-usage-queue`. Фикс: белый список через `loadProfile()` (name/age/sex/goal/equipment/experienceYears/injuries/limitationsText/mode/timeMin). Заодно чинит `profile.goal` — раньше сервер читал `.goal` из ключа, хранившегося как `'profile.goal'`, цель всегда была `General Health`.
+- **Сервер.** `/weekly-report` (`routes/coach.js`) теперь валидирует ответ модели (`_parseWeeklyReport`, зеркало `_parseBiometricsReport`): `score` клэмп 0–100, `summary` ≤500 симв., `pros`/`cons` — массивы строк ≤10×200.
+- Гарды: `test/intel-engine-wiring.test.js`, `test/coach-weekly-fallback.test.js` — 7 новых кейсов, все красные без фикса.
+- Открыт вне ГДЕ СТОП: `script-src cdn.jsdelivr.net` в CSP — усилитель будущих дыр, отдельная карточка по решению Gio.
+
 ### MO-2b/1: Аналитика на `.sd-overlay` — календарь, индекс силы, история упражнения (1.27.128)
 - Три оверлея `js/analytics.view.js` переведены на рецепт MO-2. Старая схема была мертва: правила `.modal-overlay.visible` нет, поэтому «закрыть» давало 300 мс замершего листа, который ловил тапы, и обрыв. По коду `applyCalendarTypeTap` второй тап по пустому дню в этом окне создавал вторую запись (живьём не воспроизводилось). Теперь выход 140 мс, `pointer-events: none` с первого кадра. Не закрыто: тап, пока идёт запись в IDB до `close()`
 - `.ex-history-sheet`: вернули `--sheet-tail` в `padding-bottom` и `max-height`. После MO-1 весь нижний отступ листа уходил под край экрана — замер в превью: зазор под последней строкой 0 px, стало 32
