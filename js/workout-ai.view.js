@@ -4,7 +4,7 @@
    AI bubble, mini chat overlay, quick actions
    ════════════════════════════════════════════════════════ */
 
-import { fetchCoach } from './claude.store.js';
+import { streamCoachReply } from './intel.store.js';
 import { State as WorkoutState } from './workout.store.js';
 import { DB } from './db.js';
 import { esc } from './shared/utils.js';
@@ -22,7 +22,8 @@ onKeydown('wai:key', (el, e) => handleKey(e));
    ══════════════════════════════════════════════ */
 
 let _chatOpen = false;
-let _chatHistory = [];
+/** Лента на экране чата — только для отрисовки; в модель уходит память клиента (CORE-5). */
+let _transcript = [];
 let _streaming = false;
 
 /* ══════════════════════════════════════════════
@@ -211,7 +212,7 @@ export async function checkProactiveTrigger() {
     bubble.style.opacity = '1';
     bubble.style.transform = 'scale(1)';
     // Store suggestion for chat
-    _chatHistory = [{ role: 'assistant', content: suggestion }];
+    _transcript = [{ role: 'assistant', content: suggestion }];
   } else if (bubble) {
     hideBubble();
   }
@@ -282,14 +283,14 @@ function _renderChat() {
   const container = document.getElementById('workout-ai-messages');
   if (!container) return;
 
-  if (_chatHistory.length === 0) {
+  if (_transcript.length === 0) {
     container.innerHTML = `
       <div class="chat-message ai">
         Hi! I'm your Coach. Ask me anything about this workout.
       </div>
     `;
   } else {
-    container.innerHTML = _chatHistory.map(msg => `
+    container.innerHTML = _transcript.map(msg => `
       <div class="chat-message ${msg.role}">
         ${_markdownToHtml(msg.content)}
       </div>
@@ -335,7 +336,7 @@ export async function send() {
 
   // Show user message
   addMessage(message, 'user');
-  _chatHistory.push({ role: 'user', content: message });
+  _transcript.push({ role: 'user', content: message });
 
   // Stream AI response
   await _streamMessage(message);
@@ -351,7 +352,7 @@ export async function quickAsk(type) {
 
   // Add to chat
   addMessage(question, 'user');
-  _chatHistory.push({ role: 'user', content: question });
+  _transcript.push({ role: 'user', content: question });
 
   // Send to AI
   await _streamMessage(question);
@@ -365,49 +366,36 @@ async function _streamMessage(message) {
   if (_streaming) return;
   _streaming = true;
 
+  // Create AI message div
+  const aiDiv = document.createElement('div');
+  aiDiv.className = 'chat-message ai';
+  aiDiv.innerHTML = `
+    <div class="sk-lines" style="gap:var(--sp-0-5);width:120px;padding:var(--sp-0-5) 0">
+      <div class="sk-line sk" style="height:10px;width:100%"></div>
+      <div class="sk-line sk" style="height:10px;width:70%"></div>
+    </div>`;
+  document.getElementById('workout-ai-messages')?.appendChild(aiDiv);
+
   try {
-    // CORE-4: данные для промпта собирает снимок (claude.store → fetchCoach);
-    // дверь передаёт только своё имя и свою историю чата.
-    const context = {
+    // CORE-5: один клиент коуча на все двери. Снимок и память диалога — его
+    // забота; дверь называет себя и рисует полный текст, а не последний чанк.
+    const text = await streamCoachReply({
+      text: message,
       door: 'workout',
-      chatHistory: _chatHistory,
-      skipPersistChatHistory: true,
-    };
-
-    // Create AI message div
-    const aiDiv = document.createElement('div');
-    aiDiv.className = 'chat-message ai';
-    aiDiv.innerHTML = `
-      <div class="sk-lines" style="gap:var(--sp-0-5);width:120px;padding:var(--sp-0-5) 0">
-        <div class="sk-line sk" style="height:10px;width:100%"></div>
-        <div class="sk-line sk" style="height:10px;width:70%"></div>
-      </div>`;
-    document.getElementById('workout-ai-messages')?.appendChild(aiDiv);
-
-    // Stream response
-    let firstToken = true;
-    await fetchCoach(message, {
-      onText: (text) => {
-        if (firstToken) { aiDiv.innerHTML = ''; firstToken = false; }
-        aiDiv.innerHTML = _markdownToHtml(text);
+      onText: (_chunk, full) => {
+        aiDiv.innerHTML = _markdownToHtml(full);
         const container = document.getElementById('workout-ai-messages');
         if (container) container.scrollTop = container.scrollHeight;
       },
-      onDone: (text) => {
-        _chatHistory.push({ role: 'assistant', content: text });
-        _streaming = false;
-      },
-      onError: (err) => {
-        aiDiv.replaceChildren();
-        const p = document.createElement('p');
-        p.className = 'workout-ai-error';
-        p.textContent = err;
-        aiDiv.appendChild(p);
-        _streaming = false;
-      }
-    }, context);
+    });
+    if (text) _transcript.push({ role: 'assistant', content: text });
   } catch (err) {
-    addMessage(toUserMessage(err), 'ai');
+    aiDiv.replaceChildren();
+    const p = document.createElement('p');
+    p.className = 'workout-ai-error';
+    p.textContent = toUserMessage(err);
+    aiDiv.appendChild(p);
+  } finally {
     _streaming = false;
   }
 }

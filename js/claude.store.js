@@ -1,7 +1,7 @@
 ﻿// @ts-check
 /* ════════════════════════════════════════════════════════
    claude.store.js — Claude AI data layer
-   Heatmap computation, muscle map, chat state, SSE fetch
+   Heatmap computation, muscle map, load recommendations
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
@@ -112,17 +112,13 @@ export const Heatmap = (() => {
 })();
 
 /* ══════════════════════════════════════════════
-   CLAUDE STATE — shared chat state accessors
+   CLAUDE STATE — shared panel state accessors
+   Чат здесь больше не живёт (CORE-5): клиент коуча и
+   память диалога — `intel.store.js` › streamCoachReply.
    ══════════════════════════════════════════════ */
 
 /** @type {boolean} */
 let _open = false;
-/** @type {Object|null} */
-let _context = null;
-/** @type {Array<{role: string, content: string}>} */
-let _chatHistory = [];
-/** @type {boolean} */
-let _streaming = false;
 /** @type {Object|null} */
 let _generatedPlan = null;
 
@@ -131,18 +127,6 @@ export const ClaudeState = {
   get isOpen() { return _open; },
   /** @param {boolean} v */
   set isOpen(v) { _open = v; },
-  /** @returns {Object|null} */
-  get context() { return _context; },
-  /** @param {Object|null} v */
-  set context(v) { _context = v; },
-  /** @returns {Array<{role: string, content: string}>} */
-  get chatHistory() { return _chatHistory; },
-  /** @param {Array<{role: string, content: string}>} v */
-  set chatHistory(v) { _chatHistory = v; },
-  /** @returns {boolean} */
-  get isStreaming() { return _streaming; },
-  /** @param {boolean} v */
-  set isStreaming(v) { _streaming = v; },
   /** @returns {Object|null} */
   get generatedPlan() { return _generatedPlan; },
   /** @param {Object|null} v */
@@ -345,229 +329,5 @@ export function getRecommendations(type) {
     return recs;
   } catch {
     return null;
-  }
-}
-
-/* ══════════════════════════════════════════════
-   FETCH COACH — SSE streaming from /api/coach
-   ══════════════════════════════════════════════ */
-
-const COACH_CLIENT_TIMEOUT_MS = 130000;
-
-/**
- * @param {Error} err
- * @param {number} [status]
- * @param {string} [bodyError]
- * @returns {string}
- */
-function _coachFetchErrorMessage(err, status, bodyError) {
-  if (err?.name === 'AbortError') {
-    return 'The coach took too long to respond. Try a shorter question or check your connection.';
-  }
-  const msg = err?.message || '';
-  if (msg === 'Failed to fetch' || /network|fetch/i.test(msg)) {
-    return "Can't reach the server. Run `npm run dev` (or `npm start`) and check your connection.";
-  }
-  if (status === 502 || status === 503) {
-    return 'The coach service is temporarily unavailable. Try again in a moment.';
-  }
-  if (status === 413) {
-    return 'Request too large. Shorten the message or clear some chat history.';
-  }
-  return bodyError || msg || 'Something went wrong talking to the coach.';
-}
-
-/**
- * Short diagnostic code shown after the coach error text, so a field report
- * ("Can't reach the server") says which layer failed.
- * @param {Error & {status?: number, code?: string}} err
- * @returns {string}
- */
-function _coachErrorCode(err) {
-  if (err?.status) return `HTTP ${err.status}`;
-  if (err?.name === 'AbortError') return 'TIMEOUT';
-  if (err?.name === 'PrivacyBlockedError') return `BLOCKED ${err.code || ''}`.trim();
-  if (err?.code === 'STREAM') return 'STREAM';
-  return `NET ${err?.name || 'Error'}: ${String(err?.message || '').slice(0, 60)}`;
-}
-
-/**
- * Render local insights as a markdown-ish text block for the chat UI.
- * @param {Array<{title:string, body:string, action?:string}>} insights
- * @param {'cloud'|'anon'|'airgap'} mode
- * @returns {string}
- */
-function _renderInsightsAsText(insights, mode) {
-  const banner = mode === 'airgap'
-    ? '**Air-Gapped — local insights only.** No data left this device.\n\n'
-    : '**AI Coach is off.** Showing rule-based insights from your local data.\n\n';
-  if (!insights.length) {
-    return banner + 'Not enough data yet. Log a few workouts and check back.';
-  }
-  const body = insights.map(i => {
-    const action = i.action ? `\n  → ${i.action}` : '';
-    return `**${i.title}**\n${i.body}${action}`;
-  }).join('\n\n');
-  return banner + body;
-}
-
-/**
- * Stream a coaching response from the server via SSE.
- * @param {string|null} message — user message, or null for initial load
- * @param {Object} opts — callback options
- * @param {function(string): void} opts.onText — called for each streamed text chunk
- * @param {function(string): void} opts.onDone — called when stream completes, with full text
- * @param {function(string): void} opts.onError — called on error with error message
- * @param {Object|null} [contextOverride] — optional context when ClaudeState.context is not set (e.g. in-workout AI)
- * @returns {Promise<void>}
- */
-export async function fetchCoach(message, { onText, onDone, onError }, contextOverride = null) {
-  if (_streaming) return;
-  _streaming = true;
-
-  // Счётчик установок (флаг 'usage-stats', ON) — факт вопроса, без единого
-  // байта самого вопроса. Выше приватного гейта: локальный ответ Insights
-  // для пользователя тоже «спросил коуча». message===null — это автозагрузка
-  // первой карточки, не вопрос, и в счёт не идёт.
-  if (message) {
-    import('./usage.js').then(({ trackUsage }) => trackUsage('coach_message')).catch(() => {});
-  }
-
-  // Privacy gate: short-circuit to local Insights if AI is blocked
-  try {
-    const { getPrivacyMode, getAiEnabled } = await import('./privacy.store.js');
-    if (getPrivacyMode() === 'airgap' || !getAiEnabled()) {
-      const { generateInsights } = await import('./insights.engine.js');
-      const insights = await generateInsights();
-      const text = _renderInsightsAsText(insights, getPrivacyMode());
-      // Stream-like: chunk the local text so UI animation matches
-      let i = 0;
-      const chunk = () => {
-        if (i >= text.length) { _streaming = false; onDone?.(text); return; }
-        const slice = text.slice(i, i + 6);
-        i += 6;
-        onText(slice);
-        setTimeout(chunk, 18);
-      };
-      chunk();
-      return;
-    }
-  } catch { /* fall through to network coach */ }
-
-  const ctx = contextOverride ?? _context;
-  if (!ctx) {
-    _streaming = false;
-    onError('No workout context loaded. Open the dashboard and try again.');
-    return;
-  }
-
-  const door = ctx.door === 'workout' ? 'workout' : 'panel';
-  const persistChatToStore = !ctx.skipPersistChatHistory;
-  const chatSource =
-    ctx.chatHistory != null && Array.isArray(ctx.chatHistory) ? ctx.chatHistory : _chatHistory;
-
-  const engine = await DB.Settings.get('ai-engine', DEFAULT_AI_ENGINE);
-  const requestId = _newRequestId();
-  const ac = new AbortController();
-  const timeoutId = setTimeout(() => ac.abort(), COACH_CLIENT_TIMEOUT_MS);
-
-  try {
-    // CORE-4: контекст собирает одна функция, а не `ctx` вызывающего экрана.
-    // Динамический импорт — сборщик сам импортирует этот модуль (Heatmap).
-    const { collectCoachSnapshot } = await import('./coach-snapshot.store.js');
-    const snapshot = await collectCoachSnapshot({ door });
-
-    // Build messages array
-    const apiMessages = [
-      { role: 'user', content: 'What should I focus on today?' },
-      ...chatSource,
-    ];
-    if (message) apiMessages.push({ role: 'user', content: message });
-
-    const response = await safeFetch('/api/coach', {
-      method: 'POST',
-      signal: ac.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Request-ID': requestId,
-      },
-      body: JSON.stringify({
-        engine,
-        // BYOK key for the active engine (per-engine field); empty → server key.
-        customKey: (await DB.Settings.get(engine === 'gemini' ? 'gemini-key' : 'anthropic-key')) || undefined,
-        snapshot,
-        messages: apiMessages,
-      }),
-    }, 'ai');
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errJson = await response.json().catch(() => ({}));
-      const hint = _coachFetchErrorMessage(
-        new Error(errJson.error || `HTTP ${response.status}`),
-        response.status,
-        errJson.error
-      );
-      const ref = errJson.requestId ? ` Ref: ${errJson.requestId}` : '';
-      throw Object.assign(new Error(hint + ref), { requestId: errJson.requestId, status: response.status });
-    }
-
-    if (!response.body) {
-      throw new Error('No response body from coach. Check that the app server is running.');
-    }
-
-    // Read SSE stream
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let aiText = '';
-
-    outer: while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? '';
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const raw = line.slice(6).trim();
-        if (raw === '[DONE]') break outer;
-        try {
-          const payload = JSON.parse(raw);
-          const { text, error, requestId: rid } = payload;
-          if (error) {
-            const ref = rid ? ` Ref: ${rid}` : '';
-            throw Object.assign(new Error(error + ref), { code: 'STREAM' });
-          }
-          if (text) {
-            aiText += text;
-            onText(text);
-          }
-        } catch (parseErr) {
-          if (parseErr.message !== 'Unexpected end of JSON input') throw parseErr;
-        }
-      }
-    }
-
-    // Store in conversation history (dashboard) unless caller owns history (in-workout AI)
-    if (aiText && persistChatToStore) {
-      if (message === null) {
-        _chatHistory = [{ role: 'assistant', content: aiText }];
-      } else {
-        _chatHistory.push({ role: 'user', content: message });
-        _chatHistory.push({ role: 'assistant', content: aiText });
-      }
-    }
-
-    onDone(aiText);
-  } catch (err) {
-    const base = _coachFetchErrorMessage(err, undefined, err.message);
-    onError(`${base} [${_coachErrorCode(err)}]`);
-  } finally {
-    clearTimeout(timeoutId);
-    _streaming = false;
   }
 }

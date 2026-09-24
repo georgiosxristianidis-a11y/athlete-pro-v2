@@ -115,35 +115,80 @@ export async function probeKeyState() {
   return { hasValidKey, source: probed.source };
 }
 
+/* CORE-5: это единственный клиент `/api/coach` — Core, чат тренировки и
+   «Спросить коуча» из недельной сводки идут сюда. До него рядом жил второй
+   клиент со своим разбором SSE и своей историей: история росла без потолка
+   (после ~19 обменов схема сервера отдавала 400), а чат тренировки слал
+   вопрос дважды — раз в своей истории, раз последним сообщением. */
+
+/** Память диалога — 3 обмена (решение Gio): в памяти вкладки, не в IndexedDB и не в синке. */
+export const COACH_MEMORY_EXCHANGES = 3;
+/** Потолок сообщения в схеме сервера (`COACH_MAX_CONTENT_LEN`, `routes/coach.js`). */
+export const COACH_MAX_CONTENT_LEN = 12000;
+/** Ожидание заголовков ответа; сам поток таймаутом не режется. */
+const COACH_CLIENT_TIMEOUT_MS = 130000;
+
+/** @type {Array<{ role: 'user'|'assistant', content: string }>} */
+let _memory = [];
+
+/**
+ * Обмен ложится в память, самый старый уходит. Ответ длиннее потолка схемы
+ * обрезается: иначе следующий вопрос получил бы 400 за чужое сообщение.
+ * @param {string} question
+ * @param {string} answer
+ */
+function _remember(question, answer) {
+  _memory = [
+    ..._memory,
+    { role: 'user', content: question.slice(0, COACH_MAX_CONTENT_LEN) },
+    { role: 'assistant', content: answer.slice(0, COACH_MAX_CONTENT_LEN) },
+  ].slice(-COACH_MEMORY_EXCHANGES * 2);
+}
+
 /**
  * Поток ответа коуча. Текст отдаётся наружу кусками: рисует их view, здесь
  * только чтение сокета и разбор кадров SSE.
  *
- * @param {{ text: string, image?: string|null, onText?: (chunk: string, full: string) => void }} params
+ * @param {{ text: string, door?: 'intel'|'panel'|'workout', image?: string|null, onText?: (chunk: string, full: string) => void }} params
  * @returns {Promise<string>} полный текст ответа
  */
-export async function streamCoachReply({ text, image = null, onText }) {
-  const snapshot = await collectCoachSnapshot({ door: 'intel' });
+export async function streamCoachReply({ text, door = 'intel', image = null, onText }) {
+  // Счётчик установок (флаг 'usage-stats') — факт вопроса, ни байта самого вопроса.
+  import('./usage.js').then(({ trackUsage }) => trackUsage('coach_message')).catch(() => {});
 
-  const response = await safeFetch(
-    '/api/coach',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [{ role: 'user', content: text }],
-        images: image ? [image] : [],
-        snapshot,
-        ...(await aiAuth()),
-        tone: await getTone(),
-      }),
-    },
-    'ai'
-  );
+  const snapshot = await collectCoachSnapshot({ door });
+  const question = text.slice(0, COACH_MAX_CONTENT_LEN);
+
+  const ac = new AbortController();
+  const timeoutId = setTimeout(() => ac.abort(), COACH_CLIENT_TIMEOUT_MS);
+  let response;
+  try {
+    response = await safeFetch(
+      '/api/coach',
+      {
+        method: 'POST',
+        signal: ac.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': globalThis.crypto?.randomUUID?.() || `ap-${Date.now()}`,
+        },
+        body: JSON.stringify({
+          messages: [..._memory, { role: 'user', content: question }],
+          images: image ? [image] : [],
+          snapshot,
+          ...(await aiAuth()),
+          tone: await getTone(),
+        }),
+      },
+      'ai'
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const errJson = await response.json().catch(() => ({}));
-    throw new Error(errJson.error || `HTTP ${response.status}`);
+    throw Object.assign(new Error(errJson.error || `HTTP ${response.status}`), { status: response.status });
   }
 
   const reader = response.body?.getReader();
@@ -188,6 +233,8 @@ export async function streamCoachReply({ text, image = null, onText }) {
     }
   }
 
+  // Пустой ответ в память не идёт: схема требует content ≥ 1 символа.
+  if (fullText) _remember(question, fullText);
   return fullText;
 }
 

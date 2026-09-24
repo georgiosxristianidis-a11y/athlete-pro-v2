@@ -7,7 +7,6 @@ import {
   hideMascot,
 } from './claude.store.js';
 import { esc, haptic, listenerGroup } from './shared/utils.js';
-import { toUserMessage } from './shared/errors-ui.js';
 import { State as WorkoutState } from './workout.store.js';
 import { Toast } from './shell.js';
 import { on } from './events.js';
@@ -50,8 +49,6 @@ on('claude:toggleSound', (el, e) => {
 export const Claude = (() => {
   const ClaudeState = {
     isOpen: false,
-    chatHistory: [],
-    context: null,
   };
 
   /* ══════════════════════════════════════════════
@@ -298,59 +295,16 @@ export const Claude = (() => {
   }
 
   /**
-   * Open the AI coach panel.
+   * Открыть коуча. Коуч один — экран P.A.N.D.A. Core (CORE-5): вопрос с
+   * другой двери уходит туда же и отправляется, как только экран встанет.
+   * @param {string} [question]
    */
-  async function open() {
-    // Redirection to the new Neural Command Center
-    window.Nav.go('s-intel');
-  }
-
-  async function _sendChat() {
-    const input = /** @type {HTMLInputElement} */ (document.getElementById('chat-input'));
-    const text = input?.value.trim();
-    if (!text) return;
-    input.value = '';
-    haptic(10);
-
-    const hist = document.getElementById('chat-history');
-    const userMsg = document.createElement('div');
-    userMsg.className = 'chat-msg user-msg';
-    userMsg.textContent = text;
-    hist?.appendChild(userMsg);
-    hist?.scrollTo(0, hist.scrollHeight);
-
-    const aiBubble = document.createElement('div');
-    aiBubble.className = 'chat-msg ai-msg thinking';
-    aiBubble.innerHTML = `<div class="sk-lines" style="gap:var(--sp-0-5)"><div class="sk-line sk" style="height:10px;width:100%"></div><div class="sk-line sk" style="height:10px;width:70%"></div></div>`;
-    hist?.appendChild(aiBubble);
-
-    try {
-      const { fetchCoach } = await import('./claude.store.js');
-      let aiText = '';
-      await fetchCoach(
-        text,
-        {
-          onText: (chunk) => {
-            aiBubble.classList.remove('thinking');
-            aiText += chunk;
-            aiBubble.innerHTML = _markdownToHtml(aiText);
-            hist?.scrollTo(0, hist.scrollHeight);
-          },
-          onDone: () => {
-            ClaudeState.chatHistory.push(
-              { role: 'user', content: text },
-              { role: 'assistant', content: aiText }
-            );
-          },
-          onError: (err) => {
-            aiBubble.innerHTML = `<div class="ai-error">${esc(toUserMessage(err))}</div>`;
-          },
-        },
-        { history: ClaudeState.chatHistory }
-      );
-    } catch (e) {
-      aiBubble.innerHTML = `<div class="ai-error">${esc(toUserMessage(e))}</div>`;
+  async function open(question) {
+    if (typeof question === 'string' && question.trim()) {
+      const { IntelView } = await import('./intel.view.js');
+      IntelView.ask(question);
     }
+    window.Nav.go('s-intel');
   }
 
   function close() {
@@ -360,12 +314,6 @@ export const Claude = (() => {
       setTimeout(() => overlay.remove(), 350);
     }
     ClaudeState.isOpen = false;
-  }
-
-  function _markdownToHtml(text) {
-    return esc(text)
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n/g, '<br>');
   }
 
   function _claudeIcon(size = 32) {
@@ -408,7 +356,6 @@ export const Claude = (() => {
     patchFabKeyState,
     open,
     close,
-    _sendChat,
     _claudeIcon,
     _geminiIcon,
     dismissFAB,

@@ -203,26 +203,24 @@ describe('промпт строится из снимка', () => {
 
 describe('двери идут через одну функцию', () => {
   const INTEL = read('js/intel.store.js');
-  const CLAUDE = read('js/claude.store.js');
   const WORKOUT_AI = read('js/workout-ai.view.js');
   const COLLECTOR = read('js/coach-snapshot.store.js');
 
-  test('экран Core и панель/тренировка собирают снимок одним сборщиком', () => {
-    assert.match(INTEL, /collectCoachSnapshot\(\{ door: 'intel' \}\)/);
-    assert.match(CLAUDE, /collectCoachSnapshot\(\{ door \}\)/);
-  });
-
-  test('fetchCoach не читает историю сам и не шлёт сырые поля', () => {
-    const start = CLAUDE.indexOf('export async function fetchCoach');
-    const body = CLAUDE.slice(start);
+  // CORE-5: второй клиент удалён — все двери идут через `streamCoachReply`,
+  // дверь приходит параметром. Гард единственности — `test/coach-one-client.test.js`.
+  test('единственный клиент собирает снимок одним сборщиком и не шлёт сырые поля', () => {
+    const start = INTEL.indexOf('export async function streamCoachReply');
+    const body = INTEL.slice(start, INTEL.indexOf('export async function getAutoSpeech'));
+    assert.ok(start !== -1 && body.length > 0, 'streamCoachReply / getAutoSpeech anchors missing');
+    assert.match(body, /collectCoachSnapshot\(\{ door \}\)/);
     assert.equal(/workouts:|topLifts:|longTermStats|fatigue:\s*Object/.test(body), false,
-      'fetchCoach снова собирает сырой контекст мимо снимка');
+      'клиент снова собирает сырой контекст мимо снимка');
     assert.match(body, /snapshot,/);
   });
 
   test('чат тренировки называет дверь и не читает БД для промпта', () => {
     const start = WORKOUT_AI.indexOf('async function _streamMessage');
-    const fn = WORKOUT_AI.slice(start, start + 900);
+    const fn = WORKOUT_AI.slice(start, start + 1400);
     assert.match(fn, /door: 'workout'/);
     assert.equal(/DB\.(Workouts|OneRM)|Heatmap/.test(fn), false, 'чат читает БД мимо снимка');
   });

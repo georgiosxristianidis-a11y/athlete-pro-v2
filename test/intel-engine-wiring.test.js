@@ -166,7 +166,9 @@ test('профиль для коуча — белый список через lo
   const calls = SRC.match(/_coachProfile\(\)/g) || [];
   assert.equal(calls.length, 3, 'ожидаются определение + 2 места (weekly/biometrics); чат — через снимок');
   const chat = SRC.slice(SRC.indexOf('export async function streamCoachReply'), ttsStart);
-  assert.match(chat, /collectCoachSnapshot\(\{ door: 'intel' \}\)/, 'чат обязан собирать снимок, а не читать БД сам');
+  // CORE-5: клиент один на все двери, дверь — параметр; у Core она по умолчанию.
+  assert.match(chat, /collectCoachSnapshot\(\{ door \}\)/, 'чат обязан собирать снимок, а не читать БД сам');
+  assert.match(chat, /door = 'intel'/, 'Core зовёт клиент без двери — по умолчанию обязан быть intel');
   assert.equal(/\b(workouts|topLifts|profile),/.test(chat.slice(chat.indexOf('JSON.stringify'))), false,
     'сырые workouts/profile/topLifts снова уходят в /api/coach мимо снимка');
   const fn = SRC.slice(SRC.indexOf('async function _coachProfile'), SRC.indexOf('async function _coachProfile') + 400);
