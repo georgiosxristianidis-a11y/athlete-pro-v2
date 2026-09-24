@@ -292,8 +292,12 @@ XSS в `_buildReadinessWidget`/`_renderReportOverlay` (`js/intel.view.js`) — �
 `filter` в `server.js`: SSE не сжимается, остальное идёт как шло. Гард `test/coach-sse-stream.test.js`
 (настоящий `streamResponse`, стаб `gemini.client`, gzip в `Accept-Encoding`, мерится первый
 ДЕКОДИРОВАННЫЙ кадр — сырой первый кусок это gzip-заголовок, он приходит сразу и даёт ложный зелёный).
-**Открыто, за Gio:** прод-проверка `curl -N -H 'Accept-Encoding: gzip'` на `/api/coach` после деплоя —
-живой вызов Gemini; буферизует ли сам Vercel (`@vercel/node`), не проверено.
+**Прод проверен 24.09 (деплой `2fe6134f`, с ведома Gio):** `curl`/node с `Accept-Encoding: gzip` на
+`athlete-pro-v7.vercel.app/api/coach` — `text/event-stream`, `chunked`, без `content-encoding`, пять
+кусков пришли в разное время (4529…4719 мс) — сам Vercel не буферизует. Первый кадр на ~4,5 с от
+запроса: заголовки уходят с первой записью, до неё клиент молчит (латентность модели/холодный
+старт, не буфер). Заметки: два из четырёх прогонов дали 503 JSON без разбора причины — понаблюдать;
+`/api/ai-status` на проде: `limiter: "memory"` — KV/Upstash (CORE-2, за Gio) не подключён.
 
 ### CORE-S — пачка перед раздачей ссылки (решение Gio 23.09)
 
