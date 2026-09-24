@@ -144,6 +144,26 @@ export function computeAge(dob) {
   return age;
 }
 
+/**
+ * Профиль для коуча — белый список (CORE-1). Единый источник: чат, недельный
+ * отчёт, скан и снимок движков (CORE-4) берут поля отсюда, а не каждый свои.
+ * @param {ProfileData} p
+ */
+export function toCoachProfile(p) {
+  return {
+    name: p.name,
+    age: computeAge(p.dob),
+    sex: p.sex,
+    goal: p.goal,
+    equipment: p.equipment,
+    experienceYears: p.experienceYears,
+    injuries: p.injuries,
+    limitationsText: p.limitationsText,
+    mode: p.mode,
+    timeMin: p.timeMin,
+  };
+}
+
 export function computeBMI(weightKg, heightCm) {
   if (!weightKg || !heightCm) return null;
   const m = heightCm / 100;

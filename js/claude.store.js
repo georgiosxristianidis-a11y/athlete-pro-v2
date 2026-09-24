@@ -6,7 +6,6 @@
 
 import { DB } from './db.js';
 import { safeFetch } from './privacy.store.js';
-import { loadProfile, computeAge } from './profile.store.js';
 import { athleteProScore } from './strength-engine.js';
 import { DEFAULT_AI_ENGINE } from './shared/ai-engine.js';
 
@@ -462,7 +461,7 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
     return;
   }
 
-  const { workouts, scores, orms } = ctx;
+  const door = ctx.door === 'workout' ? 'workout' : 'panel';
   const persistChatToStore = !ctx.skipPersistChatHistory;
   const chatSource =
     ctx.chatHistory != null && Array.isArray(ctx.chatHistory) ? ctx.chatHistory : _chatHistory;
@@ -472,17 +471,11 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
   const ac = new AbortController();
   const timeoutId = setTimeout(() => ac.abort(), COACH_CLIENT_TIMEOUT_MS);
 
-  // ... (enriched profile logic) ...
-
   try {
-    const profileObj = await loadProfile();
-    const coachProfile = {
-      name: profileObj.name,
-      age: computeAge(profileObj.dob),
-      sex: profileObj.sex,
-      goal: profileObj.goal
-    };
-    const longTermStats = {}; // To be populated in Phase 7 (Deep Analytics)
+    // CORE-4: контекст собирает одна функция, а не `ctx` вызывающего экрана.
+    // Динамический импорт — сборщик сам импортирует этот модуль (Heatmap).
+    const { collectCoachSnapshot } = await import('./coach-snapshot.store.js');
+    const snapshot = await collectCoachSnapshot({ door });
 
     // Build messages array
     const apiMessages = [
@@ -502,26 +495,7 @@ export async function fetchCoach(message, { onText, onDone, onError }, contextOv
         engine,
         // BYOK key for the active engine (per-engine field); empty → server key.
         customKey: (await DB.Settings.get(engine === 'gemini' ? 'gemini-key' : 'anthropic-key')) || undefined,
-        workouts: workouts.slice(0, 5).map((w) => ({
-          type: w.type,
-          hoursAgo: Math.round((Date.now() - w.timestamp) / 3600000),
-          tonnageKg: Math.round(w.tonnage || 0),
-          durationMin: Math.round((w.duration || 0) / 60000),
-          exercises: (w.exercises || [])
-            .map((e) => ({ name: e.name, sets: (e.sets || []).filter((s) => s.done).length }))
-            .filter((e) => e.sets > 0),
-        })),
-        fatigue: Object.fromEntries(
-          Object.entries(scores)
-            .filter(([, v]) => v > 0.05)
-            .map(([k, v]) => [k, Math.round(v * 100)])
-        ),
-        topLifts: orms
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 5)
-          .map((o) => ({ exercise: o.id, oneRM: o.value })),
-        profile: coachProfile,
-        longTermStats,
+        snapshot,
         messages: apiMessages,
       }),
     }, 'ai');

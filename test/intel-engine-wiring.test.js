@@ -155,12 +155,20 @@ test("gemini-key is read only inside TTS — text requests use the selected engi
    BYOK-ключами (тогда закрывал stripSecrets), но и с athlete-photo, privacy.*,
    ap-*, которым в промпте делать нечего. Проверка держит две вещи разом:
    источник — белый список через loadProfile(), а не снимок стора, и что
-   вызов ровно один — иначе три места на сервере снова разойдутся. */
+   вызов ровно один — иначе три места на сервере снова разойдутся.
+   CORE-4: чат перешёл на снимок движков и берёт профиль внутри него
+   (`coach-snapshot.store.js` → `toCoachProfile`, тот же белый список), поэтому
+   прямых вызовов `_coachProfile()` осталось определение + 2 (weekly/biometrics),
+   а чат обязан слать `snapshot`, а не сырые `profile`/`workouts`/`topLifts`. */
 test('профиль для коуча — белый список через loadProfile(), не снимок стора', () => {
   const raw = SRC.match(/DB\.Settings\.getAll\(\)/g) || [];
   assert.equal(raw.length, 0, 'вернулось чтение настроек целиком — снова уедет athlete-photo/privacy.*');
   const calls = SRC.match(/_coachProfile\(\)/g) || [];
-  assert.equal(calls.length, 4, 'ожидаются определение + 3 места (chat/weekly/biometrics)');
+  assert.equal(calls.length, 3, 'ожидаются определение + 2 места (weekly/biometrics); чат — через снимок');
+  const chat = SRC.slice(SRC.indexOf('export async function streamCoachReply'), ttsStart);
+  assert.match(chat, /collectCoachSnapshot\(\{ door: 'intel' \}\)/, 'чат обязан собирать снимок, а не читать БД сам');
+  assert.equal(/\b(workouts|topLifts|profile),/.test(chat.slice(chat.indexOf('JSON.stringify'))), false,
+    'сырые workouts/profile/topLifts снова уходят в /api/coach мимо снимка');
   const fn = SRC.slice(SRC.indexOf('async function _coachProfile'), SRC.indexOf('async function _coachProfile') + 400);
   assert.match(fn, /loadProfile\(\)/, '_coachProfile обязан читать через profile.store.js, не сырой Settings');
   for (const leak of ['athlete-photo', 'privacy.audit', 'ap-usage-queue']) {

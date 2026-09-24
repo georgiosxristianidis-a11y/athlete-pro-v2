@@ -6,6 +6,7 @@ import { logInfo, logWarn } from '../lib/logger.js';
 import { asyncHandler } from '../lib/errors.js';
 import { stripSecrets } from '../js/shared/sync-secrets.js';
 import { DEFAULT_AI_ENGINE, keyLooksValid } from '../js/shared/ai-engine.js';
+import { SNAPSHOT_VERSION, DOORS, LIMITS, CAPS } from '../js/shared/coach-snapshot.js';
 import { sharedRateLimitStore } from '../lib/rateLimitStore.js';
 import { z } from 'zod';
 
@@ -145,14 +146,62 @@ const coachMessageSchema = z.object({
   content: z.string().min(1).max(COACH_MAX_CONTENT_LEN),
 });
 
+/* CORE-4: модель получает снимок движков, а не сырые записи БД. Схема — второй
+   рубеж после сборщика (`js/shared/coach-snapshot.js`): ключи вне списка
+   срезаются zod'ом, значения за потолками CAPS — 400. Состав ключей сверяет с
+   `SNAPSHOT_KEYS` `test/coach-snapshot.test.js`. */
+const _pct = z.number().min(0).max(100).nullable();
+const _text = (n) => z.string().max(n);
+const _prof = (n) => z.string().max(n).nullable();
+const _int = (hi) => z.number().int().min(0).max(hi).nullable();
+
+export const coachSnapshotSchema = z.object({
+  v: z.literal(SNAPSHOT_VERSION),
+  lang: z.enum(['ru', 'en']),
+  door: z.enum(DOORS),
+  readiness: z.object({
+    index: _pct,
+    confidence: z.enum(['none', 'low', 'ok']),
+    parts: z.object({ acwr: _pct, recovery: _pct, monotony: _pct, trend: _pct }),
+  }),
+  cns: z.number().min(0).max(100),
+  fatigue: z.record(_text(CAPS.shortText), z.number().min(0).max(100))
+    .refine((o) => Object.keys(o).length <= CAPS.muscles),
+  insights: z.array(z.object({
+    kind: _text(CAPS.kind), title: _text(CAPS.insightTitle), body: _text(CAPS.insightBody),
+  })).max(LIMITS.insights),
+  e1rm: z.array(z.object({
+    exercise: _text(CAPS.exercise),
+    kg: z.number().min(0).max(CAPS.kg),
+    shift4w: z.number().min(-CAPS.kg).max(CAPS.kg).nullable(),
+  })).max(LIMITS.e1rm),
+  sessions: z.array(z.object({
+    type: _text(CAPS.kind),
+    hoursAgo: z.number().min(0).max(CAPS.hours),
+    tonnageKg: z.number().min(0).max(CAPS.tonnageKg),
+    durationMin: z.number().min(0).max(CAPS.minutes),
+    exercises: z.array(z.object({
+      name: _text(CAPS.exercise), sets: z.number().int().min(0).max(CAPS.setsPerExercise),
+    })).max(LIMITS.exercisesPerSession),
+  })).max(LIMITS.sessions),
+  profile: z.object({
+    name: _prof(CAPS.name),
+    age: _int(CAPS.age),
+    sex: z.enum(['m', 'f']).nullable(),
+    goal: _prof(CAPS.shortText),
+    equipment: _prof(CAPS.shortText),
+    experienceYears: _int(CAPS.years),
+    injuries: z.array(_text(CAPS.injury)).max(CAPS.injuries).nullable(),
+    limitationsText: _prof(CAPS.limitations),
+    mode: _prof(CAPS.shortText),
+    timeMin: _int(CAPS.timeMin),
+  }),
+});
+
 export const coachSchema = z.object({
-  workouts: z.array(z.any()).optional().default([]),
-  fatigue: z.any().optional().default({}),
-  topLifts: z.array(z.any()).optional().default([]),
+  snapshot: coachSnapshotSchema.optional(),
   messages: z.array(coachMessageSchema).min(1).max(COACH_MAX_MESSAGES),
   images: z.array(z.any()).optional().default([]),
-  profile: z.any().optional().default({}),
-  longTermStats: z.any().optional().default({}),
   engine: z.enum(['gemini', 'anthropic']).optional().default(DEFAULT_AI_ENGINE),
   customKey: z.string().optional(),
   tone: z.coerce.number().min(0).max(100).optional().default(50)
@@ -163,29 +212,20 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = coachSchema.safeParse(req.body);
   if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  let { 
-    workouts, 
-    fatigue, 
-    topLifts, 
-    messages, 
-    images, 
-    profile,
-    longTermStats,
+  let {
+    snapshot,
+    messages,
+    images,
     engine,
     customKey,
     tone
   } = parseResult.data;
 
-  // `profile` — снимок store `settings` целиком, и он уезжает в текст промпта.
-  // Клиент уже фильтрует (js/shared/sync-secrets.js), но дверь наружу закрывается
-  // с обеих сторон: забытый call-site не должен открывать её заново.
-  profile = stripSecrets(profile);
+  // Профиль в промпт идёт только внутри снимка — белый список в схеме, сырой
+  // объект стора до промпта не доезжает (CORE-1/CORE-4).
   customKey = _safeCustomKey(engine, customKey);
 
   // Final sanitization to prevent Gemini 400 errors
-  if (!Array.isArray(workouts)) workouts = [];
-  if (typeof fatigue !== 'object' || fatigue === null) fatigue = {};
-  if (!Array.isArray(topLifts)) topLifts = [];
   if (!Array.isArray(images)) images = [];
 
   if (!Array.isArray(messages) || !messages.length) {
@@ -197,7 +237,7 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering so chunks flush immediately
 
-  const system = _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats, tone);
+  const system = _buildSystemPrompt(snapshot, tone);
 
   // Track client disconnect so we never write to a dead socket.
   let clientGone = false;
@@ -487,18 +527,34 @@ function _toneInstruction(tone) {
   return 'Тон: нейтральный, профессиональный, сбалансированный — как опытный тренер.';
 }
 
-function _buildSystemPrompt(workouts, fatigue, topLifts, profile, longTermStats, tone) {
+// Откуда открыт коуч — одна строка ситуации, а не отдельная ветка промпта.
+const DOOR_SITUATION = {
+  intel: 'the user opened you from the P.A.N.D.A. Core screen',
+  panel: 'the user opened you from the coach panel on the main screen',
+  workout: 'the user is mid-workout, asking between sets — keep the answer short',
+};
+
+/**
+ * Контекст промпта — снимок движков (`js/shared/coach-snapshot.js`), а не
+ * записи БД. Нет снимка (клиент старее CORE-4 или вызов мимо интерфейса) —
+ * честное «данных нет», а не выдуманные нули.
+ * @param {z.infer<typeof coachSnapshotSchema>|undefined} snapshot
+ * @param {number} tone
+ */
+export function _buildSystemPrompt(snapshot, tone) {
+  const context = snapshot
+    ? `- Situation: ${DOOR_SITUATION[snapshot.door]}
+- Snapshot (computed by the app's own engines from local history; readiness/cns are 0-100, fatigue is per-muscle % over the last 72h, e1rm.shift4w is the change in estimated 1RM over 4 weeks, null = no data older than 4 weeks): ${JSON.stringify(snapshot)}
+- Current Goal: ${snapshot.profile.goal || 'General Health'}`
+    : `- Snapshot: unavailable — no training data reached the server. Say so if asked about numbers; do not invent any.
+- Current Goal: General Health`;
   return `You are "Athlete Pro Coach", an elite AI strength & conditioning expert.
 
 [PERSONA / TONE]
 ${_toneInstruction(tone)}
 
 [CONTEXT]
-- History (last 5): ${JSON.stringify(workouts.slice(0, 5))}
-- Current Fatigue: ${JSON.stringify(fatigue)}
-- 1RMs: ${JSON.stringify(topLifts)}
-- User Profile: ${JSON.stringify(profile)}
-- Current Goal: ${profile.goal || 'General Health'}
+${context}
 
 [CRITICAL RULES]
 1. ZERO FLUFF: Be concise. Give exact numbers.

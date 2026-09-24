@@ -4,7 +4,7 @@
    AI bubble, mini chat overlay, quick actions
    ════════════════════════════════════════════════════════ */
 
-import { fetchCoach, Heatmap } from './claude.store.js';
+import { fetchCoach } from './claude.store.js';
 import { State as WorkoutState } from './workout.store.js';
 import { DB } from './db.js';
 import { esc } from './shared/utils.js';
@@ -366,17 +366,10 @@ async function _streamMessage(message) {
   _streaming = true;
 
   try {
-    // Load context (same shape as dashboard coach — see claude.store fetchCoach)
-    const [workouts, orms, scores] = await Promise.all([
-      DB.Workouts.getAll(),
-      DB.OneRM.getAll(),
-      Heatmap.compute(),
-    ]);
-
+    // CORE-4: данные для промпта собирает снимок (claude.store → fetchCoach);
+    // дверь передаёт только своё имя и свою историю чата.
     const context = {
-      workouts,
-      scores,
-      orms,
+      door: 'workout',
       chatHistory: _chatHistory,
       skipPersistChatHistory: true,
     };
