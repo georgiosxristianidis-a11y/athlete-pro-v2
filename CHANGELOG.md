@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CORE-4: модель получает снимок движков, не сырые записи (1.27.131)
+- **Снимок.** `js/shared/coach-snapshot.js` (`buildSnapshot`, чистая функция) — готовность и разбор (`intel.engine`), ЦНС, усталость по мышцам за 72 ч, 3 инсайта, e1RM топ-5 + сдвиг за 4 недели (`null`, если нет истории старше окна), 3 сжатые сессии, профиль белым списком, `lang`, `door` (`intel` / `panel` / `workout`). Читает IndexedDB одна функция — `collectCoachSnapshot` (`js/coach-snapshot.store.js`).
+- **Обе двери** (`streamCoachReply`, `fetchCoach`) шлют `snapshot` вместо `workouts`/`fatigue`/`topLifts`/`profile`/`longTermStats`. Чат тренировки больше не грузит БД под промпт, только называет дверь.
+- **Сервер.** `coachSnapshotSchema` в `routes/coach.js` — второй рубеж: лишние ключи срезаются, значение за потолком (`CAPS`) — 400. Контекст промпта — снимок + строка ситуации двери; нет снимка (клиент старше CORE-4) — «данных нет», не нули. Инструкции промпта не тронуты (`CORE-7`).
+- **Профиль.** Белый список вынесен в `toCoachProfile` (`js/profile.store.js`) — один источник для чата, недельного отчёта, скана и снимка.
+- Гарды: `test/coach-snapshot.test.js` (состав ключей, худший вход сборщика проходит схему, промпт без сырых полей, обе двери через один сборщик); `test/intel-engine-wiring.test.js` — прямых `_coachProfile()` теперь 3, чат обязан идти через снимок (счёт изменён этой же картой — сознательно, не ослабление); `test/coach-validate.test.js` — сырые поля срезаются.
+- Не трогали: `/weekly-report`, `/biometrics-scan` (сырой `workouts` — карточка `CORE-6`), формат SSE, `fetchCoach` как второй клиент (`CORE-5`).
+
 ### CORE-2: открытый счёт на серверном ключе, отмена апстрима мертва (1.27.130)
 - **Лимитер на общем хранилище.** `lib/rateLimitStore.js` — `Store` express-rate-limit поверх `@upstash/redis` (общий REST-контракт с Vercel KV), вплетён во все 4 лимитера (`server.js`, `routes/coach.js` ×2, `routes/integrations.js`). Без `KV_REST_API_URL`/`UPSTASH_REDIS_REST_URL` — честный fallback на `MemoryStore` с громким `console.warn`; режим виден в `/api/ai-status.limiter` ('shared' | 'memory'), не молчит.
 - **Потолок ответа.** `maxOutputTokens` у Gemini в стриме и `generateJSON` (`lib/aiOrchestrator.js`) — не было вовсе, у Anthropic 1024/1500 уже стояли.

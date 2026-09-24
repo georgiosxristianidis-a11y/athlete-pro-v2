@@ -94,8 +94,7 @@ describe('coachSchema — context fields and defaults', () => {
   test('minimal valid payload → accepted with defaults', () => {
     const r = parse({ messages: [validMsg] });
     assert.equal(r.success, true);
-    assert.deepEqual(r.data.workouts, []);
-    assert.deepEqual(r.data.topLifts, []);
+    assert.equal(r.data.snapshot, undefined);
     assert.deepEqual(r.data.images, []);
     assert.equal(r.data.engine, 'gemini');
   });
@@ -103,14 +102,27 @@ describe('coachSchema — context fields and defaults', () => {
   test('full valid payload → accepted', () => {
     const r = parse({
       messages: [validMsg],
-      workouts: [{ type: 'push' }],
-      fatigue: { chest: 40 },
-      topLifts: [{ exercise: 'Bench', oneRM: 100 }],
       engine: 'gemini',
       customKey: 'k',
     });
     assert.equal(r.success, true);
     assert.equal(r.data.engine, 'gemini');
+  });
+
+  /* CORE-4: сырые поля БД до промпта не доезжают — схема их срезает, контекст
+     несёт только снимок (`test/coach-snapshot.test.js`). */
+  test('сырые workouts/fatigue/topLifts/profile срезаются, не проходят', () => {
+    const r = parse({
+      messages: [validMsg],
+      workouts: [{ type: 'push' }],
+      fatigue: { chest: 40 },
+      topLifts: [{ exercise: 'Bench', oneRM: 100 }],
+      profile: { name: 'x', 'athlete-photo': 'data:image/jpeg;base64,AAAA' },
+    });
+    assert.equal(r.success, true);
+    for (const k of ['workouts', 'fatigue', 'topLifts', 'profile', 'longTermStats']) {
+      assert.equal(k in r.data, false, `${k} дошёл до промпта мимо снимка`);
+    }
   });
 
   test('unknown extra fields are stripped, not fatal', () => {

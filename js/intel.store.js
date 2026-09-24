@@ -2,7 +2,8 @@
 
 import { DB } from './db.js';
 import { readiness } from './intel.engine.js';
-import { loadProfile, computeAge } from './profile.store.js';
+import { loadProfile, toCoachProfile } from './profile.store.js';
+import { collectCoachSnapshot } from './coach-snapshot.store.js';
 import { safeFetch } from './privacy.store.js';
 import { aiAuth, getTone } from './ai-settings.store.js';
 import { probeAiStatus } from './shared/ai-status.js';
@@ -90,19 +91,7 @@ export const IntelStore = (() => {
  * @returns {Promise<object>}
  */
 async function _coachProfile() {
-  const p = await loadProfile();
-  return {
-    name: p.name,
-    age: computeAge(p.dob),
-    sex: p.sex,
-    goal: p.goal,
-    equipment: p.equipment,
-    experienceYears: p.experienceYears,
-    injuries: p.injuries,
-    limitationsText: p.limitationsText,
-    mode: p.mode,
-    timeMin: p.timeMin,
-  };
+  return toCoachProfile(await loadProfile());
 }
 
 /**
@@ -134,9 +123,7 @@ export async function probeKeyState() {
  * @returns {Promise<string>} полный текст ответа
  */
 export async function streamCoachReply({ text, image = null, onText }) {
-  const workouts = await DB.Workouts.getLast(5);
-  const profile = await _coachProfile();
-  const topLifts = await DB.OneRM.getAll();
+  const snapshot = await collectCoachSnapshot({ door: 'intel' });
 
   const response = await safeFetch(
     '/api/coach',
@@ -146,9 +133,7 @@ export async function streamCoachReply({ text, image = null, onText }) {
       body: JSON.stringify({
         messages: [{ role: 'user', content: text }],
         images: image ? [image] : [],
-        workouts,
-        profile,
-        topLifts,
+        snapshot,
         ...(await aiAuth()),
         tone: await getTone(),
       }),
