@@ -286,28 +286,14 @@ XSS в `_buildReadinessWidget`/`_renderReportOverlay` (`js/intel.view.js`) — �
 **Не трогали:** промпты и формат ответа; формат кадров SSE (`test/coach-sse.test.js`);
 `compression` — это `CORE-3`. Число дневной квоты и сама настройка KV/Upstash — за Gio.
 
-### CORE-3 — в браузере нет стриминга
+### CORE-3 — в браузере нет стриминга — ЗАКРЫТА на уровне приложения (24.09)
 
-**Почему.** `app.use(compression())` (`server.js:55`) копит `text/event-stream` целиком.
-Проверено: с `Accept-Encoding: gzip` (любой браузер) ответ `/api/coach` пришёл одним куском на
-894 мс, без gzip первый кадр — на 268 мс. Три состояния стрима HUD-2 пользователь не видит;
-heartbeat `: ping` тоже в буфере, и долгий ответ может оборвать прокси. `X-Accel-Buffering: no`
-(`routes/coach.js:195`) — про nginx, не про express. Стримит ли сам Vercel (legacy `builds` +
-`@vercel/node` в `vercel.json`), не проверено.
-
-**ЦЕЛЬ.** Первый токен ответа виден в браузере сразу, а не после конца генерации.
-
-**ГДЕ СТОП.**
-
-- `compression` пропускает `text/event-stream` (опция `filter`), либо маршрут делает
-  `res.flush()` на каждый кадр.
-- Тест: `startServer(0)`, стаб оркестратора с паузами между чанками, запрос с
-  `Accept-Encoding: gzip` — первый кадр приходит раньше последнего. Без фикса красный.
-- Прод: `curl -N -H 'Accept-Encoding: gzip'` на `/api/coach` показывает кадры по мере
-  генерации — один живой вызов модели, с ведома Gio. Если буферизует сам Vercel — записать
-  фактом, карточку закрыть на уровне приложения.
-
-**НЕ ТРОГАТЬ.** Сжатие остальных ответов; политику SW для `/api/*`.
+`compression()` копил `text/event-stream` в zlib до конца ответа (heartbeat `: ping` — там же). Фикс —
+`filter` в `server.js`: SSE не сжимается, остальное идёт как шло. Гард `test/coach-sse-stream.test.js`
+(настоящий `streamResponse`, стаб `gemini.client`, gzip в `Accept-Encoding`, мерится первый
+ДЕКОДИРОВАННЫЙ кадр — сырой первый кусок это gzip-заголовок, он приходит сразу и даёт ложный зелёный).
+**Открыто, за Gio:** прод-проверка `curl -N -H 'Accept-Encoding: gzip'` на `/api/coach` после деплоя —
+живой вызов Gemini; буферизует ли сам Vercel (`@vercel/node`), не проверено.
 
 ### CORE-S — пачка перед раздачей ссылки (решение Gio 23.09)
 

@@ -52,8 +52,16 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// ── gzip/brotli compression for all text responses
-app.use(compression());
+// ── gzip/brotli compression for all text responses, кроме SSE.
+// zlib копит кадры до закрытия потока: text/event-stream (стрим /api/coach)
+// приходил в браузер одним куском в конце генерации, heartbeat `: ping` — там же
+// (CORE-3). Filter смотрит Content-Type, который маршрут ставит до первой записи.
+app.use(compression({
+  filter: (req, res) =>
+    /^text\/event-stream/i.test(String(res.getHeader('Content-Type') || ''))
+      ? false
+      : compression.filter(req, res),
+}));
 
 // Handle favicon.ico explicitly. Отдавал PNG под именем .ico, пока настоящего
 // .ico в репо не было; теперь есть — отдаём его.

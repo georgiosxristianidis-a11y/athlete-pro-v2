@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CORE-3: стрим коуча доезжает в браузер по мере генерации
+- **Причина.** `app.use(compression())` (`server.js`) копил `text/event-stream` в zlib: с `Accept-Encoding: gzip` (любой браузер) ответ `/api/coach` приходил одним куском в конце генерации, heartbeat `: ping` сидел в том же буфере. Без gzip первый кадр шёл за ~270 мс, с gzip — за ~900 (весь ответ).
+- **Фикс.** `compression({ filter })` пропускает `text/event-stream` мимо сжатия; всё остальное решает штатный `compression.filter`.  Ошибка до первого байта (JSON 500) остаётся JSON: маршрут снимает `Content-Type` SSE до записи (`test/coach-sse.test.js`).
+- Гард: `test/coach-sse-stream.test.js` — реальный `streamResponse`, стаб `gemini.client`, `Accept-Encoding: gzip`; первый декодированный кадр раньше конца ответа, SSE без `content-encoding`, `/index.html` по-прежнему gzip. 2 из 3 красные без фикса. Версия не менялась: `server.js` вне `js/`/`css/`.
+- Не трогали: сжатие остальных ответов, политику SW для `/api/*`, формат кадров SSE. Прод-проверка (`curl -N`, живой вызов Gemini) и вопрос «буферизует ли сам Vercel» — за Gio.
+
 ### CORE-5: один клиент коуча на все двери (1.27.133)
 - **Второй клиент удалён.** `fetchCoach` (`js/claude.store.js`) со своим разбором SSE и своей историей — вон вместе с `ClaudeState.context`/`chatHistory`/`isStreaming`, которые никто не задавал. Все двери — `streamCoachReply({ text, door })` (`js/intel.store.js`), кадры SSE разбирает только `js/shared/sse.js`.
 - **Память диалога — 3 обмена** в памяти вкладки (не IndexedDB, не синк — решение Gio). Четвёртый вытесняет первый; ответ длиннее `COACH_MAX_CONTENT_LEN` обрезается, ошибка и пустой ответ в память не ложатся. Раньше история чата тренировки росла без потолка: после ~19 обменов тело переваливало за `COACH_MAX_MESSAGES` = 40, и сервер отвечал 400. У Core памяти не было вовсе — каждый вопрос уходил без предыдущих.
