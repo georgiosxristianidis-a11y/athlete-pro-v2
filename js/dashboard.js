@@ -67,7 +67,7 @@ window.addEventListener('ap-nav-change', (e) => {
     if (!document.hidden) v.play().catch(() => {});
   } else v.pause();
 });
-on('dash:askAI', () => askAIAboutSummary());
+on('dash:askAI', (el) => askAIAboutSummary(el));
 on('dash:closeModal', (el) => el.closest('.modal-overlay')?.remove());
 on('dash:openJournal', () => window.Nav.go('s-journal'));
 on('dash:toggleList', (el) => {
@@ -1216,25 +1216,16 @@ async function showWeeklySummary() {
 
 /**
  * Ask AI about weekly summary.
+ * @param {HTMLElement} el кнопка в шторке сводки
  */
-async function askAIAboutSummary() {
+async function askAIAboutSummary(el) {
   const { summary, plateauAlerts, prs } = window._weeklySummary || {};
 
-  // Open Claude panel with context
   const message = `Analyze my week: ${summary}. ${plateauAlerts.length > 0 ? 'Plateaus: ' + plateauAlerts.map((a) => a.exercise).join(', ') : ''} ${prs.length > 0 ? 'PRs: ' + prs.map((p) => `${p.exercise} ${p.weight}kg`).join(', ') : ''}`;
 
-  // Send to AI via fetchCoach
-  const { fetchCoach } = await import('./claude.store.js');
+  // CORE-5: вопрос уходит в Core — один коуч, одна память. Раньше здесь был
+  // свой вызов без контекста: ответ выбрасывался, на экране — тост с ошибкой.
   const { Claude } = await import('./claude.view.js');
-
-  Claude.open();
-
-  // Wait for panel to open then send message
-  setTimeout(async () => {
-    await fetchCoach(message, {
-      onText: () => {},
-      onDone: () => {},
-      onError: (err) => Toast.show(t('dash.error', { err }), 'error'),
-    });
-  }, 500);
+  el?.closest('.modal-overlay')?.remove();
+  await Claude.open(message);
 }

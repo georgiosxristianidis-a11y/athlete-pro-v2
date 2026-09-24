@@ -73,6 +73,8 @@ export const IntelView = (() => {
   let _hasValidKey = false;
   /** @type {string} */
   let _keySource = 'offline';
+  /** Вопрос с другой двери, ждёт отрисовки экрана (CORE-5). @type {string|null} */
+  let _asked = null;
 
   /**
    * Строки экрана. Язык — только через isRu() (правило i18n проекта):
@@ -286,6 +288,24 @@ export const IntelView = (() => {
     // полёте (ушёл с экрана и вернулся) — иначе кнопка выглядит свободной,
     // но submit() молча выходит по флагу.
     _setBusy(_streaming);
+
+    // Вопрос ложится в поле ввода: если прошлый ответ ещё идёт, submit()
+    // выйдет по флагу, а текст останется у человека под пальцем, не пропадёт.
+    const input = /** @type {HTMLInputElement|null} */ (document.getElementById('intel-input'));
+    if (_asked !== null && input) {
+      input.value = _asked;
+      _asked = null;
+      submit();
+    }
+  }
+
+  /**
+   * «Спросить коуча» с другой двери открывает Core, а не свой путь (CORE-5):
+   * вопрос уходит при следующей отрисовке экрана.
+   * @param {string} question
+   */
+  function ask(question) {
+    _asked = question;
   }
 
   function renderLogs() {
@@ -945,6 +965,7 @@ export const IntelView = (() => {
 
   return {
     load,
+    ask,
     handleCamera,
     onFileSelected,
     submit,
