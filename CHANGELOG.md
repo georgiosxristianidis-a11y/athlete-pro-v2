@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### INSIGHTS-ORDER: `generateInsights()` читал историю задом наперёд (1.27.132)
+- **Причина.** `DB.Workouts.getAll()` отдаёт newest-first (`js/db/workouts.js`, `list.reverse()`), а `js/insights.engine.js` читал хвост как «последние». 'Streak paused' считал дни от самой СТАРОЙ сессии; '5 sessions in <5 days' брал `slice(-5)` (пять самых старых) и мерил `last − first` — при newest-first это отрицательное число, `< 5` истинно всегда: правило срабатывало у каждого, у кого ≥5 тренировок.
+- **Фикс.** Один явный `sort` по `timestamp` по возрастанию в начале `generateInsights()` — порядок входа больше не контракт. Правила 1 и 3 (max / Set) от порядка не зависели.
+- **Почему важно.** Инсайты уезжают в снимок для модели (CORE-4, top-3) — ложный 'rest' доезжал до коуча.
+- Гард: `test/insights-order.test.js` — реальный `generateInsights()` на подменённом `DB`, вход newest-first и oldest-first; 4 из 8 кейсов красные без фикса. Формат снимка (`js/shared/coach-snapshot.js`) не тронут.
+
 ### CORE-4: модель получает снимок движков, не сырые записи (1.27.131)
 - **Снимок.** `js/shared/coach-snapshot.js` (`buildSnapshot`, чистая функция) — готовность и разбор (`intel.engine`), ЦНС, усталость по мышцам за 72 ч, 3 инсайта, e1RM топ-5 + сдвиг за 4 недели (`null`, если нет истории старше окна), 3 сжатые сессии, профиль белым списком, `lang`, `door` (`intel` / `panel` / `workout`). Читает IndexedDB одна функция — `collectCoachSnapshot` (`js/coach-snapshot.store.js`).
 - **Обе двери** (`streamCoachReply`, `fetchCoach`) шлют `snapshot` вместо `workouts`/`fatigue`/`topLifts`/`profile`/`longTermStats`. Чат тренировки больше не грузит БД под промпт, только называет дверь.
