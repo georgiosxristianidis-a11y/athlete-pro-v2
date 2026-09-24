@@ -24,12 +24,16 @@ import { expectedFromDeadlift, symmetryIndex } from './strength-engine.js';
 
 /** @returns {Promise<Insight[]>} */
 export async function generateInsights() {
-  const [workouts, orms, metrics, settings] = await Promise.all([
+  const [rawWorkouts, orms, metrics, settings] = await Promise.all([
     DB.Workouts.getAll().catch(() => []),
     DB.OneRM.getAll().catch(() => []),
     DB.Metrics.getAll().catch(() => []),
     DB.Settings.getAll().catch(() => ({})),
   ]);
+
+  // DB.Workouts.getAll() отдаёт newest-first; правила ниже читают хвост как
+  // «последние». Порядок входа не гарантия — сортируем явно, по возрастанию.
+  const workouts = [...rawWorkouts].sort((a, b) => a.timestamp - b.timestamp);
 
   const insights = [];
 
