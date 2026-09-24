@@ -15,6 +15,7 @@ import { esc, haptic } from './shared/utils.js';
 import { formatAirMarkdown } from './shared/air-markdown.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { isRu } from './locale.store.js';
+import { flag } from './flags.js';
 import { on, onChange, onKeydown } from './events.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
 import { startVoiceWave, stopVoiceWave } from './intel.voice-wave.js';
@@ -91,6 +92,7 @@ export const IntelView = (() => {
           analyze: 'АНАЛИЗ',
           biometrics: 'БИОМЕТРИЯ',
           input: 'Команда или запрос по фото…',
+          inputText: 'Команда или вопрос…',
           close: 'Закрыть',
           camera: 'Прикрепить фото',
           send: 'Отправить',
@@ -131,6 +133,7 @@ export const IntelView = (() => {
           analyze: 'ANALYZE',
           biometrics: 'BIOMETRICS',
           input: 'Command or vision query…',
+          inputText: 'Command or question…',
           close: 'Close',
           camera: 'Attach photo',
           send: 'Send',
@@ -201,6 +204,34 @@ export const IntelView = (() => {
     await _checkApiKey();
     const L = _copy();
 
+    // Флаг 'core-photo-generate' (CORE-S): «ГЕНЕРАЦИЯ» и всё, что ведёт фото к
+    // модели, вне разметки по умолчанию. Обработчики выше остаются: без
+    // элемента на экране их никто не вызовет.
+    const photoGen = flag('core-photo-generate');
+    // Флаг могли выключить с фото на руках — без превью оно ушло бы вслепую.
+    if (!photoGen) _pendingImage = null;
+    const generateCard = photoGen
+      ? `
+          <button class="intel-module-card" data-action="intel:createWorkout">
+            <span class="intel-module-icon intel-module-icon--accent">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </span>
+            <span class="intel-module-label">${L.generate}</span>
+          </button>`
+      : '';
+    const cameraButton = photoGen
+      ? `
+          <button class="intel-btn-icon" id="intel-btn-camera" data-action="intel:camera" aria-label="${L.camera}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+            </svg>
+          </button>`
+      : '';
+    const visionPreviewWrap = photoGen ? '<div id="intel-vision-preview-wrap"></div>' : '';
+    const fileInput = photoGen
+      ? '<input type="file" id="intel-file-input" accept="image/*" style="display:none" data-change="intel:fileSelected">'
+      : '';
+
     screen.innerHTML = `
       <header class="intel-header">
         <div>
@@ -225,7 +256,7 @@ export const IntelView = (() => {
       <div class="intel-body">
         <div id="intel-feedback-feed"></div>
 
-        <div id="intel-vision-preview-wrap"></div>
+        ${visionPreviewWrap}
 
         <div class="intel-modules-grid">
           <button class="intel-module-card" data-action="intel:weekly">
@@ -234,12 +265,7 @@ export const IntelView = (() => {
             </span>
             <span class="intel-module-label">${L.summary}</span>
           </button>
-          <button class="intel-module-card" data-action="intel:createWorkout">
-            <span class="intel-module-icon intel-module-icon--accent">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            </span>
-            <span class="intel-module-label">${L.generate}</span>
-          </button>
+          ${generateCard}
           <button class="intel-module-card" data-action="intel:analyzeStats">
             <span class="intel-module-icon intel-module-icon--blue">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
@@ -265,12 +291,8 @@ export const IntelView = (() => {
 
       <div class="intel-cmd-wrap">
         <div class="intel-cmd-bar">
-          <button class="intel-btn-icon" id="intel-btn-camera" data-action="intel:camera" aria-label="${L.camera}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
-            </svg>
-          </button>
-          <input type="text" id="intel-input" class="intel-cmd-input" placeholder="${L.input}" data-keydown="intel:submitEnter" autocomplete="off" spellcheck="false">
+          ${cameraButton}
+          <input type="text" id="intel-input" class="intel-cmd-input" placeholder="${photoGen ? L.input : L.inputText}" data-keydown="intel:submitEnter" autocomplete="off" spellcheck="false">
           <button class="intel-btn-icon intel-btn-send" id="intel-btn-send" data-action="intel:submit" aria-label="${L.send}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -278,7 +300,7 @@ export const IntelView = (() => {
             ${_waveHtml()}
           </button>
         </div>
-        <input type="file" id="intel-file-input" accept="image/*" style="display:none" data-change="intel:fileSelected">
+        ${fileInput}
       </div>
     `;
 

@@ -77,6 +77,18 @@ const DEFAULTS = {
   // and persisted in island-profile.store.js. Kill switch → island reverts
   // to the proven Apple-2-state path: Flags.setFlag('island-profiles', false)
   'island-profiles': true,
+
+  // CORE-S / photo: on the P.A.N.D.A. Core screen (js/intel.view.js) the
+  // «ГЕНЕРАЦИЯ» card and the attach-photo path (camera button, file input,
+  // preview) are hidden. Both are half-built: «ГЕНЕРАЦИЯ» only focuses the
+  // input, and the Vision path sends every photo as image/png (Anthropic
+  // silently drops it), with no client-side downscale — a phone photo 413s.
+  // Code stays next to the flag (Strangler-Fig), the server Vision branch in
+  // lib/aiOrchestrator.js is untouched. Avatar upload (athlete-photo) is a
+  // different thing and never reads this flag.
+  // Default OFF until Vision is finished (correct mime + resize).
+  // Try on device: Flags.setFlag('core-photo-generate', true)
+  'core-photo-generate': false,
 };
 
 /** @param {string} name @returns {boolean} */

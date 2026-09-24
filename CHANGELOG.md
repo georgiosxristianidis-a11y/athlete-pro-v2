@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CORE-S / флаг фото: «ГЕНЕРАЦИЯ» и вход для фото ИИ спрятаны (1.27.134)
+- **Флаг `core-photo-generate`** (`js/flags.js`), OFF по умолчанию. Под ним на экране Core (`js/intel.view.js`, а не `workout-ai.view.js`/`ai-settings.*`, как значилось в карточке): карточка «ГЕНЕРАЦИЯ» (`intel:createWorkout`), кнопка камеры, `input#intel-file-input`, превью `#intel-vision-preview-wrap`. Обработчики (`intel:fileSelected`, `onFileSelected`, `intel:clearImage`) остались в коде, без элемента их никто не вызовет. Включить на устройстве: `Flags.setFlag('core-photo-generate', true)`.
+- **Причина.** «ГЕНЕРАЦИЯ» только ставит курсор в поле; Vision шлёт любое фото как `image/png` (Anthropic его молча роняет), на клиенте нет ресайза — фото с телефона получает 413. `lib/aiOrchestrator.js` не тронут.
+- **Заодно.** Плейсхолдер поля при OFF — «Команда или вопрос…» (прежний обещал «запрос по фото»); строки en/ru на месте. Три карточки вместо четырёх: нечётный хвост встаёт по центру (`css/intel.css`), а не жмётся влево. Флаг сброшен с фото на руках — `_pendingImage` обнуляется при отрисовке.
+- Гарды: `test/core-photo-flag.test.js` (флаг OFF; сырая разметка четырёх элементов только под `photoGen`; аватар флага не читает; Vision сервера на месте) — 3 из 5 красные без фикса; `test/e2e/core-photo-flag.spec.js` — живая разметка OFF/ON, красная без фикса. Аватар (`athlete-room.js`, `athlete-photo`) не трогали.
+
 ### CORE-3: стрим коуча доезжает в браузер по мере генерации
 - **Причина.** `app.use(compression())` (`server.js`) копил `text/event-stream` в zlib: с `Accept-Encoding: gzip` (любой браузер) ответ `/api/coach` приходил одним куском в конце генерации, heartbeat `: ping` сидел в том же буфере. Без gzip первый кадр шёл за ~270 мс, с gzip — за ~900 (весь ответ).
 - **Фикс.** `compression({ filter })` пропускает `text/event-stream` мимо сжатия; всё остальное решает штатный `compression.filter`.  Ошибка до первого байта (JSON 500) остаётся JSON: маршрут снимает `Content-Type` SSE до записи (`test/coach-sse.test.js`).
