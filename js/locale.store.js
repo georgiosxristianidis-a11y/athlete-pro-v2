@@ -500,6 +500,19 @@ const DICT = {
     'ob.ready_sub': "Your athlete profile is ready. Let's start training.",
     'ob.start': 'Start First Workout',
     'ob.continue': 'Continue',
+    // CORE-8: инсайты ядра без модели (js/shared/local-insights.js). Числа — из снимка.
+    'core.local.title': 'Local review',
+    'core.local.start': 'Log your first workout — the local review is built from your own history.',
+    'core.local.readiness_none':
+      'Not enough history for a readiness score yet — every logged session brings it closer.',
+    'core.local.readiness_high': 'Readiness {index} — a good day to train hard.',
+    'core.local.readiness_mid': 'Readiness {index} — a working day, not a day for records.',
+    'core.local.readiness_low': 'Readiness {index} — go light today or take a rest day.',
+    'core.local.cns_high': 'Nervous system load {cns}% — hold off on heavy compound lifts.',
+    'core.local.muscle_tired': '{muscle}: fatigue {pct}% — give it another day of rest.',
+    'core.local.e1rm_up': '{exercise}: +{kg} kg estimated max over 4 weeks.',
+    'core.local.e1rm_down': '{exercise}: −{kg} kg estimated max over 4 weeks — check your recovery.',
+    'core.local.idle': 'Last session was {days} days ago — a short workout brings the rhythm back.',
   },
   ru: {
     'profile.title': 'Профиль',
@@ -991,6 +1004,19 @@ const DICT = {
     'ob.ready_sub': 'Твой профиль настроен. Начнем тренировку?',
     'ob.start': 'Начать тренировку',
     'ob.continue': 'Продолжить',
+    // CORE-8: инсайты ядра без модели (js/shared/local-insights.js). Числа — из снимка.
+    'core.local.title': 'Локальный разбор',
+    'core.local.start': 'Запиши первую тренировку — локальный разбор строится из твоей истории.',
+    'core.local.readiness_none':
+      'Истории пока мало для индекса готовности — каждая записанная тренировка приближает его.',
+    'core.local.readiness_high': 'Готовность {index} — хороший день, чтобы работать тяжело.',
+    'core.local.readiness_mid': 'Готовность {index} — рабочий день, но не для рекордов.',
+    'core.local.readiness_low': 'Готовность {index} — сегодня лёгкая сессия или отдых.',
+    'core.local.cns_high': 'Нагрузка на нервную систему {cns}% — тяжёлые базовые пока отложи.',
+    'core.local.muscle_tired': '{muscle}: усталость {pct}% — дай ей ещё день отдыха.',
+    'core.local.e1rm_up': '{exercise}: +{kg} кг к расчётному максимуму за 4 недели.',
+    'core.local.e1rm_down': '{exercise}: −{kg} кг расчётного максимума за 4 недели — проверь восстановление.',
+    'core.local.idle': 'Последняя тренировка {days} дн. назад — короткая сессия вернёт ритм.',
   },
 };
 
