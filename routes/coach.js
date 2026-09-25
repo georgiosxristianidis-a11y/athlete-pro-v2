@@ -342,11 +342,19 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
   res.json({ success: true, audioBase64: pcmData });
 }));
 
+/* Язык UI с фронта (`getLang()`), одно правило на все маршруты ИИ. Клиент без
+   поля `lang` (старее CORE-6) получает прежний дефолт чата — русский. */
+const uiLangSchema = z.enum(['ru', 'en']).optional();
+function _langName(lang) {
+  return lang === 'en' ? 'English' : 'Russian';
+}
+
 const weeklyReportSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
   engine: z.enum(['gemini', 'anthropic']).optional().default(DEFAULT_AI_ENGINE),
-  customKey: z.string().optional()
+  customKey: z.string().optional(),
+  lang: uiLangSchema
 });
 
 /* ── POST /weekly-report ── */
@@ -354,11 +362,13 @@ router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = weeklyReportSchema.safeParse(req.body);
   if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { workouts, profile: rawProfile, engine } = parseResult.data;
+  const { workouts, profile: rawProfile, engine, lang } = parseResult.data;
   const customKey = _safeCustomKey(engine, parseResult.data.customKey);
   const profile = stripSecrets(rawProfile);
 
   logInfo(req, 'weekly_report_started', `Generating weekly report`);
+
+  // Язык в промпте не стоял вовсе — модель отвечала по-английски и русскому UI.
 
   // CORE-6: score больше не входит в промпт — «UI считает движок, модель
   // объясняет». Модель отвечает только текстом, число ниже (_weeklyScore)
@@ -371,7 +381,8 @@ Return ONLY JSON with this exact schema:
   "pros": ["<string>", "<string>"],
   "cons": ["<string>", "<string>"]
 }
-If no workouts exist, encourage them to start.`;
+If no workouts exist, encourage them to start.
+LANGUAGE: Write every string value in ${_langName(lang)} — the app's UI language.`;
 
   const prompt = `Workouts (Last 7 Days): ${JSON.stringify(workouts)}
 Profile: ${JSON.stringify(profile)}`;
@@ -396,7 +407,7 @@ Profile: ${JSON.stringify(profile)}`;
     }
   }
 
-  const fallback = _weeklyReportFallback(workouts);
+  const fallback = _weeklyReportFallback(workouts, lang);
   const report = { score: _weeklyScore(workouts), ...(text || fallback) };
   res.json({ success: true, report, degraded: !text });
 }));
@@ -443,11 +454,26 @@ function _weeklyScore(workouts) {
  * то есть это не заглушка «данные нечитаемы», а честный минимум: сколько
  * тренировок, сколько тоннажа, и куда двигаться.
  * @param {Array<any>} workouts
+ * @param {'ru'|'en'} [lang]
  */
-function _weeklyReportFallback(workouts) {
+function _weeklyReportFallback(workouts, lang) {
   const list = Array.isArray(workouts) ? workouts : [];
   const sessions = list.length;
   const tonnage = list.reduce((s, w) => s + (Number(w?.tonnage) || 0), 0);
+  if (lang !== 'en') {
+    if (!sessions) {
+      return {
+        summary: 'За последние 7 дней тренировок нет. Коуч сейчас офлайн — начни с одной.',
+        pros: [],
+        cons: ['Ноль тренировок за неделю'],
+      };
+    }
+    return {
+      summary: `Тренировок за 7 дней: ${sessions}, тоннаж ${Math.round(tonnage)} кг. Коуч сейчас офлайн — это твои собственные цифры, а не его разбор.`,
+      pros: [`Записано тренировок: ${sessions}`],
+      cons: sessions < 3 ? ['Меньше трёх тренировок за неделю'] : [],
+    };
+  }
   if (!sessions) {
     return {
       summary: 'No sessions logged in the last 7 days. The coach is offline — start with one.',
@@ -466,7 +492,8 @@ const biometricsScanSchema = z.object({
   workouts: z.array(z.any()).optional().default([]),
   profile: z.any().optional().default({}),
   engine: z.enum(['gemini', 'anthropic']).optional().default(DEFAULT_AI_ENGINE),
-  customKey: z.string().optional()
+  customKey: z.string().optional(),
+  lang: uiLangSchema
 });
 
 /* ── POST /biometrics-scan ──
@@ -480,17 +507,19 @@ router.post('/biometrics-scan', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = biometricsScanSchema.safeParse(req.body);
   if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
 
-  const { workouts, profile: rawProfile, engine } = parseResult.data;
+  const { workouts, profile: rawProfile, engine, lang } = parseResult.data;
   const customKey = _safeCustomKey(engine, parseResult.data.customKey);
   const profile = stripSecrets(rawProfile);
 
+  // Раньше summary был прибит к русскому — английский UI получал русскую прозу.
   const system = `You are "Athlete Pro Medical AI".
-Оцени риск травмы по последней истории и профилю.
-Ответ — ТОЛЬКО JSON строго по схеме, без markdown и без комментариев:
+Assess injury risk from the recent history and the profile.
+Return ONLY JSON with this exact schema, no markdown and no comments:
 {
   "injuryRisk": "<Low|Medium|High>",
-  "summary": "<2 предложения по-русски, разбор состояния>"
-}`;
+  "summary": "<2 sentences in ${_langName(lang)}, a read of the athlete's state>"
+}
+LANGUAGE: "summary" MUST be in ${_langName(lang)} — the app's UI language. "injuryRisk" stays one of the three English enum values.`;
 
   const prompt = `Workouts (last 10): ${JSON.stringify(workouts)}
 Profile: ${JSON.stringify(profile)}`;
@@ -558,9 +587,8 @@ export function _buildSystemPrompt(snapshot, tone) {
     : `- Snapshot: unavailable — no training data reached the server. Say so if asked about numbers; do not invent any.
 - Current Goal: General Health`;
   // Язык ответа = язык UI (решение Gio), не язык вопроса — snapshot.lang уже
-  // приходит с фронта (buildSnapshot({ lang: getLang() }), CORE-4). Старый
-  // клиент без снимка получает прежнее поведение по умолчанию — русский.
-  const langName = snapshot?.lang === 'en' ? 'English' : 'Russian';
+  // приходит с фронта (buildSnapshot({ lang: getLang() }), CORE-4).
+  const langName = _langName(snapshot?.lang);
   return `You are "Athlete Pro Coach", an elite AI strength & conditioning expert.
 
 [PERSONA / TONE]

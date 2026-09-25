@@ -86,7 +86,7 @@ describe('/weekly-report — отчёт вместо 500, когда ИИ нед
 
   test('запасной отчёт честно помечен degraded', async () => {
     stubProviderFailure();
-    const res = await postWeekly({ workouts: [{ type: 'push', tonnage: 1000 }], profile: {} });
+    const res = await postWeekly({ workouts: [{ type: 'push', tonnage: 1000 }], profile: {}, lang: 'en' });
     const body = await res.json();
     // Stub forces the catch path even when .env has a live provider key.
     assert.equal(body.degraded, true, 'запасной отчёт выдаёт себя за ответ модели');
@@ -95,7 +95,7 @@ describe('/weekly-report — отчёт вместо 500, когда ИИ нед
 
   test('пустая неделя — нулевой счёт, а не выдуманный', async () => {
     stubProviderFailure();
-    const res = await postWeekly({ workouts: [], profile: {} });
+    const res = await postWeekly({ workouts: [], profile: {}, lang: 'en' });
     const body = await res.json();
     assert.equal(body.report.score, 0);
     assert.deepEqual(body.report.cons, ['Zero sessions this week']);
@@ -106,7 +106,7 @@ describe('/weekly-report — отчёт вместо 500, когда ИИ нед
     const three = await (
       await postWeekly({ workouts: [{ tonnage: 1 }, { tonnage: 1 }, { tonnage: 1 }] })
     ).json();
-    const one = await (await postWeekly({ workouts: [{ tonnage: 1 }] })).json();
+    const one = await (await postWeekly({ workouts: [{ tonnage: 1 }], lang: 'en' })).json();
     assert.equal(three.report.score, 100, 'три тренировки — целевая частота PPL');
     assert.ok(one.report.score < three.report.score);
     assert.deepEqual(one.report.cons, ['Below three sessions this week']);
@@ -217,5 +217,74 @@ describe('/weekly-report — форма отчёта, а не доверие к 
     });
     const body = await (await postWeekly({ workouts: [], profile: {} })).json();
     assert.equal(body.report.pros.length, 10);
+  });
+});
+
+/* Язык ответа = язык UI (решение Gio, CORE-6). Опорный факт: в промпте
+   /weekly-report языка не было вовсе — живой вызов 25.09 отдал русскому UI
+   английскую сводку; /biometrics-scan, наоборот, был прибит к русскому. */
+describe('язык отчётов = язык UI, а не случайность модели (CORE-6)', () => {
+  /** @type {string[]} */
+  let systems = [];
+  function captureSystem() {
+    systems = [];
+    AIOrchestrator.generateJSON = async ({ system }) => {
+      systems.push(system);
+      return JSON.stringify({ summary: 'ok', pros: [], cons: [], injuryRisk: 'Low' });
+    };
+  }
+  // coachLimiter — 10/мин с IP, а файл выше уже тратит свою квоту. Свой адрес
+  // на запрос (trust proxy = 1 читает X-Forwarded-For), лимит не ослабляем.
+  let ip = 0;
+  const postAs = (route) => (body) =>
+    fetch(`${baseUrl}/api/coach/${route}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.9.0.${++ip}` },
+      body: JSON.stringify(body),
+    });
+  const postW = postAs('weekly-report');
+  const postBio = postAs('biometrics-scan');
+
+  for (const [route, post] of [['/weekly-report', postW], ['/biometrics-scan', postBio]]) {
+    test(`${route}: lang en → English, lang ru → Russian в промпте`, async () => {
+      captureSystem();
+      await post({ workouts: [], profile: {}, lang: 'en' });
+      await post({ workouts: [], profile: {}, lang: 'ru' });
+      assert.match(systems[0], /LANGUAGE:[^\n]*English/, 'английский UI не долетел до промпта');
+      assert.doesNotMatch(systems[0], /Russian|по-русски/, 'английский UI, а промпт требует русский');
+      assert.match(systems[1], /LANGUAGE:[^\n]*Russian/, 'русский UI не долетел до промпта');
+    });
+
+    test(`${route}: без lang — дефолт чата, русский`, async () => {
+      captureSystem();
+      await post({ workouts: [], profile: {} });
+      assert.match(systems[0], /LANGUAGE:[^\n]*Russian/);
+    });
+
+    test(`${route}: чужой lang — 400, а не молчаливый дефолт`, async () => {
+      captureSystem();
+      const res = await post({ workouts: [], profile: {}, lang: 'de' });
+      assert.equal(res.status, 400);
+      assert.equal(systems.length, 0, 'невалидный запрос дошёл до модели');
+    });
+  }
+
+  test('запасной отчёт на языке UI: русский по умолчанию', async () => {
+    stubProviderFailure();
+    const ru = await (await postW({ workouts: [{ tonnage: 1 }] })).json();
+    assert.equal(ru.degraded, true);
+    assert.match(ru.report.summary, /Коуч сейчас офлайн/);
+    assert.deepEqual(ru.report.cons, ['Меньше трёх тренировок за неделю']);
+    const empty = await (await postW({ workouts: [], lang: 'ru' })).json();
+    assert.deepEqual(empty.report.cons, ['Ноль тренировок за неделю']);
+  });
+
+  test('клиент шлёт язык UI в оба маршрута', () => {
+    const src = code('js/intel.store.js');
+    assert.match(src, /import\s*\{[^}]*\bgetLang\b[^}]*\}\s*from\s*['"]\.\/locale\.store\.js['"]/);
+    for (const route of ['/api/coach/weekly-report', '/api/coach/biometrics-scan']) {
+      const call = src.split(`'${route}'`)[1]?.split("'ai'")[0] || '';
+      assert.match(call, /\blang:\s*getLang\(\)/, `${route} уходит без языка UI`);
+    }
   });
 });
