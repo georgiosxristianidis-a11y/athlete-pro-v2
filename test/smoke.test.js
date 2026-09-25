@@ -40,3 +40,18 @@ test('smoke: /api/supabase-status returns not_configured when missing env', asyn
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('smoke: GET /robots.txt returns 200 text/plain with proper directives', async () => {
+  const server = await startServer(0);
+  try {
+    const { port } = server.address();
+    const res = await fetch(`http://127.0.0.1:${port}/robots.txt`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type') || '', /text\/plain/);
+    const body = await res.text();
+    assert.match(body, /User-agent:\s*\*/);
+    assert.match(body, /Allow:\s*\//);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

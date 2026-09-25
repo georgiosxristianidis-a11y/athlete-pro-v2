@@ -39,28 +39,38 @@ const THRESHOLDS = {
 function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function run() {
-  // ── 1. Start server ─────────────────────────────────────
-  console.log(`[lhci] Starting server on http://localhost:${PORT} ...`);
-  const server = spawn(
-    process.execPath,
-    ['server.js'],
-    {
-      env:   { ...process.env, PORT: String(PORT) },
-      cwd:   ROOT,
-      stdio: 'ignore',
-    }
-  );
-  server.on('error', (err) => console.error('[lhci] server error:', err.message));
+  const urlArgIdx = process.argv.findIndex((a) => a === '--url' || a.startsWith('--url='));
+  const targetUrl = urlArgIdx !== -1
+    ? (process.argv[urlArgIdx].includes('=') ? process.argv[urlArgIdx].split('=')[1] : process.argv[urlArgIdx + 1])
+    : `http://localhost:${PORT}`;
+  const isLocal = targetUrl.includes(`localhost:${PORT}`) || targetUrl.includes(`127.0.0.1:${PORT}`);
 
-  // Give server time to bind
-  await wait(2500);
+  // ── 1. Start server (if local) ──────────────────────────
+  let server = null;
+  if (isLocal) {
+    console.log(`[lhci] Starting server on http://localhost:${PORT} ...`);
+    server = spawn(
+      process.execPath,
+      ['server.js'],
+      {
+        env:   { ...process.env, PORT: String(PORT) },
+        cwd:   ROOT,
+        stdio: 'ignore',
+      }
+    );
+    server.on('error', (err) => console.error('[lhci] server error:', err.message));
+
+    // Give server time to bind
+    await wait(2500);
+  }
 
   // ── 2. Run Lighthouse ────────────────────────────────────
-  console.log('[lhci] Running Lighthouse audit...');
+  fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
+  console.log(`[lhci] Running Lighthouse audit against ${targetUrl}...`);
   const lhArgs = [
     '--yes',
     'lighthouse',
-    `http://localhost:${PORT}`,
+    targetUrl,
     '--output=json',
     `--output-path=${REPORT_PATH}`,
     '--chrome-flags=--headless --no-sandbox --disable-gpu',
@@ -74,7 +84,7 @@ async function run() {
   });
 
   // ── 3. Stop server ───────────────────────────────────────
-  server.kill();
+  if (server) server.kill();
 
   if (lhExit !== 0) {
     console.error(`\n[lhci] lighthouse exited with code ${lhExit}`);
