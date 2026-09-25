@@ -15,10 +15,14 @@
  * 2. Ноль ложных срабатываний. Файл, которого main не трогал, и новый файл не
  *    должны спрашивать ни о чём: гард, который дёргает на каждой правке,
  *    отключают целиком, и вместе с ним настоящий случай.
- * 3. Вердикт — `escalate`, а не `deny`. Решение отдаётся человеку в диалог.
- *    `deny` агент обошёл бы сам (переписал бы файл через Bash), env-обхода нет
- *    осознанно: переменную выставил бы тот, от кого гард защищает.
+ * 3. Вердикт — `deny` с готовой командой снятия. `escalate`/`ask` под
+ *    defaultMode auto молча пропускали правку (замер 25.09, FLOW-3): до человека
+ *    диалог не доходил. Агент останавливается, спрашивает в чате и только после
+ *    явного «да» снимает блок командой `ack`. Выполнить её может и сам агент —
+ *    граница доверия сдвинута на него осознанно (решение Gio 25.09); env-обхода нет.
  * 4. Правки вне рабочего дерева не трогаются вообще — хук стоит глобально.
+ * 5. Репо определяется по файлу, а не по cwd сессии: сессия из корня правит
+ *    файлы ворктри по абсолютному пути, и cwd указывал бы не на тот репозиторий.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -115,7 +119,7 @@ test('PP-6: файл переписан в main с базы ветки — др�
   assert.match(verdict.commits[0], /refactor\(profile\)/, 'и называет его человеческим сабджектом');
 });
 
-test('PP-6: хук отдаёт escalate, а не deny — решает человек', () => {
+test('PP-6: хук отдаёт deny — правка стоит, пока не спросили человека', () => {
   const work = repoWithDrift();
   const { code, json } = runGuard(work, preToolUse(path.join(work, 'js', 'profile.js')));
 
@@ -123,14 +127,26 @@ test('PP-6: хук отдаёт escalate, а не deny — решает чело
   assert.equal(json?.hookSpecificOutput?.hookEventName, 'PreToolUse');
   assert.equal(
     json?.hookSpecificOutput?.permissionDecision,
-    'escalate',
-    'deny агент обошёл бы сам; escalate уходит в диалог к человеку',
+    'deny',
+    'escalate/ask под defaultMode auto молча пропускали правку (замер 25.09)',
   );
-  assert.match(json.hookSpecificOutput.permissionDecisionReason, /js\/profile\.js/);
-  assert.match(
-    json.hookSpecificOutput.permissionDecisionReason,
-    /git rebase origin\/main/,
-    'отказ без лечения — это просто препятствие',
+  const reason = json.hookSpecificOutput.permissionDecisionReason;
+  assert.match(reason, /js\/profile\.js/);
+  assert.match(reason, /git rebase origin\/main/, 'отказ без лечения — это просто препятствие');
+  assert.match(reason, /спросить человека/, 'агенту обязано быть сказано, что решает не он');
+  assert.match(reason, / ack "test-session" "js\/profile\.js" /, 'и чем снять блок после «да»');
+});
+
+test('сессия из корня правит файл ворктри — репо судим по файлу, не по cwd', () => {
+  const work = repoWithDrift();
+  const outer = path.dirname(work);
+  sandboxGit(['init', '-q', '-b', 'main', outer]);
+
+  const { json } = runGuard(outer, { ...preToolUse(path.join(work, 'js', 'profile.js')), cwd: outer });
+  assert.equal(
+    json?.hookSpecificOutput?.permissionDecision,
+    'deny',
+    'до FLOW-3 здесь была тишина: репо искался по cwd сессии, а файл лежал в другом',
   );
 });
 
@@ -170,23 +186,30 @@ test('файл вне рабочего дерева не трогаем — ху
 
 // --- подтверждение держится до конца сессии ----------------------------------
 
-test('после состоявшейся правки по тому же файлу больше не спрашиваем', () => {
+test('команда из текста блока снимает его до конца сессии — и только для неё', () => {
   const work = repoWithDrift();
   const file = path.join(work, 'js', 'profile.js');
 
   const first = runGuard(work, preToolUse(file));
-  assert.equal(first.json?.hookSpecificOutput?.permissionDecision, 'escalate');
+  assert.equal(first.json?.hookSpecificOutput?.permissionDecision, 'deny');
 
-  // Правка состоялась — значит человек её разрешил. PostToolUse это фиксирует.
-  runGuard(work, {
-    hook_event_name: 'PostToolUse',
-    session_id: 'test-session',
-    tool_name: 'Edit',
-    tool_input: { file_path: file },
-  });
+  // Состоявшаяся правка больше не выдаётся за одобрение человека: под auto
+  // «правка прошла» не значило «человек разрешил».
+  runGuard(work, { ...preToolUse(file), hook_event_name: 'PostToolUse' });
+  assert.equal(runGuard(work, preToolUse(file)).json?.hookSpecificOutput?.permissionDecision, 'deny');
+
+  const cmd = first.json.hookSpecificOutput.permissionDecisionReason.match(
+    /node "([^"]+)" ack "([^"]+)" "([^"]+)" "([^"]+)"/,
+  );
+  assert.ok(cmd, 'в тексте блока обязана стоять готовая команда снятия');
+  const res = spawnSync(process.execPath, [cmd[1], 'ack', cmd[2], cmd[3], cmd[4]], { encoding: 'utf8' });
+  assert.equal(res.status, 0, res.stderr);
 
   const second = runGuard(work, preToolUse(file));
   assert.equal(second.out, '', 'гард, спрашивающий на каждой правке, превращается в cookie-баннер');
+
+  const other = runGuard(work, { ...preToolUse(file), session_id: 'other-session' });
+  assert.equal(other.json?.hookSpecificOutput?.permissionDecision, 'deny', '«да» одной сессии не распространяется на другую');
 });
 
 // --- FLOW-1: что именно едет в контекст --------------------------------------
