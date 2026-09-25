@@ -75,6 +75,25 @@ jobs:
             *) echo "ОШИБКА: SUPABASE_URL не заканчивается на '.supabase.co' — другой домен/регион или лишний символ на конце."; exit 2 ;;
           esac
 
+          # Роль ключа — из формата или claim `role` в payload JWT; печатается
+          # только роль, не ключ. Пинг 25.09 прочитал строку `workouts` при
+          # политике `to authenticated using (auth.uid() = user_id)` — так
+          # ведёт себя только ключ в обход RLS, а пингу хватает anon.
+          case "$SUPABASE_ANON_KEY" in
+            sb_publishable_*) key_role=anon ;;
+            sb_secret_*) key_role=service_role ;;
+            *.*.*)
+              payload=$(printf '%s' "$SUPABASE_ANON_KEY" | cut -d. -f2 | tr '_-' '/+')
+              while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="$payload="; done
+              key_role=$(printf '%s' "$payload" | base64 -d 2>/dev/null | grep -o '"role": *"[^"]*"' | sed 's/.*"\([^"]*\)"$/\1/') || true ;;
+            *) key_role=unknown ;;
+          esac
+          echo "SUPABASE_ANON_KEY: роль ${key_role:-unknown}"
+          if [ "$key_role" != "anon" ]; then
+            echo "ОШИБКА: в SUPABASE_ANON_KEY не anon-ключ — пересоздать секрет из Settings → API Keys (anon / publishable)."
+            exit 2
+          fi
+
           # `|| true`: под `bash -e` упавший curl (DNS, таймаут) рвал шаг раньше
           # диагноза ниже, а `-w` и так печатает 000.
           http_code=$(curl -s -o /tmp/resp.json -w '%{http_code}' \
