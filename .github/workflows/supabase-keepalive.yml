@@ -1,0 +1,57 @@
+# Не даёт бесплатному проекту Supabase уйти в автопаузу. Supabase паузит Free
+# Plan проекты без активности БД за 7 суток (docs: guides/platform/free-project-pausing).
+# Клиентский js/supabase.js тут не помощник: он исполняется только внутри
+# открытой сессии браузера в cloud-режиме (js/privacy.store.js) — если
+# приложение никто не открывает неделю, дёрнуть Supabase изнутри клиента
+# некому. Поэтому пинг — снаружи, тем же способом, что main-watchdog.yml.
+#
+# Настоящий SELECT к таблице `workouts`, не health-check рута /rest/v1/ —
+# запрос доходит до Postgres независимо от того, отфильтрует ли RLS строки
+# (RLS может вернуть пусто/403, это не ошибка пинга — активность на проекте
+# всё равно засчитана). anon key передаётся в заголовках, не в query —
+# публичен по дизайну (.claude/rules/security.md), но не место ему в URL.
+#
+# Секреты: SUPABASE_URL, SUPABASE_ANON_KEY — добавить в
+# Settings → Secrets and variables → Actions. Не заданы — шаг молча
+# пропускает пинг, чтобы не спамить провалами на форке/до настройки.
+name: Supabase keep-alive
+
+on:
+  # Раз в 3 дня — вдвое чаще порога паузы (7 суток), с запасом на то, что
+  # GitHub на пике задерживает cron-триггеры.
+  schedule:
+    - cron: '47 5 */3 * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Пинг Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "SUPABASE_URL/SUPABASE_ANON_KEY не заданы в секретах репозитория — пропускаю пинг."
+            exit 0
+          fi
+
+          http_code=$(curl -s -o /tmp/resp.json -w '%{http_code}' \
+            "$SUPABASE_URL/rest/v1/workouts?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+
+          echo "HTTP $http_code"
+          cat /tmp/resp.json
+
+          # 2xx — обычный ответ. 401/403 — RLS отказал в чтении, но запрос уже
+          # дошёл до Postgres, для таймера паузы этого достаточно. Падаем
+          # только на сетевой сбой (000) или отказ самого сервера (5xx).
+          if [ "$http_code" -ge 500 ] || [ "$http_code" = "000" ]; then
+            echo "Supabase не ответил (HTTP $http_code) — проверить, не в паузе ли проект уже."
+            exit 1
+          fi
