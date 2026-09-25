@@ -127,8 +127,8 @@ export function digestFor(assetsArray, root = process.cwd()) {
   return computeDigest(assetsArray, (p) => fs.readFileSync(path.join(root, p)));
 }
 
-const listBlock = (name, arr) =>
-  `const ${name} = [\n  ` + arr.map(f => `'${f}'`).join(',\n  ') + '\n];';
+const listBlock = (name, arr, eol) =>
+  `const ${name} = [${eol}  ` + arr.map(f => `'${f}'`).join(`,${eol}  `) + `${eol}];`;
 
 /**
  * sw.js with ASSETS, ASSETS_WARM and CACHE_NAME replaced. Pure: takes the
@@ -139,8 +139,12 @@ const listBlock = (name, arr) =>
  * ASSETS_WARM the post-activate one (card PRECACHE-1).
  */
 export function renderSw(swSource, split, digest) {
-  let out = swSource.replace(/const ASSETS = \[[\s\S]*?\];/, listBlock('ASSETS', split.boot));
-  out = out.replace(/const ASSETS_WARM = \[[\s\S]*?\];/, listBlock('ASSETS_WARM', split.warm));
+  // Keep the source's line ending: core.autocrlf hands out a CRLF working copy
+  // on Windows, and LF-joined blocks spliced into it leave a mixed-EOL file that
+  // git reports as modified after every build — same content, dirty tree.
+  const eol = swSource.includes('\r\n') ? '\r\n' : '\n';
+  let out = swSource.replace(/const ASSETS = \[[\s\S]*?\];/, listBlock('ASSETS', split.boot, eol));
+  out = out.replace(/const ASSETS_WARM = \[[\s\S]*?\];/, listBlock('ASSETS_WARM', split.warm, eol));
 
   // Auto-bump CACHE_NAME from a content hash of the precache manifest.
   // Guarantees the cache invalidates whenever any precached file changes —

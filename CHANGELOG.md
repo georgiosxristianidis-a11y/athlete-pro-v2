@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### build:sw сохраняет переносы строк sw.js
+- **Причина.** `renderSw` (`scripts/build-sw.mjs`) вклеивал блоки `ASSETS`/`ASSETS_WARM`, склеенные через LF, в рабочую копию, которую `core.autocrlf` на Windows отдаёт в CRLF. Файл выходил со смешанными переносами, и после каждого `npm run build:sw` (в том числе из `brief:gate`) git показывал `sw.js` изменённым при том же содержимом. Гард `test/sw-cache-name.test.js` сравнивает без учёта переносов и этого не видел.
+- **Фикс.** Блоки собираются переносом исходника. Новый кейс гарда: CRLF-вход не получает голых LF, LF-вход не получает CR (до фикса красный).
+
 ### CORE-S: self-host Supabase SDK, jsdelivr снят из CSP + плашка «Локальный режим» (1.27.137)
 - **Self-host.** `js/supabase.js` грузил `@supabase/supabase-js` с `cdn.jsdelivr.net` динамическим `import()` — хвост `CORE-1`: сторонний origin в `script-src` усиливает любую будущую XSS-дыру. Теперь SDK — официальный UMD-бандл пакета (`node_modules/@supabase/supabase-js/dist/umd/supabase.js`), скопированный в `js/vendor/supabase.umd.js` скриптом `scripts/vendor-supabase.mjs` (`npm run vendor:supabase`, перегонять после бампа зависимости) и подгружаемый тем же origin через `document.createElement('script')` — лениво, только когда облако сконфигурировано, как и раньше. `cdn.jsdelivr.net` снят из `script-src` и `connect-src` (`server.js`); файл вне линта/prettier (`js/vendor/**`) — сторонний код.
 - **Плашка «Локальный режим».** Экран Core (`js/intel.view.js`) молчал о том, что при airgap/выключенном ИИ данные считаются только на устройстве. Плашка над модулями СВОДКА/АНАЛИЗ/БИОМЕТРИЯ показывается по `!getAiEnabled()` (`js/privacy.store.js`) — airgap форсирует этот флаг в `false`, так что одно условие кроет и дефолт, и ручное отключение ИИ в cloud/anon. `fetchReadiness()` (индекс готовности) от флага не зависит — считался и считается локально всегда.

@@ -29,9 +29,9 @@ const SW_PATH = path.join(REPO_ROOT, 'sw.js');
 const SW_SRC = fs.readFileSync(SW_PATH, 'utf8');
 
 /**
- * Line endings are not part of the answer. core.autocrlf hands out a CRLF
- * working copy on Windows while the builder joins the ASSETS block with LF —
- * comparing raw would fail on a perfectly in-sync Windows checkout.
+ * Line endings are not part of the answer here — a checkout may carry CRLF or
+ * LF depending on core.autocrlf. Whether the builder preserves them is a
+ * separate question, asked by its own test below.
  */
 const norm = (s) => s.replace(/\r\n/g, '\n');
 
@@ -74,6 +74,19 @@ test('sw.js is byte-identical to what build:sw would write', () => {
     norm(renderSw(SW_SRC, split, digest)), norm(SW_SRC),
     `${STALE} (полное сравнение сгенерированной части)`
   );
+});
+
+/**
+ * The comparison above is EOL-blind on purpose, so it cannot see this one: the
+ * builder used to splice LF-joined blocks into a CRLF working copy, leaving a
+ * mixed-EOL sw.js that git reports as modified after every `build:sw` on
+ * Windows — same content, dirty tree. The output keeps the source's line ending.
+ */
+test('build:sw keeps the line ending of the sw.js it was given', () => {
+  const lf = norm(SW_SRC);
+  const crlf = lf.replace(/\n/g, '\r\n');
+  assert.ok(!/(?<!\r)\n/.test(renderSw(crlf, split, digest)), 'CRLF-исходник получил голые LF — смешанные переносы');
+  assert.ok(!renderSw(lf, split, digest).includes('\r'), 'LF-исходник получил CR');
 });
 
 /**
