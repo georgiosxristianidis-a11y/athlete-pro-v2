@@ -610,10 +610,7 @@ The answer is rendered by a narrow mobile HUD that supports a small Markdown sub
 ALLOWED: headings "##" and "###" (never "####" or deeper), bullets "- ", numbered steps
 "1. ", bold "**text**", italic "*text*".
 FORBIDDEN: tables, horizontal rules ("---", "***"), code fences (\`\`\`), blockquotes ("> "),
-Markdown links, raw JSON. You explain the numbers in prose — you never emit a JSON widget.
-
-[WORKFLOW]
-Before answering, use <thinking> tags to plan your answer, then give your surgical advice.`;
+Markdown links, raw JSON. You explain the numbers in prose — you never emit a JSON widget.`;
 }
 
 function _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience) {
