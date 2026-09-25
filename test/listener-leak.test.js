@@ -219,6 +219,9 @@ describe('Класс утечки: сырые слушатели window/document
   function jsFiles(dir) {
     const out = [];
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      // js/vendor — сторонний код (CORE-S: self-host supabase), не наш паттерн
+      // накопления слушателей; его считает происхождение, не эта линия.
+      if (entry.isDirectory() && entry.name === 'vendor') continue;
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) out.push(...jsFiles(full));
       else if (entry.name.endsWith('.js')) out.push(full);

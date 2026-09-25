@@ -208,7 +208,7 @@ describe('Периметр сервера: лимит тела и script-src', (
   }
 
   /** Сторонние origin в script-src — только эти. Новый требует решения, а не строки в конфиге. */
-  const SCRIPT_SRC_ALLOWED = new Set(["'self'", 'https://cdn.jsdelivr.net']);
+  const SCRIPT_SRC_ALLOWED = new Set(["'self'"]);
 
   test('script-src не пускает новые сторонние origin', async () => {
     const d = await directives();
@@ -221,7 +221,7 @@ describe('Периметр сервера: лимит тела и script-src', (
   test('connect-src не пускает origin, которого нет в списке решённых', async () => {
     const d = await directives();
     const ALLOWED = new Set([
-      "'self'", 'https://cdn.jsdelivr.net', 'https://api.anthropic.com',
+      "'self'", 'https://api.anthropic.com',
       'https://*.supabase.co', 'https://*.firebaseio.com', 'https://*.googleapis.com',
       'https://generativelanguage.googleapis.com',
     ]);

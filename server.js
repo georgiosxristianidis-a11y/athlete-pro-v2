@@ -26,13 +26,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+      scriptSrc: ["'self'"],
       scriptSrcAttr: ["'none'"], // CSP Phase 2: all inline on* migrated to event-delegation (js/events.js)
       styleSrc: ["'self'", "'unsafe-inline'"], // fonts self-hosted in /fonts — no Google origins
       imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
       connectSrc: [
         "'self'",
-        "https://cdn.jsdelivr.net",
         "https://api.anthropic.com",
         "https://*.supabase.co",
         "https://*.firebaseio.com",

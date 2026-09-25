@@ -202,6 +202,23 @@
   opacity: 0.5;
 }
 
+/* ── Плашка «Локальный режим» (CORE-S): airgap/ИИ выключен ── */
+.intel-local-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-l);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-3);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  line-height: 1.4;
+}
+.intel-local-banner svg { flex-shrink: 0; }
+
 /* ── Ожидание ответа: стеклянный скелетон (HUD-2) ──
    Пришёл на смену одиночному маркеру: он держит высоту карточки заранее,
    поэтому первый токен не дёргает ленту прыжком layout'а.
