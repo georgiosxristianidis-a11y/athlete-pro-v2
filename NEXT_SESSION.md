@@ -12,7 +12,7 @@
 
 - **`PROT-2`:** репо PRIVATE (Gio). Мёрж руками после зелёных, без `--auto`
 - **№1 `LAUNCH-10`, поле Gio.** Кодовых блокеров нет — `CORE-S` закрыта целиком (25.09, 1.27.137).
-  Держит KV/квота (вне ancestry) и п. 1 на Android. `LAUNCH_CHECKLIST.md` не перечитан, устарел
+  Держит KV (прод на `limiter: memory`, 25.09), квота и п. 1 на Android. Чеклист пересверен 25.09
 - **№2 `CORE-7..10`** (`docs/handoff/HANDOFF_core.md`), `CORE-6` закрыта 25.09 — следующая
   `CORE-8` (airgap), затем `CORE-7`, `CORE-9`. `CORE-10` вне порядка
 - **№3 перф-линия** (lhci 90+): `docs/handoff/HANDOFF_perf_lhci.md`, `PERF-0..8` — разблокирована
