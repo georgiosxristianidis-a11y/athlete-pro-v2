@@ -18,11 +18,13 @@
 // файл переписали в main с твоей базы. Ноль ложных срабатываний на нормальной
 // ветке, и ровно PP-6 на больной.
 //
-// ОБХОДА ЧЕРЕЗ ENV НЕТ — ОСОЗНАННО. Переменную окружения выставил бы сам агент,
-// то есть гард обходил бы тот, от кого он защищает. Вердикт `escalate` отдаёт
-// решение человеку в диалог разрешений: Gio пропускает правку одним тапом, агент
-// в одиночку — нет. Дальше файл считается подтверждённым до конца сессии (см.
-// PostToolUse), иначе гард превратился бы в cookie-баннер.
+// РЕШАЕТ ЧЕЛОВЕК, СНИМАЕТ АГЕНТ. Вердикт `deny`: правка стоит, агент обязан
+// спросить Gio в чате и только после явного «да» снять блок командой `ack` из
+// текста причины — файл подтверждён до конца сессии, иначе гард превратился бы
+// в cookie-баннер. `escalate`/`ask` не годятся: под defaultMode auto они молча
+// пропускали правку (замер 25.09, FLOW-3). Команду может выполнить и сам агент —
+// граница доверия сдвинута на него осознанно (решение Gio 25.09): блок редкий,
+// снятие видно в чате. Обхода через ENV нет: его выставил бы агент молча.
 //
 // ГДЕ ОН ЖИВЁТ. Точка входа — `~/.claude/hooks/athlete-pro-guard.mjs`, вне гита,
 // и потому не дрейфует вместе с чекаутом. Логика — здесь, в репо: версионируется,
@@ -153,12 +155,38 @@ function ackFile(dir, sessionId) {
   return dir ? path.join(dir, `ack-${String(sessionId || 'nosession').replace(/[^\w-]/g, '')}.json`) : null;
 }
 
+/** Репо судим по самому файлу, а не по cwd сессии: сессия из корня правит файлы
+    ворктри по абсолютному пути, и её cwd указывал бы на чужой репозиторий.
+    Возвращаем корень, а не каталог файла: пути git в drift-core — от корня. */
+function repoTopFor(absPath, fallback) {
+  let dir = path.dirname(absPath);
+  while (!fs.existsSync(dir)) {
+    const up = path.dirname(dir);
+    if (up === dir) return fallback;
+    dir = up;
+  }
+  return tryGit(['rev-parse', '--show-toplevel'], { cwd: dir }) || fallback;
+}
+
+const slash = (p) => p.replace(/\\/g, '/');
+
+export function recordAck(sessionId, repoFile, cwd) {
+  const file = ackFile(stateDir(cwd), sessionId);
+  if (!file) return false;
+  const ack = readJson(file, { files: [] });
+  if (!Array.isArray(ack.files)) ack.files = [];
+  if (!ack.files.includes(repoFile)) ack.files.push(repoFile);
+  writeJson(file, ack);
+  return readJson(file, { files: [] }).files?.includes(repoFile) === true;
+}
+
 function onPreToolUse(input) {
   const filePath = input.tool_input?.file_path;
   if (!filePath) process.exit(0);
 
-  const cwd = input.cwd || process.cwd();
-  const verdict = fileDrift(filePath, { cwd });
+  const absPath = path.resolve(input.cwd || process.cwd(), filePath);
+  const cwd = repoTopFor(absPath, input.cwd || process.cwd());
+  const verdict = fileDrift(absPath, { cwd });
   if (!verdict.drift) process.exit(0);
 
   /* Подтверждённый файл больше не спрашиваем: решение человека принято один раз
@@ -170,42 +198,25 @@ function onPreToolUse(input) {
   if (ack.files?.includes(verdict.file)) process.exit(0);
 
   const commits = verdict.commits.slice(0, 3).join('\n     ');
+  const ackCmd =
+    `node "${slash(path.join(HERE, 'session-guard.mjs'))}" ack ` +
+    `"${input.session_id}" "${verdict.file}" "${slash(cwd)}"`;
   emit({
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
-      permissionDecision: 'escalate',
+      permissionDecision: 'deny',
       permissionDecisionReason:
         `Дрейф базы: ${verdict.file} переписали в origin/main с базы этой ветки ` +
         `(отставание ${verdict.behind} коммит(ов), ${verdict.commits.length} из них трогали этот файл).\n\n` +
         `     ${commits}\n\n` +
         'Правка ляжет поверх кода, которого в main уже нет — тесты и проверка в браузере\n' +
         'это не поймают, они прогонятся по старому файлу (PP-6).\n\n' +
-        `Лечение: git rebase origin/main, затем перегнать гейт заново.`,
+        'Лечение: git rebase origin/main, затем перегнать гейт заново.\n\n' +
+        'СТОП. Не обходить (Bash-записью в том числе): спросить человека в чате — rebase\n' +
+        'или править поверх. Только после его явного «да» снять блок для этого файла\n' +
+        `до конца сессии:\n     ${ackCmd}`,
     },
   });
-}
-
-function onPostToolUse(input) {
-  // Дошли сюда — значит правка состоялась, то есть человек её разрешил.
-  // Это и есть отметка о подтверждении: спрашивать по тому же файлу больше не о чем.
-  const filePath = input.tool_input?.file_path;
-  if (!filePath) process.exit(0);
-
-  const cwd = input.cwd || process.cwd();
-  const dir = stateDir(cwd);
-  const file = ackFile(dir, input.session_id);
-  if (!file) process.exit(0);
-
-  const verdict = fileDrift(filePath, { cwd });
-  if (!verdict.file) process.exit(0);
-
-  const ack = readJson(file, { files: [] });
-  if (!ack.files) ack.files = [];
-  if (!ack.files.includes(verdict.file)) {
-    ack.files.push(verdict.file);
-    writeJson(file, ack);
-  }
-  process.exit(0);
 }
 
 // --- Диспетчер ---------------------------------------------------------------
@@ -216,8 +227,6 @@ export function dispatch(input) {
       return onSessionStart(input);
     case 'PreToolUse':
       return onPreToolUse(input);
-    case 'PostToolUse':
-      return onPostToolUse(input);
     default:
       process.exit(0);
   }
@@ -233,6 +242,17 @@ function readStdin() {
 
 // Запуск как скрипт — но не при импорте из теста.
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
+  if (process.argv[2] === 'ack') {
+    const [sessionId, repoFile, cwd = process.cwd()] = process.argv.slice(3);
+    if (!sessionId || !repoFile) {
+      console.error('usage: node scripts/session-guard.mjs ack <session_id> <file> [cwd]');
+      process.exit(2);
+    }
+    const ok = recordAck(sessionId, repoFile, cwd);
+    console.log(ok ? `session-guard: ${repoFile} разблокирован до конца сессии` : 'session-guard: разрешение не записано');
+    process.exit(ok ? 0 : 1);
+  }
+
   let input;
   try {
     input = JSON.parse(readStdin() || '{}');
