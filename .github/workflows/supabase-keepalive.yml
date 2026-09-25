@@ -75,13 +75,16 @@ jobs:
             *) echo "ОШИБКА: SUPABASE_URL не заканчивается на '.supabase.co' — другой домен/регион или лишний символ на конце."; exit 2 ;;
           esac
 
+          # `|| true`: под `bash -e` упавший curl (DNS, таймаут) рвал шаг раньше
+          # диагноза ниже, а `-w` и так печатает 000.
           http_code=$(curl -s -o /tmp/resp.json -w '%{http_code}' \
             "$SUPABASE_URL/rest/v1/workouts?select=id&limit=1" \
             -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY") || true
 
-          echo "HTTP $http_code"
-          cat /tmp/resp.json
+          # Тело не печатать: репо публичный, лог Actions тоже. Размер отличает
+          # пустой ответ RLS (`[]`, 2 байта) от утёкшей строки, не раскрывая её.
+          echo "HTTP $http_code, ответ $(wc -c 2>/dev/null < /tmp/resp.json || echo 0) байт"
 
           # 2xx — обычный ответ. 401/403 — RLS отказал в чтении, но запрос уже
           # дошёл до Postgres, для таймера паузы этого достаточно. Падаем
