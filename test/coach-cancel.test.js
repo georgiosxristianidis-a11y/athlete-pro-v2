@@ -133,6 +133,53 @@ describe('POST /api/coach — разрыв клиента останавлива
     assert.ok(config.maxOutputTokens > 0);
     gemini.client = realClient;
   });
+
+  // CORE-7: без thinkingConfig модели Gemini 3 думают на дефолтном (высоком)
+  // уровне — время до первого токена уходит на скрытые рассуждения. Рычаг у
+  // Gemini 3 — thinkingLevel; thinkingBudget с ним не смешиваем.
+  test('thinkingConfig с низким уровнем доезжает до Gemini (CORE-7)', async () => {
+    const { getConfig } = stubGeminiStream({ stepMs: 5, count: 3 });
+    const req = postRaw({ messages: [{ role: 'user', content: 'go' }], engine: 'gemini' });
+    await new Promise((resolve) => {
+      req.on('response', (res) => { res.on('data', () => {}); res.on('end', resolve); });
+    });
+    const config = getConfig();
+    assert.ok(config, 'chats.create не позвали — фейк не сработал');
+    assert.ok(config.thinkingConfig, 'thinkingConfig не передан — модель думает на дефолтном уровне');
+    assert.ok(
+      ['LOW', 'MINIMAL'].includes(config.thinkingConfig.thinkingLevel),
+      `thinkingLevel = ${config.thinkingConfig.thinkingLevel}, ожидался LOW или MINIMAL`
+    );
+    assert.equal(config.thinkingConfig.thinkingBudget, undefined, 'thinkingBudget не смешивать с thinkingLevel');
+    gemini.client = realClient;
+  });
+
+  test('системный промпт коуча не просит <thinking> (CORE-7)', async () => {
+    const { getConfig } = stubGeminiStream({ stepMs: 5, count: 3 });
+    const req = postRaw({ messages: [{ role: 'user', content: 'go' }], engine: 'gemini' });
+    await new Promise((resolve) => {
+      req.on('response', (res) => { res.on('data', () => {}); res.on('end', resolve); });
+    });
+    const system = getConfig()?.systemInstruction?.parts?.[0]?.text;
+    assert.equal(typeof system, 'string', 'systemInstruction не дошёл до chats.create');
+    assert.doesNotMatch(system, /<thinking>/i, 'промпт просит модель рассуждать вслух в <thinking>');
+    assert.doesNotMatch(system, /#gym/i, 'в промпте остался макрос #gym');
+    gemini.client = realClient;
+  });
+});
+
+describe('routes/coach.js — в исходнике промпта нет инструкций на <thinking> (CORE-7)', () => {
+  test('ни одной строки кода с <thinking>/#gym вне комментариев', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const src = await readFile(new URL('../routes/coach.js', import.meta.url), 'utf8');
+    // Комментарии вырезаются с якорем на начало строки: шаблон вида "image/*"
+    // внутри строки иначе открыл бы блочный комментарий и съел кусок файла.
+    const code = src
+      .replace(/^[ \t]*\/\*[\s\S]*?\*\//gm, '')
+      .replace(/^[ \t]*\/\/.*$/gm, '');
+    assert.doesNotMatch(code, /<thinking>/i, 'routes/coach.js всё ещё просит <thinking>');
+    assert.doesNotMatch(code, /#gym/i, 'routes/coach.js всё ещё содержит #gym');
+  });
 });
 
 describe('POST /api/coach — идле-таймаут ловит зависший поток целиком, не только первый байт (CORE-2)', () => {

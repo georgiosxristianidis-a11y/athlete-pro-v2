@@ -187,10 +187,14 @@ describe('Air Markdown — формат ответа движка (MD-1)', () =>
 
 describe('MD-1 — контракт формата в системном промпте', () => {
   const COACH = fs.readFileSync(path.join(ROOT, 'routes', 'coach.js'), 'utf8');
-  const section = COACH.slice(COACH.indexOf('[OUTPUT FORMAT]'), COACH.indexOf('[WORKFLOW]'));
+  // Правая граница — конец сборщика промпта: секция [WORKFLOW] снята в CORE-7,
+  // а indexOf(-1) молча растянул бы секцию до конца файла.
+  const sectionEnd = COACH.indexOf('function _buildPlanGenerationPrompt');
+  const section = COACH.slice(COACH.indexOf('[OUTPUT FORMAT]'), sectionEnd);
 
   test('промпт вообще задаёт границы разметки', () => {
     assert.ok(COACH.includes('[OUTPUT FORMAT]'), 'секция формата исчезла из системного промпта');
+    assert.ok(sectionEnd > COACH.indexOf('[OUTPUT FORMAT]'), 'правая граница секции формата потерялась');
   });
 
   test('перечислено то, чего форматтер не умеет', () => {
