@@ -350,9 +350,11 @@ export async function fetchWeeklyReport() {
 }
 
 /**
- * Биометрический скан (HUD-3). Готовность — производная от отчёта, а не
- * вторая правда: считается один раз здесь, view только рисует число.
- * @returns {Promise<{ report: any, readiness: number }>}
+ * Биометрический скан (HUD-3) — только текст. CORE-6: `cnsFatigue`/
+ * `muscleDamage`/готовность больше не берутся из ответа модели — те же
+ * числа считает локальный движок (`fetchReadiness()`, `Heatmap.compute()`
+ * в `claude.store.js`), view их туда не пускает.
+ * @returns {Promise<{ summary: string, injuryRisk: string }>}
  */
 export async function fetchBiometricsScan() {
   const workouts = await DB.Workouts.getLast(10);
@@ -378,10 +380,7 @@ export async function fetchBiometricsScan() {
   }
 
   const { report } = await response.json();
-  return {
-    report,
-    readiness: Math.max(0, 100 - Math.round((report.cnsFatigue + report.muscleDamage) / 2)),
-  };
+  return { summary: report.summary || '', injuryRisk: report.injuryRisk || '' };
 }
 
 /**

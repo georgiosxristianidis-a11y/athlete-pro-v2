@@ -360,16 +360,18 @@ router.post('/weekly-report', coachLimiter, asyncHandler(async (req, res) => {
 
   logInfo(req, 'weekly_report_started', `Generating weekly report`);
 
+  // CORE-6: score больше не входит в промпт — «UI считает движок, модель
+  // объясняет». Модель отвечает только текстом, число ниже (_weeklyScore)
+  // считается локально и не зависит от того, ответила модель или нет.
   const system = `You are "Athlete Pro Analyst", an elite sports data scientist.
-Analyze the user's past 7 days of workouts. 
+Analyze the user's past 7 days of workouts.
 Return ONLY JSON with this exact schema:
 {
-  "score": <number 0-100 representing overall performance and consistency>,
   "summary": "<string, 2-3 sentences of harsh but motivating feedback>",
   "pros": ["<string>", "<string>"],
   "cons": ["<string>", "<string>"]
 }
-If no workouts exist, set score to 0 and encourage them to start.`;
+If no workouts exist, encourage them to start.`;
 
   const prompt = `Workouts (Last 7 Days): ${JSON.stringify(workouts)}
 Profile: ${JSON.stringify(profile)}`;
@@ -385,43 +387,55 @@ Profile: ${JSON.stringify(profile)}`;
     logWarn(req, 'weekly_report_ai_failed', err?.message || String(err));
   }
 
-  let report = null;
+  let text = null;
   if (content) {
     try {
-      report = _parseWeeklyReport(content);
+      text = _parseWeeklyReport(content);
     } catch (err) {
       logWarn(req, 'weekly_report_parse_failed', err?.message || String(err));
     }
   }
 
-  res.json({ success: true, report: report || _weeklyReportFallback(workouts), degraded: !report });
+  const fallback = _weeklyReportFallback(workouts);
+  const report = { score: _weeklyScore(workouts), ...(text || fallback) };
+  res.json({ success: true, report, degraded: !text });
 }));
 
 /**
  * Ответ модели идёт прямо в DOM (`_renderReportOverlay`, CORE-1): без формы
- * `score` был числом только по названию поля — модель отвечает JSON, но
- * ничего не проверяет, что `score` действительно число, а `pros`/`cons`
- * действительно массивы строк разумной длины. Схема зеркалит
- * `_parseBiometricsReport` — тот же приём для того же класса ответа.
+ * ничего не проверяет, что `pros`/`cons` действительно массивы строк
+ * разумной длины. Схема зеркалит `_parseBiometricsReport` — тот же приём
+ * для того же класса ответа.
  * @param {string} content
- * @returns {{score:number,summary:string,pros:string[],cons:string[]}|null}
+ * @returns {{summary:string,pros:string[],cons:string[]}|null}
  */
 function _parseWeeklyReport(content) {
   const jsonMatch = content.match(/\{[\s\S]*\}/);
   if (!jsonMatch) return null;
   const raw = JSON.parse(jsonMatch[0]);
-  const clamp = (n) => Math.max(0, Math.min(100, Number.isFinite(+n) ? Math.round(+n) : 0));
   const strings = (arr) =>
     (Array.isArray(arr) ? arr : [])
       .filter((s) => typeof s === 'string')
       .slice(0, 10)
       .map((s) => s.slice(0, 200));
   return {
-    score: clamp(raw.score),
     summary: typeof raw.summary === 'string' ? raw.summary.slice(0, 500) : '',
     pros: strings(raw.pros),
     cons: strings(raw.cons),
   };
+}
+
+/**
+ * Недельный score — всегда локально (CORE-6), независимо от того, ответила
+ * ли модель. Три тренировки в неделю — целевая частота PPL; 100 за неё,
+ * дальше потолок. Та же формула, что раньше жила только в фолбэке —
+ * не калибровка заново, просто больше не только для случая «ИИ упал».
+ * @param {Array<any>} workouts
+ * @returns {number}
+ */
+function _weeklyScore(workouts) {
+  const sessions = Array.isArray(workouts) ? workouts.length : 0;
+  return Math.min(100, Math.round((sessions / 3) * 100));
 }
 
 /**
@@ -436,16 +450,12 @@ function _weeklyReportFallback(workouts) {
   const tonnage = list.reduce((s, w) => s + (Number(w?.tonnage) || 0), 0);
   if (!sessions) {
     return {
-      score: 0,
       summary: 'No sessions logged in the last 7 days. The coach is offline — start with one.',
       pros: [],
       cons: ['Zero sessions this week'],
     };
   }
-  // Три тренировки в неделю — целевая частота PPL; 100 за неё, дальше потолок.
-  const score = Math.min(100, Math.round((sessions / 3) * 100));
   return {
-    score,
     summary: `${sessions} session(s), ${Math.round(tonnage)} kg moved in the last 7 days. The coach is offline right now — these are your own numbers, not its read on them.`,
     pros: [`${sessions} session(s) logged`],
     cons: sessions < 3 ? ['Below three sessions this week'] : [],
@@ -460,8 +470,12 @@ const biometricsScanSchema = z.object({
 });
 
 /* ── POST /biometrics-scan ──
- * Отчёт для радара HUD-3: cnsFatigue / muscleDamage / summary из истории и профиля.
- * Fallback вместо 500: сеть/ключ мертвы → нули + пометка, чтобы UI не показывал пустой оверлей. */
+ * Текстовая оценка для HUD-3: injuryRisk / summary из истории и профиля.
+ * CORE-6: cnsFatigue/muscleDamage больше не запрашиваются у модели — те же
+ * числа считает локальный движок (fetchReadiness()/Heatmap.compute() на
+ * клиенте), а не выдумывает модель на каждый вызов.
+ * Fallback вместо 500: сеть/ключ мертвы → пустой текст + пометка, чтобы UI
+ * не падал (числа у него и так локальные, от модели тут только проза). */
 router.post('/biometrics-scan', coachLimiter, asyncHandler(async (req, res) => {
   const parseResult = biometricsScanSchema.safeParse(req.body);
   if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
@@ -471,11 +485,9 @@ router.post('/biometrics-scan', coachLimiter, asyncHandler(async (req, res) => {
   const profile = stripSecrets(rawProfile);
 
   const system = `You are "Athlete Pro Medical AI".
-Оцени биометрическое состояние по последней истории и профилю.
+Оцени риск травмы по последней истории и профилю.
 Ответ — ТОЛЬКО JSON строго по схеме, без markdown и без комментариев:
 {
-  "cnsFatigue": <0-100, усталость ЦНС>,
-  "muscleDamage": <0-100, структурное повреждение мышц>,
   "injuryRisk": "<Low|Medium|High>",
   "summary": "<2 предложения по-русски, разбор состояния>"
 }`;
@@ -490,7 +502,7 @@ Profile: ${JSON.stringify(profile)}`;
     logWarn(req, 'biometrics_scan_fallback', err.message, { code: err.code });
     return res.json({
       success: true,
-      report: { cnsFatigue: 0, muscleDamage: 0, injuryRisk: 'Low', summary: '' },
+      report: { injuryRisk: 'Low', summary: '' },
       warning: 'AI biometrics unavailable'
     });
   }
@@ -500,16 +512,13 @@ Profile: ${JSON.stringify(profile)}`;
 }));
 
 function _parseBiometricsReport(content) {
-  const fallback = { cnsFatigue: 0, muscleDamage: 0, injuryRisk: 'Low', summary: '' };
+  const fallback = { injuryRisk: 'Low', summary: '' };
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return fallback;
     const raw = JSON.parse(jsonMatch[0]);
-    const clamp = (n) => Math.max(0, Math.min(100, Number.isFinite(+n) ? Math.round(+n) : 0));
     const risk = ['Low', 'Medium', 'High'].includes(raw.injuryRisk) ? raw.injuryRisk : 'Low';
     return {
-      cnsFatigue: clamp(raw.cnsFatigue),
-      muscleDamage: clamp(raw.muscleDamage),
       injuryRisk: risk,
       summary: typeof raw.summary === 'string' ? raw.summary.slice(0, 500) : ''
     };
@@ -548,6 +557,10 @@ export function _buildSystemPrompt(snapshot, tone) {
 - Current Goal: ${snapshot.profile.goal || 'General Health'}`
     : `- Snapshot: unavailable — no training data reached the server. Say so if asked about numbers; do not invent any.
 - Current Goal: General Health`;
+  // Язык ответа = язык UI (решение Gio), не язык вопроса — snapshot.lang уже
+  // приходит с фронта (buildSnapshot({ lang: getLang() }), CORE-4). Старый
+  // клиент без снимка получает прежнее поведение по умолчанию — русский.
+  const langName = snapshot?.lang === 'en' ? 'English' : 'Russian';
   return `You are "Athlete Pro Coach", an elite AI strength & conditioning expert.
 
 [PERSONA / TONE]
@@ -557,14 +570,11 @@ ${_toneInstruction(tone)}
 ${context}
 
 [CRITICAL RULES]
-1. ZERO FLUFF: Be concise. Give exact numbers.
+1. ZERO FLUFF: Be concise. Give exact numbers — they are already computed for you in the
+Snapshot above (readiness/cns/fatigue). Never invent or recalculate a number yourself.
 2. SLEEP: Assume the user sleeps 7 hours on average. You may ask if needed.
 3. GREETINGS: If the user simply says "hi" or "привет", respond exactly with: "Привет, нужен план?".
-4. LANGUAGE: YOU MUST SPEAK RUSSIAN ALWAYS. All JSON string values (like 'goal') and all textual advice MUST be in Russian.
-5. MACRO #gym: If the user types EXACTLY or contains "#gym", you MUST output a raw JSON widget block ANYWHERE in your response, followed by a short textual advice.
-JSON FORMAT MUST BE EXACTLY:
-{"_widget": "readiness", "index": 82, "recovery": 77, "acwr": 88, "sleep": 64, "monotony": 95, "density": 93, "cns": 48, "goal": "Лёгкая / техническая"}
-(Calculate these values from 0-100 based on fatigue, history, and rest days. Goal must be a short string in Russian).
+4. LANGUAGE: Respond in ${langName}. All JSON string values and all textual advice MUST be in that language — match the app's own UI language, not the language the user typed in.
 
 [OUTPUT FORMAT]
 The answer is rendered by a narrow mobile HUD that supports a small Markdown subset
@@ -572,10 +582,10 @@ The answer is rendered by a narrow mobile HUD that supports a small Markdown sub
 ALLOWED: headings "##" and "###" (never "####" or deeper), bullets "- ", numbered steps
 "1. ", bold "**text**", italic "*text*".
 FORBIDDEN: tables, horizontal rules ("---", "***"), code fences (\`\`\`), blockquotes ("> "),
-Markdown links. The readiness JSON from rule 5 is emitted raw, never inside a code fence.
+Markdown links, raw JSON. You explain the numbers in prose — you never emit a JSON widget.
 
 [WORKFLOW]
-Before answering, use <thinking> tags to calculate the metrics. If #gym is requested, output the JSON block, then output your surgical advice.`;
+Before answering, use <thinking> tags to plan your answer, then give your surgical advice.`;
 }
 
 function _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience) {

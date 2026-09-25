@@ -178,28 +178,34 @@ test('профиль для коуча — белый список через lo
   }
 });
 
-/* Виджет готовности собирается из JSON, который модель кладёт прямо в поток
-   (CORE-1): формат ловится regex'ом в air-markdown.js и JSON.parse'ится без
-   единой проверки схемы. buildWidget(data) — единственный барьер до
-   innerHTML. До фикса data.goal шёл в разметку без esc(), а числовые поля —
-   без клэмпа (значение ломало inline-style width:${val}%). */
-test('_buildReadinessWidget клэмпит числа и экранирует goal (CORE-1)', () => {
+/* CORE-6: виджет готовности больше не собирается из JSON, который модель
+   кладёт в поток, — он читает fetchReadiness() (локальный движок) напрямую,
+   независимо от ответа модели (`_widget`/air-markdown regex сняты).
+   Инвариант сменился: не «эта строка от модели обязана идти через esc()»
+   (строк от модели тут больше нет — goal убран вместе с контрактом), а
+   «индекс без данных не красится числом» и «слагаемые — реальные parts
+   readiness(), не смесь sleep/дублированного density из выдумки модели». */
+test('_buildReadinessWidget не красит число без данных и читает parts движка (CORE-6)', () => {
   const start = VIEW.indexOf('function _buildReadinessWidget');
   const end = VIEW.indexOf('function playAudio');
   assert.ok(start !== -1 && end > start, 'якорь _buildReadinessWidget пропал');
   const fn = VIEW.slice(start, end);
 
-  assert.match(fn, /esc\(typeof rawData\?\.goal/, 'data.goal обязан идти через esc() — свободная строка от модели в innerHTML');
-  for (const field of ['index', 'recovery', 'acwr', 'sleep', 'monotony', 'density', 'cns']) {
+  assert.match(
+    fn,
+    /confidence === 'none'/,
+    'пустая история (INTEL-2b) обязана показывать текстовое состояние, не 0/100'
+  );
+  assert.match(fn, /clamp\(data\.index\)/, 'index обязан идти через clamp перед вставкой в inline-style width');
+  for (const part of ['recovery', 'acwr', 'monotony', 'trend']) {
     assert.match(
       fn,
-      new RegExp(`${field}:\\s*clamp\\(rawData\\?\\.${field}\\)`),
-      `data.${field} обязан идти через clamp — иначе рвёт inline-style width:\${val}%`
+      new RegExp(`data\\.parts\\?\\.${part}`),
+      `виджет обязан читать data.parts.${part} — реальное слагаемое readiness(), не поле из JSON модели`
     );
   }
-  // Дальше в шаблоне используются уже клэмпнутые/экранированные поля, не rawData.*
-  const template = fn.slice(fn.indexOf('return `'));
-  assert.equal(/rawData\./.test(template), false, 'шаблон читает rawData напрямую в обход clamp/esc');
+  assert.equal(/rawData/.test(fn), false, 'виджет не должен ждать rawData от модели — источник только fetchReadiness()');
+  assert.equal(/data\.sleep|data\.density/.test(fn), false, 'sleep и дубль density — снятые CORE-6 поля, их не должно быть в шаблоне');
 });
 
 /* report.score в оверлее недельного отчёта — до фикса единственное поле

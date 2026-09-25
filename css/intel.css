@@ -1000,6 +1000,19 @@
   gap: var(--sp-2);
 }
 
+.intel-radar-metrics + .intel-radar-metrics-title {
+  margin-top: var(--sp-3);
+}
+
+.intel-radar-metrics-title {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  margin-bottom: var(--sp-1-5);
+}
+
 .intel-radar-metric {
   background: var(--c-surface);
   border: 1px solid var(--c-border);

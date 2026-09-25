@@ -40,16 +40,9 @@ describe('Air Markdown — XSS', () => {
     assert.ok(!html.includes('<b>'), 'сырой тег попал в разметку');
   });
 
-  test('виджет готовности собирается сборщиком, а не потоком', () => {
-    const raw = 'Итог:\n{"_widget":"readiness","index":72}';
-    const html = formatAirMarkdown(raw, (d) => `<div class="w">${d.index}</div>`);
-    assert.ok(html.includes('<div class="w">72</div>'), 'виджет не собран');
-    assert.ok(!html.includes('"_widget"'), 'JSON остался в тексте');
-  });
-
   test('карточка тренировки собирается сборщиком, а не потоком (HUD-3)', () => {
     const raw = 'План:\n[WORKOUT_CARD]{"title":"Push Day","exercises":[]}[/WORKOUT_CARD]';
-    const html = formatAirMarkdown(raw, undefined, (d) => `<div class="c">${d.title}</div>`);
+    const html = formatAirMarkdown(raw, (d) => `<div class="c">${d.title}</div>`);
     assert.ok(html.includes('<div class="c">Push Day</div>'), 'карточка не собрана');
     assert.ok(!html.includes('WORKOUT_CARD'), 'маркер остался в тексте');
   });
@@ -61,7 +54,7 @@ describe('Air Markdown — XSS', () => {
     // форматтером повторно, значит его обязан экранировать сам сборщик.
     const raw = '[WORKOUT_CARD]{"title":"<img src=x onerror=alert(1)>"}[/WORKOUT_CARD]';
     let received = null;
-    formatAirMarkdown(raw, undefined, (d) => {
+    formatAirMarkdown(raw, (d) => {
       received = d;
       return '';
     });
@@ -122,7 +115,7 @@ describe('Air Markdown — блоки', () => {
 
   test('на финальном кадре незакрытый <thinking> не съедает готовый ответ', () => {
     const raw = '<thinking>User ACWR is high after Push.\n## Разбор\nСнизь объём жима.';
-    const html = formatAirMarkdown(raw, undefined, undefined, { final: true });
+    const html = formatAirMarkdown(raw, undefined, { final: true });
     assert.ok(html.includes('Снизь объём жима'), 'ответ после забытого </thinking> пропал');
     assert.ok(!html.includes('<thinking'));
   });
@@ -130,7 +123,6 @@ describe('Air Markdown — блоки', () => {
   test('на финальном кадре закрытый <thinking> по-прежнему скрыт', () => {
     const html = formatAirMarkdown(
       '<thinking>план ответа</thinking>## Итог\nДелай разминку',
-      undefined,
       undefined,
       { final: true }
     );
@@ -241,23 +233,18 @@ describe('Air Markdown — обрывки стрима', () => {
     '<thinking>ещё думаю',
     '1.',
     '- ',
-    '{"_widget":"readiness","ind',
-    'Текст\n{"_widget":"readiness"',
+    '{"index":7',
+    'Текст\n{"index":7',
     '[WORKOUT_CARD]{"title":"Push',
     'План:\n[WORKOUT_CARD]{"title":"Push Day","exercises":[',
   ];
 
   for (const chunk of partials) {
     test(`не падает на обрывке ${JSON.stringify(chunk)}`, () => {
-      const html = formatAirMarkdown(chunk, (d) => `<i>${d.index}</i>`);
+      const html = formatAirMarkdown(chunk, (d) => `<i>${d.title}</i>`);
       assert.ok(html.startsWith('<div class="intel-md-body">'));
     });
   }
-
-  test('недотёкший JSON виджета показывается текстом, а не ломает рендер', () => {
-    const html = formatAirMarkdown('{"_widget":"readiness","index":7', () => '<i></i>');
-    assert.ok(!html.includes('<i></i>'), 'виджет собран из битого JSON');
-  });
 
   test('нарастающий текст не теряет уже готовые блоки', () => {
     const full = '## Итог\n- раз\n- два\n\nВывод';

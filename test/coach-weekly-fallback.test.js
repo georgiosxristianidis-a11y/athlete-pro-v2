@@ -163,25 +163,29 @@ describe('форма BYOK — гейт с обеих сторон', () => {
 });
 
 /* CORE-1 (23.09): report из модели уезжал JSON.parse'ом прямо в ответ клиенту,
-   а клиент кладёт report.score/summary/pros/cons в innerHTML без формы —
-   до фикса score мог быть строкой с разметкой, а pros/cons чем угодно, что
-   провайдер решит вернуть. _parseWeeklyReport — та же схема, что уже
-   защищает /biometrics-scan (_parseBiometricsReport). */
+   а клиент кладёт report.summary/pros/cons в innerHTML без формы — pros/cons
+   могли быть чем угодно, что провайдер решит вернуть. _parseWeeklyReport — та
+   же схема, что уже защищает /biometrics-scan (_parseBiometricsReport).
+   CORE-6: score из этой схемы убран вообще — модель его больше не присылает,
+   отчёт считает его сам (см. describe выше), поэтому ниже он не проверяется. */
 describe('/weekly-report — форма отчёта, а не доверие к JSON модели (CORE-1)', () => {
   function stubProviderReturns(json) {
     AIOrchestrator.generateJSON = async () => JSON.stringify(json);
   }
 
-  test('score выше 100 — клэмп до 100, не проходит как есть', async () => {
+  test('score модели игнорируется — считается только локально (CORE-6)', async () => {
     stubProviderReturns({ score: 150, summary: 'ok', pros: [], cons: [] });
-    const body = await (await postWeekly({ workouts: [], profile: {} })).json();
-    assert.equal(body.report.score, 100);
+    const body = await (
+      await postWeekly({ workouts: [{ tonnage: 1 }, { tonnage: 1 }, { tonnage: 1 }], profile: {} })
+    ).json();
+    assert.equal(body.report.score, 100, 'три тренировки — целевая частота PPL, число модели (150) не должно долететь');
   });
 
-  test('score с разметкой вместо числа — безопасный 0, не сырая строка в DOM', async () => {
+  test('score с разметкой в ответе модели не долетает до отчёта вообще', async () => {
     stubProviderReturns({ score: '100<img src=x onerror=alert(1)>', summary: 'ok', pros: [], cons: [] });
     const body = await (await postWeekly({ workouts: [], profile: {} })).json();
-    assert.equal(body.report.score, 0);
+    assert.equal(body.report.score, 0, 'пустая история — локальный счёт 0, независимо от того, что вернула модель');
+    assert.equal(typeof body.report.score, 'number');
   });
 
   test('summary режется до 500 символов, не-строка — пустая строка', async () => {
