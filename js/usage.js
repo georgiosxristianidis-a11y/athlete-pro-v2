@@ -24,7 +24,8 @@
    ── Пять ворот, все должны быть открыты ──
      1. flag('usage-stats')       — по умолчанию ON; kill switch setFlag(false)
      2. DNT / GPC                 — сигнал браузера сильнее тумблера
-     3. самоисключение автора     — localStorage 'ap-usage-exclude'
+     3. самоисключение автора     — localStorage 'ap-usage-exclude';
+                                    с телефона — ссылкой /?dev=exclude (обратно — ?dev=include)
      4. тумблер пользователя      — DB.Settings 'usage.enabled'
      5. прод-хост                 — /_vercel/insights есть только на Vercel
 
@@ -116,6 +117,38 @@ export function setSelfExcluded(on) {
 }
 
 /**
+ * Самоисключение ссылкой: на телефоне нет консоли для Usage.excludeSelf().
+ * `?dev=exclude` — исключить, `?dev=include` / `?dev=0` — вернуть. Параметр
+ * вырезается из адреса (state экрана сохраняется), чужие параметры и хеш
+ * остаются. Зовётся ДО ворот initUsage: иначе app_open успеет засчитаться.
+ * Chrome и установленная PWA на Android делят localStorage origin — одной
+ * ссылки в браузере хватает.
+ * @param {{ search: string, pathname: string, hash: string }} [loc]
+ * @param {{ state: unknown, replaceState: Function }} [hist]
+ * @returns {'excluded'|'included'|null}
+ */
+export function applyDevParam(
+  loc = typeof location !== 'undefined' ? location : undefined,
+  hist = typeof history !== 'undefined' ? history : undefined,
+) {
+  if (!loc || typeof loc.search !== 'string' || !loc.search) return null;
+  const params = new URLSearchParams(loc.search);
+  const v = params.get('dev');
+  const result = v === 'exclude' ? 'excluded' : v === 'include' || v === '0' ? 'included' : null;
+  if (!result) return null;
+
+  setSelfExcluded(result === 'excluded');
+  params.delete('dev');
+  const qs = params.toString();
+  try {
+    hist?.replaceState(hist.state, '', `${loc.pathname}${qs ? `?${qs}` : ''}${loc.hash || ''}`);
+  } catch {
+    /* адрес не чистится — исключение всё равно записано */
+  }
+  return result;
+}
+
+/**
  * Хост, на котором эндпоинт /_vercel/insights вообще существует.
  * Локалка и LAN отсекаются: там SPA-фолбэк сервера отдаст на script.js
  * index.html, и в консоль прилетит синтаксическая ошибка на ровном месте.
@@ -168,6 +201,14 @@ export function getUsageState() {
 export async function initUsage() {
   if (_initialized) return;
   _initialized = true;
+
+  const dev = applyDevParam();
+  if (dev) {
+    // Тост — подтверждение для автора; локаль к этому моменту уже поднята (app.js, defer).
+    import('./locale.store.js')
+      .then(({ t }) => window.Toast?.show(t(`privacy.dev_${dev}_toast`), 'info'))
+      .catch(() => {});
+  }
 
   if (typeof window !== 'undefined') {
     window.Usage = {

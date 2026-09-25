@@ -47,7 +47,7 @@ window.__privacyMode = () => 'cloud';
 const { setFlag } = await import('../js/flags.js');
 const usage = await import('../js/usage.js');
 const { EVENTS, trackUsage, sanitizePayload, getUsageState, isDoNotTrack, setSelfExcluded, _prune,
-  getQueue, flushQueue } = usage;
+  getQueue, flushQueue, applyDevParam } = usage;
 const { DB } = await import('../js/db.js');
 
 /** Перехват отправок через window.va. */
@@ -186,6 +186,81 @@ describe('usage: ворота', () => {
     globalThis.location = /** @type {any} */ ({ protocol: 'http:', hostname: '192.168.1.42' });
     assert.equal(getUsageState(), 'host');
     globalThis.location = real;
+  });
+});
+
+describe('usage: самоисключение ссылкой ?dev=', () => {
+  /** Стаб адреса и истории: replaceState пишет в calls, state экрана должен вернуться как был. */
+  function fakeNav(search, { pathname = '/', hash = '' } = {}) {
+    const calls = [];
+    const state = { screen: 's-home' };
+    return {
+      loc: { search, pathname, hash },
+      hist: { state, replaceState: (...a) => calls.push(a) },
+      calls,
+      state,
+    };
+  }
+
+  beforeEach(() => {
+    lsStore.clear();
+    setFlag('usage-stats', true);
+    setNavigator({ onLine: true });
+  });
+  afterEach(() => lsStore.clear());
+
+  test('?dev=exclude исключает устройство и вырезает параметр из адреса', () => {
+    const n = fakeNav('?dev=exclude');
+    assert.equal(applyDevParam(n.loc, n.hist), 'excluded');
+    assert.equal(lsStore.get('ap-usage-exclude'), '1');
+    assert.equal(getUsageState(), 'excluded');
+    assert.deepEqual(n.calls, [[n.state, '', '/']]);
+  });
+
+  test('?dev=include возвращает устройство в счёт', () => {
+    setSelfExcluded(true);
+    const n = fakeNav('?dev=include');
+    assert.equal(applyDevParam(n.loc, n.hist), 'included');
+    assert.equal(lsStore.has('ap-usage-exclude'), false);
+    assert.equal(getUsageState(), 'ok');
+  });
+
+  test('?dev=0 — синоним include', () => {
+    setSelfExcluded(true);
+    const n = fakeNav('?dev=0');
+    assert.equal(applyDevParam(n.loc, n.hist), 'included');
+    assert.equal(getUsageState(), 'ok');
+  });
+
+  test('чужие параметры и хеш переживают чистку', () => {
+    const n = fakeNav('?utm_source=x&dev=exclude&b=2', { pathname: '/index.html', hash: '#top' });
+    applyDevParam(n.loc, n.hist);
+    assert.equal(n.calls[0][2], '/index.html?utm_source=x&b=2#top');
+  });
+
+  test('без параметра и с мусорным значением — ничего не трогает', () => {
+    for (const search of ['', '?a=1', '?dev=', '?dev=EXCLUDE', '?dev=1']) {
+      const n = fakeNav(search);
+      assert.equal(applyDevParam(n.loc, n.hist), null, search);
+      assert.equal(n.calls.length, 0, search);
+      assert.equal(lsStore.has('ap-usage-exclude'), false, search);
+    }
+  });
+
+  test('упавший replaceState не отменяет исключение', () => {
+    const loc = { search: '?dev=exclude', pathname: '/', hash: '' };
+    const hist = { state: null, replaceState: () => { throw new Error('SecurityError'); } };
+    assert.equal(applyDevParam(loc, hist), 'excluded');
+    assert.equal(getUsageState(), 'excluded');
+  });
+
+  test('initUsage разбирает ?dev= раньше ворот: app_open не успевает уйти', () => {
+    const src = fs.readFileSync(path.join(REPO_ROOT, 'js/usage.js'), 'utf8');
+    const body = src.slice(src.indexOf('export async function initUsage'));
+    const dev = body.indexOf('applyDevParam()');
+    assert.ok(dev > 0, 'initUsage не зовёт applyDevParam');
+    assert.ok(dev < body.indexOf("flag('usage-stats')"), 'разбор ?dev= стоит после ворот флага');
+    assert.ok(dev < body.indexOf('_injectScript()'), 'разбор ?dev= стоит после инжекта скрипта');
   });
 });
 
