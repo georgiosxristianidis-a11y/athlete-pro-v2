@@ -320,7 +320,7 @@ export const Claude = (() => {
     return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none"><path d="M16 4L22 16L16 28L10 16L16 4Z" fill="var(--c-accent)"/></svg>`;
   }
   function _geminiIcon(size = 32) {
-    return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none"><path d="M16 4L28 16L16 28L4 16L16 4Z" fill="#448aff"/></svg>`;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none"><path d="M16 4L28 16L16 28L4 16L16 4Z" fill="var(--c-gemini)"/></svg>`;
   }
 
   function buildBodySVG(scores) {
