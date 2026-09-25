@@ -4,7 +4,8 @@ import { DB } from './db.js';
 import { readiness } from './intel.engine.js';
 import { loadProfile, toCoachProfile } from './profile.store.js';
 import { collectCoachSnapshot } from './coach-snapshot.store.js';
-import { safeFetch } from './privacy.store.js';
+import { safeFetch, getAiEnabled } from './privacy.store.js';
+import { buildLocalInsights } from './shared/local-insights.js';
 import { aiAuth, getTone } from './ai-settings.store.js';
 import { probeAiStatus } from './shared/ai-status.js';
 import { appendSseChunk, parseSseDataLine } from './shared/sse.js';
@@ -113,6 +114,26 @@ export async function probeKeyState() {
         : !!probed.anthropic
       : false;
   return { hasValidKey, source: probed.source };
+}
+
+/**
+ * CORE-8: ИИ выключен — режим, а не ошибка. airgap форсирует aiEnabled=false
+ * (`privacy.store.js`), поэтому один флаг покрывает и дефолт новой установки,
+ * и ручной тумблер в cloud/anon. Двери экрана спрашивают здесь ДО похода
+ * в сеть: `safeFetch` отказал бы и сам, но отказ читался экраном как сбой.
+ * @returns {boolean}
+ */
+export function isCoachLocal() {
+  return !getAiEnabled();
+}
+
+/**
+ * Инсайты без модели — тот же снимок, что ушёл бы в `/api/coach`, прочитанный
+ * шаблонами (`shared/local-insights.js`). Сети здесь нет вовсе.
+ * @returns {Promise<import('./shared/local-insights.js').LocalInsight[]>}
+ */
+export async function localCoachInsights() {
+  return buildLocalInsights(await collectCoachSnapshot({ door: 'intel' }));
 }
 
 /* CORE-5: это единственный клиент `/api/coach` — Core, чат тренировки и

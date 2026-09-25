@@ -11,14 +11,15 @@ import {
   fetchBiometricsScan,
   fetchReadiness,
   savePlannedWorkout,
+  isCoachLocal,
+  localCoachInsights,
 } from './intel.store.js';
 import { Heatmap } from './claude.store.js';
 import { fatiguePercent } from './shared/coach-snapshot.js';
 import { esc, haptic } from './shared/utils.js';
 import { formatAirMarkdown } from './shared/air-markdown.js';
 import { toUserMessage } from './shared/errors-ui.js';
-import { isRu } from './locale.store.js';
-import { getAiEnabled } from './privacy.store.js';
+import { isRu, t } from './locale.store.js';
 import { flag } from './flags.js';
 import { on, onChange, onKeydown } from './events.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
@@ -242,13 +243,14 @@ export const IntelView = (() => {
     // одного флага хватает и на дефолтный airgap, и на ручное «ИИ выключен»
     // в cloud/anon — оба случая означают, что ниже считается только локальная
     // история (fetchReadiness), а модули СВОДКА/АНАЛИЗ/БИОМЕТРИЯ заблокированы.
-    const localBanner = getAiEnabled() ? '' : `
+    const local = isCoachLocal();
+    const localBanner = local ? `
       <div class="intel-local-banner">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
           <rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
         </svg>
         <span>${esc(L.localMode)}</span>
-      </div>`;
+      </div>` : '';
 
     screen.innerHTML = `
       <header class="intel-header">
@@ -273,6 +275,7 @@ export const IntelView = (() => {
 
       <div class="intel-body">
         <div id="intel-readiness-mount"></div>
+        ${local ? '<div id="intel-local-mount"></div>' : ''}
         <div id="intel-feedback-feed"></div>
 
         ${visionPreviewWrap}
@@ -327,6 +330,7 @@ export const IntelView = (() => {
     renderLogs();
     _listen();
     _renderReadinessWidget();
+    if (local) _renderLocalInsights();
     // Разметку экрана load() пересобирает целиком, а запрос мог остаться в
     // полёте (ушёл с экрана и вернулся) — иначе кнопка выглядит свободной,
     // но submit() молча выходит по флагу.
@@ -500,6 +504,15 @@ export const IntelView = (() => {
     const input = /** @type {HTMLInputElement} */ (document.getElementById('intel-input'));
     if (!input || (!input.value.trim() && !_pendingImage)) return;
 
+    // CORE-8: ИИ выключен — вопрос не уходит никуда, экран отвечает локальным
+    // разбором. Раньше тут был поход в safeFetch, отказ и карточка ошибки.
+    if (isCoachLocal()) {
+      IntelStore.addLog('USER', input.value.trim());
+      input.value = '';
+      await _renderLocalInsights({ focus: true });
+      return;
+    }
+
     const text = input.value.trim() || 'Analyze this photo';
     const image = _pendingImage;
 
@@ -662,6 +675,10 @@ export const IntelView = (() => {
   }
 
   async function generateWeekly() {
+    if (isCoachLocal()) {
+      await _renderLocalInsights({ focus: true });
+      return;
+    }
     IntelStore.addLog('SYS', 'Computing weekly intelligence...');
     IntelStore.setStatus('COMPUTING INTEL...');
 
@@ -806,7 +823,12 @@ export const IntelView = (() => {
       const [readinessData, fatigueScores, text] = await Promise.all([
         fetchReadiness(),
         Heatmap.compute(),
-        fetchBiometricsScan().catch(() => ({ summary: '', injuryRisk: '' })),
+        // CORE-8: без ИИ проза — из тех же шаблонов, что карточка локального разбора.
+        isCoachLocal()
+          ? localCoachInsights()
+              .then((items) => ({ summary: items.map((i) => i.text).join(' '), injuryRisk: '' }))
+              .catch(() => ({ summary: '', injuryRisk: '' }))
+          : fetchBiometricsScan().catch(() => ({ summary: '', injuryRisk: '' })),
       ]);
       const heatmap = fatiguePercent(fatigueScores);
       clearInterval(logInterval);
@@ -873,6 +895,44 @@ export const IntelView = (() => {
      Язык живёт в isRu(), голос маскота отдельной картой PANDA-C. ── */
   const openSettings = openAiSettings;
   const saveSettings = closeAiSettings;
+
+  /**
+   * CORE-8: локальный разбор — одна карточка под виджетом готовности, а не
+   * лента: двери экрана (вопрос, АНАЛИЗ, СВОДКА) её обновляют, а не плодят
+   * одинаковые копии. Каждое число из снимка идёт через esc() вместе с текстом.
+   * @param {{ focus?: boolean }} [opts]
+   */
+  async function _renderLocalInsights({ focus = false } = {}) {
+    const mount = document.getElementById('intel-local-mount');
+    if (!mount) return;
+    let items = [];
+    try {
+      items = await localCoachInsights();
+    } catch {
+      // Отказ базы — пустая карточка честнее ошибки в режиме, где ошибаться нечему.
+      items = [];
+    }
+    if (!items.length) {
+      mount.innerHTML = '';
+      return;
+    }
+    mount.innerHTML = `
+      <div class="intel-feedback intel-local-insights">
+        <div class="intel-feedback-head">
+          <div class="intel-feedback-label">${esc(t('core.local.title'))}</div>
+        </div>
+        <div class="intel-feedback-text">
+          <div class="intel-md-body">
+            <ul>${items.map((i) => `<li>${esc(i.text)}</li>`).join('')}</ul>
+          </div>
+        </div>
+      </div>`;
+    IntelStore.addLog('SYS', 'Local review updated.');
+    if (focus) {
+      haptic(2);
+      mount.scrollIntoView?.({ block: 'nearest' });
+    }
+  }
 
   /**
    * Виджет готовности живёт вне потока модели (CORE-6): рисуется при каждом
