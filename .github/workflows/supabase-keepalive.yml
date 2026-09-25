@@ -40,6 +40,25 @@ jobs:
             exit 0
           fi
 
+          # Валидация формата без раскрытия значения секрета в лог — частая
+          # причина падений: кавычки/пробел/перенос строки, случайно попавшие
+          # в значение при копировании из дашборда или через интерактивный
+          # ввод gh secret set.
+          echo "SUPABASE_URL: длина ${#SUPABASE_URL} символов"
+          case "$SUPABASE_URL" in
+            *[\"\']*)
+              echo "ОШИБКА: SUPABASE_URL содержит кавычку — пересоздать без кавычек вокруг URL."
+              exit 2 ;;
+            *[[:space:]]*)
+              echo "ОШИБКА: SUPABASE_URL содержит пробел или перенос строки — пересоздать одной строкой без Enter в конце."
+              exit 2 ;;
+            https://*.supabase.co)
+              : ;;
+            *)
+              echo "ОШИБКА: SUPABASE_URL не похож на https://<project-ref>.supabase.co — проверить значение в Project Settings → API."
+              exit 2 ;;
+          esac
+
           http_code=$(curl -s -o /tmp/resp.json -w '%{http_code}' \
             "$SUPABASE_URL/rest/v1/workouts?select=id&limit=1" \
             -H "apikey: $SUPABASE_ANON_KEY" \
