@@ -59,11 +59,17 @@ jobs:
             *[[:space:]]*)
               echo "ОШИБКА: SUPABASE_URL содержит пробел или перенос строки — пересоздать одной строкой без Enter в конце."
               exit 2 ;;
-            https://*.supabase.co)
-              : ;;
-            *)
-              echo "ОШИБКА: SUPABASE_URL не похож на https://<project-ref>.supabase.co — проверить значение в Project Settings → API."
-              exit 2 ;;
+          esac
+          # Разбито на префикс/суффикс отдельно (а не одним https://*.supabase.co),
+          # чтобы лог сказал, какая именно половина не сходится, не раскрывая
+          # само значение.
+          case "$SUPABASE_URL" in
+            https://*) : ;;
+            *) echo "ОШИБКА: SUPABASE_URL не начинается с 'https://' (регистр важен)."; exit 2 ;;
+          esac
+          case "$SUPABASE_URL" in
+            *.supabase.co) : ;;
+            *) echo "ОШИБКА: SUPABASE_URL не заканчивается на '.supabase.co' — другой домен/регион или лишний символ на конце."; exit 2 ;;
           esac
 
           http_code=$(curl -s -o /tmp/resp.json -w '%{http_code}' \
