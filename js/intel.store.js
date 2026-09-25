@@ -8,6 +8,7 @@ import { safeFetch, getAiEnabled } from './privacy.store.js';
 import { buildLocalInsights } from './shared/local-insights.js';
 import { aiAuth, getTone } from './ai-settings.store.js';
 import { probeAiStatus } from './shared/ai-status.js';
+import { getLang } from './locale.store.js';
 import { appendSseChunk, parseSseDataLine } from './shared/sse.js';
 
 /**
@@ -358,6 +359,7 @@ export async function fetchWeeklyReport() {
       body: JSON.stringify({
         workouts: recentWorkouts,
         profile,
+        lang: getLang(),
         ...(await aiAuth()),
       }),
     },
@@ -389,6 +391,7 @@ export async function fetchBiometricsScan() {
       body: JSON.stringify({
         workouts,
         profile,
+        lang: getLang(),
         ...(await aiAuth()),
       }),
     },
