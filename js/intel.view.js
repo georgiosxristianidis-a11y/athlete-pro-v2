@@ -18,6 +18,7 @@ import { esc, haptic } from './shared/utils.js';
 import { formatAirMarkdown } from './shared/air-markdown.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { isRu } from './locale.store.js';
+import { getAiEnabled } from './privacy.store.js';
 import { flag } from './flags.js';
 import { on, onChange, onKeydown } from './events.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
@@ -126,6 +127,7 @@ export const IntelView = (() => {
           cnsFatigue: 'УТОМЛЕНИЕ ЦНС',
           muscleLoad: 'НАГРУЗКА ПО МЫШЦАМ',
           readiness: 'ГОТОВНОСТЬ',
+          localMode: 'Локальный режим — данные считаются на устройстве, ИИ выключен',
         }
       : {
           keyOk: 'system secure',
@@ -167,6 +169,7 @@ export const IntelView = (() => {
           cnsFatigue: 'CNS FATIGUE',
           muscleLoad: 'MUSCLE LOAD',
           readiness: 'READINESS',
+          localMode: 'Local mode — data stays on-device, AI is off',
         };
   }
 
@@ -235,6 +238,18 @@ export const IntelView = (() => {
       ? '<input type="file" id="intel-file-input" accept="image/*" style="display:none" data-change="intel:fileSelected">'
       : '';
 
+    // CORE-S: airgap форсирует aiEnabled=false (privacy.store.js), поэтому
+    // одного флага хватает и на дефолтный airgap, и на ручное «ИИ выключен»
+    // в cloud/anon — оба случая означают, что ниже считается только локальная
+    // история (fetchReadiness), а модули СВОДКА/АНАЛИЗ/БИОМЕТРИЯ заблокированы.
+    const localBanner = getAiEnabled() ? '' : `
+      <div class="intel-local-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+        </svg>
+        <span>${esc(L.localMode)}</span>
+      </div>`;
+
     screen.innerHTML = `
       <header class="intel-header">
         <div>
@@ -261,6 +276,7 @@ export const IntelView = (() => {
         <div id="intel-feedback-feed"></div>
 
         ${visionPreviewWrap}
+        ${localBanner}
 
         <div class="intel-modules-grid">
           <button class="intel-module-card" data-action="intel:weekly">

@@ -13,13 +13,29 @@ export const isCloudConfigured = !!(supabaseUrl && supabaseKey);
 // its top-level CDN await into the island's boot-critical import chain.
 if (typeof window !== 'undefined') window.__cloudConfigured = isCloudConfigured;
 
-// Pull the Supabase SDK from the CDN ONLY when cloud is actually configured.
-// A top-level static import fetched the CDN on every boot — in the default
-// air-gapped/offline mode that request hung/408'd, taking down supabase.js and
-// its whole import chain (sync.js et al.) and starving sibling module loads.
+/**
+ * Same-origin, vendored SDK (js/vendor/supabase.umd.js — see
+ * scripts/vendor-supabase.mjs) — CORE-S. Used to be a top-level
+ * `import('https://cdn.jsdelivr.net/...')`: a CDN origin in `script-src` is a
+ * standing amplifier for any future XSS, and in the default air-gapped mode
+ * the request itself hung/408'd, taking down supabase.js and its whole import
+ * chain (sync.js et al.) and starving sibling module loads. Loaded lazily
+ * (not a static `import`) so it still only fires when cloud is configured.
+ */
+async function loadSupabaseSdk() {
+  if (globalThis.supabase?.createClient) return globalThis.supabase;
+  await new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = '/js/vendor/supabase.umd.js';
+    script.onload = () => resolve(undefined);
+    script.onerror = () => reject(new Error('failed to load vendored Supabase SDK'));
+    document.head.appendChild(script);
+  });
+  return globalThis.supabase;
+}
+
 export const supabase = (supabaseUrl && supabaseKey)
-  ? (await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'))
-      .createClient(supabaseUrl, supabaseKey)
+  ? (await loadSupabaseSdk()).createClient(supabaseUrl, supabaseKey)
   : {
       auth: { 
         getSession: async () => ({ data: { session: null }, error: null }), 

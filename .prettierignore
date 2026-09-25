@@ -3,6 +3,7 @@ package-lock.json
 .planning/
 assets/
 icons/
+js/vendor/
 
 .obsidian/
 .claude/
