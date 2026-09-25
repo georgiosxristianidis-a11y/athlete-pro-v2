@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-6b065aee';
+const CACHE_NAME = 'athlete-pro-v121-3d6a9dc9';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -72,6 +72,7 @@ const ASSETS = [
   '/icons/favicon.ico',
   '/icons/icon-192.png',
   '/icons/icon-64.png',
+  '/assets/panda-poster.jpg',
   '/fonts/instrument-sans-latin.woff2',
   '/fonts/manrope-cyrillic.woff2',
   '/fonts/manrope-latin.woff2'
@@ -159,7 +160,6 @@ const ASSETS_WARM = [
   '/css/profile.css',
   '/css/summary.css',
   '/css/workout.css',
-  '/assets/panda-poster.jpg',
   '/fonts/orbitron-latin.woff2'
 ];
 

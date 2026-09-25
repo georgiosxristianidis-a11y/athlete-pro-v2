@@ -146,6 +146,11 @@ app.use(express.static(__dirname, {
   },
 }));
 
+// PERF-3: Explicit robots.txt endpoint to avoid SPA fallback returning index.html
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /api/\n');
+});
+
 // SPA deep-link fallback: any non-API GET that didn't match a static file
 // returns index.html so direct URLs / client-side nav resolve. Sits after
 // express.static (real files win) and before the error middleware. On Vercel
