@@ -9,8 +9,11 @@ import {
   synthesizeSpeech,
   fetchWeeklyReport,
   fetchBiometricsScan,
+  fetchReadiness,
   savePlannedWorkout,
 } from './intel.store.js';
+import { Heatmap } from './claude.store.js';
+import { fatiguePercent } from './shared/coach-snapshot.js';
 import { esc, haptic } from './shared/utils.js';
 import { formatAirMarkdown } from './shared/air-markdown.js';
 import { toUserMessage } from './shared/errors-ui.js';
@@ -117,11 +120,11 @@ export const IntelView = (() => {
           scanFailed: 'Сбой сканирования',
           scanCns: 'СКАН ЦНС…',
           scanVolume: 'СБОР ДАННЫХ О НАГРУЗКЕ…',
-          scanSleep: 'АНАЛИЗ СНА…',
+          scanMuscle: 'СКАН МЫШЕЧНЫХ ГРУПП…',
           scanRpe: 'РАСЧЁТ RPE-УТОМЛЕНИЯ…',
           scanAcwr: 'РАСЧЁТ ACWR…',
           cnsFatigue: 'УТОМЛЕНИЕ ЦНС',
-          muscleDamage: 'МЫШЕЧНЫЕ ПОВРЕЖДЕНИЯ',
+          muscleLoad: 'НАГРУЗКА ПО МЫШЦАМ',
           readiness: 'ГОТОВНОСТЬ',
         }
       : {
@@ -158,11 +161,11 @@ export const IntelView = (() => {
           scanFailed: 'Scan failed',
           scanCns: 'CNS SCAN…',
           scanVolume: 'GATHERING VOLUME DATA…',
-          scanSleep: 'ANALYSING SLEEP…',
+          scanMuscle: 'MUSCLE GROUP SCAN…',
           scanRpe: 'COMPUTING RPE FATIGUE…',
           scanAcwr: 'COMPUTING ACWR…',
           cnsFatigue: 'CNS FATIGUE',
-          muscleDamage: 'MUSCLE DAMAGE',
+          muscleLoad: 'MUSCLE LOAD',
           readiness: 'READINESS',
         };
   }
@@ -254,6 +257,7 @@ export const IntelView = (() => {
       </header>
 
       <div class="intel-body">
+        <div id="intel-readiness-mount"></div>
         <div id="intel-feedback-feed"></div>
 
         ${visionPreviewWrap}
@@ -306,6 +310,7 @@ export const IntelView = (() => {
 
     renderLogs();
     _listen();
+    _renderReadinessWidget();
     // Разметку экрана load() пересобирает целиком, а запрос мог остаться в
     // полёте (ушёл с экрана и вернулся) — иначе кнопка выглядит свободной,
     // но submit() молча выходит по флагу.
@@ -463,7 +468,7 @@ export const IntelView = (() => {
 
   /** Перерисовка ответа целиком: форматтер чистый, дешевле держать одну ветку кода. */
   function _renderStream(feedbackText, fullText, L, withTail) {
-    feedbackText.innerHTML = formatAirMarkdown(fullText, _buildReadinessWidget, _buildWorkoutCard, {
+    feedbackText.innerHTML = formatAirMarkdown(fullText, _buildWorkoutCard, {
       final: !withTail,
     });
     if (!withTail) return;
@@ -735,12 +740,19 @@ export const IntelView = (() => {
     const input = document.getElementById('intel-input');
     if (input) {
       input.value =
-        'Проведи глубокий разбор последней тренировки. Сгенерируй readiness-виджет (_widget: readiness) с оценкой 0-100. Напиши пару строк о главном успехе и слабом месте.';
+        'Проведи глубокий разбор последней тренировки. Напиши пару строк о главном успехе и слабом месте.';
       submit();
     }
   }
 
-  /** Биометрический радар (HUD-3): полноэкранный скан → отчёт ЦНС/готовности. */
+  /**
+   * Биометрический скан (HUD-3): полноэкранный скан → отчёт ЦНС/готовности/
+   * нагрузки по мышцам. CORE-6: числа — из `fetchReadiness()` и уже существующего
+   * `Heatmap.compute()` (`claude.store.js`, тот же движок, что кормит снимок
+   * коуча и Recovery Heatmap на панели), не из ответа модели. Модель зовётся
+   * отдельно и только за прозой (`summary`/`injuryRisk`) — best-effort: сбой
+   * сети/ключа не должен прятать локальные числа, которые от модели не зависят.
+   */
   async function checkBiometrics() {
     haptic(10);
     const L = _copy();
@@ -759,7 +771,7 @@ export const IntelView = (() => {
     `;
     document.body.appendChild(overlay);
 
-    const logLines = [L.scanCns, L.scanVolume, L.scanSleep, L.scanRpe, L.scanAcwr];
+    const logLines = [L.scanCns, L.scanVolume, L.scanMuscle, L.scanRpe, L.scanAcwr];
     let logIndex = 0;
     const logEl = overlay.querySelector('#intel-radar-log');
     const logInterval = setInterval(() => {
@@ -775,10 +787,15 @@ export const IntelView = (() => {
     }, 400);
 
     try {
-      const { report, readiness } = await fetchBiometricsScan();
+      const [readinessData, fatigueScores, text] = await Promise.all([
+        fetchReadiness(),
+        Heatmap.compute(),
+        fetchBiometricsScan().catch(() => ({ summary: '', injuryRisk: '' })),
+      ]);
+      const heatmap = fatiguePercent(fatigueScores);
       clearInterval(logInterval);
 
-      overlay.innerHTML = _buildBiometricReport(report, readiness, L);
+      overlay.innerHTML = _buildBiometricReport(readinessData, heatmap, text, L);
       haptic(50);
     } catch (err) {
       clearInterval(logInterval);
@@ -794,7 +811,7 @@ export const IntelView = (() => {
     }
   }
 
-  function _buildBiometricReport(report, readiness, L) {
+  function _buildBiometricReport(readinessData, heatmap, text, L) {
     const bar = (label, val) => `
       <div class="intel-radar-metric">
         <div class="intel-radar-metric-label">${esc(label)}</div>
@@ -807,16 +824,31 @@ export const IntelView = (() => {
       </div>
     `;
 
+    const cns = Math.max(0, Math.min(100, Number(readinessData?.cns) || 0));
+    const readinessBar =
+      readinessData?.index === null || readinessData?.index === undefined
+        ? ''
+        : bar(L.readiness, readinessData.index);
+
+    const groups = Object.entries(heatmap || {}).sort((a, b) => b[1] - a[1]);
+    const heatmapHtml = groups.length
+      ? `
+        <div class="intel-radar-metrics-title">${esc(L.muscleLoad)}</div>
+        <div class="intel-radar-metrics">
+          ${groups.map(([group, val]) => bar(group.toUpperCase(), val)).join('')}
+        </div>`
+      : '';
+
     return `
       <div class="intel-radar-report">
         <button class="intel-btn-close intel-radar-report-close" data-action="intel:closeOverlay" data-overlay="intel-radar-overlay" aria-label="${L.close}">&times;</button>
         <h2 class="intel-radar-report-title">BIOMETRIC HUD</h2>
         <div class="intel-radar-metrics">
-          ${bar(L.cnsFatigue, report.cnsFatigue)}
-          ${bar(L.muscleDamage, report.muscleDamage)}
-          ${bar(L.readiness, readiness)}
+          ${bar(L.cnsFatigue, cns)}
+          ${readinessBar}
         </div>
-        <div class="intel-radar-report-summary">${esc(report.summary || '')}</div>
+        ${heatmapHtml}
+        <div class="intel-radar-report-summary">${esc(text?.summary || '')}</div>
       </div>
     `;
   }
@@ -827,24 +859,28 @@ export const IntelView = (() => {
   const saveSettings = closeAiSettings;
 
   /**
-   * Виджет собирается из JSON, который модель кладёт прямо в ответ (CORE-1):
-   * `data` не проходит ни одной схемы прежде, чем попасть сюда через
-   * `formatAirMarkdown` → `buildWidget`. Без клэмпа/esc() число превращается в
-   * произвольный текст inline-style (`width:${val}%`), а `data.goal` — в
-   * прямую HTML-инъекцию (виджет уходит в `innerHTML` необработанным).
+   * Виджет готовности живёт вне потока модели (CORE-6): рисуется при каждом
+   * открытии/обновлении экрана из `fetchReadiness()` — той же чистой функции
+   * `intel.engine.js`, что считает ACWR/монотонность/тренд для остального
+   * ядра. Модель эти числа больше не видит и не придумывает.
    */
-  function _buildReadinessWidget(rawData) {
+  async function _renderReadinessWidget() {
+    const mount = document.getElementById('intel-readiness-mount');
+    if (!mount) return;
+    try {
+      const data = await fetchReadiness();
+      mount.innerHTML = _buildReadinessWidget(data);
+    } catch (err) {
+      // Пустая история/сбой IDB — не повод ронять экран, просто нет виджета.
+      mount.innerHTML = '';
+    }
+  }
+
+  /**
+   * @param {import('./intel.engine.js').Readiness} data
+   */
+  function _buildReadinessWidget(data) {
     const clamp = (n) => Math.max(0, Math.min(100, Number.isFinite(+n) ? Math.round(+n) : 0));
-    const data = {
-      index: clamp(rawData?.index),
-      recovery: clamp(rawData?.recovery),
-      acwr: clamp(rawData?.acwr),
-      sleep: clamp(rawData?.sleep),
-      monotony: clamp(rawData?.monotony),
-      density: clamp(rawData?.density),
-      cns: clamp(rawData?.cns),
-      goal: esc(typeof rawData?.goal === 'string' ? rawData.goal.slice(0, 200) : ''),
-    };
     const getColor = (val) => {
       if (val >= 90) return 'var(--c-accent)'; // Green (Отлично)
       if (val >= 70) return 'var(--c-warning)'; // Yellow (Хорошо)
@@ -852,68 +888,76 @@ export const IntelView = (() => {
       return 'var(--c-red)'; // Red (Внимание)
     };
 
+    // INTEL-2b: меньше MIN_DATA.parts живых слагаемых — index === null,
+    // confidence 'none'. Число здесь честнее не рисовать вообще, чем врать
+    // нулём или серединой шкалы.
+    if (data?.confidence === 'none' || data?.index === null || data?.index === undefined) {
+      return `
+        <div class="intel-readiness-widget animate-in" style="background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.1); border-radius:24px; padding:var(--sp-3); margin:var(--sp-2) 0;">
+          <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1); margin-bottom:var(--sp-1);">Индекс готовности</div>
+          <div style="font-size:var(--fs-2); color:var(--c-text-3);">Недостаточно данных — история тренировок ещё копится.</div>
+        </div>
+      `;
+    }
+
     const hbar = (val, label) => {
-      const c = getColor(val);
+      if (val === null || val === undefined) {
+        return `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-1-5);">
+          <div style="font-size:var(--fs-2); font-weight:var(--fw-md); color:var(--c-text-2);">${label}</div>
+          <div style="font-size:var(--fs-2); color:var(--c-text-3);">нет данных</div>
+        </div>`;
+      }
+      const v = clamp(val);
+      const c = getColor(v);
       return `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-1-5);">
           <div style="font-size:var(--fs-2); font-weight:var(--fw-md); color:var(--c-text-2);">${label}</div>
           <div style="display:flex; align-items:center; gap:var(--sp-1); width:55%;">
             <div style="flex:1; height:6px; background:var(--c-surface-h); border-radius:3px; overflow:hidden;">
-              <div style="width:${val}%; height:100%; background:${c}; border-radius:3px; transition: width 1s ease-out;"></div>
+              <div style="width:${v}%; height:100%; background:${c}; border-radius:3px; transition: width 1s ease-out;"></div>
             </div>
-            <span style="font-size:var(--fs-2); font-weight:var(--fw-black); color:${c}; width:28px; text-align:right;">${val}</span>
+            <span style="font-size:var(--fs-2); font-weight:var(--fw-black); color:${c}; width:28px; text-align:right;">${v}</span>
           </div>
         </div>
       `;
     };
 
-    const mainColor = getColor(data.index);
+    const index = clamp(data.index);
+    const cns = clamp(data.cns);
+    const mainColor = getColor(index);
     const indexLabel =
-      data.index >= 90
-        ? 'отлично'
-        : data.index >= 70
-          ? 'хорошо'
-          : data.index >= 50
-            ? 'удовл'
-            : 'внимание';
+      index >= 90 ? 'отлично' : index >= 70 ? 'хорошо' : index >= 50 ? 'удовл' : 'внимание';
+    const lowNote = data.confidence === 'low' ? ' · мало истории' : '';
 
     return `
       <div class="intel-readiness-widget animate-in" style="background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.1); border-radius:24px; padding:var(--sp-3); margin:var(--sp-2) 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--sp-3);">
           <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1);">Индекс готовности</div>
-          <div style="width:24px; height:24px; border-radius:50%; background:var(--c-border-h); display:flex; align-items:center; justify-content:center; font-size:var(--fs-2); color:var(--c-text-3);">?</div>
         </div>
-        
+
         <div style="display:flex; align-items:flex-end; gap:var(--sp-2); margin-bottom:var(--sp-4);">
-          <div style="font-size:var(--fs-6); font-weight:var(--fw-black); color:${mainColor}; line-height:1; font-family:'Instrument Sans', sans-serif;">${data.index}</div>
+          <div style="font-size:var(--fs-6); font-weight:var(--fw-black); color:${mainColor}; line-height:1; font-family:'Instrument Sans', sans-serif;">${index}</div>
           <div style="flex:1; padding-bottom:var(--sp-1);">
             <div style="height:6px; background:var(--c-border-h); border-radius:3px; overflow:hidden;">
-              <div style="height:100%; width:${data.index}%; background:${mainColor}; border-radius:3px; transition: width 1s ease-out;"></div>
+              <div style="height:100%; width:${index}%; background:${mainColor}; border-radius:3px; transition: width 1s ease-out;"></div>
             </div>
-            <div style="font-size:var(--fs-2); color:var(--c-text-3); margin-top:var(--sp-1); text-transform:uppercase; font-weight:var(--fw-bold);">${indexLabel}</div>
+            <div style="font-size:var(--fs-2); color:var(--c-text-3); margin-top:var(--sp-1); text-transform:uppercase; font-weight:var(--fw-bold);">${indexLabel}${lowNote}</div>
           </div>
         </div>
 
         <div style="margin-bottom:var(--sp-4);">
-          ${hbar(data.recovery, 'Восстановление')}
-          ${hbar(data.acwr, 'Нагрузка ACWR')}
-          ${hbar(data.sleep, 'Качество сна')}
-          ${hbar(data.monotony, 'Монотонность')}
-          ${hbar(data.density, 'Тренд нагрузки')}
-          ${hbar(data.density, 'Плотность и ритм')}
+          ${hbar(data.parts?.recovery, 'Восстановление')}
+          ${hbar(data.parts?.acwr, 'Нагрузка ACWR')}
+          ${hbar(data.parts?.monotony, 'Монотонность')}
+          ${hbar(data.parts?.trend, 'Тренд нагрузки')}
         </div>
 
-        <div style="border-top:1px solid var(--c-border); padding-top:var(--sp-3);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-2);">
-            <div style="font-size:var(--fs-1); font-weight:var(--fw-black); letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">Цель на сегодня</div>
-            <div style="display:flex; align-items:center; gap:var(--sp-1);">
-              <span style="color:var(--c-red); font-size:var(--fs-2);">ЦНС</span>
-              <div style="width:40px; height:4px; background:var(--c-border-h); border-radius:2px;"><div style="width:${data.cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
-              <span style="font-size:var(--fs-2); font-weight:var(--fw-bold); color:var(--c-red);">${data.cns}%</span>
-            </div>
-          </div>
-          <div style="border-left:2px solid ${mainColor}; padding-left:var(--sp-1-5);">
-            <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1); margin-bottom:var(--sp-0-5);">${data.goal}</div>
+        <div style="border-top:1px solid var(--c-border); padding-top:var(--sp-3); display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:var(--fs-1); font-weight:var(--fw-black); letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">ЦНС</span>
+          <div style="display:flex; align-items:center; gap:var(--sp-1);">
+            <div style="width:40px; height:4px; background:var(--c-border-h); border-radius:2px;"><div style="width:${cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
+            <span style="font-size:var(--fs-2); font-weight:var(--fw-bold); color:var(--c-red);">${cns}%</span>
           </div>
         </div>
       </div>

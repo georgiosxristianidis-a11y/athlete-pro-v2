@@ -14,7 +14,7 @@
  * вложенность чинит сам, но по-своему, и вёрстка съезжала на длинных ответах.
  *
  * Форматтер вызывается на КАЖДЫЙ чанк стрима, поэтому недописанная разметка —
- * норма: незакрытый `<thinking>`, обрубленный JSON виджета, одинокие `**`.
+ * норма: незакрытый `<thinking>`, обрубленный JSON карточки тренировки, одинокие `**`.
  * Ни один из этих случаев не должен ронять рендер — показываем как есть,
  * следующий чанк дорисует. На последнем кадре (`opts.final`) незакрытый
  * `<thinking>` больше не режет хвост до EOF: модель часто забывает
@@ -22,9 +22,7 @@
  */
 import { esc } from './utils.js';
 
-/** Метка-заглушка виджета. Спецсимволов нет — esc() её не трогает. */
-const WIDGET_MARK = '[[AP_WIDGET]]';
-/** Метка-заглушка карточки тренировки — тот же приём, что и у виджета готовности. */
+/** Метка-заглушка карточки тренировки. Спецсимволов нет — esc() её не трогает. */
 const WORKOUT_MARK = '[[AP_WORKOUT]]';
 
 /**
@@ -40,12 +38,11 @@ function inline(s) {
 
 /**
  * @param {string} rawText — сырой текст от модели
- * @param {(data: any) => string} [buildWidget] — сборщик виджета готовности
  * @param {(data: any) => string} [buildWorkoutCard] — сборщик карточки тренировки (HUD-3)
  * @param {{ final?: boolean }} [opts] — `final: true` на последнем кадре стрима
  * @returns {string} HTML
  */
-export function formatAirMarkdown(rawText, buildWidget, buildWorkoutCard, opts) {
+export function formatAirMarkdown(rawText, buildWorkoutCard, opts) {
   let text = String(rawText ?? '');
   const final = !!(opts && opts.final);
 
@@ -60,19 +57,7 @@ export function formatAirMarkdown(rawText, buildWidget, buildWorkoutCard, opts) 
     text = text.replace(/<\/?thinking>/gi, '');
   }
 
-  // 2. Виджет готовности достаём ДО экранирования — это JSON, а не текст.
-  let widgetHtml = '';
-  const jsonMatch = text.match(/\{[\s\S]*"_widget"\s*:\s*"readiness"[\s\S]*\}/);
-  if (jsonMatch && typeof buildWidget === 'function') {
-    try {
-      widgetHtml = buildWidget(JSON.parse(jsonMatch[0]));
-      text = text.replace(jsonMatch[0], `\n\n${WIDGET_MARK}\n\n`);
-    } catch (e) {
-      // JSON ещё не дотёк целиком — оставляем текстом, следующий чанк починит.
-    }
-  }
-
-  // 2b. Карточка тренировки — тот же приём: JSON достаём и собираем ДО esc().
+  // 2. Карточка тренировки — JSON достаём и собираем ДО esc().
   //     В отвергнутой линии этот кусок собирался из потока БЕЗ esc() —
   //     сборщик обязан экранировать title/название упражнения сам.
   let workoutHtml = '';
@@ -115,11 +100,6 @@ export function formatAirMarkdown(rawText, buildWidget, buildWorkoutCard, opts) 
       continue;
     }
 
-    if (t === WIDGET_MARK) {
-      flush();
-      out.push(widgetHtml);
-      continue;
-    }
     if (t === WORKOUT_MARK) {
       flush();
       out.push(workoutHtml);
