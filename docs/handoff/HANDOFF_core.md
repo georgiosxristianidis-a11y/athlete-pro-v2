@@ -64,12 +64,11 @@
 
 ---
 
-## CORE-7 — код закрыт 2026-09-25 (без бампа), замер TTFT за Gio
+## CORE-7 — закрыта 2026-09-26 (без бампа)
 
-`[WORKFLOW]`/`<thinking>` снят из `_buildSystemPrompt`; оба вызова Gemini (стрим и JSON)
-несут `thinkingConfig: { thinkingLevel }`, дефолт `LOW`, env `GEMINI_THINKING_LEVEL`.
-Гард — `test/coach-cancel.test.js` (3 кейса CORE-7). **TTFT до/после: не снят** — в worktree
-агента нет `.env`; команда и порядок замера — `CHANGELOG.md` § CORE-7. Цифры вписать сюда.
+`[WORKFLOW]`/`<thinking>` снят из промпта, оба вызова Gemini несут `thinkingLevel: LOW`
+(env `GEMINI_THINKING_LEVEL`). Гард — `test/coach-cancel.test.js`. **TTFT (медиана из 3,
+gemini-3.6-flash, локально): 4330 → 2966 мс (−32 %)**; полный ответ 5178 → 3608 мс. Детали — `CHANGELOG.md`.
 
 ---
 
