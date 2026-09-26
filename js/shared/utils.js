@@ -180,13 +180,16 @@ export const readDobFromSelects = (idPrefix) => {
 /**
  * Выход оверлея с рецептом `.sd-overlay` (base.css, MO-2): ставит `data-closing`,
  * ждёт конец transition/animation и убирает узел. Без анимаций (старый движок,
- * reduced-motion) getAnimations() пуст — узел уходит сразу.
+ * reduced-motion) getAnimations() пуст — узел уходит сразу. Вечные анимации
+ * поддерева (мигающий `.ai-indicator.missing` в листе настроек ИИ) не ждём:
+ * их `finished` не резолвится никогда, и невидимый лист оставался в DOM.
  * @param {HTMLElement} el
  */
 export const dismissOverlay = (el) => {
   if (el.hasAttribute('data-closing')) return;
   el.setAttribute('data-closing', '');
-  Promise.allSettled(el.getAnimations({ subtree: true }).map((a) => a.finished)).then(() =>
-    el.remove()
-  );
+  const finite = el
+    .getAnimations({ subtree: true })
+    .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity);
+  Promise.allSettled(finite.map((a) => a.finished)).then(() => el.remove());
 };
