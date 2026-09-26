@@ -387,3 +387,46 @@ test.describe('MO-2b exercise history sheet', () => {
     await expect(page.locator('.ex-history-overlay')).toHaveCount(0, { timeout: 2000 });
   });
 });
+
+// ─── MO-2b: лист настроек ИИ на .sd-overlay ────────────────────────────────
+// В листе мигает `.ai-indicator.missing` (`infinite`, зависит от статуса ИИ на
+// сервере). Его finished не резолвится никогда: до 1.27.141 dismissOverlay ждал
+// и его, и невидимый лист оставался в DOM. Вечную анимацию вешаем явно — кейс
+// не должен зависеть от ключа на сервере. Закрытие асинхронное (сперва пишется
+// тон), поэтому момент выхода ловит MutationObserver, а не синхронный замер.
+test.describe('MO-2b ai settings sheet', () => {
+  test('entry on transitions, infinite blink inside does not keep the closed sheet mounted', async ({ page }) => {
+    await openApp(page);
+
+    const result = await page.evaluate(async () => {
+      const { openAiSettings } = await import('/js/ai-settings.view.js');
+      await openAiSettings();
+      const ov = /** @type {HTMLElement} */ (document.getElementById('ai-settings-overlay'));
+      const finite = ov
+        .getAnimations({ subtree: true })
+        .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity);
+      const kinds = finite.map((a) => ('transitionProperty' in a ? a.transitionProperty : 'keyframes'));
+      await Promise.all(finite.map((a) => a.finished));
+
+      /** @type {HTMLElement} */ (ov.querySelector('.modal-handle')).animate(
+        [{ opacity: 1 }, { opacity: 0.4 }],
+        { duration: 1000, iterations: Infinity }
+      );
+      const closing = new Promise((resolve) => {
+        new MutationObserver((_, obs) => {
+          if (!ov.hasAttribute('data-closing')) return;
+          obs.disconnect();
+          const hit = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 40);
+          resolve({ stillMounted: ov.isConnected, catchesTap: !!hit && ov.contains(hit) });
+        }).observe(ov, { attributes: true });
+      });
+      /** @type {HTMLElement} */ (ov.querySelector('.intel-settings-save')).click();
+      return { kinds: kinds.sort(), closing: await closing };
+    });
+    expect(result).toEqual({
+      kinds: ['opacity', 'transform'],
+      closing: { stillMounted: true, catchesTap: false },
+    });
+    await expect(page.locator('#ai-settings-overlay')).toHaveCount(0, { timeout: 2000 });
+  });
+});

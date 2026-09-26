@@ -3,7 +3,7 @@
  * AI settings sheet — engine, BYOK key, coach tone.
  * Hung on body; both the s-intel gear and the Profile pointer call openAiSettings().
  */
-import { esc, haptic } from './shared/utils.js';
+import { esc, haptic, dismissOverlay } from './shared/utils.js';
 import { t } from './locale.store.js';
 import { on, onInput, onBlur, onChange } from './events.js';
 import { DB } from './db.js';
@@ -251,7 +251,7 @@ export async function openAiSettings() {
   const [settings, tone] = await Promise.all([DB.Settings.getAll(), getTone()]);
 
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
+  overlay.className = 'modal-overlay sd-overlay';
   overlay.id = OVERLAY_ID;
   overlay.innerHTML = `
       <div class="modal-sheet">
@@ -271,7 +271,6 @@ export async function openAiSettings() {
       </div>
     `;
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('visible'));
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) closeAiSettings();
   });
@@ -283,7 +282,8 @@ export async function closeAiSettings() {
     document.getElementById('intel-tone-slider')
   );
   if (slider) await setTone(slider.value);
-  document.getElementById(OVERLAY_ID)?.remove();
+  const overlay = document.getElementById(OVERLAY_ID);
+  if (overlay) dismissOverlay(overlay);
 }
 
 /** @param {string} engine @param {string} raw */
