@@ -33,6 +33,13 @@ export function confirmDialog({
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay confirm-overlay';
+    // HYG-6 field tail: confirmDialog() is a shared primitive called from
+    // inside other modals (data passport z-index 5000, workout summary 7000,
+    // body-stats sheets). The base .modal-overlay z-index (1000) left it
+    // painted BEHIND its own caller — buttons existed in the DOM but no real
+    // tap could ever reach them. Found by an e2e test that actually taps
+    // through a nested confirm instead of dispatching a synthetic click.
+    overlay.style.zIndex = '9500';
     overlay.setAttribute('role', 'alertdialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.innerHTML = `

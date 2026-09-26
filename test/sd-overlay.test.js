@@ -1,8 +1,8 @@
 /**
  * Guard: рецепт `.sd-overlay` (MO-2, css/base.css) и его раскатка (MO-2b).
  *
- * 1. `dismissOverlay` снимает узел только после конца анимаций выхода и не
- *    запускает выход дважды.
+ * 1. `dismissOverlay` снимает узел только после конца анимаций выхода, не
+ *    запускает выход дважды и не ждёт вечных анимаций поддерева.
  * 2. Мигрированные файлы не возвращаются к старой схеме `rAF → add('visible')`
  *    + `setTimeout(remove, 300)`. У общего `.modal-overlay` нет правила
  *    `.visible`: старая схема давала 300 мс замершего листа, который ловил тапы,
@@ -24,7 +24,7 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 const read = (rel) => readFileSync(path.join(REPO_ROOT, rel), 'utf8');
 
 /** Поверхности, переведённые на `.sd-overlay`. Растёт по одной за PR (MO-2b). */
-const MIGRATED = ['js/analytics.view.js', 'js/privacy.view.js'];
+const MIGRATED = ['js/analytics.view.js', 'js/ai-settings.view.js', 'js/privacy.view.js'];
 
 const stripCssComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
 const stripJsComments = (src) =>
@@ -79,6 +79,23 @@ test('dismissOverlay: прерванная анимация и её отсутс
   await tick();
   assert.equal(cancelled.removed, 1, 'cancel() отклоняет finished — узел всё равно уходит');
   assert.equal(none.removed, 1, 'reduced-motion / старый движок — уходит сразу');
+});
+
+test('dismissOverlay: вечная анимация в поддереве не держит узел', async () => {
+  // Лист настроек ИИ: `.ai-indicator.missing` мигает `infinite` — его finished
+  // не резолвится никогда. До 1.27.141 лист после «Готово» оставался в DOM.
+  let exitDone;
+  const el = stubOverlay([]);
+  el.getAnimations = () => [
+    { finished: new Promise(() => {}), effect: { getComputedTiming: () => ({ endTime: Infinity }) } },
+    { finished: new Promise((r) => (exitDone = r)), effect: { getComputedTiming: () => ({ endTime: 140 }) } },
+  ];
+  dismissOverlay(el);
+  await tick();
+  assert.equal(el.removed, 0, 'конечный выход ещё идёт');
+  exitDone();
+  await tick();
+  assert.equal(el.removed, 1, 'узел ждёт вечную анимацию и не уходит');
 });
 
 test('рецепт в base.css: вход через @starting-style, выход не ловит тапы', () => {
