@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### MO-2b/2: Приватность на `.sd-overlay` (1.27.141)
+- **Что.** Паспорт данных и журнал сетевых запросов (`js/privacy.view.js`) переведены на рецепт MO-2: вход через `@starting-style`, выход — `dismissOverlay`. Старая схема `rAF → .visible` + `setTimeout(remove, 200)` давала 200 мс замершего листа (правила `.modal-overlay.visible` нет).
+- **Попутно, два бага id.** Закрывающийся лист живёт до конца выхода, и повторное открытие даёт два узла с одним id: `_closeOverlay` по `getElementById` находил уходящий, новый лист не закрывался (было и на базе, в окне 200 мс). Теперь ищет `#id:not([data-closing])`. «Очистить журнал» закрывал и открывал лист заново — теперь чистит сводку и список на месте.
+- Гарды: строка в `MIGRATED` (`test/sd-overlay.test.js`) и e2e «MO-2b privacy sheets» — на коде базы оба красные.
+
 ### CORE-7: коуч отвечает сразу, без рассуждений вслух (без бампа)
 - **Причина.** Промпт чата (`_buildSystemPrompt`, `routes/coach.js`) заканчивался секцией `[WORKFLOW]` «сначала спланируй ответ в `<thinking>`» — наследие времён, когда модель получала сырые записи. С `CORE-4` снимок движков приходит готовым, а рассуждение вслух — это токены до первого полезного слова. Thinking-уровень Gemini не задавался нигде: Gemini 3 думал на дефолтном уровне ещё и скрыто.
 - **Фикс.** `[WORKFLOW]` снят целиком (другой инструкции в нём не было). `lib/aiOrchestrator.js`: `thinkingConfig: { thinkingLevel }` в `chats.create` (стрим коуча) и тем же конфигом в `generateContent` (недельный отчёт, биометрия — одна строка). Уровень — `GEMINI_THINKING_LEVEL` (`MINIMAL`/`LOW`/`MEDIUM`/`HIGH`), дефолт и чужое значение — `LOW`. `thinkingBudget` не ставится: у Gemini 3 рычаг — уровень. `MINIMAL` не взят — качество на нём не мерили (`CORE-9`).

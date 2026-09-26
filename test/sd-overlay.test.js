@@ -24,7 +24,7 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 const read = (rel) => readFileSync(path.join(REPO_ROOT, rel), 'utf8');
 
 /** Поверхности, переведённые на `.sd-overlay`. Растёт по одной за PR (MO-2b). */
-const MIGRATED = ['js/analytics.view.js'];
+const MIGRATED = ['js/analytics.view.js', 'js/privacy.view.js'];
 
 const stripCssComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
 const stripJsComments = (src) =>
