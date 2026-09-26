@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### MO-2b/3: Настройки ИИ на `.sd-overlay`, вечная анимация не держит лист (1.27.141)
+- **Что.** Лист настроек ИИ (`js/ai-settings.view.js`: движок, ключ, тон) переведён на рецепт MO-2: вход через `@starting-style`, выход — `dismissOverlay`. Раньше `rAF → .visible` был мёртвым (правила `.modal-overlay.visible` нет), а `closeAiSettings` снимал узел мгновенно — лист исчезал обрывом.
+- **Попутно, причина в рецепте.** В листе мигает `.ai-indicator.missing` (`ai-blink-fade 2s infinite`, `css/base.css`) — нет ключа или ИИ на сервере. `dismissOverlay` ждал `finished` у всех анимаций поддерева, а у вечной он не резолвится никогда: после «Готово» лист становился невидим (`opacity: 0`, `pointer-events: none`), но оставался в DOM вместе со слайдером тона и полем ключа. Замер в Chromium: в поддереве 2 вечные анимации, `finished` не пришёл за 3 с.
+- **Фикс.** `dismissOverlay` (`js/shared/utils.js`) ждёт только анимации с конечным `getComputedTiming().endTime`. Действует на все поверхности рецепта, не только на эту.
+- Гарды: строка в `MIGRATED` и кейс «вечная анимация в поддереве не держит узел» (`test/sd-overlay.test.js`), e2e «MO-2b ai settings sheet» (Chromium + WebKit) — каждый проверен красным на коде базы. Нижний зазор листа 24 px (`--sp-3`): голый `.modal-sheet`, хвост учтён базовым правилом.
+- **Не трогали:** `js/privacy.view.js` (параллельный PR), `confirm.js`, `body-stats.js`, `ui/receipt.js`, `plate-calc.js`.
+
 ### CORE-7: коуч отвечает сразу, без рассуждений вслух (без бампа)
 - **Причина.** Промпт чата (`_buildSystemPrompt`, `routes/coach.js`) заканчивался секцией `[WORKFLOW]` «сначала спланируй ответ в `<thinking>`» — наследие времён, когда модель получала сырые записи. С `CORE-4` снимок движков приходит готовым, а рассуждение вслух — это токены до первого полезного слова. Thinking-уровень Gemini не задавался нигде: Gemini 3 думал на дефолтном уровне ещё и скрыто.
 - **Фикс.** `[WORKFLOW]` снят целиком (другой инструкции в нём не было). `lib/aiOrchestrator.js`: `thinkingConfig: { thinkingLevel }` в `chats.create` (стрим коуча) и тем же конфигом в `generateContent` (недельный отчёт, биометрия — одна строка). Уровень — `GEMINI_THINKING_LEVEL` (`MINIMAL`/`LOW`/`MEDIUM`/`HIGH`), дефолт и чужое значение — `LOW`. `thinkingBudget` не ставится: у Gemini 3 рычаг — уровень. `MINIMAL` не взят — качество на нём не мерили (`CORE-9`).
