@@ -289,13 +289,20 @@ describe('view wiring', () => {
     const css = fs.readFileSync(path.join(REPO_ROOT, 'css', 'body-stats.css'), 'utf8');
     assert.match(
       css,
-      /\.modal-overlay\.bs-overlay \{[\s\S]*?backdrop-filter:\s*none/,
+      /\.modal-overlay\.bs-overlay \{[^}]*backdrop-filter:\s*none/,
       'оверлей не должен наследовать blur(8px) поверх комнаты атлета'
     );
+    // [^}]* — в пределах одного правила: [\s\S]*? достал бы transition из соседнего.
+    // :not([data-closing]) — вход формы на decel, выход остаётся за рецептом MO-2.
     assert.match(
       css,
-      /\.modal-overlay\.bs-overlay \.modal-sheet \{[\s\S]*?transition:\s*transform 0\.26s var\(--ease-decel\)/,
+      /\.modal-overlay\.bs-overlay:not\(\[data-closing\]\) \.modal-sheet \{[^}]*transition:\s*transform 0\.26s var\(--ease-decel\)/,
       'шит едет как .ar-sheet / .claude-sheet, одним драйвером'
+    );
+    assert.doesNotMatch(
+      css,
+      /\.bs-overlay\.visible/,
+      'форма на .sd-overlay (MO-2b), .visible — мёртвое правило'
     );
   });
 
