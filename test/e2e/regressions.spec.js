@@ -164,6 +164,64 @@ test.describe('Add Exercise picker', () => {
   });
 });
 
+// ─── Фокус-трап app.js и собственный фокус листа ──────────────────────────
+// _trapFocus ставит свой rAF из микрозадачи MutationObserver, то есть ПОСЛЕ
+// rAF, который лист запланировал синхронно рядом с appendChild. В одном кадре
+// трап шёл вторым и уводил фокус на первый фокусируемый элемент — крестик.
+// Форма замеров (BS-1) фокусирует тапнутое поле, и через кадр оно его теряло.
+test.describe('Focus trap and a sheet own focus (app.js _trapFocus)', () => {
+  /** Три кадра: лист и трап отрабатывают в одном, судим итог, а не середину. */
+  const settle = (page) =>
+    page.evaluate(
+      () =>
+        new Promise((r) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))
+        )
+    );
+  const focused = (page) =>
+    page.evaluate(() => {
+      const a = document.activeElement;
+      return a?.id || a?.className || a?.tagName || null;
+    });
+
+  test('body stats form: the tapped field keeps the focus', async ({ page }) => {
+    await openApp(page);
+    await page.evaluate(async () => {
+      const { ensureCss } = await import('/js/shared/lazy-css.js');
+      await ensureCss('css/body-stats.css');
+      await import('/js/body-stats.js');
+      // Плитка замера: то же делегирование data-action="bs:edit", что на экране.
+      // Кнопка, а не div, как у .bs-stat-card: webkit в Playwright не синтезирует
+      // click из tap() по div, чей обработчик делегирован на document.
+      const tile = document.createElement('button');
+      tile.id = 'e2e-bs-tile';
+      tile.dataset.action = 'bs:edit';
+      tile.dataset.focus = 'waist';
+      tile.textContent = 'waist';
+      tile.style.cssText = 'position:fixed;top:40%;left:30%;z-index:99999;padding:16px';
+      document.body.appendChild(tile);
+    });
+
+    await page.locator('#e2e-bs-tile').tap();
+    await expect(page.locator('.bs-overlay #bsf-waist')).toBeAttached({ timeout: 3000 });
+    await settle(page);
+    expect(await focused(page)).toBe('bsf-waist');
+  });
+
+  test('a sheet that places no focus itself still gets it moved inside', async ({ page }) => {
+    await openApp(page);
+    await page.evaluate(() => {
+      const ov = document.createElement('div');
+      ov.className = 'modal-overlay';
+      ov.innerHTML =
+        '<div class="modal-sheet"><button id="e2e-first">x</button><input id="e2e-second"></div>';
+      document.body.appendChild(ov);
+    });
+    await settle(page);
+    expect(await focused(page)).toBe('e2e-first');
+  });
+});
+
 // ─── Set-logger drum ──────────────────────────────────────────────────────
 test.describe('Set logger drum', () => {
   test.beforeEach(async ({ page }) => {

@@ -351,6 +351,12 @@ function _trapFocus(overlay) {
 
   // Move focus into the modal on next frame (after DOM paint)
   requestAnimationFrame(() => {
+    // If the sheet already put focus inside itself, leave it there. This rAF
+    // is queued from the MutationObserver microtask, i.e. after any rAF the
+    // sheet scheduled next to appendChild, so it runs second in the same frame:
+    // without this check it moved the body-stats form's tapped field focus
+    // onto the close button.
+    if (overlay.contains(document.activeElement)) return;
     const els = [...overlay.querySelectorAll(_FOCUSABLE)];
     if (els.length) els[0].focus();
   });
