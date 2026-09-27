@@ -676,3 +676,63 @@ test.describe('MO-2b ai settings sheet', () => {
     await expect(page.locator('#ai-settings-overlay')).toHaveCount(0, { timeout: 2000 });
   });
 });
+
+// ─── MO-2b: форма замеров тела на .sd-overlay ─────────────────────────────
+// У .bs-overlay своё движение (затемнение без blur, лист на decel без хвоста),
+// и до 1.27.144 оно сидело на .visible + setTimeout(remove, 350): закрывающаяся
+// форма ловила тапы все 350 мс, хотя фон гас уже к ~250 мс. Форма открывается
+// тапом по data-action="bs:edit" — тем же делегированием, что плитка замера.
+test.describe('MO-2b body stats form', () => {
+  test('entry on transitions, closing form lets taps through, tile tap during exit opens a new form', async ({
+    page,
+  }) => {
+    await openApp(page);
+
+    const result = await page.evaluate(async () => {
+      const { ensureCss } = await import('/js/shared/lazy-css.js');
+      await ensureCss('css/body-stats.css');
+      await import('/js/body-stats.js');
+      const tile = document.createElement('button');
+      tile.dataset.action = 'bs:edit';
+      tile.dataset.focus = 'waist';
+      document.body.appendChild(tile);
+
+      tile.click();
+      const ov = /** @type {HTMLElement} */ (document.querySelector('.bs-overlay'));
+      const anims = ov.getAnimations({ subtree: true });
+      const kinds = anims.map((a) =>
+        'transitionProperty' in a ? a.transitionProperty : 'keyframes'
+      );
+      await Promise.all(anims.map((a) => a.finished));
+
+      // Клик и замер в одном синхронном кадре: выход 140 мс, раунд-трип
+      // Playwright между ними дал бы флак. Верх — над листом, низ — сам лист.
+      /** @type {HTMLElement} */ (ov.querySelector('.bs-close-x')).click();
+      const catches = [20, window.innerHeight - 40].some((y) => {
+        const hit = document.elementFromPoint(window.innerWidth / 2, y);
+        return !!hit && ov.contains(hit);
+      });
+      const closing = {
+        closing: ov.hasAttribute('data-closing'),
+        stillMounted: ov.isConnected,
+        catches,
+      };
+
+      tile.click();
+      const fresh = document.querySelector('.bs-overlay:not([data-closing])');
+      const reopen = {
+        mounted: document.querySelectorAll('.bs-overlay').length,
+        fresh: !!fresh && fresh !== ov,
+      };
+      /** @type {HTMLElement|null} */ (fresh?.querySelector('.bs-close-x') ?? null)?.click();
+      tile.remove();
+      return { kinds: kinds.sort(), closing, reopen };
+    });
+    expect(result).toEqual({
+      kinds: ['opacity', 'transform'],
+      closing: { closing: true, stillMounted: true, catches: false },
+      reopen: { mounted: 2, fresh: true },
+    });
+    await expect(page.locator('.bs-overlay')).toHaveCount(0, { timeout: 2000 });
+  });
+});

@@ -348,11 +348,11 @@
 /* ══════════════════════════════════════
    FORM sheet — every field, one save
    ══════════════════════════════════════ */
+/* Вход и выход — рецепт .sd-overlay (base.css, MO-2): затемнение едет на
+   opacity, выход и снятие узла ведёт dismissOverlay. Здесь только отличия формы. */
 .modal-overlay.bs-overlay {
   z-index: 5000;
-  animation: none;
-  background: transparent;
-  transition: background 0.26s var(--ease-decel);
+  background: color-mix(in srgb, var(--c-black) 82%, transparent);
   /* Inherited blur(8px) + will-change from .modal-overlay recaptures the
      Athlete Room under this sheet every frame. Dim is the background;
      glass stays on .modal-sheet (AIR Tier 2). */
@@ -360,22 +360,18 @@
   -webkit-backdrop-filter: none;
   will-change: auto;
 }
-.modal-overlay.bs-overlay.visible {
-  background: color-mix(in srgb, var(--c-black) 82%, transparent);
-}
 .modal-overlay.bs-overlay .modal-sheet {
-  animation: none;
   /* Лист едет на decel, без перелёта — запас `--sheet-tail` из base.css (MO-1)
      здесь только съел бы 32 px нижнего отступа под краем экрана. */
   --sheet-tail: 0px;
-  transform: translateY(100%);
-  transition: transform 0.26s var(--ease-decel);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
 }
-.modal-overlay.bs-overlay.visible .modal-sheet {
-  transform: translateY(0);
+/* :not() поднимает вес над входом рецепта независимо от порядка файлов и не
+   задевает [data-closing]: выход остаётся на --t-exit рецепта. */
+.modal-overlay.bs-overlay:not([data-closing]) .modal-sheet {
+  transition: transform 0.26s var(--ease-decel);
 }
 .bs-date-row {
   display: flex;

@@ -11,7 +11,7 @@
    ════════════════════════════════════════════════════════ */
 import { DB } from './db.js';
 import { Toast } from './shell.js';
-import { esc } from './shared/utils.js';
+import { esc, dismissOverlay } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
 import { isRu } from './locale.store.js';
 import { on } from './events.js';
@@ -239,15 +239,16 @@ function historyHtml(entries, ru) {
  */
 function openForm(focusId) {
   // A second tap while the first sheet is opening stacked two blur layers
-  // on Athlete Room. One form at a time.
-  if (document.querySelector('.modal-overlay.bs-overlay')) return;
+  // on Athlete Room. One form at a time. A closing form doesn't count: it no
+  // longer takes taps, and a tile tap during its exit must open a new one.
+  if (document.querySelector('.modal-overlay.bs-overlay:not([data-closing])')) return;
 
   const ru = isRu();
   const today = new Date().toISOString().split('T')[0];
   const latest = latestValues(bsLoad());
 
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay bs-overlay';
+  overlay.className = 'modal-overlay sd-overlay bs-overlay';
   overlay.innerHTML = `
     <div class="modal-sheet bs-sheet">
       <div class="modal-handle"></div>
@@ -295,11 +296,11 @@ function openForm(focusId) {
     </div>`;
   document.body.appendChild(overlay);
 
-  // Motion is CSS-only — same recipe as .ar-sheet / .claude-sheet. A JS spring
-  // writing transform on an element that also has `transition: transform`
-  // starts a new 0.3s interpolation every frame and stutters.
+  // Motion is CSS-only — the .sd-overlay recipe (MO-2): entry via
+  // @starting-style, exit via dismissOverlay. A JS spring writing transform on
+  // top of `transition: transform` restarts it every frame and stutters.
+  // The frame wait is for focus only: it keeps the pre-migration focus timing.
   requestAnimationFrame(() => {
-    overlay.classList.add('visible');
     const target = /** @type {HTMLInputElement|null} */ (
       focusId ? overlay.querySelector('#bsf-' + focusId) : null
     );
@@ -311,13 +312,7 @@ function openForm(focusId) {
     }
   });
 
-  let closing = false;
-  const close = () => {
-    if (closing) return;
-    closing = true;
-    overlay.classList.remove('visible');
-    setTimeout(() => overlay.remove(), 350);
-  };
+  const close = () => dismissOverlay(overlay);
   /** @type {HTMLElement} */ (overlay.querySelector('.bs-close-x')).onclick = close;
   overlay.onclick = (e) => {
     if (e.target === overlay) close();
