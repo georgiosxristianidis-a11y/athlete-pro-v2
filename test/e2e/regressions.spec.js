@@ -588,6 +588,52 @@ test.describe('MO-2b exercise history sheet', () => {
   });
 });
 
+// ─── MO-2b: листы приватности на .sd-overlay ──────────────────────────────
+// Закрывающийся лист живёт до конца выхода, и повторное открытие даёт в DOM два
+// узла с одним id. До 1.27.143 крестик нового листа через getElementById находил
+// уходящий, и новый лист не закрывался. Очистка журнала закрывала и открывала
+// лист заново — выход и въезд ради пустого списка.
+test.describe('MO-2b privacy sheets', () => {
+  test('reopen during exit closes the new sheet, clearing the log keeps the sheet', async ({
+    page,
+  }) => {
+    await openApp(page);
+
+    const reopen = await page.evaluate(async () => {
+      const { openAuditLog } = await import('/js/privacy.view.js');
+      openAuditLog();
+      const first = /** @type {HTMLElement} */ (document.querySelector('#audit-overlay'));
+      /** @type {HTMLElement} */ (
+        first.querySelector('[data-action="privacy:closeOverlay"]')
+      ).click();
+      openAuditLog();
+      const all = [...document.querySelectorAll('#audit-overlay')];
+      const second = /** @type {HTMLElement} */ (all[all.length - 1]);
+      /** @type {HTMLElement} */ (
+        second.querySelector('[data-action="privacy:closeOverlay"]')
+      ).click();
+      return { mounted: all.length, secondClosing: second.hasAttribute('data-closing') };
+    });
+    expect(reopen).toEqual({ mounted: 2, secondClosing: true });
+    await expect(page.locator('#audit-overlay')).toHaveCount(0, { timeout: 2000 });
+
+    const cleared = await page.evaluate(async () => {
+      const { openAuditLog } = await import('/js/privacy.view.js');
+      openAuditLog();
+      const ov = /** @type {HTMLElement} */ (document.querySelector('#audit-overlay'));
+      /** @type {HTMLElement} */ (ov.querySelector('[data-action="privacy:clearAudit"]')).click();
+      await new Promise((r) => setTimeout(r, 300));
+      const now = document.querySelectorAll('#audit-overlay');
+      return {
+        same: now.length === 1 && now[0] === ov,
+        closing: ov.hasAttribute('data-closing'),
+        empty: !!ov.querySelector('.audit-empty'),
+      };
+    });
+    expect(cleared).toEqual({ same: true, closing: false, empty: true });
+  });
+});
+
 // ─── MO-2b: лист настроек ИИ на .sd-overlay ────────────────────────────────
 // В листе мигает `.ai-indicator.missing` (`infinite`, зависит от статуса ИИ на
 // сервере). Его finished не резолвится никогда: до 1.27.141 dismissOverlay ждал

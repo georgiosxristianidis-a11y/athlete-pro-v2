@@ -18,7 +18,7 @@ import {
 } from './privacy.store.js';
 import { isUsageEnabled, setUsageEnabled, getUsageState } from './usage.js';
 import { t, isRu, getLang } from './locale.store.js';
-import { esc, haptic } from './shared/utils.js';
+import { esc, haptic, dismissOverlay } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
 import { on } from './events.js';
 import { initSegPill } from './ui/seg-pill.js';
@@ -243,7 +243,7 @@ export async function openDataPassport() {
   const syncCalls = sentRecently.filter((a) => a.kind === 'sync').length;
 
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
+  overlay.className = 'modal-overlay sd-overlay';
   overlay.id = 'data-passport-overlay';
   overlay.style.zIndex = '5000';
   overlay.innerHTML = `
@@ -296,7 +296,6 @@ export async function openDataPassport() {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('visible'));
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) _closeOverlay('data-passport-overlay');
   });
@@ -317,28 +316,9 @@ export function openAuditLog() {
   const audit = getAuditLog();
 
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
+  overlay.className = 'modal-overlay sd-overlay';
   overlay.id = 'audit-overlay';
   overlay.style.zIndex = '5000';
-
-  const rows =
-    audit.length === 0
-      ? `<div class="audit-empty">${t('privacy.audit_empty')}</div>`
-      : audit
-          .map(
-            (a) => `
-        <div class="audit-row ${a.allowed ? 'allowed' : 'blocked'}">
-          <div class="audit-row-left">
-            <span class="audit-dot ${a.allowed ? '' : 'blocked'}"></span>
-            <div>
-              <div class="audit-url">${esc(a.url)}</div>
-              <div class="audit-meta">${esc(a.kind)} · ${_relTime(a.t)}</div>
-            </div>
-          </div>
-          <span class="audit-status">${a.allowed ? esc(t('privacy.status_sent')) : esc(a.reason || t('privacy.status_blocked'))}</span>
-        </div>`
-          )
-          .join('');
 
   overlay.innerHTML = `
     <div class="modal-sheet" style="max-height:88vh;overflow-y:auto">
@@ -349,33 +329,62 @@ export function openAuditLog() {
           ${_iconClose()}
         </button>
       </div>
-      <div class="audit-summary">
-        ${t('privacy.audit_summary', { total: audit.length, sent: audit.filter((a) => a.allowed).length, blocked: audit.filter((a) => !a.allowed).length })}
-      </div>
-      <div class="audit-list">${rows}</div>
+      <div class="audit-summary">${_auditSummary(audit)}</div>
+      <div class="audit-list">${_auditRows(audit)}</div>
       <button class="btn btn-ghost" style="margin-top:var(--sp-2)"
               data-action="privacy:clearAudit">
         ${t('privacy.clear_log')}
       </button>
     </div>`;
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('visible'));
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) _closeOverlay('audit-overlay');
   });
 }
 
-async function _clearAudit() {
-  await clearAuditLog();
-  _closeOverlay('audit-overlay');
-  openAuditLog();
+function _auditSummary(audit) {
+  const sent = audit.filter((a) => a.allowed).length;
+  return t('privacy.audit_summary', { total: audit.length, sent, blocked: audit.length - sent });
 }
 
-function _closeOverlay(id) {
-  const o = document.getElementById(id);
+function _auditRows(audit) {
+  return audit.length === 0
+    ? `<div class="audit-empty">${t('privacy.audit_empty')}</div>`
+    : audit
+        .map(
+          (a) => `
+        <div class="audit-row ${a.allowed ? 'allowed' : 'blocked'}">
+          <div class="audit-row-left">
+            <span class="audit-dot ${a.allowed ? '' : 'blocked'}"></span>
+            <div>
+              <div class="audit-url">${esc(a.url)}</div>
+              <div class="audit-meta">${esc(a.kind)} · ${_relTime(a.t)}</div>
+            </div>
+          </div>
+          <span class="audit-status">${a.allowed ? esc(t('privacy.status_sent')) : esc(a.reason || t('privacy.status_blocked'))}</span>
+        </div>`
+        )
+        .join('');
+}
+
+// Журнал чистится на месте: закрыть и открыть заново — лишние выход и въезд
+// листа, а закрывающийся узел с тем же id ещё жив до конца анимации.
+async function _clearAudit() {
+  await clearAuditLog();
+  const o = _openOverlay('audit-overlay');
   if (!o) return;
-  o.classList.remove('visible');
-  setTimeout(() => o.remove(), 200);
+  const audit = getAuditLog();
+  o.querySelector('.audit-summary').innerHTML = _auditSummary(audit);
+  o.querySelector('.audit-list').innerHTML = _auditRows(audit);
+}
+
+// Закрывающийся лист живёт до конца выхода (dismissOverlay): при быстром
+// повторном открытии в DOM два узла с одним id, getElementById отдал бы уходящий.
+const _openOverlay = (id) => document.querySelector(`#${id}:not([data-closing])`);
+
+function _closeOverlay(id) {
+  const o = _openOverlay(id);
+  if (o) dismissOverlay(o);
 }
 
 async function _confirmDelete() {
