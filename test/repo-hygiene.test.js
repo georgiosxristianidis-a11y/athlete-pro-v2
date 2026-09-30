@@ -57,8 +57,12 @@ const ROOT_DOCS_ALLOWED = new Set([
  * 450/450, zero headroom, so the very next PR to add any file (A8, adding
  * dashboard.store.js + its test) broke this line instead of being a decision
  * anyone made about the ceiling.
+ *
+ * Raised to 530 in its own PR (30.09), same reason a third time: main sat at
+ * 480/480, and two docs PRs waited on it — HANDOFF_field_ux.md (PR#406) and
+ * HANDOFF_boot_motion.md, one file each. ~10% headroom, as before.
  */
-const MAX_TRACKED_FILES = 480;
+const MAX_TRACKED_FILES = 530;
 
 /** Binaries belong in assets/ (and only there). */
 const MAX_FILE_BYTES = 1024 * 1024;
