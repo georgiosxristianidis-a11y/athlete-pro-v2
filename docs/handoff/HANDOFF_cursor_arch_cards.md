@@ -456,7 +456,7 @@ HTML не резал — нарезка шаблона остаётся след
 
 **Остаток A15 в цифрах** (baseline `test/import-guard.test.js`, сверять с ним, не с этой
 строкой): `privacy.view.js` 6 · `workout.view/handlers.js` 4 · `workout.view/render.js` 2 ·
-`ai-settings.view.js` 3 · `workout-ai.view.js` 3. Брать по одной поверхности за PR.
+`ai-settings.view.js` 3 (`workout-ai.view.js` 3 ушёл вместе с модулем, `CORE-10`). Брать по одной поверхности за PR.
 
 ---
 

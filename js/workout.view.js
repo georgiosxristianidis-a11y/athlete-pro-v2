@@ -82,13 +82,9 @@ export async function load() {
     });
     await renderActive();
     window.Toast?.show('Session restored', 'info');
-    const { init: initAI } = await import('./workout-ai.view.js');
-    initAI();
     return true;
   }
   await renderSelect();
-  const { init: initAI } = await import('./workout-ai.view.js');
-  initAI();
   return false;
 }
 

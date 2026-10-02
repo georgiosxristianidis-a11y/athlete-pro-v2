@@ -177,11 +177,19 @@ describe('CORE-5 — один клиент на все двери', () => {
     assert.deepEqual(hits, ['js/shared/sse.js']);
   });
 
-  test('чат тренировки идёт через общий клиент и рисует полный текст', () => {
-    const src = stripComments(read('js/workout-ai.view.js'));
-    assert.match(src, /import \{ streamCoachReply \} from '\.\/intel\.store\.js'/);
-    assert.match(src, /door: 'workout'/);
-    assert.match(src, /onText: \(_chunk, full\) => \{\s*aiDiv\.innerHTML = _markdownToHtml\(full\)/);
+  // CORE-10: чат тренировки был недостижим (пузырь `hidden`, показать его было
+  // некому) и снесён. FAB над барабаном веса скрыт PANDA-4 — гард в
+  // `test/panda-mood.test.js`; здесь — что экран не открывает коуча сам.
+  test('на s-train нет входа в коуча', () => {
+    assert.equal(fs.existsSync(path.join(ROOT, 'js/workout-ai.view.js')), false);
+    const screen = JS.filter((x) => /^js\/workout[.\-/]/.test(x.f));
+    const names = screen.map((x) => x.f);
+    assert.ok(names.includes('js/workout.view.js') && names.includes('js/workout.view/handlers.js'),
+      'модули экрана тренировки не найдены — паттерн протух?');
+    const ENTRY = /streamCoachReply|['"`]\/api\/coach['"`]|\/(intel|claude)\.(store|view)\.js|\b(Claude|IntelView)\??\.(open|ask)\b|['"`]s-intel['"`]/;
+    assert.deepEqual(screen.filter((x) => ENTRY.test(x.code)).map((x) => x.f), []);
+    // Дверь `workout` осталась в `DOORS` (снять — правка формата снимка и промпта), но звать её некому.
+    assert.deepEqual(JS.filter((x) => /door:\s*['"`]workout['"`]/.test(x.code)).map((x) => x.f), []);
   });
 
   test('«Спросить коуча» из сводки открывает Core с вопросом', () => {

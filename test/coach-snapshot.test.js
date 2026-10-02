@@ -203,7 +203,6 @@ describe('промпт строится из снимка', () => {
 
 describe('двери идут через одну функцию', () => {
   const INTEL = read('js/intel.store.js');
-  const WORKOUT_AI = read('js/workout-ai.view.js');
   const COLLECTOR = read('js/coach-snapshot.store.js');
 
   // CORE-5: второй клиент удалён — все двери идут через `streamCoachReply`,
@@ -216,13 +215,6 @@ describe('двери идут через одну функцию', () => {
     assert.equal(/workouts:|topLifts:|longTermStats|fatigue:\s*Object/.test(body), false,
       'клиент снова собирает сырой контекст мимо снимка');
     assert.match(body, /snapshot,/);
-  });
-
-  test('чат тренировки называет дверь и не читает БД для промпта', () => {
-    const start = WORKOUT_AI.indexOf('async function _streamMessage');
-    const fn = WORKOUT_AI.slice(start, start + 1400);
-    assert.match(fn, /door: 'workout'/);
-    assert.equal(/DB\.(Workouts|OneRM)|Heatmap/.test(fn), false, 'чат читает БД мимо снимка');
   });
 
   test('сборщик не читает настройки целиком', () => {
