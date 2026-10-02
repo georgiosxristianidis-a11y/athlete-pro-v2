@@ -149,7 +149,6 @@ describe('A15: views не зовут DB.* напрямую (кроме store)', 
     'js/profile.js': 0,
     'js/profile.view/settings.js': 0,
     'js/profile.view.js': 0,
-    'js/workout-ai.view.js': 3,
     'js/workout.view/handlers.js': 4,
     'js/workout.view/render.js': 2,
   };

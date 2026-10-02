@@ -226,7 +226,6 @@ interface MuscleHeatScore {
 interface Window {
   Workout?: any;
   Claude?: any;
-  WorkoutAI?: any;
   Profile?: any;
   Analytics?: any;
   Dashboard?: any;

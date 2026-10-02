@@ -92,7 +92,7 @@ const SPHERES = [
   ['Дашборд/главная', /^js\/(dashboard|insights)/],
   ['Аналитика/Intel', /^js\/(analytics|intel|strength-engine|progressive-overload)/],
   ['Профиль/Athlete Room', /^js\/(profile|shared\/athlete-room|body-stats|onboarding)/],
-  ['AI-коуч', /^js\/(claude|workout-ai)/],
+  ['AI-коуч', /^js\/claude/],
   ['Dynamic Island', /^js\/(shared\/dynamic-island|shared\/island|island-)/],
   ['Данные/DB/Sync', /^js\/(db|sync|supabase|workers)/],
   ['Privacy', /^js\/privacy/],

@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-703631ee';
+const CACHE_NAME = 'athlete-pro-v121-151167d4';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -143,7 +143,6 @@ const ASSETS_WARM = [
   '/js/usage.js',
   '/js/vendor/supabase.umd.js',
   '/js/workers/crypto.worker.js',
-  '/js/workout-ai.view.js',
   '/js/workout.view/handlers.js',
   '/js/workout.view/modals.js',
   '/js/workout.view/render.js',

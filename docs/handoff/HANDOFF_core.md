@@ -93,34 +93,10 @@ gemini-3.6-flash, локально): 4330 → 2966 мс (−32 %)**; полны�
 
 ---
 
-## CORE-10 — снести недостижимый чат тренировки (решение Gio 24.09)
+## CORE-10 — закрыта 2026-10-02 (1.27.146)
 
-> Вне порядка линии: ни на чём из `CORE-6..9` не стоит и ничего им не даёт — брать в
-> любом месте линии. Найдено при `CORE-5`.
-
-**Почему.** Пузырь `js/workout-ai.view.js` создаётся с `hidden = true`, а показать его
-может только `checkProactiveTrigger`/`showBubble` — их не зовёт никто. Чат недостижим с
-момента появления: стилей у него одно правило (`.workout-ai-bubble` в `css/base.css`),
-строки захардкожены по-английски. Кнопку коуча на `s-train` уже убирали сознательно
-(PANDA-4, комментарий в `js/claude.view.js`: FAB висел над барабаном веса) — оживлять
-чат поверх экрана тренировки значит вернуть ту же проблему.
-
-**ЦЕЛЬ.** Удалить модуль и всё, что живёт только ради него, не трогая общий клиент коуча.
-
-**ГДЕ СТОП.**
-- Нет `js/workout-ai.view.js`; `js/workout.view.js` не импортирует его (2 места, `initAI`).
-- Сняты: `.workout-ai-bubble` (`css/base.css`), `WorkoutAI` (`js/types.d.ts`), строка
-  `'js/workout-ai.view.js'` в `BASELINE` `test/import-guard.test.js` (иначе красный
-  sanity «baseline ссылается на файл, которого нет»), паттерн в `scripts/graph-audit.mjs`,
-  упоминание пузыря в комментарии PANDA-4 (`js/claude.view.js`).
-- Мёртвый CSS старого чата панели в `css/claude.css` (`.chat-history`, `.chat-msg*`,
-  `.chat-input-wrap`, `.chat-input`): его рисовал только `_sendChat`, удалённый в `CORE-5`.
-  Живость проверять обходом CSSOM, не грепом.
-- Гарды, завязанные на модуль: кейс «чат тренировки» в `test/coach-snapshot.test.js` и
-  `test/coach-one-client.test.js` — снять вместе с модулем; взамен — гард «на `s-train`
-  нет входа в коуча». Бамп версии + `build:sw` (модуль уходит из прекеша).
-
-**НЕ ТРОГАТЬ.** `streamCoachReply` и память диалога — `CORE-5`. Двери `panel`/`workout` в
-`DOORS` (`js/shared/coach-snapshot.js`) и `DOOR_SITUATION` (`routes/coach.js`) остаются:
-после сноса живая дверь одна (`intel`), но убрать их — правка формата снимка и промпта,
-решается в `CORE-7`.
+Чат тренировки `js/workout-ai.view.js` снесён вместе с хвостами: вызов из `js/workout.view.js`,
+`.workout-ai-bubble`, мёртвый CSS старого чата панели (`css/claude.css`, вкл. `.chat-send-btn`),
+`WorkoutAI`, строка baseline A15. Гард «на `s-train` нет входа в коуча» — `test/coach-one-client.test.js`,
+детали — `CHANGELOG.md`. **В силе:** двери `panel`/`workout` в `DOORS` и `DOOR_SITUATION` живы, звать
+их некому; снять — правка формата снимка и промпта, отдельным решением.

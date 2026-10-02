@@ -1422,10 +1422,6 @@ button:focus-visible {
     border-radius: 0;
   }
 
-  .workout-ai-bubble {
-    right: 16px;
-  }
-
   @media (min-height: 900px) {
     body {
       padding: 20px;
