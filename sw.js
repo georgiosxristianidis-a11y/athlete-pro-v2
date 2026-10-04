@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-064f1cdb';
+const CACHE_NAME = 'athlete-pro-v121-2e1523df';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -128,6 +128,7 @@ const ASSETS_WARM = [
   '/js/shared/lww.js',
   '/js/shared/panda-mood.js',
   '/js/shared/panda-video.js',
+  '/js/shared/plate-math.js',
   '/js/shared/ppl-color.js',
   '/js/shared/sse.js',
   '/js/shared/sync-merge.js',
