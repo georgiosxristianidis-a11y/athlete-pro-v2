@@ -19,7 +19,7 @@
 - **Приоритет — стабильность, не косметика.** Маскот (PANDA-*/SKIN-1), TTS-голос, HUD ждут: сперва то, что не падает и не дёргается
 - **Поле — Android** (Gio 20.09). iPhone отложен: хвост `LAUNCH-7` и `VOICE-2` не блокеры. **webkit в Playwright не снимать** — единственный сигнал по Safari
 - После LAUNCH-10: `USAGE-4` (телеметрия)
-- Свободно агенту: `MO-2b` 4/5 (остаток `ui/receipt.js`, до поля) · архитектурный трек · `E2E-1` · `A18`
+- Свободно агенту: `MO-2b` 4/5 (остаток `ui/receipt.js`, до поля) · архитектурный трек · `A18`
 - **Архитектурный трек:** порядок — хендофф Cursor. Фазы 0-2 закрыты; фаза 3: `A15` partial → следующая поверхность (privacy · workout · ai-settings), по одной за PR
 - **MOTION:** поле MO-2+MO-2b — Stats + шестерёнка Интеллекта. Вторая волна `FRAME-1`→`PLATE-1`→`RANK-1`→`HOLD-SAVE`→`RPE-HEAT` — после MO-2b, `HANDOFF_motion_pro.md`
 - Закрытое перечислено в шапке хендоффа трека — здесь третья копия статуса протухнет первой
@@ -51,7 +51,7 @@ npm run preflight && npm run inventory && npm run smoke:prod && npm run docs:bud
 ## Технические заметки
 
 - **Запуск:** `npm run dev` → :3000 (Gio), 3001 = preview; телеметрия — `scripts/telemetry-server.mjs --lan`.
-- **Тесты:** `npm test`; `npx playwright test` — на тёплом сервере.
+- **Тесты:** `npm test`; `npx playwright test` поднимает свой :3000 (занят — громкий отказ), против тёплого — `E2E_BASE=http://localhost:3000`.
 - **SW:** только `npm run build:sw` (`test/sw-cache-name.test.js`).
 - **lhci** — только из worktree.
 - **Прод:** Vercel `gio-g7/athlete-pro-v7`, репо athlete-pro-v2, с `main`.
