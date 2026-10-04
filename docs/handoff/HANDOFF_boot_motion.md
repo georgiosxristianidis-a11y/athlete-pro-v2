@@ -162,7 +162,7 @@
 hero/stat-row/streak/гейдж удаляет PR снятия флага; `.session-item` там же рисует и экран
 тренировки (`js/workout.view/render.js:305`, `dashboard.css` грузится глобально —
 `index.html:452`) — не трогать вовсе. `.stagger-item` в `css/base.css` и его пользователи
-вне дашборда. `#spark-total`, серия, «2 PR». `js/ui/receipt.js` (под снос, MO-2b). `island-set-pulse`
+вне дашборда. `#spark-total`, серия, «2 PR». `island-set-pulse`
 (запрет Gio).
 
 ---

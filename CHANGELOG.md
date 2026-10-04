@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### MO-2b: снесён недостижимый чек тренировки `js/ui/receipt.js` (1.27.147)
+- **Почему.** Последний импорт `showReceipt` снят из `js/workout.view/handlers.js` 09.06 в `ab79ed4f`. С тех пор модуль никто не звал, а ссылка на него оставалась одна — прекеш `sw.js`. Переводить его на `.sd-overlay` значило полировать код, который никто не видит (тот же класс, что чат CORE-10). Решение Gio 04.10.
+- **Что снято.** Сам модуль и его строка в `ASSETS_WARM` (`build:sw`, новый `CACHE_NAME`). Стилей `.receipt-*` в `css/` не было, тестов и e2e тоже. До сноса `git grep -n -i receipt` вне доков нашёл только прекеш.
+- MO-2b в коде закрыта (4 из 4 поверхностей), ждёт поля. Вернуть чек тренировки — новой карточкой с точкой входа, код лежит в истории git.
+
 ### E2E-1: `E2E_BASE` задаёт и `page.goto`, и `request.*` (без бампа)
 - **Причина.** `use.baseURL` в `playwright.config.js` был прибит к `http://localhost:3000`, а `E2E_BASE` спеки подставляли только в `page.goto(BASE)`. `request.get('/sw.js')` шёл по `baseURL`, и `reuseExistingServer: true` молча цеплялся к любому серверу на `:3000`. 20.09 там сидело чужое приложение: 25 красных из мусора, с `E2E_BASE` один красный `sw.js` с HTML соседа.
 - **Фикс.** `baseURL` читает `E2E_BASE`, дефолт прежний и совпадает с `const BASE` в спеках. С `E2E_BASE` блок `webServer` не поднимается, сервер держит человек. Без него `reuseExistingServer: false`: занятый `:3000` даёт отказ «http://localhost:3000 is already used» до первого теста.
