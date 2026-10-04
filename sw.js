@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-151167d4';
+const CACHE_NAME = 'athlete-pro-v121-ea6ff30d';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -138,7 +138,6 @@ const ASSETS_WARM = [
   '/js/ui/drum-picker.js',
   '/js/ui/factory.js',
   '/js/ui/gravity-submit.js',
-  '/js/ui/receipt.js',
   '/js/ui/seg-pill.js',
   '/js/usage.js',
   '/js/vendor/supabase.umd.js',
