@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### E2E-1: `E2E_BASE` задаёт и `page.goto`, и `request.*` (без бампа)
+- **Причина.** `use.baseURL` в `playwright.config.js` был прибит к `http://localhost:3000`, а `E2E_BASE` спеки подставляли только в `page.goto(BASE)`. `request.get('/sw.js')` шёл по `baseURL`, и `reuseExistingServer: true` молча цеплялся к любому серверу на `:3000`. 20.09 там сидело чужое приложение: 25 красных из мусора, с `E2E_BASE` один красный `sw.js` с HTML соседа.
+- **Фикс.** `baseURL` читает `E2E_BASE`, дефолт прежний и совпадает с `const BASE` в спеках. С `E2E_BASE` блок `webServer` не поднимается, сервер держит человек. Без него `reuseExistingServer: false`: занятый `:3000` даёт отказ «http://localhost:3000 is already used» до первого теста.
+- **Поправка к карточке.** Карточка предлагала `!process.env.CI` (рецепт из доки Playwright). Локально `CI` не задан, значит `true`, то есть ровно тот реюз, который чинили. В CI порт свободен, сервер поднимается как раньше.
+- **Проверено на поломку.** Посторонний сервер на `:3000`, прогон без `E2E_BASE`: старый конфиг прошёл по нему (`sw.js` получил HTML чужого), новый отказал громко. Свой сервер на `:3041` + `E2E_BASE`: трассы прогона не несут ни одного запроса на `:3000`.
+- **Заметно локально.** `npx playwright test` при живом `npm run dev` (тоже `:3000`) теперь падает на старте. Гонять против тёплого сервера — `E2E_BASE=http://localhost:3000 npx playwright test`.
+
 ### SCA-1: узкое исключение для braces GHSA-vfj7-8cjw-p6xm в dev-дереве (без бампа)
 - **Почему.** Шаг CI «Security audit (high+)» (`npm run security:audit`, с dev-зависимостями) красный на самом `main` 9326e1a2 с 04.10 и красил все PR. Адвайзори [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm): `braces <= 3.0.3`, DoS через глубоко вложенные паттерны (CWE-674), опубликован 2026-09-18, патча нет — 3.0.3 последняя в реестре. Цепочка только dev: `stylelint@17` → `micromatch`/`fast-glob`/`globby` → `braces@3.0.3`. npm метит high все пять записей, а его «фикс» — stylelint 7.7.0, на мажоры назад. Pre-push (`--omit-dev`) чист.
 - **Почему dev-only не эксплуатируем.** Атака требует паттерна от атакующего. braces зовёт только stylelint на наших CSS-глобах во время линта, в бандл и на сервер он не попадает.
