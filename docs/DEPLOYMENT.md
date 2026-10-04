@@ -61,6 +61,36 @@ Railway и self-hosted никогда не заводились.
 Render не используется (манифест снят карточкой WEED-1). Старый ключ с Render,
 если он ещё жив в кабинете Anthropic, отозвать отдельно — это не шаг деплоя.
 
+## Supabase keep-alive
+
+Free-проект Supabase паузится, если за неделю получил мало активности базы
+([Project Pausing](https://supabase.com/docs/guides/platform/free-project-pausing)).
+Клиент тут не поможет: дефолт приватности airgap. Активность держит
+`.github/workflows/supabase-keepalive.yml`: два прогона в сутки, в каждом три
+записи сердцебиения через `POST /rest/v1/rpc/keepalive_ping` с anon-ключом.
+Секреты репозитория: `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+
+Функция и таблица создаются руками, один раз (миграций Supabase в репо нет):
+
+1. Supabase Dashboard → проект → SQL Editor → New query → вставить
+   `supabase/keepalive.sql` целиком → Run. Повторный запуск безопасен.
+2. GitHub → Actions → Supabase keep-alive → Run workflow (или
+   `gh workflow run supabase-keepalive.yml --ref main`).
+3. Успех в логе шага «Пинг Supabase»: `роль anon` и три строки
+   `Пинг N/3: HTTP 200, ответ ~35 байт`. Открытый issue «Supabase keep-alive: …»
+   закроется сам.
+
+Провал краснит прогон и заводит issue с диагнозом одной строкой:
+
+- «SQL ещё не применён» (HTTP 404) — шаг 1 не сделан или откатан.
+- «проект, вероятно, уснул» (HTTP 000/5xx) — Dashboard → проект → Resume project,
+  затем шаг 2.
+- «отверг вызов» (HTTP 401/403) — сверить `SUPABASE_ANON_KEY` с Settings → API Keys
+  и повторить шаг 1 (grant для anon).
+
+Откат — два `drop` из шапки `supabase/keepalive.sql`; workflow после этого
+вернуть к прежней версии или выключить, иначе он краснеет с 404.
+
 ## Перед мёржем
 
 ```bash

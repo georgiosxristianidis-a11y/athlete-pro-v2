@@ -1,48 +1,85 @@
-# Не даёт бесплатному проекту Supabase уйти в автопаузу. Supabase паузит Free
-# Plan проекты без активности БД за 7 суток (docs: guides/platform/free-project-pausing).
-# Клиентский js/supabase.js тут не помощник: он исполняется только внутри
-# открытой сессии браузера в cloud-режиме (js/privacy.store.js) — если
-# приложение никто не открывает неделю, дёрнуть Supabase изнутри клиента
-# некому. Поэтому пинг — снаружи, тем же способом, что main-watchdog.yml.
+# Не даёт бесплатному проекту Supabase уйти в автопаузу (карточка SUPA-1).
 #
-# Настоящий SELECT к таблице `workouts`, не health-check рута /rest/v1/ —
-# запрос доходит до Postgres независимо от того, отфильтрует ли RLS строки
-# (RLS может вернуть пусто/403, это не ошибка пинга — активность на проекте
-# всё равно засчитана). anon key передаётся в заголовках, не в query —
-# публичен по дизайну (.claude/rules/security.md), но не место ему в URL.
+# Что Supabase считает активностью (docs: guides/platform/free-project-pausing):
+# Free-проект паузится, если за неделю получил мало «user database activity».
+# Порог в цифрах не назван, ориентир из той же страницы: «a few user requests
+# to the database each day». Чтение это или запись, документация не уточняет.
 #
-# Секреты: SUPABASE_URL, SUPABASE_ANON_KEY — добавить в
-# Settings → Secrets and variables → Actions. Не заданы — шаг молча
-# пропускает пинг, чтобы не спамить провалами на форке/до настройки.
+# Почему прежний пинг не спас. До 04.10 здесь был SELECT из `workouts` под anon
+# раз в 3 дня, и шапка утверждала, что пустой ответ RLS «всё равно засчитан».
+# Прогоны 25.09, 28.09 и 01.10 зелёные (HTTP 200, 2 байта), а к 04.10 проект
+# уснул. Значит, посылка ложная минимум в одном: три запроса за девять дней
+# против «нескольких в день» по документации. Засчитывает ли Supabase SELECT,
+# который RLS обрезал до нуля строк, первоисточник не говорит.
+#
+# Что теперь. Пинг пишет: POST /rest/v1/rpc/keepalive_ping обновляет строку
+# сердцебиения (SQL — supabase/keepalive.sql, применяется руками в SQL Editor).
+# Это запрос, который гарантированно доходит до Postgres и меняет данные. Что
+# такая запись засчитывается, пока гипотеза: её подтвердит неделя зелёных
+# прогонов без паузы. Ключ тот же anon, `service_role` и management-токен
+# в CI не нужны: функция SECURITY DEFINER открыта только anon и умеет одно —
+# обновить свою строку.
+#
+# Каденс: два прогона в сутки, в каждом три вызова с паузой. Шесть записей
+# в день — это «несколько в день» с запасом, и даже если GitHub уронит или
+# задержит один cron-прогон (наш 05:47 стартовал в 11:19–12:01), день не
+# останется пустым. Прогон короче минуты: 60 прогонов/мес = 60 минут квоты
+# Actions. Это вдвое больше суточного расписания сторожа main
+# (main-watchdog.yml, 30/мес) и всё равно копейки рядом с CI.
+#
+# Если проект всё же уснул, о провале узнают без похода в Actions: второй шаг
+# заводит issue (дедуп по заголовку, как в main-watchdog.yml), на повторном
+# провале дописывает комментарий, на первом зелёном прогоне закрывает сам.
+# Supabase шлёт и своё письмо примерно за неделю до паузы, но на него одного
+# не полагаемся.
+#
+# Секреты: SUPABASE_URL, SUPABASE_ANON_KEY (Settings → Secrets and variables →
+# Actions). Раньше при отсутствии обоих шаг молча пропускал пинг; теперь это
+# красный прогон с issue, иначе пропавшие секреты = уснувший проект без сигнала.
 name: Supabase keep-alive
 
 on:
-  # Раз в 3 дня — вдвое чаще порога паузы (7 суток), с запасом на то, что
-  # GitHub на пике задерживает cron-триггеры.
   schedule:
-    - cron: '47 5 */3 * *'
+    - cron: '41 4,16 * * *'
   workflow_dispatch: {}
 
+# Только issue: пинг не читает репозиторий, а завести, дописать и закрыть
+# issue можно одним этим правом.
 permissions:
-  contents: read
+  issues: write
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    # Три вызова по 20 с максимум плюс паузы — около полутора минут даже в
+    # худшем случае. Зависший прогон без потолка жёг бы квоту до 6 часов.
+    timeout-minutes: 5
     steps:
       - name: Пинг Supabase
+        id: ping
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
+          verdict_file="$RUNNER_TEMP/keepalive-verdict.txt"
+          resp="$RUNNER_TEMP/keepalive-resp"
+
+          # Каждый красный выход идёт через fail: одна строка диагноза в лог и
+          # в файл, откуда её берёт шаг issue. Голый exit оставил бы issue без
+          # причины.
+          fail() {
+            echo "ОШИБКА: $1"
+            printf '%s\n' "$1" > "$verdict_file"
+            exit "${2:-1}"
+          }
+
           if [ -z "$SUPABASE_URL" ] && [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "SUPABASE_URL/SUPABASE_ANON_KEY не заданы в секретах репозитория — пропускаю пинг."
-            exit 0
+            fail "секреты SUPABASE_URL и SUPABASE_ANON_KEY не заданы — keep-alive не пингует, проект уснёт. Задать в Settings → Secrets and variables → Actions." 2
           fi
           # Один из двух — это не «ещё не настроено», а сломанная настройка:
           # 25.09 пропавший SUPABASE_URL дал зелёный прогон без пинга.
-          [ -n "$SUPABASE_URL" ] || { echo "ОШИБКА: задан только SUPABASE_ANON_KEY — нет секрета SUPABASE_URL."; exit 2; }
-          [ -n "$SUPABASE_ANON_KEY" ] || { echo "ОШИБКА: задан только SUPABASE_URL — нет секрета SUPABASE_ANON_KEY."; exit 2; }
+          [ -n "$SUPABASE_URL" ] || fail "задан только SUPABASE_ANON_KEY — нет секрета SUPABASE_URL." 2
+          [ -n "$SUPABASE_ANON_KEY" ] || fail "задан только SUPABASE_URL — нет секрета SUPABASE_ANON_KEY." 2
 
           # Санитизация через белый список вместо вычёркивания известного
           # мусора: три захода (BOM/CR, затем case-diff по регистру h/https)
@@ -60,23 +97,19 @@ jobs:
           # ввод gh secret set.
           echo "SUPABASE_URL: длина ${#SUPABASE_URL} символов"
           case "$SUPABASE_URL" in
-            *[\"\']*)
-              echo "ОШИБКА: SUPABASE_URL содержит кавычку — пересоздать без кавычек вокруг URL."
-              exit 2 ;;
-            *[[:space:]]*)
-              echo "ОШИБКА: SUPABASE_URL содержит пробел или перенос строки — пересоздать одной строкой без Enter в конце."
-              exit 2 ;;
+            *[\"\']*) fail "SUPABASE_URL содержит кавычку — пересоздать без кавычек вокруг URL." 2 ;;
+            *[[:space:]]*) fail "SUPABASE_URL содержит пробел или перенос строки — пересоздать одной строкой без Enter в конце." 2 ;;
           esac
           # Разбито на префикс/суффикс отдельно (а не одним https://*.supabase.co),
           # чтобы лог сказал, какая именно половина не сходится, не раскрывая
           # само значение.
           case "$SUPABASE_URL" in
             https://*) : ;;
-            *) echo "ОШИБКА: SUPABASE_URL не начинается с 'https://' (регистр важен)."; exit 2 ;;
+            *) fail "SUPABASE_URL не начинается с 'https://' (регистр важен)." 2 ;;
           esac
           case "$SUPABASE_URL" in
             *.supabase.co) : ;;
-            *) echo "ОШИБКА: SUPABASE_URL не заканчивается на '.supabase.co' — другой домен/регион или лишний символ на конце."; exit 2 ;;
+            *) fail "SUPABASE_URL не заканчивается на '.supabase.co' — другой домен/регион или лишний символ на конце." 2 ;;
           esac
 
           # Роль ключа — из формата или claim `role` в payload JWT; печатается
@@ -93,26 +126,146 @@ jobs:
             *) key_role=unknown ;;
           esac
           echo "SUPABASE_ANON_KEY: роль ${key_role:-unknown}"
-          if [ "$key_role" != "anon" ]; then
-            echo "ОШИБКА: в SUPABASE_ANON_KEY не anon-ключ — пересоздать секрет из Settings → API Keys (anon / publishable)."
-            exit 2
-          fi
+          [ "$key_role" = "anon" ] || fail "в SUPABASE_ANON_KEY не anon-ключ (роль ${key_role:-unknown}) — пересоздать секрет из Settings → API Keys (anon / publishable)." 2
 
-          # `|| true`: под `bash -e` упавший curl (DNS, таймаут) рвал шаг раньше
-          # диагноза ниже, а `-w` и так печатает 000.
-          http_code=$(curl -s -o /tmp/resp.json -w '%{http_code}' \
-            "$SUPABASE_URL/rest/v1/workouts?select=id&limit=1" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY") || true
+          # Три записи с паузой: «несколько запросов в день» (см. шапку) даже
+          # тогда, когда второй прогон суток GitHub уронит.
+          for i in 1 2 3; do
+            [ "$i" = 1 ] || sleep 10
+            # Ответ прошлого вызова не должен выдать себя за ответ этого, если
+            # curl не дойдёт до сервера и файл не перепишет.
+            rm -f "$resp"
+            # `|| true`: под `bash -e` упавший curl (DNS, таймаут) рвал шаг
+            # раньше диагноза ниже, а `-w` и так печатает 000.
+            http_code=$(curl -s -o "$resp" -w '%{http_code}' --max-time 20 \
+              -X POST "$SUPABASE_URL/rest/v1/rpc/keepalive_ping" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{}') || true
 
-          # Тело не печатать: репо публичный, лог Actions тоже. Размер отличает
-          # пустой ответ RLS (`[]`, 2 байта) от утёкшей строки, не раскрывая её.
-          echo "HTTP $http_code, ответ $(wc -c 2>/dev/null < /tmp/resp.json || echo 0) байт"
+            # Тело не печатать: лог Actions — не место ответам базы, правило
+            # общее для всех пингов. Размер отличает ответ функции (время,
+            # ~35 байт) от пустого или чужого, не раскрывая его.
+            echo "Пинг $i/3: HTTP $http_code, ответ $(wc -c 2>/dev/null < "$resp" || echo 0) байт"
 
-          # 2xx — обычный ответ. 401/403 — RLS отказал в чтении, но запрос уже
-          # дошёл до Postgres, для таймера паузы этого достаточно. Падаем
-          # только на сетевой сбой (000) или отказ самого сервера (5xx).
-          if [ "$http_code" -ge 500 ] || [ "$http_code" = "000" ]; then
-            echo "Supabase не ответил (HTTP $http_code) — проверить, не в паузе ли проект уже."
-            exit 1
-          fi
+            case "$http_code" in
+              2??) : ;;
+              404) fail "SQL ещё не применён (HTTP 404 на rpc/keepalive_ping) — выполнить supabase/keepalive.sql в Supabase → SQL Editor, затем перезапустить workflow." ;;
+              401|403) fail "Supabase отверг вызов (HTTP $http_code): ключ недействителен или у anon нет EXECUTE — сверить SUPABASE_ANON_KEY с Settings → API Keys и перевыполнить supabase/keepalive.sql." ;;
+              000|5??) fail "Supabase не отвечает (HTTP $http_code) — проект, вероятно, уснул: Supabase Dashboard → проект → Resume project, затем перезапустить workflow." ;;
+              *) fail "неожиданный ответ HTTP $http_code на rpc/keepalive_ping — открыть лог прогона." ;;
+            esac
+          done
+          echo "Keep-alive: три записи сердцебиения дошли до Postgres."
+
+      - name: Issue — завести при провале, закрыть после восстановления
+        # Не always(): отменённый руками прогон — не провал пинга.
+        if: ${{ !cancelled() }}
+        # v9 — как в main-watchdog.yml. require('@actions/github') в v9 сломан,
+        # встроенные модули Node (fs) через инжектированный require работают.
+        uses: actions/github-script@v9
+        env:
+          PING_OUTCOME: ${{ steps.ping.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+
+            // Дедуп по началу заголовка: тот же провал — тот же issue.
+            const MARKER = 'Supabase keep-alive:';
+            const TITLE = `${MARKER} пинг не доходит до базы`;
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const failed = process.env.PING_OUTCOME !== 'success';
+
+            let verdict = 'шаг пинга упал без диагноза — открыть лог прогона.';
+            try {
+              const text = fs
+                .readFileSync(`${process.env.RUNNER_TEMP}/keepalive-verdict.txt`, 'utf8')
+                .trim();
+              if (text) verdict = text;
+            } catch {
+              // Файла нет: шаг упал раньше любого fail. Остаётся общий диагноз.
+            }
+
+            // Список открытых issue, а не search: поисковый индекс отстаёт на
+            // минуты (см. main-watchdog.yml). Отказ здесь не смертелен: на
+            // провале дубль лучше молчания, на успехе закрыть просто нечего.
+            let open = null;
+            try {
+              const issues = await github.paginate(github.rest.issues.listForRepo, {
+                owner,
+                repo,
+                state: 'open',
+                per_page: 100,
+              });
+              open = issues.find((i) => !i.pull_request && i.title.startsWith(MARKER)) ?? null;
+            } catch (err) {
+              core.warning(`Не удалось прочитать открытые issue (${err.status ?? '?'}): ${err.message}`);
+            }
+
+            if (!failed) {
+              if (!open) return;
+              // Пинг прошёл — уборка не должна красить зелёный прогон.
+              try {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: open.number,
+                  body: `Пинг снова доходит до базы: ${runUrl}. Закрываю.`,
+                });
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number: open.number,
+                  state: 'closed',
+                  state_reason: 'completed',
+                });
+                core.info(`Пинг зелёный, закрыт ${open.html_url}`);
+              } catch (err) {
+                core.warning(
+                  `Пинг зелёный, но issue #${open.number} закрыть не вышло ` +
+                  `(${err.status ?? '?'}): ${err.message}. Закрыть руками.`
+                );
+              }
+              return;
+            }
+
+            const body = [
+              `Keep-alive не смог записать сердцебиение в Supabase. Пока это так, бесплатный проект может уснуть (или уже спит).`,
+              ``,
+              `- **Диагноз:** ${verdict}`,
+              `- **Прогон:** ${runUrl}`,
+              ``,
+              `### Что делать`,
+              `- **«SQL ещё не применён»** — Supabase Dashboard → SQL Editor → вставить \`supabase/keepalive.sql\` целиком → Run.`,
+              `- **«проект, вероятно, уснул»** — Supabase Dashboard → проект → Resume project.`,
+              `- **Ошибка секрета** — диагноз называет, что поправить в Settings → Secrets and variables → Actions.`,
+              ``,
+              `Затем Actions → Supabase keep-alive → Run workflow. Issue закроется сам, когда пинг пройдёт.`,
+              ``,
+              `---`,
+              `Заведено автоматически: \`.github/workflows/supabase-keepalive.yml\`.`,
+            ].join('\n');
+
+            // Записать провал не вышло — прогон и так красный от шага пинга,
+            // но причину отказа issue называем явно, а не стеком.
+            try {
+              if (open) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: open.number,
+                  body: `Снова провал: ${verdict}\n\nПрогон: ${runUrl}`,
+                });
+                core.warning(`Провал дописан в ${open.html_url}`);
+              } else {
+                const { data: issue } = await github.rest.issues.create({ owner, repo, title: TITLE, body });
+                core.warning(`Заведён issue ${issue.html_url}`);
+              }
+            } catch (err) {
+              core.setFailed(
+                `Keep-alive красный, но issue записать не вышло (${err.status ?? '?'}): ` +
+                `${err.message}\n\n${TITLE}\n\n${verdict}`
+              );
+            }
