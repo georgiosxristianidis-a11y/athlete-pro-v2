@@ -39,6 +39,9 @@
 // Слоёв два: pre-push (`--omit-dev`, как было — production-зависимости) и шаг в
 // job `test` (с dev-зависимостями: цепочку stylelint → postcss ловит только он,
 // кейс nanoid 3.3.17).
+//
+// Узкие исключения (карточка SCA-1) — список EXCEPTIONS ниже: данные, а не флаг.
+// Условия, при которых запись действует, гард проверяет сам на каждом прогоне.
 
 import { spawnSync } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -140,7 +143,9 @@ export function classify(result) {
   if (isReport(json)) {
     const counts = countFromReport(json);
     const blocking = counts.high + counts.critical;
-    return { outcome: blocking > 0 ? OUTCOME.FINDING : OUTCOME.CLEAN, counts };
+    // Отчёт едет дальше целиком: исключения (SCA-1) сводят записи к адвайзори
+    // по цепочке `via`, а её в counts нет.
+    return { outcome: blocking > 0 ? OUTCOME.FINDING : OUTCOME.CLEAN, counts, report: json };
   }
 
   // Дальше — отчёта нет. Разбираем ТОЛЬКО ради честного текста: решение для всех
@@ -202,6 +207,208 @@ export function classify(result) {
   };
 }
 
+// --- Исключения (карточка SCA-1) ---------------------------------------------
+//
+// Мина 2026-10-04: GHSA-vfj7-8cjw-p6xm (braces <= 3.0.3, DoS через глубоко
+// вложенный паттерн) опубликован без патча, 3.0.3 — последняя версия в реестре.
+// В дереве braces только через dev-цепочку stylelint → micromatch/fast-glob/
+// globby, но npm метит high все пять записей, а «фикс» предлагает stylelint
+// 7.7.0, на мажоры назад. Шаг CI с dev-зависимостями покраснел на самом main и
+// закрыл мёрж всем веткам.
+//
+// Исключение — запись данных, а не флаг. Флаг глушит всё, запись снимает один
+// адвайзори и только пока гард сам подтверждает три условия. Сломалось любое —
+// находка снова обычная, шаг красный:
+//   1. адвайзори нет в прогоне --omit-dev — пакет не дошёл до production-дерева;
+//      прогон не удался — условие не доказано, исключение не действует;
+//   2. патча нет — у носителя адвайзори и у пропускаемой записи `fixAvailable`
+//      не `true` и не объект с `isSemVerMajor: false` (неломающий фикс, см.
+//      hasPatch). Выйдет braces 3.0.4 → npm скажет «патч есть» → чинить локом;
+//   3. дата пересмотра (UTC) ещё не наступила; в сам этот день — красный.
+// Транзитивные записи npm (в `via` только имена пакетов) сводятся к корням по
+// цепочке `via`. Запись пропускается, только если ВСЕ её high/critical корни —
+// действующие исключения; один чужой high-корень — блок.
+// Исключение не молчит: строка `[SCA Exception]` в выводе, в CI ещё `::warning`.
+
+/**
+ * Список исключений. Запись: адвайзори GHSA, пакет, в котором он сидит, причина
+ * одной строкой и дата пересмотра YYYY-MM-DD.
+ */
+export const EXCEPTIONS = Object.freeze([
+  Object.freeze({
+    id: 'GHSA-vfj7-8cjw-p6xm',
+    package: 'braces',
+    reason:
+      'DoS через вложенный паттерн; braces только в dev-цепочке stylelint, паттерны — наши CSS-глобы, в бандл не попадает; патча нет',
+    review: '2026-11-04',
+  }),
+]);
+
+/** Уровни ниже порога блока: такой корень не блокирует и исключения не требует. */
+const NON_BLOCKING_LEVELS = ['info', 'low', 'moderate'];
+
+/**
+ * Патч есть — находку чинит неломающий апдейт, исключению тут не место
+ * (решение LEAD 04.10). `true` — обычный `npm audit fix`; объект с
+ * `isSemVerMajor: false` — неломающая версия пакета. Объект с
+ * `isSemVerMajor: true` — откат на мажоры (живой случай 04.10: stylelint
+ * 7.7.0), патчем не считается.
+ */
+function hasPatch(fixAvailable) {
+  return (
+    fixAvailable === true ||
+    Boolean(
+      fixAvailable && typeof fixAvailable === 'object' && fixAvailable.isSemVerMajor === false
+    )
+  );
+}
+
+const GHSA_RE = /GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}/i;
+
+function isIsoDate(s) {
+  if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}
+
+/** Адвайзори в `via` — объект; строка там — имя пакета, через который он пришёл. */
+function advisoryRoot(via, fallbackName) {
+  const m = String(via?.url ?? '').match(GHSA_RE);
+  return {
+    id: m ? m[0].toLowerCase() : null,
+    name: via?.name ?? via?.dependency ?? fallbackName,
+    severity: via?.severity ?? 'unknown',
+  };
+}
+
+function matchesException(root, exc) {
+  return root.id !== null && root.id === String(exc.id).toLowerCase() && root.name === exc.package;
+}
+
+/**
+ * Корни записи — адвайзори, к которым она сводится по цепочке `via`. Имя, которого
+ * нет в карте, и запись без `via` дают корень без id: свести некуда — исключить
+ * нечем, такой корень блокирует.
+ */
+function rootsOf(name, vulns, seen = new Set()) {
+  if (seen.has(name)) return [];
+  seen.add(name);
+  const via = Array.isArray(vulns[name]?.via) ? vulns[name].via : [];
+  if (!via.length) return [{ id: null, name, severity: 'unknown' }];
+  return via.flatMap((v) =>
+    typeof v === 'string' ? rootsOf(v, vulns, seen) : [advisoryRoot(v, name)]
+  );
+}
+
+/** Записи, в `via` которых адвайзори исключения лежит объектом. */
+function carriersOf(report, exc) {
+  return Object.entries(report?.vulnerabilities ?? {}).filter(([name, entry]) =>
+    (Array.isArray(entry?.via) ? entry.via : []).some(
+      (v) => typeof v !== 'string' && matchesException(advisoryRoot(v, name), exc)
+    )
+  );
+}
+
+/** Есть ли адвайзори (или сам пакет) в отчёте production-дерева. */
+function inProdTree(prodReport, exc) {
+  const vulns = prodReport?.vulnerabilities ?? {};
+  if (Object.hasOwn(vulns, exc.package)) return true;
+  return Object.entries(vulns).some(([name, entry]) =>
+    (Array.isArray(entry?.via) ? entry.via : []).some(
+      (v) => typeof v !== 'string' && advisoryRoot(v, name).id === String(exc.id).toLowerCase()
+    )
+  );
+}
+
+/** Исключения, к которым сводится хоть одна блокирующая запись отчёта. */
+export function exceptionCandidates(report, exceptions = EXCEPTIONS) {
+  const vulns = report?.vulnerabilities ?? {};
+  const roots = Object.entries(vulns)
+    .filter(([, entry]) => BLOCK_LEVELS.includes(entry?.severity))
+    .flatMap(([name]) => rootsOf(name, vulns));
+  return exceptions.filter((exc) => roots.some((r) => matchesException(r, exc)));
+}
+
+/** Почему исключение НЕ действует; null — все три условия подтверждены. */
+function exceptionBroken(exc, { report, prod, today }) {
+  if (!isIsoDate(exc.review) || today >= exc.review) {
+    return `дата пересмотра ${exc.review} наступила — пересмотреть или снять запись`;
+  }
+  if (carriersOf(report, exc).some(([, entry]) => hasPatch(entry?.fixAvailable))) {
+    return 'патч есть (npm: неломающий fixAvailable) — чинить обновлением лока, а не исключением';
+  }
+  if (!prod?.report) {
+    return `production-дерево не проверено (${prod?.detail ?? 'нет отчёта --omit-dev'})`;
+  }
+  if (inProdTree(prod.report, exc)) return 'адвайзори есть в production-дереве (прогон --omit-dev)';
+  return null;
+}
+
+/**
+ * Чистая функция: вердикт-находка + отчёт production-дерева → вердикт после
+ * исключений. Не-находка возвращается как есть.
+ *
+ * @param {object} verdict результат classify() на прогоне гарда
+ * @param {{ prod?: object, now?: Date, exceptions?: object[] }} [ctx]
+ *   prod — classify() прогона --omit-dev (в режиме --omit-dev — сам verdict)
+ */
+export function applyExceptions(verdict, { prod, now = new Date(), exceptions = EXCEPTIONS } = {}) {
+  if (verdict?.outcome !== OUTCOME.FINDING || !verdict.report) return verdict;
+  const touched = exceptionCandidates(verdict.report, exceptions);
+  if (!touched.length) return verdict;
+
+  const today = new Date(now).toISOString().slice(0, 10);
+  const active = [];
+  const rejected = [];
+  for (const exc of touched) {
+    const why = exceptionBroken(exc, { report: verdict.report, prod, today });
+    if (why) rejected.push({ id: exc.id, package: exc.package, why });
+    else active.push(exc);
+  }
+
+  const vulns = verdict.report.vulnerabilities ?? {};
+  const excused = [];
+  const blocking = [];
+  for (const [name, entry] of Object.entries(vulns)) {
+    if (!BLOCK_LEVELS.includes(entry?.severity)) continue;
+    const roots = rootsOf(name, vulns).filter((r) => !NON_BLOCKING_LEVELS.includes(r.severity));
+    const covered =
+      roots.length > 0 &&
+      !hasPatch(entry.fixAvailable) &&
+      roots.every((r) => active.some((exc) => matchesException(r, exc)));
+    (covered ? excused : blocking).push({ name, severity: entry.severity, roots });
+  }
+
+  const drop = (level) => excused.filter((e) => e.severity === level).length;
+  const prev = verdict.counts ?? {};
+  const counts = {
+    ...prev,
+    high: Math.max(0, Number(prev.high || 0) - drop('high')),
+    critical: Math.max(0, Number(prev.critical || 0) - drop('critical')),
+    packages: blocking.map((e) => `${e.name} (${e.severity})`),
+  };
+
+  const applied = active
+    .map((exc) => ({
+      id: exc.id,
+      package: exc.package,
+      reason: exc.reason,
+      review: exc.review,
+      packages: excused
+        .filter((e) => e.roots.some((r) => matchesException(r, exc)))
+        .map((e) => e.name),
+    }))
+    .filter((a) => a.packages.length > 0);
+
+  return {
+    ...verdict,
+    outcome: counts.high + counts.critical > 0 ? OUTCOME.FINDING : OUTCOME.CLEAN,
+    counts,
+    exceptions: applied,
+    exceptionsRejected: rejected,
+  };
+}
+
 /** Один прогон `npm audit --json`. Вынесен отдельно — в тестах подменяется. */
 export function auditOnce({ omitDev = false } = {}) {
   const args = ['audit', '--json'];
@@ -244,12 +451,28 @@ export function parseArgs(argv = []) {
   return opts;
 }
 
+/** Строки исключений: пропущенное и непрошедшее проверку — всегда вслух. */
+function exceptionLines(verdict) {
+  const lines = (verdict.exceptions ?? []).map(
+    (e) =>
+      `[SCA Exception] ${e.id} (${e.package}) пропущен до ${e.review}: ${e.reason}. Записи: ${e.packages.join(', ')}.`
+  );
+  for (const e of verdict.exceptionsRejected ?? []) {
+    lines.push(`   Исключение ${e.id} (${e.package}) не действует: ${e.why}.`);
+  }
+  return lines;
+}
+
 /** Текст вердикта. Строки блока намеренно те же, что печатал pre-push до карточки. */
 export function formatLines(verdict, opts = {}) {
   const scope = opts.omitDev ? 'production-зависимостях' : 'зависимостях (включая dev)';
 
   if (verdict.outcome === OUTCOME.CLEAN) {
-    return [`[SCA Pass] High/Critical в ${scope} не найдено.`];
+    if (!verdict.exceptions?.length) return [`[SCA Pass] High/Critical в ${scope} не найдено.`];
+    return [
+      `[SCA Pass] High/Critical в ${scope} не найдено — кроме исключённых ниже.`,
+      ...exceptionLines(verdict),
+    ];
   }
 
   if (verdict.outcome === OUTCOME.FINDING) {
@@ -260,6 +483,7 @@ export function formatLines(verdict, opts = {}) {
       `   Найдено: critical ${critical}, high ${high} — в ${scope}.`,
     ];
     if (packages.length) lines.push(`   Пакеты: ${packages.slice(0, 5).join(', ')}`);
+    lines.push(...exceptionLines(verdict));
     lines.push(`   Осознанный обход: ${BYPASS_ENV}=1 git push`);
     return lines;
   }
@@ -277,19 +501,21 @@ function annotate(verdict, out, env) {
   out.log(`::warning title=SCA не выполнен::${verdict.detail}. Уязвимости не проверены.`);
 }
 
-/**
- * @param {{ argv?: string[], env?: object, out?: { log: Function, error: Function }, audit?: Function }} [opts]
- * @returns {Promise<number>} код выхода
- */
-export async function run(opts = {}) {
-  const env = opts.env ?? process.env;
-  const out = opts.out ?? console;
-  const audit = opts.audit ?? auditOnce;
-  const cfg = parseArgs(opts.argv ?? process.argv.slice(2));
+/** Исключение в CI — аннотацией: зелёный шаг с пропуском обязан отличаться от чистого. */
+function annotateExceptions(verdict, out, env) {
+  if (env.GITHUB_ACTIONS !== 'true') return;
+  for (const e of verdict.exceptions ?? []) {
+    out.log(
+      `::warning title=SCA исключение ${e.id}::${e.package} пропущен до ${e.review}: ${e.reason}. Записи: ${e.packages.join(', ')}.`
+    );
+  }
+}
 
+/** Прогон с ретраями отказа проверки. */
+async function auditWithRetries(audit, omitDev, cfg, out) {
   let verdict;
   for (let attempt = 0; attempt <= cfg.retries; attempt++) {
-    verdict = classify(await audit({ omitDev: cfg.omitDev }));
+    verdict = classify(await audit({ omitDev }));
     // Ретраим только отказ проверки: находка и чистый отчёт — окончательные ответы.
     // Отсутствие лока повтором не лечится. Оффлайн — тоже: нет DNS или маршрута,
     // и за 2.5 с они не появятся, а пуша ждёт человек (см. OFFLINE_CODES).
@@ -301,16 +527,48 @@ export async function run(opts = {}) {
     out.log(`[SCA] ${verdict.detail} — повтор ${attempt + 1}/${cfg.retries}...`);
     if (cfg.retryDelay) await sleep(cfg.retryDelay);
   }
+  return verdict;
+}
+
+/**
+ * @param {{ argv?: string[], env?: object, out?: { log: Function, error: Function }, audit?: Function, now?: Date, exceptions?: object[] }} [opts]
+ * @returns {Promise<number>} код выхода
+ */
+export async function run(opts = {}) {
+  const env = opts.env ?? process.env;
+  const out = opts.out ?? console;
+  const audit = opts.audit ?? auditOnce;
+  const exceptions = opts.exceptions ?? EXCEPTIONS;
+  const cfg = parseArgs(opts.argv ?? process.argv.slice(2));
+
+  let verdict = await auditWithRetries(audit, cfg.omitDev, cfg, out);
+
+  // Исключение (SCA-1) проверяется по production-дереву. Второй прогон — только
+  // если находка вообще сводится к исключению; в режиме --omit-dev отчёт и есть
+  // production-дерево, и исключение на нём не проходит по определению.
+  if (
+    verdict.outcome === OUTCOME.FINDING &&
+    exceptionCandidates(verdict.report, exceptions).length
+  ) {
+    let prod = verdict;
+    if (!cfg.omitDev) {
+      out.log('[SCA] Находка сводится к исключению — проверяю production-дерево (--omit-dev)...');
+      prod = await auditWithRetries(audit, true, cfg, out);
+    }
+    verdict = applyExceptions(verdict, { prod, now: opts.now ?? new Date(), exceptions });
+  }
 
   const lines = formatLines(verdict, cfg);
 
   if (verdict.outcome === OUTCOME.CLEAN) {
     for (const line of lines) out.log(line);
+    annotateExceptions(verdict, out, env);
     return EXIT.CLEAN;
   }
 
   if (verdict.outcome === OUTCOME.FINDING) {
     for (const line of lines) out.error(line);
+    annotateExceptions(verdict, out, env);
     if (env[BYPASS_ENV] === '1') {
       out.error(`   ${BYPASS_ENV}=1 — находка пропущена осознанно.`);
       return EXIT.CLEAN;
