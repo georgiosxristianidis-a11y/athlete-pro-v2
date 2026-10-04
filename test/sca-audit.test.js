@@ -33,11 +33,14 @@ import { fileURLToPath } from 'node:url';
 import {
   BLOCK_LEVELS,
   BYPASS_ENV,
+  EXCEPTIONS,
   EXIT,
   ON_UNAVAILABLE,
   OUTCOME,
   REASON,
+  applyExceptions,
   classify,
+  exceptionCandidates,
   formatLines,
   parseArgs,
   run,
@@ -450,4 +453,342 @@ test('classify кладёт сетевой код полем, а не тольк
   );
   assert.equal(classify(NETWORK_FLAKY).code, 'ECONNRESET');
   assert.equal(classify(ENDPOINT_400).code, undefined, 'у отказа сервера сетевого кода нет');
+});
+
+// --- Слой 4: узкие исключения (карточка SCA-1) ------------------------------
+//
+// Мина 2026-10-04: GHSA-vfj7-8cjw-p6xm (braces <= 3.0.3, DoS через вложенный
+// паттерн) вышел без патча. braces только в dev-цепочке stylelint, но npm метит
+// high все пять записей, и шаг CI с dev-зависимостями покраснел на самом main.
+//
+// Исключение действует, пока гард сам подтверждает три условия: адвайзори нет в
+// прогоне --omit-dev, `fixAvailable` не `true`, дата пересмотра не наступила.
+// Транзитивные записи сводятся к корням по `via`; один чужой high-корень — блок.
+//
+// BASELINE: тот же отчёт без списка исключений (`exceptions: []`) — exit 1,
+// ровно как шаг CI на main 9326e1a2.
+//
+// Исключение в тестах своё, а не из EXCEPTIONS: снятие живой записи (выйдет
+// braces 3.0.4) не должно ломать проверку механизма.
+
+/** Адвайзори из живого `npm audit --json` 2026-10-04 (worktree на 9326e1a2). */
+const BRACES_ADVISORY = {
+  source: 1240992,
+  name: 'braces',
+  dependency: 'braces',
+  title: 'braces vulnerable to stack-exhaustion denial of service through deeply nested patterns',
+  url: 'https://github.com/advisories/GHSA-vfj7-8cjw-p6xm',
+  severity: 'high',
+  cwe: ['CWE-674'],
+  cvss: { score: 7.5, vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H' },
+  range: '<=3.0.3',
+};
+
+/** «Фикс» npm в тот день — откат stylelint на мажоры назад, не патч. */
+const STYLELINT_FIX = { name: 'stylelint', version: '7.7.0', isSemVerMajor: true };
+
+const BRACES_EXCEPTION = Object.freeze({
+  id: 'GHSA-vfj7-8cjw-p6xm',
+  package: 'braces',
+  reason: 'тестовая запись',
+  review: '2026-11-04',
+});
+
+const BEFORE_REVIEW = new Date('2026-10-04T12:00:00Z');
+
+/** Цепочка stylelint → micromatch/fast-glob/globby → braces, как в живом отчёте. */
+function bracesChain({ fixAvailable = STYLELINT_FIX } = {}) {
+  const entry = (name, via, extra = {}) => ({
+    name,
+    severity: 'high',
+    isDirect: false,
+    via,
+    fixAvailable,
+    ...extra,
+  });
+  return {
+    braces: entry('braces', [BRACES_ADVISORY], { effects: ['micromatch'], range: '*' }),
+    'fast-glob': entry('fast-glob', ['micromatch'], { effects: ['globby', 'stylelint'] }),
+    globby: entry('globby', ['fast-glob', 'micromatch'], { effects: ['stylelint'] }),
+    micromatch: entry('micromatch', ['braces'], { effects: ['fast-glob', 'globby', 'stylelint'] }),
+    stylelint: entry('stylelint', ['fast-glob', 'globby', 'micromatch'], { isDirect: true }),
+  };
+}
+
+/** Чужой high-адвайзори на отдельном пакете. */
+function foreignAdvisory(name, severity = 'high') {
+  return {
+    source: 9999999,
+    name,
+    dependency: name,
+    title: `${name} test advisory`,
+    url: 'https://github.com/advisories/GHSA-aaaa-bbbb-cccc',
+    severity,
+    range: '*',
+  };
+}
+
+/** Результат прогона `npm audit --json`: карта по алфавиту, как у npm, metadata — по карте. */
+function auditResult(map) {
+  const vulnerabilities = Object.fromEntries(
+    Object.entries(map).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+  );
+  const list = Object.values(vulnerabilities);
+  const count = (level) => list.filter((v) => v.severity === level).length;
+  return {
+    code: list.length ? 1 : 0,
+    stdout: JSON.stringify({
+      auditReportVersion: 2,
+      vulnerabilities,
+      metadata: {
+        vulnerabilities: {
+          info: 0,
+          low: count('low'),
+          moderate: count('moderate'),
+          high: count('high'),
+          critical: count('critical'),
+          total: list.length,
+        },
+        dependencies: { prod: 140, dev: 195, total: 334 },
+      },
+    }),
+    stderr: '',
+  };
+}
+
+const DEV_BRACES = auditResult(bracesChain());
+
+/** Подменный npm, отвечающий по области: dev-прогон и прогон --omit-dev раздельно. */
+function auditByScope({ dev, prod }) {
+  const calls = [];
+  return {
+    calls,
+    audit: (opts) => {
+      calls.push(opts);
+      return opts.omitDev ? prod : dev;
+    },
+  };
+}
+
+async function runScoped({
+  dev,
+  prod = CLEAN_REPORT,
+  argv = ['--retries=0'],
+  env = {},
+  now = BEFORE_REVIEW,
+  exceptions = [BRACES_EXCEPTION],
+}) {
+  const { lines, out } = sink();
+  const { audit, calls } = auditByScope({ dev, prod });
+  const code = await run({ argv, env, out, audit, now, exceptions });
+  return { code, calls, text: lines.join('\n') };
+}
+
+test('SCA-1: только исключённый адвайзори в dev-дереве — чисто, но вслух', async () => {
+  // Baseline: без списка исключений тот же отчёт красит, как шаг CI на main.
+  const base = await runScoped({ dev: DEV_BRACES, exceptions: [] });
+  assert.equal(base.code, EXIT.FINDING);
+  assert.match(base.text, /high 5/);
+
+  const r = await runScoped({ dev: DEV_BRACES });
+  assert.equal(r.code, EXIT.CLEAN);
+  assert.deepEqual(
+    r.calls.map((c) => c.omitDev),
+    [false, true],
+    'исключение обязано сверяться с прогоном --omit-dev'
+  );
+  assert.match(r.text, /\[SCA Pass\]/);
+  assert.match(
+    r.text,
+    /^\[SCA Exception\] GHSA-vfj7-8cjw-p6xm \(braces\) пропущен до 2026-11-04: тестовая запись\. Записи: braces, fast-glob, globby, micromatch, stylelint\.$/m
+  );
+  assert.doesNotMatch(r.text, /::warning/, 'аннотация — только в CI');
+
+  const ci = await runScoped({ dev: DEV_BRACES, env: { GITHUB_ACTIONS: 'true' } });
+  assert.equal(ci.code, EXIT.CLEAN);
+  assert.match(
+    ci.text,
+    /^::warning title=SCA исключение GHSA-vfj7-8cjw-p6xm::braces пропущен до 2026-11-04/m
+  );
+});
+
+test('SCA-1: исключённое + любая другая high — блок, чужая находка не тонет', async () => {
+  const dev = auditResult({
+    ...bracesChain(),
+    express: {
+      name: 'express',
+      severity: 'high',
+      isDirect: true,
+      via: [foreignAdvisory('express')],
+      fixAvailable: false,
+    },
+  });
+  const r = await runScoped({ dev });
+  assert.equal(r.code, EXIT.FINDING);
+  assert.match(r.text, /\[SCA Block\]/);
+  assert.match(r.text, /Найдено: critical 0, high 1/);
+  assert.match(r.text, /^ {3}Пакеты: express \(high\)$/m);
+
+  const v = applyExceptions(classify(dev), {
+    prod: classify(CLEAN_REPORT),
+    now: BEFORE_REVIEW,
+    exceptions: [BRACES_EXCEPTION],
+  });
+  assert.equal(v.outcome, OUTCOME.FINDING);
+  assert.deepEqual(v.counts.packages, ['express (high)']);
+});
+
+test('SCA-1: адвайзори есть в прогоне --omit-dev — исключение не действует', async () => {
+  const r = await runScoped({ dev: DEV_BRACES, prod: DEV_BRACES });
+  assert.equal(r.code, EXIT.FINDING);
+  assert.match(r.text, /не действует: адвайзори есть в production-дереве/);
+  assert.doesNotMatch(r.text, /\[SCA Exception\]/);
+
+  // pre-push сам смотрит production-дерево: второго прогона нет, исключения тоже.
+  const hook = await runScoped({
+    dev: DEV_BRACES,
+    prod: DEV_BRACES,
+    argv: ['--omit-dev', '--retries=0'],
+  });
+  assert.equal(hook.code, EXIT.FINDING);
+  assert.deepEqual(
+    hook.calls.map((c) => c.omitDev),
+    [true]
+  );
+});
+
+test('SCA-1: прогон --omit-dev не удался — условие не доказано, блок', async () => {
+  const r = await runScoped({ dev: DEV_BRACES, prod: ENDPOINT_400 });
+  assert.equal(r.code, EXIT.FINDING);
+  assert.match(r.text, /не действует: production-дерево не проверено/);
+});
+
+test('SCA-1: вышел патч (fixAvailable: true) — блок, чинить локом', async () => {
+  const r = await runScoped({ dev: auditResult(bracesChain({ fixAvailable: true })) });
+  assert.equal(r.code, EXIT.FINDING);
+  assert.match(r.text, /не действует: патч есть/);
+  assert.match(r.text, /Найдено: critical 0, high 5/);
+});
+
+test('SCA-1: фикс-объект с isSemVerMajor: false — тоже патч; с true — нет', async () => {
+  // Решение LEAD 04.10: неломающий фикс-объект значит «патч есть», как и `true`.
+  // Живой случай 04.10 — откат stylelint на 7.7.0 (isSemVerMajor: true) — проходит.
+  const live = await runScoped({ dev: auditResult(bracesChain({ fixAvailable: STYLELINT_FIX })) });
+  assert.equal(live.code, EXIT.CLEAN, 'мажорный откат — не патч');
+
+  // У носителя адвайзори: исключение снимается целиком.
+  const carrier = bracesChain();
+  carrier.braces = {
+    ...carrier.braces,
+    fixAvailable: { name: 'braces', version: '3.0.4', isSemVerMajor: false },
+  };
+  const r1 = await runScoped({ dev: auditResult(carrier) });
+  assert.equal(r1.code, EXIT.FINDING);
+  assert.match(r1.text, /не действует: патч есть/);
+  assert.match(r1.text, /Найдено: critical 0, high 5/);
+
+  // У транзитивной записи: исключение действует, но эту запись не пропускает.
+  const transitive = bracesChain();
+  transitive.stylelint = {
+    ...transitive.stylelint,
+    fixAvailable: { name: 'stylelint', version: '17.99.0', isSemVerMajor: false },
+  };
+  const r2 = await runScoped({ dev: auditResult(transitive) });
+  assert.equal(r2.code, EXIT.FINDING);
+  assert.match(r2.text, /^ {3}Пакеты: stylelint \(high\)$/m);
+  assert.match(r2.text, /Записи: braces, fast-glob, globby, micromatch\./);
+});
+
+test('SCA-1: дата пересмотра наступила — блок', async () => {
+  const lastDay = await runScoped({ dev: DEV_BRACES, now: new Date('2026-11-03T23:59:59Z') });
+  assert.equal(lastDay.code, EXIT.CLEAN, 'накануне пересмотра исключение ещё действует');
+
+  const reviewDay = await runScoped({ dev: DEV_BRACES, now: new Date('2026-11-04T00:00:00Z') });
+  assert.equal(reviewDay.code, EXIT.FINDING);
+  assert.match(reviewDay.text, /не действует: дата пересмотра 2026-11-04 наступила/);
+
+  // Битая дата не может значить «бессрочно».
+  const broken = await runScoped({
+    dev: DEV_BRACES,
+    exceptions: [{ ...BRACES_EXCEPTION, review: '2026-02-30' }],
+  });
+  assert.equal(broken.code, EXIT.FINDING);
+});
+
+test('SCA-1: транзитив с двумя корнями (исключённый + чужой high) — блок', async () => {
+  const chain = bracesChain();
+  chain.stylelint = { ...chain.stylelint, via: [...chain.stylelint.via, 'postcss'] };
+  const dev = auditResult({
+    ...chain,
+    postcss: {
+      name: 'postcss',
+      severity: 'high',
+      isDirect: false,
+      via: [foreignAdvisory('postcss')],
+      fixAvailable: false,
+    },
+  });
+  const r = await runScoped({ dev });
+  assert.equal(r.code, EXIT.FINDING);
+  assert.match(r.text, /^ {3}Пакеты: postcss \(high\), stylelint \(high\)$/m);
+  // Записи, все корни которых — исключённый braces, по-прежнему пропущены.
+  assert.match(r.text, /Записи: braces, fast-glob, globby, micromatch\./);
+});
+
+test('SCA-1: moderate-корень рядом с исключённым не делает запись блокирующей', () => {
+  // Порог блока прежний: moderate не красит ни сам, ни через транзитив.
+  const chain = bracesChain();
+  chain.stylelint = { ...chain.stylelint, via: [...chain.stylelint.via, 'postcss'] };
+  const dev = auditResult({
+    ...chain,
+    postcss: {
+      name: 'postcss',
+      severity: 'moderate',
+      via: [foreignAdvisory('postcss', 'moderate')],
+      fixAvailable: false,
+    },
+  });
+  const v = applyExceptions(classify(dev), {
+    prod: classify(CLEAN_REPORT),
+    now: BEFORE_REVIEW,
+    exceptions: [BRACES_EXCEPTION],
+  });
+  assert.equal(v.outcome, OUTCOME.CLEAN);
+});
+
+test('SCA-1: цепочку свести некуда — исключать нечем, блок без зависания', () => {
+  const dev = auditResult({
+    a: { name: 'a', severity: 'high', via: ['b'] },
+    b: { name: 'b', severity: 'high', via: ['a', 'missing'] },
+  });
+  assert.deepEqual(exceptionCandidates(classify(dev).report, [BRACES_EXCEPTION]), []);
+  const v = applyExceptions(classify(dev), {
+    prod: classify(CLEAN_REPORT),
+    now: BEFORE_REVIEW,
+    exceptions: [BRACES_EXCEPTION],
+  });
+  assert.equal(v.outcome, OUTCOME.FINDING);
+});
+
+test('SCA-1: находка без исключений — второго прогона нет', async () => {
+  const r = await runScoped({ dev: FINDING_REPORT });
+  assert.equal(r.code, EXIT.FINDING);
+  assert.deepEqual(
+    r.calls.map((c) => c.omitDev),
+    [false]
+  );
+});
+
+test('SCA-1: живой список исключений — данные, а не флаг', () => {
+  assert.ok(Object.isFrozen(EXCEPTIONS));
+  for (const e of EXCEPTIONS) {
+    assert.ok(Object.isFrozen(e));
+    assert.match(e.id, /^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/, 'id — адвайзори GHSA');
+    assert.ok(typeof e.package === 'string' && e.package.length > 0, 'пакет назван');
+    assert.ok(typeof e.reason === 'string' && e.reason.length > 0, 'причина есть');
+    assert.doesNotMatch(e.reason, /[\r\n]/, 'причина — одной строкой');
+    assert.match(e.review, /^\d{4}-\d{2}-\d{2}$/, 'дата пересмотра YYYY-MM-DD');
+    const d = new Date(`${e.review}T00:00:00Z`);
+    assert.equal(d.toISOString().slice(0, 10), e.review, 'дата пересмотра существует');
+  }
 });
