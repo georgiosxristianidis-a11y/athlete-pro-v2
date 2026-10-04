@@ -89,6 +89,12 @@ const DEFAULTS = {
   // Default OFF until Vision is finished (correct mime + resize).
   // Try on device: Flags.setFlag('core-photo-generate', true)
   'core-photo-generate': false,
+
+  // FRAME-1: замер кадров в рантайме (js/shared/frame-meter.js) — p95 кадра,
+  // % пропусков, long tasks > 50 мс, экспорт JSON. Debug-инструмент для
+  // motion-карточек; на пользователей не влияет, пока OFF (дефолт).
+  // Включить на телефоне: Flags.setFlag('frame-meter', true) и перезагрузить.
+  'frame-meter': false,
 };
 
 /** @param {string} name @returns {boolean} */

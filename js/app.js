@@ -19,6 +19,7 @@ import { VERSION } from './version.js';
 import { forceUpdate } from './shared/sw-update.js';
 import { applyTheme, watchSystemTheme } from './shared/theme.js';
 import { ensureCss } from './shared/lazy-css.js';
+import { flag } from './flags.js';
 
 /* ── Lazy-loaded modules ── */
 async function _loadWorkout() {
@@ -265,6 +266,11 @@ openDB()
       );
 
       _checkBackupReminder();
+
+      // FRAME-1: debug-замер кадров, флаг 'frame-meter' (OFF) — модуль не грузится.
+      if (flag('frame-meter')) {
+        import('./shared/frame-meter.js').then((m) => m.initFrameMeter()).catch(() => {});
+      }
 
       // Счётчик установок (флаг 'usage-stats', ON) — последним в defer:
       // приватность и локаль уже инициализированы, до первого кадра он не
