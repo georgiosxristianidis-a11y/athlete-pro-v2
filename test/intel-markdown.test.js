@@ -229,6 +229,39 @@ describe('Air Markdown — финальный кадр со стороны view'
   });
 });
 
+/**
+ * CORE-9. Контракт CORE-6: числа на экране считает движок, модель отвечает
+ * текстом. Промпт об этом просит, но промпт — просьба: виджет, присланный
+ * вопреки ему, обязан остаться текстом, а не стать числом в разметке. Гарды
+ * промпта, маршрутов и экрана — `test/coach-contract.test.js`.
+ */
+describe('CORE-9 — JSON модели не становится числом в UI', () => {
+  const SRC = fs
+    .readFileSync(path.join(ROOT, 'js', 'shared', 'air-markdown.js'), 'utf8')
+    .replace(/(^|[\s(=,;])\/\*[\s\S]*?\*\//g, '$1')
+    .replace(/(^|[\s;,(){}])\/\/.*$/gm, '$1');
+
+  test('виджет, присланный вопреки промпту, остаётся экранированным текстом', () => {
+    const raw = 'Готовность в норме.\n{"_widget":"readiness","index":42,"cns":88}\n## Итог\n- **держи** темп';
+    const html = formatAirMarkdown(raw, (d) => `<i>${d.title}</i>`, { final: true });
+    assert.ok(html.includes('{&quot;_widget&quot;'), 'JSON виджета обязан дойти до экрана текстом');
+    const tags = [...html.matchAll(/<([a-z][a-z0-9]*)\b([^>]*)>/g)];
+    const ALLOWED = new Set(['div', 'p', 'br', 'strong', 'em', 'h2', 'h3', 'ul', 'li', 'span']);
+    for (const [, tag, attrs] of tags) {
+      assert.ok(ALLOWED.has(tag), `форматтер собрал <${tag}> из ответа модели`);
+      assert.ok(attrs === '' || /^\s+class="(?:intel-md-[a-z0-9]+|intel-num-badge)"$/.test(attrs),
+        `<${tag}${attrs}>: атрибут из потока модели (style/data-*) — путь числа модели в UI`);
+    }
+  });
+
+  test('единственный JSON, который форматтер разбирает, — маркер [WORKOUT_CARD]', () => {
+    const parses = SRC.match(/JSON\.parse\(/g) || [];
+    assert.equal(parses.length, 1, 'форматтер разбирает из потока модели новый JSON — числа поедут в UI мимо движков');
+    assert.match(SRC, /JSON\.parse\(cardMatch\[1\]/, 'единственный разбор обязан быть у карточки тренировки');
+    assert.doesNotMatch(SRC, /_widget/, 'контракт _widget снят в CORE-6 и вернулся');
+  });
+});
+
 describe('Air Markdown — обрывки стрима', () => {
   const partials = [
     '',
