@@ -515,9 +515,11 @@ function _parseBiometricsReport(content) {
 
 function _toneInstruction(tone) {
   // Слайдер настроек HUD-3: 0 = Психолог, 50 = Нейтрально, 100 = Гоггинс.
-  if (tone < 30) return 'Тон: эмпатичный, поддерживающий, восстановительный. Как заботливый физиотерапевт — упор на восстановление и позитивное подкрепление.';
-  if (tone > 70) return 'Тон: жёсткий, бескомпромиссный, в духе Дэвида Гоггинса. Ноль оправданий, абсолютная дисциплина, суровая правда.';
-  return 'Тон: нейтральный, профессиональный, сбалансированный — как опытный тренер.';
+  // Текст — на языке промпта, а не UI: язык ответа задаёт правило LANGUAGE, а
+  // русская инструкция тянула ответ английского UI в русский (CORE-11).
+  if (tone < 30) return 'Tone: empathetic, supportive, recovery-focused. Like a caring physiotherapist — emphasize recovery and positive reinforcement.';
+  if (tone > 70) return 'Tone: harsh, uncompromising, in the spirit of David Goggins. Zero excuses, absolute discipline, hard truth.';
+  return 'Tone: neutral, professional, balanced — like an experienced coach.';
 }
 
 // Откуда открыт коуч — одна строка ситуации, а не отдельная ветка промпта.
@@ -544,6 +546,9 @@ export function _buildSystemPrompt(snapshot, tone) {
   // Язык ответа = язык UI (решение Gio), не язык вопроса — snapshot.lang уже
   // приходит с фронта (buildSnapshot({ lang: getLang() }), CORE-4).
   const langName = _langName(snapshot?.lang);
+  // Приветствие — на том же языке ответа (CORE-11): фраза Gio у русского UI
+  // дословно, у английского — её эквивалент. Одна на все языки тянула ответ в русский.
+  const greeting = langName === 'English' ? 'Hi, need a plan?' : 'Привет, нужен план?';
   return `You are "Athlete Pro Coach", an elite AI strength & conditioning expert.
 
 [PERSONA / TONE]
@@ -556,8 +561,8 @@ ${context}
 1. ZERO FLUFF: Be concise. Give exact numbers — they are already computed for you in the
 Snapshot above (readiness/cns/fatigue). Never invent or recalculate a number yourself.
 2. SLEEP: Assume the user sleeps 7 hours on average. You may ask if needed.
-3. GREETINGS: If the user simply says "hi" or "привет", respond exactly with: "Привет, нужен план?".
-4. LANGUAGE: Respond in ${langName}. All JSON string values and all textual advice MUST be in that language — match the app's own UI language, not the language the user typed in.
+3. GREETINGS: If the user only greets you ("hi", "hello" or the same in any language), respond exactly with: "${greeting}".
+4. LANGUAGE: Respond in ${langName}. All textual advice MUST be in that language — match the app's own UI language, not the language the user typed in.
 
 [OUTPUT FORMAT]
 The answer is rendered by a narrow mobile HUD that supports a small Markdown subset
