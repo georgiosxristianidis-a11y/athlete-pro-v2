@@ -69,7 +69,7 @@ describe('Phase 2 — Performance post-conditions', () => {
 
   test('PERF-HIST: renderExerciseCard and the coach-target chain take workouts as an argument', () => {
     const src = readText('js/workout.view/render.js');
-    assert.match(src, /export async function renderExerciseCard\(ex, ei, workouts\)/);
+    assert.match(src, /export async function renderExerciseCard\(ex, ei, workouts[,)]/);
     assert.match(src, /_computeCoachTarget\(ex\.name, workouts\)/);
   });
 

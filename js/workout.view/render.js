@@ -58,7 +58,6 @@ on('wo:addLiveEx', () => W()._addLiveExercise());
 on('wo:complete', () => W().completeSession());
 on('wo:cancel', () => W().cancelSession());
 on('wo:toggleCard', (el) => W().toggleCard(+el.dataset.ei));
-on('wo:smartCoach', (el) => W().smartCoach(+el.dataset.ei, +el.dataset.si));
 on('wo:exMenu', (el) => W().showExerciseMenu(+el.dataset.ei));
 on('wo:addSet', (el) => W().addSet(+el.dataset.ei));
 on('wo:toggleBW', (el, e) => {
@@ -365,6 +364,10 @@ export async function renderActive() {
         // а не из константы: пользователь может добавить упражнение на лету.
         const order = blockOrder(State.plan);
         const pplColor = PPL_VAR[State.type] || 'var(--c-chrome)';
+        // Фокус: раскрыто только текущее упражнение (первое с недоделанным
+        // подходом), остальные свёрнуты до шапки. Секции открываются по мере
+        // прохождения: закрыл упражнение — раскрывается следующее.
+        const focusEi = focusExerciseIndex();
 
         for (let ei = 0; ei < State.plan.length; ei++) {
           const ex = State.plan[ei];
@@ -391,7 +394,7 @@ export async function renderActive() {
             `);
           }
 
-          cards.push(await renderExerciseCard(ex, ei, workouts));
+          cards.push(await renderExerciseCard(ex, ei, workouts, ei === focusEi));
         }
         return cards.join('');
       })()}
@@ -446,19 +449,24 @@ async function getDisplayName(exerciseName) {
 }
 
 /**
- * @param {import('../db.js').WorkoutRecord[]} workouts — full history, fetched once by renderActive()
+ * Индекс упражнения в фокусе — первое, где остался недоделанный подход.
+ * -1, если сделано всё (раскрывать нечего).
+ * @param {number} [after] — искать строго после этого индекса (автопереход)
  */
-export async function renderExerciseCard(ex, ei, workouts) {
+export function focusExerciseIndex(after = -1) {
+  return State.plan.findIndex((ex, i) => i > after && ex.sets.some((s) => !s.done));
+}
+
+/**
+ * @param {import('../db.js').WorkoutRecord[]} workouts — full history, fetched once by renderActive()
+ * @param {boolean} [open] — раскрыты ли подходы; по умолчанию открыто, пока есть недоделанные
+ */
+export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every((s) => s.done)) {
   const doneSets = ex.sets.filter((s) => s.done).length;
   const setRows = await Promise.all(ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)));
   const coach = _computeCoachTarget(ex.name, workouts);
   const muscleBadge = await getMuscleBadge(ex.name);
   const displayName = await getDisplayName(ex.name);
-
-  const firstUndoneIdx = ex.sets.findIndex((s) => !s.done);
-  const targetSi = firstUndoneIdx === -1 ? 0 : firstUndoneIdx;
-
-  const iconCoach = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
 
   return `
     <div class="exercise-card ${ex.noDb ? 'ex-no-db' : ''}" id="ex-card-${ei}" data-ei="${ei}">
@@ -473,7 +481,6 @@ export async function renderExerciseCard(ex, ei, workouts) {
         </div>
         
         <div class="ex-header-actions" data-action="wo:noop">
-          <button class="ex-action-btn coach" title="${esc(t('train.smart_coach'))}" aria-label="${esc(t('train.smart_coach'))}" data-action="wo:smartCoach" data-ei="${ei}" data-si="${targetSi}">${iconCoach}</button>
           <button class="ex-action-btn" title="${esc(t('train.more_options'))}" aria-label="${esc(t('train.more_options'))}" data-action="wo:exMenu" data-ei="${ei}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" aria-hidden="true">
               <circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="6" r="1.2"/><circle cx="12" cy="18" r="1.2"/>
@@ -481,9 +488,9 @@ export async function renderExerciseCard(ex, ei, workouts) {
           </button>
         </div>
 
-        <div class="exercise-chevron" id="ex-chevron-${ei}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="exercise-chevron" id="ex-chevron-${ei}"${open ? ' style="transform:rotate(180deg)"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></div>
       </div>
-      <div class="sets-wrap" id="sets-wrap-${ei}" style="display:${doneSets === ex.sets.length ? 'none' : 'block'}">
+      <div class="sets-wrap" id="sets-wrap-${ei}" style="display:${open ? 'block' : 'none'}">
         <div class="set-header-row">
           <span style="width:20px"></span>
           <button class="set-col-label set-col-btn ${ex.isBW ? 'is-bw' : ''}"
