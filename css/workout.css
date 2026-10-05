@@ -415,10 +415,6 @@
   color: var(--c-accent);
   opacity: 0.9;
 }
-.ex-action-btn.coach {
-  color: var(--c-accent);
-  opacity: 0.7;
-}
 .ex-action-btn svg {
   width: 14px;
   height: 14px;

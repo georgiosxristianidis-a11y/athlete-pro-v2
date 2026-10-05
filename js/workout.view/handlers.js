@@ -25,7 +25,13 @@ import {
   snapWeight,
   snapPlanWeights,
 } from '../workout.store.js';
-import { renderSelect, renderActive, renderSetRow, renderFocusMode } from './render.js';
+import {
+  renderSelect,
+  renderActive,
+  renderSetRow,
+  renderFocusMode,
+  focusExerciseIndex,
+} from './render.js';
 import { RestTimer } from '../rest-timer.js';
 import { esc, haptic } from '../shared/utils.js';
 import { Spring } from '../shared/spring.js';
@@ -239,17 +245,23 @@ export async function toggleSet(ei, si) {
       RestTimer.start(ex.name, t('train.set_n', { n: si + 1 }), _restDuration);
     }
 
-    // Elite Auto-collapse logic: ONLY if ALL sets are done (e.g. 4/4)
+    // Фокус-автопереход: закрыты ВСЕ подходы (4/4) — упражнение сворачивается,
+    // раскрывается следующее с недоделанным подходом (сначала ниже по плану,
+    // потом пропущенное выше). Секции тем самым открываются по мере прохода.
     const allDone = ex.sets.every((s) => s.done);
     if (allDone) {
       setTimeout(() => {
-        const wrap = document.getElementById(`sets-wrap-${ei}`);
-        const chev = document.getElementById(`ex-chevron-${ei}`);
-        if (wrap && wrap.style.display !== 'none') {
-          wrap.style.display = 'none';
-          if (chev) chev.style.transform = 'rotate(0deg)';
-        }
-      }, 500); // 400ms delay for visual feedback
+        if (!ex.sets.every((s) => s.done)) return; // успели снять галочку
+        _setCardOpen(ei, false);
+        const nextEi = focusExerciseIndex(ei);
+        const target = nextEi !== -1 ? nextEi : focusExerciseIndex();
+        if (target === -1) return;
+        _setCardOpen(target, true);
+        const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        document
+          .getElementById(`ex-card-${target}`)
+          ?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      }, 500); // 500ms delay for visual feedback
     }
   } else {
     RestTimer.stop();
@@ -406,7 +418,7 @@ export async function selectType(type) {
    ════════════════════════════════════════════════════════ */
 
 /**
- * Show a context menu for exercise actions (Replace, DB, Copy).
+ * Show a context menu for exercise actions (Replace, Dumbbells, Copy, Turbo).
  */
 export async function showExerciseMenu(ei) {
   haptic(10);
@@ -414,6 +426,12 @@ export async function showExerciseMenu(ei) {
   const _svgSwap = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>`;
   const _svgDumb = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="6.5" y1="12" x2="17.5" y2="12"/><rect x="3" y="9" width="3" height="6" rx="1"/><rect x="18" y="9" width="3" height="6" rx="1"/></svg>`;
   const _svgCopy = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`;
+  const _svgBolt = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
+  // Турбо целится в первый недоделанный подход (все сделаны — в первый).
+  const turboSi = Math.max(
+    0,
+    ex.sets.findIndex((s) => !s.done)
+  );
   const actions = [
     {
       label: t('train.replace'),
@@ -429,6 +447,11 @@ export async function showExerciseMenu(ei) {
       label: t('train.smart_copy'),
       icon: _svgCopy,
       action: () => smartCopy(ei, 0),
+    },
+    {
+      label: t('train.smart_coach'),
+      icon: _svgBolt,
+      action: () => smartCoach(ei, turboSi),
     },
   ];
 
@@ -797,13 +820,29 @@ export async function smartCoach(ei, si) {
    MISC
    ════════════════════════════════════════════════════════ */
 
-export function toggleCard(ei) {
+/** Раскрыть/свернуть подходы одной карточки (без побочных эффектов на соседей). */
+function _setCardOpen(ei, open) {
   const wrap = document.getElementById(`sets-wrap-${ei}`);
   const chev = document.getElementById(`ex-chevron-${ei}`);
   if (!wrap || !chev) return;
-  const isOpen = wrap.style.display !== 'none';
-  wrap.style.display = isOpen ? 'none' : 'block';
-  chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+  wrap.style.display = open ? 'block' : 'none';
+  chev.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+/**
+ * Аккордеон: раскрытая карточка одна. Открыл другое упражнение — прежнее
+ * сворачивается, экран остаётся сфокусированным на одном.
+ */
+export function toggleCard(ei) {
+  const wrap = document.getElementById(`sets-wrap-${ei}`);
+  if (!wrap) return;
+  const willOpen = wrap.style.display === 'none';
+  if (willOpen) {
+    State.plan.forEach((_, i) => {
+      if (i !== ei) _setCardOpen(i, false);
+    });
+  }
+  _setCardOpen(ei, willOpen);
 }
 
 export function _updateLiveStats() {

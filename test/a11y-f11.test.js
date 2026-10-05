@@ -50,11 +50,9 @@ describe('F-11 Train: именные атрибуты', () => {
     assert.match(r, /aria-label="/);
   });
 
-  test('coach, more и BW несут доступное имя', () => {
-    const coach = openTag(render, 'class="ex-action-btn coach"');
+  test('more и BW несут доступное имя', () => {
     const more = openTag(render, 'class="ex-action-btn" title=');
     const bw = openTag(render, 'data-action="wo:toggleBW"');
-    assert.match(coach, /aria-label="/);
     assert.match(more, /aria-label="/);
     assert.match(bw, /aria-label="/);
   });
