@@ -7,7 +7,13 @@
    спек блинов — `shared/plate-math.js`, здесь одна отрисовка.
 
    Лист на рецепте `.sd-overlay` (MO-2): вход через @starting-style,
-   выход через dismissOverlay. Отскок грифа и каскад блинов — PLATE-1c.
+   выход через dismissOverlay.
+
+   Кинетика (PLATE-1c). Хост анимации не пересоздаётся рендером (закон
+   Motion п.6): скелет грифа строится один раз, блины диффятся по индексу —
+   живой узел остаётся, заменённый и добавленный входят каскадом. Отскок —
+   `.pc-kick` на постоянном `.pc-barbell`, ретриггер через getAnimations()
+   (п.5, без reflow). Движение целиком в CSS, здесь ни одного rAF.
    ════════════════════════════════════════════════════════ */
 
 import { t } from './locale.store.js';
@@ -20,20 +26,73 @@ const BAR_KEY = 'ap-bar-weight';
 /** Килограммы без округления до десятых: 1.25 не должно стать «1.3». */
 const kg = (/** @type {number} */ n) => String(n);
 
-/** @param {import('./shared/plate-math.js').PlateCount[]} plates */
-function plateSpan(plates) {
-  const bySpec = new Map(PLATE_SPEC.map((p) => [p.kg, p]));
-  return plates
-    .flatMap(({ kg: k, n }) => {
-      const p = /** @type {import('./shared/plate-math.js').PlateSpec} */ (bySpec.get(k));
-      const label = p.h >= 50 ? kg(p.kg) : '';
-      return Array.from(
-        { length: n },
-        () =>
-          `<div class="pc-plate" style="height:${p.h}px;width:${p.w}px;background:${p.bg};color:${p.fg}">${label}</div>`
-      );
-    })
-    .join('');
+/** Каскад: задержка блина = его место среди вошедших × шаг в CSS; дальше потолок. */
+const CASCADE_MAX = 3;
+
+const PLATE_BY_KG = new Map(PLATE_SPEC.map((p) => [p.kg, p]));
+
+/**
+ * Плоский список дисков на сторону, от внутреннего к внешнему.
+ * @param {import('./shared/plate-math.js').PlateCount[]} plates
+ * @returns {import('./shared/plate-math.js').PlateSpec[]}
+ */
+const flatPlates = (plates) =>
+  plates.flatMap(({ kg: k, n }) =>
+    Array.from({ length: n }, () => /** @type {import('./shared/plate-math.js').PlateSpec} */ (PLATE_BY_KG.get(k)))
+  );
+
+/** @param {import('./shared/plate-math.js').PlateSpec} p */
+function makePlate(p) {
+  const el = document.createElement('div');
+  el.className = 'pc-plate';
+  el.dataset.kg = String(p.kg);
+  el.style.height = `${p.h}px`;
+  el.style.width = `${p.w}px`;
+  el.style.background = p.bg;
+  el.style.color = p.fg;
+  if (p.h >= 50) el.textContent = kg(p.kg);
+  return el;
+}
+
+/**
+ * Привести сторону грифа к списку дисков, не пересоздавая совпавшие по индексу.
+ * Новые и заменённые узлы при `animate` получают вход, сдвинутый по порядку.
+ * @param {HTMLElement} side
+ * @param {import('./shared/plate-math.js').PlateSpec[]} specs
+ * @param {boolean} animate
+ */
+function syncSide(side, specs, animate) {
+  let first = -1;
+  specs.forEach((p, i) => {
+    const cur = /** @type {HTMLElement | undefined} */ (side.children[i]);
+    if (cur && cur.dataset.kg === String(p.kg)) return;
+    const el = makePlate(p);
+    if (animate) {
+      if (first < 0) first = i;
+      el.style.setProperty('--pc-i', String(Math.min(i - first, CASCADE_MAX)));
+      el.classList.add('pc-plate-in');
+    }
+    if (cur) cur.replaceWith(el);
+    else side.appendChild(el);
+  });
+  while (side.children.length > specs.length) side.lastElementChild?.remove();
+}
+
+/**
+ * Отскок грифа. Первый раз анимацию запускает класс; дальше живую перематываем
+ * через getAnimations() (cancel + play), без `offsetWidth`. Анимация держит
+ * `forwards`: иначе после конца getAnimations() её уже не вернёт.
+ * @param {HTMLElement} host
+ */
+function kick(host) {
+  if (!host.classList.contains('pc-kick')) {
+    host.classList.add('pc-kick');
+    return;
+  }
+  host.getAnimations?.().forEach((a) => {
+    a.cancel();
+    a.play();
+  });
 }
 
 /** @param {import('./shared/plate-math.js').PlateCount[]} plates */
@@ -99,7 +158,11 @@ export const PlateCalc = (() => {
           </div>
           <button class="pc-step-btn" type="button" data-pc="up" aria-label="${esc(t('plate.heavier'))}">${SVG_PLUS}</button>
         </div>
-        <div class="pc-barbell" data-pc="barbell" aria-hidden="true"></div>
+        <div class="pc-barbell" data-pc="barbell" data-state="bare" aria-hidden="true">
+          <div class="pc-side pc-side-l" data-pc="side-l"></div>
+          <div class="pc-collar"></div><div class="pc-shaft"></div><div class="pc-collar"></div>
+          <div class="pc-side pc-side-r" data-pc="side-r"></div>
+        </div>
         <div class="pc-text" data-pc="text" aria-live="polite"></div>
       </div>`;
 
@@ -114,7 +177,8 @@ export const PlateCalc = (() => {
     };
     window.Nav?.registerOverlay({ id: 'plate-calc', el: overlay, close });
 
-    function render() {
+    /** @param {boolean} animate смена веса или грифа — отскок и каскад; первый показ листа — нет */
+    function render(animate) {
       q('weight').textContent = fmtWeight(current);
       overlay.querySelectorAll('.pc-bar-opt').forEach((b) => {
         const el = /** @type {HTMLElement} */ (b);
@@ -124,17 +188,11 @@ export const PlateCalc = (() => {
       const r = loadPlates(current, bar);
       /** @type {string[]} */
       const rows = [];
-      let barbell = '';
       let note = '';
 
       if (r.status === 'below-bar') {
         note = `<p class="pc-msg pc-error">${esc(t('plate.below_bar', { bar: kg(bar) }))}</p>`;
       } else {
-        barbell = r.plates.length
-          ? `<div class="pc-side pc-side-l">${plateSpan(r.plates)}</div>` +
-            `<div class="pc-collar"></div><div class="pc-shaft"></div><div class="pc-collar"></div>` +
-            `<div class="pc-side pc-side-r">${plateSpan(r.plates)}</div>`
-          : `<div class="pc-shaft"></div>`;
         if (r.status === 'unreachable' && r.up) {
           note =
             `<p class="pc-msg pc-error">${esc(t('plate.unreachable', { w: kg(current) }))}</p>` +
@@ -149,7 +207,13 @@ export const PlateCalc = (() => {
           );
         }
       }
-      q('barbell').innerHTML = barbell;
+      const barbell = q('barbell');
+      const specs = r.status === 'below-bar' ? [] : flatPlates(r.plates);
+      syncSide(q('side-l'), specs, animate);
+      syncSide(q('side-r'), specs, animate);
+      const state = r.status === 'below-bar' ? 'below' : specs.length ? 'loaded' : 'bare';
+      barbell.dataset.state = state;
+      if (animate && state !== 'below') kick(barbell);
       q('text').innerHTML = note + rows.join('');
     }
 
@@ -159,7 +223,7 @@ export const PlateCalc = (() => {
       if (next === current) return;
       current = next;
       haptic([15]);
-      render();
+      render(true);
     }
 
     q('down').addEventListener('click', () => step(-1));
@@ -169,14 +233,14 @@ export const PlateCalc = (() => {
       b.addEventListener('click', () => {
         bar = Number(/** @type {HTMLElement} */ (b).dataset.bar);
         saveBar(bar);
-        render();
+        render(true);
       })
     );
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) close();
     });
 
-    render();
+    render(false);
     haptic([20]);
   }
 

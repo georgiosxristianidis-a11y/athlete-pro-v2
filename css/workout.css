@@ -1062,7 +1062,7 @@
 
 /* PLATE-1b — лист «Калькулятор блинов» (js/plate-calc.js). Вход и выход листа —
    рецепт .sd-overlay (base.css). Цвета и размеры дисков приходят из PLATE_SPEC
-   инлайном (данные, не декор), всё остальное — токены. Отскок — PLATE-1c. */
+   инлайном (данные, не декор), всё остальное — токены. */
 .pc-bar-row {
   display: flex;
   align-items: center;
@@ -1180,6 +1180,57 @@
   min-width: 24px;
   height: 8px;
   background: var(--c-text-3);
+}
+/* Скелет грифа живёт всегда (PLATE-1c: хост анимации не пересоздаётся), состояние
+   решает, что из него видно: ниже грифа — ничего, пустой гриф — только шафт. */
+.pc-barbell[data-state='below'] > * {
+  display: none;
+}
+.pc-barbell[data-state='bare'] > :not(.pc-shaft) {
+  display: none;
+}
+/* PLATE-1c — кинетика. Только transform/opacity, конечные, ≤300 мс (вход блина
+   0.2 с + максимум 3 шага каскада по 30 мс). Гриф едет одним CSS-драйвером, JS
+   лишь перематывает через getAnimations(); у блина тоже один драйвер — keyframes
+   входа, transition по transform на нём нет. Reduced-motion гасит всё глобальным
+   правилом base.css: блины встают сразу, без отскока. */
+.pc-barbell.pc-kick {
+  animation: pc-kick 0.26s var(--ease-spring-2) forwards;
+}
+@keyframes pc-kick {
+  from {
+    transform: translateY(6px);
+  }
+  to {
+    transform: none;
+  }
+}
+.pc-side-l {
+  --pc-dx: -14px;
+}
+.pc-side-r {
+  --pc-dx: 14px;
+}
+.pc-plate-in {
+  animation: pc-plate-in 0.2s var(--ease-spring-2) backwards;
+  animation-delay: calc(var(--pc-i, 0) * 30ms);
+}
+@keyframes pc-plate-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--pc-dx, 0));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Глобальное правило обнуляет длительность, но не задержку: без этого блины
+   каскада стояли бы невидимыми до 90 мс. Само движение гасит base.css. */
+@media (prefers-reduced-motion: reduce) {
+  .pc-plate-in {
+    animation-delay: 0s;
+  }
 }
 .pc-text {
   display: flex;
