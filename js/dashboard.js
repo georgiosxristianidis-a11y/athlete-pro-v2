@@ -4,14 +4,13 @@
    ════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
-import { getVolumeSummary, getNextType, computeStreak } from './dashboard.store.js';
+import { getVolumeSummary, getNextType, computeStreak, getNextSessionRecs } from './dashboard.store.js';
 import {
   generateSparkline,
   generateSparklineMulti,
   VOLUME_DAYS,
   parseVolumeDays,
 } from './shared/sparkline.js';
-import { getRecommendations } from './claude.store.js';
 import { Spring } from './shared/spring.js';
 import { esc, listenerGroup } from './shared/utils.js';
 import { Toast } from './shell.js';
@@ -948,51 +947,35 @@ export const Dashboard = (() => {
       requestAnimationFrame(() => {
         renderTopLifts(orms, allWorkouts);
         renderRecent(allWorkouts);
-        renderRecommendations();
+        renderRecommendations(allWorkouts, nextType);
         loadWeeklySummary();
       });
     });
   }
 
   /**
-   * Render recommendations card for next session.
+   * Render recommendations card for next session: тип — тот же nextType, что
+   * у hero, веса — те же, что Train подставит (getNextSessionRecs).
+   * @param {Array} allWorkouts — DB.Workouts.getAll(), newest-first
+   * @param {'push'|'pull'|'legs'} nextType — getNextType(allWorkouts)
    * @returns {void}
    */
-  function renderRecommendations() {
+  function renderRecommendations(allWorkouts, nextType) {
     const container = document.getElementById('recommendations-section');
     if (!container) return;
 
-    // Determine next session type based on last workout
-    const lastType = localStorage.getItem('ap-last-workout-type');
-    if (!lastType) {
-      container.style.display = 'none';
-      return;
-    }
-
-    const nextType = { push: 'pull', pull: 'legs', legs: 'push' }[lastType];
-    const recs = getRecommendations(nextType);
-
-    if (!recs || !recs.exercises?.length) {
-      container.style.display = 'none';
-      return;
-    }
-
-    container.style.display = 'block';
-    const progressingExercises = recs.exercises.filter(
-      (ex) => ex.recommendedWeight > ex.currentWeight
-    );
-
+    const progressingExercises = getNextSessionRecs(allWorkouts, nextType);
     if (!progressingExercises.length) {
       container.style.display = 'none';
       return;
     }
 
+    container.style.display = 'block';
     const nextTypeLabel = typeLabel(nextType);
 
     container.innerHTML = `
       <div class="section-header">
         <span class="section-label">${esc(t('dash.next_session', { type: nextTypeLabel }))}</span>
-        <span class="badge badge-green">${esc(t('dash.ai_powered'))}</span>
       </div>
       <div class="recommendations-card">
         ${progressingExercises
@@ -1003,12 +986,12 @@ export const Dashboard = (() => {
             <div class="rec-dot" style="background: var(--c-accent)"></div>
             <div class="rec-info">
               <span class="rec-name">${esc(ex.name)}</span>
-              <span class="rec-reason">${esc(ex.reason)}</span>
+              <span class="rec-reason">${esc(t('dash.rec_reason'))}</span>
             </div>
             <div class="rec-weights">
-              <span class="rec-old">${ex.currentWeight}kg</span>
+              <span class="rec-old">${esc(String(ex.from))}kg</span>
               <span class="rec-arrow">→</span>
-              <span class="rec-new">${ex.recommendedWeight}kg</span>
+              <span class="rec-new">${esc(String(ex.to))}kg</span>
             </div>
           </div>
         `

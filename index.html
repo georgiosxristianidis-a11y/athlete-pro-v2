@@ -155,10 +155,12 @@
     <link rel="modulepreload" href="js/shared/chamber-pill.js" />
     <link rel="modulepreload" href="js/shared/block-names.js" />
     <link rel="modulepreload" href="js/shared/cryptoClient.js" />
-    <!-- Транзитивы claude.store.js: статический импорт из dashboard.js, то есть
-         первый кадр. Прелоад тут не украшение — он же кладёт файл в install-фазу
-         прекеша (scripts/build-sw.mjs собирает ASSETS по этим ссылкам), а без
-         него холодный офлайн-старт сразу после апдейта падает на пустом кеше. -->
+    <!-- Транзитивы claude.store.js. С 1.27.153 dashboard.js его больше не
+         импортирует (рекомендации Home считает dashboard.store.js), и из
+         бут-графа он выпал вместе с strength-engine и ai-engine. Прелоады
+         оставлены намеренно: они же кладут файлы в install-фазу прекеша
+         (scripts/build-sw.mjs собирает ASSETS по этим ссылкам). Снимать —
+         отдельной карточкой с проверкой холодного офлайн-старта после апдейта. -->
     <link rel="modulepreload" href="js/profile.store.js" />
     <link rel="modulepreload" href="js/strength-engine.js" />
     <link rel="modulepreload" href="js/shared/ai-engine.js" />
