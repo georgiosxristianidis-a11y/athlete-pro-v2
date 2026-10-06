@@ -794,3 +794,44 @@ test.describe('MO-2b body stats form', () => {
     await expect(page.locator('.bs-overlay')).toHaveCount(0, { timeout: 2000 });
   });
 });
+
+// ─── Home recommendations — 169d3399 снёс запись 'ap-last-workout-type' ─────
+// Секция читала флаг и ключи 'ap-recommendations-*', которые с 07.06 никто не
+// пишет: история в IDB есть, а «Next Pull Session» не показывается никогда.
+test.describe('Home recommendations (getNextSessionRecs)', () => {
+  test('history without the legacy flag still shows the next-session card, same weight as Train', async ({
+    page,
+  }) => {
+    await openApp(page);
+
+    await page.evaluate(async () => {
+      localStorage.removeItem('ap-last-workout-type');
+      const { DB } = await import('/js/db.js');
+      const now = Date.now();
+      const DAY = 24 * 60 * 60 * 1000;
+      const sets = (weight, reps) => [1, 2, 3].map(() => ({ weight, reps, done: true }));
+      await DB.Workouts.save({
+        type: 'pull',
+        timestamp: now - 3 * DAY,
+        tonnage: 50 * 10 * 3,
+        duration: 3_600_000,
+        exercises: [{ name: 'Cable Row', sets: sets(50, 10) }],
+      });
+      await DB.Workouts.save({
+        type: 'push',
+        timestamp: now - DAY,
+        tonnage: 80 * 8 * 3,
+        duration: 3_600_000,
+        exercises: [{ name: 'Bench Press', sets: sets(80, 8) }],
+      });
+    });
+    await page.reload();
+    await waitForBoot(page);
+
+    const section = page.locator('#recommendations-section');
+    await expect(section).toBeVisible({ timeout: 8000 });
+    const row = section.locator('.rec-item', { hasText: 'Cable Row' });
+    await expect(row.locator('.rec-old')).toHaveText('50kg');
+    await expect(row.locator('.rec-new')).toHaveText('52.5kg');
+  });
+});

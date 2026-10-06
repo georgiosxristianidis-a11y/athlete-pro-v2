@@ -4,6 +4,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { weeklyVolumeFrom, monthlyVolumeFrom, weeklyCountFrom, pplTonnageFrom } from './db.js';
+import { loadPlan, nextWeightFor } from './workout.store.js';
 
 /** PPL rotation used to pick "what's next" off the last logged session. */
 const NEXT_TYPE = { push: 'pull', pull: 'legs', legs: 'push' };
@@ -31,6 +32,26 @@ export function getVolumeSummary(workouts) {
 export function getNextType(workouts) {
   const lastType = workouts[0]?.type || 'legs';
   return NEXT_TYPE[lastType] || 'push';
+}
+
+/**
+ * Рост веса на следующую сессию для карточки рекомендаций Home. Тип — тот же,
+ * что у hero (getNextType), вес — тот же расчёт, что Train подставит в
+ * buildSession (nextWeightFor): что обещано на Home, то и встанет на барабан.
+ * Раньше карточка читала флаг ap-last-workout-type и ключи ap-recommendations-*,
+ * которые с 169d3399 никто не пишет, — секция была скрыта у всех.
+ * @param {Array<{type: string, timestamp?: number, exercises?: Array}>} workouts newest-first
+ * @param {'push'|'pull'|'legs'} nextType
+ * @param {Object<string, Array>} [plan] loadPlan(); параметр — для тестов
+ * @returns {Array<{name: string, from: number, to: number}>} только упражнения, где вес растёт
+ */
+export function getNextSessionRecs(workouts, nextType, plan = loadPlan()) {
+  const recs = [];
+  for (const ex of plan?.[nextType] || []) {
+    const next = nextWeightFor(ex, workouts || []);
+    if (next?.autoBumped) recs.push({ name: ex.name, from: next.lastWeight, to: next.weight });
+  }
+  return recs;
 }
 
 /**

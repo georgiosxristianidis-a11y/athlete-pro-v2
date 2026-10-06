@@ -742,7 +742,7 @@ export function snapPlanWeights(plan) {
  * @param {{weight:number,reps:number,rpe:number|null,done:boolean}[]} lastSets
  * @param {number} targetReps — the plan's prescribed reps
  * @param {number} step — grid step of this exercise (weightStep)
- * @returns {{weight:number, autoBumped:boolean}|null}
+ * @returns {{weight:number, autoBumped:boolean, lastWeight:number}|null}
  */
 function _smartNextWeight(lastSets, targetReps, step) {
   const completed = lastSets.filter(s => s.done && s.weight > 0);
@@ -752,10 +752,26 @@ function _smartNextWeight(lastSets, targetReps, step) {
   const hitTarget = top.reps >= targetReps;
   const easyEffort = top.rpe == null ? hitTarget : top.rpe <= 8;
   if (hitTarget && easyEffort) {
-    return { weight: snapWeight(top.weight + step, step), autoBumped: true };
+    return { weight: snapWeight(top.weight + step, step), autoBumped: true, lastWeight: top.weight };
   }
   // Otherwise repeat last weight
-  return { weight: snapWeight(top.weight, step), autoBumped: false };
+  return { weight: snapWeight(top.weight, step), autoBumped: false, lastWeight: top.weight };
+}
+
+/**
+ * Вес следующей сессии для упражнения плана по истории (имя или alias) — ровно
+ * то, что buildSession подставит в Train. Рекомендации Home читают этот же
+ * расчёт, а не свой: второй расчёт разошёлся бы с префиллом.
+ * @param {{name: string, alias?: string[], reps: number, isUnilateral?: boolean}} ex
+ * @param {Array<{ timestamp?: number, exercises?: Array }>} workouts
+ * @returns {{weight:number, autoBumped:boolean, lastWeight:number}|null}
+ */
+export function nextWeightFor(ex, workouts) {
+  const names = [ex.name, ...(ex.alias || [])];
+  const last = latestWorkoutForNames(workouts, names);
+  const lastEx = last?.exercises?.find(e => names.includes(e.name));
+  if (!lastEx?.sets?.length) return null;
+  return _smartNextWeight(lastEx.sets, ex.reps, weightStep(ex));
 }
 
 /**
@@ -824,15 +840,10 @@ export function buildSession(type, opts = {}) {
       // at the seed's 0 kg. Seed lifts that are the same movement kept their
       // legacy names; alias:[] carries every other name the lift was ever
       // logged under, so history (and its progression) follows renames.
-      const names = [ex.name, ...(ex.alias || [])];
-      const last = latestWorkoutForNames(workouts, names);
-      const lastEx = last?.exercises?.find(e => names.includes(e.name));
-      if (lastEx?.sets?.length) {
-        const next = _smartNextWeight(lastEx.sets, ex.reps, weightStep(ex));
-        if (next) {
-          weight = next.weight;
-          bumped = autoProgress && next.autoBumped;
-        }
+      const next = nextWeightFor(ex, workouts);
+      if (next) {
+        weight = next.weight;
+        bumped = autoProgress && next.autoBumped;
       }
     }
     return {
