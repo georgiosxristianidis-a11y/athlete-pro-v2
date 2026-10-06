@@ -984,3 +984,153 @@
   color: var(--c-red);
   background: color-mix(in srgb, var(--c-red) 8%, transparent);
 }
+
+/* PLATE-1b — лист «Калькулятор блинов» (js/plate-calc.js). Вход и выход листа —
+   рецепт .sd-overlay (base.css). Цвета и размеры дисков приходят из PLATE_SPEC
+   инлайном (данные, не декор), всё остальное — токены. Отскок — PLATE-1c. */
+.pc-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.pc-lbl {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+}
+.pc-bar-opts {
+  display: flex;
+  gap: var(--sp-1);
+}
+.pc-bar-opt {
+  min-width: 48px;
+  min-height: 44px;
+  padding: 0 var(--sp-1-5);
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--r-m);
+  color: var(--c-text-1);
+  font-family: inherit;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast),
+    transform var(--t-fast);
+}
+.pc-bar-opt:active {
+  transform: scale(var(--press-scale));
+}
+.pc-bar-opt[aria-pressed='true'] {
+  border-color: var(--c-accent);
+  background: var(--c-accent-bg);
+  color: var(--c-accent);
+}
+.pc-weight-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+.pc-step-btn {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--r-m);
+  color: var(--c-text-1);
+  cursor: pointer;
+  transition: transform var(--t-fast);
+}
+.pc-step-btn:active {
+  transform: scale(var(--press-scale));
+}
+.pc-weight-display {
+  min-width: 112px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--sp-0-5);
+}
+.pc-weight-num {
+  font-size: var(--fs-6);
+  font-weight: var(--fw-black);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-1);
+}
+.pc-weight-unit {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+}
+/* Высота под самый большой диск (88 px): смена веса не двигает текст ниже. */
+.pc-barbell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  margin-bottom: var(--sp-2);
+}
+.pc-side {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.pc-side-l {
+  flex-direction: row-reverse;
+}
+.pc-plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-xs);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+}
+.pc-collar {
+  width: 6px;
+  height: 28px;
+  background: var(--c-text-3);
+  border-radius: 2px;
+}
+.pc-shaft {
+  flex: 0 1 56px;
+  min-width: 24px;
+  height: 8px;
+  background: var(--c-text-3);
+}
+.pc-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.pc-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.pc-val {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-1);
+  text-align: right;
+}
+.pc-msg {
+  margin: 0;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-md);
+  color: var(--c-text-2);
+  text-align: center;
+}
+.pc-msg.pc-error {
+  color: var(--c-red);
+}
