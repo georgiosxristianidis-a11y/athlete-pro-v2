@@ -838,6 +838,81 @@
   margin-top: var(--sp-1);
 }
 
+/* ── Секционный режим логгера (LOG-SEC-1, js/workout.view/sections.js) ──
+   Секция — заголовок-кнопка + тело с карточками. Состояние лежит в
+   data-sec-state: open — заголовок как раньше и карточки; row — строка с
+   итогом «название · галочка · N/M упр.»; hidden — до секции ещё не дошли.
+   Строка «Дальше» одна на экран, JS переставляет её под открытую секцию. */
+.log-sec[data-sec-state='hidden'] {
+  display: none;
+}
+.log-sec[data-sec-state='row'] > .log-sec-body {
+  display: none;
+}
+.log-sec-head {
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.log-sec[data-sec-state='open'] > .log-sec-head {
+  cursor: default;
+}
+.log-sec-head {
+  /* липкая шапка приложения ~65px: 48 из общего правила заголовка не хватало */
+  scroll-margin-top: calc(var(--sp-6) + var(--sp-3));
+}
+.log-sec:first-child > .log-sec-head {
+  margin-top: var(--sp-1);
+}
+.log-sec-check,
+.log-sec-sum {
+  display: none;
+}
+.log-sec[data-sec-state='row'] > .log-sec-head {
+  padding: var(--sp-1-5) var(--sp-2);
+  margin: var(--sp-1) 0;
+  background: var(--c-bg-2);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--r-m);
+}
+.log-sec[data-sec-state='row'] .log-sec-sum {
+  display: inline;
+  margin-left: auto;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.04em;
+  color: var(--c-text-3);
+}
+.log-sec[data-sec-state='row'].is-done .log-sec-check {
+  display: inline-flex;
+  color: var(--c-accent);
+}
+.log-sec-next {
+  display: block;
+  width: 100%;
+  margin: var(--sp-2) 0 var(--sp-1);
+  padding: var(--sp-1-5) var(--sp-2);
+  background: none;
+  border: 1.5px dashed var(--c-border);
+  border-radius: var(--r-m);
+  font: inherit;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+.log-sec-next[hidden] {
+  display: none;
+}
+
 .muscle-badge {
   border-radius: var(--r-xs);
   padding: 2px var(--sp-0-5);

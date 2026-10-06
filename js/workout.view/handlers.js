@@ -32,6 +32,13 @@ import {
   renderFocusMode,
   focusExerciseIndex,
 } from './render.js';
+import {
+  sectionsRendered,
+  setCardOpen as _setCardOpen,
+  syncSections,
+  openSection,
+  advanceFromExercise,
+} from './sections.js';
 import { RestTimer } from '../rest-timer.js';
 import { esc, haptic } from '../shared/utils.js';
 import { Spring } from '../shared/spring.js';
@@ -228,6 +235,7 @@ export async function toggleSet(ei, si) {
   }
   persistSession();
   _updateLiveStats();
+  syncSections();
 
   if (set.done) {
     // @ts-ignore
@@ -248,10 +256,16 @@ export async function toggleSet(ei, si) {
     // Фокус-автопереход: закрыты ВСЕ подходы (4/4) — упражнение сворачивается,
     // раскрывается следующее с недоделанным подходом (сначала ниже по плану,
     // потом пропущенное выше). Секции тем самым открываются по мере прохода.
+    // Секционный режим (LOG-SEC-1) ведёт тот же переход, но внутри секции, а
+    // закрытую секцию сворачивает и открывает следующую.
     const allDone = ex.sets.every((s) => s.done);
     if (allDone) {
       setTimeout(() => {
         if (!ex.sets.every((s) => s.done)) return; // успели снять галочку
+        if (sectionsRendered()) {
+          advanceFromExercise(ei);
+          return;
+        }
         _setCardOpen(ei, false);
         const nextEi = focusExerciseIndex(ei);
         const target = nextEi !== -1 ? nextEi : focusExerciseIndex();
@@ -330,6 +344,7 @@ export async function addSet(ei) {
     requestAnimationFrame(() => initDrumPickers());
   }
   _updateLiveStats();
+  syncSections();
 }
 
 /**
@@ -820,15 +835,6 @@ export async function smartCoach(ei, si) {
    MISC
    ════════════════════════════════════════════════════════ */
 
-/** Раскрыть/свернуть подходы одной карточки (без побочных эффектов на соседей). */
-function _setCardOpen(ei, open) {
-  const wrap = document.getElementById(`sets-wrap-${ei}`);
-  const chev = document.getElementById(`ex-chevron-${ei}`);
-  if (!wrap || !chev) return;
-  wrap.style.display = open ? 'block' : 'none';
-  chev.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
-}
-
 /**
  * Аккордеон: раскрытая карточка одна. Открыл другое упражнение — прежнее
  * сворачивается, экран остаётся сфокусированным на одном.
@@ -954,6 +960,9 @@ export async function _addLiveExercise() {
     persistSession();
     const { renderActive } = await import('./render.js');
     await renderActive();
+    // Добавленное упражнение лежит в своей секции 'custom' — без перехода в неё
+    // его не было бы видно (в секционном режиме непройденные секции скрыты).
+    openSection('custom');
     Toast.show(t('train.added', { name }), 'success');
   });
 }

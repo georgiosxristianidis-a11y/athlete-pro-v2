@@ -32,6 +32,14 @@ import { on } from '../events.js';
 import { pplColor, isPplType, PPL_TYPES } from '../shared/ppl-color.js';
 import { t, isRu } from '../locale.store.js';
 import { exerciseLabel } from '../shared/exercise-label.js';
+import { sectionList, focusInSection } from '../shared/logger-sections.js';
+import {
+  sectionsEnabled,
+  sectionLabel,
+  resolveOpenSection,
+  syncSections,
+  openSection,
+} from './sections.js';
 
 function sessionTypeLabel(type) {
   if (type === 'push' || type === 'pull' || type === 'legs') {
@@ -58,6 +66,7 @@ on('wo:addLiveEx', () => W()._addLiveExercise());
 on('wo:complete', () => W().completeSession());
 on('wo:cancel', () => W().cancelSession());
 on('wo:toggleCard', (el) => W().toggleCard(+el.dataset.ei));
+on('wo:openSection', (el) => openSection(el.dataset.block || ''));
 on('wo:exMenu', (el) => W().showExerciseMenu(+el.dataset.ei));
 // Вес читаем в момент тапа, не из разметки: подход, отмеченный после рендера
 // карточки, сдвигает активную строку (то же, чем страдает data-si у коуча).
@@ -357,7 +366,7 @@ export async function renderActive() {
       <div class="live-rail" id="live-rail">${'<div class="live-rail-seg"></div>'.repeat(totalSets)}</div>
     </div>
 
-    <div id="exercise-list">
+    <div id="exercise-list"${sectionsEnabled() ? ' data-sections' : ''}>
       ${await (async () => {
         let currentBlock = '';
         const cards = [];
@@ -375,6 +384,12 @@ export async function renderActive() {
         // подходом), остальные свёрнуты до шапки. Секции открываются по мере
         // прохождения: закрыл упражнение — раскрывается следующее.
         const focusEi = focusExerciseIndex();
+
+        // LOG-SEC-1: секционный режим — карточки лежат в секциях, переходы
+        // между ними живут в sections.js. OFF — прежний плоский список ниже.
+        if (sectionsEnabled()) {
+          return renderSections(workouts, pplColor);
+        }
 
         for (let ei = 0; ei < State.plan.length; ei++) {
           const ex = State.plan[ei];
@@ -423,6 +438,8 @@ export async function renderActive() {
     <div style="height:var(--sp-4)"></div>
   `;
 
+  syncSections();
+
   requestAnimationFrame(() => {
     _initDrag();
     initDragNumbers();
@@ -434,6 +451,44 @@ export async function renderActive() {
     // static render<->handlers import cycle.
     import('./handlers.js').then((m) => m._updateLiveStats?.()).catch(() => {});
   });
+}
+
+/**
+ * LOG-SEC-1: HTML секционного режима. Каждая секция — заголовок-кнопка (в
+ * открытом состоянии это обычный заголовок блока, в свёрнутом — строка с итогом)
+ * и тело с карточками. Видимость и итоги расставляет syncSections() по
+ * `data-sec-state`; здесь только структура и раскрытое упражнение в открытой.
+ *
+ * @param {import('../db.js').WorkoutRecord[]} workouts
+ * @param {string} color — PPL-цвет полосок
+ * @returns {Promise<string>}
+ */
+async function renderSections(workouts, color) {
+  const secs = sectionList(State.plan);
+  const openId = resolveOpenSection(secs);
+  const openSec = secs.find((s) => s.id === openId);
+  const focusEi = openSec ? focusInSection(openSec, State.plan) : -1;
+  const out = [];
+  for (let i = 0; i < secs.length; i++) {
+    const sec = secs[i];
+    const label = sectionLabel(sec.id);
+    const ticks = blockTicks({ index: i, total: secs.length, color, label });
+    const cards = await Promise.all(
+      sec.eis.map((ei) => renderExerciseCard(State.plan[ei], ei, workouts, ei === focusEi))
+    );
+    out.push(`
+      <section class="log-sec" data-block="${esc(sec.id)}" data-sec-state="hidden">
+        <button type="button" class="workout-block-header log-sec-head" data-action="wo:openSection" data-block="${esc(sec.id)}">
+          ${ticks}
+          <span class="workout-block-name">${esc(label)}</span>
+          <span class="log-sec-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span class="log-sec-sum"></span>
+        </button>
+        <div class="log-sec-body">${cards.join('')}</div>
+      </section>`);
+  }
+  out.push('<button type="button" class="log-sec-next" data-action="wo:openSection" hidden></button>');
+  return out.join('');
 }
 
 async function getMuscleBadge(exerciseName) {
