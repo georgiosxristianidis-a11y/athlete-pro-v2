@@ -59,6 +59,13 @@ on('wo:complete', () => W().completeSession());
 on('wo:cancel', () => W().cancelSession());
 on('wo:toggleCard', (el) => W().toggleCard(+el.dataset.ei));
 on('wo:exMenu', (el) => W().showExerciseMenu(+el.dataset.ei));
+// Вес читаем в момент тапа, не из разметки: подход, отмеченный после рендера
+// карточки, сдвигает активную строку (то же, чем страдает data-si у коуча).
+on('wo:plates', (el) => {
+  const sets = State.plan[+el.dataset.ei]?.sets ?? [];
+  const set = sets.find((s) => !s.done) ?? sets[sets.length - 1];
+  import('../plate-calc.js').then(({ PlateCalc }) => PlateCalc.open(set?.weight ?? 0));
+});
 on('wo:addSet', (el) => W().addSet(+el.dataset.ei));
 on('wo:toggleBW', (el, e) => {
   e.stopPropagation();
@@ -468,6 +475,12 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
   const muscleBadge = await getMuscleBadge(ex.name);
   const displayName = await getDisplayName(ex.name);
 
+  // Блин в разрезе: диск с отверстием. Со своим весом блинов нет — кнопки нет.
+  const iconPlate = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg>`;
+  const plateBtn = ex.isBW
+    ? ''
+    : `<button class="ex-action-btn" title="${esc(t('plate.title'))}" aria-label="${esc(t('plate.title'))}" data-action="wo:plates" data-ei="${ei}">${iconPlate}</button>`;
+
   return `
     <div class="exercise-card ${ex.noDb ? 'ex-no-db' : ''}" id="ex-card-${ei}" data-ei="${ei}">
       <div class="exercise-header" data-action="wo:toggleCard" data-ei="${ei}">
@@ -481,6 +494,7 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
         </div>
         
         <div class="ex-header-actions" data-action="wo:noop">
+          ${plateBtn}
           <button class="ex-action-btn" title="${esc(t('train.more_options'))}" aria-label="${esc(t('train.more_options'))}" data-action="wo:exMenu" data-ei="${ei}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" aria-hidden="true">
               <circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="6" r="1.2"/><circle cx="12" cy="18" r="1.2"/>

@@ -1,178 +1,184 @@
-import { fmtWeight } from './shared/format.js';
-import { on } from './events.js';
-import { haptic } from './shared/utils.js';
-
-on('pc:setBar', (el) => window.PlateCalc.setBar(+el.dataset.w));
-on('pc:close',  () => window.PlateCalc.close());
-on('pc:step',   (el) => window.PlateCalc.stepWeight(+el.dataset.amt));
 // @ts-check
 /* ════════════════════════════════════════════════════════
-   Block 10.1 — Plate Calculator  v1.1  |  Athlete Pro
-   FIX: correct plate mirroring on left side
+   plate-calc.js — лист «Калькулятор блинов» (PLATE-1b)
+   ────────────────────────────────────────────────────────
+   Показывает, чем собрать вес на грифе. В подход ничего не пишет: вес
+   подхода живёт на барабане, лист только считает и рисует. Арифметика и
+   спек блинов — `shared/plate-math.js`, здесь одна отрисовка.
+
+   Лист на рецепте `.sd-overlay` (MO-2): вход через @starting-style,
+   выход через dismissOverlay. Отскок грифа и каскад блинов — PLATE-1c.
    ════════════════════════════════════════════════════════ */
 
+import { t } from './locale.store.js';
+import { esc, haptic, dismissOverlay } from './shared/utils.js';
+import { fmtWeight } from './shared/format.js';
+import { PLATE_SPEC, BAR_OPTIONS, loadPlates, stepLoadable, normalizeBar } from './shared/plate-math.js';
+
+const BAR_KEY = 'ap-bar-weight';
+
+/** Килограммы без округления до десятых: 1.25 не должно стать «1.3». */
+const kg = (/** @type {number} */ n) => String(n);
+
+/** @param {import('./shared/plate-math.js').PlateCount[]} plates */
+function plateSpan(plates) {
+  const bySpec = new Map(PLATE_SPEC.map((p) => [p.kg, p]));
+  return plates
+    .flatMap(({ kg: k, n }) => {
+      const p = /** @type {import('./shared/plate-math.js').PlateSpec} */ (bySpec.get(k));
+      const label = p.h >= 50 ? kg(p.kg) : '';
+      return Array.from(
+        { length: n },
+        () =>
+          `<div class="pc-plate" style="height:${p.h}px;width:${p.w}px;background:${p.bg};color:${p.fg}">${label}</div>`
+      );
+    })
+    .join('');
+}
+
+/** @param {import('./shared/plate-math.js').PlateCount[]} plates */
+const sideList = (plates) => plates.map((p) => `${p.n}×${kg(p.kg)}`).join(' + ');
+
+function readBar() {
+  try {
+    return normalizeBar(localStorage.getItem(BAR_KEY));
+  } catch {
+    return normalizeBar(null);
+  }
+}
+
+function saveBar(/** @type {number} */ bar) {
+  try {
+    localStorage.setItem(BAR_KEY, String(bar));
+  } catch {
+    /* приватный режим: гриф живёт до закрытия листа */
+  }
+}
+
+const SVG_CLOSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="18" height="18" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
+const SVG_MINUS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/></svg>`;
+const SVG_PLUS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="20" height="20" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
+
 export const PlateCalc = (() => {
-
-  const PLATES = [
-    [25, '#c62828', '#fff', 88, 17],
-    [20, '#1565c0', '#fff', 78, 15],
-    [15, '#f9a825', '#000', 70, 13],
-    [10, '#2e7d32', '#fff', 62, 11],
-    [5, '#e0e0e0', '#000', 50, 9],
-    [2.5, '#c62828', '#fff', 40, 7],
-    [1.25, '#9e9e9e', '#000', 32, 5],
-  ];
-  const BAR_OPTS = [20, 15, 10];
-  const BAR_KEY = 'ap-bar-weight';
-  let _weight = 100,
-    _barWeight = 20,
-    _overlay = null;
-
-  function _calc(total, bar) {
-    let rem = Math.round(((total - bar) / 2) * 100) / 100;
-    if (rem < 0) return { plates: [], remainder: 0, error: `Below bar weight (${bar} kg)` };
-    const result = [];
-    for (const [w, bg, fg, h, pw] of PLATES) {
-      const n = Math.floor(rem / w + 0.0001);
-      if (n > 0) {
-        result.push({ w, bg, fg, h, pw, n });
-        rem = Math.round((rem - n * w) * 100) / 100;
-      }
-    }
-    return { plates: result, remainder: rem, error: null };
-  }
-
-  /* ── plate HTML helper ── */
-  function _toHTML(arr) {
-    return arr
-      .flatMap((p) =>
-        Array.from(
-          { length: p.n },
-          () =>
-            `<div class="pc-plate" style="height:${p.h}px;width:${p.pw}px;background:${p.bg};color:${p.fg}">${p.h >= 50 ? p.w : ''}</div>`
-        )
-      )
-      .join('');
-  }
-
-  function _render() {
-    const weightEl = document.getElementById('pc-weight-val');
-    const barbellEl = document.getElementById('pc-barbell');
-    const textEl = document.getElementById('pc-text');
-    if (!weightEl || !barbellEl || !textEl) return;
-
-    weightEl.textContent = fmtWeight(_weight);
-    document
-      .querySelectorAll('.pc-bar-opt')
-      .forEach((b) => b.classList.toggle('active', parseFloat(b.dataset.w) === _barWeight));
-
-    const { plates, remainder, error } = _calc(_weight, _barWeight);
-    if (error) {
-      barbellEl.innerHTML = `<p class="pc-msg pc-error">${error}</p>`;
-      textEl.innerHTML = '';
-      return;
-    }
-
-    if (plates.length === 0) {
-      barbellEl.innerHTML = `<p class="pc-msg">Bar only — no plates needed</p>`;
-    } else {
-      /*
-        MIRRORING FIX:
-        Right side: DOM order = [largest→smallest], flex-row  → largest is closest to collar ✓
-        Left  side: DOM order = [largest→smallest], flex-row-reverse → largest ends up closest to collar ✓
-        Both sides use the SAME array order; CSS row-reverse handles the visual flip.
-      */
-      barbellEl.innerHTML =
-        `<div class="pc-side pc-side-l">${_toHTML(plates)}</div>` +
-        `<div class="pc-collar"></div>` +
-        `<div class="pc-shaft"></div>` +
-        `<div class="pc-collar"></div>` +
-        `<div class="pc-side pc-side-r">${_toHTML(plates)}</div>`;
-    }
-
-    if (!plates.length) {
-      textEl.innerHTML = '';
-      return;
-    }
-    const perSide = plates.reduce((s, p) => s + p.w * p.n, 0);
-    textEl.innerHTML = `
-      <div class="pc-row"><span class="pc-lbl">Per side</span><span class="pc-val">${plates.map((p) => `${p.n}×${p.w}`).join(' + ')} kg</span></div>
-      <div class="pc-row"><span class="pc-lbl">Per side total</span><span class="pc-val">${perSide} kg</span></div>
-      <div class="pc-row"><span class="pc-lbl">Total on bar</span><span class="pc-val">${_weight} kg</span></div>
-      ${remainder > 0.05 ? `<p class="pc-warn">${remainder} kg unaccounted — add 1.25 kg plates</p>` : ''}`;
-  }
-
-  function stepWeight(delta) {
-    _weight = Math.max(_barWeight, Math.round((_weight + delta) * 100) / 100);
-    haptic([15]);
-    _render();
-  }
-  function setBar(kg) {
-    _barWeight = kg;
-    localStorage.setItem(BAR_KEY, String(kg));
-    if (_weight < _barWeight) _weight = _barWeight;
-    _render();
-  }
-  function close() {
-    if (!_overlay) return;
-    const el = _overlay;
-    _overlay = null;
-    el.classList.remove('visible');
-    setTimeout(() => el.remove(), 300);
-  }
+  /**
+   * Открыть лист на весе `weight` кг (вес подхода с барабана). Уже открытый
+   * лист не дублируется; закрывающийся не мешает открыть новый.
+   * @param {number} weight
+   */
   function open(weight) {
-    _barWeight = parseFloat(localStorage.getItem(BAR_KEY)) || 20;
-    _weight = Math.max(_barWeight, weight || _barWeight);
-    if (_overlay) _overlay.remove();
-    _build();
-    document.body.appendChild(_overlay);
-    requestAnimationFrame(() => _overlay.classList.add('visible'));
-    _render();
+    if (document.querySelector('.pc-overlay:not([data-closing])')) return;
+
+    let bar = readBar();
+    let current = Number.isFinite(Number(weight)) ? Number(weight) : 0;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay sd-overlay pc-overlay';
+    overlay.style.zIndex = '7000';
+
+    const barButtons = BAR_OPTIONS.map(
+      (w) =>
+        `<button class="pc-bar-opt" type="button" data-bar="${w}" aria-pressed="${w === bar}">${kg(w)}</button>`
+    ).join('');
+
+    overlay.innerHTML = `
+      <div class="modal-sheet pc-sheet" role="dialog" aria-label="${esc(t('plate.title'))}">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">${esc(t('plate.title'))}</div>
+          <button class="btn-icon-sm" type="button" data-pc="close" aria-label="${esc(t('plate.close'))}">${SVG_CLOSE}</button>
+        </div>
+        <div class="pc-bar-row">
+          <span class="pc-lbl">${esc(t('plate.bar'))}, ${esc(t('plate.unit'))}</span>
+          <div class="pc-bar-opts">${barButtons}</div>
+        </div>
+        <div class="pc-weight-row">
+          <button class="pc-step-btn" type="button" data-pc="down" aria-label="${esc(t('plate.lighter'))}">${SVG_MINUS}</button>
+          <div class="pc-weight-display">
+            <span class="pc-weight-num" data-pc="weight"></span>
+            <span class="pc-weight-unit">${esc(t('plate.unit'))}</span>
+          </div>
+          <button class="pc-step-btn" type="button" data-pc="up" aria-label="${esc(t('plate.heavier'))}">${SVG_PLUS}</button>
+        </div>
+        <div class="pc-barbell" data-pc="barbell" aria-hidden="true"></div>
+        <div class="pc-text" data-pc="text" aria-live="polite"></div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    const q = (/** @type {string} */ name) => /** @type {HTMLElement} */ (overlay.querySelector(`[data-pc="${name}"]`));
+    // Лист в реестре Nav: системная «назад» и Escape закрывают его, а не уводят
+    // с экрана тренировки посреди сессии. Закрытие кнопкой само снимает запись history.
+    const close = () => {
+      window.Nav?.unregisterOverlay('plate-calc');
+      dismissOverlay(overlay);
+    };
+    window.Nav?.registerOverlay({ id: 'plate-calc', el: overlay, close });
+
+    function render() {
+      q('weight').textContent = fmtWeight(current);
+      overlay.querySelectorAll('.pc-bar-opt').forEach((b) => {
+        const el = /** @type {HTMLElement} */ (b);
+        el.setAttribute('aria-pressed', String(Number(el.dataset.bar) === bar));
+      });
+
+      const r = loadPlates(current, bar);
+      /** @type {string[]} */
+      const rows = [];
+      let barbell = '';
+      let note = '';
+
+      if (r.status === 'below-bar') {
+        note = `<p class="pc-msg pc-error">${esc(t('plate.below_bar', { bar: kg(bar) }))}</p>`;
+      } else {
+        barbell = r.plates.length
+          ? `<div class="pc-side pc-side-l">${plateSpan(r.plates)}</div>` +
+            `<div class="pc-collar"></div><div class="pc-shaft"></div><div class="pc-collar"></div>` +
+            `<div class="pc-side pc-side-r">${plateSpan(r.plates)}</div>`
+          : `<div class="pc-shaft"></div>`;
+        if (r.status === 'unreachable' && r.up) {
+          note =
+            `<p class="pc-msg pc-error">${esc(t('plate.unreachable', { w: kg(current) }))}</p>` +
+            `<p class="pc-msg">${esc(t('plate.add_up', { d: kg(r.up.delta), w: kg(r.up.total) }))}</p>`;
+        } else if (r.plates.length === 0) {
+          note = `<p class="pc-msg">${esc(t('plate.bar_only'))}</p>`;
+        }
+        if (r.plates.length) {
+          rows.push(
+            `<div class="pc-row"><span class="pc-lbl">${esc(t('plate.per_side'))}</span><span class="pc-val">${esc(sideList(r.plates))} ${esc(t('plate.unit'))}</span></div>`,
+            `<div class="pc-row"><span class="pc-lbl">${esc(t('plate.on_bar'))}</span><span class="pc-val">${esc(kg(r.loaded))} ${esc(t('plate.unit'))}</span></div>`
+          );
+        }
+      }
+      q('barbell').innerHTML = barbell;
+      q('text').innerHTML = note + rows.join('');
+    }
+
+    /** @param {number} dir */
+    function step(dir) {
+      const next = stepLoadable(current, bar, dir);
+      if (next === current) return;
+      current = next;
+      haptic([15]);
+      render();
+    }
+
+    q('down').addEventListener('click', () => step(-1));
+    q('up').addEventListener('click', () => step(1));
+    q('close').addEventListener('click', close);
+    overlay.querySelectorAll('.pc-bar-opt').forEach((b) =>
+      b.addEventListener('click', () => {
+        bar = Number(/** @type {HTMLElement} */ (b).dataset.bar);
+        saveBar(bar);
+        render();
+      })
+    );
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close();
+    });
+
+    render();
     haptic([20]);
   }
 
-  function _build() {
-    _overlay = document.createElement('div');
-    _overlay.className = 'modal-overlay pc-overlay';
-    _overlay.addEventListener('click', (e) => {
-      if (e.target === _overlay) close();
-    });
-    const barBtns = BAR_OPTS.map(
-      (w) =>
-        `<button class="pc-bar-opt${w === _barWeight ? ' active' : ''}" data-w="${w}"
-               data-action="pc:setBar">${w} kg</button>`
-    ).join('');
-    _overlay.innerHTML = `
-      <div class="modal-sheet pc-sheet">
-        <div class="modal-handle"></div>
-        <div class="modal-header">
-          <span class="modal-title">Plate Calculator</span>
-          <button class="btn-icon-sm" data-action="pc:close">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                 stroke-linecap="round" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-        <div class="pc-bar-row"><span class="pc-section-lbl">Bar weight</span><div class="pc-bar-opts">${barBtns}</div></div>
-        <div class="pc-weight-row">
-          <button class="pc-step-btn" data-action="pc:step" data-amt="-2.5">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                 stroke-linecap="round" width="20" height="20"><path d="M5 12h14"/></svg>
-          </button>
-          <div class="pc-weight-display">
-            <span id="pc-weight-val" class="pc-weight-num">100</span>
-            <span class="pc-weight-unit">kg</span>
-          </div>
-          <button class="pc-step-btn" data-action="pc:step" data-amt="2.5">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                 stroke-linecap="round" width="20" height="20"><path d="M12 5v14M5 12h14"/></svg>
-          </button>
-        </div>
-        <div class="pc-divider"></div>
-        <div id="pc-barbell" class="pc-barbell-wrap"></div>
-        <div id="pc-text"    class="pc-text-wrap"></div>
-        <p class="pc-hint">Step: ±2.5 kg · Tap bar weight to change</p>
-      </div>`;
-  }
-
-  return { open, close, stepWeight, setBar };
+  return { open };
 })();
