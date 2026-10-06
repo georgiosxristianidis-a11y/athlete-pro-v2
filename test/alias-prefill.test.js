@@ -88,7 +88,9 @@ test('prefill — newest session wins when getAll order is newest-first', () => 
       exercises: [{ name: 'Bench Press', sets: [{ weight: 60, reps: 8, done: true }] }],
     },
   ];
-  const session = buildSession('push', { workouts: newestFirst });
+  // now рядом с фикстурой: тест про порядок, не про давность (FIELD-2 —
+  // timestamp 2_000 от «сейчас» читался бы как перерыв в полвека).
+  const session = buildSession('push', { workouts: newestFirst, now: 3_000 });
   const bench = session.find((e) => e.name === 'Bench Press');
   assert.ok(
     bench.sets[0].weight >= 100,
@@ -109,7 +111,7 @@ test('prefill — newest session wins even if the array is oldest-first', () => 
       exercises: [{ name: 'Bench Press', sets: [{ weight: 100, reps: 8, done: true }] }],
     },
   ];
-  const session = buildSession('push', { workouts: oldestFirst });
+  const session = buildSession('push', { workouts: oldestFirst, now: 3_000 });
   const bench = session.find((e) => e.name === 'Bench Press');
   assert.ok(bench.sets[0].weight >= 100, `expected latest ≥100kg, got ${bench.sets[0].weight}`);
 });
