@@ -22,6 +22,7 @@ import {
   resolveMuscleGroup,
   weightStep,
   isPending,
+  breakReason,
 } from '../workout.store.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
@@ -536,7 +537,10 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
   if (skipped) open = false;
   const doneSets = ex.sets.filter((s) => s.done).length;
   const setRows = await Promise.all(ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)));
-  const coach = _computeCoachTarget(ex.name, workouts);
+  // FIELD-2: после перерыва пилюля «прошлый +2.5%» спорила бы со сниженным
+  // барабаном — вместо неё причина веса словами.
+  const brk = ex.returnBreak ? breakReason(ex.returnBreak) : null;
+  const coach = brk ? null : _computeCoachTarget(ex.name, workouts);
   const muscleBadge = await getMuscleBadge(ex.name);
   const displayName = await getDisplayName(ex.name);
 
@@ -556,6 +560,7 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
             ${esc(displayName)}${muscleBadge}
             ${coach ? `<span class="coach-pill">${coach.target}<span class="coach-pill-unit">kg</span></span>` : ''}
           </div>
+          ${brk ? `<div class="ex-break-reason" data-break="${esc(ex.returnBreak.mode)}">${esc(t(brk.key, brk.params))}</div>` : ''}
         </div>
         ${skipped ? `
         <div class="ex-skip-tag">

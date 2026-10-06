@@ -732,6 +732,52 @@ export function snapPlanWeights(plan) {
   return moved;
 }
 
+/* FIELD-2: автопрогресс смотрит на дату. Источник чисел — решение Gio
+   06.10.2026 по развилке карточки FIELD-2 (HANDOFF_field_ux.md): перерыв от
+   4 недель отключает бамп, от 6 недель — мягкий возврат на 80% прежнего
+   топ-веса. Ориентир физиологии: за 8 недель тренированный теряет порядка
+   5-15% силы. Числа калибруются на своих данных — менять здесь, больше нигде
+   они не вшиты. Живут в сторе, а не отдельным модулем: стор в бут-графе, и
+   новый модуль потянул бы modulepreload и install-фазу прекеша. */
+
+/** Давность (дней), с которой бамп веса не предлагается. */
+export const RETURN_NO_BUMP_DAYS = 28;
+/** Давность (дней), с которой предлагается сниженный вес. */
+export const RETURN_REDUCE_DAYS = 42;
+/** Доля прежнего топ-веса при мягком возврате. */
+export const RETURN_FACTOR = 0.8;
+
+const DAY_MS = 86400000;
+
+/**
+ * Режим возврата по давности последней сессии с упражнением.
+ * Нет валидного timestamp — давность неизвестна, режима нет (прежнее поведение).
+ * @param {number|undefined} lastTs — timestamp последней тренировки с упражнением
+ * @param {number} now
+ * @returns {{mode: 'hold'|'reduce', days: number}|null}
+ */
+export function returnBreak(lastTs, now) {
+  const ts = Number(lastTs);
+  if (!(ts > 0) || !isFinite(now)) return null;
+  const days = Math.floor((now - ts) / DAY_MS);
+  if (days >= RETURN_REDUCE_DAYS) return { mode: 'reduce', days };
+  if (days >= RETURN_NO_BUMP_DAYS) return { mode: 'hold', days };
+  return null;
+}
+
+/**
+ * Причина словами для карточки упражнения: ключ t() и его параметры. Рамка
+ * рабочая, не обвинение; процент берётся из RETURN_FACTOR, а не вшит в строку.
+ * @param {{mode: 'hold'|'reduce', days: number}} rb
+ * @returns {{key: string, params: {weeks: number, pct: number}}}
+ */
+export function breakReason(rb) {
+  return {
+    key: rb.mode === 'reduce' ? 'train.break_reduce' : 'train.break_hold',
+    params: { weeks: Math.floor(rb.days / 7), pct: Math.round(RETURN_FACTOR * 100) },
+  };
+}
+
 /**
  * Smart-progression rule: if last session's TOP set hit target reps with ≥1 rep
  * in reserve (rpe ≤ 8) — bump weight by one grid step next time.
@@ -741,14 +787,25 @@ export function snapPlanWeights(plan) {
  * показал бы не то, что лежит в State.
  * @param {{weight:number,reps:number,rpe:number|null,done:boolean}[]} lastSets
  * @param {number} targetReps — the plan's prescribed reps
+ * FIELD-2: после перерыва (`brk`, см. returnBreak выше) бампа нет;
+ * долгий перерыв — мягкий возврат на долю прежнего топ-веса, на сетке, не выше
+ * прежнего и не ниже одного шага.
  * @param {number} step — grid step of this exercise (weightStep)
- * @returns {{weight:number, autoBumped:boolean, lastWeight:number}|null}
+ * @param {{mode:'hold'|'reduce', days:number}|null} [brk] — давность последней сессии
+ * @returns {{weight:number, autoBumped:boolean, lastWeight:number, returnBreak?:{mode:'hold'|'reduce', days:number}}|null}
  */
-function _smartNextWeight(lastSets, targetReps, step) {
+function _smartNextWeight(lastSets, targetReps, step, brk = null) {
   const completed = lastSets.filter(s => s.done && s.weight > 0);
   if (!completed.length) return null;
   // Top set = highest weight set that was completed
   const top = completed.reduce((a, b) => (b.weight > a.weight ? b : a));
+  if (brk) {
+    const held = snapWeight(top.weight, step);
+    const weight = brk.mode === 'reduce'
+      ? Math.min(held, Math.max(step, snapWeight(top.weight * RETURN_FACTOR, step)))
+      : held;
+    return { weight, autoBumped: false, lastWeight: top.weight, returnBreak: brk };
+  }
   const hitTarget = top.reps >= targetReps;
   const easyEffort = top.rpe == null ? hitTarget : top.rpe <= 8;
   if (hitTarget && easyEffort) {
@@ -763,15 +820,18 @@ function _smartNextWeight(lastSets, targetReps, step) {
  * то, что buildSession подставит в Train. Рекомендации Home читают этот же
  * расчёт, а не свой: второй расчёт разошёлся бы с префиллом.
  * @param {{name: string, alias?: string[], reps: number, isUnilateral?: boolean}} ex
+ * Давность последней сессии (FIELD-2) считается здесь же — префилл и Home
+ * видят одно и то же решение.
  * @param {Array<{ timestamp?: number, exercises?: Array }>} workouts
- * @returns {{weight:number, autoBumped:boolean, lastWeight:number}|null}
+ * @param {number} [now] — момент отсчёта давности; параметр — для тестов
+ * @returns {{weight:number, autoBumped:boolean, lastWeight:number, returnBreak?:{mode:'hold'|'reduce', days:number}}|null}
  */
-export function nextWeightFor(ex, workouts) {
+export function nextWeightFor(ex, workouts, now = Date.now()) {
   const names = [ex.name, ...(ex.alias || [])];
   const last = latestWorkoutForNames(workouts, names);
   const lastEx = last?.exercises?.find(e => names.includes(e.name));
   if (!lastEx?.sets?.length) return null;
-  return _smartNextWeight(lastEx.sets, ex.reps, weightStep(ex));
+  return _smartNextWeight(lastEx.sets, ex.reps, weightStep(ex), returnBreak(last.timestamp, now));
 }
 
 /**
@@ -821,18 +881,20 @@ export function latestWorkoutForNames(workouts, names) {
 /**
  * Build an active workout session from the user's plan (default: PPL | GIO).
  * @param {string} [type] — 'push'|'pull'|'legs'
- * @param {{ workouts?: Array, autoProgress?: boolean }} [opts]
+ * @param {{ workouts?: Array, autoProgress?: boolean, now?: number }} [opts]
  * @returns {Array<{name: string, sets: Array<{weight: number, reps: number, done: boolean}>}>}
  */
 export function buildSession(type, opts = {}) {
   const workouts = opts.workouts || [];
   const autoProgress = opts.autoProgress !== false;
+  const now = opts.now ?? Date.now();
 
   const plan = loadPlan();
   const t = type || 'push';
   return (plan[t] || []).map((ex) => {
     let weight = ex.weight;
     let bumped = false;
+    let brk = null;
     if (workouts.length) {
       // History lookup by name OR alias. The 2026-07-08 default-plan switch
       // (DEFAULT_PLAN → PPL | GIO) renamed the lifts, and an exact-name match
@@ -840,10 +902,11 @@ export function buildSession(type, opts = {}) {
       // at the seed's 0 kg. Seed lifts that are the same movement kept their
       // legacy names; alias:[] carries every other name the lift was ever
       // logged under, so history (and its progression) follows renames.
-      const next = nextWeightFor(ex, workouts);
+      const next = nextWeightFor(ex, workouts, now);
       if (next) {
         weight = next.weight;
         bumped = autoProgress && next.autoBumped;
+        brk = next.returnBreak || null;
       }
     }
     return {
@@ -857,6 +920,9 @@ export function buildSession(type, opts = {}) {
       // трогает name/alias/историю — тот же контракт, что и alias, но
       // наоборот: alias только для поиска, tag только для показа.
       ...(ex.tag ? { tag: ex.tag } : {}),
+      // FIELD-2: причина веса после перерыва — карточка упражнения пишет её
+      // словами; едет в State.plan и переживает перезагрузку (persistSession).
+      ...(brk ? { returnBreak: brk } : {}),
       sets: Array.from({ length: ex.sets }, () => ({
         // Сетка барабана — последняя инстанция: вес из редактора плана тоже
         // мог остаться вне её шага (план правится числом, барабан — шагом).
