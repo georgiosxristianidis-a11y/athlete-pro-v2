@@ -358,6 +358,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* FIELD-2: причина веса после перерыва — вторичная строка под именем */
+.ex-break-reason {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-2);
+  line-height: 1.2;
+  margin-top: var(--sp-0-5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .exercise-meta {
   font-size: var(--fs-1);
   font-weight: var(--fw-md);
