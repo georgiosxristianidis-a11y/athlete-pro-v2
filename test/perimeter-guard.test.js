@@ -129,8 +129,9 @@ describe('Периметр: BYOK-ключи не попадают в промп�
         if (!entry.name.endsWith('.js')) continue;
         const rel = path.relative(REPO_ROOT, full).replace(/\\/g, '/');
         // Профиль, уезжающий на сервер, обязан быть отфильтрован в момент снятия.
-        // Локальные читатели настроек (profile.js, privacy.view.js, backup) — не в счёт:
-        // они рисуют UI и пишут файл на устройстве, наружу не ходят.
+        // Локальные читатели настроек (profile.js, privacy.view.js) — не в счёт:
+        // они рисуют UI и наружу не ходят. Бэкап — дверь наружу (файл пересылают),
+        // он режет секреты сам; сторож — BACKUP-SEC в test/backup.test.js.
         for (const line of fs.readFileSync(full, 'utf8').split('\n')) {
           const m = line.match(/\bprofile\s*=\s*(?:await\s+)?(?:DB\.)?Settings\.getAll\(\)/);
           if (m && !line.includes('stripSecrets')) offenders.push(`${rel}: ${line.trim()}`);

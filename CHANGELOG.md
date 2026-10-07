@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### BACKUP-SEC: BYOK-ключи не проходят через файл бэкапа (1.27.157)
+- **Причина.** `Backup.export()` в `js/db/backup.js` клал в файл `Settings.getAll()` целиком — вместе с `gemini-key` и `anthropic-key`. Синк и промпт резали секреты через `js/shared/sync-secrets.js`, а бэкап нет: `test/perimeter-guard.test.js` освобождал его с обоснованием «пишет файл на устройстве, наружу не ходит», хотя файл бэкапа как раз пересылают по чатам. Импорт принимал любые настройки из файла, так что подложенный «бэкап» тихо подменял свой ключ чужим. Проба на fake-indexeddb до правки: `export contains own key: true`, после импорта `gemini-key = AIzaPROBE_FOREIGN_KEY`.
+- **Фикс.** Экспорт отдаёт `stripSecrets(settings)`. Импорт отбрасывает секретные записи фильтром `isSecretKey()` по `Object.entries`, а не пересборкой объекта: раскладка по записям остаётся защитой от загрязнения прототипа (`docs/THREAT_MODEL.md`). Секретом считается то же, что и в синке; из 23 ключей настроек в коде под маску попадают только два BYOK-ключа, остальное едет в бэкап как раньше.
+- **Цена.** Переезд на новое устройство через бэкап больше не переносит BYOK-ключ, его вводят заново. Старые файлы бэкапа по-прежнему содержат ключ: если файл уходил с телефона, ключ перевыпустить (решение Gio).
+- **Док.** В `docs/THREAT_MODEL.md` добавлена строка «Утечка BYOK-ключа» (синк, промпт, бэкап); комментарий в `test/perimeter-guard.test.js` больше не называет бэкап локальным.
+- **Гейт.** Два кейса BACKUP-SEC в `test/backup.test.js`: на коде до правки оба красные («gemini-key уехал в файл бэкапа»), после зелёные. Прекеш не изменился: 56 бут-ассетов и 84 тёплых.
+
 ### Сняты мёртвые рекомендации: клиент в `claude.store.js` и маршрут `/api/coach/recommendations` (1.27.156)
 - **Зачем.** После #492 секцию рекомендаций Home считает `getNextSessionRecs()` в `js/dashboard.store.js`, и у `generateRecommendations()` с `getRecommendations()` не осталось ни одного вызова: греп по `js/*.js`, `js/**/*.js`, `test/`, `scripts/`, `index.html` находит их только в самом модуле. С клиента ключи `ap-recommendations-<type>` никто не писал, а `POST /api/coach/recommendations` никто не звал с 07.06 (`169d3399`).
 - **Что.** Из `js/claude.store.js` сняты `generateRecommendations`, `getRecommendations`, `_saveRecommendations`, `_fetchAIRecommendations`, `REC_KEY` и их помощники `_computeSimpleProgression`, `_newRequestId`. Ушли осиротевшие импорты `safeFetch` и `DEFAULT_AI_ENGINE`, а с ними `athleteProScore`, мёртвый с 11.06. Модуль больше не тянет `strength-engine.js` и `shared/ai-engine.js`, у обоих есть свои импортёры. Прекеш не изменился: 56 бут-ассетов и 84 тёплых, как до правки.

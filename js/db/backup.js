@@ -13,6 +13,7 @@ import { OneRM } from './onerm.js';
 import { Metrics } from './metrics.js';
 import { Settings } from './settings.js';
 import { PlannedWorkouts } from './planned.js';
+import { isSecretKey, stripSecrets } from '../shared/sync-secrets.js';
 
 /**
  * localStorage keys that belong in a backup. The editable training plan
@@ -97,7 +98,9 @@ export const Backup = {
         workouts,
         orm,
         metrics,
-        settings,
+        // BACKUP-SEC: файл бэкапа пересылают по чатам — BYOK-ключ уезжал
+        // вместе с историей. Секреты остаются на устройстве, как и в синке.
+        settings: stripSecrets(settings),
         plans,
         local: readLocalBackup(),
       },
@@ -195,9 +198,15 @@ export const Backup = {
     validORM.forEach((o) => ormStore.put(o));
     validMetrics.forEach((m) => metStore.put(m));
     validPlans.forEach((p) => planStore.put(p));
-    Object.entries(validSettings).forEach(([key, value]) =>
-      setStore.put({ key, value, updatedAt: Date.now(), deviceId: getDeviceId() })
-    );
+    // BACKUP-SEC: секреты из чужого файла не принимаются — иначе подложенный
+    // «бэкап» тихо подменял бы свой ключ на чужой. Фильтр по записям, а не
+    // пересборка объекта: раскладка через Object.entries — защита от
+    // загрязнения прототипа (docs/THREAT_MODEL.md).
+    Object.entries(validSettings)
+      .filter(([key]) => !isSecretKey(key))
+      .forEach(([key, value]) =>
+        setStore.put({ key, value, updatedAt: Date.now(), deviceId: getDeviceId() })
+      );
     await committed;
     writeLocalBackup(data.local);
     return true;
