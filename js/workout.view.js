@@ -24,7 +24,7 @@ import {
 import {
   selectType, stepWeight, stepReps, setWeight, setReps, editVal, commitVal, setRPE, toggleSet, toggleCard,
   openCustomWorkoutModal, showExerciseMenu, _createNewCustomWorkout, _editCustomWorkout, _deleteCustomWorkout,
-  _startCustomWorkout, _closeCustomWorkoutModal, addSet, smartCopy, smartCoach,
+  _startCustomWorkout, _closeCustomWorkoutModal, addSet, smartCopy, smartCoach, skipExerciseToday, _unskipExercise,
   completeSession, cancelSession, _toggleUnilateral, _toggleBW, _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem,
   _removeCoreItem, _openFocus, _closeFocus, _focusNext, _focusPrev, jumpToNextExercise,
   _focusStepW, _focusStepR, _focusCompleteSet, _initFocusLongPress,
@@ -125,6 +125,8 @@ export const Workout = {
   addSet,
   smartCopy,
   smartCoach,
+  skipExerciseToday,
+  _unskipExercise,
   completeSession,
   cancelSession,
   openReplaceExModal,
@@ -160,7 +162,7 @@ export {
   _addPlanEx, _deletePlanEx, openExercisePickerModal, openReplaceExModal,
   selectType, stepWeight, stepReps, setWeight, setReps, editVal, commitVal, setRPE, toggleSet, toggleCard,
   openCustomWorkoutModal, showExerciseMenu, _createNewCustomWorkout, _editCustomWorkout, _deleteCustomWorkout,
-  _startCustomWorkout, _closeCustomWorkoutModal, addSet, smartCopy, smartCoach,
+  _startCustomWorkout, _closeCustomWorkoutModal, addSet, smartCopy, smartCoach, skipExerciseToday, _unskipExercise,
   completeSession, cancelSession, _toggleUnilateral, _toggleBW, _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem,
   _removeCoreItem, _openFocus, _closeFocus, _focusNext, _focusPrev, jumpToNextExercise,
   _focusStepW, _focusStepR, _focusCompleteSet, _initFocusLongPress, _renderCoreSection

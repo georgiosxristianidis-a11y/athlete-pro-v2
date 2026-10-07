@@ -27,7 +27,7 @@ export const OTHER_BLOCK = '_';
  */
 
 /**
- * @param {Array<{block?: string, sets: Array<{done?: boolean}>}>} plan
+ * @param {Array<{block?: string, skipped?: boolean, sets: Array<{done?: boolean}>}>} plan
  * @returns {Section[]}
  */
 export function sectionList(plan) {
@@ -41,6 +41,9 @@ export function sectionList(plan) {
       map.set(id, sec);
     }
     sec.eis.push(ei);
+    // FIELD-1: пропущенное карточкой в секции остаётся, но в счёт не идёт —
+    // ни сделанным, ни ждущим; секцию открытой не держит.
+    if (ex.skipped) return;
     sec.total++;
     const sets = ex.sets || [];
     if (sets.length && sets.every((s) => s.done)) sec.doneEx++;
@@ -56,12 +59,13 @@ export function sectionList(plan) {
  * иначе первое недоделанное в секции (пропущенное выше). -1 — сделано всё.
  *
  * @param {Section} sec
- * @param {Array<{sets: Array<{done?: boolean}>}>} plan
+ * @param {Array<{skipped?: boolean, sets: Array<{done?: boolean}>}>} plan
  * @param {number} [after]
  * @returns {number}
  */
 export function focusInSection(sec, plan, after = -1) {
-  const undone = (/** @type {number} */ ei) => plan[ei].sets.some((s) => !s.done);
+  const undone = (/** @type {number} */ ei) =>
+    !plan[ei].skipped && plan[ei].sets.some((s) => !s.done);
   const next = sec.eis.find((ei) => ei > after && undone(ei));
   if (next !== undefined) return next;
   const any = sec.eis.find(undone);
