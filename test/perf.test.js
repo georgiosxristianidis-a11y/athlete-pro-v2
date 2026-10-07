@@ -62,15 +62,15 @@ describe('Phase 2 — Performance post-conditions', () => {
       calls,
       1,
       'render.js should call DB.Workouts.getAll() exactly once (in renderActive) — ' +
-        '_getLastSessionWeight/_computeCoachTarget/_getLastSessionSummary/_getExerciseHistory ' +
+        '_getLastSessionSummary/_getExerciseHistory and the coach pill (coachPillWeight) ' +
         'must take the history as an argument instead of fetching it themselves'
     );
   });
 
-  test('PERF-HIST: renderExerciseCard and the coach-target chain take workouts as an argument', () => {
+  test('PERF-HIST: renderExerciseCard and the coach pill take workouts as an argument', () => {
     const src = readText('js/workout.view/render.js');
     assert.match(src, /export async function renderExerciseCard\(ex, ei, workouts[,)]/);
-    assert.match(src, /_computeCoachTarget\(ex\.name, workouts\)/);
+    assert.match(src, /coachPillWeight\(ex, workouts\)/);
   });
 
   test('PERF-HIST: boot backup-reminder check does not read the full workout history just to test count > 0', () => {

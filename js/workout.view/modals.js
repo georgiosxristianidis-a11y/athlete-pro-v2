@@ -826,6 +826,7 @@ export async function openReplaceExModal(ei) {
     const customName = customEl.value.trim();
     if (customName) {
       State.plan[ei].name = customName;
+      delete State.plan[ei].coachWeight; // COACH-ONE: решение было про прежнее упражнение
       persistSession();
       overlay.remove();
       const nameEl = document.querySelector(`#ex-card-${ei} .exercise-name`);
@@ -841,6 +842,7 @@ export async function openReplaceExModal(ei) {
     const name = btn.dataset.name.trim();
     if (name) {
       State.plan[ei].name = name;
+      delete State.plan[ei].coachWeight; // COACH-ONE: решение было про прежнее упражнение
       persistSession();
       overlay.remove();
       const nameEl = document.querySelector(`#ex-card-${ei} .exercise-name`);

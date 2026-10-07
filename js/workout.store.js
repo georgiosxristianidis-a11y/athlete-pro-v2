@@ -835,6 +835,24 @@ export function nextWeightFor(ex, workouts, now = Date.now()) {
 }
 
 /**
+ * COACH-ONE: вес пилюли тренера на карточке упражнения — то же решение, что
+ * барабан и Home (nextWeightFor), а не свой расчёт. Пилюля — ориентир, когда
+ * барабан уже сдвинут руками. Основной путь — `ex.coachWeight`, записанный
+ * buildSession (видит alias и плановые повторы). Без поля — упражнение
+ * добавлено вживую, заменено или снимок сессии старый — пересчёт по имени;
+ * цель по повторам тогда берётся из подходов, а не из `reps`.
+ * @param {{name: string, alias?: string[], isUnilateral?: boolean, coachWeight?: number, sets?: Array<{reps: number}>}} ex — упражнение из State.plan
+ * @param {Array<{ timestamp?: number, exercises?: Array }>} workouts
+ * @param {number} [now]
+ * @returns {number|null} null — истории нет, пилюлю не рисуем
+ */
+export function coachPillWeight(ex, workouts, now = Date.now()) {
+  if (Number.isFinite(ex.coachWeight) && ex.coachWeight > 0) return ex.coachWeight;
+  const next = nextWeightFor({ ...ex, reps: ex.sets?.[0]?.reps ?? 0 }, workouts, now);
+  return next ? next.weight : null;
+}
+
+/**
  * Fallback chamber classifier for plan exercises that carry no explicit
  * `block` (legacy flat plans, blockless program templates). Maps a lift to one
  * of the four canonical chambers so the DHL tracker / summary never collapse
@@ -895,6 +913,7 @@ export function buildSession(type, opts = {}) {
     let weight = ex.weight;
     let bumped = false;
     let brk = null;
+    let coachWeight = null;
     if (workouts.length) {
       // History lookup by name OR alias. The 2026-07-08 default-plan switch
       // (DEFAULT_PLAN → PPL | GIO) renamed the lifts, and an exact-name match
@@ -907,6 +926,7 @@ export function buildSession(type, opts = {}) {
         weight = next.weight;
         bumped = autoProgress && next.autoBumped;
         brk = next.returnBreak || null;
+        coachWeight = next.weight;
       }
     }
     return {
@@ -920,6 +940,10 @@ export function buildSession(type, opts = {}) {
       // трогает name/alias/историю — тот же контракт, что и alias, но
       // наоборот: alias только для поиска, tag только для показа.
       ...(ex.tag ? { tag: ex.tag } : {}),
+      // COACH-ONE: решение nextWeightFor на момент сборки — его читает пилюля
+      // тренера. alias в элемент не едет, а повторы первого подхода барабан
+      // крутит посреди сессии: пересчёт на карточке разошёлся бы с барабаном.
+      ...(coachWeight != null ? { coachWeight } : {}),
       // FIELD-2: причина веса после перерыва — карточка упражнения пишет её
       // словами; едет в State.plan и переживает перезагрузку (persistSession).
       ...(brk ? { returnBreak: brk } : {}),
