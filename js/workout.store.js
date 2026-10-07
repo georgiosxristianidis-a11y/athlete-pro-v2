@@ -871,6 +871,59 @@ export function buildSession(type, opts = {}) {
   });
 }
 
+/* ── FIELD-1: пропуск упражнения на одну сессию («тренажёр занят») ──
+   Статус живёт только в State.plan (и в снимке persistSession, который пишет
+   plan целиком), buildSession его не знает — следующая тренировка собирается
+   из плана заново, упражнение на своём месте. В сохраняемую запись и сводку
+   пропущенное не попадает вовсе: ни «ноль сетов» в статистике, ни запись, из
+   которой latestWorkoutForNames взял бы вес для префилла. */
+
+/**
+ * Упражнение ещё ждёт подходов: не пропущено и есть незакрытый сет. Единый
+ * предикат «что дальше» для фокуса, острова, таймера отдыха и секций —
+ * пропущенное не должно всплывать «следующим».
+ * @param {{skipped?: boolean, sets?: Array<{done?: boolean}>}} ex
+ * @returns {boolean}
+ */
+export function isPending(ex) {
+  return !ex?.skipped && (ex?.sets || []).some((s) => !s.done);
+}
+
+/**
+ * Пропустить упражнение: уходит в конец списка (ниже активных) с флагом
+ * `skipped` и исходным индексом `skipFrom` для возврата. Сеты не трогаются —
+ * возврат отдаёт их как были.
+ * @param {Array<object>} plan — State.plan, правится на месте
+ * @param {number} ei
+ * @returns {boolean} true — пропущено
+ */
+export function skipExercise(plan, ei) {
+  const ex = plan?.[ei];
+  if (!ex || ex.skipped) return false;
+  plan.splice(ei, 1);
+  ex.skipped = true;
+  ex.skipFrom = ei;
+  plan.push(ex);
+  return true;
+}
+
+/**
+ * Вернуть пропущенное упражнение на исходный индекс.
+ * @param {Array<object>} plan — State.plan, правится на месте
+ * @param {number} ei — текущий индекс пропущенного упражнения
+ * @returns {number} новый индекс, -1 — нечего возвращать
+ */
+export function unskipExercise(plan, ei) {
+  const ex = plan?.[ei];
+  if (!ex || !ex.skipped) return -1;
+  plan.splice(ei, 1);
+  const to = Math.min(Math.max(0, Number(ex.skipFrom) || 0), plan.length);
+  delete ex.skipped;
+  delete ex.skipFrom;
+  plan.splice(to, 0, ex);
+  return to;
+}
+
 /**
  * Persist the current active session to localStorage for crash recovery.
  * No-op if State.phase is not 'active'.
@@ -1118,6 +1171,8 @@ export async function buildSessionSummary(state, durationMs, opts = {}) {
   const prCandidates = [];
 
   for (const ex of (state.plan || [])) {
+    // FIELD-1: пропущенное не сделано и не провалено — его нет в отчёте.
+    if (ex.skipped) continue;
     const id = ex.block || 'custom';
     if (!blockMap.has(id)) {
       blockMap.set(id, { tonnage: 0, exercises: [] });
@@ -1230,8 +1285,11 @@ export async function persistFinalSession(state, summaryData, duration) {
     duration,
     tonnage: summaryData.totalTonnage,
     sessionRpe: summaryData.sessionRpe ?? null,
+    // FIELD-1: пропущенное в запись не идёт — иначе префилл следующей
+    // сессии (latestWorkoutForNames) взял бы вес отсюда, а статистика
+    // увидела бы «ноль сетов».
     exercises: state.plan
-      .filter((ex) => !ex.noDb)
+      .filter((ex) => !ex.noDb && !ex.skipped)
       .map((ex) => ({
         name: ex.name,
         block: ex.block || null,
@@ -1258,7 +1316,7 @@ export async function persistFinalSession(state, summaryData, duration) {
   // fresh OneRM record from this point on; isAdded:true is preserved in
   // session.exercises so future analytics can separate the two streams).
   for (const ex of state.plan) {
-    if (ex.noDb) continue;
+    if (ex.noDb || ex.skipped) continue;
     const bestSet = ex.sets
       .filter((s) => s.done && s.weight && s.reps)
       .sort((a, b) => b.weight - a.weight)[0];

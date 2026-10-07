@@ -42,7 +42,12 @@ describe('LOGGER-FOCUS: раскрыто одно упражнение', () => {
   });
 
   test('фокус — первое упражнение с недоделанным подходом', () => {
-    assert.match(render, /findIndex\(\(ex, i\) => i > after && ex\.sets\.some\(\(s\) => !s\.done\)\)/);
+    // FIELD-1: «недоделанное» — единый предикат isPending (пропущенное фокус
+    // не получает); сам предикат обязан проверять незакрытые подходы.
+    assert.match(render, /findIndex\(\(ex, i\) => i > after && isPending\(ex\)\)/);
+    const store = read('js/workout.store.js');
+    const fn = store.slice(store.indexOf('export function isPending'));
+    assert.match(fn, /return !ex\?\.skipped && \(ex\?\.sets \|\| \[\]\)\.some\(\(s\) => !s\.done\);/);
   });
 
   test('toggleCard — аккордеон: открытие сворачивает остальные', () => {
