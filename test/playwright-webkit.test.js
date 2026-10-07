@@ -47,3 +47,38 @@ test('LAUNCH-7: CI installs chromium and webkit, not chromium alone', () => {
 test('LAUNCH-7: Playwright cache key names both browsers', () => {
   assert.match(ciYml, /chromium-webkit/);
 });
+
+// CI-CACHE (07.10): ключ от хеша всего локфайла бился каждым бампом версии
+// приложения (`"version"` в package-lock.json) — каждый релизный PR качал
+// браузеры заново, а без таймаута зависшая загрузка висела до 6 ч (дефолт
+// GitHub). Комментарии YAML вырезаются: гард не должен зеленеть на тексте.
+const ciCode = ciYml
+  .split('\n')
+  .filter((line) => !/^\s*#/.test(line))
+  .join('\n');
+
+/** Блок шага `- name: <name>` до следующего шага. */
+function stepBlock(name) {
+  const start = ciCode.indexOf(`- name: ${name}`);
+  assert.ok(start >= 0, `в ci.yml нет шага «${name}»`);
+  const next = ciCode.indexOf('\n      - name:', start + 1);
+  return ciCode.slice(start, next === -1 ? undefined : next);
+}
+
+test('CI-CACHE: ключ кеша браузеров — версия playwright-core, не хеш всего локфайла', () => {
+  const key = (stepBlock('Cache Playwright browsers').match(/key:\s*(.+)/) || [])[1] || '';
+  assert.doesNotMatch(key, /hashFiles\('package-lock\.json'\)/,
+    'бамп версии приложения меняет локфайл и бьёт кеш браузеров каждым релизным PR');
+  assert.match(key, /steps\.pw-version\.outputs\.version/);
+  assert.doesNotMatch(key, /\d+\.\d+\.\d+/,
+    'версия, вписанная руками, переживает бамп Playwright и даёт hit со старыми браузерами');
+  assert.match(stepBlock('Playwright version'), /node_modules\/playwright-core\/package\.json/);
+});
+
+test('CI-CACHE: установка браузеров и e2e-задача ограничены по времени', () => {
+  assert.match(stepBlock('Install Playwright browsers'), /timeout-minutes:\s*\d+/);
+  assert.match(stepBlock('Install Playwright OS dependencies'), /timeout-minutes:\s*\d+/);
+  const e2eJob = ciCode.slice(ciCode.indexOf('\n  e2e:'));
+  assert.match(e2eJob.split('\n    steps:')[0], /timeout-minutes:\s*\d+/,
+    'без таймаута задачи зависший шаг держит чек до 6 часов');
+});

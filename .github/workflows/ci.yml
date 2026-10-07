@@ -98,6 +98,9 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    # CI-CACHE: без потолка зависший шаг держит чек до 6 ч (дефолт GitHub).
+    # Обычный прогон — 8-22 мин (с установкой браузеров при промахе кеша).
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -111,20 +114,28 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Версия — из установленного пакета, не вписанная руками: прибитый
+      # `playwright-1.60.0` пережил бамп до 1.62.1, кеш дал hit со старыми
+      # браузерами, установка пропустилась — и все 42 теста упали на
+      # «Executable doesn't exist … chromium_headless_shell-1234». Сборки
+      # браузеров определяет playwright-core, поэтому ключ — его версия.
+      - name: Playwright version
+        id: pw-version
+        run: echo "version=$(node -p "require('./node_modules/playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          # Ключ от локфайла, а не от вписанной руками версии: прибитый
-          # `playwright-1.60.0` пережил бамп до 1.62.1, кеш дал hit со старыми
-          # браузерами, установка пропустилась — и все 42 теста упали на
-          # «Executable doesn't exist … chromium_headless_shell-1234».
+          # CI-CACHE (07.10): раньше ключ был хешем всего локфайла, а его
+          # меняет каждый бамп версии приложения — каждый релизный PR промахивался
+          # и качал браузеры заново (11+ мин, 07.10 загрузка зависала).
           # Suffix names the browsers in the cache. Without it a chromium-only
           # hit skips `playwright install`, and the new webkit project fails
           # with "Executable doesn't exist" — the same mine as the pinned
           # `playwright-1.60.0` key above.
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}-chromium-webkit
+          key: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}-chromium-webkit
 
       # Оба шага ниже зовут `apt-get update`, а он падает целиком, если сбоит
       # ЛЮБОЙ источник образа. 09.09 таким источником стал репозиторий Google
@@ -135,12 +146,17 @@ jobs:
       - name: Drop third-party apt sources
         run: sudo rm -f /etc/apt/sources.list.d/google-chrome.list
 
+      # Таймауты шагов (CI-CACHE): зависшая загрузка падает красным за 15 мин,
+      # а не висит часами. Отмена — не выход: `gh pr checks` кладёт её в
+      # корзину `cancel`, не `fail`, — красный по таймауту честнее.
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 15
         run: npx playwright install --with-deps chromium webkit
 
       - name: Install Playwright OS dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
+        timeout-minutes: 10
         run: npx playwright install-deps chromium webkit
 
       - name: E2E tests
