@@ -9,7 +9,7 @@ export const Integrity = (() => {
   const CONTRACTS = {
     Workout: [
       'load', 'renderSelect', 'renderActive', 'selectType', 'showExerciseMenu', 
-      'openCustomWorkoutModal', 'completeSession', 'cancelSession', 'toggleSet'
+      'openCustomWorkoutModal', 'completeSession', 'cancelSession', 'toggleSet', '_unskipExercise'
     ],
     Claude: [
       'renderFAB', 'open', 'close', 'dismissFAB'

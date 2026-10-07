@@ -1,5 +1,5 @@
 // @ts-check
-import { State } from '../workout.store.js';
+import { State, isPending } from '../workout.store.js';
 import { renderIslandTracker } from './island-tracker.js';
 import { Timer } from '../timer.js';
 import { haptic } from './utils.js';
@@ -382,7 +382,9 @@ export const DynamicIsland = (() => {
 
     // Time
     // Current Exercise
-    let activeIdx = State.plan.findIndex((ex) => ex.sets.some((s) => !s.done));
+    let activeIdx = State.plan.findIndex(isPending);
+    // Всё закрыто: последнее НЕ пропущенное — пропуск (FIELD-1) стоит в конце.
+    if (activeIdx === -1) activeIdx = State.plan.findLastIndex((ex) => !ex.skipped);
     if (activeIdx === -1) activeIdx = State.plan.length - 1;
     const currentEx = State.plan[activeIdx];
     if (_nameEl) _nameEl.textContent = islandLabel(currentEx);
@@ -511,7 +513,9 @@ export const DynamicIsland = (() => {
   function _renderExpandedDuringRest() {
     if (!_island || !_expanded || !State.plan?.length) return;
 
-    let activeIdx = State.plan.findIndex((ex) => ex.sets.some((s) => !s.done));
+    let activeIdx = State.plan.findIndex(isPending);
+    // Всё закрыто: последнее НЕ пропущенное — пропуск (FIELD-1) стоит в конце.
+    if (activeIdx === -1) activeIdx = State.plan.findLastIndex((ex) => !ex.skipped);
     if (activeIdx === -1) activeIdx = State.plan.length - 1;
     const currentEx = State.plan[activeIdx];
     const exDone = currentEx ? currentEx.sets.filter((s) => s.done).length : 0;
@@ -565,7 +569,7 @@ export const DynamicIsland = (() => {
     // one after its last set). Computed once per rest: sets can't change
     // mid-rest, and update() deliberately skips re-renders while _timerActive.
     if (starting && _restNextEl) {
-      const nx = State.plan?.find((ex) => ex.sets.some((s) => !s.done));
+      const nx = State.plan?.find(isPending);
       _restNextEl.textContent = nx ? t('island.next', { name: islandLabel(nx) }) : '';
       // Only a pill that actually carries the caption gets the wide layout.
       _island?.classList.toggle('rest-has-next', !!nx);

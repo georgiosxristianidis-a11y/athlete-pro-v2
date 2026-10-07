@@ -20,7 +20,7 @@
 import { PiP } from './features/pip.js';
 import { isRu, t } from './locale.store.js';
 import { haptic } from './shared/utils.js';
-import { State } from './workout.store.js';
+import { State, isPending } from './workout.store.js';
 import { flag } from './flags.js';
 
 /** @type {Promise<typeof import('./shared/panda-mood.js')>|null} */
@@ -94,7 +94,7 @@ export const RestTimer = (() => {
     // (first exercise still holding an undone set). Computed once here and
     // fed into every PiP frame during this rest so the island and the PiP
     // mirror can never disagree (F-2: PiP was showing a stale pre-rest frame).
-    const nx = State.plan?.find((ex) => ex.sets.some((s) => !s.done));
+    const nx = State.plan?.find(isPending);
     _nextName = nx ? nx.name : '';
 
     // Разрешение на уведомления здесь БОЛЬШЕ НЕ ПРОСИМ. Раньше системный

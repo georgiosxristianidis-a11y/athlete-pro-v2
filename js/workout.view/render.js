@@ -21,6 +21,7 @@ import {
   getExerciseLibrary,
   resolveMuscleGroup,
   weightStep,
+  isPending,
 } from '../workout.store.js';
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
@@ -68,6 +69,8 @@ on('wo:cancel', () => W().cancelSession());
 on('wo:toggleCard', (el) => W().toggleCard(+el.dataset.ei));
 on('wo:openSection', (el) => openSection(el.dataset.block || ''));
 on('wo:exMenu', (el) => W().showExerciseMenu(+el.dataset.ei));
+// FIELD-1: возврат пропущенного — тап по всей шапке погашенной карточки.
+on('wo:unskip', (el) => W()._unskipExercise(+el.dataset.ei));
 // Вес читаем в момент тапа, не из разметки: подход, отмеченный после рендера
 // карточки, сдвигает активную строку (то же, чем страдает data-si у коуча).
 on('wo:plates', (el) => {
@@ -335,8 +338,10 @@ export async function renderSelect() {
    ════════════════════════════════════════════════════════ */
 export async function renderActive() {
   const ru = isRu();
-  const exCount = State.plan.length;
-  const totalSets = State.plan.reduce((s, e) => s + e.sets.length, 0);
+  // Пропущенное (FIELD-1) не в счёте сессии — ни в «N упр.», ни в рельсе.
+  const counted = State.plan.filter((e) => !e.skipped);
+  const exCount = counted.length;
+  const totalSets = counted.reduce((s, e) => s + e.sets.length, 0);
 
   const trainEl = document.getElementById('s-train');
   if (!trainEl) return;
@@ -516,7 +521,7 @@ async function getDisplayName(exerciseName) {
  * @param {number} [after] — искать строго после этого индекса (автопереход)
  */
 export function focusExerciseIndex(after = -1) {
-  return State.plan.findIndex((ex, i) => i > after && ex.sets.some((s) => !s.done));
+  return State.plan.findIndex((ex, i) => i > after && isPending(ex));
 }
 
 /**
@@ -524,6 +529,11 @@ export function focusExerciseIndex(after = -1) {
  * @param {boolean} [open] — раскрыты ли подходы; по умолчанию открыто, пока есть недоделанные
  */
 export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every((s) => s.done)) {
+  // FIELD-1: пропущенная карточка погашена и свёрнута; вся шапка — одна цель
+  // «вернуть» (wo:unskip), меню и блины на ней не рисуются, чтобы тап по
+  // погашенной карточке не открыл ничего, кроме возврата.
+  const skipped = !!ex.skipped;
+  if (skipped) open = false;
   const doneSets = ex.sets.filter((s) => s.done).length;
   const setRows = await Promise.all(ex.sets.map((set, si) => renderSetRow(ex, ei, set, si)));
   const coach = _computeCoachTarget(ex.name, workouts);
@@ -537,8 +547,8 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
     : `<button class="ex-action-btn" title="${esc(t('plate.title'))}" aria-label="${esc(t('plate.title'))}" data-action="wo:plates" data-ei="${ei}">${iconPlate}</button>`;
 
   return `
-    <div class="exercise-card ${ex.noDb ? 'ex-no-db' : ''}" id="ex-card-${ei}" data-ei="${ei}">
-      <div class="exercise-header" data-action="wo:toggleCard" data-ei="${ei}">
+    <div class="exercise-card ${ex.noDb ? 'ex-no-db' : ''}${skipped ? ' ex-skipped' : ''}" id="ex-card-${ei}" data-ei="${ei}">
+      <div class="exercise-header" data-action="${skipped ? 'wo:unskip' : 'wo:toggleCard'}" data-ei="${ei}"${skipped ? ` role="button" aria-label="${esc(t('train.skipped_undo'))}"` : ''}>
         <div class="drag-handle" data-action="wo:noop" role="img" aria-label="${esc(t('train.reorder'))}"><svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12" aria-hidden="true"><circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/></svg></div>
         <div class="exercise-icon"><span class="ex-num">${ei + 1}</span></div>
         <div class="exercise-info">
@@ -547,7 +557,11 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
             ${coach ? `<span class="coach-pill">${coach.target}<span class="coach-pill-unit">kg</span></span>` : ''}
           </div>
         </div>
-        
+        ${skipped ? `
+        <div class="ex-skip-tag">
+          <span class="ex-skip-state">${esc(t('train.skipped'))}</span>
+          <span class="ex-skip-undo">${esc(t('train.skipped_undo'))}</span>
+        </div>` : `
         <div class="ex-header-actions" data-action="wo:noop">
           ${plateBtn}
           <button class="ex-action-btn" title="${esc(t('train.more_options'))}" aria-label="${esc(t('train.more_options'))}" data-action="wo:exMenu" data-ei="${ei}">
@@ -557,7 +571,7 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
           </button>
         </div>
 
-        <div class="exercise-chevron" id="ex-chevron-${ei}"${open ? ' style="transform:rotate(180deg)"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="exercise-chevron" id="ex-chevron-${ei}"${open ? ' style="transform:rotate(180deg)"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></div>`}
       </div>
       <div class="sets-wrap" id="sets-wrap-${ei}" style="display:${open ? 'block' : 'none'}">
         <div class="set-header-row">
