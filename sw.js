@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-470ad7d3';
+const CACHE_NAME = 'athlete-pro-v121-7651a525';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -172,9 +172,44 @@ const MEDIA_RE = /\.(?:mp4|webm|m4a|mp3|ogg|mov)$/i;
 /* ── Privacy mode — synced from main thread via postMessage ── */
 let privacyMode = 'cloud'; // default; updated when client posts message
 
+/* ── SW-CACHE: код из CACHE_NAME без сети, флаг 'sw-cache-first' ──
+   SW не видит localStorage: страница постит флаг сообщением (js/app.js), SW
+   кладёт его на диск. Отдельный кеш SETTINGS_CACHE — потому что activate
+   сносит всё, кроме CACHE_NAME, и флаг внутри версии обнулялся бы на каждом
+   деплое; activate его щадит. До первого сообщения — OFF, путь как раньше. */
+const SETTINGS_CACHE = 'ap-sw-settings';
+const CACHE_FIRST_KEY = '/__sw/cache-first';
+// Dev-хосты всегда network-first: правка видна без `npm run build:sw`.
+const IS_DEV_HOST = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
+let cacheFirstOn = null; // Promise<boolean>; null — ещё не читали с диска
+
+function readCacheFirst() {
+  if (!cacheFirstOn) {
+    cacheFirstOn = caches
+      .open(SETTINGS_CACHE)
+      .then((cache) => cache.match(CACHE_FIRST_KEY))
+      .then((res) => (res ? res.text() : '0'))
+      .then((v) => v === '1')
+      .catch(() => false);
+  }
+  return cacheFirstOn;
+}
+
+function writeCacheFirst(on) {
+  cacheFirstOn = Promise.resolve(on);
+  return caches
+    .open(SETTINGS_CACHE)
+    .then((cache) => cache.put(CACHE_FIRST_KEY, new Response(on ? '1' : '0')))
+    .catch(() => {});
+}
+
 self.addEventListener('message', (e) => {
   if (e.data?.type === 'privacy-mode') {
     privacyMode = e.data.mode || 'cloud';
+  }
+  if (e.data?.type === 'sw-cache-first') {
+    const saved = writeCacheFirst(e.data.on === true);
+    if (e.waitUntil) e.waitUntil(saved);
   }
   // Honest "apply now" handshake: the page's Update action posts this so a
   // waiting SW activates immediately → activate/claim → controllerchange → reload.
@@ -241,7 +276,11 @@ self.addEventListener('activate', (e) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+        Promise.all(
+          keys
+            .filter((k) => k !== CACHE_NAME && k !== SETTINGS_CACHE)
+            .map((k) => caches.delete(k))
+        )
       )
           .then(() => self.clients.claim())
           .then(() => { warmCache(); })
@@ -317,8 +356,23 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  e.respondWith(isCode ? networkFirst(e.request, cleanReq, dest) : cacheFirst(e.request, cleanReq));
+  e.respondWith(isCode ? codeResponse(e.request, cleanReq, dest) : cacheFirst(e.request, cleanReq));
 });
+
+/* Код: флаг ON (и не dev-хост) — из CACHE_NAME без сети, промах — в сеть.
+   Только CACHE_NAME, не caches.match по всем кешам: он и есть атомарная
+   версия (хеш манифеста), смесь версий модулей = белый экран. Таймаут-гонку
+   «сеть или кеш, кто быстрее» сюда не добавлять по той же причине.
+   `cache: 'no-store'` от страницы — всегда сеть: так ходит версия-поллинг
+   (`/js/version.js?uc=…`, js/app.js), страховка от залипшей версии. */
+async function codeResponse(request, cleanReq, dest) {
+  if (!IS_DEV_HOST && request.cache !== 'no-store' && (await readCacheFirst())) {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(cleanReq, { ignoreVary: true });
+    if (cached) return cached;
+  }
+  return networkFirst(request, cleanReq, dest);
+}
 
 /* Cache a successful, non-private response without blocking the return. */
 function maybeCache(response, cleanReq) {

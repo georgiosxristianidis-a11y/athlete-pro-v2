@@ -10,9 +10,20 @@
  *   6. JS heap + DOM node count (утечки при навигации)
  *
  * Запуск:  node scripts/profile.mjs [--cpu=4] [--net=3g] [--port=3111]
+ *          [--host=sw.localhost] [--flags=sw-cache-first,другой-флаг]
+ *
+ * Сеть меряется на стороне сервера: перед server.js стоит прокси, он считает
+ * каждый запрос, который реально дошёл до сети. `fromCache` из Resource Timing
+ * не различает «SW отдал из кеша» и «SW сходил в сеть» (карточка SW-CACHE), а
+ * счётчик прокси различает. `--net=3g` троттлит в том же прокси — значит,
+ * и запросы самого service worker, которые CDP-эмуляция страницы не видит.
+ * `--host` — хост вместо localhost: SW держит localhost/127.0.0.1 всегда
+ * network-first, а *.localhost Chromium резолвит в loopback и считает
+ * безопасным контекстом.
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
+import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,19 +38,72 @@ const arg = (n, d) => {
 const PORT = Number(arg('port', 3111));
 const CPU_THROTTLE = Number(arg('cpu', 4)); // 1 = desktop, 4 = mid-tier android
 const COVERAGE = arg('coverage', '1') !== '0'; // coverage искажает тайминги — гони отдельным прогоном
-const BASE = `http://localhost:${PORT}`;
+const HOST = arg('host', 'localhost');
+const NET = arg('net', 'none');
+const FLAGS = arg('flags', '').split(',').filter(Boolean);
+const BASE = `http://${HOST}:${PORT}`;
+const UPSTREAM_PORT = PORT + 1;
+
+/* Профиль сети прокси: задержка на запрос + полоса. 3g — пресет Lighthouse
+   (150 мс RTT, 1.6 Мбит/с вниз). */
+const NET_PRESETS = { none: { rttMs: 0, bytesPerMs: 0 }, '3g': { rttMs: 150, bytesPerMs: 1.6e6 / 8 / 1000 } };
+const net = NET_PRESETS[NET];
+if (!net) throw new Error(`--net=${NET}: известны ${Object.keys(NET_PRESETS).join(', ')}`);
+
+/* ───────────────────────── proxy (счётчик сети) ───────────────────────── */
+const CODE_RE = /(?:\.(?:js|mjs|css|html)|\/)$/;
+const traffic = { total: 0, code: 0, bytes: 0, last: Date.now() };
+const resetTraffic = () => Object.assign(traffic, { total: 0, code: 0, bytes: 0 });
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function startProxy() {
+  const srv = http.createServer((req, res) => {
+    const pathname = (req.url || '/').split('?')[0];
+    traffic.total++;
+    traffic.last = Date.now();
+    if (CODE_RE.test(pathname) && pathname !== '/sw.js') traffic.code++;
+    const up = http.request(
+      { host: '127.0.0.1', port: UPSTREAM_PORT, path: req.url, method: req.method, headers: req.headers },
+      async (upRes) => {
+        try {
+          await sleep(net.rttMs);
+          res.writeHead(upRes.statusCode || 502, upRes.headers);
+          for await (const chunk of upRes) {
+            traffic.bytes += chunk.length;
+            traffic.last = Date.now();
+            if (net.bytesPerMs) await sleep(chunk.length / net.bytesPerMs);
+            res.write(chunk);
+          }
+          res.end();
+        } catch {
+          res.destroy(); // сервер погашен посреди ответа — на выходе из прогона
+        }
+      }
+    );
+    up.on('error', () => res.destroy());
+    req.pipe(up);
+  });
+  return new Promise((r) => srv.listen(PORT, '127.0.0.1', () => r(srv)));
+}
+
+/* Ждать, пока сеть затихнет: фоновый прогрев SW (PRECACHE-1) иначе попадёт
+   в счёт повторного визита. */
+async function waitNetIdle(quietMs = 2000, maxMs = 60000) {
+  const start = Date.now();
+  while (Date.now() - traffic.last < quietMs && Date.now() - start < maxMs) await sleep(250);
+}
 
 /* ───────────────────────── server ───────────────────────── */
 async function startServer() {
   const proc = spawn(process.execPath, ['server.js'], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(PORT), NODE_ENV: 'production' },
+    env: { ...process.env, PORT: String(UPSTREAM_PORT), HOST: '127.0.0.1', NODE_ENV: 'production' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   await new Promise((res, rej) => {
     const t = setTimeout(() => rej(new Error('server timeout')), 15000);
     proc.stdout.on('data', (b) => {
-      if (String(b).includes(String(PORT))) {
+      if (String(b).includes(String(UPSTREAM_PORT))) {
         clearTimeout(t);
         res();
       }
@@ -55,7 +119,8 @@ const ms = (n) => (n == null ? 'n/a' : Math.round(n) + ' ms');
 
 /* ───────────────────────── main ───────────────────────── */
 const server = await startServer();
-const report = { meta: { cpuThrottle: CPU_THROTTLE, date: new Date().toISOString() } };
+const proxy = await startProxy();
+const report = { meta: { cpuThrottle: CPU_THROTTLE, net: NET, host: HOST, flags: FLAGS, date: new Date().toISOString() } };
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({
@@ -96,6 +161,13 @@ page.on('response', async (res) => {
     /* noop */
   }
 });
+
+/* флаги — до первого скрипта приложения, на всех страницах контекста */
+if (FLAGS.length) {
+  await ctx.addInitScript((names) => {
+    for (const n of names) localStorage.setItem('ap-flag-' + n, '1');
+  }, FLAGS);
+}
 
 /* наблюдатели ставим ДО загрузки документа */
 await page.addInitScript(() => {
@@ -389,9 +461,12 @@ for (let i = 0; i < 3; i++) {
 report.leakProbe = leak;
 
 /* ── 6. ПОВТОРНЫЙ ВИЗИТ (service worker / cache) ── */
+await waitNetIdle();
+resetTraffic();
 const t1 = Date.now();
 await page.goto(BASE, { waitUntil: 'load' });
 await page.waitForTimeout(1500);
+const warmServer = { ...traffic };
 report.warmLoad = await page.evaluate(() => {
   const n = performance.getEntriesByType('navigation')[0] || {};
   const paints = Object.fromEntries(
@@ -407,8 +482,10 @@ report.warmLoad = await page.evaluate(() => {
   };
 });
 report.warmLoad.wallClockMs = Date.now() - t1;
+report.warmLoad.server = { requests: warmServer.total, code: warmServer.code, bytes: warmServer.bytes };
 
 await browser.close();
+proxy.close();
 server.kill();
 
 /* ───────────────────────── вывод ───────────────────────── */
@@ -417,7 +494,8 @@ fs.writeFileSync(out, JSON.stringify(report, null, 2));
 
 const L = console.log;
 L('\n══════════ ATHLETE PRO — PERF PROFILE ══════════');
-L(`CPU throttle: ${CPU_THROTTLE}x (эмуляция среднего Android), viewport 390x844\n`);
+L(`CPU throttle: ${CPU_THROTTLE}x (эмуляция среднего Android), viewport 390x844`);
+L(`Сеть: ${NET} | хост: ${HOST} | флаги: ${FLAGS.join(', ') || 'нет'}\n`);
 
 L('── 1. COLD LOAD ──');
 const c = report.coldLoad;
@@ -485,6 +563,9 @@ L('\n── 8. ПОВТОРНЫЙ ВИЗИТ (SW/кеш) ──');
 const w = report.warmLoad;
 L(
   `  FCP ${ms(w.fcp)} | load ${ms(w.load)} | сеть ${kb(w.transfer)} | из кеша ${w.fromCache}/${w.total}`
+);
+L(
+  `  до сервера дошло: ${w.server.requests} запросов, из них кода ${w.server.code} | ${kb(w.server.bytes)}`
 );
 
 L(`\nПолный JSON: ${path.relative(ROOT, out)}\n`);

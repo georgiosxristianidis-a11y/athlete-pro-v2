@@ -104,6 +104,12 @@ const DEFAULTS = {
   // раскрыто одно упражнение. Дефолт ON по карточке LOG-SEC-1.
   // Kill switch on device: Flags.setFlag('logger-sections', false)
   'logger-sections': true,
+
+  // SW-CACHE: на тёплом старте SW отдаёт JS/CSS/HTML из CACHE_NAME без сети
+  // (зал, слабый Wi-Fi). Цена — обновление доезжает на запуск позже. Флаг
+  // постится в SW из js/app.js; на localhost SW всегда network-first.
+  // Default OFF до поля Gio. Kill switch: Flags.setFlag('sw-cache-first', false)
+  'sw-cache-first': false,
 };
 
 /** @param {string} name @returns {boolean} */
