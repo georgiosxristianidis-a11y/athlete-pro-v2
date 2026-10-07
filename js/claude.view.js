@@ -1,20 +1,13 @@
 // @ts-check
-import {
-  COMPUTE_REST_HOURS,
-  Heatmap,
-  MUSCLE_MAP,
-  getPandaHidden,
-  hideMascot,
-} from './claude.store.js';
+import { getPandaHidden, hideMascot } from './claude.store.js';
 import { esc, haptic, listenerGroup } from './shared/utils.js';
-import { State as WorkoutState } from './workout.store.js';
 import { Toast } from './shell.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
 import { t } from './locale.store.js';
 import { probeAiStatus } from './shared/ai-status.js';
 import { onPrivacyChange } from './privacy.store.js';
-import { fabGlowClass, fabKeyState, getEngine, hasLocalKey, setEngine } from './ai-settings.store.js';
+import { fabGlowClass, fabKeyState, getEngine, hasLocalKey } from './ai-settings.store.js';
 import {
   initPandaVideo,
   togglePandaSound,
@@ -44,7 +37,7 @@ on('claude:toggleSound', (el, e) => {
 
 /**
  * AI Assistant view layer.
- * Handles the floating assistant (FAB), chat panel, and muscle recovery heatmap.
+ * Handles the floating assistant (FAB) and the entry into the coach screen.
  */
 export const Claude = (() => {
   const ClaudeState = {
@@ -323,34 +316,6 @@ export const Claude = (() => {
     return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none"><path d="M16 4L28 16L16 28L4 16L16 4Z" fill="var(--c-gemini)"/></svg>`;
   }
 
-  function buildBodySVG(scores) {
-    const f = (m) =>
-      scores[m] > 50
-        ? 'rgba(232,132,140,0.8)'
-        : scores[m] > 20
-          ? 'rgba(255,179,0,0.6)'
-          : 'rgba(0,230,118,0.3)';
-    return `<svg class="body-svg" viewBox="0 0 260 240">
-      <path d="M50,112 Q65,116 80,112 L82,124 Q65,129 48,124 Z" fill="${f('quad')}" stroke="currentColor" stroke-width="1.5"/>
-      <text x="130" y="230" text-anchor="middle" font-size="10" fill="var(--c-text-3)">Recovery Heatmap</text>
-    </svg>`;
-  }
-
-  async function _toggleEngine() {
-    const isGem = (await getEngine()) === 'gemini';
-    // Через стор, а не `DB.Settings.set` напрямую: там airgap-стоп (в этом
-    // режиме движок не переключается вовсе) и событие 'ap-ai-engine', на
-    // которое подписан сам FAB (`_fabOn.add`). Прямая запись обходила оба.
-    const res = await setEngine(isGem ? 'anthropic' : 'gemini');
-    if (!res.ok) {
-      Toast.show(t('profile.ai_airgap'), 'error');
-      return;
-    }
-    haptic(10);
-    close();
-    setTimeout(renderFAB, 100);
-  }
-
   return {
     renderFAB,
     patchFabKeyState,
@@ -360,7 +325,6 @@ export const Claude = (() => {
     _geminiIcon,
     dismissFAB,
     _snapFAB,
-    _toggleEngine,
   };
 })();
 

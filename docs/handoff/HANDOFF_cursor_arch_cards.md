@@ -45,7 +45,6 @@
 | 4 | **A14-хвост** | средняя | скорость | S | Island ещё на critical path |
 | 4 | **A12** | низкая | гигиена · поверхность | S | Firebase-призрак |
 | 4 | **A16+A17** | низкая | гигиена · backend | S | мёртвый код / поле |
-| 4 | **A18** | низкая | гигиена | S | мёртвый код в `claude.view.js` |
 | 4 | **CURSOR-OFF** | высокая | гигиена · инструмент | M | мёртвые чеки выглядят зелёными |
 | 1 | **MOTION-FIX** | высокая | скорость · моторика | M | разморожена 20.09, берётся первой |
 | 4 | **A10** | средняя | backend | S | промпты в routes/coach |
@@ -55,7 +54,7 @@ GATE-WEEKLY · PERF-HIST · PERF-INLINE · PERF-BLUR · NAV-1 · MEASURE-1 · DR
 A6-follow-up (снос `s-body`) · A1 (completeSession → workout.store, 14.09) ·
 A8 (dashboard.store read-модель, 14.09) · AI-1 · A2 (Integrity.check, 15.09) ·
 A5 (block-names.js, 16.09) · A9 (сеть и IDB Intel в стор, 17.09) ·
-A13 (профиль: IDB только через стор, 18.09) · E2E-1 (`E2E_BASE` кроет `request.*`, 04.10).
+A13 (профиль: IDB только через стор, 18.09) · E2E-1 (`E2E_BASE` кроет `request.*`, 04.10) · A18 (мёртвый код `claude.view.js`, 07.10).
 
 **Не карточки агента (только Gio):** LAUNCH-10 поле · VOICE-2 поле · HYG-6 полевой хвост.
 
@@ -362,35 +361,12 @@ HTML не резал — нарезка шаблона остаётся след
 
 ---
 
-### A18 — мёртвый код в `claude.view.js`
-**от:** Claude · **Фаза 4** · **важность:** низкая · **тип:** гигиена · **размер:** S
+### A18 — мёртвый код в `claude.view.js` — ЗАКРЫТА (07.10, 1.27.155)
 
-**Для чего.** Найдено при переносе A15-claude 20.09, тем же проходом. Два куска:
-
-1. `_toggleEngine` висит на `window.Claude`, но ни один `data-action`, ни `index.html`,
-   ни e2e его не зовут — проверено грепом по репозиторию. Живой переключатель движка
-   один: `ai:setEngine` → `_onSetEngine` в `js/ai-settings.view.js`.
-2. Пять предупреждений `no-unused-vars` в этом же файле, одинаковые до и после переноса
-   (`npx eslint js/claude.view.js` — 5 warn, сверено с `origin/main`): импорты
-   `COMPUTE_REST_HOURS` / `Heatmap` / `MUSCLE_MAP` из `claude.store.js`, импорт
-   `WorkoutState`, функция `buildBodySVG`. Первые три держат `claude.store.js` в графе
-   view **ничем** — тепловая карта давно уехала на экран Intel.
-
-**Мина.** `claude.store.js` сидит в первом кадре (`test/boot-graph.test.js` §keepPreload) —
-снос мёртвых импортов может выбить его из install-фазы прекеша и покрасить бут-граф, как
-было на `A5`. Сносить с прогоном `test/boot-graph.test.js`, а не «заодно».
-
-**Почему важно.** Ложный контракт того же класса, что A16/A17: метод «есть», эффекта нет.
-Хуже — это второй путь к одному состоянию, и он уже один раз разъехался с первым (писал
-`ai-engine` мимо `setEngine`, без airgap-стопа и без `ap-ai-engine`; путь починен 20.09,
-дубль остался).
-
-**Где.** `js/claude.view.js` — тело `_toggleEngine` + строка в объекте экспорта.
-
-**Стоп.** `_toggleEngine` либо удалён вместе со строкой экспорта, либо получил вход в UI —
-третьего нет; `npx eslint js/claude.view.js` даёт 0 warn; `npm test` зелёный, включая
-`test/boot-graph.test.js`. Перед сносом — греп `toggleEngine` по репозиторию, включая
-`test/e2e/`.
+`_toggleEngine` удалён вместе со строкой экспорта (решение Gio 06.10): переключатель движка
+один — `ai:setEngine` → `_onSetEngine` в `js/ai-settings.view.js`. Сняты пять `no-unused-vars`
+(`COMPUTE_REST_HOURS`/`Heatmap`/`MUSCLE_MAP`, `WorkoutState`, `buildBodySVG`) и ставший мёртвым
+импорт `setEngine`; `npx eslint js/claude.view.js` — 0 warn, бут-граф без изменений. Детали — `CHANGELOG.md`.
 
 ---
 
@@ -464,7 +440,7 @@ HTML не резал — нарезка шаблона остаётся след
 `_toggleEngine()` обходил `setEngine()`, то есть airgap-стоп и событие `ap-ai-engine`, —
 дыра настоящая, но недостижимая: вызывающих у функции нет.
 
-**Хвост — отдельной карточкой `A18` ниже:** `_toggleEngine()` вызывающих не имеет.
+**Хвост — карточка `A18` выше, закрыта 07.10:** `_toggleEngine()` удалён.
 
 ---
 

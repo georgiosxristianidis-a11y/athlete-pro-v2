@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A18: мёртвый код в `claude.view.js` снят (1.27.155)
+- **Причина.** `_toggleEngine` висел на `window.Claude` без единого вызывающего (греп `toggleEngine` по `js/`, `test/`, `test/e2e/`, `index.html` — только сам файл). Это был второй путь к движку ИИ рядом с живым `ai:setEngine` → `_onSetEngine`, и он уже один раз разъехался с первым (20.09). В том же файле `npx eslint` давал 5 `no-unused-vars`: импорты `COMPUTE_REST_HOURS` / `Heatmap` / `MUSCLE_MAP` из `claude.store.js`, импорт `WorkoutState` и функция `buildBodySVG` (тепловая карта давно живёт на экране Intel).
+- **Фикс.** `_toggleEngine` удалён вместе со строкой экспорта, сняты все пять мёртвых имён и ставший мёртвым импорт `setEngine`. Из `claude.store.js` view берёт только `getPandaHidden`/`hideMascot`, поэтому стор остаётся в бут-графе: прекеш по-прежнему 56 boot + 84 warm, `test/boot-graph.test.js` прогнан после каждого снятого импорта. `npx eslint --max-warnings 0 js/claude.view.js` — 0.
+
 ### FIELD-2: автопрогресс смотрит на дату — после перерыва без «+шаг» (1.27.155)
 - **Причина.** `_smartNextWeight` в `js/workout.store.js` не читал `timestamp`: последняя сессия с упражнением давала «прежний топ-вес + шаг», если цель была взята, — хоть вчера, хоть два месяца назад. Полевой случай: после паузы приложение встречало июльским рабочим весом плюс 2.5, и Gio правил вес руками в зале. Тот же расчёт (`nextWeightFor`) кормит префилл Train и рекомендации Home.
 - **Фикс.** Давность последней сессии с упражнением считает `nextWeightFor(ex, workouts, now)`. ≥28 дней — без добавки, вес = прежний топ-вес на сетке; ≥42 дней — мягкий возврат: `snapWeight(топ × 0.8, weightStep)`, не выше прежнего и не ниже одного шага. Числа — константы в одном месте, `RETURN_*` в `js/workout.store.js` (решение Gio 06.10; не отдельным модулем — стор в бут-графе, новый файл потянул бы `modulepreload` и install-фазу прекеша). Моложе 28 дней и без `timestamp` — побайтно прежнее поведение, без флага.
