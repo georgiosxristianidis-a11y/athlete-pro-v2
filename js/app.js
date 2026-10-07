@@ -458,6 +458,12 @@ if ('serviceWorker' in navigator) {
       // sitting around — nudge it to check for a fresh version.
       window.addEventListener('online', () => reg.update());
 
+      // SW-CACHE: SW не видит localStorage — постим флаг каждый запуск, и ON, и
+      // OFF, чтобы kill switch доезжал тем же путём (как privacy-mode).
+      navigator.serviceWorker.ready
+        .then((r) => r.active?.postMessage({ type: 'sw-cache-first', on: flag('sw-cache-first') }))
+        .catch(() => {});
+
       // A fresh worker may already be parked (installed on a previous visit).
       if (reg.waiting && navigator.serviceWorker.controller) _promptUpdate(reg.waiting);
 
