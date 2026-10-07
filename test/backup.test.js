@@ -264,3 +264,44 @@ describe('LAUNCH-8 — restore on a wiped profile', () => {
     assert.deepEqual(JSON.parse(localStorage.getItem('ap-custom-plan-A')), SAMPLE_PLAN);
   });
 });
+
+// BACKUP-SEC: файл бэкапа пересылают по чатам — это дверь наружу, а не
+// «локальный файл». Секреты (isSecretKey) не уезжают в него и не въезжают из него.
+describe('BACKUP-SEC — BYOK-ключи не проходят через файл бэкапа', () => {
+  const OWN_GEMINI = 'AIzaBACKUPSEC_OWN_GEMINI_000000000000000';
+  const OWN_ANTHROPIC = 'sk-ant-BACKUPSEC-OWN-0000000000';
+
+  test('экспорт не несёт ни одного BYOK-ключа, обычные настройки на месте', async () => {
+    await DB.Settings.set('gemini-key', OWN_GEMINI);
+    await DB.Settings.set('anthropic-key', OWN_ANTHROPIC);
+    await DB.Settings.set('lang', 'ru');
+
+    const json = await Backup.export();
+    assert.ok(!json.includes(OWN_GEMINI), 'gemini-key уехал в файл бэкапа');
+    assert.ok(!json.includes(OWN_ANTHROPIC), 'anthropic-key уехал в файл бэкапа');
+    const parsed = JSON.parse(json);
+    assert.equal(parsed.settings['gemini-key'], undefined);
+    assert.equal(parsed.settings['anthropic-key'], undefined);
+    assert.equal(parsed.settings.lang, 'ru');
+  });
+
+  test('импорт не подменяет свой ключ чужим и не ставит ключ из файла', async () => {
+    await DB.Settings.set('gemini-key', OWN_GEMINI);
+
+    await Backup.import(
+      JSON.stringify({
+        version: 1,
+        workouts: [],
+        settings: {
+          'gemini-key': 'AIzaFOREIGN_KEY_FROM_FILE_0000000000000',
+          'anthropic-key': 'sk-ant-FOREIGN-FROM-FILE',
+          lang: 'en',
+        },
+      })
+    );
+
+    assert.equal(await DB.Settings.get('gemini-key'), OWN_GEMINI);
+    assert.equal(await DB.Settings.get('anthropic-key', null), null);
+    assert.equal(await DB.Settings.get('lang'), 'en');
+  });
+});
