@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A18: мёртвый код в `claude.view.js` снят (1.27.155)
+- **Причина.** `_toggleEngine` висел на `window.Claude` без единого вызывающего (греп `toggleEngine` по `js/`, `test/`, `test/e2e/`, `index.html` — только сам файл). Это был второй путь к движку ИИ рядом с живым `ai:setEngine` → `_onSetEngine`, и он уже один раз разъехался с первым (20.09). В том же файле `npx eslint` давал 5 `no-unused-vars`: импорты `COMPUTE_REST_HOURS` / `Heatmap` / `MUSCLE_MAP` из `claude.store.js`, импорт `WorkoutState` и функция `buildBodySVG` (тепловая карта давно живёт на экране Intel).
+- **Фикс.** `_toggleEngine` удалён вместе со строкой экспорта, сняты все пять мёртвых имён и ставший мёртвым импорт `setEngine`. Из `claude.store.js` view берёт только `getPandaHidden`/`hideMascot`, поэтому стор остаётся в бут-графе: прекеш по-прежнему 56 boot + 84 warm, `test/boot-graph.test.js` прогнан после каждого снятого импорта. `npx eslint --max-warnings 0 js/claude.view.js` — 0.
+
 ### Рекомендации Home снова показываются: тип как у hero, вес как у Train (1.27.154)
 - **Причина.** Секция «Next {type} Session» (`#recommendations-section`) читала `localStorage` `ap-last-workout-type` и `ap-recommendations-<type>`. Коммит 169d3399 (07.06) снёс при завершении тренировки и запись флага, и вызов `generateRecommendations()`, поэтому с тех пор оба ключа никто не пишет. Июньские остатки истекли по 7-дневному TTL, и секция оказалась скрыта у всех. Схема была кривой и до этого: рекомендации сохранялись под ключом завершённого типа, а читались под следующим, а прогрессия сравнивала прошлую сессию одного дня с планом другого.
 - **Фикс.** `getNextSessionRecs(workouts, nextType)` в `js/dashboard.store.js`. Тип берётся из того же `getNextType(allWorkouts)`, что у hero, вес — из `nextWeightFor()` (`js/workout.store.js`). Это тот же расчёт, которым `buildSession` префиллит Train (выделен без изменения поведения): имя или alias, сетка барабана 2/2.5, топ-сет, RPE. В карточку попадают только упражнения, где вес растёт. Сети, флагов и записи в путь сохранения тренировки нет.
