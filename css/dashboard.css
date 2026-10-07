@@ -567,92 +567,7 @@
   }
 }
 
-/* ════════════════════════════════════════════════
-   RECOMMENDATIONS MODAL
-   ════════════════════════════════════════════════ */
-
-.recommendations-modal {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-  margin: var(--sp-2) 0;
-  max-height: 35vh;
-  overflow-y: auto;
-}
-
-.rec-ex-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  padding: var(--sp-1-5) var(--sp-2);
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-m);
-  transition: background var(--t-fast);
-}
-
-.rec-ex-row:hover {
-  background: var(--c-surface-h);
-}
-
-.rec-ex-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  box-shadow: 0 0 8px currentColor;
-}
-
-.rec-ex-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.rec-ex-name {
-  font-size: var(--fs-2);
-  font-weight: var(--fw-md);
-  color: var(--c-text-1);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.rec-ex-reason {
-  font-size: var(--fs-1);
-  font-weight: var(--fw-md);
-  color: var(--c-text-3);
-}
-
-.rec-ex-weights {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  flex-shrink: 0;
-}
-
-.rec-old {
-  font-size: var(--fs-2);
-  font-weight: var(--fw-md);
-  color: var(--c-text-3);
-  text-decoration: line-through;
-}
-
-.rec-arrow {
-  font-size: var(--fs-2);
-  font-weight: var(--fw-md);
-  color: var(--c-accent);
-}
-
-.rec-new {
-  font-size: var(--fs-2);
-  font-weight: var(--fw-black);
-  color: var(--c-accent);
-  text-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
-}
-
+/* ── Recommendations card on Dashboard ── */
 .rec-more {
   font-size: var(--fs-2);
   font-weight: var(--fw-md);
@@ -661,57 +576,6 @@
   padding: var(--sp-1);
 }
 
-.ai-notes-card {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-1);
-  padding: var(--sp-2);
-  background: rgba(139, 92, 246, 0.08);
-  border: 1px solid rgba(139, 92, 246, 0.2);
-  border-radius: var(--r-m);
-  margin-bottom: var(--sp-1);
-}
-
-.ai-notes-icon {
-  font-size: var(--fs-4);
-  flex-shrink: 0;
-}
-
-.ai-notes-text {
-  font-size: var(--fs-2);
-  font-weight: var(--fw-md);
-  color: var(--c-text-2);
-  line-height: 1.5;
-}
-
-.ai-notes-text strong {
-  color: var(--c-text-1);
-  font-weight: var(--fw-bold);
-}
-
-.fatigue-warning {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  padding: var(--sp-2);
-  background: rgba(255, 179, 0, 0.08);
-  border: 1px solid rgba(255, 179, 0, 0.2);
-  border-radius: var(--r-m);
-  margin-bottom: var(--sp-1);
-}
-
-.fatigue-icon {
-  font-size: var(--fs-3);
-  flex-shrink: 0;
-}
-
-.fatigue-text {
-  font-size: var(--fs-2);
-  font-weight: var(--fw-md);
-  color: var(--c-text-2);
-}
-
-/* Recommendations card on Dashboard */
 .recommendations-card {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
@@ -775,11 +639,6 @@
   flex-shrink: 0;
 }
 
-/* ВНИМАНИЕ: .rec-old / .rec-arrow / .rec-new объявлены выше (блок модалки,
-   dashboard.css:~559) — эти правила их перебивают. После перевода на ступени
-   оба блока совпали; верхний фактически мёртв, как и вся модалка рекомендаций
-   (.recommendations-modal / .rec-ex-* / .ai-notes-* / .fatigue-* нигде не
-   рендерятся). Снос — отдельная карточка, не в типографике. */
 .rec-old {
   font-size: var(--fs-2);
   font-weight: var(--fw-md);
