@@ -15,6 +15,7 @@ import {
   savePlan,
   buildSession,
   latestWorkoutForNames,
+  coachPillWeight,
   persistSession,
   getWeekMode,
   loadCoreChecklist,
@@ -141,24 +142,6 @@ export { fmtVol };
 /* ════════════════════════════════════════════════════════
    DB HELPERS
    ════════════════════════════════════════════════════════ */
-
-/**
- * @param {string} exerciseName
- * @param {import('../db.js').WorkoutRecord[]} workouts — caller-fetched, one read for the whole render
- */
-export function _getLastSessionWeight(exerciseName, workouts) {
-  const last = latestWorkoutForNames(workouts, [exerciseName]);
-  const ex = last?.exercises?.find((e) => e.name === exerciseName);
-  return ex?.sets?.[0]?.weight || 0;
-}
-
-export function _computeCoachTarget(exerciseName, workouts) {
-  const last = _getLastSessionWeight(exerciseName, workouts);
-  if (!last || last <= 0) return null;
-  const raw = last * 1.025;
-  const target = Math.round(raw / 2.5) * 2.5;
-  return { target, last };
-}
 
 export function _getLastSessionSummary(exerciseName, workouts) {
   try {
@@ -540,7 +523,7 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
   // FIELD-2: после перерыва пилюля «прошлый +2.5%» спорила бы со сниженным
   // барабаном — вместо неё причина веса словами.
   const brk = ex.returnBreak ? breakReason(ex.returnBreak) : null;
-  const coach = brk ? null : _computeCoachTarget(ex.name, workouts);
+  const coach = brk ? null : coachPillWeight(ex, workouts);
   const muscleBadge = await getMuscleBadge(ex.name);
   const displayName = await getDisplayName(ex.name);
 
@@ -558,7 +541,7 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
         <div class="exercise-info">
           <div class="exercise-name">
             ${esc(displayName)}${muscleBadge}
-            ${coach ? `<span class="coach-pill">${coach.target}<span class="coach-pill-unit">kg</span></span>` : ''}
+            ${coach != null ? `<span class="coach-pill">${coach}<span class="coach-pill-unit">kg</span></span>` : ''}
           </div>
           ${brk ? `<div class="ex-break-reason" data-break="${esc(ex.returnBreak.mode)}">${esc(t(brk.key, brk.params))}</div>` : ''}
         </div>

@@ -203,15 +203,6 @@ interface CustomWorkout {
 // Recommendation / Coach
 // ──────────────────────────────────────────────────────────
 
-/**
- * Coach progression suggestion — computed from last session's top set.
- * `target = last × 1.025` rounded to 2.5 kg increment.
- */
-interface CoachTarget {
-  target: number;         // kg suggested
-  last: number;           // kg from last session
-}
-
 /** Heat score for muscle-recovery map (0-100, higher = more fatigued). */
 interface MuscleHeatScore {
   group: string;

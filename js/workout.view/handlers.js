@@ -192,28 +192,6 @@ export function commitVal(ei, si, type, val) {
 }
 
 /* ════════════════════════════════════════════════════════
-   RPE
-   ════════════════════════════════════════════════════════ */
-
-export function setRPE(ei, si, val) {
-  haptic(8);
-  const ex = State.plan[ei];
-  if (!ex) return;
-  const set = ex.sets[si];
-  if (!set) return;
-  set.rpe = set.rpe === val ? null : val;
-  const row = document.getElementById(`rpe-${ei}-${si}`);
-  if (row) {
-    row.querySelectorAll('.rpe-btn').forEach((btn) => {
-      // @ts-ignore
-      const v = parseInt(btn.dataset.val);
-      btn.classList.toggle('rpe-active', v === set.rpe);
-    });
-  }
-  persistSession();
-}
-
-/* ════════════════════════════════════════════════════════
    SET MANAGEMENT
    ════════════════════════════════════════════════════════ */
 

@@ -22,7 +22,7 @@ import {
 } from './workout.view/modals.js';
 
 import {
-  selectType, stepWeight, stepReps, setWeight, setReps, editVal, commitVal, setRPE, toggleSet, toggleCard,
+  selectType, stepWeight, stepReps, setWeight, setReps, editVal, commitVal, toggleSet, toggleCard,
   openCustomWorkoutModal, showExerciseMenu, _createNewCustomWorkout, _editCustomWorkout, _deleteCustomWorkout,
   _startCustomWorkout, _closeCustomWorkoutModal, addSet, smartCopy, smartCoach, skipExerciseToday, _unskipExercise,
   completeSession, cancelSession, _toggleUnilateral, _toggleBW, _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem,
@@ -119,7 +119,6 @@ export const Workout = {
   setReps,
   editVal,
   commitVal,
-  setRPE,
   toggleSet,
   toggleCard,
   addSet,
@@ -160,7 +159,7 @@ export {
   openPlanEditor, _switchPlanTab, _switchPlanWeek, _setPlanSearch, _loadPreset,
   _closePlanEditor, toggleChecklist, _savePlanAndClose, _updatePlanName, _updatePlanTag, _adjustPlan,
   _addPlanEx, _deletePlanEx, openExercisePickerModal, openReplaceExModal,
-  selectType, stepWeight, stepReps, setWeight, setReps, editVal, commitVal, setRPE, toggleSet, toggleCard,
+  selectType, stepWeight, stepReps, setWeight, setReps, editVal, commitVal, toggleSet, toggleCard,
   openCustomWorkoutModal, showExerciseMenu, _createNewCustomWorkout, _editCustomWorkout, _deleteCustomWorkout,
   _startCustomWorkout, _closeCustomWorkoutModal, addSet, smartCopy, smartCoach, skipExerciseToday, _unskipExercise,
   completeSession, cancelSession, _toggleUnilateral, _toggleBW, _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem,
