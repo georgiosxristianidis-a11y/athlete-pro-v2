@@ -129,32 +129,14 @@ describe('POST /api/coach/generate-plan — fallback (no API key)', () => {
   });
 });
 
-describe('POST /api/coach/recommendations', () => {
-  test('valid request → 200 with recommendations array', async () => {
-    const saved = process.env.ANTHROPIC_API_KEY;
-    delete process.env.ANTHROPIC_API_KEY;
-    try {
-      const res = await post('/api/coach/recommendations', {
-        engine: 'anthropic',
-        workout: { type: 'push', exercises: [] },
-        fatigue: {},
-        topLifts: [],
-        nextSessionPlan: [{ name: 'Bench Press', sets: 4, reps: 8, weight: 80 }],
-      });
-      assert.equal(res.status, 200);
-      const body = await res.json();
-      assert.ok(Array.isArray(body.recommendations));
-    } finally {
-      if (saved !== undefined) process.env.ANTHROPIC_API_KEY = saved;
-    }
-  });
-
-  test('missing nextSessionPlan → 400', async () => {
+// Маршрут снят в 1.27.156: клиент (`generateRecommendations` в claude.store.js)
+// не звал его с 07.06, а открытый ИИ-эндпоинт без клиента только жжёт квоту.
+describe('POST /api/coach/recommendations — снят', () => {
+  test('маршрута нет → 404', async () => {
     const res = await post('/api/coach/recommendations', {
       workout: { type: 'push', exercises: [] },
+      nextSessionPlan: [{ name: 'Bench Press', sets: 4, reps: 8, weight: 80 }],
     });
-    assert.equal(res.status, 400);
-    const body = await res.json();
-    assert.ok(body.error);
+    assert.equal(res.status, 404);
   });
 });

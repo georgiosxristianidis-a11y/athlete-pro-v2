@@ -91,51 +91,6 @@ router.post('/generate-plan', apiLimiter, asyncHandler(async (req, res) => {
   res.json({ success: true, plan, generated: true, aiNotes: content });
 }));
 
-const recommendationsSchema = z.object({
-  workout: z.any(), // Keeping it loose as it's a complex object
-  fatigue: z.any().optional().default({}),
-  topLifts: z.array(z.any()).optional().default([]),
-  nextSessionPlan: z.array(z.any()).min(1, 'nextSessionPlan is required'),
-  engine: z.enum(['gemini', 'anthropic']).optional().default(DEFAULT_AI_ENGINE)
-});
-
-/* ── POST /recommendations ── */
-router.post('/recommendations', apiLimiter, asyncHandler(async (req, res) => {
-  const parseResult = recommendationsSchema.safeParse(req.body);
-  if (!parseResult.success) return res.status(400).json({ error: 'Invalid input schema', details: parseResult.error.issues });
-  
-  const { workout, fatigue, topLifts, nextSessionPlan, engine } = parseResult.data;
-  
-  const system = _buildRecommendationsPrompt(workout, fatigue, topLifts, nextSessionPlan);
-  let content;
-  try {
-    content = await AIOrchestrator.generateJSON({
-      system,
-      prompt: 'Generate weight recommendations for the next session. Return JSON only.',
-      engine
-    }, req, res);
-  } catch (err) {
-    // Offline-first contract: maintain current weights instead of erroring
-    logWarn(req, 'recommendations_fallback', err.message, { code: err.code });
-    const fallback = nextSessionPlan.map((ex) => ({
-      name: ex.name,
-      sets: ex.sets,
-      reps: ex.reps,
-      recommendedWeight: ex.weight,
-      reason: 'Maintain current weight (AI unavailable)',
-    }));
-    return res.json({
-      success: true,
-      recommendations: fallback,
-      aiNotes: null,
-      warning: 'AI recommendations unavailable'
-    });
-  }
-
-  const recommendations = _parseRecommendations(content, nextSessionPlan);
-  res.json({ success: true, recommendations, aiNotes: content });
-}));
-
 const COACH_MAX_MESSAGES = 40;
 const COACH_MAX_CONTENT_LEN = 12000;
 // Idle keep-alive: proxies (nginx/Vercel) drop silent connections while the model thinks.
@@ -623,36 +578,11 @@ Generate a 3-day PPL rotation (Push, Pull, Legs) in valid JSON.
 Fields: name, sets, reps, weight, notes.`;
 }
 
-function _buildRecommendationsPrompt(workout, fatigue, topLifts, nextPlan) {
-  return `Performance Analyst.
-Last Workout: ${JSON.stringify(workout)}
-Fatigue: ${JSON.stringify(fatigue)}
-Plan: ${nextPlan.map(e => e.name).join(', ')}
-
-Recommend weights and reasons in JSON format.`;
-}
-
 function _parseGeneratedPlan(content, fallback) {
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     return jsonMatch ? JSON.parse(jsonMatch[0]) : fallback;
   } catch { return fallback; }
-}
-
-function _parseRecommendations(content, plan) {
-  try {
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return plan.map(ex => ({ ...ex, recommendedWeight: ex.weight, reason: 'Maintain' }));
-    
-    const parsed = JSON.parse(jsonMatch[0]);
-    return plan.map(ex => ({
-      ...ex,
-      recommendedWeight: parsed[ex.name] || ex.weight,
-      reason: parsed.reasons?.[ex.name] || 'Standard progression'
-    }));
-  } catch {
-    return plan.map(ex => ({ ...ex, recommendedWeight: ex.weight, reason: 'Maintain' }));
-  }
 }
 
 export default router;
