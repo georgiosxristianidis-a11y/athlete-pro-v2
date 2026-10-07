@@ -347,8 +347,8 @@ Gio по KV/квоте (`CORE-2`, вне кода) — см. ГДЕ СТОП в�
 - Смена движка в шторке затирает видео панды в FAB ромбом `#448aff`
   (`js/ai-settings.view.js:366-370`); `fab-video` включён по умолчанию.
 
-Низкий: сырой `err.message` клиенту (`lib/errors.js:23`); у `/api/coach/recommendations`
-с 1.27.154 нет клиента — снимать ли маршрут, решает Gio; мёртвый код — `_sendChat` в
+Низкий: сырой `err.message` клиенту (`lib/errors.js:23`); `legal/privacy.*.html` ещё описывают
+снятый в 1.27.156 `/api/coach/recommendations` — правка текста за Gio; мёртвый код — `_sendChat` в
 `js/claude.view.js` (упал бы при вызове), `lib/tokenUsage.js`, второй SSE-парсер в
 `fetchCoach`; промпт требует «SPEAK RUSSIAN ALWAYS» (`routes/coach.js:471`), а пользователю
 показывается «Run `npm run dev`» (`js/claude.store.js:370`); у оверлеев отчёта и радара нет

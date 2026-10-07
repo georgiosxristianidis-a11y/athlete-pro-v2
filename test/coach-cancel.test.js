@@ -268,8 +268,9 @@ describe('generateJSON — таймаут и отмена (CORE-2: не было
 
 /* CORE-2: engine: z.string() на 5 схемах пускал что угодно. coachSchema
    проверена юнит-тестом (test/coach-validate.test.js — экспортирован),
-   остальные четыре схемы приватные — проверка идёт через реальный HTTP,
-   валидация всё равно отрабатывает раньше AIOrchestrator. */
+   остальные три схемы приватные — проверка идёт через реальный HTTP,
+   валидация всё равно отрабатывает раньше AIOrchestrator. Пятая,
+   /recommendations, снята вместе с маршрутом в 1.27.156. */
 describe('engine ограничен списком провайдеров на всех AI-маршрутах (CORE-2)', () => {
   const post = (path, body) =>
     fetch(`http://127.0.0.1:${port}${path}`, {
@@ -280,7 +281,6 @@ describe('engine ограничен списком провайдеров на �
 
   const cases = [
     ['/api/coach/generate-plan', {}],
-    ['/api/coach/recommendations', { workout: {}, nextSessionPlan: [{ name: 'Squat' }] }],
     ['/api/coach/weekly-report', { workouts: [] }],
     ['/api/coach/biometrics-scan', { workouts: [] }],
   ];
