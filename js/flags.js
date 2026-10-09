@@ -110,6 +110,15 @@ const DEFAULTS = {
   // постится в SW из js/app.js; на localhost SW всегда network-first.
   // Default OFF до поля Gio. Kill switch: Flags.setFlag('sw-cache-first', false)
   'sw-cache-first': false,
+
+  // BOOT-1 «Контент»: карточки Home входят одной лесенкой на --stagger-i
+  // (пружина, шаг 48 мс, гейдж строго после заголовка), а числа трёх чипов
+  // докручиваются барабаном только в изменившихся разрядах (js/shared/
+  // digit-roll.js, база — localStorage 'ap-dash-seen'). OFF — как на проде:
+  // DESIGN-3 в css/dashboard.css и числа появляются готовыми.
+  // Читается в dashboard.js после данных, к этому моменту модуль загружен.
+  // Default OFF до поля Gio. Kill switch: Flags.setFlag('boot-cascade', false)
+  'boot-cascade': false,
 };
 
 /** @param {string} name @returns {boolean} */

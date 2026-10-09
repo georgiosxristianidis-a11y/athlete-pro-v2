@@ -534,6 +534,61 @@
 .ppl-gauge-card {
   animation: fadeSlideUp 0.26s var(--ease-out) 0.18s both;
 }
+
+/* BOOT-1 «Контент» (флаг boot-cascade → класс на #s-home): одна лесенка на
+   --stagger-i из разметки вместо двух драйверов — .stagger-item:nth-child(1-6)
+   в base.css и DESIGN-3 выше. Седьмой ребёнок, гейдж, нумерацию не получал,
+   брал 0.18 с из DESIGN-3 и входил на 120 мс раньше своего заголовка (0.30 с).
+   #s-home в селекторе перекрывает оба и не задевает .stagger-item других
+   экранов. База 50 мс — прежний старт hero. 420 мс длиннее закона кадра п.2:
+   исключение бута, раз на документ (design.md). Гасит глобальное reduce. */
+#s-home.boot-cascade .stagger-item {
+  animation: boot-rise 420ms var(--ease-spring-1) both;
+  animation-delay: calc(50ms + var(--stagger-i, 0) * 48ms);
+}
+@keyframes boot-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* BOOT-1: барабан разницы на чипах Home (js/shared/digit-roll.js). Окно в одну
+   цифру; внутри колонка едет вверх на --roll-n строк. Прошлые цифры лежат в
+   data-trail и рисуются псевдоэлементом — textContent узла остаётся новым
+   значением. Движение — transform колонки (драйвер один, закон кадра п.4),
+   кривая --ease-std: смена на месте, без перелёта (п.7). Старт: чип на 60 мс
+   позже предыдущего, разряд внутри числа на 40 мс. Гасит глобальное reduce. */
+.dig-roll {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  vertical-align: top;
+}
+.dig-roll-col {
+  display: block;
+  line-height: 1;
+  animation: dig-roll 300ms var(--ease-std) both;
+  animation-delay: calc(var(--roll-c, 0) * 60ms + var(--roll-i, 0) * 40ms);
+}
+.dig-roll-col::before {
+  content: attr(data-trail);
+  display: block;
+  white-space: pre;
+}
+@keyframes dig-roll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(var(--roll-n, 1) * -1em));
+  }
+}
+
 .session-item {
   animation: fadeSlideUp 0.3s ease both;
 }

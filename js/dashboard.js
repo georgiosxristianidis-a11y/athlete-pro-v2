@@ -20,6 +20,21 @@ import { on } from './events.js';
 import { flag } from './flags.js';
 import { t, getLang } from './locale.store.js';
 
+/**
+ * BOOT-1: барабан чипов. Динамический импорт, не статический: статический
+ * втянул бы модуль в бут-граф (test/boot-graph.test.js требует ему
+ * modulepreload и места в install-фазе), а при OFF он не нужен вовсе.
+ * Обрыв загрузки даёт null — числа встанут без анимации.
+ * @type {Promise<typeof import('./shared/digit-roll.js')|null>|null}
+ */
+let _digitRollP = null;
+function _loadDigitRoll() {
+  if (!_digitRollP) _digitRollP = import('./shared/digit-roll.js').catch(() => null);
+  return _digitRollP;
+}
+// Включён флаг — тянем модуль сразу, параллельно чтению IDB в load().
+if (flag('boot-cascade')) _loadDigitRoll();
+
 /** @type {Promise<typeof import('./shared/panda-video.js')>|null} */
 let _pandaVideoP = null;
 function _loadPandaVideo() {
@@ -188,7 +203,7 @@ export const Dashboard = (() => {
   function _buildTemplate(nextType = 'push') {
     return `
       <!-- Hero -->
-      <div class="dash-hero stagger-item">
+      <div class="dash-hero stagger-item" style="--stagger-i:0">
         <div>
           <div class="dash-hero-label">${esc(t('dash.hero_today', { day: typeDay(nextType) }))}</div>
           <div class="dash-hero-title" id="dash-greeting-label">${esc(greeting())}</div>
@@ -205,7 +220,7 @@ export const Dashboard = (() => {
       </div>
 
       <!-- Stat chips -->
-      <div class="stat-row stagger-item">
+      <div class="stat-row stagger-item" style="--stagger-i:1">
         <div class="stat-chip">
           <div class="stat-chip-label">${esc(t('analytics.period_week'))}</div>
           <div class="stat-chip-val sk" id="dash-vol-week">&nbsp;&nbsp;&nbsp;&nbsp;</div>
@@ -221,7 +236,7 @@ export const Dashboard = (() => {
       </div>
 
         <!-- Sparkline Chart (Phase 6) -->
-        <div class="dash-card stagger-item" style="padding-bottom: 0; overflow: hidden; background: var(--c-spark-bg); border: 1px solid var(--c-border); margin-top: var(--sp-2); border-radius: var(--r-xl);">
+        <div class="dash-card stagger-item" style="--stagger-i:2; padding-bottom: 0; overflow: hidden; background: var(--c-spark-bg); border: 1px solid var(--c-border); margin-top: var(--sp-2); border-radius: var(--r-xl);">
           <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 var(--sp-2); padding-top: var(--sp-2);">
             <div>
               <div style="color:var(--c-text-2); font-size:var(--fs-1); font-weight:var(--fw-bold); letter-spacing:0.05em; text-transform:uppercase;">${esc(t('dash.volume_trend'))}</div>
@@ -242,7 +257,7 @@ export const Dashboard = (() => {
         </div>
 
         <!-- Weekly Summary Chip -->
-      <div class="stat-chip weekly-summary-chip stagger-item" data-action="dash:weeklySummary" style="cursor:pointer;margin-top:var(--sp-2)">
+      <div class="stat-chip weekly-summary-chip stagger-item" data-action="dash:weeklySummary" style="--stagger-i:3;cursor:pointer;margin-top:var(--sp-2)">
         <div class="stat-chip-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
                stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
@@ -257,7 +272,7 @@ export const Dashboard = (() => {
       </div>
 
       <!-- Streak card -->
-      <div class="streak-card stagger-item" data-action="dash:navStats" style="cursor:pointer">
+      <div class="streak-card stagger-item" data-action="dash:navStats" style="--stagger-i:4;cursor:pointer">
         <div class="streak-header">
           <span class="section-label">${esc(t('dash.this_week'))}</span>
           <span class="streak-count" id="streak-count"></span>
@@ -266,11 +281,11 @@ export const Dashboard = (() => {
       </div>
 
       <!-- PPL split -->
-      <div class="section-header stagger-item">
+      <div class="section-header stagger-item" style="--stagger-i:5">
         <span class="section-label">${esc(t('dash.ppl_split'))}</span>
         <span class="badge badge-accent" id="dash-total"></span>
       </div>
-      <div class="chart-card ppl-gauge-card stagger-item" id="ppl-gauge-home"></div>
+      <div class="chart-card ppl-gauge-card stagger-item" id="ppl-gauge-home" style="--stagger-i:6"></div>
 
       <!-- Top Lifts -->
       <div class="section-header">
@@ -903,6 +918,16 @@ export const Dashboard = (() => {
     // Determine nextType based on last workout (DB already sorted)
     const nextType = getNextType(allWorkouts);
 
+    // BOOT-1: класс ставим ДО вставки шаблона — лесенка стартует на вставке.
+    // Барабан и база — только пока Home на виду: load() зовут и из профиля
+    // (вес, аватар): Home не на виду, барабан отыграл бы вхолостую, а база сгорела.
+    const bootOn = flag('boot-cascade');
+    screen.classList.toggle('boot-cascade', bootOn);
+    // Модуль грузится динамически (см. _loadDigitRoll); await до шаблона, чтобы
+    // между скелетом чипов и числами не лёг лишний кадр.
+    const dr = bootOn ? await _loadDigitRoll() : null;
+    const roll = !!dr && screen.classList.contains('active');
+
     // Build full dashboard frame if needed
     if (!document.getElementById('dash-greeting-label')) {
       screen.innerHTML = _buildTemplate(nextType);
@@ -925,18 +950,24 @@ export const Dashboard = (() => {
     const wv = document.getElementById('dash-vol-week');
     const mv = document.getElementById('dash-vol-month');
     const sc = document.getElementById('dash-sessions');
+    const shown = { w: fmtVol(weekVol), m: fmtVol(monthVol), s: String(weekCount) };
+    // Барабан считает от СОХРАНЁННОЙ базы, не от живого узла: innerHTML чипа на
+    // каждом load() (закон кадра п.6) его не обнуляет.
+    const seen = roll ? dr.readSeen() : null;
     if (wv) {
       wv.classList.remove('sk');
-      wv.innerHTML = fmtVol(weekVol) + '<span class="stat-chip-unit">kg</span>';
+      wv.innerHTML = (roll ? dr.chipValueHtml(seen?.w, shown.w, 0) : shown.w) + '<span class="stat-chip-unit">kg</span>';
     }
     if (mv) {
       mv.classList.remove('sk');
-      mv.innerHTML = fmtVol(monthVol) + '<span class="stat-chip-unit">kg</span>';
+      mv.innerHTML = (roll ? dr.chipValueHtml(seen?.m, shown.m, 1) : shown.m) + '<span class="stat-chip-unit">kg</span>';
     }
     if (sc) {
       sc.classList.remove('sk');
-      sc.textContent = weekCount;
+      if (roll) sc.innerHTML = dr.chipValueHtml(seen?.s, shown.s, 2);
+      else sc.textContent = weekCount;
     }
+    if (roll) dr.writeSeen(shown);
 
     // Phase 2: Deferred rendering to keep UI responsive
     requestAnimationFrame(() => {

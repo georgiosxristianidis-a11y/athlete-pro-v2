@@ -34,6 +34,7 @@ import { Toast } from './shell.js';
 import { on, onChange } from './events.js';
 import { haptic, esc } from './shared/utils.js';
 import { forceUpdate } from './shared/sw-update.js';
+import { clearSeen } from './shared/digit-roll.js';
 
 on('profile:clearData', () => window.Profile.clearAllData());
 onChange('profile:importFile', (el, e) => window.Profile._onImportFile(e));
@@ -332,6 +333,9 @@ export const Profile = (() => {
     try {
       const text = await file.text();
       await importBackupJson(text);
+      // BOOT-1: импорт документ не перезагружает — без сброса барабан Home
+      // докрутил бы разницу «до импорта → после» как будто это новая тренировка.
+      clearSeen();
       Toast.show(t('profile.import_ok'), 'success');
       // Import can rewrite everything — settings, workouts, language. This is
       // the one case where a full rebuild is the honest answer; it's rare and
