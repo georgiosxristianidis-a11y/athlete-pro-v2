@@ -39,25 +39,6 @@ router.get('/supabase-status', async (req, res) => {
   }
 });
 
-/* ── GET /firebase-config — expose Firebase config to the browser ── */
-router.get('/firebase-config', (req, res) => {
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  if (!projectId || projectId.includes('your-firebase')) {
-    return res.json({ configured: false });
-  }
-
-  // Firebase client config is inherently public (shipped in every browser bundle);
-  // real access control lives in Firebase Security Rules, not in hiding this response.
-  res.json({
-    configured: true,
-    apiKey: process.env.FIREBASE_API_KEY,
-    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-    projectId,
-    appId: process.env.FIREBASE_APP_ID,
-    env: process.env.NODE_ENV || 'production'
-  });
-});
-
 /* ── GET /ai-status — check for server-side API keys ── */
 router.get('/ai-status', (req, res) => {
   const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;

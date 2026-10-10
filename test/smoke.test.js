@@ -14,14 +14,13 @@ test('smoke: GET / returns 200', async () => {
   }
 });
 
-test('smoke: /api/firebase-config returns configured false when missing env', async () => {
+// PERIM-2 (A12): Firebase в js/ нет, эндпоинт снят — не возвращать мёртвую поверхность.
+test('smoke: /api/firebase-config снят — 404', async () => {
   const server = await startServer(0);
   try {
     const { port } = server.address();
     const res = await fetch(`http://127.0.0.1:${port}/api/firebase-config`);
-    assert.equal(res.status, 200);
-    const body = await res.json();
-    assert.equal(body.configured, false);
+    assert.equal(res.status, 404);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

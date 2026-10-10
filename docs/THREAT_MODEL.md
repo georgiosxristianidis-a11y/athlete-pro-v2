@@ -6,7 +6,7 @@ Athlete Pro — это **Offline-first** PWA приложение, исполь�
 
 - **Frontend**: Vanilla JS (ESM), Service Workers, IndexedDB.
 - **Backend**: Node.js (Express) с ограниченным API (в основном для связи с AI и интеграциями).
-- **Storage**: IndexedDB (клиент), Supabase / Firebase (для опциональной облачной синхронизации).
+- **Storage**: IndexedDB (клиент), Supabase (для опциональной облачной синхронизации).
 - **Framework & Methodology**: **Solid 9** (Surgical Fixes) + **#brain** (Квартет ИИ-субагентов для аудита).
 
 ## 2. Поверхность Атаки (Attack Surface)
@@ -17,6 +17,7 @@ Athlete Pro — это **Offline-first** PWA приложение, исполь�
 4. **API Endpoints**: DDoS-атаки или исчерпание лимитов (Billing Exhaustion) на эндпоинтах взаимодействия с Claude/Gemini.
 5. **Service Worker**: Web Cache Poisoning и Cache DOS (переполнение памяти мусорными ссылками).
 6. **Цепочка Поставок (Supply Chain)**: уязвимости в сторонних NPM пакетах.
+7. **Статика сервера**: всё, что лежит рядом с `server.js` (на проде — бандл функции Vercel), отдаётся по прямой ссылке, если не закрыто allowlist.
 
 ## 3. Идентифицированные Угрозы и Меры Противодействия
 
@@ -28,6 +29,7 @@ Athlete Pro — это **Offline-first** PWA приложение, исполь�
 | **Утечка BYOK-ключа**            | Ключ Gemini/Anthropic уходит с устройства или подменяется | Синк `settings`, промпт `profile`, файл бэкапа | Одна функция правды `isSecretKey()` / `stripSecrets()` (`js/shared/sync-secrets.js`): 1. Синк — ни запись в IDB, ни очередь, ни слияние входящих строк секрет не пропускают (`test/perimeter-guard.test.js`).<br>2. Профиль в промпте снимается через `stripSecrets`.<br>3. Бэкап: экспорт режет секреты, импорт их не принимает — свой ключ чужим файлом не подменить (`test/backup.test.js`, BACKUP-SEC). Переезд на новое устройство = ключ вводится заново. |
 | **Data Loss / LWW Skew**         | Потеря данных при выходе / Рассинхронизация времени   | IndexedDB / Sync Engine           | 1. Гарантия записи: `Promise` связан строго с `tx.oncomplete`.<br>2. Защита LWW: Корректировка оффлайн-времени через `lastServerTime`.<br>3. Защита от Quota Exceeded: Очередь хранит только ID. |
 | **API Abuse (DDoS / Billing)**   | Массовые запросы к API с целью исчерпания баланса LLM | Network                           | `express-rate-limit` на глобальные `/api/` и жёсткие лимиты на `/api/coach/`, стор общий (`lib/rateLimitStore.js`, KV/Upstash) при заданных `KV_REST_API_URL`/`UPSTASH_REDIS_REST_URL` — без них честный fallback на `MemoryStore` (лимит инстанса на serverless, режим виден в `/api/ai-status`). `maxOutputTokens` на Gemini, таймаут+отмена по `res.on('close')` на весь цикл ответа (не только первый байт) — CORE-2, 2026-09-23. Дневная квота ключа в Google Cloud Console — решение и настройка Gio, вне кода. |
+| **Утечка исходников и карты атаки** | Бэкенд, системные промпты, лимиты и версии зависимостей читаются по прямой ссылке | Статика сервера, LAN | PERIM-2, 2026-10-10: 1. Статика по allowlist = `includeFiles` из `vercel.json`, каталог монтируется своим корнем (`/js/../server.js` → 403), файлы корня — по точному пути. 2. Dev-сервер слушает `127.0.0.1`, в LAN — только `npm run dev:lan` (`--lan`) или `HOST`. 3. `connect-src` = `'self'` + `*.supabase.co`: ИИ ходит через свой бэкенд. Гард — `test/perimeter-guard.test.js` § 5–6, на проде — `npm run smoke:prod` п. 6. |
 | **Web Cache Poisoning & DOS**    | Внедрение ответов в кэш / Переполнение памяти SW      | Network / Proxy / Cache           | 1. SW не кэширует ответы с `set-cookie` / `no-store`.<br>2. Жесткая нормализация URL (`ignoreSearch` патч): очистка GET-параметров до поиска в кэше.                                             |
 | **Supply Chain Attacks**         | Использование уязвимых NPM зависимостей               | Build                             | Нативный `pre-push` Git хук с проверкой Airgap. Блокирует код только при наличии High/Critical уязвимостей в `production` зависимостях.                                                          |
 

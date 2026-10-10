@@ -126,7 +126,7 @@
 | A9 | Intel: сеть/DB из view → store/engine | **done** (17.09) | `js/intel.store.js` — `streamCoachReply`/`synthesizeSpeech`/`fetchWeeklyReport`/`fetchBiometricsScan`/`savePlannedWorkout`/`probeKeyState`/`getAutoSpeech`; в `intel.view.js` ноль `DB.*` (baseline A15 11 → 0) и ноль `fetch`. Гарды `test/intel-engine-wiring.test.js` переехали на стор. 1.27.117 | — |
 | A10 | Промпты коуча в `lib/prompts/` | **open** | `routes/coach.js` `_buildSystemPrompt` | Не менять SSE; только вынести строки |
 | A11 | Airgap-гейт в `SyncManager.process()` / `push` | **done** (09-13) | `_netBlocked()` в `js/sync.js` закрывает `process()`, `pull()`, keep-alive и `signIn()`; гард `test/sync-privacy-gate.test.js` шпионит по объекту `supabase`, а не по исходнику. PR #345 · `7b8304e` · 1.27.101 | — |
-| A12 | Снять Firebase-призрак (CSP + endpoint) | **open** | `routes/integrations.js` `/firebase-config`; smoke ждёт endpoint | Отдельный PR + smoke |
+| A12 | Снять Firebase-призрак (CSP + endpoint) | **done** (10-10) | Взята в PERIM-2: `/api/firebase-config` снят (smoke ждёт 404), `connect-src` = `'self'` + `*.supabase.co`, гард `test/perimeter-guard.test.js`. `FIREBASE_*` в `.env.example` и Vercel — за Gio | — |
 | A13 | Профиль: один владелец экрана | **done** (18.09) | `js/profile.store.js` — `getAllSettings`/`getStoredLang`/`adjustRestDuration`/`toggle*Pref`/`getNotifyRest`+`setNotifyRest`/`togglePandaHidden`+`revealMascot`+`hideMascot`+`getPandaHidden` (последние два — 20.09, A15-claude)/`loadPassportSources`/`getAvatarAppearance`/`exportBackupJson`+`saveLastExportAt`/`importBackupJson`/`deleteAllUserData`/`getAllWorkouts`/`deduplicateWorkouts`/`getGymPlace`+`saveGymPlace`/`loadTxtExportSources`; baseline A15 39 → 0 (`profile.js`), 6 → 0 (`profile.view.js`), 1 → 0 (`profile.view/settings.js`). Гард удаления переехал на стор, новый `test/profile-store.test.js`. 1.27.119 | — |
 | A14 | Athlete Room / Island не на critical path | **partial** | Комната lazy (#321); `privacy.view` с бута снят (#328, `app.js` импортирует только `privacy.store`). Island **всё ещё eager**: static import `app.js:14` + `modulepreload` в `index.html:111` | Остался один Island. Отдельная карточка — снимать вместе с `dynamic-island.css` |
 | A15 | Views не пишут в IDB напрямую (кроме store) | **partial** (20.09) | правило в `architecture.md` + `test/import-guard.test.js`; мигрированы `analytics.view.js::removeCalendarEntry` (14.09), весь `intel.view.js` (17.09, A9: 11 → 0), экран профиля (18.09, A13: 46 → 0 на трёх файлах) и `claude.view.js` (20.09, 5 → 0) — остальные поверхности (privacy/workout/ai-settings) ещё прямые. Гард с 18.09 режет комментарии: JSDoc больше не считается вызовом | Следующая поверхность — `privacy.view.js` (6) или `workout.view/handlers.js` (4) |
@@ -157,7 +157,7 @@
 | **1** | кадр и отзыв | `PERF-HIST` · `PERF-INLINE` · `PERF-BLUR` → `MOTION-FIX` (ждёт LAUNCH-10) |
 | **2** | стабильность ввода | `NAV-1` · `DRUM-TICK` (+`A3`) · `A6+A7` |
 | **3** | архитектура под рост | `A1`+`A8`+`A2`+`A5`+`A9` закрыты, `A15` правило заведено → `A13` |
-| **4** | гигиена и поверхность | `A14-хвост` · `A12` · `A16+A17` · `A10` |
+| **4** | гигиена и поверхность | `A14-хвост` · `A16+A17` · `A10` |
 | **вне фаз** | блокер ссылки | `AI-1` |
 
 Фаза 0 идёт первой не по важности, а по зависимости: пока локальный `npm test` красный от
