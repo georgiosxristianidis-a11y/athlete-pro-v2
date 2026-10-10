@@ -6,6 +6,15 @@
 
 import { DB } from './db.js';
 import { estimate1RM } from './strength-engine.js';
+import {
+  calculateProgressionCurves,
+  computeProgressionCacheKey,
+} from './analytics.progression-curves.js';
+import {
+  getProgressionCurvesCache,
+  setProgressionCurvesCache,
+  PROGRESSION_CACHE_VERSION,
+} from './db/progression-cache.js';
 
 /* ══════════════════════════════════════════════
    CALENDAR STATE
@@ -436,4 +445,66 @@ export function fetchExerciseHistory(workouts, exerciseName) {
     sessions: rawSessions,
     pts,
   };
+}
+
+const _inFlightProgressionCurves = new Map();
+
+/**
+ * Get cached progression curves or compute them freshly from workouts history,
+ * storing the result in IndexedDB cache for offline-first performance.
+ *
+ * @param {Array<import('./db.js').WorkoutRecord>} workouts
+ * @param {{ minMonths?: number, limit?: number, forceRefresh?: boolean }} [options]
+ * @returns {Promise<import('./analytics.progression-curves.js').ExerciseProgressionCurve[]>}
+ */
+export async function getCachedOrComputeProgressionCurves(workouts, options = {}) {
+  const safeWorkouts = Array.isArray(workouts) ? workouts : [];
+  const key = computeProgressionCacheKey(safeWorkouts, options);
+  const cacheKey = `curves:${key}`;
+
+  if (!options?.forceRefresh) {
+    if (_inFlightProgressionCurves.has(cacheKey)) {
+      return _inFlightProgressionCurves.get(cacheKey);
+    }
+
+    try {
+      const cached = await getProgressionCurvesCache(cacheKey);
+      if (
+        cached &&
+        cached.version === PROGRESSION_CACHE_VERSION &&
+        Array.isArray(cached.curves)
+      ) {
+        return cached.curves;
+      }
+    } catch (e) {
+      console.warn('[analytics.store] Failed to read progression cache, computing freshly', e);
+    }
+  }
+
+  const computePromise = (async () => {
+    // Compute fresh curves
+    const curves = calculateProgressionCurves(safeWorkouts, options);
+
+    // Asynchronously populate cache in IndexedDB
+    try {
+      await setProgressionCurvesCache({
+        id: cacheKey,
+        version: PROGRESSION_CACHE_VERSION,
+        timestamp: Date.now(),
+        workoutCount: safeWorkouts.length,
+        curves,
+      });
+    } catch (e) {
+      console.warn('[analytics.store] Failed to persist progression cache', e);
+    }
+
+    return curves;
+  })();
+
+  _inFlightProgressionCurves.set(cacheKey, computePromise);
+  try {
+    return await computePromise;
+  } finally {
+    _inFlightProgressionCurves.delete(cacheKey);
+  }
 }
