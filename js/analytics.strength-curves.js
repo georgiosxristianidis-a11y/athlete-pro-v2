@@ -11,6 +11,7 @@ import { esc } from './shared/utils.js';
 import { isRu } from './locale.store.js';
 import { pplColor } from './shared/ppl-color.js';
 import { monotoneCubicPath } from './shared/sparkline.js';
+import { calculateProgressionCurves } from './analytics.progression-curves.js';
 
 const GOLD = 'var(--c-gold)';
 
@@ -20,43 +21,11 @@ const GOLD = 'var(--c-gold)';
  * noise into a clean strength-climb curve. X follows calendar time so a
  * skipped month is a visible gap, not a fake equal step.
  * @param {Array<import('./db.js').WorkoutRecord>} workouts
+ * @param {{ minMonths?: number, limit?: number }} [options]
  * @returns {Array<{name:string, pts:{t:number,v:number}[], type:string, n:number, delta:number}>}
  */
-function buildSeries(workouts) {
-  const map = new Map();
-  for (const w of workouts) {
-    const d = new Date(w.timestamp);
-    const mk = d.getFullYear() * 12 + d.getMonth(); // month key
-    for (const ex of w.exercises || []) {
-      if (!ex || !ex.name) continue;
-      let top = 0;
-      for (const s of ex.sets || []) {
-        // Lifted sets only: a session prefills every set with the auto-progressed
-        // weight as done:false and saves it as-is, so an unfinished +2.5 kg set
-        // would otherwise plot as the peak. `done !== false` is the same rule as
-        // fetchExerciseHistory and txt-export: a set without the field counts as done.
-        if (!s || s.done === false || !(s.reps > 0)) continue;
-        if (s.weight > top) top = s.weight;
-      }
-      if (top <= 0) continue;
-      const m = map.get(ex.name) || { months: new Map(), type: {}, sessions: 0 };
-      m.sessions++;
-      m.type[w.type] = (m.type[w.type] || 0) + 1;
-      m.months.set(mk, Math.max(m.months.get(mk) || 0, top)); // monthly max working weight
-      map.set(ex.name, m);
-    }
-  }
-  const out = [];
-  for (const [name, m] of map) {
-    if (m.months.size < 3) continue; // need ≥3 months for a curve
-    const pts = [...m.months.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .map(([mk, v]) => ({ t: new Date(Math.floor(mk / 12), mk % 12, 15).getTime(), v }));
-    const type = Object.entries(m.type).sort((a, b) => b[1] - a[1])[0][0];
-    out.push({ name, pts, type, n: m.sessions, delta: pts[pts.length - 1].v - pts[0].v });
-  }
-  out.sort((a, b) => b.n - a.n); // most-tracked lifts first
-  return out.slice(0, 6);
+export function buildSeries(workouts, { minMonths = 3, limit = 6 } = {}) {
+  return calculateProgressionCurves(workouts, { minMonths, limit });
 }
 
 /** Monotone cubic through the points — no Catmull-Rom hooks or fake peaks. */
@@ -97,23 +66,67 @@ function curveCard(s, idx) {
     padX = 8,
     padTop = 12,
     padBot = 20;
+  const isSingle = s.pts.length === 1;
   const t0 = s.pts[0].t,
     tN = s.pts[s.pts.length - 1].t,
     tr = tN - t0 || 1;
   const vs = s.pts.map((p) => p.v);
-  const { vmin, vr } = valueBand(vs);
-  const peakVal = Math.max(...vs);
-  const X = (p) => padX + ((p.t - t0) / tr) * (W - 2 * padX);
-  const Y = (p) => padTop + (1 - (p.v - vmin) / vr) * (H - padTop - padBot);
-  const pts = s.pts.map((p) => ({ x: X(p), y: Y(p), v: p.v, t: p.t }));
-  const line = smoothPath(pts);
-  const area = `${line} L ${pts[pts.length - 1].x.toFixed(1)},${H} L ${pts[0].x.toFixed(1)},${H} Z`;
-  const peakI = vs.indexOf(peakVal);
   const color = pplColor(s.type);
   const gid = `scg-${idx}`;
   const cur = Math.round(s.pts[s.pts.length - 1].v);
+  const peakVal = Math.max(...vs);
   const peak = Math.round(peakVal);
-  const deltaTxt = (s.delta >= 0 ? '+' : '') + Math.round(s.delta);
+
+  let pts, svgContent, subMarkup, axisMarkup;
+
+  if (isSingle) {
+    const midY = Math.round((padTop + H - padBot) / 2);
+    const midX = Math.round(W / 2);
+    pts = [{ x: midX, y: midY, v: s.pts[0].v, t: s.pts[0].t }];
+    svgContent = `
+      <defs>
+        <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.18"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <rect x="${padX}" y="${midY}" width="${W - 2 * padX}" height="${H - midY}" fill="url(#${gid})"/>
+      <line x1="${padX}" y1="${midY}" x2="${W - padX}" y2="${midY}" stroke="${color}" stroke-opacity="0.4" stroke-dasharray="4 4" stroke-width="1.5"/>
+      <circle cx="${midX}" cy="${midY}" r="4" fill="${color}" stroke="var(--c-surface)" stroke-width="2" class="sc-cur-dot"/>
+    `;
+    subMarkup = `
+      <span class="sc-delta up">${isRu() ? 'Базовый вес' : 'Baseline'}</span>
+      <span class="sc-peak">${isRu() ? '1-я точка' : '1st mark'}</span>
+    `;
+    axisMarkup = `<span>${fmtMon(t0)}</span><span>${s.n} ${isRu() ? (s.n === 1 ? 'сессия' : 'сессии') : (s.n === 1 ? 'session' : 'sessions')}</span><span>${isRu() ? 'старт' : 'start'}</span>`;
+  } else {
+    const { vmin, vr } = valueBand(vs);
+    const X = (p) => padX + ((p.t - t0) / tr) * (W - 2 * padX);
+    const Y = (p) => padTop + (1 - (p.v - vmin) / vr) * (H - padTop - padBot);
+    pts = s.pts.map((p) => ({ x: X(p), y: Y(p), v: p.v, t: p.t }));
+    const line = smoothPath(pts);
+    const area = `${line} L ${pts[pts.length - 1].x.toFixed(1)},${H} L ${pts[0].x.toFixed(1)},${H} Z`;
+    const peakI = vs.indexOf(peakVal);
+    const deltaTxt = (s.delta >= 0 ? '+' : '') + Math.round(s.delta);
+
+    svgContent = `
+      <defs>
+        <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="${area}" fill="url(#${gid})"/>
+      <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>
+      <circle cx="${pts[peakI].x.toFixed(1)}" cy="${pts[peakI].y.toFixed(1)}" r="3.5" fill="${GOLD}" class="sc-peak-dot"/>
+      <circle cx="${pts[pts.length - 1].x.toFixed(1)}" cy="${pts[pts.length - 1].y.toFixed(1)}" r="3.5" fill="${color}" class="sc-cur-dot"/>
+    `;
+    subMarkup = `
+      <span class="sc-delta ${s.delta >= 0 ? 'up' : 'down'}">${deltaTxt} kg</span>
+      <span class="sc-peak">peak ${peak}</span>
+    `;
+    axisMarkup = `<span>${fmtMon(t0)}</span><span>${s.n} ${isRu() ? 'сессий' : 'sessions'}</span><span>${fmtMon(tN)}</span>`;
+  }
 
   const html = `
     <div class="sc-card chart-card" style="--sc:${color}" data-action="analytics:openExercise" data-exercise="${esc(s.name)}" role="button" tabindex="0" aria-label="${esc(s.name)}">
@@ -122,21 +135,11 @@ function curveCard(s, idx) {
         <div class="sc-cur">${cur}<span class="sc-unit">kg</span></div>
       </div>
       <div class="sc-sub">
-        <span class="sc-delta ${s.delta >= 0 ? 'up' : 'down'}">${deltaTxt} kg</span>
-        <span class="sc-peak">peak ${peak}</span>
+        ${subMarkup}
       </div>
       <div class="sc-plot">
         <svg class="sc-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)} ${isRu() ? `— максимальный рабочий вес по месяцам, сейчас ${cur} кг, пик ${peak} кг` : `top working weight by month, ${cur} kg current, ${peak} kg peak`}">
-          <defs>
-            <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="${color}" stop-opacity="0.22"/>
-              <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <path d="${area}" fill="url(#${gid})"/>
-          <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>
-          <circle cx="${pts[peakI].x.toFixed(1)}" cy="${pts[peakI].y.toFixed(1)}" r="3.5" fill="${GOLD}" class="sc-peak-dot"/>
-          <circle cx="${pts[pts.length - 1].x.toFixed(1)}" cy="${pts[pts.length - 1].y.toFixed(1)}" r="3.5" fill="${color}" class="sc-cur-dot"/>
+          ${svgContent}
         </svg>
         <div class="sc-scrub" aria-hidden="true">
           <div class="sc-scrub-line"></div>
@@ -144,7 +147,7 @@ function curveCard(s, idx) {
           <div class="sc-scrub-tip"><b></b><span></span></div>
         </div>
       </div>
-      <div class="sc-axis"><span>${fmtMon(t0)}</span><span>${s.n} ${isRu() ? 'сессий' : 'sessions'}</span><span>${fmtMon(tN)}</span></div>
+      <div class="sc-axis">${axisMarkup}</div>
     </div>`;
 
   return { html, pts };
@@ -320,17 +323,27 @@ export function renderStrengthHero(workouts, mount) {
 
 /**
  * Render the Strength Progression section into a container element.
- * @param {Array<import('./db.js').WorkoutRecord>} workouts
+ * @param {Array<import('./db.js').WorkoutRecord>|Array<import('./analytics.progression-curves.js').ExerciseProgressionCurve>} workoutsOrCurves
  * @param {HTMLElement|null} mount
  */
-export function renderStrengthCurves(workouts, mount) {
+export function renderStrengthCurves(workoutsOrCurves, mount) {
   if (!mount) return;
-  const series = buildSeries(workouts);
+  const isCurves =
+    Array.isArray(workoutsOrCurves) &&
+    workoutsOrCurves.length > 0 &&
+    Array.isArray(workoutsOrCurves[0]?.pts);
+  const series = isCurves
+    ? workoutsOrCurves
+    : calculateProgressionCurves(workoutsOrCurves, { minMonths: 1, limit: 6 });
+
   if (!series.length) {
-    mount.innerHTML = '';
+    mount.innerHTML = `
+      <div class="sc-empty-hint" style="padding: var(--sp-4); text-align: center; color: var(--c-text-3); font-size: var(--fs-2); background: var(--c-surface-h); border-radius: var(--r-md); border: 1px dashed var(--c-border); line-height: 1.5;">
+        ${isRu() ? 'Прогрессия строится автоматически по вашим подходам с весом.' : 'Progression curves build automatically from your weighted sets.'}
+      </div>`;
     return;
   }
-  const cards = series.map(curveCard);
+  const cards = series.map((s, idx) => curveCard(s, idx));
   mount.innerHTML = `<div class="sc-grid">${cards.map((c) => c.html).join('')}</div>`;
   mount.querySelectorAll('.sc-card').forEach((card, i) => wireScrub(card, cards[i].pts));
 }

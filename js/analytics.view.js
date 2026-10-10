@@ -22,6 +22,7 @@ import {
   savePeriodPref,
   PERIOD_DAYS,
   fetchExerciseHistory,
+  getCachedOrComputeProgressionCurves,
 } from './analytics.store.js';
 import { pplTonnageFrom } from './db.js';
 import { t, isRu } from './locale.store.js';
@@ -199,7 +200,13 @@ export async function load() {
   renderStrengthHero(workouts, document.getElementById('strength-hero'));
   _renderQuickStats();
   _renderPPLBalance();
-  renderStrengthCurves(workouts, document.getElementById('strength-curves'));
+  try {
+    const curves = await getCachedOrComputeProgressionCurves(workouts, { minMonths: 1 });
+    renderStrengthCurves(curves, document.getElementById('strength-curves'));
+  } catch (err) {
+    console.warn('[analytics.view] progression curves render error:', err);
+    renderStrengthCurves(workouts, document.getElementById('strength-curves'));
+  }
   _renderCalendar(workouts);
   const trend = await fetchWeeklyTrend(10);
   _renderVolumeChart(workouts, trend);
