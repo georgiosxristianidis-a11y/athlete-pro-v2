@@ -15,7 +15,7 @@
   Держат квота Gemini и п. 1 на Android (KV закрыт 25.09)
 - **№2 `CORE-9`** (`docs/handoff/HANDOFF_core.md`): гарды в `npm test`; осталось — живой
   прогон `scripts/coach-eval.mjs` перед релизом ядра, Gio
-- **№3 перф** (`docs/handoff/HANDOFF_perf_lhci.md`): прод 94; свободна `SW-CACHE` (тёплый старт без сети), `PERF-9` — стоп на мокап Gio
+- **№3 перф** (`docs/handoff/HANDOFF_perf_lhci.md`): прод 94; `SW-CACHE` влита (1.27.160, флаг OFF, поле Gio), `PERF-9` — стоп на мокап Gio
 - **BOOT-MO** (`docs/handoff/HANDOFF_boot_motion.md`, вне трека): `BOOT-1` влита (флаг OFF, поле Gio), `BOOT-2` после `LAUNCH-10`, `BOOT-3` сам пишет `ap-last-workout-type`
 - **Приоритет — стабильность, не косметика.** Маскот (PANDA-*/SKIN-1), TTS-голос, HUD ждут: сперва то, что не падает и не дёргается
 - **Поле — Android** (Gio 20.09). iPhone отложен: хвост `LAUNCH-7` и `VOICE-2` не блокеры. **webkit в Playwright не снимать** — единственный сигнал по Safari
