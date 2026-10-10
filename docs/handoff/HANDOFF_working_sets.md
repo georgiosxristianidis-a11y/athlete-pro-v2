@@ -8,20 +8,9 @@
 - Пресс и поясница (блоки `core`/`align` + имена) — вне аналитики.
 - Два PR: WSET-1 (правило), WSET-2 (значки).
 
-## WSET-1 — правило аналитики (в работе)
+## WSET-1 — правило аналитики (ВЗЯТА, 1.27.164, флаг OFF)
 
-Сделано: `js/shared/working-sets.js` (чистое правило) + `test/working-sets.test.js` 6/6.
-
-Осталось:
-1. СДЕЛАНО: флаг `working-sets` (OFF) в `js/flags.js`.
-2. СДЕЛАНО: `js/db/workouts.js` `view()` — копия с рабочим тоннажем в get/getAll/getLast/getLastByType и курсорных суммах; `getAllRaw()` для бэкапа; modulepreload + build:sw. npm test: красный только version-bump.
-3. `js/db.js` `*From(list)` уже читают `w.tonnage` из getAll — проверить, что все списки идут через getAll.
-4. `js/analytics.store.js:371` — объём по упражнению без подводящих (`warmupFlags`).
-5. `buildSessionSummary` (`js/workout.store.js:1312`) и `_updateLiveStats` (`js/workout.view/handlers.js:869`): показ рабочего тоннажа при флаге; живой счётчик сейчас считает и `noDb` — расхождение с итогом. `persistFinalSession` пишет `warmup` в подход, если он задан.
-6. UI: тап по `.set-num` (`js/workout.view/render.js:600`) переключает метку; подводящий показывает «W» вместо номера. Ре-рендер строки — авто-метка зависит от топ-веса.
-7. Бамп версии, `build:sw`, CHANGELOG, PR.
-
-ГДЕ СТОП: зелёный PR, флаг OFF. НЕ ТРОГАТЬ: сохранённые записи (никакой миграции).
+Правило, чтение `DB.Workouts`, объём по упражнению, итог/живой счётчик, тумблер «W» — см. CHANGELOG 1.27.164. Включить флаг — после проверки Gio на живых данных (Bench Press, гантельные дни).
 
 ## WSET-2 — значки (`js/shared/athlete-room.js:74`)
 

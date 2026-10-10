@@ -10,6 +10,7 @@ import { fmtVol } from '../shared/format.js';
    │   type: 'push'|'pull'|'legs',                       │
    │   timeStr: '1h 23m',                                │
    │   totalTonnage: 4200,   // kg                       │
+   │   shownTonnage: 3900,   // kg на экране (WSET-1)    │
    │   totalReps: 187,                                   │
    │   setsDone: 24,        // PANDA-1 bamboo ledger     │
    │   blocks: [                                         │
@@ -259,7 +260,7 @@ export function renderSummaryModal(data, onSave) {
         <div class="summ-stat-lbl">${esc(t('summ.time'))}</div>
       </div>
       <div class="summ-stat">
-        <div class="summ-stat-val">${_fmtTon(data.totalTonnage)}</div>
+        <div class="summ-stat-val">${_fmtTon(data.shownTonnage ?? data.totalTonnage)}</div>
         <div class="summ-stat-lbl">${esc(t('summ.volume'))}</div>
       </div>
       <div class="summ-stat">

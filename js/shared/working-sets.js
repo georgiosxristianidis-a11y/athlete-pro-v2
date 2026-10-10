@@ -82,13 +82,47 @@ export function workingTonnage(ex) {
 }
 
 /**
+ * Метки «подводящий» по плану — для подписи в сет-логгере: топ-вес берётся из
+ * всех подходов с повторами, закрыты они или нет, чтобы «W» стояла до того,
+ * как дошли до рабочего веса. Итог считает warmupFlags по закрытым — подпись
+ * разойдётся с ним, только если рабочие подходы так и не закрыли.
+ * @param {Array<{ weight?: number, reps?: number, done?: boolean, warmup?: boolean }>} sets
+ * @returns {boolean[]}
+ */
+export function plannedWarmupFlags(sets) {
+  return warmupFlags((Array.isArray(sets) ? sets : []).map((s) => ({ ...s, done: true })));
+}
+
+/**
+ * Тоннаж упражнения по всем поднятым подходам ×1 — знаменатель доли рабочих.
+ * @param {{ sets?: Array<{ weight?: number, reps?: number, done?: boolean }> }} ex
+ * @returns {number}
+ */
+function liftedTonnage1x(ex) {
+  return (ex?.sets || []).reduce(
+    (sum, s) => (isLifted(s) ? sum + (Number(s.weight) || 0) * (Number(s.reps) || 0) : sum),
+    0
+  );
+}
+
+/**
  * Тоннаж сессии по рабочим подходам. Нет `exercises` (старые записи) —
  * пересчитывать не из чего, остаётся сохранённое число.
+ *
+ * Записи до WSET-1 не несут `isUnilateral`, а сохранённый тоннаж уже посчитан
+ * с ×2 у гантелей. Пересчёт с нуля срезал бы их вдвое, поэтому у таких записей
+ * сохранённое число масштабируется долей рабочих: множитель сокращается.
+ * С WSET-1 флаг пишется в каждое упражнение — счёт точный.
  * @param {{ tonnage?: number, exercises?: Array<any> }} w
  * @returns {number}
  */
 export function sessionWorkingTonnage(w) {
   const list = w?.exercises;
-  if (!Array.isArray(list) || !list.length) return Number(w?.tonnage) || 0;
-  return list.reduce((sum, ex) => sum + workingTonnage(ex), 0);
+  const stored = Number(w?.tonnage) || 0;
+  if (!Array.isArray(list) || !list.length) return stored;
+  const working = list.reduce((sum, ex) => sum + workingTonnage(ex), 0);
+  if (list.every((ex) => typeof ex?.isUnilateral === 'boolean')) return working;
+  const all = list.reduce((sum, ex) => sum + liftedTonnage1x(ex), 0);
+  if (all <= 0) return 0;
+  return Math.round(stored * (working / all));
 }
