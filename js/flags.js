@@ -141,5 +141,36 @@ export function allFlags() {
   return Object.fromEntries(Object.keys(DEFAULTS).map((k) => [k, flag(k)]));
 }
 
+/**
+ * LAB-1 — флаги, выведенные тумблерами в «Лабораторию» Профиля: полевой чек с
+ * телефона, где консоли DevTools нет. Только то, что ждёт поля, плюс kill
+ * switch, который может понадобиться посреди тренировки. `drum-*` сюда не идут
+ * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
+ * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
+ */
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections']);
+
+/** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
+export function isOverridden(name) {
+  try {
+    return localStorage.getItem('ap-flag-' + name) !== null;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Тумблер Лаборатории. Значение, совпавшее с дефолтом, снимает override, а не
+ * пишет '0'/'1': иначе выключенный однажды флаг пережил бы релиз, в котором
+ * дефолт стал ON, и устройство навсегда осталось бы на старом пути.
+ * @param {string} name @param {boolean} on
+ */
+export function setLabFlag(name, on) {
+  try {
+    if (on === !!DEFAULTS[name]) localStorage.removeItem('ap-flag-' + name);
+    else localStorage.setItem('ap-flag-' + name, on ? '1' : '0');
+  } catch { /* private mode — тумблер просто не сохранится */ }
+}
+
 // Console handle for live toggling during testing.
 if (typeof window !== 'undefined') window.Flags = { flag, setFlag, allFlags };

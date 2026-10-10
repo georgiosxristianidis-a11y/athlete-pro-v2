@@ -322,6 +322,27 @@ export const Profile = (() => {
     _refreshSettings();
   }
 
+  /**
+   * LAB-1 — тумблер Лаборатории. Имя приходит из data-атрибута, поэтому
+   * пропускаем только белый список: чужое имя флага сюда не доедет.
+   * @param {string} name
+   */
+  async function toggleLabFlag(name) {
+    const { flag, setLabFlag, LAB_FLAGS } = await import('./flags.js');
+    if (!LAB_FLAGS.includes(name)) return;
+    const next = !flag(name);
+    setLabFlag(name, next);
+    // SW не видит localStorage: флаг тёплого старта постим сразу, а не ждём
+    // следующего запуска — тот же путь, что в js/app.js.
+    if (name === 'sw-cache-first' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then((r) => r.active?.postMessage({ type: 'sw-cache-first', on: next }))
+        .catch(() => {});
+    }
+    Toast.show(t('lab.restart'), 'success');
+    _refreshSettings();
+  }
+
   async function exportData() {
     const json = await exportBackupJson();
     const { downloadText, exportFilename } = await import('./shared/download.js');
@@ -570,6 +591,7 @@ export const Profile = (() => {
     togglePanda,
     toggleFabVideo,
     togglePandaMoods,
+    toggleLabFlag,
     setLang,
     exportData,
     exportCsv,
