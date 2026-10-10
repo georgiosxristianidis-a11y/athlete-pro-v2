@@ -11,6 +11,7 @@
      3. /                → no-store, без валидаторов (app shell не морозится)
      4. /assets/*        → ETag + max-age, условный запрос даёт 304 (медиа не качается заново)
      5. /sw.js           → CACHE_NAME совпал с репом (SW-бамп доехал)
+     6. /server.js       → не исходник (статика по allowlist, PERIM-2)
 
    Запуск:
      npm run smoke:prod
@@ -140,6 +141,17 @@ async function runChecks() {
     else fail('prod: CACHE_NAME совпал', `прод=${prodCache ?? '—'} ожидали=${localCacheName ?? '—'}`);
   } catch (e) {
     fail('prod: /sw.js', e.message);
+  }
+
+  // 6. исходники бэкенда не отдаются (PERIM-2): бандл функции лежит рядом с server.js
+  try {
+    const { res, body } = await get('/server.js');
+    const type = res.headers.get('content-type') || '';
+    if (/javascript/i.test(type) || body.includes('express.json(')) {
+      fail('prod: /server.js закрыт', `HTTP ${res.status} ${type} — исходник бэкенда отдаётся`);
+    } else ok('prod: /server.js закрыт', `HTTP ${res.status} ${type}`);
+  } catch (e) {
+    fail('prod: /server.js', e.message);
   }
 
   return results.every((r) => r.pass);

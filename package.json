@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "dev:lan": "node server.js --lan",
+    "dev:lan": "node --watch server.js --lan",
     "lint": "eslint . && stylelint \"css/**/*.css\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

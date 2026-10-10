@@ -7,7 +7,7 @@
  * вопроса «периметр цел?» в задании не было, и его никто не задал.
  *
  * Отсюда правило карточки: то, что можно спросить тестом, спрашивает тест,
- * а не честное слово агента. Четыре инварианта, каждый — на живом факте
+ * а не честное слово агента. Инварианты — каждый на живом факте
  * (заголовок реального ответа, реальный 413), а не на пересказе намерений:
  *
  *   1. Секреты не покидают устройство: `*-key` не попадает ни в очередь
@@ -18,6 +18,9 @@
  *      `vercel.live`).
  *   4. Whitelist AIR-гарда не отключается на целый файл (`'intel.css': [/./]`
  *      снял проверку Tier-2 blur с файла с девятью `backdrop-filter`).
+ *   5. Сервер отдаёт только allowlist статики (PERIM-2: прод отдавал
+ *      /server.js и /routes/coach.js с промптами по прямой ссылке).
+ *   6. В локальную сеть — только по явной просьбе (`--lan` / HOST).
  *
  * Инвариант 4 — про сам гард: **дифф `test/` при аудите читается раньше
  * диффа кода**, одна строка в whitelist тише любого кода отключает проверку.
@@ -25,11 +28,12 @@
 import { describe, test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { isSecretKey, stripSecrets } from '../js/shared/sync-secrets.js';
-import { startServer } from '../server.js';
+import { startServer, resolveHost } from '../server.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel) => fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
@@ -219,15 +223,129 @@ describe('Периметр сервера: лимит тела и script-src', (
       '. Каждый — это чужой код с правами страницы; расширять список осознанно, вместе с этим тестом.');
   });
 
-  test('connect-src не пускает origin, которого нет в списке решённых', async () => {
+  test('connect-src: только свой origin и Supabase', async () => {
     const d = await directives();
-    const ALLOWED = new Set([
-      "'self'", 'https://api.anthropic.com',
-      'https://*.supabase.co', 'https://*.firebaseio.com', 'https://*.googleapis.com',
-      'https://generativelanguage.googleapis.com',
-    ]);
+    // PERIM-2: ИИ ходит через свой бэкенд, Firebase в js/ нет. Anthropic/Google
+    // здесь были готовым каналом вывода BYOK-ключа при любой XSS.
+    const ALLOWED = new Set(["'self'", 'https://*.supabase.co']);
     const extra = (d.get('connect-src') || []).filter((v) => !ALLOWED.has(v));
     assert.deepEqual(extra, [], 'в connect-src приехал новый адрес: ' + extra.join(', '));
+  });
+});
+
+/* ════════════════════════════════════════════════════════
+   5. Браузеру — только то, что нужно браузеру (PERIM-2)
+
+   express.static(__dirname) отдавал всё, что лежит рядом с server.js. На проде
+   это бандл функции Vercel: 08.10 curl получил 200 application/javascript на
+   /server.js, /routes/coach.js (системные промпты, лимиты), /lib/*, /package.json.
+   Локально — весь репо.
+   ════════════════════════════════════════════════════════ */
+describe('Периметр сервера: статика по allowlist', () => {
+  let server, port;
+
+  before(async () => {
+    server = await startServer(0);
+    port = server.address().port;
+  });
+
+  after(() => new Promise((resolve) => server.close(resolve)));
+
+  /** Сырой путь мимо нормализации fetch/URL: `/js/../server.js` уходит как есть. */
+  const rawGet = (rawPath) => new Promise((resolve, reject) => {
+    http.get({ host: '127.0.0.1', port, path: rawPath }, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => resolve({
+        status: res.statusCode,
+        type: String(res.headers['content-type'] || ''),
+        body: Buffer.concat(chunks),
+      }));
+    }).on('error', reject);
+  });
+
+  /** Исходник не отдан: 4xx или шелл приложения, но не байты файла. */
+  function assertNotServed(res, rel, rawPath) {
+    const src = fs.readFileSync(path.join(REPO_ROOT, rel));
+    assert.ok(!res.body.equals(src), `${rawPath} отдаёт ${rel} как есть — исходник утёк`);
+    assert.ok(res.status >= 400 || /^text\/html/.test(res.type),
+      `${rawPath} → ${res.status} ${res.type}: ждали 4xx или шелл index.html`);
+  }
+
+  test('исходники бэкенда, конфиги и инструменты не отдаются', async () => {
+    for (const rel of [
+      'server.js', 'routes/coach.js', 'routes/integrations.js', 'lib/aiOrchestrator.js',
+      'lib/geminiClient.js', 'package.json', 'package-lock.json', 'vercel.json',
+      'scripts/preflight.mjs', 'test/perimeter-guard.test.js', 'docs/THREAT_MODEL.md',
+    ]) {
+      assertNotServed(await rawGet(`/${rel}`), rel, `/${rel}`);
+    }
+  });
+
+  test('`..` внутри публичного каталога не выводит в корень', async () => {
+    for (const [raw, rel] of [
+      ['/js/../server.js', 'server.js'],
+      ['/js/%2e%2e/server.js', 'server.js'],
+      ['/css/..%2fserver.js', 'server.js'],
+      ['/legal/..%5cserver.js', 'server.js'],
+      ['/JS/../package.json', 'package.json'],
+    ]) {
+      assertNotServed(await rawGet(raw), rel, raw);
+    }
+  });
+
+  test('всё из includeFiles vercel.json отдаётся байт в байт', async () => {
+    const include = JSON.parse(read('vercel.json')).builds[0].config.includeFiles;
+    assert.ok(include.length > 0, 'includeFiles пуст — список статики не с чем сверять');
+    const firstFile = (dir) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+        if (e.name.startsWith('.')) continue;
+        const full = path.join(dir, e.name);
+        const hit = e.isDirectory() ? firstFile(full) : full;
+        if (hit) return hit;
+      }
+      return null;
+    };
+    for (const entry of include) {
+      const abs = entry.endsWith('/**')
+        ? firstFile(path.join(REPO_ROOT, entry.slice(0, -3)))
+        : path.join(REPO_ROOT, entry);
+      assert.ok(abs, `${entry}: в каталоге нет ни одного файла`);
+      const rel = path.relative(REPO_ROOT, abs).replace(/\\/g, '/');
+      const res = await rawGet(`/${rel}`);
+      assert.equal(res.status, 200, `/${rel} (${entry}) → ${res.status}: allowlist в server.js отстал от vercel.json`);
+      assert.ok(res.body.equals(fs.readFileSync(abs)), `/${rel} отдаёт не сам файл (шелл вместо ассета?)`);
+    }
+  });
+});
+
+/* ════════════════════════════════════════════════════════
+   6. В локальную сеть — только по явной просьбе (PERIM-2)
+   ════════════════════════════════════════════════════════ */
+describe('Периметр сервера: LAN только по --lan или HOST', () => {
+  test('resolveHost: loopback по умолчанию, 0.0.0.0 по --lan, HOST главнее', () => {
+    assert.equal(resolveHost({}, ['node', 'server.js']), '127.0.0.1');
+    assert.equal(resolveHost({}, ['node', 'server.js', '--lan']), '0.0.0.0');
+    assert.equal(resolveHost({ HOST: '192.168.1.5' }, ['node', 'server.js', '--lan']), '192.168.1.5');
+  });
+
+  test('dev:lan передаёт серверу --lan, dev — нет', () => {
+    const { scripts } = JSON.parse(read('package.json'));
+    assert.match(scripts['dev:lan'], /server\.js.*--lan/, 'dev:lan снова плацебо: флага нет в команде');
+    assert.doesNotMatch(scripts.dev, /--lan|HOST=/, 'npm run dev снова светит в LAN');
+  });
+
+  test('живой startServer без HOST слушает только loopback', async () => {
+    const saved = process.env.HOST;
+    delete process.env.HOST;
+    const server = await startServer(0);
+    try {
+      assert.equal(server.address().address, '127.0.0.1',
+        'сервер без HOST открыт в сеть — API с ключом сервера доступен всему Wi-Fi');
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+      if (saved !== undefined) process.env.HOST = saved;
+    }
   });
 });
 

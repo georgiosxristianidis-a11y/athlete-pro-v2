@@ -30,14 +30,9 @@ app.use(helmet({
       scriptSrcAttr: ["'none'"], // CSP Phase 2: all inline on* migrated to event-delegation (js/events.js)
       styleSrc: ["'self'", "'unsafe-inline'"], // fonts self-hosted in /fonts — no Google origins
       imgSrc: ["'self'", "data:", "blob:", "https://*.supabase.co"],
-      connectSrc: [
-        "'self'",
-        "https://api.anthropic.com",
-        "https://*.supabase.co",
-        "https://*.firebaseio.com",
-        "https://*.googleapis.com",
-        "https://generativelanguage.googleapis.com"
-      ],
+      // PERIM-2: ИИ ходит только через свой бэкенд (/api/coach), Firebase в js/ нет.
+      // Anthropic/Google/Firebase здесь были готовым каналом вывода BYOK-ключа при XSS.
+      connectSrc: ["'self'", "https://*.supabase.co"],
       fontSrc: ["'self'"],
       workerSrc: ["'self'"],
       mediaSrc: ["'self'", "blob:"],
@@ -125,7 +120,7 @@ app.use('/assets', express.static(path.join(__dirname, 'assets'), {
   maxAge: '1h',
 }));
 
-app.use(express.static(__dirname, {
+const STATIC_OPTS = {
   // Vercel normalizes bundled-file mtimes to a constant (Oct 2018), so
   // Last-Modified lies and the mtime+size weak ETag COLLIDES across releases
   // for any file whose byte size didn't change (version.js is always 35 B:
@@ -144,7 +139,23 @@ app.use(express.static(__dirname, {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     }
   },
-}));
+};
+
+// PERIM-2: статика по allowlist, не express.static(__dirname). Рядом с server.js
+// лежит бандл функции Vercel (routes/, lib/, package.json), локально — весь репо:
+// прод отдавал исходники бэкенда с системными промптами по прямой ссылке.
+// Список = includeFiles из vercel.json (сверяет test/perimeter-guard.test.js).
+// Каталог монтируется со СВОИМ корнем: фильтр по первому сегменту перед общим
+// static обходится путём /js/../server.js (send нормализует его внутри корня),
+// а у корня-каталога `..` упирается в 403.
+for (const dir of ['css', 'js', 'icons', 'fonts', 'legal']) {
+  app.use(`/${dir}`, express.static(path.join(__dirname, dir), STATIC_OPTS));
+}
+// Файлы корня — только по точному пути: шелл, sw.js (scope требует корня),
+// manifest и библиотека упражнений, которую клиент тянет сам.
+const ROOT_FILES = new Set(['/', '/index.html', '/manifest.json', '/sw.js', '/exercises-library.json']);
+const rootStatic = express.static(__dirname, STATIC_OPTS);
+app.use((req, res, next) => (ROOT_FILES.has(req.path) ? rootStatic(req, res, next) : next()));
 
 // PERF-3: Explicit robots.txt endpoint to avoid SPA fallback returning index.html
 app.get('/robots.txt', (req, res) => {
@@ -178,8 +189,8 @@ app.use(errorMiddleware);
  * Port resolution (keeps your phone testing and Claude's preview on separate
  * ports so they never collide):
  *   PORT env  →  `--port=N` / `--port N` CLI arg  →  3000 (default).
- * Your `npm run dev` / `npm run dev:lan` → 3000 (phone). Claude's preview
- * launches with `--port=3001`.
+ * Your `npm run dev` (localhost) / `npm run dev:lan` (phone) → 3000. Claude's
+ * preview launches with `--port=3001`.
  */
 function resolvePort() {
   if (process.env.PORT) return Number(process.env.PORT);
@@ -191,10 +202,18 @@ function resolvePort() {
   return 3000;
 }
 
+/**
+ * Localhost по умолчанию, в LAN — только по явной просьбе: `npm run dev:lan`
+ * (--lan) или HOST=0.0.0.0. Так задумано в 53e674c; f9a7277 зашил 0.0.0.0 и
+ * перестал читать флаг — любой `npm run dev` светил весь API с живыми ключами
+ * в Wi-Fi, а dev:lan был плацебо (PERIM-2).
+ */
+export function resolveHost(env = process.env, argv = process.argv) {
+  return env.HOST || (argv.includes('--lan') ? '0.0.0.0' : '127.0.0.1');
+}
+
 export function startServer(port = resolvePort()) {
-  // LAN by default — phone field testing is the daily workflow
-  // (http://192.168.x.x:3000). Set HOST=127.0.0.1 to restrict to localhost.
-  const host = process.env.HOST || '0.0.0.0';
+  const host = resolveHost();
   return new Promise((resolve) => {
     const server = app.listen(port, host, () => {
       const p = server.address().port;

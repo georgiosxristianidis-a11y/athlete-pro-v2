@@ -36,7 +36,7 @@ npm run dev                 # http://localhost:3000
 
 - **Frontend:** Vanilla JS (ES Modules), no frameworks. Store/View split per module.
 - **Backend:** Express (ESM) — helmet + CSP, compression, rate limiting, zod validation.
-- **Storage:** IndexedDB (offline-first) + optional Supabase/Firebase cloud sync.
+- **Storage:** IndexedDB (offline-first) + optional Supabase cloud sync.
 - **AI:** `lib/aiOrchestrator.js` — multi-engine (Anthropic / Gemini), BYOK, SSE via `POST /api/coach`.
 
 ## Env Variables
