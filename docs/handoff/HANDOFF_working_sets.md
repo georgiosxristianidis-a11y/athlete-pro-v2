@@ -13,8 +13,8 @@
 Сделано: `js/shared/working-sets.js` (чистое правило) + `test/working-sets.test.js` 6/6.
 
 Осталось:
-1. Флаг `working-sets` в `js/flags.js`, дефолт OFF.
-2. `js/db/workouts.js`: при флаге `get`/`getAll`/`getLast`/`getLastByType` и курсорные суммы отдают КОПИЮ с `tonnage = sessionWorkingTonnage(w)`. Запись в IDB не меняется. Новый `getAllRaw()` — для `js/db/backup.js:88` (бэкап только сырой).
+1. СДЕЛАНО: флаг `working-sets` (OFF) в `js/flags.js`.
+2. СДЕЛАНО: `js/db/workouts.js` `view()` — копия с рабочим тоннажем в get/getAll/getLast/getLastByType и курсорных суммах; `getAllRaw()` для бэкапа; modulepreload + build:sw. npm test: красный только version-bump.
 3. `js/db.js` `*From(list)` уже читают `w.tonnage` из getAll — проверить, что все списки идут через getAll.
 4. `js/analytics.store.js:371` — объём по упражнению без подводящих (`warmupFlags`).
 5. `buildSessionSummary` (`js/workout.store.js:1312`) и `_updateLiveStats` (`js/workout.view/handlers.js:869`): показ рабочего тоннажа при флаге; живой счётчик сейчас считает и `noDb` — расхождение с итогом. `persistFinalSession` пишет `warmup` в подход, если он задан.
@@ -45,6 +45,7 @@
 - **PLAN-1 — шаблоны.** Добавить `Cable Curl` (arms) и `Machine Press` в конец push-дня как редкую альтернативу (раз в месяц, на закачку).
 - **ANL-ALT — Incline Press в аналитике.** Сейчас графика нет.
 - **SWAP-1 — быстрая замена на аналог в сет-логгере** (UX как переключатель недели A/B): занята скамья → Bench ⇄ Incline ⇄ Machine Press в один тап, история и график — у реально сделанного упражнения. Сначала мокап.
+- **PLATE-2 — «игрушка» штанги.** Тап по самой штанге в калькуляторе блинов = пружинный отскок (`js/shared/spring.js`, только transform) + короткое мягкое вибро через Haptic Gate. Калькулятор Gio проверил 11.10 — работает идеально, логику не трогать.
 - **PLATE-1 — калькулятор блинов** (`js/plate-calc.js`, уже подключён в `js/workout.view/render.js`): убедиться, что виден у Bench Press и в ногах (Leg Press, Hip Thrust).
 
 Приоритет Gio: Bench Press — главная аналитика.
