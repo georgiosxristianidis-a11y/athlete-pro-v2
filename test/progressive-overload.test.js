@@ -225,6 +225,43 @@ describe('generateWeeklySummary', () => {
     const result = await mod.generateWeeklySummary(history);
     assert.equal(result.plateauAlerts.length, 1);
   });
+
+  // PR = this week's best lifted weight STRICTLY above the best lifted before
+  // the window (timestamp < since). The old bar was all-time history with this
+  // week inside it, so `>=` crowned a tie with the old best every single week.
+  test('a tie with the best before the window is not a PR', async () => {
+    const history = [bench(1, [{ weight: 80, reps: 8, done: true }]), bench(10, [{ weight: 80, reps: 8, done: true }])];
+    const result = await mod.generateWeeklySummary(history);
+    assert.deepEqual(result.prs, []);
+  });
+
+  test('beating the best before the window is a PR', async () => {
+    const history = [bench(1, [{ weight: 82.5, reps: 8, done: true }]), bench(10, [{ weight: 80, reps: 8, done: true }])];
+    const result = await mod.generateWeeklySummary(history);
+    assert.deepEqual(result.prs.map((p) => [p.exercise, p.weight]), [['Bench Press', 82.5]]);
+  });
+
+  test('a plateau 80/80/80 is a plateau and not a PR in the same summary', async () => {
+    const history = [1, 8, 15].map((d) => bench(d, [{ weight: 80, reps: 8, done: true }]));
+    const result = await mod.generateWeeklySummary(history);
+    assert.equal(result.plateauAlerts.length, 1);
+    assert.deepEqual(result.prs, []);
+    assert.doesNotMatch(result.summary, /PRs/);
+  });
+
+  // First lifetime session: nothing lifted before the window, nothing to beat —
+  // a baseline, not a record. Otherwise a new user's first week turns every
+  // logged exercise into a gold "PR" chip on the dashboard.
+  test('the first lifetime session of an exercise is not a PR', async () => {
+    const result = await mod.generateWeeklySummary([bench(1, [{ weight: 80, reps: 8, done: true }])]);
+    assert.deepEqual(result.prs, []);
+  });
+
+  test('history before the window with nothing lifted does not make a baseline', async () => {
+    const history = [bench(1, [{ weight: 80, reps: 8, done: true }]), bench(10, [{ weight: 100, reps: 8, done: false }])];
+    const result = await mod.generateWeeklySummary(history);
+    assert.deepEqual(result.prs, []);
+  });
 });
 
 describe('getTypeClass / getTypeIcon', () => {
