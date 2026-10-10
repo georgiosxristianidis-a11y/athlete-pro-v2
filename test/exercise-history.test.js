@@ -122,6 +122,30 @@ describe('fetchExerciseHistory (AN-2)', () => {
     assert.equal(res.totalVolume, 140 * 5);
   });
 
+  test('a done set with 0 reps does not raise topWeight (same rule as the Stats curve)', () => {
+    const workouts = [
+      {
+        id: 1,
+        type: 'pull',
+        timestamp: 1000,
+        exercises: [
+          {
+            name: 'Deadlift',
+            sets: [
+              { weight: 140, reps: 5, done: true },
+              { weight: 180, reps: 0, done: true },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const res = fetchExerciseHistory(workouts, 'Deadlift');
+    assert.equal(res.bestWeight, 140);
+    assert.equal(res.currentWeight, 140);
+    assert.equal(res.pts[0].v, 140);
+  });
+
   test('matches exercises case-insensitively and via aliases', () => {
     const workouts = [
       {
