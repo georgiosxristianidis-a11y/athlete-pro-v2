@@ -167,6 +167,64 @@ describe('generateWeeklySummary', () => {
     assert.equal(result.plateauAlerts.length, 1);
     assert.equal(result.plateauAlerts[0].exercise, 'Bench Press');
   });
+
+  // A session prefills every set with the auto-progressed weight as done:false
+  // (workout.store buildSession) and saves sets as-is. PR and plateau read only
+  // lifted sets: done !== false and reps > 0, a set without `done` is lifted.
+  const bench = (daysAgo, sets) => makeWorkout('push', daysAgo, [{ name: 'Bench Press', sets }]);
+
+  test('a done:false set with a heavier weight is not a PR', async () => {
+    const history = [
+      bench(1, [
+        { weight: 102.5, reps: 8, done: false },
+        { weight: 95, reps: 8, done: true },
+      ]),
+      bench(10, [{ weight: 100, reps: 8, done: true }]),
+    ];
+    const result = await mod.generateWeeklySummary(history);
+    assert.deepEqual(result.prs, []);
+  });
+
+  test('an unfinished heavier suggestion in the past does not block a real PR', async () => {
+    const history = [
+      bench(1, [{ weight: 100, reps: 8, done: true }]),
+      bench(10, [
+        { weight: 120, reps: 8, done: false },
+        { weight: 90, reps: 8, done: true },
+      ]),
+    ];
+    const result = await mod.generateWeeklySummary(history);
+    assert.deepEqual(result.prs.map((p) => [p.exercise, p.weight]), [['Bench Press', 100]]);
+  });
+
+  test('a done set with 0 reps is not a PR', async () => {
+    const history = [
+      bench(1, [
+        { weight: 110, reps: 0, done: true },
+        { weight: 95, reps: 8, done: true },
+      ]),
+      bench(10, [{ weight: 100, reps: 8, done: true }]),
+    ];
+    const result = await mod.generateWeeklySummary(history);
+    assert.deepEqual(result.prs, []);
+  });
+
+  test('a set without the done field counts as lifted', async () => {
+    const history = [bench(1, [{ weight: 100, reps: 8 }]), bench(10, [{ weight: 90, reps: 8, done: true }])];
+    const result = await mod.generateWeeklySummary(history);
+    assert.deepEqual(result.prs.map((p) => p.weight), [100]);
+  });
+
+  test('a session with nothing lifted does not break a plateau', async () => {
+    const history = [
+      bench(1, [{ weight: 82.5, reps: 8, done: false }]),
+      bench(3, [{ weight: 80, reps: 8, done: true }]),
+      bench(8, [{ weight: 80, reps: 8, done: true }]),
+      bench(15, [{ weight: 80, reps: 8, done: true }]),
+    ];
+    const result = await mod.generateWeeklySummary(history);
+    assert.equal(result.plateauAlerts.length, 1);
+  });
 });
 
 describe('getTypeClass / getTypeIcon', () => {

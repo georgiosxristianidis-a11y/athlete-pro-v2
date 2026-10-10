@@ -127,6 +127,25 @@ export function calculateProgression(exerciseName, currentWeight, completedSets,
    ══════════════════════════════════════════════ */
 
 /**
+ * Top weight among LIFTED sets of one logged exercise. A session prefills every
+ * set with the auto-progressed weight as done:false and saves sets as-is, so an
+ * unfinished +2.5 kg set would otherwise read as lifted. Same rule as the Stats
+ * curve and txt-export: `done !== false` and `reps > 0`; a set without the
+ * field counts as done.
+ * @param {{ sets?: Array<{ weight?: number, reps?: number, done?: boolean }> }} ex
+ * @returns {number|null} null — nothing was lifted
+ */
+function _topLiftedWeight(ex) {
+  let top = null;
+  for (const s of ex?.sets || []) {
+    if (!s || s.done === false || !(s.reps > 0)) continue;
+    const weight = Number(s.weight) || 0;
+    if (top === null || weight > top) top = weight;
+  }
+  return top;
+}
+
+/**
  * Detect plateau for an exercise.
  * @param {string} exerciseName
  * @param {Array} workoutHistory — last 10 workouts
@@ -138,7 +157,9 @@ export function detectPlateau(exerciseName, workoutHistory) {
   // Find all sessions with this exercise
   for (const workout of workoutHistory) {
     const ex = (workout.exercises || []).find(e => e.name === exerciseName);
-    if (ex) {
+    // A session where nothing was lifted is not a session "at this weight".
+    const weight = ex ? _topLiftedWeight(ex) : null;
+    if (weight !== null) {
       const bestSet = (ex.sets || []).reduce((max, s) => {
         const volume = (s.weight || 0) * (s.reps || 0);
         return volume > max ? volume : max;
@@ -146,7 +167,7 @@ export function detectPlateau(exerciseName, workoutHistory) {
 
       sessions.push({
         timestamp: workout.timestamp,
-        weight: ex.sets?.[0]?.weight || 0,
+        weight,
         bestVolume: bestSet
       });
     }
@@ -249,18 +270,16 @@ export async function generateWeeklySummary(workoutHistory) {
       });
     }
 
-    // Check for PRs
-    const sessionExercises = recent
+    // Check for PRs — lifted sets only (_topLiftedWeight): an unfinished
+    // auto-progression suggestion would otherwise announce itself as a record.
+    const liftedTops = (workouts) => workouts
       .flatMap(w => w.exercises || [])
-      .filter(e => e.name === exName);
+      .filter(e => e.name === exName)
+      .map(_topLiftedWeight)
+      .filter(w => w !== null);
 
-    const bestWeight = Math.max(...sessionExercises.map(e => e.sets?.[0]?.weight || 0));
-    const allTimeBest = Math.max(
-      ...(workoutHistory
-        .flatMap(w => w.exercises || [])
-        .filter(e => e.name === exName)
-        .map(e => e.sets?.[0]?.weight || 0))
-    );
+    const bestWeight = Math.max(0, ...liftedTops(recent));
+    const allTimeBest = Math.max(0, ...liftedTops(workoutHistory));
 
     if (bestWeight >= allTimeBest && bestWeight > 0) {
       prs.push({
