@@ -24,6 +24,7 @@ import {
   weightStep,
   snapWeight,
   snapPlanWeights,
+  lastLiftedTopWeight,
   isPending,
   skipExercise,
   unskipExercise,
@@ -826,15 +827,13 @@ export async function smartCoach(ei, si) {
   const ex = State.plan[ei];
   const set = ex.sets[si];
   const workouts = await DB.Workouts.getAll().catch(() => []);
-  const lastSession = [...workouts]
-    .reverse()
-    .find((w) => (w.exercises || []).some((e) => e.name === ex.name));
-  const lastEx = lastSession?.exercises?.find((e) => e.name === ex.name);
-  if (!lastEx || !lastEx.sets?.length) {
+  // Шаг кладётся на поднятый вес прошлой сессии, а не на недожатое предложение
+  // автопрогрессии. Поднятого нет нигде — для Турбо это «истории нет».
+  const lastWeight = lastLiftedTopWeight(workouts, ex.name);
+  if (lastWeight === null) {
     Toast.show(t('train.no_history'), 'info');
     return;
   }
-  const lastWeight = Math.max(...lastEx.sets.map((s) => s.weight));
   const step = weightStep(ex);
   // Турбо прибавляет ОДИН шаг сетки этого упражнения, а не плоские 2.5 кг:
   // на гантельных (шаг 2) плоский бамп уводил вес мимо барабана.

@@ -897,6 +897,42 @@ export function latestWorkoutForNames(workouts, names) {
 }
 
 /**
+ * Опора Турбо: верхний ПОДНЯТЫЙ вес упражнения в новейшей (по `timestamp`)
+ * сессии, где оно было поднято. Поднятый подход — `done !== false` и
+ * `reps > 0`: сессия предзаполняет подходы весом автопрогрессии с `done: false`
+ * и сохраняется как есть, так что недожатые +2.5 кг иначе читались бы поднятыми
+ * и Турбо клал шаг поверх предложения. Запись без поля `done` — выполнена
+ * (txt-export, intel.engine, coach-snapshot). Сессия, где упражнение есть, но не
+ * поднято ни разу (тренировку закрыли, не дойдя до него), пропускается — опора
+ * уходит в прошлую поднятую. Порядок — по `timestamp`, не по массиву: getAll()
+ * отдаёт новые первыми, и обход «с конца» брал первую сессию в жизни.
+ * @param {Array<{ timestamp?: number, exercises?: Array<{ name?: string, sets?: Array<{ weight?: number, reps?: number, done?: boolean }> }> }>} [workouts]
+ * @param {string} name
+ * @returns {number|null} null — поднятого подхода в истории нет
+ */
+export function lastLiftedTopWeight(workouts, name) {
+  let top = null;
+  let topTs = -Infinity;
+  for (const w of workouts || []) {
+    const ts = Number(w.timestamp) || 0;
+    if (ts < topTs) continue;
+    let best = null;
+    for (const e of w.exercises || []) {
+      if (e.name !== name) continue;
+      for (const s of e.sets || []) {
+        if (!s || s.done === false || !(s.reps > 0)) continue;
+        const weight = Number(s.weight) || 0;
+        if (best === null || weight > best) best = weight;
+      }
+    }
+    if (best === null) continue;
+    top = best;
+    topTs = ts;
+  }
+  return top;
+}
+
+/**
  * Build an active workout session from the user's plan (default: PPL | GIO).
  * @param {string} [type] — 'push'|'pull'|'legs'
  * @param {{ workouts?: Array, autoProgress?: boolean, now?: number }} [opts]
