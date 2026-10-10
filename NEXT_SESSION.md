@@ -1,7 +1,7 @@
 # NEXT SESSION — Athlete Pro
 
 > Читать первым. **Роутер, а не состояние:** указатель на карточку, контекст — в хендоффе.
-> Обновлено 2026-10-07 (`COACH-ONE` закрыта: пилюля = барабан; `receipt.js` снесён, MO-2b 4/4).
+> Обновлено 2026-10-10 (`BOOT-1` влита, 1.27.161, флаг `boot-cascade` OFF).
 > Осталось поле: Gio
 
 ## Куда идти за работой
@@ -16,7 +16,7 @@
 - **№2 `CORE-9`** (`docs/handoff/HANDOFF_core.md`): гарды в `npm test`; осталось — живой
   прогон `scripts/coach-eval.mjs` перед релизом ядра, Gio
 - **№3 перф** (`docs/handoff/HANDOFF_perf_lhci.md`): прод 94; свободна `SW-CACHE` (тёплый старт без сети), `PERF-9` — стоп на мокап Gio
-- **BOOT-MO** (`docs/handoff/HANDOFF_boot_motion.md`, вне трека): `BOOT-1` свободна, `BOOT-2` после `LAUNCH-10`, `BOOT-3` сам пишет `ap-last-workout-type`
+- **BOOT-MO** (`docs/handoff/HANDOFF_boot_motion.md`, вне трека): `BOOT-1` влита (флаг OFF, поле Gio), `BOOT-2` после `LAUNCH-10`, `BOOT-3` сам пишет `ap-last-workout-type`
 - **Приоритет — стабильность, не косметика.** Маскот (PANDA-*/SKIN-1), TTS-голос, HUD ждут: сперва то, что не падает и не дёргается
 - **Поле — Android** (Gio 20.09). iPhone отложен: хвост `LAUNCH-7` и `VOICE-2` не блокеры. **webkit в Playwright не снимать** — единственный сигнал по Safari
 - После LAUNCH-10: `USAGE-4` (телеметрия)
