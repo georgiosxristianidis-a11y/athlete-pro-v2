@@ -8,6 +8,9 @@ import { stripSecrets } from '../js/shared/sync-secrets.js';
 import { DEFAULT_AI_ENGINE, keyLooksValid } from '../js/shared/ai-engine.js';
 import { SNAPSHOT_VERSION, DOORS, LIMITS, CAPS } from '../js/shared/coach-snapshot.js';
 import { sharedRateLimitStore } from '../lib/rateLimitStore.js';
+import {
+  reserveServerSpend, byteTokens, OUT_TOKENS, TTS_MODEL, TTS_OUT_TOKENS_PER_CHAR, priceFor, usageMicros,
+} from '../lib/serverKeyBudget.js';
 import { z } from 'zod';
 
 const router = express.Router();
@@ -69,11 +72,19 @@ router.post('/generate-plan', apiLimiter, asyncHandler(async (req, res) => {
   };
 
   const system = _buildPlanGenerationPrompt(workoutHistory, oneRMs, goals, experience);
+  const prompt = 'Generate a highly personalized 3-day PPL rotation. Return JSON only.';
+  // BUDGET-1: маршрут без BYOK — всегда серверный ключ. Потолок исчерпан — план по умолчанию.
+  const budget = await reserveServerSpend(req, {
+    engine, inTokens: byteTokens(system, prompt), outTokens: OUT_TOKENS.json,
+  });
+  if (!budget.ok) {
+    return res.json({ success: true, plan: DEFAULT_PLAN, generated: true, note: 'Default plan — AI unavailable' });
+  }
   let content;
   try {
     content = await AIOrchestrator.generateJSON({
       system,
-      prompt: 'Generate a highly personalized 3-day PPL rotation. Return JSON only.',
+      prompt,
       engine
     }, req, res);
   } catch (err) {
@@ -187,12 +198,20 @@ router.post('/', coachLimiter, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'messages array is required' });
   }
 
+  const system = _buildSystemPrompt(snapshot, tone);
+
+  // BUDGET-1: резерв до заголовков SSE — отказ уходит чистым JSON.
+  const budget = await reserveServerSpend(req, {
+    engine, customKey, inTokens: byteTokens(system, messages, images), outTokens: OUT_TOKENS.stream,
+  });
+  if (!budget.ok) {
+    return res.status(budget.status).json({ error: budget.error, code: budget.code, requestId: req.correlationId });
+  }
+
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering so chunks flush immediately
-
-  const system = _buildSystemPrompt(snapshot, tone);
 
   // Track client disconnect so we never write to a dead socket.
   let clientGone = false;
@@ -260,34 +279,49 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
 
   const { gemini } = await import('../lib/geminiClient.js');
   // TTS прибит к Gemini, поэтому и форма ключа проверяется по нему.
-  const apiKey = _safeCustomKey('gemini', customKey) || gemini.apiKey;
-  
+  const byok = _safeCustomKey('gemini', customKey);
+  const apiKey = byok || gemini.apiKey;
+
   if (!apiKey || apiKey === 'dummy-key') {
     return res.status(500).json({ error: 'GOOGLE_GENERATIVE_AI_API_KEY is not configured.' });
   }
 
+  const ttsPrompt = `Скажи мотивирующим и суровым голосом тренера: ${text}`;
+  // BUDGET-1: резерв по оценке сверху, после ответа — досчёт по usageMetadata.
+  const budget = await reserveServerSpend(req, {
+    engine: 'gemini', customKey: byok, model: TTS_MODEL,
+    inTokens: byteTokens(ttsPrompt), outTokens: text.length * TTS_OUT_TOKENS_PER_CHAR,
+  });
+  if (!budget.ok) {
+    return res.status(budget.status).json({ error: budget.error, code: budget.code, requestId: req.correlationId });
+  }
+
   // CORE-2: ключ в заголовке, не в query — тот же паттерн, что уже верно
   // делает /verify-key. URL с ?key= оседает в логах прокси/сервера открытым текстом.
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`, {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: `Скажи мотивирующим и суровым голосом тренера: ${text}` }] }],
-      generationConfig: { 
-        responseModalities: ["AUDIO"], 
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Fenrir" } } } 
+      contents: [{ parts: [{ text: ttsPrompt }] }],
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Fenrir" } } }
       },
-      model: "gemini-2.5-flash-preview-tts"
+      model: TTS_MODEL
     })
   });
 
   if (!response.ok) {
+    // Отказ провайдера не тарифицируется — резерв возвращается целиком.
+    await budget.settle(0);
     const errText = await response.text();
     logWarn(req, 'tts_failed', `TTS API error: ${errText}`);
     return res.status(response.status).json({ error: 'TTS Generation failed' });
   }
 
   const result = await response.json();
+  const actual = usageMicros(priceFor(TTS_MODEL), result.usageMetadata);
+  if (actual !== null) await budget.settle(actual);
   const pcmData = result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
   
   if (!pcmData) {
@@ -346,11 +380,17 @@ Profile: ${JSON.stringify(profile)}`;
   // (сеть, 400 API_KEY_INVALID, лимит провайдера) уходило asyncHandler'ом в
   // 500. Пользователь вместо отчёта получал пустой экран — при том что счёт
   // и сводку по недельным цифрам можно отдать и без модели.
+  // BUDGET-1: потолок исчерпан — тот же честный фолбэк, что и при падении ИИ.
+  const budget = await reserveServerSpend(req, {
+    engine, customKey, inTokens: byteTokens(system, prompt), outTokens: OUT_TOKENS.json,
+  });
   let content = null;
-  try {
-    content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req, res);
-  } catch (err) {
-    logWarn(req, 'weekly_report_ai_failed', err?.message || String(err));
+  if (budget.ok) {
+    try {
+      content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req, res);
+    } catch (err) {
+      logWarn(req, 'weekly_report_ai_failed', err?.message || String(err));
+    }
   }
 
   let text = null;
@@ -479,6 +519,13 @@ LANGUAGE: "summary" MUST be in ${_langName(lang)} — the app's UI language. "in
   const prompt = `Workouts (last 10): ${JSON.stringify(workouts)}
 Profile: ${JSON.stringify(profile)}`;
 
+  // BUDGET-1: потолок исчерпан — тот же фолбэк, что и при падении ИИ.
+  const budget = await reserveServerSpend(req, {
+    engine, customKey, inTokens: byteTokens(system, prompt), outTokens: OUT_TOKENS.json,
+  });
+  if (!budget.ok) {
+    return res.json({ success: true, report: { injuryRisk: 'Low', summary: '' }, warning: budget.code });
+  }
   let content;
   try {
     content = await AIOrchestrator.generateJSON({ system, prompt, engine, customKey }, req, res);
