@@ -1,9 +1,10 @@
 // @ts-check
 /* ════════════════════════════════════════════════════════
    analytics.strength-curves.js — premium per-lift progression
-   Builds est-1RM time series per exercise from full history and
-   renders smooth neon curves (PPL-coloured) with peak/current
-   markers. Pure DOM string output; mounted by analytics.view.
+   Builds top-working-weight time series per exercise from full
+   history and renders smooth neon curves (PPL-coloured) with
+   peak/current markers. Pure DOM string output; mounted by
+   analytics.view.
    ════════════════════════════════════════════════════════ */
 
 import { esc } from './shared/utils.js';
@@ -11,7 +12,7 @@ import { isRu } from './locale.store.js';
 import { pplColor } from './shared/ppl-color.js';
 import { monotoneCubicPath } from './shared/sparkline.js';
 
-const GOLD = '#D4AF37';
+const GOLD = 'var(--c-gold)';
 
 /**
  * Build a per-exercise progression series: one point per calendar month holding
@@ -30,7 +31,12 @@ function buildSeries(workouts) {
       if (!ex || !ex.name) continue;
       let top = 0;
       for (const s of ex.sets || []) {
-        if (s && s.weight && s.weight > top) top = s.weight;
+        // Lifted sets only: a session prefills every set with the auto-progressed
+        // weight as done:false and saves it as-is, so an unfinished +2.5 kg set
+        // would otherwise plot as the peak. `done !== false` is the same rule as
+        // fetchExerciseHistory and txt-export: a set without the field counts as done.
+        if (!s || s.done === false || !(s.reps > 0)) continue;
+        if (s.weight > top) top = s.weight;
       }
       if (top <= 0) continue;
       const m = map.get(ex.name) || { months: new Map(), type: {}, sessions: 0 };
@@ -120,7 +126,7 @@ function curveCard(s, idx) {
         <span class="sc-peak">peak ${peak}</span>
       </div>
       <div class="sc-plot">
-        <svg class="sc-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)} est 1RM progression, ${cur} kg current, ${peak} kg peak">
+        <svg class="sc-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)} ${isRu() ? `— максимальный рабочий вес по месяцам, сейчас ${cur} кг, пик ${peak} кг` : `top working weight by month, ${cur} kg current, ${peak} kg peak`}">
           <defs>
             <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="${color}" stop-opacity="0.22"/>

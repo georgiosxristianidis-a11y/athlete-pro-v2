@@ -363,7 +363,8 @@ export function fetchExerciseHistory(workouts, exerciseName) {
         if (!s || s.done === false) continue;
         const weight = Number(s.weight) || 0;
         const reps = Number(s.reps) || 0;
-        if (weight > topWeight) topWeight = weight;
+        // A 0-rep set wasn't lifted — same rule as buildSeries on the Stats curve.
+        if (reps > 0 && weight > topWeight) topWeight = weight;
         const e1rm = estimate1RM(weight, reps);
         if (e1rm > top1RM) top1RM = e1rm;
         if (weight > 0 && reps > 0) {
