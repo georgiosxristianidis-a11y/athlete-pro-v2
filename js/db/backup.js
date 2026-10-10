@@ -85,7 +85,7 @@ export const Backup = {
    */
   async export() {
     const [workouts, orm, metrics, settings, plans] = await Promise.all([
-      Workouts.getAll(),
+      Workouts.getAllRaw(),
       OneRM.getAll(),
       Metrics.getAll(),
       Settings.getAll(),

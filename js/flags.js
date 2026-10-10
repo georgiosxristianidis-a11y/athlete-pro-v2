@@ -119,6 +119,11 @@ const DEFAULTS = {
   // Читается в dashboard.js после данных, к этому моменту модуль загружен.
   // Default OFF до поля Gio. Kill switch: Flags.setFlag('boot-cascade', false)
   'boot-cascade': false,
+  // WSET-1: тоннаж, объём и значки — только рабочие подходы силовых упражнений
+  // (js/shared/working-sets.js): подводящие и пресс/поясница вне счёта.
+  // Пересчёт на чтении в js/db/workouts.js, записи в IDB не меняются.
+  // Default OFF до поля Gio. Kill switch: Flags.setFlag('working-sets', false)
+  'working-sets': false,
 };
 
 /** @param {string} name @returns {boolean} */

@@ -4,6 +4,19 @@
    ════════════════════════════════════════════════════════ */
 
 import { S, tx, req2p, req2pSafe, withMeta, _triggerSync } from './core.js';
+import { flag } from '../flags.js';
+import { sessionWorkingTonnage } from '../shared/working-sets.js';
+
+/**
+ * WSET-1: при флаге 'working-sets' читатели видят тоннаж рабочих подходов
+ * (без подводящих, пресса и поясницы). Копия — запись в IDB не меняется,
+ * бэкап читает getAllRaw().
+ * @param {any} w
+ */
+function view(w) {
+  if (!w || !flag('working-sets')) return w;
+  return { ...w, tonnage: sessionWorkingTonnage(w) };
+}
 
 export const Workouts = {
   /**
@@ -28,7 +41,7 @@ export const Workouts = {
    * @returns {Promise<import('../db.js').WorkoutRecord|null>}
    */
   get(id) {
-    return tx(S.WORKOUTS).then((s) => req2p(s.get(id)).then((r) => (r && !r._deleted ? r : null)));
+    return tx(S.WORKOUTS).then((s) => req2p(s.get(id)).then((r) => (r && !r._deleted ? view(r) : null)));
   },
 
   /**
@@ -61,6 +74,14 @@ export const Workouts = {
    * @returns {Promise<import('../db.js').WorkoutRecord[]>}
    */
   getAll() {
+    return this.getAllRaw().then((list) => list.map(view));
+  },
+
+  /**
+   * Все сессии как лежат в IDB, новые первыми — для бэкапа (WSET-1).
+   * @returns {Promise<import('../db.js').WorkoutRecord[]>}
+   */
+  getAllRaw() {
     return tx(S.WORKOUTS).then((s) => {
       const idx = s.index('timestamp');
       return req2p(idx.getAll()).then((list) => list.reverse().filter((w) => !w._deleted));
@@ -81,7 +102,7 @@ export const Workouts = {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor && list.length < n) {
-            if (!cursor.value._deleted) list.push(cursor.value);
+            if (!cursor.value._deleted) list.push(view(cursor.value));
             cursor.continue();
           } else {
             res(list);
@@ -121,7 +142,7 @@ export const Workouts = {
           if (cursor.value._deleted) {
             cursor.continue();
           } else {
-            res(cursor.value);
+            res(view(cursor.value));
           }
         };
         req.onerror = (e) => rej(e.target.error);
@@ -143,7 +164,7 @@ export const Workouts = {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor) {
-            if (!cursor.value._deleted) total += cursor.value.tonnage || 0;
+            if (!cursor.value._deleted) total += view(cursor.value).tonnage || 0;
             cursor.continue();
           } else {
             res(total);
@@ -167,7 +188,7 @@ export const Workouts = {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor) {
-            if (!cursor.value._deleted) total += cursor.value.tonnage || 0;
+            if (!cursor.value._deleted) total += view(cursor.value).tonnage || 0;
             cursor.continue();
           } else {
             res(total);
@@ -207,7 +228,7 @@ export const Workouts = {
           req.onsuccess = (e) => {
             const cursor = e.target.result;
             if (cursor) {
-              if (!cursor.value._deleted) r[type] += cursor.value.tonnage || 0;
+              if (!cursor.value._deleted) r[type] += view(cursor.value).tonnage || 0;
               cursor.continue();
             } else {
               res();
