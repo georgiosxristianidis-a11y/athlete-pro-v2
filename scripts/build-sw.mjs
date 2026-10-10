@@ -47,6 +47,11 @@ const INSTALL_ICON_RE = /\/icons\/(?:icon-384|icon-512|icon-maskable-512|apple-t
 // the cache and works offline after the first real render. latin-ext is
 // included deliberately despite carrying Latin diacritics (exercise/gym
 // names) — same runtime-fallback safety net, not a functional loss.
+// Greek dictionary (I18N-EL): loaded only when the UI language is `el`, so en/ru
+// installs don't pay ~45 KB. The SW runtime-caches it on the first EL load;
+// offline without that cache locale.store.js falls back to en.
+const LAZY_LOCALE_RE = /\/js\/locale\.el\.js$/;
+
 const FONT_SUBSET_RE = /\/fonts\/(?:manrope-(?:greek|vietnamese|latin-ext|cyrillic-ext)|instrument-sans-latin-ext)\.woff2$/i;
 
 /**
@@ -69,7 +74,8 @@ export function collectAssets(root = process.cwd()) {
     .filter(f => !f.includes('.DS_Store') && !f.endsWith('.map') && !f.endsWith('.md') && !f.endsWith('.d.ts'))
     .filter(f => !MEDIA_RE.test(f))
     .filter(f => !INSTALL_ICON_RE.test(f))
-    .filter(f => !FONT_SUBSET_RE.test(f));
+    .filter(f => !FONT_SUBSET_RE.test(f))
+    .filter(f => !LAZY_LOCALE_RE.test(f));
 }
 
 /**

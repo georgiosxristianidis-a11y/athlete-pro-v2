@@ -93,6 +93,20 @@ describe('/weekly-report — отчёт вместо 500, когда ИИ нед
     assert.match(body.report.summary, /coach is offline/i);
   });
 
+  test('запасной отчёт на el — греческий, а не русский (I18N-EL)', async () => {
+    stubProviderFailure();
+    // Свой адрес: coachLimiter 10/мин с IP, квоту общего адреса блок уже выбрал.
+    const res = await fetch(`${baseUrl}/api/coach/weekly-report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': '10.8.0.1' },
+      body: JSON.stringify({ workouts: [{ type: 'push', tonnage: 1000 }], profile: {}, lang: 'el' }),
+    });
+    const body = await res.json();
+    assert.equal(body.degraded, true);
+    assert.match(body.report.summary, /εκτός σύνδεσης/);
+    assert.doesNotMatch(body.report.summary, /[а-яё]/i, 'грек получил русский отчёт');
+  });
+
   test('пустая неделя — нулевой счёт, а не выдуманный', async () => {
     stubProviderFailure();
     const res = await postWeekly({ workouts: [], profile: {}, lang: 'en' });
@@ -253,6 +267,13 @@ describe('язык отчётов = язык UI, а не случайность 
       assert.match(systems[0], /LANGUAGE:[^\n]*English/, 'английский UI не долетел до промпта');
       assert.doesNotMatch(systems[0], /Russian|по-русски/, 'английский UI, а промпт требует русский');
       assert.match(systems[1], /LANGUAGE:[^\n]*Russian/, 'русский UI не долетел до промпта');
+    });
+
+    test(`${route}: lang el → Greek в промпте (I18N-EL)`, async () => {
+      captureSystem();
+      await post({ workouts: [], profile: {}, lang: 'el' });
+      assert.match(systems[0], /LANGUAGE:[^\n]*Greek/, 'греческий UI не долетел до промпта');
+      assert.doesNotMatch(systems[0], /Russian/, 'греческий UI, а промпт требует русский');
     });
 
     test(`${route}: без lang — дефолт чата, русский`, async () => {

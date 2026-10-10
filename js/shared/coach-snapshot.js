@@ -176,7 +176,7 @@ export function buildSnapshot(input) {
   const r = readiness(workouts, { now });
   return {
     v: SNAPSHOT_VERSION,
-    lang: input.lang === 'ru' ? 'ru' : 'en',
+    lang: input.lang === 'ru' || input.lang === 'el' ? input.lang : 'en',
     door: DOORS.includes(/** @type {string} */ (input.door)) ? /** @type {string} */ (input.door) : 'panel',
     readiness: { index: r.index, confidence: r.confidence, parts: { ...r.parts } },
     cns: r.cns,

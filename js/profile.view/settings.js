@@ -75,7 +75,7 @@ on('settings:dedup', () => P().deduplicateDB());
 /**
  * Render the complete Application Settings for the Profile tab.
  * @param {Object} settings - All settings from DB.Settings.getAll()
- * @param {string} lang - Current language code ('en'|'ru')
+ * @param {string} lang - Current language code ('en'|'ru'|'el')
  * @param {string} syncStatus - Current sync status
  * @returns {string}
  */
@@ -179,10 +179,12 @@ export function renderSettings(settings, lang, syncStatus = 'idle') {
           <div class="pref-sub">${t('settings.lang_sub')}</div>
         </div>
         <div class="toggle-group">
-          <button class="toggle-btn ${lang !== 'ru' ? 'active' : ''}"
+          <button class="toggle-btn ${lang !== 'ru' && lang !== 'el' ? 'active' : ''}"
                   data-action="settings:setLang" data-lang="en">EN</button>
           <button class="toggle-btn ${lang === 'ru' ? 'active' : ''}"
                   data-action="settings:setLang" data-lang="ru">RU</button>
+          <button class="toggle-btn ${lang === 'el' ? 'active' : ''}"
+                  data-action="settings:setLang" data-lang="el">ΕΛ</button>
         </div>
       </div>
 

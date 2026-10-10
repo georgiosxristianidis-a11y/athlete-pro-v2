@@ -45,9 +45,21 @@ test('sw.js contains core service worker handlers', () => {
 test('sw.js ASSETS includes all js/*.js files', () => {
   const sw = readText('sw.js');
   const jsDir = path.join(__dirname, '..', 'js');
-  const jsFiles = fs.readdirSync(jsDir).filter((f) => f.endsWith('.js'));
+  // Lazy by design (I18N-EL): the Greek dictionary loads only for `el`, sw.js
+  // runtime-caches it (networkFirst → cache.put), offline-without-cache falls
+  // back to en. The exemption is pinned both ways — see the test below.
+  const LAZY = new Set(['locale.el.js']);
+  const jsFiles = fs.readdirSync(jsDir).filter((f) => f.endsWith('.js') && !LAZY.has(f));
 
   for (const file of jsFiles) {
     assert.ok(sw.includes('/js/' + file), 'sw.js ASSETS missing: /js/' + file);
   }
+});
+
+test('lazy Greek dictionary stays out of the precache and keeps an en fallback', () => {
+  const sw = readText('sw.js');
+  assert.ok(!sw.includes('/js/locale.el.js'), 'locale.el.js leaked into ASSETS');
+  const store = readText('js/locale.store.js');
+  assert.match(store, /import\('\.\/locale\.el\.js'\)/, 'el dictionary must be a dynamic import');
+  assert.match(store, /catch\s*\{[\s\S]{0,80}return false/, 'el import failure must fall back, not throw');
 });
