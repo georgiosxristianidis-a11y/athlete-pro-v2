@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { logInfo } from '../lib/logger.js';
 import { sharedRateLimitStore, rateLimitMode } from '../lib/rateLimitStore.js';
+import { budgetMode } from '../lib/serverKeyBudget.js';
 const router = express.Router();
 
 /* ── GET /supabase-status — proxy health check (avoids browser CORS) ── */
@@ -51,13 +52,16 @@ router.get('/ai-status', (req, res) => {
   // настроены, дневная квота на серверном ключе держится только `MemoryStore`
   // (лимит одного serverless-инстанса), и это должно быть видно, не открыто заново молча.
   const limiter = rateLimitMode();
+  // BUDGET-1: где живёт месячный счётчик трат серверного ключа — режим, не остаток.
+  const budget = budgetMode();
 
-  logInfo(req, 'ai-status', 'API key availability checked', { gemini: hasGemini, anthropic: hasAnthropic, limiter });
+  logInfo(req, 'ai-status', 'API key availability checked', { gemini: hasGemini, anthropic: hasAnthropic, limiter, budget });
 
   res.json({
     gemini: hasGemini,
     anthropic: hasAnthropic,
-    limiter
+    limiter,
+    budget
   });
 });
 

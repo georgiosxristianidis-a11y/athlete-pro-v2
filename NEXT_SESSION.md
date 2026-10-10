@@ -12,7 +12,7 @@
 
 - **`PROT-2`:** репо PRIVATE (Gio). Мёрж руками после зелёных, без `--auto`
 - **№1 `LAUNCH-10`, поле Gio.** Кодовых блокеров нет — `CORE-S` закрыта целиком (25.09, 1.27.137).
-  Держат квота Gemini и п. 1 на Android (KV закрыт 25.09)
+  Держит п. 1 на Android; ключ — потолок $5/мес (BUDGET-1)
 - **№2 `CORE-9`** (`docs/handoff/HANDOFF_core.md`): гарды в `npm test`; осталось — живой
   прогон `scripts/coach-eval.mjs` перед релизом ядра, Gio
 - **№3 перф** (`docs/handoff/HANDOFF_perf_lhci.md`): прод 94; `SW-CACHE` влита (1.27.160, флаг OFF, поле Gio), `PERF-9` — стоп на мокап Gio
