@@ -278,15 +278,22 @@ export async function generateWeeklySummary(workoutHistory) {
       .map(_topLiftedWeight)
       .filter(w => w !== null);
 
-    const bestWeight = Math.max(0, ...liftedTops(recent));
-    const allTimeBest = Math.max(0, ...liftedTops(workoutHistory));
+    // A PR beats the best lifted BEFORE the window, strictly. The bar used to
+    // be all-time history with this week inside it, so `>=` turned a tie with
+    // the old best into a record every week — next to a plateau alert. Nothing
+    // lifted before the window → no PR: a first session is a baseline.
+    const weekTops = liftedTops(recent);
+    const priorTops = liftedTops(workoutHistory.filter(w => w.timestamp < since));
 
-    if (bestWeight >= allTimeBest && bestWeight > 0) {
-      prs.push({
-        exercise: exName,
-        weight: bestWeight,
-        date: new Date().toISOString()
-      });
+    if (weekTops.length > 0 && priorTops.length > 0) {
+      const bestWeight = Math.max(...weekTops);
+      if (bestWeight > Math.max(...priorTops)) {
+        prs.push({
+          exercise: exName,
+          weight: bestWeight,
+          date: new Date().toISOString()
+        });
+      }
     }
   }
 
