@@ -1,5 +1,15 @@
 ---
 description: Протокол security-auditor — уязвимости, секреты, зависимости, соответствие модели угроз.
+paths:
+  - "routes/**"
+  - "lib/**"
+  - "server.js"
+  - "sw.js"
+  - "js/privacy.store.js"
+  - "js/db/backup.js"
+  - "js/shared/sync-merge.js"
+  - "scripts/sca-audit.mjs"
+  - "docs/THREAT_MODEL.md"
 ---
 
 # Security auditor
