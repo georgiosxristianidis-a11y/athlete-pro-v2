@@ -2,7 +2,7 @@
 import { esc } from '../shared/utils.js';
 import { t, getLang } from '../locale.store.js';
 import { on } from '../events.js';
-import { flag } from '../flags.js';
+import { flag, isOverridden, LAB_FLAGS } from '../flags.js';
 import { K_LAST_EXPORT } from '../db/backup.js';
 import { getThemePref } from '../shared/theme.js';
 import '../ai-settings.view.js';
@@ -52,6 +52,7 @@ on('settings:setUnit', (el) => P().setUnit(el.dataset.unit));
 on('settings:togglePanda', () => P().togglePanda());
 on('settings:toggleFabVideo', () => P().toggleFabVideo());
 on('settings:togglePandaMoods', () => P().togglePandaMoods());
+on('settings:toggleLab', (el) => P().toggleLabFlag(el.dataset.flag));
 on('settings:syncToggle', async (el) => {
   const icon = document.getElementById('sync-connect-icon');
   icon?.classList.add('is-spinning');
@@ -311,6 +312,39 @@ export function renderSettings(settings, lang, syncStatus = 'idle', cloudConfigu
 
     <!-- ── DATA & CLOUD SYNC ── -->
     ${_renderData(settings, syncStatus, syncStatusLabel, syncStatusColor, cloudConfigured)}
+
+    ${_renderLab()}
+  `;
+}
+
+/**
+ * LAB-1 — Лаборатория: флаги на поле тумблерами, без консоли DevTools.
+ * Стоит последней карточкой: это инструмент проверки, а не настройка.
+ * Метка «изменено» — чтобы на телефоне было видно, что устройство идёт не по
+ * дефолту релиза, и не гадать, почему экран ведёт себя иначе.
+ * @returns {string}
+ */
+function _renderLab() {
+  const rows = LAB_FLAGS.map(
+    (name) => `
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); padding: var(--sp-0-5) 0;">
+        <div class="pref-info">
+          <div class="pref-title">${t(`lab.${name}`)}${isOverridden(name) ? ` <span style="color:var(--c-accent); font-size:var(--fs-1); font-weight:var(--fw-bold);">${t('lab.changed')}</span>` : ''}</div>
+          <div class="pref-sub">${t(`lab.${name}_sub`)}</div>
+        </div>
+        <div class="switch-wrap" data-action="settings:toggleLab" data-flag="${esc(name)}">
+          <div class="switch ${flag(name) ? 'on' : ''}" id="sw-lab-${esc(name)}">
+            <div class="switch-thumb"></div>
+          </div>
+        </div>
+      </div>`,
+  ).join('<div class="pref-divider"></div>');
+  return `
+    <div class="section-label-alt">${t('settings.lab')}</div>
+    <div class="profile-card" style="padding:var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-1);">
+      <div class="pref-sub">${t('settings.lab_hint')}</div>
+      ${rows}
+    </div>
   `;
 }
 
