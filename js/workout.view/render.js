@@ -28,6 +28,8 @@ import {
 import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
 import { initDrumPickers } from '../ui/drum-picker.js';
+import { flag } from '../flags.js';
+import { plannedWarmupFlags } from '../shared/working-sets.js';
 import { fmtVol } from '../shared/format.js';
 import { blockTicks, blockOrder } from '../shared/block-ticks.js';
 import { blockLabel } from '../shared/chamber-pill.js';
@@ -85,6 +87,7 @@ on('wo:toggleBW', (el, e) => {
   e.stopPropagation();
   W()._toggleBW(+el.dataset.ei);
 });
+on('wo:toggleWarmup', (el) => W()._toggleWarmup(+el.dataset.ei, +el.dataset.si));
 on('wo:toggleSet', (el) => W().toggleSet(+el.dataset.ei, +el.dataset.si));
 on('wo:closeFocus', () => W()._closeFocus());
 on('wo:focusStepW', (el) => W()._focusStepW(+el.dataset.amt));
@@ -580,6 +583,23 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
     </div>`;
 }
 
+/**
+ * Номер подхода. При флаге 'working-sets' — кнопка: тап переключает метку
+ * «подводящий», подводящий показывает «W» вместо номера (WSET-1).
+ * @param {any} ex
+ * @param {number} ei
+ * @param {number} si
+ * @returns {string}
+ */
+export function setNumCell(ex, ei, si) {
+  if (!flag('working-sets')) return `<span class="set-num">${si + 1}</span>`;
+  const warm = plannedWarmupFlags(ex.sets)[si];
+  return `<button class="set-num set-num-btn ${warm ? 'is-warmup' : ''}" id="set-num-${ei}-${si}"
+        data-action="wo:toggleWarmup" data-ei="${ei}" data-si="${si}"
+        aria-pressed="${warm ? 'true' : 'false'}"
+        aria-label="${esc(t('train.warmup_set', { n: si + 1 }))}">${warm ? 'W' : si + 1}</button>`;
+}
+
 export async function renderSetRow(ex, ei, set, si) {
   const firstUndoneIdx = ex.sets.findIndex((s) => !s.done);
   const isActive = !set.done && si === firstUndoneIdx;
@@ -597,7 +617,7 @@ export async function renderSetRow(ex, ei, set, si) {
 
   return `
     <div class="set-row ${set.done ? 'set-done' : ''} ${isActive ? 'set-active' : ''}" id="set-row-${ei}-${si}">
-      <span class="set-num">${si + 1}</span>
+      ${setNumCell(ex, ei, si)}
       <div class="drum-wrap" id="sw-${ei}-${si}"
            data-type="w" data-ei="${ei}" data-si="${si}"
            data-value="${set.weight}"

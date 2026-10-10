@@ -508,6 +508,25 @@
   text-align: center;
   opacity: 0.35;
 }
+/* WSET-1 (флаг working-sets): номер подхода — тумблер «подводящий».
+   Хит-зона на всю высоту строки; «W» выходит из шёпота, чтобы метку было
+   видно без чтения, но тише акцента — подводящий не событие. */
+.set-num-btn {
+  background: none;
+  border: none;
+  font-family: inherit;
+  padding: 0;
+  align-self: stretch;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    opacity var(--t-fast),
+    color var(--t-fast);
+}
+.set-num-btn.is-warmup {
+  opacity: 1;
+  color: var(--c-text-2);
+}
 .set-row.set-active {
   background: linear-gradient(
     180deg,

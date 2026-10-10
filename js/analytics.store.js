@@ -15,6 +15,8 @@ import {
   setProgressionCurvesCache,
   PROGRESSION_CACHE_VERSION,
 } from './db/progression-cache.js';
+import { flag } from './flags.js';
+import { warmupFlags } from './shared/working-sets.js';
 
 /* ══════════════════════════════════════════════
    CALENDAR STATE
@@ -368,7 +370,10 @@ export function fetchExerciseHistory(workouts, exerciseName) {
       let validSetsCount = 0;
 
       const sets = Array.isArray(ex.sets) ? ex.sets : [];
-      for (const s of sets) {
+      // WSET-1: подводящие не идут в объём и счёт подходов. Топ-вес и e1RM
+      // они не меняют — подводящий по определению легче рабочего.
+      const warm = flag('working-sets') ? warmupFlags(sets) : null;
+      for (const [i, s] of sets.entries()) {
         if (!s || s.done === false) continue;
         const weight = Number(s.weight) || 0;
         const reps = Number(s.reps) || 0;
@@ -376,6 +381,7 @@ export function fetchExerciseHistory(workouts, exerciseName) {
         if (reps > 0 && weight > topWeight) topWeight = weight;
         const e1rm = estimate1RM(weight, reps);
         if (e1rm > top1RM) top1RM = e1rm;
+        if (warm?.[i]) continue;
         if (weight > 0 && reps > 0) {
           sessionVolume += weight * reps;
           validSetsCount++;

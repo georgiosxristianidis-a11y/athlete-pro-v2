@@ -46,6 +46,8 @@ import {
 import { RestTimer } from '../rest-timer.js';
 import { esc, haptic } from '../shared/utils.js';
 import { Spring } from '../shared/spring.js';
+import { flag } from '../flags.js';
+import { workingTonnage, plannedWarmupFlags } from '../shared/working-sets.js';
 import { confirmDialog } from '../shared/confirm.js';
 import { t } from '../locale.store.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
@@ -351,6 +353,39 @@ export function _toggleBW(ei) {
   persistSession();
   renderActive();
   Toast.show(ex.isBW ? t('train.bw_on') : t('train.bw_off'), 'info');
+}
+
+/**
+ * WSET-1: тап по номеру подхода — ручная метка «подводящий / рабочий».
+ * Ставится явное значение, противоположное видимому: ручная бьёт авто.
+ * @param {number} ei
+ * @param {number} si
+ */
+export function _toggleWarmup(ei, si) {
+  const ex = State.plan[ei];
+  const set = ex?.sets?.[si];
+  if (!set) return;
+  set.warmup = !plannedWarmupFlags(ex.sets)[si];
+  haptic(10);
+  persistSession();
+  _updateLiveStats();
+}
+
+/**
+ * Подписи «W» зависят от топ-веса упражнения: правка веса одного подхода
+ * меняет метки соседних. Обновляем на месте — барабаны не пересоздаём.
+ */
+function _refreshWarmupLabels() {
+  State.plan.forEach((ex, ei) => {
+    const warm = plannedWarmupFlags(ex.sets);
+    warm.forEach((w, si) => {
+      const el = document.getElementById(`set-num-${ei}-${si}`);
+      if (!el) return;
+      el.textContent = w ? 'W' : String(si + 1);
+      el.classList.toggle('is-warmup', w);
+      el.setAttribute('aria-pressed', w ? 'true' : 'false');
+    });
+  });
 }
 
 export function _toggleUnilateral(ei) {
@@ -870,16 +905,21 @@ export function _updateLiveStats() {
     setsDone = 0,
     exDone = 0;
   let totalSets = 0;
+  // WSET-1: при флаге счётчик = итог сессии (рабочие подходы, без пресса и
+  // noDb). Без флага — прежний счёт, он берёт и noDb.
+  const working = flag('working-sets');
+  if (working) _refreshWarmupLabels();
 
   State.plan.forEach((ex) => {
     if (ex.skipped) return; // FIELD-1: пропуск не в счёте сессии
     const mul = ex.isUnilateral ? 2 : 1;
+    if (working) tonnage += workingTonnage(ex);
     let allExDone = true,
       anyDone = false;
     ex.sets.forEach((s) => {
       totalSets++;
       if (s.done) {
-        tonnage += (s.weight || 0) * (s.reps || 0) * mul;
+        if (!working) tonnage += (s.weight || 0) * (s.reps || 0) * mul;
         setsDone++;
         anyDone = true;
       } else allExDone = false;

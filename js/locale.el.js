@@ -393,6 +393,7 @@ export const EL = {
   'train.day_pull': 'Ημέρα Pull',
   'train.day_legs': 'Ημέρα Legs',
   'train.set_n': 'Σετ {n}',
+  'train.warmup_set': 'Προθέρμανση, σετ {n}',
   'train.mark_set': 'Ολοκλήρωση σετ {n}',
   'train.unmark_set': 'Αναίρεση σετ {n}',
   'train.reorder': 'Αναδιάταξη άσκησης',

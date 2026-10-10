@@ -370,9 +370,13 @@ export async function deleteAllUserData() {
   await DB.deleteAllUserData();
 }
 
-/** @returns {Promise<any[]>} */
+/**
+ * CSV-выгрузка — данные как лежат в базе: сырой тоннаж сходится с подходами
+ * в той же строке (WSET-1, флаг working-sets его не подменяет).
+ * @returns {Promise<any[]>}
+ */
 export async function getAllWorkouts() {
-  return DB.Workouts.getAll();
+  return DB.Workouts.getAllRaw();
 }
 
 /** @returns {Promise<number>} сколько дублей убрано */

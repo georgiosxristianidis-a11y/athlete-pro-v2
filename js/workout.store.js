@@ -5,6 +5,8 @@
 
 import { DB } from './db.js';
 import { BLOCK_NAMES_EN } from './shared/block-names.js';
+import { flag } from './flags.js';
+import { workingTonnage } from './shared/working-sets.js';
 
 export const SESSION_KEY = 'ap-active-session';
 export const PLAN_KEY = 'ap-custom-plan';        // legacy — migrated → PLAN_KEY_A on first load
@@ -1274,6 +1276,10 @@ export function isBodyweightExercise(name, library) {
  * @param {number} durationMs                       wall-clock session length
  * @param {object} [opts]
  * @param {(name:string)=>Promise<{value:number}|undefined>} [opts.oneRMLookup]
+ * @param {boolean} [opts.workingSets]  WSET-1: по умолчанию флаг 'working-sets'.
+ *   Включён — `shownTonnage` и тоннаж блоков считают только рабочие подходы
+ *   (без подводящих, пресса, поясницы). `totalTonnage` остаётся сырым: его
+ *   пишет persistFinalSession, сохранённое число не меняется.
  * @returns {Promise<object>} summaryData per the contract in workout.view/summary.js
  */
 export async function buildSessionSummary(state, durationMs, opts = {}) {
@@ -1290,7 +1296,9 @@ export async function buildSessionSummary(state, durationMs, opts = {}) {
   // Single pass over State.plan, preserving insertion order via blockOrder.
   const blockOrder = [];
   const blockMap = new Map();
+  const working = opts.workingSets ?? flag('working-sets');
   let totalTonnage = 0;
+  let shownTonnage = 0;
   let totalReps = 0;
   let setsDone = 0;   // PANDA-1: один закрытый подход = один бамбук панде
   /** @type {Array<{name:string,weight:number,reps:number,estimate:number}>} */
@@ -1318,10 +1326,10 @@ export async function buildSessionSummary(state, durationMs, opts = {}) {
         totalReps += (s.reps || 0);
       }
     }
-    if (!ex.noDb) {
-      blk.tonnage += exTonnage;
-      totalTonnage += exTonnage;
-    }
+    if (!ex.noDb) totalTonnage += exTonnage;
+    const exShown = working ? workingTonnage(ex) : ex.noDb ? 0 : exTonnage;
+    blk.tonnage += exShown;
+    shownTonnage += exShown;
 
     const completed = ex.sets.filter((s) => s.done && s.weight && s.reps);
     const bestSet = completed.sort((a, b) => b.weight - a.weight)[0];
@@ -1375,7 +1383,7 @@ export async function buildSessionSummary(state, durationMs, opts = {}) {
     };
   });
 
-  return { type: state.type, timeStr, totalTonnage, totalReps, setsDone, blocks, prs };
+  return { type: state.type, timeStr, totalTonnage, shownTonnage, totalReps, setsDone, blocks, prs };
 }
 
 /**
@@ -1425,10 +1433,14 @@ export async function persistFinalSession(state, summaryData, duration) {
         // должен пережить сессию в истории — иначе экспорт (читает
         // DB.Workouts, не State.plan) его никогда не увидит.
         ...(ex.tag ? { tag: ex.tag } : {}),
+        // WSET-1: без него рабочий тоннаж из истории не знает про ×2 у гантелей.
+        isUnilateral: !!ex.isUnilateral,
         sets: ex.sets.map((s) => ({
           weight: s.weight,
           reps: s.reps,
           done: s.done,
+          // Ручная метка подводящего; нет метки — решает авто-правило.
+          ...(typeof s.warmup === 'boolean' ? { warmup: s.warmup } : {}),
         })),
       })),
     prs: summaryData.prs,
