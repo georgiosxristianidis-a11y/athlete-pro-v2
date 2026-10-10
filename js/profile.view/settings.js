@@ -77,9 +77,11 @@ on('settings:dedup', () => P().deduplicateDB());
  * @param {Object} settings - All settings from DB.Settings.getAll()
  * @param {string} lang - Current language code ('en'|'ru'|'el')
  * @param {string} syncStatus - Current sync status
+ * @param {boolean} [cloudConfigured] - CLOUD-1: Supabase в конфиге есть. Нет —
+ *   карточка «Облако» не рисуется (по умолчанию: обещать облако, которого нет, нельзя)
  * @returns {string}
  */
-export function renderSettings(settings, lang, syncStatus = 'idle') {
+export function renderSettings(settings, lang, syncStatus = 'idle', cloudConfigured = false) {
   const themePref = getThemePref();
   // Тумблер уведомлений отражает ДВА состояния сразу: наше «хочу» из базы и
   // ответ браузера. Разрешение можно отозвать в настройках телефона, минуя
@@ -308,7 +310,7 @@ export function renderSettings(settings, lang, syncStatus = 'idle') {
     </div>
 
     <!-- ── DATA & CLOUD SYNC ── -->
-    ${_renderData(settings, syncStatus, syncStatusLabel, syncStatusColor)}
+    ${_renderData(settings, syncStatus, syncStatusLabel, syncStatusColor, cloudConfigured)}
   `;
 }
 
@@ -331,27 +333,12 @@ export function renderSettings(settings, lang, syncStatus = 'idle') {
  *
  * @param {Object} settings @param {string} syncStatus
  * @param {string} syncStatusLabel @param {string} syncStatusColor
+ * @param {boolean} cloudConfigured
  * @returns {string}
  */
-function _renderData(settings, syncStatus, syncStatusLabel, syncStatusColor) {
+function _renderData(settings, syncStatus, syncStatusLabel, syncStatusColor, cloudConfigured) {
   return `
-    <div class="section-label-alt">${t('settings.cloud')}</div>
-    <div class="profile-card" style="padding:0">
-      <div class="pref-row-icon">
-        <div class="pref-icon-box" style="background:var(--c-accent-bg); color:var(--c-accent)">
-          <svg id="sync-connect-icon" class="icon-rotate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        </div>
-        <div class="pref-info">
-          <div class="pref-title">${t('sync.connect')}</div>
-          <div class="pref-sub" style="color:${syncStatusColor}; font-weight: var(--fw-bold);">${syncStatusLabel}</div>
-        </div>
-        <button class="btn-text"
-                data-action="settings:syncToggle" data-sync="${syncStatus}"
-                style="color: var(--c-accent); font-size: var(--fs-2); font-weight: var(--fw-bold);">
-          ${syncStatus === 'offline' ? t('sync.connect_cta') : t('sync.disconnect')}
-        </button>
-      </div>
-    </div>
+    ${cloudConfigured ? _renderCloud(syncStatus, syncStatusLabel, syncStatusColor) : ''}
 
     <!-- Резервная копия. Единственная primary-кнопка всей секции: это то
          действие, ради которого сюда заходят.
@@ -406,6 +393,35 @@ function _renderData(settings, syncStatus, syncStatusLabel, syncStatusColor) {
           <div class="pref-sub">${t('data.dedup_sub')}</div>
         </div>
         <button class="btn btn-ghost" data-action="settings:dedup" style="min-width: 92px; height: 36px; font-size: var(--fs-2); color: var(--c-text-3);">${t('data.dedup_run')}</button>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * CLOUD-1: карточка «Облако». Рисуется только при настроенном Supabase — без
+ * бандлера конфиг из `import.meta.env` в браузер не доезжает (CLOUD-0), и
+ * кнопка «Подключить» всегда падала: обещание облака, которого нет.
+ * @param {string} syncStatus @param {string} syncStatusLabel @param {string} syncStatusColor
+ * @returns {string}
+ */
+function _renderCloud(syncStatus, syncStatusLabel, syncStatusColor) {
+  return `
+    <div class="section-label-alt">${t('settings.cloud')}</div>
+    <div class="profile-card" style="padding:0">
+      <div class="pref-row-icon">
+        <div class="pref-icon-box" style="background:var(--c-accent-bg); color:var(--c-accent)">
+          <svg id="sync-connect-icon" class="icon-rotate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </div>
+        <div class="pref-info">
+          <div class="pref-title">${t('sync.connect')}</div>
+          <div class="pref-sub" style="color:${syncStatusColor}; font-weight: var(--fw-bold);">${syncStatusLabel}</div>
+        </div>
+        <button class="btn-text"
+                data-action="settings:syncToggle" data-sync="${syncStatus}"
+                style="color: var(--c-accent); font-size: var(--fs-2); font-weight: var(--fw-bold);">
+          ${syncStatus === 'offline' ? t('sync.connect_cta') : t('sync.disconnect')}
+        </button>
       </div>
     </div>
   `;

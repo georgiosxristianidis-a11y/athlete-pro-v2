@@ -59,7 +59,9 @@ export const Profile = (() => {
     if (!screen) return;
 
     try {
-      const [syncStatus, settings] = await Promise.all([_syncStatus(), getAllSettings()]);
+      const [syncStatus, settings, cloudConfigured] = await Promise.all([
+        _syncStatus(), getAllSettings(), _cloudConfigured(),
+      ]);
       const lang = getLang() || 'en';
 
       screen.innerHTML = `
@@ -82,7 +84,7 @@ export const Profile = (() => {
       <!-- PP-6: wrapper exists so _refreshSettings() can swap the settings
            markup alone. Plain div, no styling of its own: .screen is padding
            only (no flex/gap), so it doesn't disturb the vertical rhythm. -->
-      <div id="profile-settings-block">${renderSettings(settings, lang, syncStatus)}</div>
+      <div id="profile-settings-block">${renderSettings(settings, lang, syncStatus, cloudConfigured)}</div>
 
       <!-- ── DANGER ZONE ── -->
       <div class="section-label-alt" id="profile-danger-label" style="color:var(--c-red); opacity:0.8">${esc(t('profile.danger_zone'))}</div>
@@ -128,16 +130,30 @@ export const Profile = (() => {
     }
   }
 
+  /* CLOUD-1: Supabase в конфиге? Нет — карточка «Облако» не рисуется. Флаг
+     берётся из модуля, а не из window.__cloudConfigured: глобал ставится побочным
+     эффектом той же загрузки и мог не успеть к первому рендеру. supabase.js и так
+     тянет sync.js — динамический импорт граф бута не меняет. */
+  async function _cloudConfigured() {
+    try {
+      const { isCloudConfigured } = await import('./supabase.js');
+      return isCloudConfigured;
+    } catch {
+      return false;
+    }
+  }
+
   /** Re-render the settings block only. Every toggle lands here. */
   async function _refreshSettings() {
     const block = document.getElementById('profile-settings-block');
     if (!block) return;
-    const [syncStatus, settings, lang] = await Promise.all([
+    const [syncStatus, settings, lang, cloudConfigured] = await Promise.all([
       _syncStatus(),
       getAllSettings(),
       getStoredLang(),
+      _cloudConfigured(),
     ]);
-    block.innerHTML = renderSettings(settings, lang, syncStatus);
+    block.innerHTML = renderSettings(settings, lang, syncStatus, cloudConfigured);
   }
 
   /** Re-render the passport only — for actions that change workouts, not settings. */
