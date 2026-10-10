@@ -40,3 +40,22 @@ test('DICT.en и DICT.ru несут одно множество ключей', (
   assert.deepEqual(onlyEn, [], `ключи только в en: ${onlyEn.join(', ')}`);
   assert.deepEqual(onlyRu, [], `ключи только в ru: ${onlyRu.join(', ')}`);
 });
+
+test('DICT.el (js/locale.el.js) несёт ключи en и те же {плейсхолдеры}', async () => {
+  const { EL } = await import('../js/locale.el.js');
+  const en = dictKeys('en');
+  const elKeys = Object.keys(EL);
+  const elSet = new Set(elKeys);
+  const enSet = new Set(en);
+  assert.deepEqual(en.filter((k) => !elSet.has(k)), [], 'ключи en без перевода на el');
+  assert.deepEqual(elKeys.filter((k) => !enSet.has(k)), [], 'ключи только в el');
+  const ph = (s) => (String(s).match(/\{\w+\}/g) || []).sort().join(',');
+  const enStart = SRC.indexOf('\n  en: {');
+  const enBody = SRC.slice(enStart, SRC.indexOf('\n  ru: {'));
+  for (const k of en) {
+    const esc = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const m = enBody.match(new RegExp(String.raw`'${esc}':\s*(['"])((?:\\.|(?!\1).)*)\1`));
+    assert.ok(m, `en-значение ${k} не распарсилось`);
+    assert.equal(ph(EL[k]), ph(m[2]), `плейсхолдеры el расходятся с en: ${k}`);
+  }
+});

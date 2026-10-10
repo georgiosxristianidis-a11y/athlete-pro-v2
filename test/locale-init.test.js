@@ -41,6 +41,11 @@ afterEach(async () => {
 });
 
 describe('detectDeviceLang', () => {
+  test('el-GR primary tag → el (I18N-EL)', () => {
+    assert.equal(detectDeviceLang(['el-GR', 'en']), 'el');
+    assert.equal(detectDeviceLang(['el']), 'el');
+  });
+
   test('ru-RU primary tag → ru', () => {
     assert.equal(detectDeviceLang(['ru-RU', 'ru']), 'ru');
     assert.equal(detectDeviceLang(['ru']), 'ru');

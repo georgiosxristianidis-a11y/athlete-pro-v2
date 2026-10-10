@@ -27,7 +27,7 @@ on('ob:select', (el) => window._obSelect(el.dataset.key));
 on('ob:setData', (el) => window._obSetData({ [el.dataset.key]: el.dataset.value }));
 on('ob:setLang', (el) => {
   const lang = el.dataset.lang;
-  if (lang !== 'en' && lang !== 'ru') return;
+  if (lang !== 'en' && lang !== 'ru' && lang !== 'el') return;
   setLang(lang).then(() => _render());
 });
 onInput('ob:setField', (el, e) => window._obSetData({ [el.dataset.key]: e.target.value }));
@@ -210,10 +210,12 @@ function _langToggle() {
   const lang = getLang();
   return `
       <div class="ob-lang" role="group" aria-label="${esc(t('settings.lang'))}">
-        <button type="button" class="ob-lang-btn ${lang !== 'ru' ? 'active' : ''}"
-                data-action="ob:setLang" data-lang="en" aria-pressed="${lang !== 'ru'}">EN</button>
+        <button type="button" class="ob-lang-btn ${lang === 'en' ? 'active' : ''}"
+                data-action="ob:setLang" data-lang="en" aria-pressed="${lang === 'en'}">EN</button>
         <button type="button" class="ob-lang-btn ${lang === 'ru' ? 'active' : ''}"
                 data-action="ob:setLang" data-lang="ru" aria-pressed="${lang === 'ru'}">RU</button>
+        <button type="button" class="ob-lang-btn ${lang === 'el' ? 'active' : ''}"
+                data-action="ob:setLang" data-lang="el" aria-pressed="${lang === 'el'}">ΕΛ</button>
       </div>`;
 }
 

@@ -3,9 +3,10 @@ import { DB } from './db.js';
 
 /**
  * #GIO: Athlete Pro Locale Store
- * Centralized dictionary for RU/EN localization.
+ * Centralized dictionary for EN/RU/EL localization. `el` lives in locale.el.js.
  */
 
+/** @type {Record<string, Record<string, string>>} */
 const DICT = {
   en: {
     'profile.title': 'Profile',
@@ -1064,16 +1065,33 @@ const DICT = {
     'core.local.e1rm_down': '{exercise}: −{kg} кг расчётного максимума за 4 недели — проверь восстановление.',
     'core.local.idle': 'Последняя тренировка {days} дн. назад — короткая сессия вернёт ритм.',
   },
+  /* el грузится лениво (_ensureDict): 45 КБ не едут в бут для en/ru. */
 };
 
+/** @param {string} lang */
+async function _ensureDict(lang) {
+  if (lang !== 'el' || DICT.el) return true;
+  try {
+    DICT.el = (await import('./locale.el.js')).EL;
+    return true;
+  } catch {
+    return false; // офлайн без runtime-кэша: остаёмся на en, бут не падает
+  }
+}
+
+/** @typedef {'en'|'ru'|'el'} Lang */
+/** @type {readonly string[]} */
+const LANGS = ['en', 'ru', 'el'];
+
+/** @type {Lang} */
 let _lang = 'en';
 
 /**
  * First-run language from the device locale list. UI code still reads
  * `getLang()` / `isRu()` / `t()` — not `navigator.language`.
- * Only the primary tag is consulted; anything other than `ru*` stays `en`.
+ * Only the primary tag is consulted; anything other than `ru*`/`el*` stays `en`.
  * @param {readonly string[] | undefined} [languages]
- * @returns {'en'|'ru'}
+ * @returns {Lang}
  */
 export function detectDeviceLang(languages) {
   const tags = Array.isArray(languages)
@@ -1089,7 +1107,7 @@ export function detectDeviceLang(languages) {
     .trim()
     .toLowerCase()
     .split(/[-_]/)[0];
-  return primary === 'ru' ? 'ru' : 'en';
+  return primary === 'ru' || primary === 'el' ? primary : 'en';
 }
 
 /**
@@ -1098,12 +1116,13 @@ export function detectDeviceLang(languages) {
  */
 export async function initLocale() {
   const saved = await DB.Settings.get('lang');
-  if (saved === 'ru' || saved === 'en') {
-    _lang = saved;
+  if (LANGS.includes(saved)) {
+    _lang = (await _ensureDict(saved)) ? saved : 'en';
     return;
   }
-  _lang = detectDeviceLang();
-  await DB.Settings.set('lang', _lang);
+  const detected = detectDeviceLang();
+  _lang = (await _ensureDict(detected)) ? detected : 'en';
+  await DB.Settings.set('lang', detected);
 }
 
 /**
@@ -1123,10 +1142,24 @@ export function isRu() {
 }
 
 /**
+ * Inline three-way string for spots without a DICT key. Argument order
+ * mirrors the legacy `ru ? A : B` ternary so conversions stay mechanical.
+ * @param {string} ru
+ * @param {string} en
+ * @param {string} el
+ * @returns {string}
+ */
+export function tri(ru, en, el) {
+  return _lang === 'ru' ? ru : _lang === 'el' ? el : en;
+}
+
+/**
  * Set language.
- * @param {'en'|'ru'} lang
+ * @param {Lang} lang
  */
 export async function setLang(lang) {
+  if (!LANGS.includes(lang)) return;
+  if (!(await _ensureDict(lang))) return;
   _lang = lang;
   await DB.Settings.set('lang', lang);
   window.dispatchEvent(new CustomEvent('ap-locale-change', { detail: { lang } }));

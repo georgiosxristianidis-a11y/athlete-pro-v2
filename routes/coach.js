@@ -123,7 +123,7 @@ const _int = (hi) => z.number().int().min(0).max(hi).nullable();
 
 export const coachSnapshotSchema = z.object({
   v: z.literal(SNAPSHOT_VERSION),
-  lang: z.enum(['ru', 'en']),
+  lang: z.enum(['ru', 'en', 'el']),
   door: z.enum(DOORS),
   readiness: z.object({
     index: _pct,
@@ -333,9 +333,9 @@ router.post('/tts', apiLimiter, asyncHandler(async (req, res) => {
 
 /* Язык UI с фронта (`getLang()`), одно правило на все маршруты ИИ. Клиент без
    поля `lang` (старее CORE-6) получает прежний дефолт чата — русский. */
-const uiLangSchema = z.enum(['ru', 'en']).optional();
+const uiLangSchema = z.enum(['ru', 'en', 'el']).optional();
 function _langName(lang) {
-  return lang === 'en' ? 'English' : 'Russian';
+  return lang === 'en' ? 'English' : lang === 'el' ? 'Greek' : 'Russian';
 }
 
 const weeklyReportSchema = z.object({
@@ -449,12 +449,26 @@ function _weeklyScore(workouts) {
  * то есть это не заглушка «данные нечитаемы», а честный минимум: сколько
  * тренировок, сколько тоннажа, и куда двигаться.
  * @param {Array<any>} workouts
- * @param {'ru'|'en'} [lang]
+ * @param {'ru'|'en'|'el'} [lang]
  */
 function _weeklyReportFallback(workouts, lang) {
   const list = Array.isArray(workouts) ? workouts : [];
   const sessions = list.length;
   const tonnage = list.reduce((s, w) => s + (Number(w?.tonnage) || 0), 0);
+  if (lang === 'el') {
+    if (!sessions) {
+      return {
+        summary: 'Καμία προπόνηση τις τελευταίες 7 ημέρες. Ο coach είναι εκτός σύνδεσης — ξεκίνα με μία.',
+        pros: [],
+        cons: ['Μηδέν προπονήσεις αυτή την εβδομάδα'],
+      };
+    }
+    return {
+      summary: `Προπονήσεις σε 7 ημέρες: ${sessions}, όγκος ${Math.round(tonnage)} kg. Ο coach είναι εκτός σύνδεσης — αυτά είναι τα δικά σου νούμερα, όχι η ανάλυσή του.`,
+      pros: [`Καταγεγραμμένες προπονήσεις: ${sessions}`],
+      cons: sessions < 3 ? ['Λιγότερες από τρεις προπονήσεις την εβδομάδα'] : [],
+    };
+  }
   if (lang !== 'en') {
     if (!sessions) {
       return {
@@ -595,7 +609,8 @@ export function _buildSystemPrompt(snapshot, tone) {
   const langName = _langName(snapshot?.lang);
   // Приветствие — на том же языке ответа (CORE-11): фраза Gio у русского UI
   // дословно, у английского — её эквивалент. Одна на все языки тянула ответ в русский.
-  const greeting = langName === 'English' ? 'Hi, need a plan?' : 'Привет, нужен план?';
+  const greeting =
+    langName === 'English' ? 'Hi, need a plan?' : langName === 'Greek' ? 'Γεια, θες πλάνο;' : 'Привет, нужен план?';
   return `You are "Athlete Pro Coach", an elite AI strength & conditioning expert.
 
 [PERSONA / TONE]
