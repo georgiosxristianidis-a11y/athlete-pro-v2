@@ -276,6 +276,7 @@ export const EL = {
   'dash.weeks_since': '{n} εβδομάδες από την τελευταία πρόοδο',
   'dash.ask_coach': 'Ρώτα τον coach',
   'dash.error': 'Σφάλμα: {err}',
+  'dash.vs_prev': 'έναντι προηγ. {n}ημ.',
   'metrics.title': 'Μετρήσεις',
   'metrics.history': 'Ιστορικό',
   'metrics.data': 'Μετρήσεις σώματος',

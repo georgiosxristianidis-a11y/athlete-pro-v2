@@ -7,7 +7,7 @@ import { DB } from './db.js';
 import { getVolumeSummary, getNextType, computeStreak, getNextSessionRecs } from './dashboard.store.js';
 import {
   generateSparkline,
-  generateSparklineMulti,
+  generateVolumeBars,
   VOLUME_DAYS,
   parseVolumeDays,
 } from './shared/sparkline.js';
@@ -15,6 +15,8 @@ import { Spring } from './shared/spring.js';
 import { esc, listenerGroup } from './shared/utils.js';
 import { Toast } from './shell.js';
 import { fmtVol, fmtDuration, fmtDate } from './shared/format.js';
+import { volumeTrend, trendPercent } from './shared/volume-trend.js';
+import { pplColor } from './shared/ppl-color.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { on } from './events.js';
 import { flag } from './flags.js';
@@ -513,7 +515,8 @@ export const Dashboard = (() => {
   }
 
   /**
-   * Render the volume-trend sparkline for the selected window (7 / 30 / 90 days).
+   * Render the volume-trend chart for the selected window (7 / 30 / 90 days):
+   * 7 = daily PPL-coloured bars, 30/90 = one weekly total line.
    */
   function renderSparkline(workouts) {
     const container = document.getElementById('spark-container');
@@ -521,87 +524,31 @@ export const Dashboard = (() => {
     if (!container || !totalEl) return;
     _sparkWorkouts = workouts;
 
-    if (!workouts || workouts.length === 0) {
+    const r = volumeTrend(workouts, _sparkDays);
+    const pct = trendPercent(r);
+    const pill =
+      pct === null
+        ? ''
+        : `<span class="dash-trend-pill${pct < 0 ? ' down' : ''}">${pct < 0 ? '-' : '+'}${Math.abs(pct)}% <span class="dash-trend-pill-sub">${esc(t('dash.vs_prev', { n: _sparkDays }))}</span></span>`;
+    totalEl.innerHTML = `${fmtVol(r.total)} kg ${pill}`;
+
+    if (r.total === 0) {
       container.innerHTML = `<div style="padding: var(--sp-2); text-align: center; color: var(--c-text-3); font-size: var(--fs-2);">${esc(t('dash.no_data'))}</div>`;
       return;
     }
 
-    const days = _sparkDays;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dayMs = 24 * 60 * 60 * 1000;
-
-    const dayKeys = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      dayKeys.push(d.getTime());
-    }
-
-    const pplMaps = {
-      push: new Map(dayKeys.map((k) => [k, 0])),
-      pull: new Map(dayKeys.map((k) => [k, 0])),
-      legs: new Map(dayKeys.map((k) => [k, 0])),
-    };
-
-    let totalWindow = 0;
-    let last7d = 0;
-    let prev7d = 0;
-
-    workouts.forEach((w) => {
-      const wDate = new Date(w.timestamp);
-      wDate.setHours(0, 0, 0, 0);
-      const ts = wDate.getTime();
-      const diffDays = Math.floor((today.getTime() - ts) / dayMs);
-
-      if (diffDays < 7) last7d += w.tonnage;
-      else if (diffDays < 14) prev7d += w.tonnage;
-
-      const type = (w.type || '').toLowerCase();
-      const map = pplMaps[type];
-      if (map && map.has(ts)) {
-        map.set(ts, map.get(ts) + w.tonnage);
-        totalWindow += w.tonnage;
-      } else if (!map) {
-        // non-PPL type — add to total only
-        const anyMap = pplMaps.push;
-        if (anyMap.has(ts)) totalWindow += w.tonnage;
-      }
-    });
-
-    let trendHtml = '';
-    if (prev7d > 0 || last7d > 0) {
-      const percent = prev7d === 0 ? 100 : Math.round(((last7d - prev7d) / prev7d) * 100);
-      const isUp = percent >= 0;
-      const color = isUp ? 'var(--c-accent)' : 'var(--c-red)';
-      const bg = isUp ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 77, 136, 0.15)';
-      const arrow = isUp ? '+' : '-';
-      // Вертикаль 2px — ниже нижней ступени (--sp-0-5 = 4px): пилюля стоит в
-      // лок-апе с hero-числом, 4px разорвали бы строку. Горизонталь ушла ВНИЗ
-      // к --sp-0-5 по тому же правилу лок-апа.
-      trendHtml = `<span style="background:${bg}; color:${color}; font-size:var(--fs-1); font-weight:var(--fw-black); padding:2px var(--sp-0-5); border-radius:12px; margin-left:var(--sp-1);">${arrow}${Math.abs(percent)}%</span>`;
-    }
-
-    const pushArr = Array.from(pplMaps.push.values());
-    const pullArr = Array.from(pplMaps.pull.values());
-    const legsArr = Array.from(pplMaps.legs.values());
-    const globalMax = Math.max(...pushArr, ...pullArr, ...legsArr);
-
-    if (globalMax === 0) {
-      container.innerHTML = generateSparkline([0, 0, 0, 0], 300, 80);
-      return;
-    }
-
-    totalEl.innerHTML = `${fmtVol(totalWindow)} kg ${trendHtml}`;
-    container.innerHTML = generateSparklineMulti(
-      [
-        { data: pushArr, color: 'var(--c-push)' },
-        { data: pullArr, color: 'var(--c-pull)' },
-        { data: legsArr, color: 'var(--c-legs)' },
-      ],
-      300,
-      80
-    );
+    container.innerHTML =
+      r.mode === 'day'
+        ? generateVolumeBars(
+            r.buckets.map((b) => ({ value: b.value, color: b.type ? pplColor(b.type) : 'var(--c-text-3)' })),
+            300,
+            80
+          )
+        : generateSparkline(
+            r.buckets.map((b) => b.value),
+            300,
+            80
+          );
   }
 
   /**

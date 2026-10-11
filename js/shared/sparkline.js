@@ -106,35 +106,30 @@ export function generateSparkline(data, width = 100, height = 30, strokeColor = 
 }
 
 /**
- * Renders multiple data series in a single SVG, all scaled to the same global max.
- * @param {{data: number[], color: string}[]} layers
+ * Столбики объёма: один на корзину, цвет задаёт вызывающий (PPL-закон).
+ * Пустая корзина столбика не рисует — без «нулей на дне».
+ * @param {{value:number, color:string}[]} bars
  * @param {number} width
  * @param {number} height
  * @returns {string} SVG HTML string
  */
-export function generateSparklineMulti(layers, width = 300, height = 80) {
-  const validLayers = layers.filter((l) => l.data && l.data.length >= 2 && Math.max(...l.data) > 0);
-  if (validLayers.length === 0) return '';
-
-  const globalMax = Math.max(...validLayers.flatMap((l) => l.data));
-  const globalMin = 0;
-  const range = globalMax - globalMin || 1;
+export function generateVolumeBars(bars, width = 300, height = 80) {
+  const max = Math.max(0, ...bars.map((b) => b.value));
+  if (!bars.length || max <= 0) return '';
   const padding = 4;
-  const n = validLayers[0].data.length;
-
-  const paths = validLayers.map(({ data, color }) => {
-    const pts = data.map((val, i) => {
-      const x = (i / (n - 1)) * width;
-      const y = height - padding - ((val - globalMin) / range) * (height - padding * 2);
-      return { x, y };
-    });
-    const d = monotoneCubicPath(pts);
-    return `<path class="spark-stroke" d="${d}" fill="none" vector-effect="non-scaling-stroke" stroke="${color}" />`;
-  });
-
+  const slot = width / bars.length;
+  const bw = slot * 0.6;
+  const rects = bars
+    .map((b, i) => {
+      if (!(b.value > 0)) return '';
+      const h = Math.max(4, (b.value / max) * (height - padding * 2));
+      const x = i * slot + (slot - bw) / 2;
+      return `<rect x="${x.toFixed(1)}" y="${(height - padding - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${b.color}" />`;
+    })
+    .join('');
   return `
     <svg viewBox="0 0 ${width} ${height}" class="sparkline-svg" preserveAspectRatio="none">
-      ${paths.join('\n      ')}
+      ${rects}
     </svg>
   `;
 }
