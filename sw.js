@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-4cd82a14';
+const CACHE_NAME = 'athlete-pro-v121-99a84b91';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -53,6 +53,7 @@ const ASSETS = [
   '/js/shared/format.js',
   '/js/shared/island-tracker.js',
   '/js/shared/lazy-css.js',
+  '/js/shared/ppl-color.js',
   '/js/shared/ppl-gauge.js',
   '/js/shared/sparkline.js',
   '/js/shared/spring.js',
@@ -61,6 +62,7 @@ const ASSETS = [
   '/js/shared/sync-secrets.js',
   '/js/shared/theme.js',
   '/js/shared/utils.js',
+  '/js/shared/volume-trend.js',
   '/js/shared/working-sets.js',
   '/js/shell.js',
   '/js/strength-engine.js',
@@ -134,7 +136,6 @@ const ASSETS_WARM = [
   '/js/shared/panda-mood.js',
   '/js/shared/panda-video.js',
   '/js/shared/plate-math.js',
-  '/js/shared/ppl-color.js',
   '/js/shared/sse.js',
   '/js/shared/sync-merge.js',
   '/js/shared/txt-export.js',

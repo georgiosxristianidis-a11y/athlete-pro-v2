@@ -809,8 +809,8 @@
   flex-shrink: 0;
 }
 .dash-vol-btn {
-  min-width: 36px;
-  min-height: 32px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0 var(--sp-1);
   background: none;
   border: 1px solid transparent;
@@ -825,6 +825,27 @@
     background var(--t-fast),
     color var(--t-fast),
     transform var(--t-fast);
+}
+.dash-trend-pill {
+  display: inline-block;
+  white-space: nowrap;
+  margin-left: var(--sp-1);
+  /* Вертикаль 2px — ниже нижней ступени (--sp-0-5 = 4px): пилюля стоит в
+     лок-апе с hero-числом, 4px разорвали бы строку. */
+  padding: 2px var(--sp-0-5);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  color: var(--c-accent);
+  background: var(--c-accent-bg);
+}
+.dash-trend-pill.down {
+  color: var(--c-red);
+  background: var(--c-red-bg);
+}
+.dash-trend-pill-sub {
+  font-weight: var(--fw-bold);
+  opacity: 0.8;
 }
 .dash-vol-btn:active {
   transform: scale(var(--press-scale));

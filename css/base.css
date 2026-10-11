@@ -2183,7 +2183,7 @@ button:focus-visible {
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 6px rgba(0, 230, 118, 0.7)) drop-shadow(0 0 2px rgba(0, 230, 118, 0.55));
+  filter: drop-shadow(0 0 4px var(--c-accent));
 }
 
 /* ── PPL balance gauge (shared: dashboard + analytics) ── */
