@@ -39,8 +39,13 @@ const INSTALL_BUDGET_BYTES = 0.75 * 1024 * 1024;
  * The warm phase answers a different question — offline completeness, not the
  * cost of installing over a cell — so its ceiling is deliberately loose. It
  * exists so a multi-megabyte asset drop still meets a red test somewhere.
+ *
+ * 2.00 -> 2.25 MB (2026-10-11): the set sat 7.7 KB under the old ceiling, so the
+ * first ordinary feature module went red (progression curves, +12 KB). Raised
+ * in its own PR per ceiling-bump-isolated; ~240 KB of headroom, still far
+ * below a media drop.
  */
-const OFFLINE_BUDGET_BYTES = 2 * 1024 * 1024;
+const OFFLINE_BUDGET_BYTES = 2.25 * 1024 * 1024;
 
 const MEDIA_EXT = /\.(?:mp4|webm|m4a|mp3|ogg|mov)$/i;
 
