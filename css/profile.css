@@ -548,9 +548,9 @@ button.pref-row-icon:active,
     background-color var(--t-fast),
     border-color var(--t-fast),
     color var(--t-fast);
-  /* AIR: опасная зона отделена от подписи воздухом, а не линией — 32px
-     (--sp-4), ~3% высоты телефона; было 8px, кнопка липла к подписи. */
-  margin: var(--sp-4) auto 0;
+  /* AIR: опасная зона отделена от подписи воздухом, а не линией — 24px
+     (--sp-3), +16px к прежним 8px, ~2% высоты телефона; кнопка липла к подписи. */
+  margin: var(--sp-3) auto 0;
 }
 .danger-btn svg {
   width: 15px;
