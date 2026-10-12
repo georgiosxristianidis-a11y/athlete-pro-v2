@@ -12,6 +12,9 @@ import { tri } from './locale.store.js';
 import { pplColor } from './shared/ppl-color.js';
 import { monotoneCubicPath } from './shared/sparkline.js';
 import { calculateProgressionCurves } from './analytics.progression-curves.js';
+import { estimate1RM } from './strength-engine.js';
+import { canonicalKey } from './shared/exercise-identity.js';
+import { isLifted } from './shared/working-sets.js';
 
 const GOLD = 'var(--c-gold)';
 
@@ -233,20 +236,63 @@ function wireScrub(card, pts, opts = {}) {
 }
 
 /**
- * Strength Index = mean relative gain (current / first working weight) across the
- * tracked lifts, indexed to 100. Honest for machine/PPL data (no big-3 / bodyweight
- * needed, unlike DOTS). Returns the monthly index track for the sparkline.
+ * Strength Index (ANL-3) — chained by estimated 1RM, 1 at the first month. A lift's
+ * monthly value is its best `estimate1RM` over lifted sets, so more reps at the same
+ * weight counts as growth. Each month multiplies the index by the geometric mean of
+ * e1RM(m) / last-seen e1RM over lifts present in that month AND seen before: a new
+ * lift enters silently (no drop), +50% and −33% cancel, a lift that skipped a month
+ * is compared with its last seen value once (last-seen moves on after every
+ * comparison). A lift needs ≥2 months of data; no top-6 cap — that limit belongs to
+ * the curve cards, which stay on working weight. Lift key = trim + lowercase + alias.
+ * @param {Array<import('./db.js').WorkoutRecord>|null|undefined} workouts
+ * @returns {{months:number[], idx:number[]}} mid-month timestamps and index per month (1 = 100)
  */
-function strengthIndex(series) {
-  const months = [...new Set(series.flatMap((s) => s.pts.map((p) => p.t)))].sort((a, b) => a - b);
-  const idx = months.map((m) => {
-    const ratios = [];
-    for (const s of series) {
-      const seen = s.pts.filter((p) => p.t <= m);
-      if (seen.length) ratios.push(seen[seen.length - 1].v / s.pts[0].v);
+export function buildIndexSeries(workouts) {
+  /** @type {Map<string, Map<number, number>>} lift → calendar month → best e1RM */
+  const lifts = new Map();
+  for (const w of Array.isArray(workouts) ? workouts : []) {
+    if (!w || w._deleted) continue;
+    const ts = Number(w.timestamp);
+    if (!Number.isFinite(ts) || ts <= 0) continue;
+    const d = new Date(ts);
+    const mk = d.getFullYear() * 12 + d.getMonth();
+    for (const ex of Array.isArray(w.exercises) ? w.exercises : []) {
+      if (!ex || typeof ex.name !== 'string') continue;
+      const key = canonicalKey(ex.name);
+      if (!key) continue;
+      let best = 0;
+      for (const set of Array.isArray(ex.sets) ? ex.sets : []) {
+        const weight = Number(set?.weight);
+        if (!isLifted(set) || !(weight > 0)) continue;
+        best = Math.max(best, estimate1RM(weight, Number(set.reps)));
+      }
+      if (!best) continue;
+      let months = lifts.get(key);
+      if (!months) lifts.set(key, (months = new Map()));
+      if (best > (months.get(mk) ?? 0)) months.set(mk, best);
     }
-    return ratios.length ? ratios.reduce((a, b) => a + b, 0) / ratios.length : 1;
+  }
+
+  const tracks = [...lifts.values()].filter((m) => m.size >= 2);
+  const monthKeys = [...new Set(tracks.flatMap((m) => [...m.keys()]))].sort((a, b) => a - b);
+  const lastSeen = tracks.map(() => 0);
+  let index = 1;
+  const idx = monthKeys.map((mk) => {
+    let logSum = 0,
+      n = 0;
+    tracks.forEach((m, j) => {
+      const v = m.get(mk);
+      if (!v) return;
+      if (lastSeen[j]) {
+        logSum += Math.log(v / lastSeen[j]);
+        n++;
+      }
+      lastSeen[j] = v;
+    });
+    if (n) index *= Math.exp(logSum / n);
+    return index;
   });
+  const months = monthKeys.map((mk) => Date.UTC(Math.floor(mk / 12), mk % 12, 15, 12, 0, 0));
   return { months, idx };
 }
 
@@ -259,13 +305,12 @@ function strengthIndex(series) {
  */
 export function renderStrengthHero(workouts, mount) {
   if (!mount) return;
-  const series = buildSeries(workouts);
-  if (!series.length || !workouts.length) {
+  const { months, idx } = buildIndexSeries(workouts);
+  if (!idx.length || !workouts.length) {
     mount.innerHTML = '';
     return;
   }
 
-  const { idx } = strengthIndex(series);
   const score = Math.round(idx[idx.length - 1] * 100);
   const gain = Math.round((idx[idx.length - 1] - 1) * 100);
 
@@ -291,8 +336,11 @@ export function renderStrengthHero(workouts, mount) {
   const mn = Math.min(...idx),
     mx = Math.max(...idx),
     rg = mx - mn || 1;
+  // X follows calendar time, like the drill-down plot: a skipped month is a visible gap.
+  const sparkT0 = months[0],
+    sparkTr = months[months.length - 1] - sparkT0 || 1;
   const P = idx.map((v, i) => ({
-    x: pad + (i / (idx.length - 1 || 1)) * (W - 2 * pad),
+    x: pad + ((months[i] - sparkT0) / sparkTr) * (W - 2 * pad),
     y: H - pad - ((v - mn) / rg) * (H - 2 * pad),
   }));
   const spark = idx.length > 1 ? smoothPath(P) : '';
@@ -303,7 +351,7 @@ export function renderStrengthHero(workouts, mount) {
         <div class="sh-main">
           <div class="sh-label">${tri('Индекс силы', 'Strength Index', 'Δείκτης δύναμης')}</div>
           <div class="sh-score">${score}<span class="sh-gain ${gain >= 0 ? 'up' : 'down'}">${gain >= 0 ? '+' : ''}${gain}%</span></div>
-          <div class="sh-cap">${tri('средний рост весов с начала', 'avg weight gain since start', 'μέση αύξηση βαρών από την αρχή')}</div>
+          <div class="sh-cap">${tri('средний рост силы с начала', 'avg strength gain since start', 'μέση αύξηση δύναμης από την αρχή')}</div>
         </div>
         ${
           spark
@@ -357,9 +405,7 @@ const IDX_W = 320,
  * @returns {{html:string, pts:{x:number,y:number,v:number,t:number}[], viewW:number, viewH:number, score:number, gain:number, t0:number, tN:number}|null}
  */
 export function strengthIndexPlot(workouts) {
-  const series = buildSeries(workouts);
-  if (!series.length) return null;
-  const { months, idx } = strengthIndex(series);
+  const { months, idx } = buildIndexSeries(workouts);
   if (idx.length < 2) return null;
 
   const score = Math.round(idx[idx.length - 1] * 100);
