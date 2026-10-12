@@ -190,7 +190,7 @@ export const EL = {
   'analytics.ex_no_history': 'Δεν έχουν καταγραφεί σετ για αυτή την άσκηση',
   'analytics.index_detail': 'Δείκτης δύναμης',
   'analytics.index_trend': 'Τάση δείκτη',
-  'analytics.index_cap': 'μέση αύξηση βάρους από την αρχή',
+  'analytics.index_cap': 'μέση αύξηση δύναμης από την αρχή',
   'journal.title': 'Ημερολόγιο',
   'journal.sub': 'Κάθε προπόνηση που κατέγραψες',
   'journal.search': 'Αναζήτηση ανά άσκηση',
