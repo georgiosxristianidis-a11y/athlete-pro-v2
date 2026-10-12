@@ -186,14 +186,18 @@ export function detectPlateau(exerciseName, workoutHistory) {
   const allSame = weights.every((w, _, arr) => Math.abs(w - arr[0]) < 0.5);
 
   if (allSame) {
-    const lastProgressDate = sessions.find((s, i, arr) => {
-      if (i === 0) return false;
-      return s.weight > arr[i - 1].weight;
-    });
+    // Walk back from the newest session: the LAST rise is the progress date.
+    // A weight that never rose counts from the first logged session — the
+    // honest answer to "how long has it stood", not a 999 sentinel on screen.
+    let lastProgressDate = sessions[0];
+    for (let i = sessions.length - 1; i > 0; i--) {
+      if (sessions[i].weight > sessions[i - 1].weight) {
+        lastProgressDate = sessions[i];
+        break;
+      }
+    }
 
-    const weeksSinceProgress = lastProgressDate
-      ? Math.round((Date.now() - lastProgressDate.timestamp) / (7 * 24 * 3600000))
-      : 999;
+    const weeksSinceProgress = Math.round((Date.now() - lastProgressDate.timestamp) / (7 * 24 * 3600000));
 
     return {
       isPlateau: true,
