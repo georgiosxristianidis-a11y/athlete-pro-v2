@@ -5,24 +5,28 @@
 
 ## Статус (читать первым)
 
-**Сделано в части 2 (шаг 2, простые тернарники):** 158 литеральных `ru ? 'A' : 'B'` в 17 файлах
-переписаны кодмодом на `tri(ru, en, el)`; перевод — карта `ru | en -> el` из 140 пар. Юнит-тесты 1787/1790,
-три красных ожидаемы: хэш SW (`npm run build:sw`) и бамп версии. eslint: 0 ошибок.
+**Сделано в части 2:** шаг 2 — 158 инлайн-тернарников на `tri(ru, en, el)`; шаг 4 — даты через `getLang()`
+(format.js, body-stats.js, settings.js, render.js); словари с полем `el`: `body-stats.core.js` (поля, секции, бенто,
+`bodyFatCategory`), `body-stats.js`, `lift-bars.js`, `passport-hero.js`, `athlete-room.js` (`TIER_EL`, достижения),
+`dobSelectsHtml(dob, idPrefix)` (месяцы по `getLang()`, параметр `ru` убран). Тесты body-stats/athlete-room зелёные.
 
-**Осталось (шаги 2-4):**
+**Осталось (по порядку):**
 
-1. Бамп `js/version.js` + `package.json`+lock (`npm install`), `npm run build:sw`.
-2. Чистка: неиспользуемые `isRu` в импортах (≈8 файлов), `ru` в `athlete-room.js:306,665` (`const { ru } = ctx`)
-   и параметры `ru` в `body-stats.js:128,191`. Смотреть `npx eslint js | grep -E "'(ru|isRu)'"`.
-3. Не-литеральные ветки, кодмод их не берёт: `athlete-room.js` (`a.ru/a.en` достижения, `TIER_RU`, `LIFT_RU`,
-   `renderLiftBars(..., ru ? 'ru' : 'en')`, `isRu()` на :731/:734), `body-stats.core.js` (`f.ru`, `cat.ru`, `sec.ru`
-   — добавить `el`), `body-stats.js` (`label()`, `cat.ru`, `sec.ru`, :366 `isRu()`-блок), `passport-hero.js`
-   (`TIER_RU`/`GOAL_RU`), `lift-bars.js` (`TIER_RU`/`LIFT_RU`), `island-settings.view.js` (`p.ru`, `descRu/descEn`),
-   `analytics.strength-curves.js:101` (вложенный тернарник «сессия/сессии»), `block-names.js:45`, `txt-export.js` (`L.ru`,
-   :84, :111), `intel.view.js:90` (объект строк), `settings.js:185-187,290-303`, `profile.js:65,502`, `privacy.view.js:129`
-   (`'ru' : 'en'` -> `getLang()`), `workout.view/modals.js:614,791` и `render.js:286,500` (`lang: isRu() ? 'ru' : 'en'`).
-4. Даты (шаг 4): сделано в format.js, body-stats.js, settings.js, render.js (getLang()). Осталось txt-export.js:84,111 (_day/_plural принимают lang 'ru'|'en', нужен el).
-5. Превью на EL: Настройки -> главная, тренировка, профиль, Интеллект, Замеры — без русских строк.
+1. `island-settings.view.js` — `p.ru/p.en`, `descRu/descEn` (:30,:33,:51,:54,:70) + `renderProfileCard(ru)`, `const ru` (:80): добавить `nameEl`/`descEl`.
+2. `analytics.strength-curves.js:101` — вложенный тернарник «сессия/сессии» (греч.: συνεδρία/συνεδρίες).
+3. `shared/block-names.js:42-45` `blockLabel(block, ru)` — пары `[en, ru]`, добавить `el`; вызовы: `workout.view/render.js:393`, `sections.js:54`.
+4. `shared/txt-export.js` — `L.ru` (+`L.el`), :84 (дата, `lang === 'ru' ? 'ru' : 'en'` -> `lang`), :111 `_plural` (греч. без падежей: две формы как в en).
+5. `intel.view.js:90` — объект строк `isRu() ? {...} : {...}` -> третья ветка el (читать целиком, объект большой).
+6. `lang: isRu() ? 'ru' : 'en'`: `workout.view/modals.js:614,791` -> `getLang()`; `render.js:286` (`ru ? 'ru' : 'en'`) -> `getLang()`;
+   `render.js:500` `if (!isRu()) return exerciseName` — проверить, что для el остаётся английское имя. `profile.js:502`, `privacy.view.js:129`
+   (`getLang() === 'ru' ? 'ru' : 'en'`) -> `getLang()`. `modals.js:593,770` (`isRu() && ex.nameRu`) — на el поиск по `name`, оставить.
+7. Чистка неиспользуемых `isRu`: `analytics.view.js:28`, `features/pip.js:8`, `privacy.view.js:20`, `rest-timer.js:21`,
+   `shared/errors-ui.js:2`, `shared/ppl-gauge.js:11` (`npx eslint js | grep -E "'(ru|isRu)'"`).
+8. Бамп `js/version.js` + `package.json`+lock (`npm install`), `npm run build:sw`, `npm test` = 0.
+9. Превью на EL: Настройки -> главная, тренировка, профиль, Интеллект, Замеры — без русских строк.
+   Добор: грепнуть кириллицу в `js/` вне `locale.store.js` и вне `tri(` — всё, что осталось, это дыра.
+
+Трюк: файлы в рабочем дереве CRLF (индекс LF) — правки скриптом, а не sed по многострочным шаблонам.
 
 Кодмод и карта лежат вне репо (`C:/PROJECTS/_scratch_i18n/`, не коммитить); повторять не нужно, остаток — руками.
 

@@ -20,8 +20,14 @@ const TIER_RU = {
   Intermediate: 'Средний', Advanced: 'Продвинутый', Elite: 'Элита',
 };
 
+const TIER_EL = {
+  Untrained: 'Αγύμναστος', Novice: 'Αρχάριος',
+  Intermediate: 'Μέτριος', Advanced: 'Προχωρημένος', Elite: 'Ελίτ',
+};
+
 const GOAL_EN = { strength: 'Strength', hypertrophy: 'Hypertrophy', cut: 'Cut', maintain: 'Maintain' };
 const GOAL_RU = { strength: 'Сила', hypertrophy: 'Масса', cut: 'Сушка', maintain: 'Поддержание' };
+const GOAL_EL = { strength: 'Δύναμη', hypertrophy: 'Υπερτροφία', cut: 'Λιπόλυση', maintain: 'Διατήρηση' };
 
 /**
  * @param {import('../profile.store.js').ProfileData} profile
@@ -31,7 +37,6 @@ const GOAL_RU = { strength: 'Сила', hypertrophy: 'Масса', cut: 'Суш�
  * @returns {string}
  */
 export function renderPassportHero(profile, metrics, oneRMs, lang) {
-  const ru = lang === 'ru';
   const age = computeAge(profile.dob);
   const bw = metrics?.weight || 80;
   
@@ -39,8 +44,8 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   const total = (oneRMs.squat || 0) + (oneRMs.bench || 0) + (oneRMs.deadlift || 0);
   const score = total ? athleteProScore({ total, bodyweight: bw, sex: profile.sex, age, experience: profile.experienceYears, height: metrics?.height }) : 0;
   const tier = tierFromScore(score);
-  const tierLabel = ru ? TIER_RU[tier] : tier;
-  const goalMap = ru ? GOAL_RU : GOAL_EN;
+  const tierLabel = lang === 'ru' ? TIER_RU[tier] : lang === 'el' ? TIER_EL[tier] : tier;
+  const goalMap = lang === 'ru' ? GOAL_RU : lang === 'el' ? GOAL_EL : GOAL_EN;
 
   // Best lift percentile (Top X% logic)
   let bestPercentile = 0;
