@@ -37,6 +37,7 @@ import {
   valueBand,
 } from './analytics.strength-curves.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
+import { ORM_BODY_ID, mergeORMRows, ormSectionHtml, setORMExpanded } from './shared/orm-list.js';
 import { on } from './events.js';
 import { fmtDate, fmtWeight } from './shared/format.js';
 import { pplColor, pplColorAlpha, isPplType, PPL_TYPES } from './shared/ppl-color.js';
@@ -50,6 +51,7 @@ on('analytics:openExercise', (el) => {
   if (name) openExerciseHistoryModal(name);
 });
 on('analytics:openIndex', () => openStrengthIndexModal());
+on('analytics:toggleORM', (el) => _toggleORM(el));
 
 // PPL-цвет берётся из токенов темы — см. `js/shared/ppl-color.js` (DS-1).
 
@@ -166,10 +168,7 @@ export async function load() {
       </div>
       <div class="chart-card stagger-item" style="animation-delay: 0.15s"><canvas id="cv-volume" height="140"></canvas></div>
 
-      <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.2s">
-        <span class="section-label">${t('analytics.est_1rm')}</span>
-      </div>
-      <div id="orm-list"></div>
+      <div id="orm-section" class="stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.2s"></div>
       
       <div style="height:40px"></div>
     `;
@@ -575,27 +574,41 @@ function _renderVolumeChart(workouts, buckets) {
   });
 }
 
-function _renderORMList(orms) {
-  const el = document.getElementById('orm-list');
-  if (!el || !orms.length) return;
-  const sorted = orms.sort((a, b) => b.value - a.value);
-  el.innerHTML = sorted
-    .map(
-      (o, i) => `
-    <div class="orm-row stagger-item" style="animation-delay: ${0.2 + i * 0.05}s" data-action="analytics:openExercise" data-exercise="${esc(o.id)}" role="button" tabindex="0" aria-label="${esc(o.id)}">
-      <div class="orm-name">${esc(o.id)}</div>
-      <div class="orm-val">${o.value}<span class="orm-unit">kg</span></div>
-      <div class="orm-bar-wrap"><div class="orm-bar-fill" id="an-orm-bar-${i}" style="background:linear-gradient(90deg, var(--c-legs), var(--c-legs))"></div></div>
-    </div>`
-    )
-    .join('');
+/** Строки списка 1RM (после склейки) и живые пружины полос — для раскрытия/сворачивания. */
+let _ormRows = [];
+let _ormSprings = [];
 
-  // Spring animation for bars
-  setTimeout(() => {
-    sorted.forEach((o, i) => {
-      const bar = document.getElementById(`an-orm-bar-${i}`);
-      if (!bar) return;
-      const targetWidth = Math.min(100, (o.value / 250) * 100);
+/** Список свёрнут по умолчанию (ANL-2); пружина полос стартует в _toggleORM, не здесь. */
+function _renderORMList(orms) {
+  const el = document.getElementById('orm-section');
+  if (!el) return;
+  _ormRows = mergeORMRows(orms);
+  _ormSprings = [];
+  el.innerHTML = ormSectionHtml(_ormRows, { title: t('analytics.est_1rm') });
+}
+
+function _toggleORM(btn) {
+  const body = document.getElementById(ORM_BODY_ID);
+  if (!body) return;
+  const expanded = !body.classList.contains('expanded');
+  setORMExpanded(btn, body, expanded);
+  haptic(8);
+  _animateORMBars(_ormRows, expanded);
+}
+
+/** Раскрытие — пружина по полосам с нуля; сворачивание гасит живые пружины и сбрасывает полосы. */
+function _animateORMBars(rows, expanded) {
+  _ormSprings.forEach((s) => s.stop());
+  _ormSprings = [];
+  rows.forEach((o, i) => {
+    const bar = document.getElementById(`an-orm-bar-${i}`);
+    if (!bar) return;
+    if (!expanded) {
+      bar.style.transform = '';
+      return;
+    }
+    const targetWidth = Math.min(100, (o.value / 250) * 100);
+    _ormSprings.push(
       Spring.animate({
         from: 0,
         to: targetWidth,
@@ -604,9 +617,9 @@ function _renderORMList(orms) {
         onUpdate: (v) => {
           bar.style.transform = `scaleX(${v / 100})`;
         },
-      });
-    });
-  }, 150);
+      })
+    );
+  });
 }
 
 /**

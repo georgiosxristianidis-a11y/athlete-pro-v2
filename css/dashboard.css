@@ -797,6 +797,28 @@
 .list-toggle.expanded .list-toggle-icon {
   transform: rotate(180deg);
 }
+/* Заголовок секции как тоггл (ANL-2, список 1RM в Stats): подпись слева, число
+   записей рядом, шеврон у правого края — а не «Показать ещё» по центру. */
+.list-toggle-section {
+  justify-content: flex-start;
+  gap: var(--sp-1);
+  min-height: var(--sp-5);
+  padding: var(--sp-1) 0;
+  text-align: left;
+}
+.list-toggle-section .list-toggle-icon {
+  margin-left: auto;
+}
+.list-toggle-count {
+  padding: var(--sp-0-5) var(--sp-1);
+  border-radius: var(--r-s);
+  background: var(--c-surface-h);
+  font-family: var(--font-heading);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-2);
+}
 
 /* Volume Trend period (7 / 30 / 90) — the old "30 Days" badge was not a control. */
 .dash-vol-seg {
