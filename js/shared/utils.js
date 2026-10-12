@@ -1,3 +1,4 @@
+import { tri } from '../locale.store.js';
 'use strict';
 
 /**
@@ -146,15 +147,15 @@ export const dobSelectsHtml = (dob, ru, idPrefix) => {
          разный (12/8/12) разъезжался при одинаковой ширине колонок. -->
     <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr; gap:var(--sp-1)">
       <select id="${idPrefix}-y" style="${selStyle} padding:0 var(--sp-1-5);">
-        <option value="">${ru ? 'Год' : 'Year'}</option>
+        <option value="">${tri('Год', 'Year', 'Έτος')}</option>
         ${years.map(year => `<option value="${year}" ${y === String(year) ? 'selected' : ''}>${year}</option>`).join('')}
       </select>
       <select id="${idPrefix}-m" style="${selStyle} padding:0 var(--sp-1-5);">
-        <option value="">${ru ? 'Мес' : 'Month'}</option>
+        <option value="">${tri('Мес', 'Month', 'Μήν.')}</option>
         ${months.map((name, i) => `<option value="${String(i + 1).padStart(2, '0')}" ${m === String(i + 1).padStart(2, '0') ? 'selected' : ''}>${name}</option>`).join('')}
       </select>
       <select id="${idPrefix}-d" style="${selStyle} padding:0 var(--sp-1-5);">
-        <option value="">${ru ? 'День' : 'Day'}</option>
+        <option value="">${tri('День', 'Day', 'Ημέρα')}</option>
         ${Array.from({ length: 31 }, (_, i) => {
           const val = String(i + 1).padStart(2, '0');
           return `<option value="${val}" ${d === val ? 'selected' : ''}>${i + 1}</option>`;

@@ -18,7 +18,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { PiP } from './features/pip.js';
-import { isRu, t } from './locale.store.js';
+import { isRu, t, tri } from './locale.store.js';
 import { haptic } from './shared/utils.js';
 import { State, isPending } from './workout.store.js';
 import { flag } from './flags.js';
@@ -123,7 +123,7 @@ export const RestTimer = (() => {
     const s = (rem % 60).toString().padStart(2, '0');
     PiP.drawFrame({
       time: `${m}:${s}`,
-      name: isRu() ? 'ОТДЫХ...' : 'RESTING...',
+      name: tri('ОТДЫХ...', 'RESTING...', 'ΞΕΚΟΥΡΑΣΗ...'),
       nextName: _nextName,
     });
 
@@ -179,9 +179,8 @@ export const RestTimer = (() => {
     const { DB } = await import('./db.js');
     if ((await DB.Settings.get('notify-rest', 'off')) !== 'on') return;
 
-    const ru = isRu();
-    const title = ru ? 'Отдых завершен!' : 'Rest Complete';
-    const body = ru ? 'Пора начинать следующий подход.' : 'Time to start your next set.';
+    const title = tri('Отдых завершен!', 'Rest Complete', 'Η ξεκούραση τελείωσε');
+    const body = tri('Пора начинать следующий подход.', 'Time to start your next set.', 'Ώρα για το επόμενο σετ.');
 
     const reg = await navigator.serviceWorker.getRegistration();
     if (reg) {

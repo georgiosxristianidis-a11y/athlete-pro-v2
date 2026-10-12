@@ -9,7 +9,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { renderPrivacyCard } from './privacy.view.js';
-import { isRu } from './locale.store.js';
+import { isRu, tri } from './locale.store.js';
 import { flag } from './flags.js';
 import { initSegPill, mountSegPills } from './ui/seg-pill.js';
 import { getIslandProfile, setIslandProfile } from './island-profile.store.js';
@@ -40,10 +40,10 @@ function renderProfileCard(ru) {
   const active = PROFILES.find(p => p.id === cur) || PROFILES[0];
   return `
     <div class="section-header" style="margin-top:var(--sp-1)">
-      <span class="section-label">${ru ? 'Профиль острова' : 'Island profile'}</span>
+      <span class="section-label">${tri('Профиль острова', 'Island profile', 'Προφίλ νησιού')}</span>
     </div>
     <div class="profile-card">
-      <div class="privacy-segment" role="tablist" aria-label="${ru ? 'Профиль острова' : 'Island profile'}">
+      <div class="privacy-segment" role="tablist" aria-label="${tri('Профиль острова', 'Island profile', 'Προφίλ νησιού')}">
         ${PROFILES.map(p => `
           <button class="privacy-seg-btn ${p.id === cur ? 'active' : ''}"
                   data-profile="${p.id}" role="tab" aria-selected="${p.id === cur}"
@@ -81,15 +81,15 @@ export function loadIslandSettings() {
 
   screen.innerHTML = `
     <div class="screen-header" style="display:flex;align-items:center;gap:var(--sp-2)">
-      <button class="btn-icon-sm" data-action="nav:back" aria-label="${ru ? 'Назад' : 'Back'}">
+      <button class="btn-icon-sm" data-action="nav:back" aria-label="${tri('Назад', 'Back', 'Πίσω')}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
              stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </button>
       <div>
-        <div class="screen-title">${ru ? 'Остров' : 'Island'}</div>
-        <div class="screen-sub">${ru ? 'Настройки и приватность' : 'Settings & privacy'}</div>
+        <div class="screen-title">${tri('Остров', 'Island', 'Νησί')}</div>
+        <div class="screen-sub">${tri('Настройки и приватность', 'Settings & privacy', 'Ρυθμίσεις & απόρρητο')}</div>
       </div>
     </div>
 

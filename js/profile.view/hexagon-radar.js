@@ -1,4 +1,5 @@
 // @ts-check
+import { tri } from '../locale.store.js';
 import { exrxTier } from '../strength-engine.js';
 
 const TIER_PCT = { Untrained: 8, Novice: 28, Intermediate: 52, Advanced: 76, Elite: 96 };
@@ -33,7 +34,6 @@ function _polygon(cx, cy, R, pcts) {
  * @returns {string}
  */
 export function renderHexagonRadar(oneRMs, bw, sex, age, workouts, lang) {
-  const ru = lang === 'ru';
   const effectiveAge = age || 30;
 
   const since30d = Date.now() - 30 * 86400000;
@@ -47,12 +47,12 @@ export function renderHexagonRadar(oneRMs, bw, sex, age, workouts, lang) {
 
   /** @type {Array<{label: string, lift: string|null, rm: number}>} */
   const axes = [
-    { label: ru ? 'Жим'    : 'Bench',    lift: 'bench',    rm: oneRMs.bench    || 0 },
-    { label: ru ? 'Жим ст' : 'OHP',      lift: 'ohp',      rm: oneRMs.ohp      || 0 },
-    { label: ru ? 'Тяга'   : 'Deadlift', lift: 'deadlift', rm: oneRMs.deadlift || 0 },
-    { label: ru ? 'Присед' : 'Squat',    lift: 'squat',    rm: oneRMs.squat    || 0 },
-    { label: ru ? 'Объём'  : 'Volume',   lift: null,       rm: 0 },
-    { label: ru ? 'Регул.' : 'Consist.', lift: null,       rm: 0 },
+    { label: tri('Жим', 'Bench', 'Bench'),    lift: 'bench',    rm: oneRMs.bench    || 0 },
+    { label: tri('Жим ст', 'OHP', 'OHP'),      lift: 'ohp',      rm: oneRMs.ohp      || 0 },
+    { label: tri('Тяга', 'Deadlift', 'Deadlift'), lift: 'deadlift', rm: oneRMs.deadlift || 0 },
+    { label: tri('Присед', 'Squat', 'Squat'),    lift: 'squat',    rm: oneRMs.squat    || 0 },
+    { label: tri('Объём', 'Volume', 'Όγκος'),   lift: null,       rm: 0 },
+    { label: tri('Регул.', 'Consist.', 'Σταθερ.'), lift: null,       rm: 0 },
   ];
 
   const pcts = axes.map((a, i) => {
@@ -90,9 +90,9 @@ export function renderHexagonRadar(oneRMs, bw, sex, age, workouts, lang) {
   }).join('');
 
   return `
-<div class="pp-section-lbl pp-section-lbl-gap">${ru ? 'Профиль силы' : 'Strength Profile'}</div>
+<div class="pp-section-lbl pp-section-lbl-gap">${tri('Профиль силы', 'Strength Profile', 'Προφίλ δύναμης')}</div>
 <div class="pp-radar-wrap">
-  <svg class="pp-radar" viewBox="0 0 240 240" role="img" aria-label="${ru ? 'Радар силы' : 'Strength radar'}">
+  <svg class="pp-radar" viewBox="0 0 240 240" role="img" aria-label="${tri('Радар силы', 'Strength radar', 'Ραντάρ δύναμης')}">
     ${ringSVG}
     ${spokeSVG}
     <polygon points="${dataPts}" fill="var(--c-accent-bg)" stroke="var(--c-accent)" stroke-width="1.5" stroke-linejoin="round">

@@ -1,4 +1,5 @@
 // @ts-check
+import { tri } from '../locale.store.js';
 import { on } from '../events.js';
 
 on('bento:toggleGlow', (el) => el.classList.toggle('pp-bento-glow'));
@@ -41,7 +42,6 @@ function _streak(workouts) {
  * @returns {string}
  */
 export function renderBento(workouts, lang) {
-  const ru = lang === 'ru';
   const streak = _streak(workouts);
   const totalVol = Math.round(workouts.reduce((s, w) => s + (w.tonnage || 0), 0) / 1000);
   const totalHrs = Math.round(workouts.reduce((s, w) => s + (w.duration || 0), 0) / 3600000);
@@ -50,24 +50,24 @@ export function renderBento(workouts, lang) {
     {
       id: 'bento-streak',
       val: streak || '—',
-      lbl: ru ? 'Серия' : 'Streak',
-      sub: ru ? 'дней подряд' : 'days',
+      lbl: tri('Серия', 'Streak', 'Σερί'),
+      sub: tri('дней подряд', 'days', 'ημέρες στη σειρά'),
       color: 'var(--c-amber)',
       glow: 'var(--glow-amber-md)',
     },
     {
       id: 'bento-vol',
       val: totalVol || '—',
-      lbl: ru ? 'Тоннаж' : 'Volume',
-      sub: ru ? 'тонн' : 'tonnes',
+      lbl: tri('Тоннаж', 'Volume', 'Όγκος'),
+      sub: tri('тонн', 'tonnes', 'τόνοι'),
       color: 'var(--c-blue)',
       glow: 'var(--glow-blue-md)',
     },
     {
       id: 'bento-hrs',
       val: totalHrs || '—',
-      lbl: ru ? 'Часы' : 'Hours',
-      sub: ru ? 'тренировок' : 'trained',
+      lbl: tri('Часы', 'Hours', 'Ώρες'),
+      sub: tri('тренировок', 'trained', 'προπόνησης'),
       color: 'var(--c-secondary)',
       glow: 'var(--glow-purple-md)',
     },

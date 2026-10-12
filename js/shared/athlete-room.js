@@ -7,7 +7,7 @@ import { loadProfile, updateProfile, updateWeightAndHeight, computeAge } from '.
 import { esc, haptic, dobSelectsHtml, readDobFromSelects } from './utils.js';
 import { shakeField } from './field-shake.js';
 import { initSegPill, syncSegPill } from '../ui/seg-pill.js';
-import { isRu } from '../locale.store.js';
+import { isRu, tri } from '../locale.store.js';
 import { on, onChange } from '../events.js';
 import { ensureCss } from './lazy-css.js';
 
@@ -192,7 +192,7 @@ async function _buildContext() {
     ]);
 
   const ru = lang === 'ru';
-  const name = customName || profile?.name || (ru ? 'Атлет' : 'Athlete');
+  const name = customName || profile?.name || (tri('Атлет', 'Athlete', 'Αθλητής'));
   const [c1, c2] = AVATAR_COLORS[(parseInt(colorIdx) || 0) % AVATAR_COLORS.length];
   const [f1, f2] = FRAME_COLORS[(parseInt(frameIdx) || 0) % FRAME_COLORS.length];
   const initials =
@@ -313,14 +313,14 @@ export const AthleteRoom = (() => {
             <button class="ar-back-btn" data-action="ar:close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
-            <div style="font-weight: var(--fw-bold); font-size: var(--fs-3);">${ru ? 'Мой профиль' : 'Athlete Room'}</div>
+            <div style="font-weight: var(--fw-bold); font-size: var(--fs-3);">${tri('Мой профиль', 'Athlete Room', 'Το προφίλ μου')}</div>
             <div style="width: 44px;"></div> <!-- spacer -->
           </div>
           
           <div class="bs-tab-bar" style="margin-bottom: 0; width: 100%; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
-            <button class="bs-tab ${activeTab === 'profile' ? 'active' : ''}" data-action="ar:switchTab" data-tab="profile">${ru ? 'Профиль' : 'Profile'}</button>
-            <button class="bs-tab ${activeTab === 'strength' ? 'active' : ''}" data-action="ar:switchTab" data-tab="strength">${ru ? 'Сила' : 'Strength'}</button>
-            <button class="bs-tab ${activeTab === 'metrics' ? 'active' : ''}" data-action="ar:switchTab" data-tab="metrics">${ru ? 'Замеры' : 'Body Metrics'}</button>
+            <button class="bs-tab ${activeTab === 'profile' ? 'active' : ''}" data-action="ar:switchTab" data-tab="profile">${tri('Профиль', 'Profile', 'Προφίλ')}</button>
+            <button class="bs-tab ${activeTab === 'strength' ? 'active' : ''}" data-action="ar:switchTab" data-tab="strength">${tri('Сила', 'Strength', 'Δύναμη')}</button>
+            <button class="bs-tab ${activeTab === 'metrics' ? 'active' : ''}" data-action="ar:switchTab" data-tab="metrics">${tri('Замеры', 'Body Metrics', 'Μετρήσεις')}</button>
           </div>
         </div>
 
@@ -423,25 +423,25 @@ export const AthleteRoom = (() => {
           <div class="ar-stats" style="margin-bottom:var(--sp-1-5)">
             <div class="ar-stat" data-action="ar:editStat" data-stat="weight" data-val="${metrics?.weight || 80}" style="cursor:pointer">
               <div class="ar-stat-val">${metrics?.weight || '—'} <span style="font-size:var(--fs-1);opacity:0.6">kg</span></div>
-              <div class="ar-stat-lbl">${ru ? 'Вес' : 'Weight'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:var(--sp-0-5); opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+              <div class="ar-stat-lbl">${tri('Вес', 'Weight', 'Βάρος')} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:var(--sp-0-5); opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
             <div class="ar-stat" data-action="ar:editStat" data-stat="height" data-val="${metrics?.height || 180}" style="cursor:pointer">
               <div class="ar-stat-val">${metrics?.height || '—'} <span style="font-size:var(--fs-1);opacity:0.6">cm</span></div>
-              <div class="ar-stat-lbl">${ru ? 'Рост' : 'Height'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:var(--sp-0-5); opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+              <div class="ar-stat-lbl">${tri('Рост', 'Height', 'Ύψος')} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-left:var(--sp-0-5); opacity:0.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
             </div>
             <div class="ar-stat" style="box-shadow: 0 4px 16px ${tierColor}20; border-color: ${tierColor}40">
               <div class="ar-stat-val" style="color: ${tierColor}; text-shadow: 0 0 12px ${tierColor}80">${Math.round(score)}</div>
-              <div class="ar-stat-lbl">${ru ? 'Очки' : 'Score'}</div>
+              <div class="ar-stat-lbl">${tri('Очки', 'Score', 'Σκορ')}</div>
             </div>
           </div>
           <div class="ar-stats">
             <div class="ar-stat">
               <div class="ar-stat-val">${streak} <span style="font-size:var(--fs-1);opacity:0.6">d</span></div>
-              <div class="ar-stat-lbl">${ru ? 'Стрик' : 'Streak'}</div>
+              <div class="ar-stat-lbl">${tri('Стрик', 'Streak', 'Σερί')}</div>
             </div>
             <div class="ar-stat">
               <div class="ar-stat-val">${total} <span style="font-size:var(--fs-1);opacity:0.6">kg</span></div>
-              <div class="ar-stat-lbl">${ru ? 'Сумма 1RM' : '1RM Total'}</div>
+              <div class="ar-stat-lbl">${tri('Сумма 1RM', '1RM Total', 'Σύνολο 1RM')}</div>
             </div>
             <div class="ar-stat" style="box-shadow: 0 4px 16px ${tierColor}20; border-color: ${tierColor}40">
               <div class="ar-stat-val" style="color: ${tierColor}; text-shadow: 0 0 12px ${tierColor}80">${Math.round(dots)}</div>
@@ -449,7 +449,7 @@ export const AthleteRoom = (() => {
             </div>
           </div>
 
-          <div class="ar-section-label">${ru ? 'Достижения' : 'Achievements'}</div>
+          <div class="ar-section-label">${tri('Достижения', 'Achievements', 'Επιτεύγματα')}</div>
           <div class="ar-achievements">
             ${ACHIEVEMENTS.map((a) => {
               const unlocked = unlockedAch.has(a.id);
@@ -467,26 +467,26 @@ export const AthleteRoom = (() => {
               <div class="ar-editor-label" id="ar-stat-label">Value</div>
               <input type="number" id="ar-stat-input" class="ar-name-input" value="0" step="0.1">
               <div class="ar-editor-actions" style="margin-top:var(--sp-3)">
-                <button class="ar-btn-save" data-action="ar:saveStat">${ru ? 'Сохранить' : 'Save'}</button>
-                <button class="ar-btn-cancel" data-action="ar:cancelStatEdit">${ru ? 'Отмена' : 'Cancel'}</button>
+                <button class="ar-btn-save" data-action="ar:saveStat">${tri('Сохранить', 'Save', 'Αποθήκευση')}</button>
+                <button class="ar-btn-cancel" data-action="ar:cancelStatEdit">${tri('Отмена', 'Cancel', 'Ακύρωση')}</button>
               </div>
             </div>
           </div>
           <div class="ar-name-editor" id="ar-name-editor" style="display:none; position:absolute; inset:0; background:var(--c-bg-1); z-index:10; padding:var(--sp-2);">
             <div class="ar-editor-card">
-              <div class="ar-editor-label">${ru ? 'Имя' : 'Name'}</div>
+              <div class="ar-editor-label">${tri('Имя', 'Name', 'Όνομα')}</div>
               <input type="text" id="ar-name-input" class="ar-name-input" value="${esc(name)}" maxlength="25">
               
-              <div class="ar-editor-label" style="margin-top:var(--sp-2)">${ru ? 'Дата рождения' : 'Date of Birth'}</div>
+              <div class="ar-editor-label" style="margin-top:var(--sp-2)">${tri('Дата рождения', 'Date of Birth', 'Ημερομηνία γέννησης')}</div>
               <div style="margin-top:var(--sp-1)">${dobSelectsHtml(ctx.profile?.dob || '', ru, 'ar-dob')}</div>
 
-              <div class="ar-editor-label" style="margin-top:var(--sp-2)">${ru ? 'Пол' : 'Sex'}</div>
+              <div class="ar-editor-label" style="margin-top:var(--sp-2)">${tri('Пол', 'Sex', 'Φύλο')}</div>
               <select id="ar-sex-input" class="ar-name-input" style="background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); border-radius:12px; height:48px; padding:0 var(--sp-2); width:100%; font-size:var(--fs-3); margin-top:var(--sp-1);">
-                <option value="m" ${ctx.profile?.sex !== 'f' ? 'selected' : ''}>${ru ? 'Мужской' : 'Male'}</option>
-                <option value="f" ${ctx.profile?.sex === 'f' ? 'selected' : ''}>${ru ? 'Женский' : 'Female'}</option>
+                <option value="m" ${ctx.profile?.sex !== 'f' ? 'selected' : ''}>${tri('Мужской', 'Male', 'Άνδρας')}</option>
+                <option value="f" ${ctx.profile?.sex === 'f' ? 'selected' : ''}>${tri('Женский', 'Female', 'Γυναίκα')}</option>
               </select>
               
-              <div class="ar-editor-colors-label" style="margin-top:var(--sp-2)">${ru ? 'Цвет аватара' : 'Avatar Color'}</div>
+              <div class="ar-editor-colors-label" style="margin-top:var(--sp-2)">${tri('Цвет аватара', 'Avatar Color', 'Χρώμα avatar')}</div>
               <div class="ar-color-row">
                 ${AVATAR_COLORS.map(
                   ([e, t], i) => `
@@ -496,7 +496,7 @@ export const AthleteRoom = (() => {
                 ).join('')}
               </div>
 
-              <div class="ar-editor-colors-label" style="margin-top:var(--sp-2)">${ru ? 'Цвет рамки' : 'Frame Color'}</div>
+              <div class="ar-editor-colors-label" style="margin-top:var(--sp-2)">${tri('Цвет рамки', 'Frame Color', 'Χρώμα πλαισίου')}</div>
               <div class="ar-color-row">
                 ${FRAME_COLORS.map(
                   ([e, t], i) => `
@@ -507,8 +507,8 @@ export const AthleteRoom = (() => {
               </div>
 
               <div class="ar-editor-actions" style="margin-top:var(--sp-3)">
-                <button class="ar-btn-save" data-action="ar:saveName">${ru ? 'Применить' : 'Apply'}</button>
-                <button class="ar-btn-cancel" data-action="ar:cancelEdit">${ru ? 'Отмена' : 'Cancel'}</button>
+                <button class="ar-btn-save" data-action="ar:saveName">${tri('Применить', 'Apply', 'Εφαρμογή')}</button>
+                <button class="ar-btn-cancel" data-action="ar:cancelEdit">${tri('Отмена', 'Cancel', 'Ακύρωση')}</button>
               </div>
             </div>
           </div>
@@ -551,51 +551,29 @@ export const AthleteRoom = (() => {
     };
 
     const ageWhy = !age
-      ? ru
-        ? 'возраст не указан'
-        : 'age not set'
+      ? tri('возраст не указан', 'age not set', 'δεν έχει οριστεί ηλικία')
       : age >= 40
-        ? ru
-          ? `${age} лет — надбавка мастеру`
-          : `${age} yo — masters bonus`
+        ? tri(`${age} лет — надбавка мастеру`, `${age} yo — masters bonus`, `${age} ετών — bonus masters`)
         : age <= 23
-          ? ru
-            ? `${age} лет — надбавка юниору`
-            : `${age} yo — junior bonus`
-          : ru
-            ? `${age} лет — пиковый возраст`
-            : `${age} yo — prime years`;
+          ? tri(`${age} лет — надбавка юниору`, `${age} yo — junior bonus`, `${age} ετών — bonus junior`)
+          : tri(`${age} лет — пиковый возраст`, `${age} yo — prime years`, `${age} ετών — ηλικία κορύφωσης`);
 
     const levWhy =
       b.bmi == null
-        ? ru
-          ? 'нужен рост в замерах'
-          : 'height not set'
+        ? tri('нужен рост в замерах', 'height not set', 'χρειάζεται ύψος στις μετρήσεις')
         : b.bmi < 25
-          ? ru
-            ? `BMI ${b.bmi.toFixed(1)} — длинная амплитуда`
-            : `BMI ${b.bmi.toFixed(1)} — longer range of motion`
-          : ru
-            ? `BMI ${b.bmi.toFixed(1)} — рычаги без надбавки`
-            : `BMI ${b.bmi.toFixed(1)} — no leverage bonus`;
+          ? tri(`BMI ${b.bmi.toFixed(1)} — длинная амплитуда`, `BMI ${b.bmi.toFixed(1)} — longer range of motion`, `BMI ${b.bmi.toFixed(1)} — μεγαλύτερο εύρος κίνησης`)
+          : tri(`BMI ${b.bmi.toFixed(1)} — рычаги без надбавки`, `BMI ${b.bmi.toFixed(1)} — no leverage bonus`, `BMI ${b.bmi.toFixed(1)} — χωρίς bonus μοχλών`);
 
     const exp = profile?.experienceYears;
     const expWhy =
       typeof exp !== 'number'
-        ? ru
-          ? 'опыт не указан'
-          : 'experience not set'
+        ? tri('опыт не указан', 'experience not set', 'δεν έχει οριστεί εμπειρία')
         : exp < 1
-          ? ru
-            ? 'меньше года в зале'
-            : 'under a year of training'
+          ? tri('меньше года в зале', 'under a year of training', 'λιγότερο από έναν χρόνο στο γυμναστήριο')
           : exp < 3
-            ? ru
-              ? `${exp} г. опыта — ещё новичок`
-              : `${exp}y — still a novice`
-            : ru
-              ? `${exp} г. опыта — надбавки нет`
-              : `${exp}y — no bonus`;
+            ? tri(`${exp} г. опыта — ещё новичок`, `${exp}y — still a novice`, `${exp} έτη — ακόμη αρχάριος`)
+            : tri(`${exp} г. опыта — надбавки нет`, `${exp}y — no bonus`, `${exp} έτη — χωρίς bonus`);
 
     // Лучшее из четырёх движений — именно оно даёт «Топ X%» в паспорте.
     let best = null;
@@ -614,7 +592,7 @@ export const AthleteRoom = (() => {
       <div class="ar-sc-head">
         <div class="ar-sc-score">${b.score || '—'}</div>
         <div class="ar-sc-tier">${esc(tierLabel(b.tier))}</div>
-        <div class="ar-sc-cap">${ru ? 'Скор атлета' : 'Athlete score'}</div>
+        <div class="ar-sc-cap">${tri('Скор атлета', 'Athlete score', 'Σκορ αθλητή')}</div>
       </div>
 
       <div class="ar-sc-scale">
@@ -626,16 +604,10 @@ export const AthleteRoom = (() => {
       <div class="ar-sc-next">
         ${
           empty
-            ? ru
-              ? 'Запиши присед, жим и становую — скор появится сам'
-              : 'Log squat, bench and deadlift — the score follows'
+            ? tri('Запиши присед, жим и становую — скор появится сам', 'Log squat, bench and deadlift — the score follows', 'Κατέγραψε squat, bench και deadlift — το σκορ εμφανίζεται μόνο του')
             : b.next
-              ? ru
-                ? `До тира «${esc(tierLabel(b.next.id))}» осталось <b>+${b.kgToNext} кг</b> в сумме трёх`
-                : `<b>+${b.kgToNext} kg</b> on the big three to reach ${esc(tierLabel(b.next.id))}`
-              : ru
-                ? 'Высший тир — выше некуда'
-                : 'Top tier — nothing above'
+              ? tri(`До тира «${esc(tierLabel(b.next.id))}» осталось <b>+${b.kgToNext} кг</b> в сумме трёх`, `<b>+${b.kgToNext} kg</b> on the big three to reach ${esc(tierLabel(b.next.id))}`, `Για την κατηγορία «${esc(tierLabel(b.next.id))}» λείπουν <b>+${b.kgToNext} kg</b> στο σύνολο των τριών`)
+              : tri('Высший тир — выше некуда', 'Top tier — nothing above', 'Ανώτατη κατηγορία — δεν υπάρχει παραπάνω')
         }
       </div>
 
@@ -643,46 +615,40 @@ export const AthleteRoom = (() => {
         empty
           ? ''
           : `
-      <div class="ar-section-label">${ru ? 'Из чего собран скор' : 'How the score is built'}</div>
+      <div class="ar-section-label">${tri('Из чего собран скор', 'How the score is built', 'Πώς σχηματίζεται το σκορ')}</div>
       <div class="ar-sc-card">
         <div class="ar-sc-row ar-sc-row-base">
           <div class="ar-sc-row-lbl">DOTS</div>
           <div class="ar-sc-row-why">${
-            ru
-              ? `${total} кг суммы при весе ${weight} кг`
-              : `${total} kg total at ${weight} kg bodyweight`
+            tri(`${total} кг суммы при весе ${weight} кг`, `${total} kg total at ${weight} kg bodyweight`, `${total} kg σύνολο με σωματικό βάρος ${weight} kg`)
           }</div>
           <div class="ar-sc-row-val">${b.base}</div>
         </div>
-        ${modRow(ru ? 'Возраст' : 'Age', b.ageMod, ageWhy)}
-        ${modRow(ru ? 'Рычаги' : 'Leverage', b.leverageMod, levWhy)}
-        ${modRow(ru ? 'Опыт' : 'Experience', b.expMod, expWhy)}
+        ${modRow(tri('Возраст', 'Age', 'Ηλικία'), b.ageMod, ageWhy)}
+        ${modRow(tri('Рычаги', 'Leverage', 'Μοχλοί'), b.leverageMod, levWhy)}
+        ${modRow(tri('Опыт', 'Experience', 'Εμπειρία'), b.expMod, expWhy)}
         <div class="ar-sc-row ar-sc-row-total">
-          <div class="ar-sc-row-lbl">${ru ? 'Итог' : 'Score'}</div>
-          <div class="ar-sc-row-why">${ru ? 'DOTS × три коэффициента' : 'DOTS × three modifiers'}</div>
+          <div class="ar-sc-row-lbl">${tri('Итог', 'Score', 'Σκορ')}</div>
+          <div class="ar-sc-row-why">${tri('DOTS × три коэффициента', 'DOTS × three modifiers', 'DOTS × τρεις συντελεστές')}</div>
           <div class="ar-sc-row-val">${b.score}</div>
         </div>
       </div>
 
       <div class="ar-sc-note">
         ${
-          ru
-            ? 'DOTS — коэффициент из пауэрлифтинга: он уже уравнивает атлетов разного веса, поэтому сумма в килограммах сама по себе ничего не говорит.'
-            : 'DOTS is a powerlifting coefficient: it already normalises across bodyweights, so raw kilograms alone say little.'
+          tri('DOTS — коэффициент из пауэрлифтинга: он уже уравнивает атлетов разного веса, поэтому сумма в килограммах сама по себе ничего не говорит.', 'DOTS is a powerlifting coefficient: it already normalises across bodyweights, so raw kilograms alone say little.', 'Το DOTS είναι συντελεστής του powerlifting: εξισώνει ήδη αθλητές διαφορετικού βάρους, γι’ αυτό τα ακατέργαστα κιλά από μόνα τους λένε λίγα.')
         }
       </div>
 
       ${
         best
           ? `
-      <div class="ar-section-label">${ru ? 'Откуда «Топ»' : 'Where “Top” comes from'}</div>
+      <div class="ar-section-label">${tri('Откуда «Топ»', 'Where “Top” comes from', 'Από πού προκύπτει το «Top»')}</div>
       <div class="ar-sc-card">
-        <div class="ar-sc-pct">${ru ? 'Топ' : 'Top'} ${100 - best.percentile}%</div>
+        <div class="ar-sc-pct">${tri('Топ', 'Top', 'Top')} ${100 - best.percentile}%</div>
         <div class="ar-sc-note" style="margin:0">
           ${
-            ru
-              ? `Лучшее из четырёх движений — ${LIFT_RU[best.lift]} ${best.rm} кг. Сравнение идёт по таблицам ExRx для пола, веса тела и возраста, а не с другими пользователями приложения.`
-              : `Best of the four lifts — ${LIFT_EN[best.lift]} ${best.rm} kg. Compared against ExRx tables for your sex, bodyweight and age, not against other app users.`
+            tri(`Лучшее из четырёх движений — ${LIFT_RU[best.lift]} ${best.rm} кг. Сравнение идёт по таблицам ExRx для пола, веса тела и возраста, а не с другими пользователями приложения.`, `Best of the four lifts — ${LIFT_EN[best.lift]} ${best.rm} kg. Compared against ExRx tables for your sex, bodyweight and age, not against other app users.`, `Η καλύτερη από τις τέσσερις κινήσεις — ${LIFT_EN[best.lift]} ${best.rm} kg. Η σύγκριση γίνεται με πίνακες ExRx για φύλο, σωματικό βάρος και ηλικία, όχι με άλλους χρήστες της εφαρμογής.`)
           }
         </div>
       </div>`
@@ -728,12 +694,8 @@ export const AthleteRoom = (() => {
     if (!ed || !lbl || !inp) return;
     lbl.textContent =
       type === 'weight'
-        ? isRu()
-          ? 'Вес (кг)'
-          : 'Weight (kg)'
-        : isRu()
-          ? 'Рост (см)'
-          : 'Height (cm)';
+        ? tri('Вес (кг)', 'Weight (kg)', 'Βάρος (kg)')
+        : tri('Рост (см)', 'Height (cm)', 'Ύψος (cm)');
     inp.value = val;
     ed.style.display = 'block';
     inp.focus();
@@ -771,8 +733,8 @@ export const AthleteRoom = (() => {
       renderProfile(sProfile);
     }
     const statLbl =
-      _currentStat === 'weight' ? (isRu() ? 'Вес' : 'Weight') : isRu() ? 'Рост' : 'Height';
-    window.Toast?.show(isRu() ? `${statLbl} обновлён` : `${statLbl} updated`, 'success');
+      _currentStat === 'weight' ? (tri('Вес', 'Weight', 'Βάρος')) : tri('Рост', 'Height', 'Ύψος');
+    window.Toast?.show(tri(`${statLbl} обновлён`, `${statLbl} updated`, `Ενημερώθηκε: ${statLbl}`), 'success');
   }
 
   async function saveName() {
@@ -805,7 +767,7 @@ export const AthleteRoom = (() => {
       const { renderProfile } = await import('../profile.view.js');
       renderProfile(sProfile);
     }
-    window.Toast?.show(isRu() ? 'Имя обновлено' : 'Name updated', 'success');
+    window.Toast?.show(tri('Имя обновлено', 'Name updated', 'Το όνομα ενημερώθηκε'), 'success');
   }
 
   async function cycleColor() {
@@ -889,14 +851,13 @@ export const AthleteRoom = (() => {
   }
 
   function _openCropModal(base64) {
-    const ru = isRu();
 
     const modal = document.createElement('div');
     modal.className = 'ar-crop-modal';
     modal.innerHTML = `
       <div class="ar-crop-card">
         <div class="ar-crop-header">
-          <div class="ar-crop-title">${ru ? 'Масштаб и положение' : 'Scale and position'}</div>
+          <div class="ar-crop-title">${tri('Масштаб и положение', 'Scale and position', 'Κλίμακα και θέση')}</div>
         </div>
         <div class="ar-crop-view-container">
           <div class="ar-crop-mask"></div>
@@ -907,13 +868,13 @@ export const AthleteRoom = (() => {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <span>${ru ? 'Масштаб' : 'Zoom'}</span>
+            <span>${tri('Масштаб', 'Zoom', 'Ζουμ')}</span>
           </div>
           <input type="range" id="ar-crop-zoom" min="1" max="4" step="0.05" value="1" class="ar-crop-slider">
         </div>
         <div class="ar-crop-actions">
-          <button class="ar-btn-save" id="ar-crop-apply">${ru ? 'Применить' : 'Apply'}</button>
-          <button class="ar-btn-cancel" id="ar-crop-cancel">${ru ? 'Отмена' : 'Cancel'}</button>
+          <button class="ar-btn-save" id="ar-crop-apply">${tri('Применить', 'Apply', 'Εφαρμογή')}</button>
+          <button class="ar-btn-cancel" id="ar-crop-cancel">${tri('Отмена', 'Cancel', 'Ακύρωση')}</button>
         </div>
       </div>
     `;

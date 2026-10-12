@@ -1,19 +1,31 @@
 # HANDOFF — I18N-EL: греческий язык (EN · RU · EL)
 
-> Ветка `claude/i18n-greek`, ворктри `C:/PROJECTS/ap-greek` (от `origin/main` 927b04af).
-> 2026-10-11, конец смены 1: WIP-коммит, не запушен.
+> Часть 1 влита (PR#525, 1.27.165). Часть 2: ветка `claude/i18n-greek-2`, ворктри `C:/PROJECTS/ap-greek2`
+> (от `origin/main` 0c3bd596). 2026-10-12: WIP-коммит, не запушен, версия не бампнута.
 
 ## Статус (читать первым)
 
-Сделано: шаги 1, 6, 7 + бамп 1.27.165 (1.27.164 заняли #519/#521/#524). Словарь `el` (517 ключей)
-в `js/locale.el.js`, грузится лениво (`_ensureDict` в `locale.store.js`) — бут не растёт.
-`tri(ru, en, el)` готов для шага 2. Тесты: паритет ключей и плейсхолдеров el, `el-GR → el`.
+**Сделано в части 2 (шаг 2, простые тернарники):** 158 литеральных `ru ? 'A' : 'B'` в 17 файлах
+переписаны кодмодом на `tri(ru, en, el)`; перевод — карта `ru | en -> el` из 140 пар. Юнит-тесты 1787/1790,
+три красных ожидаемы: хэш SW (`npm run build:sw`) и бамп версии. eslint: 0 ошибок.
 
-PR-1 готов (1719/1719): `locale.el.js` вне прекеша (`LAZY_LOCALE_RE` в `build-sw.mjs`, явное
-исключение в `test/pwa.test.js`), офлайн без кэша — фолбэк на en. Превью: онбординг на EL после
-перезагрузки. Регистрацию SW панель превью блокирует сама — офлайн-путь проверить на Android.
+**Осталось (шаги 2-4):**
 
-**Следующее — PR-2:** шаги 2-4 (инлайн-тернарники через `tri`, словари `.ru`, даты через `getLang()`).
+1. Бамп `js/version.js` + `package.json`+lock (`npm install`), `npm run build:sw`.
+2. Чистка: неиспользуемые `isRu` в импортах (≈8 файлов), `ru` в `athlete-room.js:306,665` (`const { ru } = ctx`)
+   и параметры `ru` в `body-stats.js:128,191`. Смотреть `npx eslint js | grep -E "'(ru|isRu)'"`.
+3. Не-литеральные ветки, кодмод их не берёт: `athlete-room.js` (`a.ru/a.en` достижения, `TIER_RU`, `LIFT_RU`,
+   `renderLiftBars(..., ru ? 'ru' : 'en')`, `isRu()` на :731/:734), `body-stats.core.js` (`f.ru`, `cat.ru`, `sec.ru`
+   — добавить `el`), `body-stats.js` (`label()`, `cat.ru`, `sec.ru`, :366 `isRu()`-блок), `passport-hero.js`
+   (`TIER_RU`/`GOAL_RU`), `lift-bars.js` (`TIER_RU`/`LIFT_RU`), `island-settings.view.js` (`p.ru`, `descRu/descEn`),
+   `analytics.strength-curves.js:101` (вложенный тернарник «сессия/сессии»), `block-names.js:45`, `txt-export.js` (`L.ru`,
+   :84, :111), `intel.view.js:90` (объект строк), `settings.js:185-187,290-303`, `profile.js:65,502`, `privacy.view.js:129`
+   (`'ru' : 'en'` -> `getLang()`), `workout.view/modals.js:614,791` и `render.js:286,500` (`lang: isRu() ? 'ru' : 'en'`).
+4. Даты (шаг 4): `toLocaleDateString(isRu() ? 'ru' : 'en')` -> `getLang()` в `format.js:40`, `body-stats.js:49`,
+   `settings.js:19,37`, `render.js:304`, `txt-export.js:84`.
+5. Превью на EL: Настройки -> главная, тренировка, профиль, Интеллект, Замеры — без русских строк.
+
+Кодмод и карта лежат вне репо (`C:/PROJECTS/_scratch_i18n/`, не коммитить); повторять не нужно, остаток — руками.
 
 ## I18N-EL — карточка
 

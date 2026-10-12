@@ -5,7 +5,7 @@
    Document Picture-in-Picture for full interactivity.
    ════════════════════════════════════════════════════════ */
 
-import { isRu } from '../locale.store.js';
+import { isRu, tri } from '../locale.store.js';
 import { esc } from '../shared/utils.js';
 
 export const PiP = (() => {
@@ -95,8 +95,7 @@ export const PiP = (() => {
     if (state.nextName) {
       _ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
       _ctx.font = '700 14px "Syne", sans-serif';
-      const ru = isRu();
-      _ctx.fillText(`${ru ? 'ДАЛЕЕ' : 'NEXT'}: ${state.nextName.toUpperCase()}`, _canvas.width / 2, _canvas.height / 2 + 80);
+      _ctx.fillText(`${tri('ДАЛЕЕ', 'NEXT', 'ΕΠΟΜΕΝΟ')}: ${state.nextName.toUpperCase()}`, _canvas.width / 2, _canvas.height / 2 + 80);
     }
   }
 

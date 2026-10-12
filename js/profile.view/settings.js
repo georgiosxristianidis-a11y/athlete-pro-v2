@@ -1,6 +1,6 @@
 // @ts-check
 import { esc } from '../shared/utils.js';
-import { t, getLang } from '../locale.store.js';
+import { t, getLang, tri } from '../locale.store.js';
 import { on } from '../events.js';
 import { flag, isOverridden, LAB_FLAGS } from '../flags.js';
 import { K_LAST_EXPORT } from '../db/backup.js';
@@ -287,8 +287,8 @@ export function renderSettings(settings, lang, syncStatus = 'idle', cloudConfigu
 
         <div style="display:flex; align-items:center; justify-content:space-between; padding: var(--sp-0-5) 0;">
           <div class="pref-info">
-            <div class="pref-title">${lang === 'ru' ? 'Живой маскот (бета)' : 'Live Mascot (beta)'}</div>
-            <div class="pref-sub">${lang === 'ru' ? 'Видео-панда с озвучкой' : 'Panda video with voice'}</div>
+            <div class="pref-title">${tri('Живой маскот (бета)', 'Live Mascot (beta)', 'Ζωντανό μασκότ (beta)')}</div>
+            <div class="pref-sub">${tri('Видео-панда с озвучкой', 'Panda video with voice', 'Panda βίντεο με φωνή')}</div>
           </div>
           <div class="switch-wrap" data-action="settings:toggleFabVideo">
             <div class="switch ${flag('fab-video') ? 'on' : ''}" id="sw-fab-video">
@@ -299,8 +299,8 @@ export function renderSettings(settings, lang, syncStatus = 'idle', cloudConfigu
 
         <div style="display:flex; align-items:center; justify-content:space-between; padding: var(--sp-0-5) 0;">
           <div class="pref-info">
-            <div class="pref-title">${lang === 'ru' ? 'Реакции панды (бета)' : 'Panda Reactions (beta)'}</div>
-            <div class="pref-sub">${lang === 'ru' ? 'Осуждает за долгий отдых, ведёт счёт' : 'Judges long rests, keeps score'}</div>
+            <div class="pref-title">${tri('Реакции панды (бета)', 'Panda Reactions (beta)', 'Αντιδράσεις panda (beta)')}</div>
+            <div class="pref-sub">${tri('Осуждает за долгий отдых, ведёт счёт', 'Judges long rests, keeps score', 'Κρίνει τις μεγάλες ξεκουράσεις, κρατά σκορ')}</div>
           </div>
           <div class="switch-wrap" data-action="settings:togglePandaMoods">
             <div class="switch ${flag('panda-moods') ? 'on' : ''}" id="sw-panda-moods">

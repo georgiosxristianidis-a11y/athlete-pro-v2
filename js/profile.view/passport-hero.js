@@ -1,4 +1,5 @@
 // @ts-check
+import { tri } from '../locale.store.js';
 import { computeAge } from '../profile.store.js';
 import { fmtNum } from '../shared/format.js';
 import { athleteProScore, exrxTier, tierFromScore } from '../strength-engine.js';
@@ -55,8 +56,8 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
     .split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'A';
 
   const metaStr = [
-    age ? (ru ? `${age} лет` : `${age} yo`) : null,
-    profile.experienceYears ? (ru ? `${profile.experienceYears} г. опыта` : `${profile.experienceYears}y exp`) : null,
+    age ? (tri(`${age} лет`, `${age} yo`, `${age} ετών`)) : null,
+    profile.experienceYears ? (tri(`${profile.experienceYears} г. опыта`, `${profile.experienceYears}y exp`, `${profile.experienceYears} έτη εμπειρίας`)) : null,
   ].filter(Boolean).join(' · ');
 
   // Photo & Color cycle integration from AthleteRoom
@@ -72,27 +73,27 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   </div>
   
   <div class="pp-identity-v2">
-    <div class="pp-name-v2">${esc(profile.name || (ru ? 'Атлет' : 'Athlete'))}</div>
-    <div class="pp-meta-v2">${esc(metaStr) || (ru ? 'Настрой профиль' : 'Set up your profile')}</div>
+    <div class="pp-name-v2">${esc(profile.name || (tri('Атлет', 'Athlete', 'Αθλητής')))}</div>
+    <div class="pp-meta-v2">${esc(metaStr) || (tri('Настрой профиль', 'Set up your profile', 'Ρύθμισε το προφίλ σου'))}</div>
     
     <div class="pp-badge-row">
       <div class="pp-tier-pill-v2" data-tier="${esc(tier)}" data-action="pp:openScore"
            role="button" tabindex="0"
-           title="${ru ? 'Из чего собран скор' : 'How the score is built'}">
+           title="${tri('Из чего собран скор', 'How the score is built', 'Πώς σχηματίζεται το σκορ')}">
         ${esc(tierLabel)} ${score ? `· <span class="pp-tier-score">${score}</span>
-        <span class="pp-pill-cue">${ru ? 'СКОР' : 'SCORE'}</span>` : ''}
+        <span class="pp-pill-cue">${tri('СКОР', 'SCORE', 'ΣΚΟΡ')}</span>` : ''}
       </div>
       ${bestPercentile > 0 ? `
         <div class="pp-percentile-pill" data-action="pp:openScore" role="button" tabindex="0"
-             title="${ru ? 'Откуда этот процент' : 'Where this percentage comes from'}">
-          ${ru ? 'Топ' : 'Top'} ${100 - bestPercentile}%
+             title="${tri('Откуда этот процент', 'Where this percentage comes from', 'Από πού προκύπτει αυτό το ποσοστό')}">
+          ${tri('Топ', 'Top', 'Top')} ${100 - bestPercentile}%
         </div>
       ` : ''}
     </div>
   </div>
 
   <div class="pp-goal-v2">
-    <div class="pp-goal-lbl-v2">${ru ? 'Цель' : 'Goal'}</div>
+    <div class="pp-goal-lbl-v2">${tri('Цель', 'Goal', 'Στόχος')}</div>
     <div class="pp-goal-val-v2">${esc(goalMap[profile.goal] || profile.goal)}</div>
   </div>
 </div>
@@ -100,12 +101,12 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
 <div class="pp-metrics-strip" style="cursor: pointer;" data-action="pp:openMetrics" title="Edit Metrics">
   <div class="pp-m-item">
     <div class="pp-m-val">${metrics?.weight || '—'}<span class="pp-m-u">kg</span></div>
-    <div class="pp-m-lbl">${ru ? 'Вес' : 'Weight'}</div>
+    <div class="pp-m-lbl">${tri('Вес', 'Weight', 'Βάρος')}</div>
   </div>
   <div class="pp-m-div"></div>
   <div class="pp-m-item">
     <div class="pp-m-val">${metrics?.height || '—'}<span class="pp-m-u">cm</span></div>
-    <div class="pp-m-lbl">${ru ? 'Рост' : 'Height'}</div>
+    <div class="pp-m-lbl">${tri('Рост', 'Height', 'Ύψος')}</div>
   </div>
   <div class="pp-m-div"></div>
   <div class="pp-m-item">
