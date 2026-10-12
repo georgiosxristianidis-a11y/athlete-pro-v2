@@ -19,7 +19,7 @@ import { fatiguePercent } from './shared/coach-snapshot.js';
 import { esc, haptic } from './shared/utils.js';
 import { formatAirMarkdown } from './shared/air-markdown.js';
 import { toUserMessage } from './shared/errors-ui.js';
-import { isRu, t } from './locale.store.js';
+import { getLang, isRu, t } from './locale.store.js';
 import { flag } from './flags.js';
 import { on, onChange, onKeydown } from './events.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
@@ -83,10 +83,54 @@ export const IntelView = (() => {
   let _asked = null;
 
   /**
-   * Строки экрана. Язык — только через isRu() (правило i18n проекта):
+   * Строки экрана. Язык — только через isRu()/getLang() (правило i18n проекта):
    * до этого подписи модулей были прошиты по-русски, а плейсхолдер — по-английски.
    */
   function _copy() {
+    if (getLang() === 'el') {
+      return {
+        keyOk: 'το σύστημα είναι ασφαλές',
+        keyMissing: 'λείπει το κλειδί',
+        keyAirgap: 'λειτουργία airgap',
+        summary: 'ΣΥΝΟΨΗ',
+        generate: 'ΔΗΜΙΟΥΡΓΙΑ',
+        analyze: 'ΑΝΑΛΥΣΗ',
+        biometrics: 'ΒΙΟΜΕΤΡΙΑ',
+        input: 'Εντολή ή ερώτηση με φωτογραφία…',
+        inputText: 'Εντολή ή ερώτηση…',
+        close: 'Κλείσιμο',
+        camera: 'Επισύναψη φωτογραφίας',
+        send: 'Αποστολή',
+        logs: 'Καταγραφή ροής',
+        speak: 'Ανάγνωση φωναχτά',
+        clearImage: 'Αφαίρεση φωτογραφίας',
+        feedback: 'Απάντηση AI',
+        waiting: 'Αναλύω…',
+        failed: 'Αποτυχία',
+        streaming: 'Η απάντηση γράφεται',
+        empty: 'Η απάντηση ήρθε κενή',
+        settings: 'Ρυθμίσεις AI',
+        settingsTitle: 'Ρυθμίσεις AI',
+        save: 'Αποθήκευση',
+        toneLabel: 'Ύφος coach',
+        toneTherapist: 'Θεραπευτής',
+        toneNeutral: 'Ουδέτερο',
+        toneGoggins: 'Goggins',
+        saveWorkout: 'Αποθήκευση στο πρόγραμμα',
+        saved: 'Αποθηκεύτηκε',
+        scanning: 'ΣΑΡΩΣΗ',
+        scanFailed: 'Η σάρωση απέτυχε',
+        scanCns: 'ΣΑΡΩΣΗ ΚΝΣ…',
+        scanVolume: 'ΣΥΛΛΟΓΗ ΔΕΔΟΜΕΝΩΝ ΦΟΡΤΙΟΥ…',
+        scanMuscle: 'ΣΑΡΩΣΗ ΜΥΪΚΩΝ ΟΜΑΔΩΝ…',
+        scanRpe: 'ΥΠΟΛΟΓΙΣΜΟΣ ΚΟΠΩΣΗΣ RPE…',
+        scanAcwr: 'ΥΠΟΛΟΓΙΣΜΟΣ ACWR…',
+        cnsFatigue: 'ΚΟΠΩΣΗ ΚΝΣ',
+        muscleLoad: 'ΦΟΡΤΙΟ ΜΥΩΝ',
+        readiness: 'ΕΤΟΙΜΟΤΗΤΑ',
+        localMode: 'Τοπική λειτουργία — τα δεδομένα υπολογίζονται στη συσκευή, το AI είναι ανενεργό',
+      };
+    }
     return isRu()
       ? {
           keyOk: 'система защищена',
