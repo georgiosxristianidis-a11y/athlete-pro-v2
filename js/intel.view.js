@@ -19,7 +19,7 @@ import { fatiguePercent } from './shared/coach-snapshot.js';
 import { esc, haptic } from './shared/utils.js';
 import { formatAirMarkdown } from './shared/air-markdown.js';
 import { toUserMessage } from './shared/errors-ui.js';
-import { getLang, isRu, t } from './locale.store.js';
+import { getLang, isRu, t, tri } from './locale.store.js';
 import { flag } from './flags.js';
 import { on, onChange, onKeydown } from './events.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
@@ -807,7 +807,7 @@ export const IntelView = (() => {
       input.value = '';
       input.focus();
       // @ts-ignore
-      input.placeholder = 'Какую группу мышц тренируем сегодня?';
+      input.placeholder = tri('Какую группу мышц тренируем сегодня?', 'Which muscle group are we training today?', 'Ποια μυϊκή ομάδα προπονούμε σήμερα;');
     }
   }
 
@@ -816,8 +816,11 @@ export const IntelView = (() => {
     IntelStore.addLog('SYS', 'Ready to analyze stats');
     const input = document.getElementById('intel-input');
     if (input) {
-      input.value =
-        'Проведи глубокий разбор последней тренировки. Напиши пару строк о главном успехе и слабом месте.';
+      input.value = tri(
+        'Проведи глубокий разбор последней тренировки. Напиши пару строк о главном успехе и слабом месте.',
+        'Run a deep review of my last workout. Write a couple of lines on the main success and the weak spot.',
+        'Κάνε μια σε βάθος ανάλυση της τελευταίας προπόνησης. Γράψε δυο γραμμές για τη βασική επιτυχία και το αδύναμο σημείο.'
+      );
       submit();
     }
   }
@@ -1014,8 +1017,8 @@ export const IntelView = (() => {
     if (data?.confidence === 'none' || data?.index === null || data?.index === undefined) {
       return `
         <div class="intel-readiness-widget animate-in" style="background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.1); border-radius:24px; padding:var(--sp-3); margin:var(--sp-2) 0;">
-          <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1); margin-bottom:var(--sp-1);">Индекс готовности</div>
-          <div style="font-size:var(--fs-2); color:var(--c-text-3);">Недостаточно данных — история тренировок ещё копится.</div>
+          <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1); margin-bottom:var(--sp-1);">${tri('Индекс готовности', 'Readiness index', 'Δείκτης ετοιμότητας')}</div>
+          <div style="font-size:var(--fs-2); color:var(--c-text-3);">${tri('Недостаточно данных — история тренировок ещё копится.', 'Not enough data yet — your workout history is still building.', 'Δεν υπάρχουν αρκετά δεδομένα — το ιστορικό προπονήσεων χτίζεται ακόμα.')}</div>
         </div>
       `;
     }
@@ -1025,7 +1028,7 @@ export const IntelView = (() => {
         return `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-1-5);">
           <div style="font-size:var(--fs-2); font-weight:var(--fw-md); color:var(--c-text-2);">${label}</div>
-          <div style="font-size:var(--fs-2); color:var(--c-text-3);">нет данных</div>
+          <div style="font-size:var(--fs-2); color:var(--c-text-3);">${tri('нет данных', 'no data', 'χωρίς δεδομένα')}</div>
         </div>`;
       }
       const v = clamp(val);
@@ -1047,13 +1050,16 @@ export const IntelView = (() => {
     const cns = clamp(data.cns);
     const mainColor = getColor(index);
     const indexLabel =
-      index >= 90 ? 'отлично' : index >= 70 ? 'хорошо' : index >= 50 ? 'удовл' : 'внимание';
-    const lowNote = data.confidence === 'low' ? ' · мало истории' : '';
+      index >= 90 ? tri('отлично', 'excellent', 'άριστα')
+        : index >= 70 ? tri('хорошо', 'good', 'καλά')
+          : index >= 50 ? tri('удовл', 'fair', 'μέτρια')
+            : tri('внимание', 'caution', 'προσοχή');
+    const lowNote = data.confidence === 'low' ? tri(' · мало истории', ' · little history', ' · λίγο ιστορικό') : '';
 
     return `
       <div class="intel-readiness-widget animate-in" style="background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.1); border-radius:24px; padding:var(--sp-3); margin:var(--sp-2) 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--sp-3);">
-          <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1);">Индекс готовности</div>
+          <div style="font-size:var(--fs-3); font-weight:var(--fw-md); color:var(--c-text-1);">${tri('Индекс готовности', 'Readiness index', 'Δείκτης ετοιμότητας')}</div>
         </div>
 
         <div style="display:flex; align-items:flex-end; gap:var(--sp-2); margin-bottom:var(--sp-4);">
@@ -1067,14 +1073,14 @@ export const IntelView = (() => {
         </div>
 
         <div style="margin-bottom:var(--sp-4);">
-          ${hbar(data.parts?.recovery, 'Восстановление')}
-          ${hbar(data.parts?.acwr, 'Нагрузка ACWR')}
-          ${hbar(data.parts?.monotony, 'Монотонность')}
-          ${hbar(data.parts?.trend, 'Тренд нагрузки')}
+          ${hbar(data.parts?.recovery, tri('Восстановление', 'Recovery', 'Αποκατάσταση'))}
+          ${hbar(data.parts?.acwr, tri('Нагрузка ACWR', 'ACWR load', 'Φορτίο ACWR'))}
+          ${hbar(data.parts?.monotony, tri('Монотонность', 'Monotony', 'Μονοτονία'))}
+          ${hbar(data.parts?.trend, tri('Тренд нагрузки', 'Load trend', 'Τάση φορτίου'))}
         </div>
 
         <div style="border-top:1px solid var(--c-border); padding-top:var(--sp-3); display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:var(--fs-1); font-weight:var(--fw-black); letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">ЦНС</span>
+          <span style="font-size:var(--fs-1); font-weight:var(--fw-black); letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">${tri('ЦНС', 'CNS', 'ΚΝΣ')}</span>
           <div style="display:flex; align-items:center; gap:var(--sp-1);">
             <div style="width:40px; height:4px; background:var(--c-border-h); border-radius:2px;"><div style="width:${cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
             <span style="font-size:var(--fs-2); font-weight:var(--fw-bold); color:var(--c-red);">${cns}%</span>
