@@ -35,7 +35,7 @@ import { blockTicks, blockOrder } from '../shared/block-ticks.js';
 import { blockLabel } from '../shared/chamber-pill.js';
 import { on } from '../events.js';
 import { pplColor, isPplType, PPL_TYPES } from '../shared/ppl-color.js';
-import { t, isRu } from '../locale.store.js';
+import { t, isRu, getLang } from '../locale.store.js';
 import { exerciseLabel } from '../shared/exercise-label.js';
 import { sectionList, focusInSection } from '../shared/logger-sections.js';
 import {
@@ -301,7 +301,7 @@ export async function renderSelect() {
     el.innerHTML = list
       .map((w) => {
         const dot = isPplType(w.type) ? pplColor(w.type) : 'var(--c-text-3)';
-        const date = new Date(w.timestamp).toLocaleDateString(ru ? 'ru' : 'en', {
+        const date = new Date(w.timestamp).toLocaleDateString(getLang(), {
           weekday: 'short',
           month: 'short',
           day: 'numeric',

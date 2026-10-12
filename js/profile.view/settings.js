@@ -16,7 +16,7 @@ import '../ai-settings.view.js';
 export function backupSubLabel(lastExportAt) {
   const ts = Number(lastExportAt) || 0;
   if (!ts) return t('backup.save_sub_never');
-  const d = new Date(ts).toLocaleDateString(getLang() === 'ru' ? 'ru' : 'en', {
+  const d = new Date(ts).toLocaleDateString(getLang(), {
     day: 'numeric',
     month: 'short',
   });
@@ -34,7 +34,7 @@ export function backupSubLabel(lastExportAt) {
 export function backupMetaLabel(lastExportAt) {
   const ts = Number(lastExportAt) || 0;
   if (!ts) return t('backup.meta_never');
-  const d = new Date(ts).toLocaleDateString(getLang() === 'ru' ? 'ru' : 'en', {
+  const d = new Date(ts).toLocaleDateString(getLang(), {
     day: 'numeric',
     month: 'short',
   });
