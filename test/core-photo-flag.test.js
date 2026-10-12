@@ -77,7 +77,7 @@ test('разметка Core: четыре элемента фото/генера
 test('подсказка в поле ввода при OFF не обещает фото; обе локали заведены', () => {
   const view = read('js/intel.view.js');
   assert.match(view, /placeholder="\$\{photoGen \? L\.input : L\.inputText\}"/, 'placeholder не зависит от флага');
-  assert.equal((view.match(/inputText:/g) || []).length, 2, 'inputText обязан быть и в ru, и в en (паритет _copy)');
+  assert.equal((view.match(/inputText:/g) || []).length, 3, 'inputText обязан быть в ru, en и el (паритет _copy)');
 });
 
 test('аватар не читает флаг: athlete-photo — не фото для ИИ', () => {
