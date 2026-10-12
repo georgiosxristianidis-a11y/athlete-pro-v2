@@ -8,7 +8,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { esc } from './shared/utils.js';
-import { isRu, tri } from './locale.store.js';
+import { tri } from './locale.store.js';
 import { pplColor } from './shared/ppl-color.js';
 import { monotoneCubicPath } from './shared/sparkline.js';
 import { calculateProgressionCurves } from './analytics.progression-curves.js';
@@ -98,7 +98,7 @@ function curveCard(s, idx) {
       <span class="sc-delta up">${tri('Базовый вес', 'Baseline', 'Βάση')}</span>
       <span class="sc-peak">${tri('1-я точка', '1st mark', '1ο σημείο')}</span>
     `;
-    axisMarkup = `<span>${fmtMon(t0)}</span><span>${s.n} ${isRu() ? (s.n === 1 ? 'сессия' : 'сессии') : (s.n === 1 ? 'session' : 'sessions')}</span><span>${tri('старт', 'start', 'εκκίνηση')}</span>`;
+    axisMarkup = `<span>${fmtMon(t0)}</span><span>${s.n} ${tri(s.n === 1 ? 'сессия' : 'сессии', s.n === 1 ? 'session' : 'sessions', s.n === 1 ? 'συνεδρία' : 'συνεδρίες')}</span><span>${tri('старт', 'start', 'εκκίνηση')}</span>`;
   } else {
     const { vmin, vr } = valueBand(vs);
     const X = (p) => padX + ((p.t - t0) / tr) * (W - 2 * padX);

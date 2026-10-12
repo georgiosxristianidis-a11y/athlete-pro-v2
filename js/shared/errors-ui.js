@@ -1,5 +1,5 @@
 // @ts-check
-import { isRu, tri } from '../locale.store.js';
+import { tri } from '../locale.store.js';
 
 /**
  * errors-ui.js — normalize any thrown value into a clean, user-facing message

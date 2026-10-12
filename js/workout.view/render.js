@@ -229,7 +229,6 @@ export async function renderSelect() {
   State.phase = 'select';
   const plan = loadPlan();
   const weekMode = getWeekMode();
-  const ru = isRu();
 
   const trainEl = document.getElementById('s-train');
   if (!trainEl) return;
@@ -283,7 +282,7 @@ export async function renderSelect() {
   `;
 
   document.getElementById('train-date').textContent = new Date().toLocaleDateString(
-    ru ? 'ru' : 'en',
+    getLang(),
     {
       weekday: 'long',
       month: 'long',
