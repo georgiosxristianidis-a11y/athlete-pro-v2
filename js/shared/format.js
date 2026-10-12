@@ -1,5 +1,5 @@
 // @ts-check
-import { isRu } from '../locale.store.js';
+import { getLang } from '../locale.store.js';
 
 /**
  * format.js — the single layer for number / unit / date display (task 2-3).
@@ -37,7 +37,7 @@ export function fmtDuration(ms) {
 export function fmtDate(input, opts = { weekday: 'short', month: 'short', day: 'numeric' }) {
   const d = input instanceof Date ? input : new Date(input);
   if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString(isRu() ? 'ru' : 'en', opts);
+  return d.toLocaleDateString(getLang(), opts);
 }
 
 /** Generic number formatter (avoids inline toFixed issues). */

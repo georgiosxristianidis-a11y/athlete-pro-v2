@@ -13,7 +13,7 @@ import { DB } from './db.js';
 import { Toast } from './shell.js';
 import { esc, dismissOverlay } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
-import { isRu, tri } from './locale.store.js';
+import { isRu, getLang, tri } from './locale.store.js';
 import { on } from './events.js';
 import {
   BS_FIELDS,
@@ -46,7 +46,7 @@ const SPARK_W = 100,
   SPARK_H = 38;
 
 const fmtDate = (iso) =>
-  new Date(iso).toLocaleDateString(isRu() ? 'ru' : 'en', {
+  new Date(iso).toLocaleDateString(getLang(), {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

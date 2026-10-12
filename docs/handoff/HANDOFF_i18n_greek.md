@@ -21,8 +21,7 @@
    `analytics.strength-curves.js:101` (вложенный тернарник «сессия/сессии»), `block-names.js:45`, `txt-export.js` (`L.ru`,
    :84, :111), `intel.view.js:90` (объект строк), `settings.js:185-187,290-303`, `profile.js:65,502`, `privacy.view.js:129`
    (`'ru' : 'en'` -> `getLang()`), `workout.view/modals.js:614,791` и `render.js:286,500` (`lang: isRu() ? 'ru' : 'en'`).
-4. Даты (шаг 4): `toLocaleDateString(isRu() ? 'ru' : 'en')` -> `getLang()` в `format.js:40`, `body-stats.js:49`,
-   `settings.js:19,37`, `render.js:304`, `txt-export.js:84`.
+4. Даты (шаг 4): сделано в format.js, body-stats.js, settings.js, render.js (getLang()). Осталось txt-export.js:84,111 (_day/_plural принимают lang 'ru'|'en', нужен el).
 5. Превью на EL: Настройки -> главная, тренировка, профиль, Интеллект, Замеры — без русских строк.
 
 Кодмод и карта лежат вне репо (`C:/PROJECTS/_scratch_i18n/`, не коммитить); повторять не нужно, остаток — руками.
