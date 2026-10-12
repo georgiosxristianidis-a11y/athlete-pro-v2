@@ -85,6 +85,36 @@ describe('workoutsToTxt', () => {
     assert.match(txt, /80 kg × 8/);
   });
 
+  test('греческая локаль: подписи, дата и ни одной русской буквы', () => {
+    const el = [{
+      type: 'push', timestamp: Date.UTC(2026, 6, 30, 9, 0), duration: 125 * 60000, tonnage: 12450,
+      exercises: [
+        { name: 'Bench Press', sets: [{ weight: 80, reps: 8, rpe: 8, done: true }, { weight: 85, reps: 5, done: false }] },
+        { name: 'Overhead Press', sets: [{ done: false }] },
+      ],
+    }];
+    const txt = workoutsToTxt(el, {
+      lang: 'el', now: NOW, athlete: { name: 'Gio', age: 38, weight: 82.5, gym: 'Iron Temple' },
+      records: [{ name: 'Squat', value: 140 }],
+    });
+    assert.match(txt, /ημερολόγιο προπονήσεων/);
+    assert.match(txt, /Εξαγωγή: 2026-08-02/);
+    assert.match(txt, /Αθλητής: Gio {2}· {2}38 ετών {2}· {2}82\.5 kg/);
+    assert.match(txt, /Προπονήσεις: 1/);
+    assert.match(txt, /Χρόνος στο γυμναστήριο: 2 ώρ\. 05 λεπ\./);
+    assert.match(txt, /Συνολικός όγκος: 12 450 kg/);
+    assert.match(txt, /έγιναν 1 από 2/);
+    assert.match(txt, /Bench Press {2}\(1 σετ\)/);
+    assert.match(txt, /2\. — παραλείφθηκε/);
+    assert.match(txt, /2026-07-30, Πέμ/, 'день недели по-гречески, а не «Thu»');
+    assert.ok(!/[А-Яа-яЁё]/.test(txt), 'русских букв в греческом файле нет');
+  });
+
+  test('неизвестный язык не роняет дату: падает на английский', () => {
+    const txt = workoutsToTxt([W[0]], { lang: 'xx', now: NOW });
+    assert.match(txt, /2026-07-30, Thu/);
+  });
+
   test('пустая история — валидный текст, а не пустая строка', () => {
     const txt = workoutsToTxt([], { lang: 'ru', now: NOW });
     assert.match(txt, /Тренировок: 0/);

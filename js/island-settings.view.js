@@ -9,7 +9,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { renderPrivacyCard } from './privacy.view.js';
-import { isRu, tri } from './locale.store.js';
+import { tri } from './locale.store.js';
 import { flag } from './flags.js';
 import { initSegPill, mountSegPills } from './ui/seg-pill.js';
 import { getIslandProfile, setIslandProfile } from './island-profile.store.js';
@@ -25,16 +25,21 @@ on('island:setProfile', (el) => {
 });
 
 const PROFILES = [
-  { id: 'minimal', en: 'Minimal', ru: 'Минимал',
+  { id: 'minimal', en: 'Minimal', ru: 'Минимал', el: 'Μίνιμαλ',
     descEn: 'DHL chamber navigation — a thin near-black strip, air over panel.',
-    descRu: 'DHL-навигация по камерам — тонкая полоска, воздух вместо панели.' },
-  { id: 'apple', en: 'Classic', ru: 'Классик',
+    descRu: 'DHL-навигация по камерам — тонкая полоска, воздух вместо панели.',
+    descEl: 'Πλοήγηση θαλάμων τύπου DHL — λεπτή σχεδόν μαύρη λωρίδα, αέρας αντί για πάνελ.' },
+  { id: 'apple', en: 'Classic', ru: 'Классик', el: 'Κλασικό',
     descEn: 'Apple-style two-state pill: exercise name and set count.',
-    descRu: 'Двухсостоянийная капсула Apple: имя упражнения и счёт сетов.' },
+    descRu: 'Двухсостоянийная капсула Apple: имя упражнения и счёт сетов.',
+    descEl: 'Κάψουλα Apple δύο καταστάσεων: όνομα άσκησης και αριθμός σετ.' },
 ];
 
+const profileName = (p) => tri(p.ru, p.en, p.el);
+const profileDesc = (p) => tri(p.descRu, p.descEn, p.descEl);
+
 /** Island-profile selector card — only meaningful when the feature is enabled. */
-function renderProfileCard(ru) {
+function renderProfileCard() {
   if (!flag('island-profiles')) return '';
   const cur = getIslandProfile();
   const active = PROFILES.find(p => p.id === cur) || PROFILES[0];
@@ -48,10 +53,10 @@ function renderProfileCard(ru) {
           <button class="privacy-seg-btn ${p.id === cur ? 'active' : ''}"
                   data-profile="${p.id}" role="tab" aria-selected="${p.id === cur}"
                   data-action="island:setProfile">
-            <span>${ru ? p.ru : p.en}</span>
+            <span>${profileName(p)}</span>
           </button>`).join('')}
       </div>
-      <div class="privacy-desc">${ru ? active.descRu : active.descEn}</div>
+      <div class="privacy-desc">${profileDesc(active)}</div>
     </div>
   `;
 }
@@ -67,7 +72,7 @@ function syncProfileCard(id) {
   });
   const p = PROFILES.find((x) => x.id === id) || PROFILES[0];
   const desc = seg.nextElementSibling;
-  if (desc) desc.textContent = isRu() ? p.descRu : p.descEn;
+  if (desc) desc.textContent = profileDesc(p);
   initSegPill(seg);
 }
 
@@ -77,8 +82,6 @@ function syncProfileCard(id) {
 export function loadIslandSettings() {
   const screen = document.getElementById('s-island-settings');
   if (!screen) return;
-  const ru = isRu();
-
   screen.innerHTML = `
     <div class="screen-header" style="display:flex;align-items:center;gap:var(--sp-2)">
       <button class="btn-icon-sm" data-action="nav:back" aria-label="${tri('Назад', 'Back', 'Πίσω')}">
@@ -93,7 +96,7 @@ export function loadIslandSettings() {
       </div>
     </div>
 
-    ${renderProfileCard(ru)}
+    ${renderProfileCard()}
     ${renderPrivacyCard()}
   `;
   mountSegPills(screen);
