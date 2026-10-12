@@ -18,7 +18,7 @@
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
-1. **`FIELD-4`** — фокус в set logger, мокапами. `HANDOFF_field_ux.md`; затем `FIELD-3`, `FIELD-6`
+1. **`FIELD-7`** — вес в паузе острова (вариант A). `HANDOFF_field_ux.md`; затем `FIELD-3`, `FIELD-6`
 2. **`ANL-3`** — индекс силы цепной по e1RM. Стоп снят (#516 влит); раньше `ANL-2` (там числа, тут вид). `HANDOFF_analytics_polish.md`
 3. **`NAME-1`** — склейка `Cable Row`/`Seated Cable Row`: история Gio с 2023 не видна на графике. `HANDOFF_working_sets.md`
 4. **`ANL-2`** — список 1RM свёрнут
