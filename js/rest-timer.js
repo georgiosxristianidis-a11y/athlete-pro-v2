@@ -18,7 +18,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { PiP } from './features/pip.js';
-import { isRu, t, tri } from './locale.store.js';
+import { t, tri } from './locale.store.js';
 import { haptic } from './shared/utils.js';
 import { State, isPending } from './workout.store.js';
 import { flag } from './flags.js';

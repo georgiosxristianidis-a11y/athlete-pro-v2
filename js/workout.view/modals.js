@@ -8,7 +8,7 @@ import { Toast } from '../shell.js';
 import { esc, haptic } from '../shared/utils.js';
 import { confirmDialog } from '../shared/confirm.js';
 import { mountSegPills, syncSegPill } from '../ui/seg-pill.js';
-import { t, isRu } from '../locale.store.js';
+import { t, isRu, getLang } from '../locale.store.js';
 import { on, onChange, onInput } from '../events.js';
 import { exerciseLabel } from '../shared/exercise-label.js';
 
@@ -611,7 +611,7 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       const btn = document.createElement('button');
       btn.className = 'add-ex-item';
       btn.style.cssText = 'text-align:left;padding:var(--sp-1-5);height:auto';
-      const label = exerciseLabel(ex.name, { library: allExercises, lang: isRu() ? 'ru' : 'en' });
+      const label = exerciseLabel(ex.name, { library: allExercises, lang: getLang() });
       btn.innerHTML = `
         <div style="font-weight:var(--fw-bold);font-size:var(--fs-2);color:var(--c-text-1)">${esc(label)}</div>
         <div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:var(--sp-0-5);display:flex;gap:var(--sp-1);flex-wrap:wrap">
@@ -788,7 +788,7 @@ export async function openReplaceExModal(ei) {
       const btn = document.createElement('button');
       btn.className = 'add-ex-item';
       btn.style.cssText = 'text-align:left;padding:var(--sp-1-5);height:auto';
-      const label = exerciseLabel(ex.name, { library: allExercises, lang: isRu() ? 'ru' : 'en' });
+      const label = exerciseLabel(ex.name, { library: allExercises, lang: getLang() });
       btn.innerHTML = `
         <div style="font-weight:var(--fw-bold);font-size:var(--fs-2);color:var(--c-text-1)">${esc(label)}</div>
         <div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:var(--sp-0-5);display:flex;gap:var(--sp-1);flex-wrap:wrap">

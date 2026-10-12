@@ -25,7 +25,7 @@ import {
   getCachedOrComputeProgressionCurves,
 } from './analytics.store.js';
 import { pplTonnageFrom } from './db.js';
-import { t, isRu, tri } from './locale.store.js';
+import { t, tri } from './locale.store.js';
 import {
   renderStrengthHero,
   renderStrengthCurves,

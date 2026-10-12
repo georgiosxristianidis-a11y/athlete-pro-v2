@@ -17,7 +17,7 @@ import {
   clearAuditLog,
 } from './privacy.store.js';
 import { isUsageEnabled, setUsageEnabled, getUsageState } from './usage.js';
-import { t, isRu, getLang, tri } from './locale.store.js';
+import { t, getLang, tri } from './locale.store.js';
 import { esc, haptic, dismissOverlay } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
 import { on } from './events.js';

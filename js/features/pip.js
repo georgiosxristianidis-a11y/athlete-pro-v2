@@ -5,7 +5,7 @@
    Document Picture-in-Picture for full interactivity.
    ════════════════════════════════════════════════════════ */
 
-import { isRu, tri } from '../locale.store.js';
+import { tri } from '../locale.store.js';
 import { esc } from '../shared/utils.js';
 
 export const PiP = (() => {

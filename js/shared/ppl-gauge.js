@@ -8,7 +8,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { fmtVol } from './format.js';
-import { isRu, tri } from '../locale.store.js';
+import { tri } from '../locale.store.js';
 
 const CX = 100, CY = 104, R = 86, SW = 18, GAP = 4; // geometry (viewBox units, gap in deg)
 const LABELS = { push: 'Push', pull: 'Pull', legs: 'Legs' };
