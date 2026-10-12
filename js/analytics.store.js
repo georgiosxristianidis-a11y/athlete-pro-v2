@@ -17,6 +17,7 @@ import {
 } from './db/progression-cache.js';
 import { flag } from './flags.js';
 import { warmupFlags } from './shared/working-sets.js';
+import { canonicalKey, canonicalName } from './shared/exercise-identity.js';
 
 /* ══════════════════════════════════════════════
    CALENDAR STATE
@@ -347,6 +348,7 @@ export function fetchExerciseHistory(workouts, exerciseName) {
     };
   }
 
+  const targetKey = canonicalKey(exerciseName);
   const typeCounts = { push: 0, pull: 0, legs: 0 };
   const rawSessions = [];
 
@@ -354,11 +356,10 @@ export function fetchExerciseHistory(workouts, exerciseName) {
     if (!w || !Array.isArray(w.exercises)) continue;
     for (const ex of w.exercises) {
       if (!ex || !ex.name) continue;
-      const normName = ex.name.trim().toLowerCase();
-      const aliases = Array.isArray(ex.alias)
-        ? ex.alias.map((a) => String(a).trim().toLowerCase())
-        : [];
-      if (normName !== normTarget && !aliases.includes(normTarget)) continue;
+      // NAME-1: «Cable Row» и «Seated Cable Row» — одно движение; сравниваем по
+      // каноническому ключу, а не по строке, иначе история 2023 не видна.
+      const aliases = Array.isArray(ex.alias) ? ex.alias.map(canonicalKey) : [];
+      if (canonicalKey(ex.name) !== targetKey && !aliases.includes(targetKey)) continue;
 
       if (w.type && Object.prototype.hasOwnProperty.call(typeCounts, w.type)) {
         typeCounts[w.type]++;
@@ -437,7 +438,7 @@ export function fetchExerciseHistory(workouts, exerciseName) {
     }));
 
   return {
-    name: exerciseName,
+    name: canonicalName(exerciseName),
     type: dominantType,
     sessionsCount: rawSessions.length,
     totalSets,

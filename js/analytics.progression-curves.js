@@ -6,6 +6,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { estimate1RM } from './strength-engine.js';
+import { canonicalName } from './shared/exercise-identity.js';
 
 /**
  * @typedef {{
@@ -111,7 +112,8 @@ export function calculateProgressionCurves(workouts, options = {}) {
     const exercises = Array.isArray(w.exercises) ? w.exercises : [];
     for (const ex of exercises) {
       if (!ex || typeof ex.name !== 'string') continue;
-      const name = ex.name.trim();
+      // NAME-1: одно движение под разными именами — одна кривая.
+      const name = canonicalName(ex.name);
       if (!name) continue;
 
       let topWeight = 0;
