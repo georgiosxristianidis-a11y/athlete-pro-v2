@@ -13,9 +13,10 @@ import { S, tx, req2p, req2pSafe } from './core.js';
 const CACHE_PREFIX = 'ap-progression-cache:';
 
 /**
- * Expected schema version for progression curves cache.
+ * Expected schema version for progression curves cache. Поднимать и при смене
+ * правил группировки упражнений (2: NAME-1, склейка имён) — ключ кэша их не видит.
  */
-export const PROGRESSION_CACHE_VERSION = 1;
+export const PROGRESSION_CACHE_VERSION = 2;
 
 /**
  * Storage facade for progression curves cache.
