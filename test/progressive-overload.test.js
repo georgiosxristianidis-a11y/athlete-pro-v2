@@ -120,6 +120,41 @@ describe('detectPlateau', () => {
     assert.equal(typeof result.isPlateau, 'boolean');
     assert.equal(typeof result.suggestion, 'string');
   });
+
+  // FIELD-5: the weeks counter ran from the EARLIEST rise in the whole history
+  // (sessions.find over an ascending array), so it grew with the length of the
+  // history instead of with the stall.
+  const dayAt = (daysAgo, weight) => ({
+    timestamp: Date.now() - daysAgo * 24 * 3600000,
+    exercises: [{ name: 'Bench Press', sets: [{ weight, reps: 8, done: true }] }],
+  });
+
+  test('FIELD-5: weeks count from the LAST rise, not the first one in history', () => {
+    const history = [
+      dayAt(420, 70),
+      dayAt(350, 72.5), // first rise ever, 50 weeks ago
+      dayAt(210, 75), // 30 weeks ago
+      dayAt(70, 77.5), // last rise, 10 weeks ago
+      dayAt(42, 77.5),
+      dayAt(21, 77.5),
+      dayAt(3, 77.5),
+    ];
+    const result = mod.detectPlateau('Bench Press', history);
+    assert.equal(result.isPlateau, true);
+    assert.equal(result.lastProgress, 10);
+  });
+
+  test('FIELD-5: input order does not change the answer', () => {
+    const history = [dayAt(70, 77.5), dayAt(3, 77.5), dayAt(350, 72.5), dayAt(21, 77.5), dayAt(42, 77.5), dayAt(210, 75)];
+    assert.equal(mod.detectPlateau('Bench Press', history).lastProgress, 10);
+  });
+
+  test('FIELD-5: a weight that never rose counts from the first logged session, not 999', () => {
+    const history = [dayAt(56, 80), dayAt(35, 80), dayAt(14, 80)];
+    const result = mod.detectPlateau('Bench Press', history);
+    assert.equal(result.isPlateau, true);
+    assert.equal(result.lastProgress, 8);
+  });
 });
 
 describe('generateWeeklySummary', () => {
