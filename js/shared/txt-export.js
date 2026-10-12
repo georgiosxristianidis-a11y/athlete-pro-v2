@@ -68,6 +68,28 @@ const L = {
     sets: ['set', 'sets', 'sets'],
     years: ['y', 'y', 'y'],
   },
+  el: {
+    title: 'ATHLETE PRO — ημερολόγιο προπονήσεων',
+    exported: 'Εξαγωγή',
+    athlete: 'Αθλητής',
+    place: 'Γυμναστήριο',
+    summary: 'ΣΥΝΟΛΟ',
+    records: 'ΡΕΚΟΡ (1RM)',
+    total: 'Προπονήσεις',
+    exercises: 'Ασκήσεις',
+    setsTotal: 'Σετ',
+    time: 'Χρόνος στο γυμναστήριο',
+    tonnage: 'Συνολικός όγκος',
+    empty: 'Το ιστορικό είναι άδειο — καμία ολοκληρωμένη προπόνηση.',
+    doneOf: 'έγιναν {a} από {b}',
+    min: 'λεπ.',
+    hr: 'ώρ.',
+    kg: 'kg',
+    skipped: 'παραλείφθηκε',
+    rpe: 'RPE',
+    sets: ['σετ', 'σετ', 'σετ'],
+    years: ['ετών', 'ετών', 'ετών'],
+  },
 };
 
 const RULE = '─'.repeat(46);
@@ -75,13 +97,13 @@ const RULE = '─'.repeat(46);
 /**
  * Дата в локальном виде `2026-08-02, чт`.
  * @param {number} ts
- * @param {'ru'|'en'} lang
+ * @param {'ru'|'en'|'el'} lang
  */
 function _day(ts, lang) {
   const d = new Date(ts);
   const iso = Number.isFinite(ts) ? d.toISOString().split('T')[0] : '—';
   const wd = Number.isFinite(ts)
-    ? d.toLocaleDateString(lang === 'ru' ? 'ru' : 'en', { weekday: 'short' })
+    ? d.toLocaleDateString(L[lang] ? lang : 'en', { weekday: 'short' })
     : '';
   return wd ? `${iso}, ${wd}` : iso;
 }
@@ -100,12 +122,12 @@ function _num(n) {
 }
 
 /**
- * Форма числительного. Английский обходится двумя (1 set / 2 sets), русскому
- * нужны три, и правило не сводится к «последняя цифра»: 11 — «подходов»,
+ * Форма числительного. Английский и греческий обходятся двумя (1 set / 2 sets),
+ * русскому нужны три, и правило не сводится к «последняя цифра»: 11 — «подходов»,
  * 21 — «подход».
  * @param {number} n
  * @param {string[]} forms — [один, два, пять]
- * @param {'ru'|'en'} lang
+ * @param {'ru'|'en'|'el'} lang
  */
 function _plural(n, forms, lang) {
   if (lang !== 'ru') return Math.abs(n) === 1 ? forms[0] : forms[1];
@@ -139,7 +161,7 @@ const _doneCount = (ex) => _sets(ex).filter((s) => s?.done !== false).length;
  * Тренировки → человекочитаемый текст.
  * @param {Array<any>} workouts — как отдаёт DB.Workouts.getAll()
  * @param {{
- *   lang?: 'ru'|'en',
+ *   lang?: 'ru'|'en'|'el',
  *   now?: Date,
  *   athlete?: { name?: string, age?: number|null, weight?: number|null, gym?: string, country?: string } | null,
  *   records?: Array<{ name: string, value: number }> | null,

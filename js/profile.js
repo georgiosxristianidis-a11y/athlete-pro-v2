@@ -499,9 +499,8 @@ export const Profile = (() => {
 
     const { workouts, orms, customName, profile, metrics } = await loadTxtExportSources();
 
-    const lang = getLang() === 'ru' ? 'ru' : 'en';
     const txt = workoutsToTxt(workouts, {
-      lang,
+      lang: getLang(),
       athlete: {
         name: customName || profile?.name || '',
         age: computeAge(profile?.dob),
