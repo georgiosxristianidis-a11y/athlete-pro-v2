@@ -1,40 +1,13 @@
 # HANDOFF — I18N-EL: греческий язык (EN · RU · EL)
 
-> Часть 1 влита (PR#525, 1.27.165). Часть 2: ветка `claude/i18n-greek-2`, ворктри `C:/PROJECTS/ap-greek2`
-> (от `origin/main` 0c3bd596). 2026-10-12: WIP-коммит, не запушен, версия не бампнута.
+> **ЗАКРЫТ 2026-10-12.** Часть 1 — PR#525 (1.27.165), часть 2 — ветка `claude/i18n-greek-2` (1.27.173).
+> Все карточки взяты и влиты — хендофф переехал в `docs/_archive/`. Детали — `CHANGELOG.md`.
 
-## Статус (читать первым)
+## Итог
 
-**12.10, конец сессии (1.27.173, гейт 1798/1798):** пп. 1-5 ниже закрыты; виджет готовности `intel.view.js` (русский был и в EN) переведён. Осталось: превью EL на главной/тренировке/Замерах после правки, затем PR. Не переводилось по решению: `speakText` `intel.view.js:737` (голос TTS), HTML-комментарии в шаблонах.
-
-**Сделано в части 2:** шаг 2 — 158 инлайн-тернарников на `tri(ru, en, el)`; шаг 4 — даты через `getLang()`
-(format.js, body-stats.js, settings.js, render.js); словари с полем `el`: `body-stats.core.js` (поля, секции, бенто,
-`bodyFatCategory`), `body-stats.js`, `lift-bars.js`, `passport-hero.js`, `athlete-room.js` (`TIER_EL`, достижения),
-`dobSelectsHtml(dob, idPrefix)` (месяцы по `getLang()`, параметр `ru` убран). Тесты body-stats/athlete-room зелёные.
-
-**Решено по пути (не переделывать):**
-- `block-names.js` не трогать: `blockLabel(block, ru)` отдаёт `pair[0]` (английский) для всего, кроме ru, — для el это и нужно.
-- `privacy.view.js:129` остаётся `'ru' : 'en'`: ссылки ведут на статику `legal/`, греческих юр. текстов нет (решение Gio) — el получает en.
-- `render.js:500` `getDisplayName`: на el возвращает каноническое английское имя — верно.
-- Сделаны: `lang: getLang()` в modals/render, `сессия/сессии` в strength-curves, чистка `isRu` в 6 файлах (eslint: нет `ru`/`isRu`).
-
-**Осталось (по порядку):**
-
-1. `island-settings.view.js` — `p.ru/p.en`, `descRu/descEn` (:28-33,:51,:54,:70) + `renderProfileCard(ru)`, `const ru` (:80): добавить `nameEl`/`descEl`, читать через `tri`.
-2. `shared/txt-export.js` — словарь `L.ru` (+`L.el`), :84 дата (`lang === 'ru' ? 'ru' : 'en'` -> `lang`), :111 `_plural` (греч. две формы как en). Вызов — `profile.js:502` (`getLang() === 'ru' ? 'ru' : 'en'` -> `getLang()`) — менять вместе.
-3. `intel.view.js:90` — объект строк `isRu() ? {...} : {...}` (:92-170, 76 строк) -> третья ветка el. Читать целиком.
-4. Аудит дыр: `node C:/PROJECTS/_scratch_i18n/cyr.cjs` печатает строки с кириллицей вне `tri(`, но шумит заголовочными комментариями — отсекать глазами.
-   Кандидаты не из комментариев: `profile.view/settings.js:125-132`, `profile.js:78-81,99,134-136`, `profile.store.js:210-213`, `dashboard.js:467-471,852,1100`,
-   `onboarding.js:230-232,344,494`, `privacy.view.js:143-146,470`, `rest-timer.js:58-170`, `app.js:230,546`, `shell.js:167-170`, `shared/dynamic-island.js:173-177`,
-   `ui/drum-picker.js:69-73`, `journal.view.js`, `analytics.view.js:148,451`, `ai-settings.view.js:202`, `workout.view/summary.js:157-159`, `handlers.js:248,914`,
-   `modals.js:829,845`. Часть может быть данными/словарями (русский по замыслу: голос TTS, промпты) — разбирать по месту.
-5. Бамп `js/version.js` + `package.json`+lock (`npm install`), `npm run build:sw`, `npm test` = 0 (сейчас 1787/1790: хэш SW, sw.js byte-identical, бамп).
-6. Превью на EL: Настройки -> главная, тренировка, профиль, Интеллект, Замеры — без русских строк.
-7. PR: `gh pr create --base main`, зелёные чеки, `gh pr merge --rebase --delete-branch`.
-
-Трюк: файлы в рабочем дереве CRLF (индекс LF) — правки скриптом, а не sed по многострочным шаблонам.
-
-Кодмод и карта лежат вне репо (`C:/PROJECTS/_scratch_i18n/`, не коммитить); повторять не нужно, остаток — руками.
+- EL без русских строк на `s-home`, `s-train`, `s-intel`, `s-profile`, `s-journal`, `s-island-settings`, `s-stats` — проверено по `innerText` на живом экране, в пустом режиме и с данными.
+- Остаток по замыслу: `speakText` в `intel.view.js` (голос TTS), `legal/` и `privacy.view.js:129` (юр. текстов на греческом нет — решение Gio), `block-names.js` и `render.js:500` (на el — канонические английские).
+- Ловушка: `tri()` вычисляет все три ветки сразу — выражения вроде `${LIFT_EN[...]}` в ветке el копировать из en. Статический аудит дыр режет комментарии и `tri(`, источник правды — `innerText` живого экрана.
 
 ## I18N-EL — карточка
 
