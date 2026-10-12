@@ -17,7 +17,7 @@ import {
   clearAuditLog,
 } from './privacy.store.js';
 import { isUsageEnabled, setUsageEnabled, getUsageState } from './usage.js';
-import { t, isRu, getLang } from './locale.store.js';
+import { t, isRu, getLang, tri } from './locale.store.js';
 import { esc, haptic, dismissOverlay } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
 import { on } from './events.js';
@@ -388,12 +388,11 @@ function _closeOverlay(id) {
 }
 
 async function _confirmDelete() {
-  const ru = isRu();
   const ok = await confirmDialog({
-    title: ru ? 'Удалить данные?' : 'Delete data?',
+    title: tri('Удалить данные?', 'Delete data?', 'Διαγραφή δεδομένων;'),
     message: t('privacy.delete_confirm'),
-    confirmLabel: ru ? 'Удалить' : 'Delete',
-    cancelLabel: ru ? 'Отмена' : 'Cancel',
+    confirmLabel: tri('Удалить', 'Delete', 'Διαγραφή'),
+    cancelLabel: tri('Отмена', 'Cancel', 'Ακύρωση'),
     danger: true,
   });
   if (!ok) return;

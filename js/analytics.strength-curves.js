@@ -8,7 +8,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { esc } from './shared/utils.js';
-import { isRu } from './locale.store.js';
+import { isRu, tri } from './locale.store.js';
 import { pplColor } from './shared/ppl-color.js';
 import { monotoneCubicPath } from './shared/sparkline.js';
 import { calculateProgressionCurves } from './analytics.progression-curves.js';
@@ -95,10 +95,10 @@ function curveCard(s, idx) {
       <circle cx="${midX}" cy="${midY}" r="4" fill="${color}" stroke="var(--c-surface)" stroke-width="2" class="sc-cur-dot"/>
     `;
     subMarkup = `
-      <span class="sc-delta up">${isRu() ? 'Базовый вес' : 'Baseline'}</span>
-      <span class="sc-peak">${isRu() ? '1-я точка' : '1st mark'}</span>
+      <span class="sc-delta up">${tri('Базовый вес', 'Baseline', 'Βάση')}</span>
+      <span class="sc-peak">${tri('1-я точка', '1st mark', '1ο σημείο')}</span>
     `;
-    axisMarkup = `<span>${fmtMon(t0)}</span><span>${s.n} ${isRu() ? (s.n === 1 ? 'сессия' : 'сессии') : (s.n === 1 ? 'session' : 'sessions')}</span><span>${isRu() ? 'старт' : 'start'}</span>`;
+    axisMarkup = `<span>${fmtMon(t0)}</span><span>${s.n} ${isRu() ? (s.n === 1 ? 'сессия' : 'сессии') : (s.n === 1 ? 'session' : 'sessions')}</span><span>${tri('старт', 'start', 'εκκίνηση')}</span>`;
   } else {
     const { vmin, vr } = valueBand(vs);
     const X = (p) => padX + ((p.t - t0) / tr) * (W - 2 * padX);
@@ -125,7 +125,7 @@ function curveCard(s, idx) {
       <span class="sc-delta ${s.delta >= 0 ? 'up' : 'down'}">${deltaTxt} kg</span>
       <span class="sc-peak">peak ${peak}</span>
     `;
-    axisMarkup = `<span>${fmtMon(t0)}</span><span>${s.n} ${isRu() ? 'сессий' : 'sessions'}</span><span>${fmtMon(tN)}</span>`;
+    axisMarkup = `<span>${fmtMon(t0)}</span><span>${s.n} ${tri('сессий', 'sessions', 'προπονήσεις')}</span><span>${fmtMon(tN)}</span>`;
   }
 
   const html = `
@@ -138,7 +138,7 @@ function curveCard(s, idx) {
         ${subMarkup}
       </div>
       <div class="sc-plot">
-        <svg class="sc-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)} ${isRu() ? `— максимальный рабочий вес по месяцам, сейчас ${cur} кг, пик ${peak} кг` : `top working weight by month, ${cur} kg current, ${peak} kg peak`}">
+        <svg class="sc-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)} ${tri(`— максимальный рабочий вес по месяцам, сейчас ${cur} кг, пик ${peak} кг`, `top working weight by month, ${cur} kg current, ${peak} kg peak`, `μέγιστο βάρος εργασίας ανά μήνα, τώρα ${cur} kg, κορυφή ${peak} kg`)}">
           ${svgContent}
         </svg>
         <div class="sc-scrub" aria-hidden="true">
@@ -282,7 +282,7 @@ export function renderStrengthHero(workouts, mount) {
   const duration = showYears
     ? Math.round(spanYears * 10) / 10
     : Math.max(1, Math.round(spanMs / 2629800000)); // avg month = 365.25/12 days
-  const durationUnit = showYears ? (isRu() ? 'г' : 'y') : isRu() ? 'мес' : 'mo';
+  const durationUnit = showYears ? (tri('г', 'y', 'έτ.')) : tri('мес', 'mo', 'μήν.');
 
   // index sparkline (normalised to its own min/max)
   const W = 96,
@@ -298,24 +298,24 @@ export function renderStrengthHero(workouts, mount) {
   const spark = idx.length > 1 ? smoothPath(P) : '';
 
   mount.innerHTML = `
-    <div class="sh-hero chart-card" data-action="analytics:openIndex" role="button" tabindex="0" aria-label="${isRu() ? 'Индекс силы — открыть график' : 'Strength Index — open chart'}">
+    <div class="sh-hero chart-card" data-action="analytics:openIndex" role="button" tabindex="0" aria-label="${tri('Индекс силы — открыть график', 'Strength Index — open chart', 'Δείκτης δύναμης — άνοιγμα γραφήματος')}">
       <div class="sh-top">
         <div class="sh-main">
-          <div class="sh-label">${isRu() ? 'Индекс силы' : 'Strength Index'}</div>
+          <div class="sh-label">${tri('Индекс силы', 'Strength Index', 'Δείκτης δύναμης')}</div>
           <div class="sh-score">${score}<span class="sh-gain ${gain >= 0 ? 'up' : 'down'}">${gain >= 0 ? '+' : ''}${gain}%</span></div>
-          <div class="sh-cap">${isRu() ? 'средний рост весов с начала' : 'avg weight gain since start'}</div>
+          <div class="sh-cap">${tri('средний рост весов с начала', 'avg weight gain since start', 'μέση αύξηση βαρών από την αρχή')}</div>
         </div>
         ${
           spark
-            ? `<svg class="sh-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${isRu() ? 'тренд индекса силы' : 'strength index trend'}">
+            ? `<svg class="sh-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${tri('тренд индекса силы', 'strength index trend', 'τάση δείκτη δύναμης')}">
           <path d="${spark}" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sh-spark-stroke"/>
         </svg>`
             : ''
         }
       </div>
       <div class="sh-stats">
-        <div class="sh-stat"><b>${tons}<small>${tonsUnit}</small></b><span>${isRu() ? 'поднято' : 'lifted'}</span></div>
-        <div class="sh-stat"><b>${workouts.length}</b><span>${isRu() ? 'тренировок' : 'sessions'}</span></div>
+        <div class="sh-stat"><b>${tons}<small>${tonsUnit}</small></b><span>${tri('поднято', 'lifted', 'σηκώθηκαν')}</span></div>
+        <div class="sh-stat"><b>${workouts.length}</b><span>${tri('тренировок', 'sessions', 'προπονήσεις')}</span></div>
         <div class="sh-stat"><b>${duration}<small>${durationUnit}</small></b><span>${fmtMon(ts[0])}–${fmtMon(ts[ts.length - 1])}</span></div>
       </div>
     </div>`;
@@ -339,7 +339,7 @@ export function renderStrengthCurves(workoutsOrCurves, mount) {
   if (!series.length) {
     mount.innerHTML = `
       <div class="sc-empty-hint" style="padding: var(--sp-4); text-align: center; color: var(--c-text-3); font-size: var(--fs-2); background: var(--c-surface-h); border-radius: var(--r-md); border: 1px dashed var(--c-border); line-height: 1.5;">
-        ${isRu() ? 'Прогрессия строится автоматически по вашим подходам с весом.' : 'Progression curves build automatically from your weighted sets.'}
+        ${tri('Прогрессия строится автоматически по вашим подходам с весом.', 'Progression curves build automatically from your weighted sets.', 'Οι καμπύλες προόδου χτίζονται αυτόματα από τα σετ σου με βάρος.')}
       </div>`;
     return;
   }
@@ -385,7 +385,7 @@ export function strengthIndexPlot(workouts) {
 
   const html = `
       <div class="sc-plot ex-chart-plot">
-        <svg class="sc-chart ex-svg-chart idx-svg-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${isRu() ? 'тренд индекса силы' : 'strength index trend'}">
+        <svg class="sc-chart ex-svg-chart idx-svg-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${tri('тренд индекса силы', 'strength index trend', 'τάση δείκτη δύναμης')}">
           <defs>
             <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="var(--c-accent)" stop-opacity="0.28"/>

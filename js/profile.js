@@ -26,7 +26,7 @@ import {
   loadTxtExportSources,
   computeAge,
 } from './profile.store.js';
-import { t, getLang } from './locale.store.js';
+import { t, getLang, tri } from './locale.store.js';
 import { renderProfile } from './profile.view.js';
 import { renderSettings, backupSubLabel, backupMetaLabel } from './profile.view/settings.js';
 import { VERSION } from './version.js';
@@ -246,7 +246,7 @@ export const Profile = (() => {
       if (taps >= 5) {
         taps = 0;
         clearTimeout(timer);
-        Toast.show(getLang() === 'ru' ? 'Обновление…' : 'Updating…', 'info');
+        Toast.show(tri('Обновление…', 'Updating…', 'Ενημέρωση…'), 'info');
         forceUpdate();
       }
     });
@@ -487,7 +487,7 @@ export const Profile = (() => {
           { key: 'country', label: t('data.place_country'), placeholder: t('data.place_country') },
         ],
         confirmLabel: t('data.place_save'),
-        cancelLabel: getLang() === 'ru' ? 'Отмена' : 'Cancel',
+        cancelLabel: tri('Отмена', 'Cancel', 'Ακύρωση'),
       });
       if (!res) return; // отмена — файл не создаём
       place = res;

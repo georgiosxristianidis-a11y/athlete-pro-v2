@@ -1,5 +1,5 @@
 // @ts-check
-import { isRu } from '../locale.store.js';
+import { isRu, tri } from '../locale.store.js';
 
 /**
  * errors-ui.js — normalize any thrown value into a clean, user-facing message
@@ -15,10 +15,9 @@ import { isRu } from '../locale.store.js';
  * @returns {string}
  */
 export function toUserMessage(err, fallback) {
-  const ru = isRu();
   const generic =
     fallback ||
-    (ru ? 'Что-то пошло не так. Попробуйте ещё раз.' : 'Something went wrong. Please try again.');
+    (tri('Что-то пошло не так. Попробуйте ещё раз.', 'Something went wrong. Please try again.', 'Κάτι πήγε στραβά. Δοκίμασε ξανά.'));
 
   // Pull a string to classify from, without ever surfacing it verbatim.
   const raw =
@@ -39,11 +38,9 @@ export function toUserMessage(err, fallback) {
   // classifiers: the throw is local, not a downed coach.
   if (name === 'PrivacyBlockedError') {
     if (code === 'airgap') {
-      return ru ? 'ИИ выключен в режиме «Без сети».' : 'AI is off in air-gapped mode.';
+      return tri('ИИ выключен в режиме «Без сети».', 'AI is off in air-gapped mode.', 'Το AI είναι απενεργοποιημένο σε λειτουργία «Χωρίς δίκτυο».');
     }
-    return ru
-      ? 'ИИ-тренер выключен. Включите его в Настройки → Приватность.'
-      : 'AI Coach is disabled. Turn it on in Settings → Privacy.';
+    return tri('ИИ-тренер выключен. Включите его в Настройки → Приватность.', 'AI Coach is disabled. Turn it on in Settings → Privacy.', 'Ο AI Coach είναι απενεργοποιημένος. Ενεργοποίησέ τον στις Ρυθμίσεις → Απόρρητο.');
   }
 
   // Lazy-loaded module (dynamic import()) failed. Browsers phrase this as a
@@ -57,10 +54,8 @@ export function toUserMessage(err, fallback) {
     s.includes('error loading dynamically imported module')
   ) {
     if (!navigator.onLine)
-      return ru ? 'Нет соединения. Проверьте интернет.' : 'No connection — check your internet.';
-    return ru
-      ? 'Не удалось загрузить часть приложения. Обновите страницу.'
-      : 'Failed to load part of the app. Please refresh the page.';
+      return tri('Нет соединения. Проверьте интернет.', 'No connection — check your internet.', 'Δεν υπάρχει σύνδεση — έλεγξε το ίντερνετ.');
+    return tri('Не удалось загрузить часть приложения. Обновите страницу.', 'Failed to load part of the app. Please refresh the page.', 'Δεν φορτώθηκε μέρος της εφαρμογής. Ανανέωσε τη σελίδα.');
   }
   // Offline / network — also trust the live connection flag.
   if (
@@ -71,19 +66,15 @@ export function toUserMessage(err, fallback) {
     s.includes('load failed') ||
     s.includes('err_internet')
   ) {
-    return ru ? 'Нет соединения. Проверьте интернет.' : 'No connection — check your internet.';
+    return tri('Нет соединения. Проверьте интернет.', 'No connection — check your internet.', 'Δεν υπάρχει σύνδεση — έλεγξε το ίντερνετ.');
   }
   // Timeout / aborted request.
   if (s.includes('timeout') || s.includes('timed out') || s.includes('abort')) {
-    return ru
-      ? 'Превышено время ожидания. Попробуйте снова.'
-      : 'Request timed out. Please try again.';
+    return tri('Превышено время ожидания. Попробуйте снова.', 'Request timed out. Please try again.', 'Έληξε ο χρόνος αναμονής. Δοκίμασε ξανά.');
   }
   // Rate limited.
   if (s.includes('429') || s.includes('too many requests') || s.includes('rate limit')) {
-    return ru
-      ? 'Слишком много запросов. Подождите немного.'
-      : 'Too many requests — please wait a moment.';
+    return tri('Слишком много запросов. Подождите немного.', 'Too many requests — please wait a moment.', 'Πάρα πολλά αιτήματα — περίμενε λίγο.');
   }
   // Auth / API key.
   if (
@@ -95,9 +86,7 @@ export function toUserMessage(err, fallback) {
     s.includes('apikey') ||
     s.includes('invalid key')
   ) {
-    return ru
-      ? 'Проблема с ключом доступа. Проверьте настройки.'
-      : 'Authorization problem — check your key in Settings.';
+    return tri('Проблема с ключом доступа. Проверьте настройки.', 'Authorization problem — check your key in Settings.', 'Πρόβλημα εξουσιοδότησης — έλεγξε το κλειδί στις Ρυθμίσεις.');
   }
   // Server-side failure.
   if (
@@ -106,9 +95,7 @@ export function toUserMessage(err, fallback) {
     s.includes('503') ||
     s.includes('internal server')
   ) {
-    return ru
-      ? 'Сервис временно недоступен. Попробуйте позже.'
-      : 'Service temporarily unavailable. Try again later.';
+    return tri('Сервис временно недоступен. Попробуйте позже.', 'Service temporarily unavailable. Try again later.', 'Η υπηρεσία δεν είναι προσωρινά διαθέσιμη. Δοκίμασε αργότερα.');
   }
   return generic;
 }

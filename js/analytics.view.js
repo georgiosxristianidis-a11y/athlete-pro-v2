@@ -25,7 +25,7 @@ import {
   getCachedOrComputeProgressionCurves,
 } from './analytics.store.js';
 import { pplTonnageFrom } from './db.js';
-import { t, isRu } from './locale.store.js';
+import { t, isRu, tri } from './locale.store.js';
 import {
   renderStrengthHero,
   renderStrengthCurves,
@@ -136,7 +136,7 @@ export async function load() {
 
       <!-- ── Strength Progression (premium per-lift curves) ── -->
       <div class="section-header stagger-item" style="margin-top:var(--sp-4); animation-delay: 0.11s">
-        <span class="section-label">${isRu() ? 'Прогресс силы' : 'Strength Progression'}</span>
+        <span class="section-label">${tri('Прогресс силы', 'Strength Progression', 'Πρόοδος δύναμης')}</span>
       </div>
       <div id="strength-curves" class="stagger-item" style="animation-delay: 0.11s"></div>
 
@@ -282,7 +282,7 @@ function _openPeriodSheet() {
       ([key, labelKey]) => `
     <button class="period-row ${_period === key ? 'active' : ''}" data-period="${key}">
       <span>${t(labelKey)}</span>
-      <span class="period-row-hint">${PERIOD_DAYS[key]}${isRu() ? ' дн.' : 'd'}</span>
+      <span class="period-row-hint">${PERIOD_DAYS[key]}${tri(' дн.', 'd', ' ημ.')}</span>
     </button>`
     )
     .join('');
@@ -726,7 +726,7 @@ export function openExerciseHistoryModal(exerciseName) {
       </div>
       <div class="sc-axis">
         <span>${fmtMon(t0)}</span>
-        <span>${history.sessionsCount} ${isRu() ? 'сессий' : 'sessions'}</span>
+        <span>${history.sessionsCount} ${tri('сессий', 'sessions', 'προπονήσεις')}</span>
         <span>${fmtMon(tN)}</span>
       </div>`;
   } else if (history.pts.length === 1) {
@@ -734,7 +734,7 @@ export function openExerciseHistoryModal(exerciseName) {
     chartHtml = `
       <div class="ex-single-point-card">
         <div class="ex-single-val">${p.v} <span class="ex-stat-unit">kg</span></div>
-        <div class="ex-single-date">${fmtMon(p.t)} (1 ${isRu() ? 'сессия' : 'session'})</div>
+        <div class="ex-single-date">${fmtMon(p.t)} (1 ${tri('сессия', 'session', 'προπόνηση')})</div>
       </div>`;
   } else {
     chartHtml = `<div class="ex-no-history">${t('analytics.ex_no_history')}</div>`;
@@ -796,12 +796,12 @@ export function openExerciseHistoryModal(exerciseName) {
         </div>
         <div class="ex-stat-cell">
           <div class="ex-stat-val">${history.sessionsCount}</div>
-          <div class="ex-stat-lbl">${t('analytics.ex_sessions')} · ${history.totalSets} ${isRu() ? 'сет' : 'sets'}</div>
+          <div class="ex-stat-lbl">${t('analytics.ex_sessions')} · ${history.totalSets} ${tri('сет', 'sets', 'σετ')}</div>
         </div>
       </div>
 
       <div class="ex-chart-card chart-card">
-        <div class="ex-chart-title">${isRu() ? 'Динамика веса' : 'Weight Progression'}</div>
+        <div class="ex-chart-title">${tri('Динамика веса', 'Weight Progression', 'Πρόοδος βάρους')}</div>
         ${chartHtml}
       </div>
 

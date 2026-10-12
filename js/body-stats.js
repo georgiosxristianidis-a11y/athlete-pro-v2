@@ -13,7 +13,7 @@ import { DB } from './db.js';
 import { Toast } from './shell.js';
 import { esc, dismissOverlay } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
-import { isRu } from './locale.store.js';
+import { isRu, tri } from './locale.store.js';
 import { on } from './events.js';
 import {
   BS_FIELDS,
@@ -102,25 +102,23 @@ export async function renderBodyStats(targetEl) {
     <div class="bs-wrap">
       <div class="bs-header">
         <div class="bs-title-group">
-          <h2 class="bs-title">${ru ? 'Замеры тела' : 'Body Measurements'}</h2>
+          <h2 class="bs-title">${tri('Замеры тела', 'Body Measurements', 'Μετρήσεις σώματος')}</h2>
         </div>
         <button class="btn-primary bs-add-btn" data-action="bs:edit">
-          ${ru ? 'Обновить' : 'Update'}
+          ${tri('Обновить', 'Update', 'Ενημέρωση')}
         </button>
       </div>
       <div class="bs-last-date">
         ${
           latest
-            ? `${ru ? 'последний замер' : 'last measured'} · ${esc(fmtDate(latest.date))}`
-            : ru
-              ? 'ещё нет замеров'
-              : 'no measurements yet'
+            ? `${tri('последний замер', 'last measured', 'τελευταία μέτρηση')} · ${esc(fmtDate(latest.date))}`
+            : tri('ещё нет замеров', 'no measurements yet', 'καμία μέτρηση ακόμη')
         }
       </div>
       <div class="bs-grid">${entries.length ? gridHtml(entries, latestMetric, sex, ru) : ''}</div>
       ${
         entries.length
-          ? `<div class="bs-section-title">${ru ? 'История' : 'History'}</div>
+          ? `<div class="bs-section-title">${tri('История', 'History', 'Ιστορικό')}</div>
            <div class="bs-history">${historyHtml(entries, ru)}</div>`
           : emptyHtml(ru)
       }
@@ -134,13 +132,11 @@ function emptyHtml(ru) {
         <path d="M3 8h18M3 8v8a2 2 0 002 2h14a2 2 0 002-2V8M3 8V6a2 2 0 012-2h14a2 2 0 012 2v2"/>
         <path d="M7 8v3M11 8v5M15 8v3M19 8v5"/>
       </svg>
-      <p class="bs-empty-title">${ru ? 'Пока пусто' : 'Nothing yet'}</p>
+      <p class="bs-empty-title">${tri('Пока пусто', 'Nothing yet', 'Ακόμη τίποτα')}</p>
       <p class="bs-empty-sub">${
-        ru
-          ? 'Один замер — это точка. Два — уже тренд: рост рук, уход талии, динамика жира.'
-          : 'One entry is a dot. Two make a trend — arm growth, waist loss, fat direction.'
+        tri('Один замер — это точка. Два — уже тренд: рост рук, уход талии, динамика жира.', 'One entry is a dot. Two make a trend — arm growth, waist loss, fat direction.', 'Μία μέτρηση είναι μια τελεία. Δύο — ήδη τάση: ανάπτυξη χεριών, μείωση μέσης, πορεία λίπους.')
       }</p>
-      <button class="btn-primary bs-add-btn" data-action="bs:edit">${ru ? 'Первый замер' : 'First entry'}</button>
+      <button class="btn-primary bs-add-btn" data-action="bs:edit">${tri('Первый замер', 'First entry', 'Πρώτη μέτρηση')}</button>
     </div>`;
 }
 
@@ -185,7 +181,7 @@ function gridHtml(entries, latestMetric, sex, ru) {
                <polyline points="${pts}" fill="none" stroke="var(--bs-accent)" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
              </svg>`
-            : `<div class="bs-spark-empty">${ru ? 'нужен ещё замер' : 'one more entry'}</div>`
+            : `<div class="bs-spark-empty">${tri('нужен ещё замер', 'one more entry', 'χρειάζεται μία ακόμη μέτρηση')}</div>`
         }
       </div>`;
   }).join('');
@@ -221,7 +217,7 @@ function historyHtml(entries, ru) {
         <div class="bs-hist-body">
           ${rows}
           <button class="bs-del-btn" data-action="bs:delete" data-date="${esc(e.date)}">
-            ${ru ? 'Удалить запись' : 'Delete entry'}
+            ${tri('Удалить запись', 'Delete entry', 'Διαγραφή εγγραφής')}
           </button>
         </div>
       </div>`;
@@ -253,13 +249,13 @@ function openForm(focusId) {
     <div class="modal-sheet bs-sheet">
       <div class="modal-handle"></div>
       <div class="modal-header">
-        <span class="modal-title">${ru ? 'Замеры' : 'Measurements'}</span>
-        <button class="btn-icon-sm bs-close-x" aria-label="${ru ? 'Закрыть' : 'Close'}">
+        <span class="modal-title">${tri('Замеры', 'Measurements', 'Μετρήσεις')}</span>
+        <button class="btn-icon-sm bs-close-x" aria-label="${tri('Закрыть', 'Close', 'Κλείσιμο')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
       </div>
       <div class="bs-date-row">
-        <label class="bs-field-label" for="bsf-date">${ru ? 'Дата' : 'Date'}</label>
+        <label class="bs-field-label" for="bsf-date">${tri('Дата', 'Date', 'Ημερομηνία')}</label>
         <input type="date" id="bsf-date" class="bs-date-inp" value="${today}" max="${today}">
       </div>
       <div class="bs-fields-scroll">
@@ -285,13 +281,11 @@ function openForm(focusId) {
         `
         ).join('')}
         <p class="bs-form-note">${
-          ru
-            ? 'Процент жира считается по формуле ВМФ США из талии, шеи и роста — вводить его не нужно.'
-            : 'Body fat is derived from waist, neck and height (U.S. Navy formula) — no need to enter it.'
+          tri('Процент жира считается по формуле ВМФ США из талии, шеи и роста — вводить его не нужно.', 'Body fat is derived from waist, neck and height (U.S. Navy formula) — no need to enter it.', 'Το ποσοστό λίπους υπολογίζεται με τον τύπο του Ναυτικού των ΗΠΑ από μέση, λαιμό και ύψος — δεν χρειάζεται να το εισάγεις.')
         }</p>
       </div>
       <div class="bs-form-actions">
-        <button class="btn-primary bs-save-btn" id="bsf-save">${ru ? 'Сохранить' : 'Save'}</button>
+        <button class="btn-primary bs-save-btn" id="bsf-save">${tri('Сохранить', 'Save', 'Αποθήκευση')}</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -376,14 +370,13 @@ function openForm(focusId) {
 }
 
 async function deleteEntry(dateIso) {
-  const ru = isRu();
   const ok = await confirmDialog({
-    title: ru ? 'Удалить запись?' : 'Delete entry?',
+    title: tri('Удалить запись?', 'Delete entry?', 'Διαγραφή εγγραφής;'),
     message:
-      (ru ? 'Замеры за ' : 'Measurements for ') +
+      (tri('Замеры за ', 'Measurements for ', 'Οι μετρήσεις για ')) +
       fmtDate(dateIso) +
-      (ru ? ' будут удалены.' : ' will be removed.'),
-    confirmLabel: ru ? 'Удалить' : 'Delete',
+      (tri(' будут удалены.', ' will be removed.', ' θα διαγραφούν.')),
+    confirmLabel: tri('Удалить', 'Delete', 'Διαγραφή'),
     danger: true,
   });
   if (!ok) return;

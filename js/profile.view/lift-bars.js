@@ -1,4 +1,5 @@
 // @ts-check
+import { tri } from '../locale.store.js';
 import { exrxTier } from '../strength-engine.js';
 
 const TIER_ORDER = ['untrained', 'novice', 'intermediate', 'advanced', 'elite'];
@@ -52,7 +53,7 @@ export function renderLiftBars(oneRMs, bw, sex, age, lang) {
     }).join('');
 
     const percentileText = tierData && tierData.percentile > 0
-      ? `<div class="lift-percentile">${ru ? 'Топ' : 'Top'} ${100 - tierData.percentile}%</div>`
+      ? `<div class="lift-percentile">${tri('Топ', 'Top', 'Top')} ${100 - tierData.percentile}%</div>`
       : '';
 
     return `
@@ -77,6 +78,6 @@ export function renderLiftBars(oneRMs, bw, sex, age, lang) {
   }).join('');
 
   return `
-<div class="pp-section-lbl pp-section-lbl-gap">${ru ? 'Силовые показатели' : 'Strength Records'}</div>
+<div class="pp-section-lbl pp-section-lbl-gap">${tri('Силовые показатели', 'Strength Records', 'Επιδόσεις δύναμης')}</div>
 <div class="pp-card-v2 pp-lifts-v2">${rows}</div>`;
 }

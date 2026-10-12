@@ -8,7 +8,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { fmtVol } from './format.js';
-import { isRu } from '../locale.store.js';
+import { isRu, tri } from '../locale.store.js';
 
 const CX = 100, CY = 104, R = 86, SW = 18, GAP = 4; // geometry (viewBox units, gap in deg)
 const LABELS = { push: 'Push', pull: 'Pull', legs: 'Legs' };
@@ -64,11 +64,11 @@ export function renderPplGauge(mount, ppl) {
   mount.innerHTML = `
     <div class="ppl-gauge">
       <svg class="ppl-g-svg" viewBox="0 0 200 118" role="img"
-           aria-label="${isRu() ? 'Баланс Push/Pull/Legs' : 'Push/Pull/Legs balance'}, ${fmtVol(total)} kg">
+           aria-label="${tri('Баланс Push/Pull/Legs', 'Push/Pull/Legs balance', 'Ισορροπία Push/Pull/Legs')}, ${fmtVol(total)} kg">
         <path d="${arcPath(180, 0)}" class="ppl-g-track"/>
         ${segs}
         <text x="${CX}" y="86" text-anchor="middle" class="ppl-g-total">${fmtVol(total)}</text>
-        <text x="${CX}" y="104" text-anchor="middle" class="ppl-g-cap">${isRu() ? 'кг всего' : 'kg total'}</text>
+        <text x="${CX}" y="104" text-anchor="middle" class="ppl-g-cap">${tri('кг всего', 'kg total', 'kg σύνολο')}</text>
       </svg>
       <div class="ppl-g-legend">${legend}</div>
     </div>`;
