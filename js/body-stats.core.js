@@ -15,25 +15,25 @@
  * Every field the user can type in. `group` drives colour by the PPL law
  * (push=green, pull=cyan, legs=purple); `core` means body composition and
  * stays neutral — decoration is not a reason to spend a semantic colour.
- * @typedef {{ id: string, label: string, ru: string, unit: string,
+ * @typedef {{ id: string, label: string, ru: string, el: string, unit: string,
  *             group: 'push'|'pull'|'legs'|'core', computed?: boolean }} BsField
  */
 
 /** @type {BsField[]} */
 export const BS_FIELDS = [
-  { id: 'weight', label: 'Weight', ru: 'Вес', unit: 'kg', group: 'core' },
-  { id: 'body_fat', label: 'Body Fat', ru: 'Жир', unit: '%', group: 'core', computed: true },
-  { id: 'chest', label: 'Chest', ru: 'Грудь', unit: 'cm', group: 'push' },
-  { id: 'shoulders', label: 'Shoulders', ru: 'Плечи', unit: 'cm', group: 'push' },
-  { id: 'waist', label: 'Waist', ru: 'Талия', unit: 'cm', group: 'core' },
-  { id: 'hips', label: 'Hips', ru: 'Бёдра', unit: 'cm', group: 'legs' },
-  { id: 'neck', label: 'Neck', ru: 'Шея', unit: 'cm', group: 'core' },
-  { id: 'arm_l', label: 'Left Arm', ru: 'Рука (лев.)', unit: 'cm', group: 'pull' },
-  { id: 'arm_r', label: 'Right Arm', ru: 'Рука (прав.)', unit: 'cm', group: 'pull' },
-  { id: 'thigh_l', label: 'Left Thigh', ru: 'Бедро (лев.)', unit: 'cm', group: 'legs' },
-  { id: 'thigh_r', label: 'Right Thigh', ru: 'Бедро (прав.)', unit: 'cm', group: 'legs' },
-  { id: 'calf_l', label: 'Left Calf', ru: 'Голень (лев.)', unit: 'cm', group: 'legs' },
-  { id: 'calf_r', label: 'Right Calf', ru: 'Голень (прав.)', unit: 'cm', group: 'legs' },
+  { id: 'weight', label: 'Weight', ru: 'Вес', el: 'Βάρος', unit: 'kg', group: 'core' },
+  { id: 'body_fat', label: 'Body Fat', ru: 'Жир', el: 'Λίπος', unit: '%', group: 'core', computed: true },
+  { id: 'chest', label: 'Chest', ru: 'Грудь', el: 'Στήθος', unit: 'cm', group: 'push' },
+  { id: 'shoulders', label: 'Shoulders', ru: 'Плечи', el: 'Ώμοι', unit: 'cm', group: 'push' },
+  { id: 'waist', label: 'Waist', ru: 'Талия', el: 'Μέση', unit: 'cm', group: 'core' },
+  { id: 'hips', label: 'Hips', ru: 'Бёдра', el: 'Ισχία', unit: 'cm', group: 'legs' },
+  { id: 'neck', label: 'Neck', ru: 'Шея', el: 'Λαιμός', unit: 'cm', group: 'core' },
+  { id: 'arm_l', label: 'Left Arm', ru: 'Рука (лев.)', el: 'Μπράτσο (αρ.)', unit: 'cm', group: 'pull' },
+  { id: 'arm_r', label: 'Right Arm', ru: 'Рука (прав.)', el: 'Μπράτσο (δεξ.)', unit: 'cm', group: 'pull' },
+  { id: 'thigh_l', label: 'Left Thigh', ru: 'Бедро (лев.)', el: 'Μηρός (αρ.)', unit: 'cm', group: 'legs' },
+  { id: 'thigh_r', label: 'Right Thigh', ru: 'Бедро (прав.)', el: 'Μηρός (δεξ.)', unit: 'cm', group: 'legs' },
+  { id: 'calf_l', label: 'Left Calf', ru: 'Голень (лев.)', el: 'Γάμπα (αρ.)', unit: 'cm', group: 'legs' },
+  { id: 'calf_r', label: 'Right Calf', ru: 'Голень (прав.)', el: 'Γάμπα (δεξ.)', unit: 'cm', group: 'legs' },
 ];
 
 /** Fields the user actually types — body fat is derived, never entered. */
@@ -42,25 +42,28 @@ export const BS_INPUT_FIELDS = BS_FIELDS.filter((f) => !f.computed);
 /**
  * Form sections. Thirteen inputs in one flat list read as a wall; grouped by
  * body region they read as a checklist you tick top to bottom.
- * @type {{ id: string, label: string, ru: string, fields: string[] }[]}
+ * @type {{ id: string, label: string, ru: string, el: string, fields: string[] }[]}
  */
 export const BS_FORM_SECTIONS = [
   {
     id: 'comp',
     label: 'Composition',
     ru: 'Композиция',
+    el: 'Σύνθεση',
     fields: ['weight', 'waist', 'neck', 'hips'],
   },
   {
     id: 'upper',
     label: 'Upper Body',
     ru: 'Верх',
+    el: 'Άνω σώμα',
     fields: ['chest', 'shoulders', 'arm_l', 'arm_r'],
   },
   {
     id: 'lower',
     label: 'Lower Body',
     ru: 'Низ',
+    el: 'Κάτω σώμα',
     fields: ['thigh_l', 'thigh_r', 'calf_l', 'calf_r'],
   },
 ];
@@ -73,7 +76,7 @@ export const BS_FORM_SECTIONS = [
  * `trend` says what a rise means — 'up' good for muscle, 'down' good for waist
  * and fat, 'neutral' for weight, where neither direction is progress on its own.
  *
- * @typedef {{ id: string, label: string, ru: string, unit: string,
+ * @typedef {{ id: string, label: string, ru: string, el: string, unit: string,
  *             source: string[], trend: 'up'|'down'|'neutral', color: string }} BsCell
  * @type {BsCell[]}
  */
@@ -82,6 +85,7 @@ export const BS_BENTO = [
     id: 'weight',
     label: 'Weight',
     ru: 'Вес',
+    el: 'Βάρος',
     unit: 'kg',
     source: ['weight'],
     trend: 'neutral',
@@ -91,6 +95,7 @@ export const BS_BENTO = [
     id: 'body_fat',
     label: 'Body Fat',
     ru: 'Жир',
+    el: 'Λίπος',
     unit: '%',
     source: ['body_fat'],
     trend: 'down',
@@ -100,6 +105,7 @@ export const BS_BENTO = [
     id: 'chest',
     label: 'Chest',
     ru: 'Грудь',
+    el: 'Στήθος',
     unit: 'cm',
     source: ['chest'],
     trend: 'up',
@@ -109,6 +115,7 @@ export const BS_BENTO = [
     id: 'waist',
     label: 'Waist',
     ru: 'Талия',
+    el: 'Μέση',
     unit: 'cm',
     source: ['waist'],
     trend: 'down',
@@ -118,6 +125,7 @@ export const BS_BENTO = [
     id: 'arms',
     label: 'Arms',
     ru: 'Руки',
+    el: 'Μπράτσα',
     unit: 'cm',
     source: ['arm_l', 'arm_r'],
     trend: 'up',
@@ -127,6 +135,7 @@ export const BS_BENTO = [
     id: 'thighs',
     label: 'Thighs',
     ru: 'Бёдра',
+    el: 'Μηροί',
     unit: 'cm',
     source: ['thigh_l', 'thigh_r'],
     trend: 'up',
@@ -179,29 +188,31 @@ export function bodyFatNavy({ sex, heightCm, waistCm, neckCm, hipCm }) {
 /**
  * @param {number} bf
  * @param {string} sex
- * @returns {{ label: string, ru: string, color: string }}
+ * @returns {{ label: string, ru: string, el: string, color: string }}
  */
 export function bodyFatCategory(bf, sex) {
   const ranges =
     sex === 'f'
       ? [
-          [13, 'Essential', 'Минимум', 'var(--c-blue)'],
-          [20, 'Athletic', 'Атлет', 'var(--c-accent)'],
-          [24, 'Fitness', 'Форма', 'var(--c-accent)'],
-          [31, 'Average', 'Средне', 'var(--c-amber)'],
-          [100, 'High', 'Высокий', 'var(--c-red)'],
+          [13, 'Essential', 'Минимум', 'Ελάχιστο', 'var(--c-blue)'],
+          [20, 'Athletic', 'Атлет', 'Αθλητικό', 'var(--c-accent)'],
+          [24, 'Fitness', 'Форма', 'Φόρμα', 'var(--c-accent)'],
+          [31, 'Average', 'Средне', 'Μέτριο', 'var(--c-amber)'],
+          [100, 'High', 'Высокий', 'Υψηλό', 'var(--c-red)'],
         ]
       : [
-          [6, 'Essential', 'Минимум', 'var(--c-blue)'],
-          [13, 'Athletic', 'Атлет', 'var(--c-accent)'],
-          [17, 'Fitness', 'Форма', 'var(--c-accent)'],
-          [25, 'Average', 'Средне', 'var(--c-amber)'],
-          [100, 'High', 'Высокий', 'var(--c-red)'],
+          [6, 'Essential', 'Минимум', 'Ελάχιστο', 'var(--c-blue)'],
+          [13, 'Athletic', 'Атлет', 'Αθλητικό', 'var(--c-accent)'],
+          [17, 'Fitness', 'Форма', 'Φόρμα', 'var(--c-accent)'],
+          [25, 'Average', 'Средне', 'Μέτριο', 'var(--c-amber)'],
+          [100, 'High', 'Высокий', 'Υψηλό', 'var(--c-red)'],
         ];
-  for (const [max, label, ru, color] of ranges) {
-    if (bf < Number(max)) return { label: String(label), ru: String(ru), color: String(color) };
+  for (const [max, label, ru, el, color] of ranges) {
+    if (bf < Number(max)) {
+      return { label: String(label), ru: String(ru), el: String(el), color: String(color) };
+    }
   }
-  return { label: '—', ru: '—', color: 'var(--c-text-3)' };
+  return { label: '—', ru: '—', el: '—', color: 'var(--c-text-3)' };
 }
 
 /* ── Entries ────────────────────────────────────────────────────────────── */

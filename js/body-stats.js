@@ -13,7 +13,7 @@ import { DB } from './db.js';
 import { Toast } from './shell.js';
 import { esc, dismissOverlay } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
-import { isRu, getLang, tri } from './locale.store.js';
+import { getLang, tri } from './locale.store.js';
 import { on } from './events.js';
 import {
   BS_FIELDS,
@@ -52,7 +52,7 @@ const fmtDate = (iso) =>
     year: 'numeric',
   });
 
-const label = (f) => (isRu() ? f.ru : f.label);
+const label = (f) => tri(f.ru, f.label, f.el);
 
 function bsLoad() {
   try {
@@ -83,7 +83,6 @@ export async function renderBodyStats(targetEl) {
   if (!root) return;
   _root = root;
 
-  const ru = isRu();
   const [sexProfile, sexLegacy] = await Promise.all([
     DB.Settings.get('profile.sex', null),
     DB.Settings.get('sex', 'm'),
@@ -115,17 +114,17 @@ export async function renderBodyStats(targetEl) {
             : tri('ещё нет замеров', 'no measurements yet', 'καμία μέτρηση ακόμη')
         }
       </div>
-      <div class="bs-grid">${entries.length ? gridHtml(entries, latestMetric, sex, ru) : ''}</div>
+      <div class="bs-grid">${entries.length ? gridHtml(entries, latestMetric, sex) : ''}</div>
       ${
         entries.length
           ? `<div class="bs-section-title">${tri('История', 'History', 'Ιστορικό')}</div>
-           <div class="bs-history">${historyHtml(entries, ru)}</div>`
-          : emptyHtml(ru)
+           <div class="bs-history">${historyHtml(entries)}</div>`
+          : emptyHtml()
       }
     </div>`;
 }
 
-function emptyHtml(ru) {
+function emptyHtml() {
   return `
     <div class="bs-empty">
       <svg class="bs-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="40" height="40">
@@ -141,7 +140,7 @@ function emptyHtml(ru) {
 }
 
 /** Six tiles: value, change since the previous entry that had it, trend line. */
-function gridHtml(entries, latestMetric, sex, ru) {
+function gridHtml(entries, latestMetric, sex) {
   return BS_BENTO.map((cell) => {
     const points = cellSeries(entries, cell);
     // The newest entry the metric appears in, not the newest entry outright: a
@@ -161,7 +160,7 @@ function gridHtml(entries, latestMetric, sex, ru) {
     let sub = '';
     if (cell.id === 'body_fat' && val != null) {
       const cat = bodyFatCategory(val, sex);
-      sub = `<div class="bs-stat-sub" style="color:${cat.color}">${ru ? cat.ru : cat.label}</div>`;
+      sub = `<div class="bs-stat-sub" style="color:${cat.color}">${tri(cat.ru, cat.label, cat.el)}</div>`;
     } else if (cell.id === 'weight' && latestMetric?.bmi) {
       sub = `<div class="bs-stat-sub">BMI ${esc(String(latestMetric.bmi))}</div>`;
     }
@@ -170,7 +169,7 @@ function gridHtml(entries, latestMetric, sex, ru) {
       <div class="bs-stat-card" style="--bs-accent:${cell.color}"
            data-action="bs:edit" data-focus="${cellFocusField(cell.id)}">
         <div class="bs-stat-top">
-          <span class="bs-stat-label">${ru ? cell.ru : cell.label}</span>
+          <span class="bs-stat-label">${tri(cell.ru, cell.label, cell.el)}</span>
           ${delta ? `<span class="bs-delta bs-delta-${delta.tone}">${fmtDelta(delta.diff)}</span>` : ''}
         </div>
         <div class="bs-stat-value">${fmtNum(val)}<span class="bs-stat-unit">${cell.unit}</span></div>
@@ -188,7 +187,7 @@ function gridHtml(entries, latestMetric, sex, ru) {
 }
 
 /** Collapsed by date; opened it shows every field with its own change. */
-function historyHtml(entries, ru) {
+function historyHtml(entries) {
   return entries
     .slice(0, 12)
     .map((e, i) => {
@@ -239,7 +238,6 @@ function openForm(focusId) {
   // longer takes taps, and a tile tap during its exit must open a new one.
   if (document.querySelector('.modal-overlay.bs-overlay:not([data-closing])')) return;
 
-  const ru = isRu();
   const today = new Date().toISOString().split('T')[0];
   const latest = latestValues(bsLoad());
 
@@ -261,7 +259,7 @@ function openForm(focusId) {
       <div class="bs-fields-scroll">
         ${BS_FORM_SECTIONS.map(
           (sec) => `
-          <div class="bs-form-sec">${ru ? sec.ru : sec.label}</div>
+          <div class="bs-form-sec">${tri(sec.ru, sec.label, sec.el)}</div>
           ${sec.fields
             .map((id) => {
               const f = BS_INPUT_FIELDS.find((x) => x.id === id);
@@ -357,13 +355,9 @@ function openForm(focusId) {
     close();
     await renderBodyStats();
     Toast.show(
-      isRu()
-        ? changed
-          ? 'Замеры сохранены'
-          : 'Без изменений'
-        : changed
-          ? 'Measurements saved'
-          : 'No changes',
+      changed
+        ? tri('Замеры сохранены', 'Measurements saved', 'Οι μετρήσεις αποθηκεύτηκαν')
+        : tri('Без изменений', 'No changes', 'Καμία αλλαγή'),
       changed ? 'success' : 'info'
     );
   };

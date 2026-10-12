@@ -19,6 +19,15 @@ const TIER_RU = {
   elite: 'Элита',
 };
 
+const TIER_EL = {
+  untrained: 'Αγύμναστος',
+  novice: 'Αρχάριος',
+  intermediate: 'Μέτριος',
+  advanced: 'Προχωρημένος',
+  elite: 'Ελίτ',
+};
+
+// Lift names stay English in Greek gyms (see exercise-label.js) — EL reuses EN.
 const LIFT_EN = { bench: 'Bench', squat: 'Squat', deadlift: 'Deadlift', ohp: 'OHP' };
 const LIFT_RU = { bench: 'Жим', squat: 'Присед', deadlift: 'Тяга', ohp: 'Жим стоя' };
 
@@ -31,8 +40,7 @@ const LIFT_RU = { bench: 'Жим', squat: 'Присед', deadlift: 'Тяга', 
  * @returns {string}
  */
 export function renderLiftBars(oneRMs, bw, sex, age, lang) {
-  const ru = lang === 'ru';
-  const names = ru ? LIFT_RU : LIFT_EN;
+  const names = lang === 'ru' ? LIFT_RU : LIFT_EN;
   const effectiveAge = age || 30;
 
   const rows = ['bench', 'squat', 'deadlift', 'ohp'].map((lift, idx) => {
@@ -60,7 +68,7 @@ export function renderLiftBars(oneRMs, bw, sex, age, lang) {
 <div class="lift-row-v2">
   <div class="lift-info-v2">
     <div class="lift-name-v2">${names[lift]}</div>
-    <div class="lift-tier-label" style="color:${color}">${ru ? TIER_RU[tier] : tier.charAt(0).toUpperCase() + tier.slice(1)}</div>
+    <div class="lift-tier-label" style="color:${color}">${lang === 'ru' ? TIER_RU[tier] : lang === 'el' ? TIER_EL[tier] : tier.charAt(0).toUpperCase() + tier.slice(1)}</div>
   </div>
   
   <div class="lift-bar-wrap-v2">

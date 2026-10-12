@@ -1,4 +1,4 @@
-import { tri } from '../locale.store.js';
+import { getLang, tri } from '../locale.store.js';
 'use strict';
 
 /**
@@ -130,16 +130,16 @@ export const listenerGroup = (target = typeof window !== 'undefined' ? window : 
  * Renders a design-system date-of-birth picker (year/month/day selects) in place of native `<input type="date">`,
  * whose Android UI renders in the system locale regardless of app language.
  * @param {string} dob YYYY-MM-DD or empty
- * @param {boolean} ru
  * @param {string} idPrefix DOM id prefix for the three selects
  * @returns {string}
  */
-export const dobSelectsHtml = (dob, ru, idPrefix) => {
+export const dobSelectsHtml = (dob, idPrefix) => {
   const [y, m, d] = dob ? dob.split('-') : ['', '', ''];
   const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
-  const months = ru
-    ? ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
-    : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = {
+    ru: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+    el: ['Ιαν', 'Φεβ', 'Μαρ', 'Απρ', 'Μάι', 'Ιουν', 'Ιουλ', 'Αυγ', 'Σεπ', 'Οκτ', 'Νοε', 'Δεκ'],
+  }[getLang()] || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const selStyle = 'height:52px; background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-1); font-weight:var(--fw-bold);';
   return `
     <!-- Зазор ушёл вниз к --sp-1: в трёхколоночной сетке он отнимается у селектов

@@ -7,7 +7,7 @@ import { loadProfile, updateProfile, updateWeightAndHeight, computeAge } from '.
 import { esc, haptic, dobSelectsHtml, readDobFromSelects } from './utils.js';
 import { shakeField } from './field-shake.js';
 import { initSegPill, syncSegPill } from '../ui/seg-pill.js';
-import { isRu, tri } from '../locale.store.js';
+import { getLang, tri } from '../locale.store.js';
 import { on, onChange } from '../events.js';
 import { ensureCss } from './lazy-css.js';
 
@@ -71,12 +71,21 @@ const TIER_RU = {
   Elite: 'Элита',
 };
 
+const TIER_EL = {
+  Untrained: 'Αγύμναστος',
+  Novice: 'Αρχάριος',
+  Intermediate: 'Μέτριος',
+  Advanced: 'Προχωρημένος',
+  Elite: 'Ελίτ',
+};
+
 const ACHIEVEMENTS = [
   {
     id: 'first_workout',
     icon: '1st',
     ru: 'Первая тренировка',
     en: 'First Workout',
+    el: 'Πρώτη προπόνηση',
     check: (w) => w.length >= 1,
   },
   {
@@ -84,6 +93,7 @@ const ACHIEVEMENTS = [
     icon: '5x',
     ru: '5 тренировок',
     en: '5 Workouts',
+    el: '5 προπονήσεις',
     check: (w) => w.length >= 5,
   },
   {
@@ -91,6 +101,7 @@ const ACHIEVEMENTS = [
     icon: '10x',
     ru: '10 тренировок',
     en: '10 Workouts',
+    el: '10 προπονήσεις',
     check: (w) => w.length >= 10,
   },
   {
@@ -98,6 +109,7 @@ const ACHIEVEMENTS = [
     icon: '50x',
     ru: '50 тренировок',
     en: '50 Workouts',
+    el: '50 προπονήσεις',
     check: (w) => w.length >= 50,
   },
   {
@@ -105,6 +117,7 @@ const ACHIEVEMENTS = [
     icon: '7D',
     ru: '7 дней подряд',
     en: '7-Day Streak',
+    el: '7 ημέρες στη σειρά',
     check: (w) => _calcStreak(w) >= 7,
   },
   {
@@ -112,6 +125,7 @@ const ACHIEVEMENTS = [
     icon: '1T',
     ru: '1 тонна за сессию',
     en: '1 Tonne Session',
+    el: '1 τόνος σε μία προπόνηση',
     check: (w) => w.some((s) => s.tonnage >= 1000),
   },
   {
@@ -119,6 +133,7 @@ const ACHIEVEMENTS = [
     icon: 'PM',
     ru: 'Мастер жима',
     en: 'Push Master',
+    el: 'Master του Push',
     check: (w) => w.filter((s) => s.type === 'push').length >= 10,
   },
   {
@@ -126,6 +141,7 @@ const ACHIEVEMENTS = [
     icon: '3W',
     ru: '3 недели без пропусков',
     en: '3 Weeks Consistent',
+    el: '3 εβδομάδες χωρίς κενά',
     check: (w) => _calcConsistency(w),
   },
 ];
@@ -178,20 +194,18 @@ const _tierFromScore = tierFromScore;
  * `computeAge`. Один и тот же атлет получал два разных скора на двух экранах.
  */
 async function _buildContext() {
-  const [workouts, orms, customName, colorIdx, frameIdx, lang, profile, metrics, photo] =
+  const [workouts, orms, customName, colorIdx, frameIdx, profile, metrics, photo] =
     await Promise.all([
       DB.Workouts.getAll().catch(() => []),
       DB.OneRM.getAll().catch(() => []),
       DB.Settings.get('athlete-name', ''),
       DB.Settings.get('avatar-color', '0'),
       DB.Settings.get('avatar-frame', '0'),
-      DB.Settings.get('lang', 'en'),
       loadProfile().catch(() => null),
       DB.Metrics.latest().catch(() => null),
       DB.Settings.get('athlete-photo', null),
     ]);
 
-  const ru = lang === 'ru';
   const name = customName || profile?.name || (tri('Атлет', 'Athlete', 'Αθλητής'));
   const [c1, c2] = AVATAR_COLORS[(parseInt(colorIdx) || 0) % AVATAR_COLORS.length];
   const [f1, f2] = FRAME_COLORS[(parseInt(frameIdx) || 0) % FRAME_COLORS.length];
@@ -233,7 +247,7 @@ async function _buildContext() {
     f2,
     colorIdx,
     frameIdx,
-    tierLabel: ru ? TIER_RU[tier] : tier,
+    tierLabel: tri(TIER_RU[tier], tier, TIER_EL[tier]),
     tierColor: TIER_COLOR[tier],
     tier,
     streak: _calcStreak(workouts),
@@ -250,7 +264,6 @@ async function _buildContext() {
     metrics,
     photo,
     profile,
-    ru,
   };
 }
 
@@ -303,7 +316,6 @@ export const AthleteRoom = (() => {
   async function render() {
     const ctx = await _buildContext();
     _ctx = ctx;
-    const { ru } = ctx;
     const activeTab = window._arActiveTab || 'profile';
 
     _overlay.innerHTML = `
@@ -387,7 +399,6 @@ export const AthleteRoom = (() => {
       dots,
       unlockedAch,
       photo,
-      ru,
       metrics,
     } = ctx;
 
@@ -456,7 +467,7 @@ export const AthleteRoom = (() => {
               return `
                 <div class="ar-ach-card ${unlocked ? 'unlocked' : 'locked'}">
                   <div class="ar-ach-icon">${a.icon}</div>
-                  <div class="ar-ach-title">${ru ? a.ru : a.en}</div>
+                  <div class="ar-ach-title">${tri(a.ru, a.en, a.el)}</div>
                   <div class="ar-ach-status">${unlocked ? '<svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>'}</div>
                 </div>`;
             }).join('')}
@@ -478,7 +489,7 @@ export const AthleteRoom = (() => {
               <input type="text" id="ar-name-input" class="ar-name-input" value="${esc(name)}" maxlength="25">
               
               <div class="ar-editor-label" style="margin-top:var(--sp-2)">${tri('Дата рождения', 'Date of Birth', 'Ημερομηνία γέννησης')}</div>
-              <div style="margin-top:var(--sp-1)">${dobSelectsHtml(ctx.profile?.dob || '', ru, 'ar-dob')}</div>
+              <div style="margin-top:var(--sp-1)">${dobSelectsHtml(ctx.profile?.dob || '', 'ar-dob')}</div>
 
               <div class="ar-editor-label" style="margin-top:var(--sp-2)">${tri('Пол', 'Sex', 'Φύλο')}</div>
               <select id="ar-sex-input" class="ar-name-input" style="background:var(--c-bg-2); border:1px solid var(--c-border); color:var(--c-text-1); border-radius:12px; height:48px; padding:0 var(--sp-2); width:100%; font-size:var(--fs-3); margin-top:var(--sp-1);">
@@ -523,10 +534,10 @@ export const AthleteRoom = (() => {
    * «что это за цифра рядом с тиром» и «откуда взялся Топ X%».
    */
   function _renderStrengthTab(container, ctx) {
-    const { ru, breakdown: b, total, oneRMs, weight, sex, age, profile } = ctx;
+    const { breakdown: b, total, oneRMs, weight, sex, age, profile } = ctx;
     const SCALE_MAX = SCORE_TIERS[SCORE_TIERS.length - 1].min + 30; // немного воздуха за «Элитой»
     const pos = Math.max(0, Math.min(100, (b.score / SCALE_MAX) * 100));
-    const tierLabel = (id) => (ru ? TIER_RU[id] : id);
+    const tierLabel = (id) => tri(TIER_RU[id], id, TIER_EL[id]);
 
     // Ступени тира на шкале — те же пороги, что решают, каким словом назвать атлета.
     const ticks = SCORE_TIERS.slice(1)
@@ -585,6 +596,7 @@ export const AthleteRoom = (() => {
     });
     const LIFT_RU = { bench: 'жим лёжа', squat: 'присед', deadlift: 'становая', ohp: 'жим стоя' };
     const LIFT_EN = { bench: 'bench', squat: 'squat', deadlift: 'deadlift', ohp: 'overhead press' };
+    // Greek gyms use the English lift names (see exercise-label.js), so EL reads from LIFT_EN.
 
     const empty = !total;
 
@@ -657,12 +669,11 @@ export const AthleteRoom = (() => {
       `
       }
 
-      ${renderLiftBars(oneRMs, weight, sex, age, ru ? 'ru' : 'en')}
+      ${renderLiftBars(oneRMs, weight, sex, age, getLang())}
     `;
   }
 
-  function _renderMetricsTab(container, ctx) {
-    const { ru } = ctx;
+  function _renderMetricsTab(container) {
     // Пара с инсетом .ar-content (--sp-2): отрицательный margin гасит верхний
     // отступ вкладки, поэтому переводится только вместе с ним.
     container.innerHTML = `<div id="ar-body-stats-root" style="margin-top: calc(-1 * var(--sp-2));"></div>`;
