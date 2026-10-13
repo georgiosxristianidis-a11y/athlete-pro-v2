@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### FIELD-5-TAIL: убрано мёртвое bestVolume из detectPlateau (1.27.181)
+
+- **Причина.** После FIELD-5 `detectPlateau` по-прежнему считал объём лучшего подхода (`bestSet`) и клал его в `sessions[].bestVolume`, но ни функция, ни вызывающие это поле не читали.
+- **Что.** Блок `reduce` и ключ `bestVolume` удалены; сессия — `{ timestamp, weight }`. Поведение не изменилось: 3 теста FIELD-5 зелёные без правки теста.
+
 ### HOME-1: тумблер «Серия в неделях» в Лаборатории (1.27.180)
 
 - `streak-weeks` добавлен в `LAB_FLAGS`, строки `lab.streak-weeks`/`_sub` в ru/en/el. Дефолт по-прежнему OFF — включается с телефона в Профиль → Лаборатория.
