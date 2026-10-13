@@ -189,7 +189,7 @@ function _calcConsistency(workouts) {
    здесь только подписи и разметка. Короткий заголовок обязателен: длинный
    переносится и рвёт выравнивание полос у соседних плиток. */
 const LADDER_LABEL = {
-  sessionTonnes: ['Тоннаж за сессию', 'Session tonnage', 'Τόνοι ανά προπόνηση'],
+  sessionTonnes: ['Тоннаж за сессию', 'Session tonnage', 'Τόνοι/προπόνηση'],
   totalTonnes: ['Тоннаж всего', 'Total tonnage', 'Συνολικοί τόνοι'],
   workouts: ['Тренировки', 'Workouts', 'Προπονήσεις'],
   weekStreak: ['Недельная серия', 'Weekly streak', 'Εβδομαδιαία σειρά'],
