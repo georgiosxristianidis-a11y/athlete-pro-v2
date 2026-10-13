@@ -61,8 +61,12 @@ const ROOT_DOCS_ALLOWED = new Set([
  * Raised to 530 in its own PR (30.09), same reason a third time: main sat at
  * 480/480, and two docs PRs waited on it — HANDOFF_field_ux.md (PR#406) and
  * HANDOFF_boot_motion.md, one file each. ~10% headroom, as before.
+ *
+ * Raised to 580 in its own PR (13.10), same reason a fourth time: main sat at
+ * 529/530, one file of headroom, and ANL-2 (js/shared/orm-list.js + its test)
+ * needs two. ~10% headroom, as before.
  */
-const MAX_TRACKED_FILES = 530;
+const MAX_TRACKED_FILES = 580;
 
 /** Binaries belong in assets/ (and only there). */
 const MAX_FILE_BYTES = 1024 * 1024;
