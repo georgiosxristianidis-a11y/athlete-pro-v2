@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Гард.** `test/preflight-root-wip.test.js`: юниты разбора и вердикта + 8 кейсов на синтетическом репозитории (bare origin, клон, линкованный worktree, autocrlf=true). Без проверки красны 9.
 - Версия не меняется: правка в `scripts/` и `test/`.
 
+### FONT-1: кириллица заголовков на Manrope, а не на системном шрифте (1.27.178)
+
+- **Причина.** `--font-heading: 'Instrument Sans', sans-serif` — у Instrument Sans нет кириллической кассы, побуквенный fallback уходил в системный sans (Roboto на Android). В «Сплит PPL» слово и латиница рисовались разными гарнитурами.
+- **Правка.** `--font-heading: 'Instrument Sans', 'Manrope', sans-serif` в `css/base.css`: латиница и цифры остаются Instrument Sans, кириллица берёт уже загруженный Manrope. 20 селекторов на токене не тронуты.
+- **Проверка (превью 375px, RU).** `.section-label`/`.modal-title`/`.intel-title` — стек с Manrope; ширина кириллической строки на стеке 767.4 = Manrope (было 792.3 = `sans-serif`); `document.fonts.check('16px Manrope','Ж')` = true.
+
 ### WSET-2: достижения-лестницы в комнате атлета за флагом badge-ladders (1.27.177)
 
 - **Вид (вариант A, Gio 13.10).** Плитки по две: достигнутая ступень крупно, сегментная полоса до следующей, «значение / след. ступень» и «k из n». Заливка — `scaleX`, без layout. Флаг OFF: старая сетка 4×2 как была. Включается в Профиле → Лаборатория («Достижения-лестницы»).
