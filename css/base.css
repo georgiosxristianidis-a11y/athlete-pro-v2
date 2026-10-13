@@ -184,7 +184,7 @@
 
   /* Typography Mix */
   --font-main: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-heading: 'Instrument Sans', sans-serif;
+  --font-heading: 'Instrument Sans', 'Manrope', sans-serif;
 
   /* Spatial Rhythm.
      --side-padding 20px is an intentional Apple-style "Air" exception that sits
