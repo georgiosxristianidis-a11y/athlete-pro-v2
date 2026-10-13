@@ -15,7 +15,7 @@
 2. **`LAUNCH-10` п.1 на Android** и `SERVER_KEY_MONTHLY_CAP_USD=1` на Vercel prod (BUDGET-1, Gio 12.10) — выставлен ли?
 3. **Поле флагов** (Профиль → Лаборатория): `sw-cache-first`, затем `boot-cascade`; `working-sets` на живых данных (жим, гантели)
 4. **`CORE-9`:** живой прогон `scripts/coach-eval.mjs` (`HANDOFF_core.md`)
-5. **`HOME-1`** влита за флагом `streak-weeks` OFF — включить? (в Лабораторию не выведен)
+5. **`HOME-1`** — флаг `streak-weeks` тумблером в Лаборатории: поле на живых данных
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 

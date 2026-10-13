@@ -132,7 +132,7 @@ const DEFAULTS = {
   // HOME-1: «Серия N нед.» на Главной — подряд засчитанные недели (≥ max(норма
   // плана, 2) тренировок, ISO пн–вс по местному времени) вместо дней подряд,
   // которые при 3 тренировках в неделю всегда 0-1. Полоса 7 дней не меняется.
-  // Default OFF до решения Gio. Kill switch: Flags.setFlag('streak-weeks', false)
+  // Default OFF до поля Gio; тумблер в Лаборатории. Kill switch: Flags.setFlag('streak-weeks', false)
   'streak-weeks': false,
 };
 
@@ -163,7 +163,7 @@ export function allFlags() {
  * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
  * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
  */
-export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders']);
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks']);
 
 /** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
 export function isOverridden(name) {
