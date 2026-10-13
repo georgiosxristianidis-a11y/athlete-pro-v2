@@ -593,6 +593,66 @@
 }
 .ar-ach-card.locked .ar-ach-status { color: var(--c-text-3); }
 
+/* ── Achievement ladders (WSET-2, флаг badge-ladders) ──
+   Плитки по две; нечётная последняя тянется на обе колонки. Заливка сегмента —
+   scaleX от левого края (закон кадра: только transform), доля идёт из --p. */
+.ar-ladders {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 16px 20px;
+}
+.ar-lad {
+  border-radius: var(--r-m);
+  padding: 12px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ar-lad:last-child:nth-child(odd) { grid-column: span 2; }
+.ar-lad-lbl {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  color: var(--c-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+.ar-lad-val {
+  font-size: var(--fs-4);
+  font-weight: var(--fw-black);
+  color: var(--c-accent);
+  letter-spacing: -0.3px;
+  line-height: 1;
+}
+.ar-lad-val.none { color: var(--c-text-3); }
+.ar-lad-segs { display: flex; gap: 3px; }
+.ar-lad-segs span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--c-border);
+  position: relative;
+  overflow: hidden;
+}
+.ar-lad-segs i {
+  position: absolute;
+  inset: 0;
+  background: var(--c-accent);
+  transform-origin: left;
+  transform: scaleX(var(--p));
+}
+.ar-lad-cap {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+}
+.ar-lad-cap b { color: var(--c-text-2); font-weight: var(--fw-md); }
+
 /* ── Personal Records ── */
 .ar-pr-list {
   padding: 0 16px 20px;
