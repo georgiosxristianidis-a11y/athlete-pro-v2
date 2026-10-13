@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### HOME-1: тумблер «Серия в неделях» в Лаборатории (1.27.180)
+
+- `streak-weeks` добавлен в `LAB_FLAGS`, строки `lab.streak-weeks`/`_sub` в ru/en/el. Дефолт по-прежнему OFF — включается с телефона в Профиль → Лаборатория.
+
 ### HOME-1: серия на Главной в неделях за флагом streak-weeks (1.27.179)
 
 - **Причина.** `computeStreak` считал дни подряд с тренировкой: при 3 тренировках в неделю «серия» всегда 0-1.
