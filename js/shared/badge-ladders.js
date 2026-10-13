@@ -109,6 +109,29 @@ export function climb(rungs, value) {
  */
 
 /**
+ * Вариант E (Gio 14.10): три главные карточки — тоннаж за сессию, тренировки
+ * и жим; нет жима (нет 1RM или веса) — вместо него недельная серия. Остальное
+ * уходит под «Все достижения».
+ * @param {Ladder[]} ladders
+ * @returns {{ heroes: Ladder[], rest: Ladder[] }}
+ */
+export function splitHeroes(ladders) {
+  const by = new Map((ladders || []).map((l) => [l.id, l]));
+  const ids = ['sessionTonnes', 'workouts', by.has('bench') ? 'bench' : 'weekStreak'];
+  const heroes = ids.map((id) => by.get(id)).filter(Boolean);
+  return { heroes, rest: (ladders || []).filter((l) => !heroes.includes(l)) };
+}
+
+/**
+ * Заливка одной полосы: доля текущего сегмента, у потолка лестницы — полная.
+ * @param {Ladder} l
+ * @returns {number}
+ */
+export function currentFill(l) {
+  return l.next === null ? 1 : l.segs[l.reached] ?? 0;
+}
+
+/**
  * @param {Array<{ timestamp: number, tonnage?: number, prs?: unknown[] }>} workouts
  * @param {{
  *   now?: number, benchOneRM?: number, sex?: 'm'|'f', bodyweight?: number, age?: number
