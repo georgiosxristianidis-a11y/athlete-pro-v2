@@ -15,13 +15,15 @@
 2. **`LAUNCH-10` п.1 на Android** и `SERVER_KEY_MONTHLY_CAP_USD=1` на Vercel prod (BUDGET-1, Gio 12.10) — выставлен ли?
 3. **Поле флагов** (Профиль → Лаборатория): `sw-cache-first`, затем `boot-cascade`; `working-sets` на живых данных (жим, гантели)
 4. **`CORE-9`:** живой прогон `scripts/coach-eval.mjs` (`HANDOFF_core.md`)
+5. **`HOME-1`** влита за флагом `streak-weeks` OFF — включить? (в Лабораторию не выведен)
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
 1. **`FIELD-7`** — вес в паузе острова (вариант A). `HANDOFF_field_ux.md`; затем `FIELD-3`, `FIELD-6`
 2. **`WSET-2`** — значки-лестницы, сперва мокап; затем `PLAN-1`, `ANL-ALT`, `SWAP-1`, `PLATE-*`
 3. Фон, по одной за PR: архитектурный трек (`A15`, следующая поверхность — хендофф Cursor)
-4. **`GEAR-1`** — решена (A, 1.5 с), косметика; вторая волна MOTION — `HANDOFF_motion_pro.md`
+4. Хвост HOME-1: `insights.engine._computeStreak` тоже в днях; свести `weekKey` (badge-ladders) и `computeWeekStreak` в shared
+5. **`GEAR-1`** — решена (A, 1.5 с), косметика; вторая волна MOTION — `HANDOFF_motion_pro.md`
 
 **После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PERF-9` (стоп на мокап Gio), `PROG-0`.
 

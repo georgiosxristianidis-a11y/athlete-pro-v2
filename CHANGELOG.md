@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### HOME-1: серия на Главной в неделях за флагом streak-weeks (1.27.179)
+
+- **Причина.** `computeStreak` считал дни подряд с тренировкой: при 3 тренировках в неделю «серия» всегда 0-1.
+- **Правка.** `computeWeekStreak(workouts, weeklyNorm, now)` в `js/dashboard.store.js`: неделя ISO пн–вс по местному времени засчитана при тренировках ≥ max(норма, 2); серия — подряд засчитанные недели от прошлой, текущая даёт +1 только если уже засчитана. Флаг `streak-weeks` (OFF) переключает строку на `dash.streakWeeks` (ru/en/el); полоса 7 дней и `computeStreak` не тронуты.
+- **Норма плана не хранится** (план — только упражнения, онбординг частоту не спрашивает) — порог 2. Математика недели дублирует `weekKey` из `shared/badge-ladders.js`: импорт тянул бы `strength-engine` в бут-граф.
+- **Гард.** `test/dashboard-week-streak.test.js` — 12 кейсов (стык вс 23:30 / пн 00:30, done:false, newest-first), зелёные в TZ Athens/LA/Kiritimati.
+
 ### FLOW-6: preflight видит забытый WIP в корневом чекауте
 
 - **Проверка 3c.** `scripts/root-wip.mjs` читает основной worktree (первый в `git worktree list`, в том числе из линкованного): `git status --porcelain=v1 -z -uall` под `--no-optional-locks` — индекс корня не переписывается под чужой сессией. Возраст по самой свежей mtime; старше 24 ч — WARN с числом путей, списком (до 10) и подсказкой без разрушающих команд, свежее — OK «правится сейчас». Только удаления — возраст по mtime индекса.
