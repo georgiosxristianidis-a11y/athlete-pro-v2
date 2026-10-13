@@ -245,6 +245,7 @@ export const EL = {
   'dash.launching': 'Έναρξη προπόνησης {type}',
   'dash.no_data': 'Χωρίς δεδομένα',
   'dash.streak': 'Σερί {n} ημερών',
+  'dash.streakWeeks': 'Σερί {n} εβδομάδων',
   'dash.dow_mo': 'Δε',
   'dash.dow_tu': 'Τρ',
   'dash.dow_we': 'Τε',
