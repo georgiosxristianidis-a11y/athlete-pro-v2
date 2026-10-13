@@ -593,65 +593,6 @@
 }
 .ar-ach-card.locked .ar-ach-status { color: var(--c-text-3); }
 
-/* ── Achievement ladders (WSET-2, флаг badge-ladders) ──
-   Плитки по две; нечётная последняя тянется на обе колонки. Заливка сегмента —
-   scaleX от левого края (закон кадра: только transform), доля идёт из --p. */
-.ar-ladders {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 0 16px 20px;
-}
-.ar-lad {
-  border-radius: var(--r-m);
-  padding: 12px;
-  border: 1px solid var(--c-border);
-  background: var(--c-surface);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.ar-lad:last-child:nth-child(odd) { grid-column: span 2; }
-.ar-lad-lbl {
-  font-size: var(--fs-1);
-  font-weight: var(--fw-md);
-  color: var(--c-text-2);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  line-height: 1.2;
-}
-.ar-lad-val {
-  font-size: var(--fs-4);
-  font-weight: var(--fw-black);
-  color: var(--c-accent);
-  letter-spacing: -0.3px;
-  line-height: 1;
-}
-.ar-lad-val.none { color: var(--c-text-3); }
-.ar-lad-segs { display: flex; gap: 3px; }
-.ar-lad-segs span {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--c-border);
-  position: relative;
-  overflow: hidden;
-}
-.ar-lad-segs i {
-  position: absolute;
-  inset: 0;
-  background: var(--c-accent);
-  transform-origin: left;
-  transform: scaleX(var(--p));
-}
-.ar-lad-cap {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--fs-1);
-  font-weight: var(--fw-md);
-  color: var(--c-text-3);
-}
-.ar-lad-cap b { color: var(--c-text-2); font-weight: var(--fw-md); }
 
 /* ── Personal Records ── */
 .ar-pr-list {
@@ -1170,3 +1111,32 @@
   color: var(--c-accent);
   margin-bottom: var(--sp-0-5);
 }
+
+/* ── Achievement ladders, вариант E (WSET-2b, флаг badge-ladders) ──
+   Три карточки и свёрнутый список. Нигде мельче --fs-2. Заливка полосы —
+   scaleX от левого края (закон кадра: только transform), доля из --p. */
+.ar-ladders { padding: 0 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.ar-lad { border-radius: var(--r-m); padding: 16px; border: 1px solid var(--c-border); background: var(--c-surface); }
+.ar-lad-lbl { font-size: var(--fs-2); font-weight: var(--fw-md); color: var(--c-text-2); }
+.ar-lad-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 6px 0 12px; }
+.ar-lad-val { font-size: var(--fs-6); font-weight: var(--fw-black); color: var(--c-accent); letter-spacing: -0.5px; line-height: 1.1; }
+.ar-lad-val.none { color: var(--c-text-3); }
+.ar-lad-head > span { font-size: var(--fs-3); font-weight: var(--fw-md); color: var(--c-text-2); }
+.ar-lad-bar { height: 8px; border-radius: 4px; background: var(--c-border); overflow: hidden; }
+.ar-lad-bar i { display: block; height: 100%; background: var(--c-accent); transform-origin: left; transform: scaleX(var(--p)); }
+.ar-lad-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: var(--fs-2); font-weight: var(--fw-md); color: var(--c-text-2); }
+.ar-lad-foot em { font-style: normal; color: var(--c-text-3); }
+.ar-lad-more { appearance: none; background: none; font: inherit; width: 100%; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-radius: var(--r-m); border: 1px solid var(--c-border); color: var(--c-text-3); }
+.ar-lad-more:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+.ar-lad-morelbl { display: block; font-size: var(--fs-3); font-weight: var(--fw-md); color: var(--c-text-1); }
+.ar-lad-more small { display: block; margin-top: 2px; font-size: var(--fs-2); font-weight: var(--fw-md); color: var(--c-text-3); }
+.ar-lad-more svg { flex: none; }
+.ar-lad-more[aria-expanded="true"] svg { transform: rotate(180deg); }
+.ar-lad-rows { display: flex; flex-direction: column; gap: 16px; padding: 4px 4px 0; }
+.ar-lad-rows[hidden] { display: none; }
+.ar-lad-rowhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.ar-lad-rowhead span { font-size: var(--fs-3); font-weight: var(--fw-md); color: var(--c-text-1); }
+.ar-lad-rowhead b { font-size: var(--fs-4); font-weight: var(--fw-black); color: var(--c-accent); }
+.ar-lad-rowhead b.none { color: var(--c-text-3); }
+.ar-lad-rowcap { margin: 2px 0 8px; font-size: var(--fs-2); font-weight: var(--fw-md); color: var(--c-text-3); }
+.ar-lad-rows .ar-lad-bar { height: 6px; border-radius: 3px; }
