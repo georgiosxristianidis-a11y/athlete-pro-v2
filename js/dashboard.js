@@ -4,7 +4,7 @@
    ════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
-import { getVolumeSummary, getNextType, computeStreak, getNextSessionRecs } from './dashboard.store.js';
+import { getVolumeSummary, getNextType, computeStreak, computeWeekStreak, getNextSessionRecs } from './dashboard.store.js';
 import {
   generateSparkline,
   generateVolumeBars,
@@ -582,7 +582,12 @@ export const Dashboard = (() => {
     const { streak, workedDays } = computeStreak(workouts);
 
     const el = document.getElementById('streak-count');
-    if (el) el.textContent = t('dash.streak', { n: streak });
+    // HOME-1: норма «тренировок в неделю» в плане не хранится — порог 2 внутри computeWeekStreak.
+    if (el) {
+      el.textContent = flag('streak-weeks')
+        ? t('dash.streakWeeks', { n: computeWeekStreak(workouts) })
+        : t('dash.streak', { n: streak });
+    }
 
     strip.innerHTML = cells
       .map((d) => {
