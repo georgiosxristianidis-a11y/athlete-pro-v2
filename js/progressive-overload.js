@@ -160,16 +160,7 @@ export function detectPlateau(exerciseName, workoutHistory) {
     // A session where nothing was lifted is not a session "at this weight".
     const weight = ex ? _topLiftedWeight(ex) : null;
     if (weight !== null) {
-      const bestSet = (ex.sets || []).reduce((max, s) => {
-        const volume = (s.weight || 0) * (s.reps || 0);
-        return volume > max ? volume : max;
-      }, 0);
-
-      sessions.push({
-        timestamp: workout.timestamp,
-        weight,
-        bestVolume: bestSet
-      });
+      sessions.push({ timestamp: workout.timestamp, weight });
     }
   }
 
