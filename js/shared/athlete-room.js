@@ -10,6 +10,8 @@ import { initSegPill, syncSegPill } from '../ui/seg-pill.js';
 import { getLang, tri } from '../locale.store.js';
 import { on, onChange } from '../events.js';
 import { ensureCss } from './lazy-css.js';
+import { flag } from '../flags.js';
+import { buildLadders } from './badge-ladders.js';
 
 const _nextFrame =
   typeof requestAnimationFrame === 'function'
@@ -183,6 +185,57 @@ function _calcConsistency(workouts) {
   return activeWeeks >= 3;
 }
 
+/* WSET-2: значки-лестницы (флаг badge-ladders). Расчёт — badge-ladders.js,
+   здесь только подписи и разметка. Короткий заголовок обязателен: длинный
+   переносится и рвёт выравнивание полос у соседних плиток. */
+const LADDER_LABEL = {
+  sessionTonnes: ['Тоннаж за сессию', 'Session tonnage', 'Τόνοι ανά προπόνηση'],
+  totalTonnes: ['Тоннаж всего', 'Total tonnage', 'Συνολικοί τόνοι'],
+  workouts: ['Тренировки', 'Workouts', 'Προπονήσεις'],
+  weekStreak: ['Недельная серия', 'Weekly streak', 'Εβδομαδιαία σειρά'],
+  prs: ['Рекорды (PR)', 'Records (PR)', 'Ρεκόρ (PR)'],
+  bench: ['Мастер жима', 'Push Master', 'Master του Push'],
+  dayStreak: ['7 дней подряд', '7-Day Streak', '7 ημέρες στη σειρά'],
+};
+const LADDER_UNIT = {
+  sessionTonnes: ['т', 't', 'τν'],
+  totalTonnes: ['т', 't', 'τν'],
+  weekStreak: ['нед', 'wk', 'εβδ'],
+  bench: ['кг', 'kg', 'kg'],
+  dayStreak: ['дн', 'd', 'ημ'],
+};
+const BENCH_TIERS = ['Novice', 'Intermediate', 'Advanced', 'Elite'];
+
+function _fmtNum(n) {
+  const lang = getLang();
+  const loc = lang === 'en' ? 'en-US' : lang === 'el' ? 'el-GR' : 'ru-RU';
+  return Number(n).toLocaleString(loc, { maximumFractionDigits: 1 });
+}
+
+/** @param {import('./badge-ladders.js').Ladder[]} ladders */
+function _laddersHtml(ladders) {
+  const tiles = ladders
+    .map((l) => {
+      const u = LADDER_UNIT[l.id] ? ' ' + tri(...LADDER_UNIT[l.id]) : '';
+      let big = '—';
+      if (l.reached) {
+        const tier = BENCH_TIERS[l.reached - 1];
+        big = l.id === 'bench' ? tri(TIER_RU[tier], tier, TIER_EL[tier]) : _fmtNum(l.rungs[l.reached - 1]) + u;
+      }
+      const segs = l.segs.map((p) => `<span><i style="--p:${p.toFixed(3)}"></i></span>`).join('');
+      const cap = (l.next === null ? _fmtNum(l.value) : `${_fmtNum(l.value)} / ${_fmtNum(l.next)}`) + u;
+      return `
+        <div class="ar-lad">
+          <div class="ar-lad-lbl">${tri(...LADDER_LABEL[l.id])}</div>
+          <div class="ar-lad-val${l.reached ? '' : ' none'}">${big}</div>
+          <div class="ar-lad-segs">${segs}</div>
+          <div class="ar-lad-cap"><span>${cap}</span><b>${l.reached} ${tri('из', 'of', 'από')} ${l.rungs.length}</b></div>
+        </div>`;
+    })
+    .join('');
+  return `<div class="ar-ladders">${tiles}</div>`;
+}
+
 // Пороги тиров живут в strength-engine.js (SCORE_TIERS) — здесь была копия,
 // и разъезд порогов между hero и комнатой никто бы не заметил.
 const _tierFromScore = tierFromScore;
@@ -261,6 +314,9 @@ async function _buildContext() {
     weight,
     height,
     unlockedAch: new Set(ACHIEVEMENTS.filter((a) => a.check(workouts)).map((a) => a.id)),
+    ladders: flag('badge-ladders')
+      ? buildLadders(workouts, { benchOneRM: oneRMs.bench, bodyweight: weight, sex, age })
+      : null,
     metrics,
     photo,
     profile,
@@ -398,6 +454,7 @@ export const AthleteRoom = (() => {
       score,
       dots,
       unlockedAch,
+      ladders,
       photo,
       metrics,
     } = ctx;
@@ -461,7 +518,7 @@ export const AthleteRoom = (() => {
           </div>
 
           <div class="ar-section-label">${tri('Достижения', 'Achievements', 'Επιτεύγματα')}</div>
-          <div class="ar-achievements">
+          ${ladders ? _laddersHtml(ladders) : `<div class="ar-achievements">
             ${ACHIEVEMENTS.map((a) => {
               const unlocked = unlockedAch.has(a.id);
               return `
@@ -471,7 +528,7 @@ export const AthleteRoom = (() => {
                   <div class="ar-ach-status">${unlocked ? '<svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>'}</div>
                 </div>`;
             }).join('')}
-          </div>
+          </div>`}
 
           <div class="ar-name-editor" id="ar-stat-editor" style="display:none; position:absolute; inset:0; background:var(--c-bg-1); z-index:10; padding:var(--sp-2);">
             <div class="ar-editor-card">

@@ -124,6 +124,11 @@ const DEFAULTS = {
   // Пересчёт на чтении в js/db/workouts.js, записи в IDB не меняются.
   // Default OFF до поля Gio. Kill switch: Flags.setFlag('working-sets', false)
   'working-sets': false,
+  // WSET-2: достижения комнаты атлета — значки-лестницы с прогрессом до
+  // следующей ступени (js/shared/badge-ladders.js) вместо плоской сетки.
+  // Легаси-сетка ACHIEVEMENTS остаётся под флагом OFF.
+  // Default OFF до поля Gio. Kill switch: Flags.setFlag('badge-ladders', false)
+  'badge-ladders': false,
 };
 
 /** @param {string} name @returns {boolean} */
@@ -153,7 +158,7 @@ export function allFlags() {
  * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
  * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
  */
-export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections']);
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders']);
 
 /** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
 export function isOverridden(name) {
