@@ -11,7 +11,7 @@ import { getLang, tri } from '../locale.store.js';
 import { on, onChange } from '../events.js';
 import { ensureCss } from './lazy-css.js';
 import { flag } from '../flags.js';
-import { buildLadders } from './badge-ladders.js';
+import { buildLadders, splitHeroes, currentFill } from './badge-ladders.js';
 
 const _nextFrame =
   typeof requestAnimationFrame === 'function'
@@ -32,6 +32,13 @@ on('ar:selectColor', (el) => AR().selectColor(+el.dataset.i));
 on('ar:selectFrame', (el) => AR().selectFrame(+el.dataset.i));
 on('ar:saveName', () => AR().saveName());
 on('ar:cancelEdit', () => AR().cancelEdit());
+on('ar:toggleLadders', (el) => {
+  const rows = el.nextElementSibling;
+  if (!rows) return;
+  const open = rows.hidden;
+  rows.hidden = !open;
+  el.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
 onChange('ar:photoSelected', (el, e) => AR().handlePhotoSelected(e));
 
 /* ════════════════════════════════════════════════════════
@@ -212,28 +219,60 @@ function _fmtNum(n) {
   return Number(n).toLocaleString(loc, { maximumFractionDigits: 1 });
 }
 
+/** Вариант E (Gio 14.10): подписи одной лестницы, общие для карточки и строки. */
+function _ladderParts(l) {
+  const u = LADDER_UNIT[l.id] ? ' ' + tri(...LADDER_UNIT[l.id]) : '';
+  let big = '—';
+  if (l.reached) {
+    const tier = BENCH_TIERS[l.reached - 1];
+    big = l.id === 'bench' ? tri(TIER_RU[tier], tier, TIER_EL[tier]) : _fmtNum(l.rungs[l.reached - 1]) + u;
+  }
+  let to = '';
+  if (l.next !== null) {
+    const nt = BENCH_TIERS[l.reached];
+    to = tri('до', 'to', 'έως') + ' ' + (l.id === 'bench' ? tri(TIER_RU[nt], nt, TIER_EL[nt]) : _fmtNum(l.next) + u);
+  }
+  const left = l.next === null ? '' : `${tri('осталось', 'left', 'απομένουν')} ${_fmtNum(l.next - l.value)}${u}`;
+  const have = l.next === null ? _fmtNum(l.value) + u : `${_fmtNum(l.value)} ${tri('из', 'of', 'από')} ${_fmtNum(l.next)}${u}`;
+  const bar = `<div class="ar-lad-bar"><i style="--p:${currentFill(l).toFixed(3)}"></i></div>`;
+  return { big, to, left, have, bar, label: tri(...LADDER_LABEL[l.id]), none: l.reached ? '' : ' none' };
+}
+
 /** @param {import('./badge-ladders.js').Ladder[]} ladders */
 function _laddersHtml(ladders) {
-  const tiles = ladders
+  const { heroes, rest } = splitHeroes(ladders);
+  const cards = heroes
     .map((l) => {
-      const u = LADDER_UNIT[l.id] ? ' ' + tri(...LADDER_UNIT[l.id]) : '';
-      let big = '—';
-      if (l.reached) {
-        const tier = BENCH_TIERS[l.reached - 1];
-        big = l.id === 'bench' ? tri(TIER_RU[tier], tier, TIER_EL[tier]) : _fmtNum(l.rungs[l.reached - 1]) + u;
-      }
-      const segs = l.segs.map((p) => `<span><i style="--p:${p.toFixed(3)}"></i></span>`).join('');
-      const cap = (l.next === null ? _fmtNum(l.value) : `${_fmtNum(l.value)} / ${_fmtNum(l.next)}`) + u;
+      const p = _ladderParts(l);
       return `
         <div class="ar-lad">
-          <div class="ar-lad-lbl">${tri(...LADDER_LABEL[l.id])}</div>
-          <div class="ar-lad-val${l.reached ? '' : ' none'}">${big}</div>
-          <div class="ar-lad-segs">${segs}</div>
-          <div class="ar-lad-cap"><span>${cap}</span><b>${l.reached} ${tri('из', 'of', 'από')} ${l.rungs.length}</b></div>
+          <div class="ar-lad-lbl">${p.label}</div>
+          <div class="ar-lad-head"><b class="ar-lad-val${p.none}">${p.big}</b><span>${p.to}</span></div>
+          ${p.bar}
+          <div class="ar-lad-foot"><span>${p.have}</span><em>${p.left}</em></div>
         </div>`;
     })
     .join('');
-  return `<div class="ar-ladders">${tiles}</div>`;
+  const rows = rest
+    .map((l) => {
+      const p = _ladderParts(l);
+      return `
+        <div class="ar-lad-row">
+          <div class="ar-lad-rowhead"><span>${p.label}</span><b class="${p.none.trim()}">${p.big}</b></div>
+          <div class="ar-lad-rowcap">${p.have}${p.left ? ' · ' + p.left : ''}</div>
+          ${p.bar}
+        </div>`;
+    })
+    .join('');
+  const names = rest.map((l) => tri(...LADDER_LABEL[l.id])).join(', ');
+  const more = rest.length
+    ? `<button type="button" class="ar-lad-more" data-action="ar:toggleLadders" aria-expanded="false">
+         <span><span class="ar-lad-morelbl">${tri('Все достижения', 'All achievements', 'Όλα τα επιτεύγματα')} · ${rest.length}</span><small>${names}</small></span>
+         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+       </button>
+       <div class="ar-lad-rows" hidden>${rows}</div>`
+    : '';
+  return `<div class="ar-ladders">${cards}${more}</div>`;
 }
 
 // Пороги тиров живут в strength-engine.js (SCORE_TIERS) — здесь была копия,
