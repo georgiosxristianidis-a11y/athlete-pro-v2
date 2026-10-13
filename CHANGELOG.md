@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### FLOW-6: preflight видит забытый WIP в корневом чекауте
+
+- **Проверка 3c.** `scripts/root-wip.mjs` читает основной worktree (первый в `git worktree list`, в том числе из линкованного): `git status --porcelain=v1 -z -uall` под `--no-optional-locks` — индекс корня не переписывается под чужой сессией. Возраст по самой свежей mtime; старше 24 ч — WARN с числом путей, списком (до 10) и подсказкой без разрушающих команд, свежее — OK «правится сейчас». Только удаления — возраст по mtime индекса.
+- **Гард.** `test/preflight-root-wip.test.js`: юниты разбора и вердикта + 8 кейсов на синтетическом репозитории (bare origin, клон, линкованный worktree, autocrlf=true). Без проверки красны 9.
+- Версия не меняется: правка в `scripts/` и `test/`.
+
 ### ANL-2: список 1RM в аналитике свёрнут по умолчанию (1.27.176)
 
 - **Тоггл.** Заголовок «Рекорды (1RM)» — кнопка с числом записей и шевроном; список скрыт до тапа, состояние не запоминается. `aria-expanded`, `aria-controls`, Enter/Space (нативная `<button>`); свёрнутое тело `inert`, строки не ловят Tab.
