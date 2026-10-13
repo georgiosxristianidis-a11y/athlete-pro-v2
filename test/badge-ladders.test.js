@@ -7,6 +7,8 @@ import {
   dayStreak,
   climb,
   buildLadders,
+  splitHeroes,
+  currentFill,
 } from '../js/shared/badge-ladders.js';
 
 const DAY = 86400000;
@@ -105,4 +107,25 @@ test('RUNGS: пороги Gio 13.10 не дрейфуют', () => {
   assert.deepEqual(RUNGS.weekStreak, [3, 6, 12, 26]);
   assert.deepEqual(RUNGS.prs, [10, 25, 50, 100]);
   assert.deepEqual(RUNGS.dayStreak, [7]);
+});
+
+test('splitHeroes: три главные — сессия, тренировки, жим; остальные под список', () => {
+  const l = buildLadders([sess(0)], { now: NOW, benchOneRM: 105, bodyweight: 90, sex: 'm', age: 38 });
+  const { heroes, rest } = splitHeroes(l);
+  assert.deepEqual(heroes.map((x) => x.id), ['sessionTonnes', 'workouts', 'bench']);
+  assert.deepEqual(rest.map((x) => x.id), ['totalTonnes', 'weekStreak', 'prs', 'dayStreak']);
+});
+
+test('splitHeroes: без жима третья карточка — недельная серия, в списке три', () => {
+  const { heroes, rest } = splitHeroes(buildLadders([sess(0)], { now: NOW }));
+  assert.deepEqual(heroes.map((x) => x.id), ['sessionTonnes', 'workouts', 'weekStreak']);
+  assert.deepEqual(rest.map((x) => x.id), ['totalTonnes', 'prs', 'dayStreak']);
+});
+
+test('currentFill: доля текущего сегмента, потолок лестницы даёт полную полосу', () => {
+  const mid = climb([5, 10, 15, 20], 11.8);
+  assert.ok(Math.abs(currentFill({ ...mid, rungs: [5, 10, 15, 20], id: 'x', value: 11.8 }) - 0.36) < 1e-9);
+  const top = climb([10, 50], 400);
+  assert.equal(currentFill({ ...top, rungs: [10, 50], id: 'x', value: 400 }), 1);
+  assert.equal(currentFill({ ...climb([10, 50], 0), rungs: [10, 50], id: 'x', value: 0 }), 0);
 });
