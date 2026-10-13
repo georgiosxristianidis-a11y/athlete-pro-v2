@@ -8,6 +8,8 @@
 //   3b. база содержит отвергнутую линию -> её код уедет в main под видом карточки
 //      (BASE-1: ворктри трижды подряд приезжал нарезанным от `elite-hud-wow`,
 //      где утечка BYOK-ключа в неаутентифицированный эндпоинт)
+//   3c. в корневом чекауте лежит незакоммиченное старше суток -> забытый WIP без ветки
+//      и PR, который не видит ни один другой слой (FLOW-6; только WARN, только чтение)
 //   4. невлитые свои ветки старше суток -> там может лежать готовый фикс
 //   5. дефолт-ветка на GitHub != main   -> клоны и Compare&PR целятся в мёртвую
 //      линию (кейс csp-soft-delete 2026-07-26: O-3 упразднил trunk, а настройку
@@ -28,6 +30,7 @@ import path from 'node:path';
 
 import { judgeProtection } from './main-protection.mjs';
 import { scanBase } from './rejected-lines.mjs';
+import { judgeRootWip, scanRootWip } from './root-wip.mjs';
 import {
   BUDGETS,
   findMemoryIndex,
@@ -40,7 +43,7 @@ const STALE_MS = 24 * 60 * 60 * 1000;
 const MAX_LISTED = 10;
 
 const results = [];
-const add = (level, name, msg, hint) => results.push({ level, name, msg, hint });
+const add = (level, name, msg, hint, detail) => results.push({ level, name, msg, hint, detail });
 
 function git(args, opts = {}) {
   return execFileSync('git', args, {
@@ -197,6 +200,28 @@ if (!hits.length) {
         (mainKnown ? '' : '; сверить с origin/main не удалось (оффлайн)'),
       `git rebase --onto origin/main ${sha} ${branch} (или нарезать ворктри заново от origin/main) — иначе код отвергнутой линии уедет в main вместе с карточкой`
     );
+  }
+}
+
+// --- 3c. Забытый WIP в корневом чекауте -------------------------------------
+// FLOW-6. Корень делится с живой сессией, и правка в нём не оставляет следов: 08.10 там
+// осталось семь путей (1172 строки) без коммита, ветки и PR, нашлись через ~39 ч руками.
+// Ни одна проверка выше в эту сторону не смотрит — 3 считает отставание корня, не его
+// грязь. WARN, не FAIL: ложный красный на живой сессии дороже, чем сказать вслух.
+// Порог тот же, что у невлитых веток (STALE_MS); свежее — «правится сейчас», не тишина.
+{
+  const scan = scanRootWip();
+  if (!scan) {
+    add('WARN', 'WIP в корне', 'git status корневого чекаута не прочитался — проверка пропущена');
+  } else {
+    const v = judgeRootWip({
+      items: scan.items,
+      indexMtimeMs: scan.indexMtimeMs,
+      now: Date.now(),
+      staleMs: STALE_MS,
+      maxListed: MAX_LISTED,
+    });
+    add(v.level, 'WIP в корне', v.msg, v.hint, v.detail);
   }
 }
 
@@ -417,6 +442,7 @@ console.log(`\nPreflight — ветка ${branch}\n`);
 for (const r of results) {
   console.log(`[${r.level.padEnd(4)}] ${r.name}: ${r.msg}`);
   if (r.hint) console.log(`         -> ${r.hint}`);
+  for (const d of r.detail || []) console.log(`            ${d}`);
 }
 
 if (stale.length) {
