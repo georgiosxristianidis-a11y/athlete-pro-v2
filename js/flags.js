@@ -129,6 +129,11 @@ const DEFAULTS = {
   // Легаси-сетка ACHIEVEMENTS остаётся под флагом OFF.
   // Default OFF до поля Gio. Kill switch: Flags.setFlag('badge-ladders', false)
   'badge-ladders': false,
+  // HOME-1: «Серия N нед.» на Главной — подряд засчитанные недели (≥ max(норма
+  // плана, 2) тренировок, ISO пн–вс по местному времени) вместо дней подряд,
+  // которые при 3 тренировках в неделю всегда 0-1. Полоса 7 дней не меняется.
+  // Default OFF до решения Gio. Kill switch: Flags.setFlag('streak-weeks', false)
+  'streak-weeks': false,
 };
 
 /** @param {string} name @returns {boolean} */
