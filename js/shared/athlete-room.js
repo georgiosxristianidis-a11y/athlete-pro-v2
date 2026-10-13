@@ -247,7 +247,7 @@ function _laddersHtml(ladders) {
       return `
         <div class="ar-lad">
           <div class="ar-lad-lbl">${p.label}</div>
-          <div class="ar-lad-head"><b class="ar-lad-val${p.none}">${p.big}</b><span>${p.to}</span></div>
+          <div class="ar-lad-head"><b class="ar-lad-val${p.none}${l.id === 'bench' ? ' tier' : ''}">${p.big}</b><span>${p.to}</span></div>
           ${p.bar}
           <div class="ar-lad-foot"><span>${p.have}</span><em>${p.left}</em></div>
         </div>`;
