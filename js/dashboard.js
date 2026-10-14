@@ -4,7 +4,14 @@
    ════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
-import { getVolumeSummary, getNextType, computeStreak, computeWeekStreak, getNextSessionRecs } from './dashboard.store.js';
+import {
+  getVolumeSummary,
+  getNextType,
+  computeStreak,
+  computeWeekStreak,
+  getNextSessionRecs,
+  getTodayPreview,
+} from './dashboard.store.js';
 import {
   generateSparkline,
   generateVolumeBars,
@@ -202,8 +209,30 @@ export const Dashboard = (() => {
    * @param {string} nextType — 'push'|'pull'|'legs'
    * @returns {string} — HTML string
    */
-  function _buildTemplate(nextType = 'push') {
-    return `
+  function _buildTemplate(nextType = 'push', feedA = false) {
+    // HOME-2: при home-feed-a видны только .dash-feed (css/dashboard.css),
+    // легаси-блоки остаются в разметке и прячутся классом на #s-home.
+    const todayCard = feedA
+      ? `
+      <div class="dash-today dash-feed stagger-item" style="--stagger-i:0">
+        <div class="dash-today-label">${esc(t('dash.today'))}</div>
+        <div class="dash-today-title"><span class="dash-today-dot" style="background:${TYPE_COLOR[nextType]}"></span>${esc(typeLabel(nextType))}</div>
+        <div class="dash-today-date" id="dash-today-date"></div>
+        <div class="dash-today-list" id="dash-today-list"></div>
+      </div>`
+      : '';
+    const feedCta = feedA
+      ? `
+      <button class="dash-feed-cta dash-feed" id="dash-feed-cta" data-action="dash:directLaunch" data-type="${nextType}">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>
+        <span>${esc(t('dash.start_type', { type: typeLabel(nextType) }))}</span>
+        <span class="dash-feed-cta-sub" id="dash-feed-cta-sub"></span>
+      </button>`
+      : '';
+    const streakAttrs = feedA
+      ? 'class="streak-card dash-feed stagger-item" data-action="dash:weeklySummary" style="--stagger-i:1;cursor:pointer"'
+      : 'class="streak-card stagger-item" data-action="dash:navStats" style="--stagger-i:4;cursor:pointer"';
+    return `${todayCard}
       <!-- Hero -->
       <div class="dash-hero stagger-item" style="--stagger-i:0">
         <div>
@@ -274,13 +303,14 @@ export const Dashboard = (() => {
       </div>
 
       <!-- Streak card -->
-      <div class="streak-card stagger-item" data-action="dash:navStats" style="--stagger-i:4;cursor:pointer">
+      <div ${streakAttrs}>
         <div class="streak-header">
           <span class="section-label">${esc(t('dash.this_week'))}</span>
           <span class="streak-count" id="streak-count"></span>
         </div>
         <div class="streak-strip" id="streak-strip"></div>
       </div>
+${feedCta}
 
       <!-- PPL split -->
       <div class="section-header stagger-item" style="--stagger-i:5">
@@ -880,9 +910,22 @@ export const Dashboard = (() => {
     const dr = bootOn ? await _loadDigitRoll() : null;
     const roll = !!dr && screen.classList.contains('active');
 
+    // HOME-2: флаг меняется тумблером Лаборатории — каркас другой, пересобираем.
+    const feedA = flag('home-feed-a');
+    const feedKey = feedA ? 'a' : '';
+    screen.classList.toggle('home-feed-a', feedA);
+
     // Build full dashboard frame if needed
-    if (!document.getElementById('dash-greeting-label')) {
-      screen.innerHTML = _buildTemplate(nextType);
+    if (!document.getElementById('dash-greeting-label') || (screen.dataset.feed || '') !== feedKey) {
+      screen.innerHTML = _buildTemplate(nextType, feedA);
+      if (feedA) screen.dataset.feed = feedKey;
+      else delete screen.dataset.feed;
+    }
+
+    if (feedA) {
+      renderToday(allWorkouts, nextType);
+      requestAnimationFrame(() => renderStreak(allWorkouts));
+      return;
     }
 
     // Phase 1: Static / Fast data
@@ -934,6 +977,49 @@ export const Dashboard = (() => {
         loadWeeklySummary();
       });
     });
+  }
+
+  /**
+   * HOME-2 «Сегодня»: дата, до двух упражнений с весом и шагом, хвост «ещё N»,
+   * число упражнений на CTA. Веса — getTodayPreview (тот же расчёт, что Train).
+   * @param {Array} allWorkouts — newest-first
+   * @param {'push'|'pull'|'legs'} nextType
+   */
+  function renderToday(allWorkouts, nextType) {
+    const dateEl = document.getElementById('dash-today-date');
+    if (dateEl) {
+      dateEl.textContent = new Date().toLocaleDateString(getLang(), {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+      });
+    }
+    const { total, items } = getTodayPreview(allWorkouts, nextType);
+    const list = document.getElementById('dash-today-list');
+    if (list) {
+      const rows = items
+        .map((ex) => {
+          const meta = `${ex.sets} × ${ex.reps}${ex.last != null ? ' · ' + t('dash.last_time', { w: ex.last }) : ''}`;
+          const step = ex.step > 0 ? `<span class="dash-today-step">+${ex.step}</span>` : '';
+          const weight =
+            ex.weight != null
+              ? `<div class="dash-today-w">${step}<span class="dash-today-kg">${ex.weight}<small>kg</small></span></div>`
+              : '';
+          return `
+          <div class="dash-today-ex">
+            <div class="dash-today-ex-info">
+              <div class="dash-today-ex-name">${esc(ex.name)}</div>
+              <div class="dash-today-ex-meta">${esc(meta)}</div>
+            </div>
+            ${weight}
+          </div>`;
+        })
+        .join('');
+      const rest = total - items.length;
+      list.innerHTML = rows + (rest > 0 ? `<div class="dash-today-more">${esc(t('dash.more_ex', { n: rest }))}</div>` : '');
+    }
+    const sub = document.getElementById('dash-feed-cta-sub');
+    if (sub) sub.textContent = total ? '· ' + t('dash.ex_n', { n: total }) : '';
   }
 
   /**
