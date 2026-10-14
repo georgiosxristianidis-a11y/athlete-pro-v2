@@ -52,6 +52,82 @@ export function valueBand(vs, padRatio = 0.12) {
   return { vmin, vmax, vr: vmax - vmin };
 }
 
+const DAY_MS = 86400000;
+/** Точки Stats-карточек стоят в середине месяца: соседи в 28–31 дне, один пустой месяц — от 59. */
+export const MONTHLY_GAP_DAYS = 45;
+/** Перерыв на точках-сессиях — то же понятие, что бамп веса в FIELD-2 (`RETURN_NO_BUMP_DAYS`). */
+export const SESSION_GAP_DAYS = 28;
+
+/**
+ * FIELD-3: паузы между соседними точками. Разрыв i лежит между pts[i] и pts[i+1].
+ * @param {{t:number}[]} pts — по возрастанию t
+ * @param {number} minDays
+ * @returns {{i:number, days:number}[]}
+ */
+export function findGaps(pts, minDays) {
+  const out = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const days = Math.round((pts[i + 1].t - pts[i].t) / DAY_MS);
+    if (days >= minDays) out.push({ i, days });
+  }
+  return out;
+}
+
+/**
+ * Длина паузы словами. Месячные точки меряют пустые календарные месяцы (расстояние
+ * середина–середина минус один), сессионные — недели.
+ * @param {number} days
+ * @param {boolean} monthly
+ */
+export function pauseLabel(days, monthly) {
+  const word = tri('пауза', 'break', 'παύση');
+  if (monthly) return `${word} ${Math.max(1, Math.round(days / 30.44) - 1)} ${tri('мес', 'mo', 'μήν.')}`;
+  return `${word} ${Math.round(days / 7)} ${tri('нед', 'wk', 'εβδ.')}`;
+}
+
+/**
+ * Линия и заливка с разрывами: сплошная кривая внутри каждого отрезка, пунктир через
+ * паузу, заливки под паузой нет. Без разрывов — ровно прежняя геометрия.
+ * @param {{x:number,y:number}[]} P
+ * @param {{i:number}[]} gaps
+ * @param {{H:number, color:string}} o
+ * @returns {{line:string, area:string, extra:string}}
+ */
+export function curvePaths(P, gaps, { H, color }) {
+  if (!gaps.length) {
+    const line = smoothPath(P);
+    return { line, area: `${line} L ${P[P.length - 1].x.toFixed(1)},${H} L ${P[0].x.toFixed(1)},${H} Z`, extra: '' };
+  }
+  const cut = new Set(gaps.map((g) => g.i));
+  const runs = [[]];
+  P.forEach((p, i) => {
+    runs[runs.length - 1].push(p);
+    if (cut.has(i)) runs.push([]);
+  });
+  const lines = [];
+  const areas = [];
+  let dots = '';
+  for (const r of runs) {
+    if (r.length === 1) {
+      dots += `<circle cx="${r[0].x.toFixed(1)}" cy="${r[0].y.toFixed(1)}" r="2.5" fill="${color}" class="sc-gap-dot"/>`;
+      continue;
+    }
+    const d = smoothPath(r);
+    lines.push(d);
+    areas.push(`${d} L ${r[r.length - 1].x.toFixed(1)},${H} L ${r[0].x.toFixed(1)},${H} Z`);
+  }
+  const bridge = gaps
+    .map((g) => `M ${P[g.i].x.toFixed(1)},${P[g.i].y.toFixed(1)} L ${P[g.i + 1].x.toFixed(1)},${P[g.i + 1].y.toFixed(1)}`)
+    .join(' ');
+  const extra = `<path d="${bridge}" fill="none" stroke="${color}" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round" vector-effect="non-scaling-stroke" class="sc-gap-line"/>${dots}`;
+  return { line: lines.join(' '), area: areas.join(' '), extra };
+}
+
+/** Зоны пауз в координатах viewBox — wireScrub читает ими, что под пальцем. */
+export function gapZones(P, gaps, monthly) {
+  return gaps.map((g) => ({ x0: P[g.i].x, x1: P[g.i + 1].x, text: pauseLabel(g.days, monthly) }));
+}
+
 function fmtMon(ts) {
   const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const d = new Date(ts);
@@ -81,6 +157,9 @@ function curveCard(s, idx) {
   const peak = Math.round(peakVal);
 
   let pts, svgContent, subMarkup, axisMarkup;
+  /** @type {{x0:number,x1:number,text:string}[]} */
+  let zones = [];
+  let gapNote = '';
 
   if (isSingle) {
     const midY = Math.round((padTop + H - padBot) / 2);
@@ -107,8 +186,13 @@ function curveCard(s, idx) {
     const X = (p) => padX + ((p.t - t0) / tr) * (W - 2 * padX);
     const Y = (p) => padTop + (1 - (p.v - vmin) / vr) * (H - padTop - padBot);
     pts = s.pts.map((p) => ({ x: X(p), y: Y(p), v: p.v, t: p.t }));
-    const line = smoothPath(pts);
-    const area = `${line} L ${pts[pts.length - 1].x.toFixed(1)},${H} L ${pts[0].x.toFixed(1)},${H} Z`;
+    const gaps = findGaps(s.pts, MONTHLY_GAP_DAYS);
+    zones = gapZones(pts, gaps, true);
+    const { line, area, extra } = curvePaths(pts, gaps, { H, color });
+    if (gaps.length) {
+      const longest = gaps.reduce((a, g) => (g.days > a.days ? g : a));
+      gapNote = `<span class="sc-gap-note">${pauseLabel(longest.days, true)}</span>`;
+    }
     const peakI = vs.indexOf(peakVal);
     const deltaTxt = (s.delta >= 0 ? '+' : '') + Math.round(s.delta);
 
@@ -120,13 +204,13 @@ function curveCard(s, idx) {
         </linearGradient>
       </defs>
       <path d="${area}" fill="url(#${gid})"/>
-      <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>
+      <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>${extra}
       <circle cx="${pts[peakI].x.toFixed(1)}" cy="${pts[peakI].y.toFixed(1)}" r="3.5" fill="${GOLD}" class="sc-peak-dot"/>
       <circle cx="${pts[pts.length - 1].x.toFixed(1)}" cy="${pts[pts.length - 1].y.toFixed(1)}" r="3.5" fill="${color}" class="sc-cur-dot"/>
     `;
     subMarkup = `
       <span class="sc-delta ${s.delta >= 0 ? 'up' : 'down'}">${deltaTxt} kg</span>
-      <span class="sc-peak">peak ${peak}</span>
+      <span class="sc-peak">peak ${peak}</span>${gapNote}
     `;
     axisMarkup = `<span>${fmtMon(t0)}</span><span>${s.n} ${tri('сессий', 'sessions', 'προπονήσεις')}</span><span>${fmtMon(tN)}</span>`;
   }
@@ -153,7 +237,7 @@ function curveCard(s, idx) {
       <div class="sc-axis">${axisMarkup}</div>
     </div>`;
 
-  return { html, pts };
+  return { html, pts, zones };
 }
 
 /**
@@ -167,7 +251,7 @@ function curveCard(s, idx) {
  *
  * @param {HTMLElement} card
  * @param {{x:number,y:number,v:number,t:number}[]} pts — viewBox-space geometry
- * @param {{viewW?:number, viewH?:number, format?: (p:{x:number,y:number,v:number,t:number}) => {val:string, sub:string}}} [opts]
+ * @param {{viewW?:number, viewH?:number, zones?:{x0:number,x1:number,text:string}[], format?: (p:{x:number,y:number,v:number,t:number}) => {val:string, sub:string}}} [opts]
  */
 function wireScrub(card, pts, opts = {}) {
   const plot = card.querySelector('.sc-plot');
@@ -202,14 +286,17 @@ function wireScrub(card, pts, opts = {}) {
       }
     }
     const p = pts[bi];
-    const sx = (p.x / viewW) * rect.width;
+    const zone = opts.zones?.find((z) => svgX > z.x0 && svgX < z.x1);
+    // FIELD-3: на паузе показаний нет — не прилипаем к соседней точке и не рисуем её вес.
+    dot.style.opacity = zone ? '0' : '';
+    const sx = zone ? px : (p.x / viewW) * rect.width;
     const sy = (p.y / viewH) * rect.height;
     line.style.transform = `translateX(${sx.toFixed(1)}px)`;
-    dot.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px) translate(-50%, -50%)`;
+    if (!zone) dot.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px) translate(-50%, -50%)`;
     if (!tipHalf) tipHalf = tip.offsetWidth / 2;
     const tx = Math.max(tipHalf + 2, Math.min(rect.width - tipHalf - 2, sx));
     tip.style.transform = `translateX(calc(${tx.toFixed(1)}px - 50%))`;
-    const read = format(p);
+    const read = zone ? { val: zone.text, sub: '' } : format(p);
     tipVal.textContent = read.val;
     tipSub.textContent = read.sub;
     scrub.classList.add('on');
@@ -393,7 +480,7 @@ export function renderStrengthCurves(workoutsOrCurves, mount) {
   }
   const cards = series.map((s, idx) => curveCard(s, idx));
   mount.innerHTML = `<div class="sc-grid">${cards.map((c) => c.html).join('')}</div>`;
-  mount.querySelectorAll('.sc-card').forEach((card, i) => wireScrub(card, cards[i].pts));
+  mount.querySelectorAll('.sc-card').forEach((card, i) => wireScrub(card, cards[i].pts, { zones: cards[i].zones }));
 }
 
 const IDX_W = 320,
