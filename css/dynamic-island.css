@@ -354,6 +354,9 @@
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: auto auto;
   align-content: center;
+  /* gap базового .island-rest задаёт и row-gap: строки разъезжались,
+     вторая вылезала за низ пилюли на 1px (замер 375px). */
+  row-gap: 0;
   column-gap: var(--sp-2);
 }
 .island.rest-has-set .island-rest-next { grid-column: 1; grid-row: 1; line-height: 1.2; }
