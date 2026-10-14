@@ -17,10 +17,11 @@
 4. **`CORE-9`:** живой прогон `scripts/coach-eval.mjs` (`HANDOFF_core.md`)
 5. **`HOME-1`** — флаг `streak-weeks` тумблером в Лаборатории: поле на живых данных
 6. **`WSET-2b`** — значки вариант E (флаг `badge-ladders` уже ON): поле на живых данных
+7. **`FIELD-7`** — флаг `rest-next-set` (Лаборатория): вес × повторы в паузе острова, поле в зале
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
-1. **`FIELD-7`** — вес в паузе острова (вариант A). `HANDOFF_field_ux.md`; затем **`HOME-3`** (материя Главной за флагом, «12 с», Gio 14.10), `FIELD-3`, `FIELD-6`
+1. **`HOME-3`** — материя Главной за флагом, «12 с» (Gio 14.10); затем `FIELD-3`, `FIELD-6` (`HANDOFF_field_ux.md`; FIELD-7 влита 1.27.184)
 2. **`PLAN-1`**, `ANL-ALT`, `SWAP-1`, `PLATE-*` (`HANDOFF_working_sets.md`; WSET-2 влита 1.27.182)
 3. Фон, по одной за PR: архитектурный трек (`A15`, следующая поверхность — хендофф Cursor)
 4. Хвост HOME-1: `insights.engine._computeStreak` тоже в днях; свести `weekKey` (badge-ladders) и `computeWeekStreak` в shared
