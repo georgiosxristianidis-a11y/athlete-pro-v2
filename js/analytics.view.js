@@ -29,12 +29,16 @@ import { t, tri } from './locale.store.js';
 import {
   renderStrengthHero,
   renderStrengthCurves,
-  smoothPath,
   wireScrub,
   fmtMon,
   GOLD,
   strengthIndexPlot,
   valueBand,
+  findGaps,
+  curvePaths,
+  gapZones,
+  pauseLabel,
+  SESSION_GAP_DAYS,
 } from './analytics.strength-curves.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { ORM_BODY_ID, mergeORMRows, ormSectionHtml, setORMExpanded } from './shared/orm-list.js';
@@ -701,6 +705,9 @@ export function openExerciseHistoryModal(exerciseName) {
     padTop = 14,
     padBot = 22;
   const ptsGeo = [];
+  /** @type {{x0:number,x1:number,text:string}[]} */
+  let gapZonesGeo = [];
+  let gapNote = '';
 
   if (history.pts.length >= 2) {
     const t0 = history.pts[0].t,
@@ -712,8 +719,14 @@ export function openExerciseHistoryModal(exerciseName) {
     const Y = (p) => padTop + (1 - (p.v - vmin) / vr) * (H - padTop - padBot);
     history.pts.forEach((p) => ptsGeo.push({ x: X(p), y: Y(p), v: p.v, t: p.t }));
 
-    const line = smoothPath(ptsGeo);
-    const area = `${line} L ${ptsGeo[ptsGeo.length - 1].x.toFixed(1)},${H} L ${ptsGeo[0].x.toFixed(1)},${H} Z`;
+    // FIELD-3: точки здесь — сессии с реальными датами, порог в днях работает как есть.
+    const gaps = findGaps(history.pts, SESSION_GAP_DAYS);
+    gapZonesGeo = gapZones(ptsGeo, gaps, false);
+    const { line, area, extra } = curvePaths(ptsGeo, gaps, { H, color });
+    if (gaps.length) {
+      const longest = gaps.reduce((a, g) => (g.days > a.days ? g : a));
+      gapNote = ` · <span class="sc-gap-note">${pauseLabel(longest.days, false)}</span>`;
+    }
     const peakI = vs.indexOf(Math.max(...vs));
     const gid = `ex-chart-grad-${Date.now()}`;
 
@@ -727,7 +740,7 @@ export function openExerciseHistoryModal(exerciseName) {
             </linearGradient>
           </defs>
           <path d="${area}" fill="url(#${gid})"/>
-          <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>
+          <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>${extra}
           <circle cx="${ptsGeo[peakI].x.toFixed(1)}" cy="${ptsGeo[peakI].y.toFixed(1)}" r="3.5" fill="${GOLD}" class="sc-peak-dot"/>
           <circle cx="${ptsGeo[ptsGeo.length - 1].x.toFixed(1)}" cy="${ptsGeo[ptsGeo.length - 1].y.toFixed(1)}" r="3.5" fill="${color}" class="sc-cur-dot"/>
         </svg>
@@ -739,7 +752,7 @@ export function openExerciseHistoryModal(exerciseName) {
       </div>
       <div class="sc-axis">
         <span>${fmtMon(t0)}</span>
-        <span>${history.sessionsCount} ${tri('сессий', 'sessions', 'προπονήσεις')}</span>
+        <span>${history.sessionsCount} ${tri('сессий', 'sessions', 'προπονήσεις')}${gapNote}</span>
         <span>${fmtMon(tN)}</span>
       </div>`;
   } else if (history.pts.length === 1) {
@@ -835,7 +848,7 @@ export function openExerciseHistoryModal(exerciseName) {
 
   const chartCard = overlay.querySelector('.ex-chart-card');
   if (chartCard && ptsGeo.length >= 2) {
-    wireScrub(chartCard, ptsGeo, { viewW: 320, viewH: 110 });
+    wireScrub(chartCard, ptsGeo, { viewW: 320, viewH: 110, zones: gapZonesGeo });
   }
 
   haptic(10);

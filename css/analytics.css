@@ -476,6 +476,12 @@
   letter-spacing: 0.06em;
   color: var(--c-gold);
 }
+.sc-gap-note {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-3);
+  white-space: nowrap;
+}
 .sc-plot {
   position: relative;
   margin-top: var(--sp-1);
