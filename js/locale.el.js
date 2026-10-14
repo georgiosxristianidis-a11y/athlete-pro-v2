@@ -464,6 +464,8 @@ export const EL = {
   'island.finish_lbl': 'Τέλος',
   'island.confirm': 'Επιβεβαίωση;',
   'island.next': 'επόμενο: {name}',
+  'island.next_set': '{w} kg × {r}',
+  'island.next_set_bw': '× {r}',
   'island.complete': 'ολοκληρώθηκε!',
   'island.ex': 'Άσκηση',
   'ob.step': 'Βήμα',
@@ -552,6 +554,8 @@ export const EL = {
   'lab.streak-weeks_sub': 'Η αρχική μετρά εβδομάδες με 2+ προπονήσεις αντί για συνεχόμενες ημέρες',
   'lab.home-feed-a': 'Αρχική: μόνο σήμερα',
   'lab.home-feed-a_sub': 'Η αρχική δείχνει την προπόνηση της ημέρας, την εβδομάδα και το «Έναρξη»',
+  'lab.rest-next-set': 'Διάλειμμα: επόμενο σετ',
+  'lab.rest-next-set_sub': 'Κάτω από το «επόμενο: …» το νησί δείχνει βάρος και επαναλήψεις του σετ στο οποίο επιστρέφεις',
   'lab.changed': 'ΑΛΛΑΓΜΕΝΟ',
   'lab.restart': 'Αποθηκεύτηκε. Επανεκκίνησε την εφαρμογή για εφαρμογή',
 };

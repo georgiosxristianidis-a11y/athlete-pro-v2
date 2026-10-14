@@ -318,7 +318,7 @@ export const DynamicIsland = (() => {
     _timerActive = false;
     _disarmFinish();
     _island?.classList.remove('expanded');
-    _island?.classList.remove('timer-mode', 'rest-has-next');
+    _island?.classList.remove('timer-mode', 'rest-has-next', 'rest-has-set');
     _island?.classList.remove('finish-mode');
     _island?.classList.add('mode-idle');
   }
@@ -336,7 +336,7 @@ export const DynamicIsland = (() => {
     // IDLE MODE: If no workout, act as the ONLINE button
     if (!State.plan || !State.plan.length) {
       _expanded = false;
-      _island?.classList.remove('timer-mode', 'expanded', 'rest-has-next');
+      _island?.classList.remove('timer-mode', 'expanded', 'rest-has-next', 'rest-has-set');
       _island?.classList.add('mode-idle');
 
       document.getElementById('status-bar')?.classList.remove('workout-active');
@@ -573,6 +573,17 @@ export const DynamicIsland = (() => {
       _restNextEl.textContent = nx ? t('island.next', { name: islandLabel(nx) }) : '';
       // Only a pill that actually carries the caption gets the wide layout.
       _island?.classList.toggle('rest-has-next', !!nx);
+      // FIELD-7: вторая строка — вес × повторы этого сета. Модуль ленивый:
+      // статический импорт сажал его на бут-граф первого кадра, а флаг OFF
+      // не должен платить ни байта.
+      _paintRestSet('');
+      if (nx && flag('rest-next-set')) {
+        import('./rest-next-set.js')
+          .then(({ nextSetLine }) => {
+            if (_timerActive) _paintRestSet(nextSetLine(nx, t));
+          })
+          .catch(() => {});
+      }
     }
 
     // No numeric readout by design — the depleting bar + colour escalation below
@@ -592,6 +603,27 @@ export const DynamicIsland = (() => {
     _timerMax = max;
   }
 
+  /**
+   * FIELD-7: строка «24 кг × 10» под «далее: X». Отдельный элемент, не
+   * textContent подписи: раскрытый остров копирует подпись в #di-sublabel,
+   * и строки склеились бы. Пусто — элемента нет вовсе (флаг OFF = как было).
+   * @param {string} line
+   */
+  function _paintRestSet(line) {
+    let setEl = document.getElementById('di-rest-set');
+    if (line && !setEl && _restNextEl) {
+      setEl = document.createElement('span');
+      setEl.className = 'island-rest-set';
+      setEl.id = 'di-rest-set';
+      _restNextEl.after(setEl);
+    }
+    if (setEl) {
+      if (line) setEl.textContent = line;
+      else setEl.remove();
+    }
+    _island?.classList.toggle('rest-has-set', !!line && !!setEl);
+  }
+
   /** Drive the rest bar from its current fraction down to empty over `remaining`s (compositor). */
   function _armRestProgress(remaining, max) {
     if (!_timerProg) return;
@@ -605,7 +637,7 @@ export const DynamicIsland = (() => {
 
   function stopTimer() {
     _timerActive = false;
-    _island?.classList.remove('timer-mode', 'rest-has-next');
+    _island?.classList.remove('timer-mode', 'rest-has-next', 'rest-has-set');
     if (_timerProg) {
       _timerProg.style.transition = 'none';
       _timerProg.style.transform = 'scaleX(0)';
@@ -633,7 +665,7 @@ export const DynamicIsland = (() => {
     _timerActive = false;
     _expanded = false;
     _disarmFinish();
-    _island?.classList.remove('timer-mode', 'expanded', 'mode-idle', 'rest-has-next');
+    _island?.classList.remove('timer-mode', 'expanded', 'mode-idle', 'rest-has-next', 'rest-has-set');
     _island?.classList.add('finish-mode');
   }
 

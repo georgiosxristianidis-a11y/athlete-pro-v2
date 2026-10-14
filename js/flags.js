@@ -139,6 +139,12 @@ const DEFAULTS = {
   // Остальные блоки в разметке, спрятаны классом home-feed-a на #s-home.
   // Default OFF до поля Gio; тумблер в Лаборатории. Kill switch: Flags.setFlag('home-feed-a', false)
   'home-feed-a': false,
+  // FIELD-7 (вариант A из FIELD-4, выбор Gio 12.10): в компактной паузе под
+  // «далее: X» вторая строка — вес и повторы сета, к которому вернёшься
+  // («24 кг × 10», js/shared/rest-next-set.js). Секунд нет: время несут полоса
+  // и цвет. Строка берётся на старте отдыха, барабан во время паузы её не меняет.
+  // Default OFF до поля Gio; тумблер в Лаборатории. Kill switch: Flags.setFlag('rest-next-set', false)
+  'rest-next-set': false,
 };
 
 /** @param {string} name @returns {boolean} */
@@ -168,7 +174,7 @@ export function allFlags() {
  * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
  * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
  */
-export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a']);
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'rest-next-set']);
 
 /** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
 export function isOverridden(name) {

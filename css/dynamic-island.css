@@ -345,6 +345,33 @@
      inset, and with no caption it just parks the pair 8px off centre. */
   padding: 0 var(--sp-3);
 }
+/* FIELD-7 (флаг rest-next-set): под «далее: X» — «24 кг × 10». Элемент
+   создаётся только при флаге ON, поэтому OFF не видит ни одного правила ниже.
+   Грид вместо flex: две строки слева, пара кнопок справа на обе строки —
+   высота пилюли остаётся 44px, кнопки на месте. Ширина 236px та же. */
+.island.timer-mode.rest-has-set:not(.expanded) .island-rest {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-content: center;
+  column-gap: var(--sp-2);
+}
+.island.rest-has-set .island-rest-next { grid-column: 1; grid-row: 1; line-height: 1.2; }
+.island.rest-has-set .island-rest-actions { grid-column: 2; grid-row: 1 / span 2; }
+.island-rest-set {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
 /* During rest, mute the regular collapsed readouts behind the rest HUD */
 .island.timer-mode .island-time,
 .island.timer-mode .island-name-collapsed,
