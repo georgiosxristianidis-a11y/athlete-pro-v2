@@ -55,6 +55,37 @@ export function getNextSessionRecs(workouts, nextType, plan = loadPlan()) {
 }
 
 /**
+ * HOME-2 «Сегодня» (флаг home-feed-a): до двух упражнений плана с весом на
+ * следующую сессию — тот же nextWeightFor, что Train подставит. Берутся
+ * упражнения с историей, без собственного веса тела и кора; истории нет —
+ * первые силовые плана без веса. step > 0 только при автоподъёме.
+ * @param {Array<{type: string, timestamp?: number, exercises?: Array}>} workouts newest-first
+ * @param {'push'|'pull'|'legs'} nextType
+ * @param {Object<string, Array>} [plan] loadPlan(); параметр — для тестов
+ * @returns {{total: number, items: Array<{name: string, sets: number, reps: number, weight: number|null, last: number|null, step: number}>}}
+ */
+export function getTodayPreview(workouts, nextType, plan = loadPlan()) {
+  const list = plan?.[nextType] || [];
+  const loaded = list.filter((ex) => !ex.isBW && !ex.noDb);
+  const row = (ex, next) => ({
+    name: ex.name,
+    sets: ex.sets,
+    reps: ex.reps,
+    weight: next ? next.weight : null,
+    last: next ? next.lastWeight : null,
+    step: next?.autoBumped ? Math.round((next.weight - next.lastWeight) * 10) / 10 : 0,
+  });
+  const withHistory = [];
+  for (const ex of loaded) {
+    const next = nextWeightFor(ex, workouts || []);
+    if (next) withHistory.push(row(ex, next));
+    if (withHistory.length === 2) break;
+  }
+  const items = withHistory.length ? withHistory : loaded.slice(0, 2).map((ex) => row(ex, null));
+  return { total: list.length, items };
+}
+
+/**
  * Current-streak read-model: consecutive calendar days (ending today) with
  * a logged workout, plus a day→type map for the 7-day strip.
  * @param {Array<{timestamp: number, type: string}>} workouts
