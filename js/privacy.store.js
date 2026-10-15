@@ -275,3 +275,28 @@ export function clearAuditLog() {
   _audit = [];
   return DB.Settings.set(KEY_AUDIT, []);
 }
+
+/* ════════════════════════════════════════════════════════
+   DATA PASSPORT + ERASE — экран приватности ходит в базу только сюда (A15)
+   ════════════════════════════════════════════════════════ */
+
+/**
+ * Пять наборов для паспорта данных. Каждый источник падает отдельно: отказ
+ * одного даёт пустое ([] / {} для Settings), остальные приходят как есть.
+ * @returns {Promise<{ workouts: any[], orms: any[], metrics: any[], settings: Record<string, any>, events: any[] }>}
+ */
+export async function loadPassportData() {
+  const [workouts, orms, metrics, settings, events] = await Promise.all([
+    DB.Workouts.getAll().catch(() => []),
+    DB.OneRM.getAll().catch(() => []),
+    DB.Metrics.getAll().catch(() => []),
+    DB.Settings.getAll().catch(() => ({})),
+    DB.Events.getAll().catch(() => []),
+  ]);
+  return { workouts, orms, metrics, settings, events };
+}
+
+/** Стирание всех пользовательских данных. Ошибку не глотает — решает вызывающий. */
+export async function eraseAllUserData() {
+  await DB.deleteAllUserData();
+}

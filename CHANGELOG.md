@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A15-privacy: экран приватности ходит в базу через store (1.27.188)
+
+- **Что.** `js/privacy.view.js` больше не зовёт `DB.*`: паспорт данных берёт пять наборов через `loadPassportData()` (каждый источник падает отдельно — `[]`, у Settings `{}`, как было), стирание — через `eraseAllUserData()`; `location.reload()` остался во view. Диалог, тексты и порядок шагов не тронуты. Новых рёбер импорта нет — `privacy.store.js` уже импортировал `db.js`.
+- **Гард.** Baseline `import-guard` для `privacy.view.js` 6 → 0; контракт двух дверей — `test/privacy-store-data.test.js` на стабах `DB` (реальное стирание не вызывается). Прогон на поломку: прямой `DB.*` во view и снятый fallback в сторе — оба красные.
+- **Смежный гард.** `test/clear-all-local.test.js` сторожил текст `DB.deleteAllUserData()` в `privacy.view.js` — идёт за кодом, как в A13: теперь сторожит `privacy.store.js`, плюс новый кейс «кнопка дотягивается» (view импортирует и зовёт `eraseAllUserData()`, не зовёт `clearAll`, стор ведёт в `DB.deleteAllUserData()`). Проверено на поломку.
+
 ### A15-ai-settings: шторка AI ходит в базу через store (1.27.187)
 
 - **Что.** `js/ai-settings.view.js` 3 → 0 прямых `DB.*`: три чтения снимка настроек (открытие шторки, после сохранения ключа, после смены движка) идут через `getAllSettings()` в `js/ai-settings.store.js`. Поведение шторки прежнее, новых рёбер бут-графа нет — store и раньше импортировал `db.js`.

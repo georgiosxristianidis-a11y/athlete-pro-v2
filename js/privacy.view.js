@@ -7,7 +7,6 @@
    • openAuditLog()        — modal: last 50 fetch events
    ════════════════════════════════════════════════════════ */
 
-import { DB } from './db.js';
 import {
   getPrivacyMode,
   getAiEnabled,
@@ -15,6 +14,8 @@ import {
   setAiEnabled,
   getAuditLog,
   clearAuditLog,
+  loadPassportData,
+  eraseAllUserData,
 } from './privacy.store.js';
 import { isUsageEnabled, setUsageEnabled, getUsageState } from './usage.js';
 import { t, getLang, tri } from './locale.store.js';
@@ -229,13 +230,7 @@ async function _toggleUsage() {
    ════════════════════════════════════════════════════════ */
 
 export async function openDataPassport() {
-  const [workouts, orms, metrics, settings, events] = await Promise.all([
-    DB.Workouts.getAll().catch(() => []),
-    DB.OneRM.getAll().catch(() => []),
-    DB.Metrics.getAll().catch(() => []),
-    DB.Settings.getAll().catch(() => ({})),
-    DB.Events.getAll().catch(() => []),
-  ]);
+  const { workouts, orms, metrics, settings, events } = await loadPassportData();
 
   const audit = getAuditLog();
   const sentRecently = audit.filter((a) => a.allowed && Date.now() - a.t < 30 * 24 * 3600e3);
@@ -396,7 +391,7 @@ async function _confirmDelete() {
     danger: true,
   });
   if (!ok) return;
-  await DB.deleteAllUserData();
+  await eraseAllUserData();
   location.reload();
 }
 

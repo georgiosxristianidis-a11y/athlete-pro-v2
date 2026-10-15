@@ -138,9 +138,10 @@ describe('удаление всех данных — контракт localStora
   /* A13 (18.09): вызов из профиля переехал в `js/profile.store.js` — экран
      в базу больше не ходит (baseline A15 в test/import-guard.test.js). Гард
      идёт за кодом: сторожим тот файл, где вызов живёт сейчас, и отдельно —
-     что кнопка экрана до него дотягивается. */
+     что кнопка экрана до него дотягивается. A15-privacy (15.10): так же
+     переехал вызов из экрана приватности — в `js/privacy.store.js`. */
   test('оба пользовательских пути удаления зовут deleteAllUserData, не clearAll', () => {
-    for (const rel of ['js/privacy.view.js', 'js/profile.store.js']) {
+    for (const rel of ['js/privacy.store.js', 'js/profile.store.js']) {
       const src = code(rel);
       assert.match(
         src,
@@ -167,6 +168,32 @@ describe('удаление всех данных — контракт localStora
       src,
       /await deleteAllUserData\(\)/,
       'clearAllData() экрана не зовёт удаление: второй тап по кнопке перезагрузит страницу впустую'
+    );
+  });
+
+  test('кнопка «Удалить» на экране приватности дотягивается до этого пути', () => {
+    const src = code('js/privacy.view.js');
+    const imported = src.match(/import\s*\{([\s\S]*?)\}\s*from '\.\/privacy\.store\.js'/)?.[1] || '';
+    assert.match(
+      imported,
+      /\beraseAllUserData\b/,
+      'js/privacy.view.js больше не берёт eraseAllUserData из стора — путь удаления оборвался'
+    );
+    assert.match(
+      src,
+      /await eraseAllUserData\(\)/,
+      '_confirmDelete() экрана не зовёт удаление: подтверждение перезагрузит страницу впустую'
+    );
+    assert.doesNotMatch(
+      src,
+      /\bclearAll\(/,
+      'js/privacy.view.js вернулся к IDB-only очистке: localStorage останется нетронутым'
+    );
+    const store = code('js/privacy.store.js');
+    assert.match(
+      store,
+      /export async function eraseAllUserData\(\)\s*\{\s*await DB\.deleteAllUserData\(\);/,
+      'eraseAllUserData() в сторе не ведёт в DB.deleteAllUserData()'
     );
   });
 });
