@@ -417,7 +417,7 @@ HTML не резал — нарезка шаблона остаётся след
 (privacy/workout/ai-settings) — будущими PR по поверхности.
 
 **Остаток A15 в цифрах** (baseline `test/import-guard.test.js`, сверять с ним, не с этой
-строкой): `privacy.view.js` 6 · `workout.view/handlers.js` 4 · `workout.view/render.js` 2
+строкой): `workout.view/handlers.js` 4 · `workout.view/render.js` 2
 (`workout-ai.view.js` 3 ушёл вместе с модулем, `CORE-10`). Брать по одной поверхности за PR.
 
 ---

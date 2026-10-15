@@ -145,7 +145,8 @@ describe('A15: views не зовут DB.* напрямую (кроме store)', 
     'js/claude.view.js': 0,
     // A9 (17.09): 11 → 0, экран ходит в базу только через js/intel.store.js.
     'js/intel.view.js': 0,
-    'js/privacy.view.js': 6,
+    // A15-privacy (15.10): 6 → 0 — паспорт данных и стирание через js/privacy.store.js.
+    'js/privacy.view.js': 0,
     // A13 (18.09): 39 → 0 — экран профиля ходит в базу только через
     // js/profile.store.js. Вместе с ним 0 получили оба его view-файла.
     'js/profile.js': 0,
