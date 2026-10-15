@@ -5,6 +5,7 @@
 
 import { weeklyVolumeFrom, monthlyVolumeFrom, weeklyCountFrom, pplTonnageFrom } from './db.js';
 import { loadPlan, nextWeightFor } from './workout.store.js';
+import { streakWeeks } from './shared/week.js';
 
 /** PPL rotation used to pick "what's next" off the last logged session. */
 const NEXT_TYPE = { push: 'pull', pull: 'legs', legs: 'push' };
@@ -118,21 +119,6 @@ export function computeStreak(workouts) {
 const WEEK_STREAK_FLOOR = 2;
 
 /**
- * Понедельник 00:00 по местному времени как номер дня от эпохи. Через
- * календарную дату, не деление на 7 суток: эпоха — четверг, а переход на
- * летнее время сдвигает сутки на час. Та же математика, что weekKey в
- * shared/badge-ladders.js; не импортируем, чтобы не тянуть strength-engine
- * в бут-граф Главной.
- * @param {number} ts
- * @returns {number}
- */
-function isoWeekKey(ts) {
-  const d = new Date(ts);
-  const mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
-  return Math.round(Date.UTC(mon.getFullYear(), mon.getMonth(), mon.getDate()) / 86400000);
-}
-
-/**
  * HOME-1: серия в НЕДЕЛЯХ (решение Gio 13.10). Неделя ISO пн–вс по местному
  * времени засчитана при тренировках ≥ max(норма плана, 2). Серия — подряд
  * засчитанные недели назад от прошлой; текущая незаконченная неделя даёт +1,
@@ -144,20 +130,5 @@ function isoWeekKey(ts) {
  * @returns {number}
  */
 export function computeWeekStreak(workouts, weeklyNorm = WEEK_STREAK_FLOOR, now = Date.now()) {
-  const min = Math.max(Number(weeklyNorm) || 0, WEEK_STREAK_FLOOR);
-  /** @type {Map<number, number>} */
-  const perWeek = new Map();
-  for (const w of workouts || []) {
-    if (!w || !Number.isFinite(w.timestamp)) continue;
-    const k = isoWeekKey(w.timestamp);
-    perWeek.set(k, (perWeek.get(k) || 0) + 1);
-  }
-  let k = isoWeekKey(now);
-  if ((perWeek.get(k) || 0) < min) k -= 7;
-  let n = 0;
-  while ((perWeek.get(k) || 0) >= min) {
-    n++;
-    k -= 7;
-  }
-  return n;
+  return streakWeeks(workouts, now, Math.max(Number(weeklyNorm) || 0, WEEK_STREAK_FLOOR));
 }

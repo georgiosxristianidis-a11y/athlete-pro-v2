@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### HOME-1 хвост: недельная математика в одном модуле (1.27.189)
+
+- **Причина.** Ключ недели и серия «недели подряд» жили двумя копиями: `weekKey`/`weeklyStreak` в `js/shared/badge-ladders.js` и `isoWeekKey`/`computeWeekStreak` в `js/dashboard.store.js`. Дубль ставили, чтобы импорт badge-ladders не тянул strength-engine в бут-граф Главной.
+- **Что.** Ядро — `js/shared/week.js` (`weekKey`, `streakWeeks`), ноль импортов. badge-ladders реэкспортирует `weekKey`, `weeklyStreak` — обёртка; `computeWeekStreak` — обёртка с порогом не ниже 2. Сигнатуры и поведение прежние, ожидания тестов не тронуты.
+- **Бут-граф.** week.js статически сидит в первом кадре через dashboard.store — получил `modulepreload` в `index.html` и install-фазу прекеша (гард `boot-graph`). Тяжёлых модулей не добавилось.
+- Гард — `test/week.test.js`: границы вс/пн, смена месяца, неделя после перевода часов, пустой массив, незасчитанная текущая неделя, обёртки = ядро, ключ недели `Date.UTC(...)/сутки` только в week.js. Прогон на поломку (смещение понедельника) краснит badge-ladders, dashboard-week-streak и week.
+
 ### A15-privacy: экран приватности ходит в базу через store (1.27.188)
 
 - **Что.** `js/privacy.view.js` больше не зовёт `DB.*`: паспорт данных берёт пять наборов через `loadPassportData()` (каждый источник падает отдельно — `[]`, у Settings `{}`, как было), стирание — через `eraseAllUserData()`; `location.reload()` остался во view. Диалог, тексты и порядок шагов не тронуты. Новых рёбер импорта нет — `privacy.store.js` уже импортировал `db.js`.
