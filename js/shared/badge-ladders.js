@@ -8,6 +8,7 @@
    сегмента полосы. Решения Gio 13.10 — docs/handoff/HANDOFF_working_sets.md.
    ════════════════════════════════════════════════════════ */
 import { exrxTier, mcCullochAge } from '../strength-engine.js';
+import { weekKey, streakWeeks } from './week.js';
 
 const DAY_MS = 86400000;
 
@@ -21,46 +22,19 @@ export const RUNGS = {
   dayStreak: [7],
 };
 
-/**
- * Начало недели (понедельник 00:00 по локальному времени) в виде числа дней
- * от эпохи — ключ для сравнения «соседние недели». Через календарную дату,
- * а не деление на 7 суток: неделя с четверга (эпоха 01.01.1970 — четверг)
- * была ошибкой старого `_calcConsistency`.
- * @param {number} ts
- * @returns {number}
- */
-export function weekKey(ts) {
-  const d = new Date(ts);
-  const monOffset = (d.getDay() + 6) % 7;
-  const mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() - monOffset);
-  return Math.round(Date.UTC(mon.getFullYear(), mon.getMonth(), mon.getDate()) / DAY_MS);
-}
+// Ключ недели живёт в shared/week.js; реэкспорт держит прежний публичный путь.
+export { weekKey };
 
 /**
- * Недели подряд, в каждой из которых не меньше `min` тренировок. Текущая
- * неделя ещё идёт: если в ней пока меньше `min`, серия не рвётся, а считается
- * от прошлой недели.
+ * Недели подряд, в каждой из которых не меньше `min` тренировок. Ядро —
+ * streakWeeks в shared/week.js.
  * @param {Array<{ timestamp: number }>} workouts
  * @param {number} now
  * @param {number} [min]
  * @returns {number}
  */
 export function weeklyStreak(workouts, now, min = 2) {
-  /** @type {Map<number, number>} */
-  const perWeek = new Map();
-  for (const w of workouts || []) {
-    if (!w || !Number.isFinite(w.timestamp)) continue;
-    const k = weekKey(w.timestamp);
-    perWeek.set(k, (perWeek.get(k) || 0) + 1);
-  }
-  let k = weekKey(now);
-  if ((perWeek.get(k) || 0) < min) k -= 7;
-  let n = 0;
-  while ((perWeek.get(k) || 0) >= min) {
-    n++;
-    k -= 7;
-  }
-  return n;
+  return streakWeeks(workouts, now, min);
 }
 
 /**
@@ -128,7 +102,7 @@ export function splitHeroes(ladders) {
  * @returns {number}
  */
 export function currentFill(l) {
-  return l.next === null ? 1 : l.segs[l.reached] ?? 0;
+  return l.next === null ? 1 : (l.segs[l.reached] ?? 0);
 }
 
 /**
@@ -157,7 +131,12 @@ export function buildLadders(workouts, ctx = {}) {
   if (bench) out.push(bench);
 
   const days = dayStreak(ws, now);
-  out.push({ id: 'dayStreak', value: days, rungs: RUNGS.dayStreak, ...climb(RUNGS.dayStreak, days) });
+  out.push({
+    id: 'dayStreak',
+    value: days,
+    rungs: RUNGS.dayStreak,
+    ...climb(RUNGS.dayStreak, days),
+  });
   return out;
 }
 
