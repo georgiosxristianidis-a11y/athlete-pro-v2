@@ -6,7 +6,6 @@
 import { esc, haptic, dismissOverlay } from './shared/utils.js';
 import { t } from './locale.store.js';
 import { on, onInput, onBlur, onChange } from './events.js';
-import { DB } from './db.js';
 import { Toast } from './shell.js';
 import { probeAiStatus } from './shared/ai-status.js';
 import { ensureCss } from './shared/lazy-css.js';
@@ -17,6 +16,7 @@ import {
   keyLooksValid,
   keyConnInitState,
   keyPrefix,
+  getAllSettings,
   getTone,
   setTone,
   setEngine,
@@ -248,7 +248,7 @@ export async function openAiSettings() {
 
   document.getElementById(OVERLAY_ID)?.remove();
 
-  const [settings, tone] = await Promise.all([DB.Settings.getAll(), getTone()]);
+  const [settings, tone] = await Promise.all([getAllSettings(), getTone()]);
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay sd-overlay';
@@ -318,7 +318,7 @@ async function applyKey(engine, raw) {
     document.getElementById('claude-fab-container')?.remove();
     Claude.renderFAB();
   }
-  patchAiStatus(await DB.Settings.getAll());
+  patchAiStatus(await getAllSettings());
   setKeyConn(/** @type {any} */ (result.state), result);
   await window.IntelView?.refreshKeyBadge?.();
 }
@@ -371,7 +371,7 @@ async function _onSetEngine(engine) {
     }
   }
   haptic(20);
-  const settings = await DB.Settings.getAll();
+  const settings = await getAllSettings();
   const el = document.getElementById('ai-settings-engine');
   if (el) el.innerHTML = renderEngineAndKey(settings, _serverStatus);
   patchAiStatus(settings);

@@ -131,6 +131,15 @@ export async function hasLocalKey(engine) {
   return !!String(raw || '').trim();
 }
 
+/**
+ * Все настройки разом — шторка рисует движок, ключ и статус из одного снимка.
+ * View в базу не ходит (A15), поэтому чтение живёт здесь.
+ * @returns {Promise<Record<string, any>>}
+ */
+export function getAllSettings() {
+  return DB.Settings.getAll();
+}
+
 /** Тон коуча, 0 (терапевт) .. 100 (Гоггинс). Дефолт — нейтрально. */
 export function getTone() {
   return DB.Settings.get('intel-tone', 50);
