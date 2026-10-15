@@ -137,7 +137,9 @@ describe('A15: views не зовут DB.* напрямую (кроме store)', 
 
   /** Долг на дату правила (14.09.2026) — не расти. Понижается миграцией по поверхности. */
   const BASELINE = {
-    'js/ai-settings.view.js': 3,
+    // A15-ai-settings (15.10): 3 → 0 — шторка читает снимок настроек через
+    // getAllSettings() из js/ai-settings.store.js.
+    'js/ai-settings.view.js': 0,
     // A15-claude (20.09): 5 → 0 — FAB читает ключ и видимость маскота через
     // js/claude.store.js и js/ai-settings.store.js.
     'js/claude.view.js': 0,
