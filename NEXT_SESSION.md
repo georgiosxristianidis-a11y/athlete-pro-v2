@@ -23,8 +23,8 @@
 
 1. **`HOME-3`** — материя Главной за флагом, «12 с» (Gio 14.10); затем `FIELD-6` (`HANDOFF_field_ux.md`; FIELD-7 влита 1.27.184)
 2. **`PLAN-1`**, `ANL-ALT`, `SWAP-1`, `PLATE-*` (`HANDOFF_working_sets.md`; WSET-2 влита 1.27.182)
-3. Фон, по одной за PR: архитектурный трек (`A15`, следующая поверхность — хендофф Cursor)
-4. Хвост HOME-1: `insights.engine._computeStreak` тоже в днях; свести `weekKey` (badge-ladders) и `computeWeekStreak` в shared
+3. Фон, по одной за PR: архитектурный трек (`A15`, остались `workout.view/handlers.js` и `render.js` — хендофф Cursor)
+4. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio; `athlete-room._calcConsistency` считает неделю от эпохи — на `weekKey`
 5. **`GEAR-1`** — решена (A, 1.5 с), косметика; вторая волна MOTION — `HANDOFF_motion_pro.md`
 
 **После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PERF-9` (стоп на мокап Gio), `PROG-0`.
