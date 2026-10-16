@@ -26,7 +26,7 @@
 2. **`PLAN-1`**, `ANL-ALT`, `SWAP-1`, `PLATE-*` (`HANDOFF_working_sets.md`; WSET-2 влита 1.27.182)
 3. Фон, по одной за PR: архитектурный трек (`A15`, остались `workout.view/handlers.js` и `render.js` — хендофф Cursor)
 4. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio; `athlete-room._calcConsistency` считает неделю от эпохи — на `weekKey`
-5. **`GEAR-1`** — решена (A, 1.5 с), косметика; вторая волна MOTION — `HANDOFF_motion_pro.md`
+5. **`GEAR-1`** — решена (A, 1.5 с); **`HOME-4`** (всплеск искр на подходе и PR, флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
 
 **После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PERF-9` (стоп на мокап Gio), `PROG-0`.
 
@@ -34,8 +34,7 @@
 - **Невлитые ветки** — `npm run inventory`; вердикты **HYG-7** за Gio. `claude/changelog-deps-batch` влита по содержимому — мёрж откатит роутер
 
 Остальные семнадцать линий **заморожены в `docs/_archive/`** — это пауза, не отмена.
-Карточки живы, вернуться к ним можно после LAUNCH-10. Брать оттуда работу — только явным
-решением Gio, не «по дороге».
+Карточки живы; брать оттуда работу — после LAUNCH-10 и только явным решением Gio.
 
 ## Правило файла
 
