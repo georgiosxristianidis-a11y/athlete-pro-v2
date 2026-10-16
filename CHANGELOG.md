@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### HOME-3: материя в карточке «Сегодня», за флагом (1.27.190)
+
+- **Причина.** Вердикт Gio 14.10 по ENERGY-PROTO-3: материя нужна, но «вечно» не нужно, «12 с» хватает. Живого движения на Главной не было.
+- **Что.** Флаг `home-matter` (OFF, тумблер в Лаборатории, нужна `home-feed-a`). В правом верхнем углу карточки «Сегодня» — стальная пыль и три световые ленты (`--c-chrome`, без цветного glow). Три canvas рисуются один раз на размер карточки (первая отрисовка 17.7 мс на DPR 2, цель ≤40), движение — WAAPI `transform`/`opacity`. 12 с после входа на Главную, затем 1 с в нейтраль и стоп: `getAnimations()` пуст. Возврат на вкладку и возврат из фона дают новые 12 с; `prefers-reduced-motion` и светлая тема — статика/без материи. При OFF модуль не грузится.
+- **Проверено:** браузер 375 и 360 px, ru/en/el; CTA и неделя не накрыты (`pointer-events: none`). Поле — за Gio.
+- Гард — `test/home-matter.test.js`. `home-feed-a`, `island-set-pulse`, `spring.js` не тронуты.
+
 ### HOME-1 хвост: недельная математика в одном модуле (1.27.189)
 
 - **Причина.** Ключ недели и серия «недели подряд» жили двумя копиями: `weekKey`/`weeklyStreak` в `js/shared/badge-ladders.js` и `isoWeekKey`/`computeWeekStreak` в `js/dashboard.store.js`. Дубль ставили, чтобы импорт badge-ladders не тянул strength-engine в бут-граф Главной.

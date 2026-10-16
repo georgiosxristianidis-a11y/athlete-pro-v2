@@ -892,6 +892,37 @@
   padding: var(--sp-2);
   margin-bottom: var(--sp-2);
 }
+/* HOME-3 (флаг home-matter): материя в карточке «Сегодня». Слои рисуются раз
+   (js/shared/home-matter.js), едут только transform/opacity. Маска на
+   неподвижной обёртке, слои на 8% больше карточки — сдвиг не открывает край.
+   Единственное место с материей; без цветного glow, сталь из --c-chrome. */
+.dash-today.has-matter {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(110% 80% at 100% 0%, color-mix(in oklab, var(--c-chrome) 8%, transparent) 0%, color-mix(in oklab, var(--c-chrome) 4%, transparent) 40%, transparent 72%),
+    var(--c-bg-2);
+}
+.dash-today .matter {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  isolation: isolate;
+  -webkit-mask-image: linear-gradient(200deg, #000 35%, transparent 95%);
+  mask-image: linear-gradient(200deg, #000 35%, transparent 95%);
+}
+.dash-today .matter canvas {
+  position: absolute;
+  inset: -4%;
+  width: 108%;
+  height: 108%;
+  will-change: transform, opacity;
+}
+.dash-today .matter canvas + canvas {
+  mix-blend-mode: plus-lighter;
+}
 .dash-today-label {
   font-size: var(--fs-1);
   font-weight: var(--fw-md);

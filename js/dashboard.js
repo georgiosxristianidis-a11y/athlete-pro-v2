@@ -44,6 +44,25 @@ function _loadDigitRoll() {
 // Включён флаг — тянем модуль сразу, параллельно чтению IDB в load().
 if (flag('boot-cascade')) _loadDigitRoll();
 
+/**
+ * HOME-3 (флаг home-matter): материя в карточке «Сегодня». Динамический импорт —
+ * при OFF модуль не нужен вовсе и в бут-граф не входит. Обрыв загрузки даёт null:
+ * карточка остаётся без материи.
+ * @type {Promise<typeof import('./shared/home-matter.js')|null>|null}
+ */
+let _matterP = null;
+function _loadMatter() {
+  if (!_matterP) _matterP = import('./shared/home-matter.js').catch(() => null);
+  return _matterP;
+}
+/** Вешает/снимает материю по флагу; карточка «Сегодня» есть только при home-feed-a. */
+async function _syncMatter(nextType) {
+  const host = document.querySelector('#s-home .dash-today');
+  if (!host) return;
+  if (flag('home-matter')) (await _loadMatter())?.mountMatter(host, nextType);
+  else if (host.classList.contains('has-matter')) (await _loadMatter())?.unmountMatter(host);
+}
+
 /** @type {Promise<typeof import('./shared/panda-video.js')>|null} */
 let _pandaVideoP = null;
 function _loadPandaVideo() {
@@ -925,6 +944,7 @@ ${feedCta}
     if (feedA) {
       renderToday(allWorkouts, nextType);
       requestAnimationFrame(() => renderStreak(allWorkouts));
+      _syncMatter(nextType);
       return;
     }
 
