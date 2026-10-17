@@ -877,6 +877,24 @@ export function classifyChamber(ex) {
 }
 
 /**
+ * A15: вся история тренировок, newest-first. View не ходит в IDB сам —
+ * экран активной тренировки читает её один раз на экран (PERF-HIST).
+ * @returns {Promise<Array>}
+ */
+export function loadWorkoutHistory() {
+  return DB.Workouts.getAll();
+}
+
+/**
+ * A15: последние `n` тренировок, newest-first — превью на экране выбора дня.
+ * @param {number} [n]
+ * @returns {Promise<Array>}
+ */
+export function loadRecentWorkouts(n = 3) {
+  return DB.Workouts.getLast(n);
+}
+
+/**
  * Newest workout (by `timestamp`) that contains an exercise matching `names`.
  * `DB.Workouts.getAll()` is newest-first; `[...workouts].reverse().find(...)`
  * then walked oldest-first and prefills collapsed to the first-ever session.

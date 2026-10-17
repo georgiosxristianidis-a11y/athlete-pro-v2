@@ -57,13 +57,24 @@ describe('Phase 2 — Performance post-conditions', () => {
 
   test('PERF-HIST: render.js reads workout history once per render, not once per exercise', () => {
     const src = readText('js/workout.view/render.js');
-    const calls = (src.match(/DB\.Workouts\.getAll\(\)/g) || []).length;
+    // A15: view в IDB не ходит — чтение живёт в сторе, view зовёт loadWorkoutHistory().
+    const calls = (src.match(/\bloadWorkoutHistory\(\)/g) || []).length;
     assert.equal(
       calls,
       1,
-      'render.js should call DB.Workouts.getAll() exactly once (in renderActive) — ' +
+      'render.js should call loadWorkoutHistory() exactly once (in renderActive) — ' +
         '_getLastSessionSummary/_getExerciseHistory and the coach pill (coachPillWeight) ' +
         'must take the history as an argument instead of fetching it themselves'
+    );
+    assert.ok(
+      !/DB\.Workouts\.getAll\(\)/.test(src),
+      'render.js must not read the history through DB directly (A15) — use loadWorkoutHistory()'
+    );
+    const store = readText('js/workout.store.js');
+    assert.match(
+      store,
+      /export function loadWorkoutHistory\(\)\s*\{\s*return DB\.Workouts\.getAll\(\);\s*\}/,
+      'loadWorkoutHistory() must stay a single getAll() read'
     );
   });
 

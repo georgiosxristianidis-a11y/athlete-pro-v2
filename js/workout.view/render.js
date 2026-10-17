@@ -5,7 +5,6 @@
    _renderCoreSection, _initDrag + shared helpers / DB queries
    ════════════════════════════════════════════════════════ */
 
-import { DB } from '../db.js';
 import { Timer } from '../timer.js';
 import { Toast } from '../shell.js';
 import { esc } from '../shared/utils.js';
@@ -15,6 +14,8 @@ import {
   savePlan,
   buildSession,
   latestWorkoutForNames,
+  loadWorkoutHistory,
+  loadRecentWorkouts,
   coachPillWeight,
   persistSession,
   getWeekMode,
@@ -290,7 +291,7 @@ export async function renderSelect() {
     }
   );
 
-  DB.Workouts.getLast(3).then((list) => {
+  loadRecentWorkouts(3).then((list) => {
     const el = document.getElementById('last-sessions-preview');
     if (!el) return;
     if (!list.length) {
@@ -363,7 +364,7 @@ export async function renderActive() {
         const cards = [];
         // Один вызов на весь экран — раньше renderExerciseCard тянул это
         // сам, N упражнений = N чтений всей истории (PERF-HIST).
-        const workouts = await DB.Workouts.getAll();
+        const workouts = await loadWorkoutHistory();
 
         // Номер блока больше не пишется словом: римскую цифру заменил ряд
         // полосок (blockTicks) — позиция читается взглядом, без перевода
