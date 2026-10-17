@@ -1,5 +1,4 @@
 // @ts-check
-import { DB } from '../db.js';
 import { Timer } from '../timer.js';
 import { Nav, Toast } from '../shell.js';
 import {
@@ -28,6 +27,9 @@ import {
   isPending,
   skipExercise,
   unskipExercise,
+  loadWorkoutHistory,
+  loadRestDurationSetting,
+  loadKeepAwakeSetting,
 } from '../workout.store.js';
 import {
   renderSelect,
@@ -421,9 +423,9 @@ export async function selectType(type) {
   State.type = type;
 
   const [workouts, restDurRaw, keepAwake] = await Promise.all([
-    DB.Workouts.getAll().catch(() => []),
-    DB.Settings.get('rest-duration').catch(() => null),
-    DB.Settings.get('keep-awake', 'on').catch(() => 'on'), // BG-1: default ON (opt-out)
+    loadWorkoutHistory().catch(() => []),
+    loadRestDurationSetting().catch(() => null),
+    loadKeepAwakeSetting().catch(() => 'on'), // BG-1: default ON (opt-out)
   ]);
   _restDuration = parseInt(restDurRaw || 90);
 
@@ -861,7 +863,7 @@ export async function smartCoach(ei, si) {
   haptic(20);
   const ex = State.plan[ei];
   const set = ex.sets[si];
-  const workouts = await DB.Workouts.getAll().catch(() => []);
+  const workouts = await loadWorkoutHistory().catch(() => []);
   // Шаг кладётся на поднятый вес прошлой сессии, а не на недожатое предложение
   // автопрогрессии. Поднятого нет нигде — для Турбо это «истории нет».
   const lastWeight = lastLiftedTopWeight(workouts, ex.name);

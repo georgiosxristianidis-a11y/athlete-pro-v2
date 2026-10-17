@@ -24,7 +24,7 @@
 
 1. **`FIELD-6`** (`HANDOFF_field_ux.md`; FIELD-7 влита 1.27.184)
 2. **`PLAN-1`**, `ANL-ALT`, `SWAP-1`, `PLATE-*` (`HANDOFF_working_sets.md`; WSET-2 влита 1.27.182)
-3. Фон, по одной за PR: архитектурный трек (`A15`, остался `workout.view/handlers.js` — хендофф Cursor)
+3. Фон, по одной за PR: архитектурный трек (A15 закрыта 1.27.193; A14, A16, A17 — хендофф Cursor)
 4. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio; `athlete-room._calcConsistency` считает неделю от эпохи — на `weekKey`
 5. **`GEAR-1`** — решена (A, 1.5 с); **`HOME-4`** (всплеск искр на подходе и PR, флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
 

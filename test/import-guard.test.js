@@ -152,7 +152,10 @@ describe('A15: views не зовут DB.* напрямую (кроме store)', 
     'js/profile.js': 0,
     'js/profile.view/settings.js': 0,
     'js/profile.view.js': 0,
-    'js/workout.view/handlers.js': 4,
+    // A15-handlers (18.10): 4 → 0 — старт сессии и Турбо читают историю и
+    // настройки отдыха/экрана через loadWorkoutHistory()/loadRestDurationSetting()/
+    // loadKeepAwakeSetting() из js/workout.store.js.
+    'js/workout.view/handlers.js': 0,
     // A15-render (18.10): 2 → 0 — история и превью последних сессий через
     // loadWorkoutHistory()/loadRecentWorkouts() из js/workout.store.js.
     'js/workout.view/render.js': 0,

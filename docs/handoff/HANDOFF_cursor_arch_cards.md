@@ -418,11 +418,10 @@ HTML не резал — нарезка шаблона остаётся след
 `ai-settings.view.js` 3 → 0 (`getAllSettings` в `ai-settings.store.js`, 1.27.187) и
 `privacy.view.js` 6 → 0 (`loadPassportData`/`eraseAllUserData` в `privacy.store.js`, 1.27.188).
 `workout.view/render.js` 2 → 0 (`loadWorkoutHistory`/`loadRecentWorkouts` в `workout.store.js`, 1.27.192).
-Остальной долг (workout) — будущим PR.
+**18.10:** последняя — `workout.view/handlers.js` 4 → 0 (`loadWorkoutHistory`/`loadRestDurationSetting`/`loadKeepAwakeSetting` в `workout.store.js`, 1.27.193). A15 закрыта.
 
-**Остаток A15 в цифрах** (baseline `test/import-guard.test.js`, сверять с ним, не с этой
-строкой): `workout.view/handlers.js` 4
-(`workout-ai.view.js` 3 ушёл вместе с модулем, `CORE-10`). Брать по одной поверхности за PR.
+**Остаток A15:** нет — все BASELINE-строки `test/import-guard.test.js` равны 0
+(`workout-ai.view.js` 3 ушёл вместе с модулем, `CORE-10`). Новый долг режет гард.
 
 ---
 

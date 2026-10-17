@@ -878,11 +878,30 @@ export function classifyChamber(ex) {
 
 /**
  * A15: вся история тренировок, newest-first. View не ходит в IDB сам —
- * экран активной тренировки читает её один раз на экран (PERF-HIST).
+ * экран активной тренировки читает её один раз на экран (PERF-HIST);
+ * старт сессии и Турбо берут её тем же вызовом.
  * @returns {Promise<Array>}
  */
 export function loadWorkoutHistory() {
   return DB.Workouts.getAll();
+}
+
+/**
+ * A15: сырая настройка длительности отдыха (секунды, `null` — не задана).
+ * Разбор и дефолт 90 остаются у вызывающего — обёртка только читает.
+ * @returns {Promise<*>}
+ */
+export function loadRestDurationSetting() {
+  return DB.Settings.get('rest-duration');
+}
+
+/**
+ * A15: настройка «экран не гаснет» — `'on'` | `'off'`. Дефолт `'on'` (BG-1:
+ * opt-out) живёт здесь, у ключа, а не в каждом читателе.
+ * @returns {Promise<*>}
+ */
+export function loadKeepAwakeSetting() {
+  return DB.Settings.get('keep-awake', 'on');
 }
 
 /**
