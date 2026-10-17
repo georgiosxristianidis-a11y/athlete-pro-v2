@@ -24,7 +24,7 @@
 | Метрика | Значение | Как читать |
 |---|---|---|
 | **Архитектура в целом** | **75.7%** | Зрелость слоёв (ниже). Не «сколько фич». |
-| **Долг аудита закрыт** | **71%** | 11 `done` + 2 `partial` из 17 (A1/A2/A3/A4/A6/A7/A8/A9/A11/A5/A13 + A14/A15). |
+| **Долг аудита закрыт** | **74%** | 12 `done` + 1 `partial` из 17 (A1/A2/A3/A4/A6/A7/A8/A9/A11/A5/A13/A15 + A14). |
 | **Этап 2 роадмапа** (`ROADMAP` §2) | **~56%** | Store/View + нарезка монолитов. |
 | **Этап 3 роадмапа** (`ROADMAP` §3) | **~70%** | Thin `server.js` есть; промпты/auth — нет. |
 | **LAUNCH-код** | **~97%** | Код трека влит; осталось поле Gio + **AI-1**. |
@@ -108,7 +108,7 @@
 
 ---
 
-## 3. Долг аудита — backlog (→ 71% закрыто)
+## 3. Долг аудита — backlog (→ 74% закрыто)
 
 Статусы: `open` · `partial` · `done`. Считать «закрытым» только `done`.
 Карточки с пояснениями — `docs/handoff/HANDOFF_cursor_arch_cards.md`.
@@ -129,13 +129,13 @@
 | A12 | Снять Firebase-призрак (CSP + endpoint) | **done** (10-10) | Взята в PERIM-2: `/api/firebase-config` снят (smoke ждёт 404), `connect-src` = `'self'` + `*.supabase.co`, гард `test/perimeter-guard.test.js`. `FIREBASE_*` в `.env.example` и Vercel — за Gio | — |
 | A13 | Профиль: один владелец экрана | **done** (18.09) | `js/profile.store.js` — `getAllSettings`/`getStoredLang`/`adjustRestDuration`/`toggle*Pref`/`getNotifyRest`+`setNotifyRest`/`togglePandaHidden`+`revealMascot`+`hideMascot`+`getPandaHidden` (последние два — 20.09, A15-claude)/`loadPassportSources`/`getAvatarAppearance`/`exportBackupJson`+`saveLastExportAt`/`importBackupJson`/`deleteAllUserData`/`getAllWorkouts`/`deduplicateWorkouts`/`getGymPlace`+`saveGymPlace`/`loadTxtExportSources`; baseline A15 39 → 0 (`profile.js`), 6 → 0 (`profile.view.js`), 1 → 0 (`profile.view/settings.js`). Гард удаления переехал на стор, новый `test/profile-store.test.js`. 1.27.119 | — |
 | A14 | Athlete Room / Island не на critical path | **partial** | Комната lazy (#321); `privacy.view` с бута снят (#328, `app.js` импортирует только `privacy.store`). Island **всё ещё eager**: static import `app.js:14` + `modulepreload` в `index.html:111` | Остался один Island. Отдельная карточка — снимать вместе с `dynamic-island.css` |
-| A15 | Views не пишут в IDB напрямую (кроме store) | **partial** (17.10) | правило в `architecture.md` + `test/import-guard.test.js`; мигрированы `analytics.view.js::removeCalendarEntry` (14.09), весь `intel.view.js` (17.09, A9: 11 → 0), экран профиля (18.09, A13: 46 → 0 на трёх файлах), `claude.view.js` (20.09, 5 → 0), `ai-settings.view.js` (3 → 0, `getAllSettings` в `ai-settings.store.js`, 1.27.187) и `privacy.view.js` (6 → 0, `loadPassportData`/`eraseAllUserData` в `privacy.store.js`, 1.27.188; обе влиты 17.10) и `workout.view/render.js` (2 → 0, `loadWorkoutHistory`/`loadRecentWorkouts` в `workout.store.js`, 1.27.192) — прямые вызовы остались только в `workout.view/handlers.js`. Гард с 18.09 режет комментарии: JSDoc больше не считается вызовом | Последняя поверхность — `workout.view/handlers.js` (4); цифры — по BASELINE в `test/import-guard.test.js` |
+| A15 | Views не пишут в IDB напрямую (кроме store) | **done** (18.10) | правило в `architecture.md` + `test/import-guard.test.js`; мигрированы `analytics.view.js::removeCalendarEntry` (14.09), весь `intel.view.js` (17.09, A9: 11 → 0), экран профиля (18.09, A13: 46 → 0 на трёх файлах), `claude.view.js` (20.09, 5 → 0), `ai-settings.view.js` (3 → 0, `getAllSettings` в `ai-settings.store.js`, 1.27.187) и `privacy.view.js` (6 → 0, `loadPassportData`/`eraseAllUserData` в `privacy.store.js`, 1.27.188; обе влиты 17.10) и `workout.view/render.js` (2 → 0, `loadWorkoutHistory`/`loadRecentWorkouts` в `workout.store.js`, 1.27.192) и `workout.view/handlers.js` (4 → 0, `loadWorkoutHistory`/`loadRestDurationSetting`/`loadKeepAwakeSetting` в `workout.store.js`, 1.27.193) — прямых вызовов `DB.*` во view нет. Гард с 18.09 режет комментарии: JSDoc больше не считается вызовом | — (новый долг режет BASELINE в `test/import-guard.test.js`) |
 | A16 | Мёртвый `lib/tokenUsage.js` | **open** | нет импортеров | Удалить или подключить |
 | A17 | `longTermStats` в схеме без использования | **open** | `coach.js` принимает и передаёт в `_buildSystemPrompt`, в шаблон **не попадает** | Убрать поле или прокинуть в prompt |
 
-**Чистый `done`: 11/17 (A1, A2, A3, A4, A5, A6, A7, A8, A9, A11, A13).**  
-**Partial: A14, A15.**  
-**71%** = `(11 + 0.5×2) / 17` = 70.6, округление вверх.
+**Чистый `done`: 12/17 (A1, A2, A3, A4, A5, A6, A7, A8, A9, A11, A13, A15).**  
+**Partial: A14.**  
+**74%** = `(12 + 0.5×1) / 17` = 73.5, округление вверх.
 
 Продуктовые закрытия (F-7/F-8, motion, analytics field, BOOT-TRIM) в A1–A17 не входят, кроме пересечения A14.
 
@@ -156,7 +156,7 @@
 | **0** | вернуть измеримость | `GATE-WEEKLY` · `MEASURE-1` |
 | **1** | кадр и отзыв | `PERF-HIST` · `PERF-INLINE` · `PERF-BLUR` → `MOTION-FIX` (ждёт LAUNCH-10) |
 | **2** | стабильность ввода | `NAV-1` · `DRUM-TICK` (+`A3`) · `A6+A7` |
-| **3** | архитектура под рост | `A1`+`A8`+`A2`+`A5`+`A9` закрыты, `A15` правило заведено → `A13` |
+| **3** | архитектура под рост | `A1`+`A8`+`A2`+`A5`+`A9` закрыты, `A15` закрыта (18.10) → `A13` |
 | **4** | гигиена и поверхность | `A14-хвост` · `A16+A17` · `A10` |
 | **вне фаз** | блокер ссылки | `AI-1` |
 

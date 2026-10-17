@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A15-handlers: старт сессии и Турбо читают базу через стор, A15 закрыта (1.27.193)
+
+- **Причина.** `workout.view/handlers.js` держал последние 4 прямых вызова `DB.*` во view: история и две настройки при старте сессии (`selectType`) и история в Турбо (`smartCoach`). Правило A15: view в IDB не ходит.
+- **Что.** В `js/workout.store.js` рядом с `loadWorkoutHistory()` — `loadRestDurationSetting()` и `loadKeepAwakeSetting()` (дефолт `'on'` у ключа). `.catch`-значения, порядок чтений в `Promise.all` и разбор `rest-duration` остались у вызывающего — поведение не менялось. Импорт `DB` из `handlers.js` убран. Baseline `test/import-guard.test.js`: `handlers.js` 4 → 0, во `view` долга по `DB.*` больше нет. Новый `test/workout-store-reads.test.js`: обёртки на реальной базе + call-site-ы по исходнику (лишний `DB.*`, смена дефолта, второе чтение истории в Турбо — красные).
+
 ### A15-render: экран активной тренировки читает историю через стор (1.27.192)
 
 - **Причина.** `workout.view/render.js` держал два прямых вызова `DB.Workouts.*` (превью последних сессий на экране выбора и одно чтение всей истории на экран активной тренировки, PERF-HIST). Правило A15: view в IDB не ходит.
