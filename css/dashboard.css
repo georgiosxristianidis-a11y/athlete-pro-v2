@@ -894,7 +894,8 @@
 }
 /* HOME-3 (флаг home-matter): материя в карточке «Сегодня». Слои рисуются раз
    (js/shared/home-matter.js), едут только transform/opacity. Маска на
-   неподвижной обёртке, слои на 8% больше карточки — сдвиг не открывает край.
+   неподвижной обёртке, слои на 20% больше карточки (запас 10% с каждой стороны) —
+   сдвиг до 16 px не открывает край.
    Единственное место с материей; без цветного glow, сталь из --c-chrome. */
 .dash-today.has-matter {
   position: relative;
@@ -915,9 +916,9 @@
 }
 .dash-today .matter canvas {
   position: absolute;
-  inset: -4%;
-  width: 108%;
-  height: 108%;
+  inset: -10%;
+  width: 120%;
+  height: 120%;
   will-change: transform, opacity;
 }
 .dash-today .matter canvas + canvas {

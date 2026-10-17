@@ -12,17 +12,18 @@
 import { listenerGroup } from './utils.js';
 
 const N_DUST = 2400;
-const PAD = 0.04; // запас слоя с каждой стороны (inset -4% в css/dashboard.css)
+const PAD = 0.1; // запас слоя с каждой стороны (inset -10%, width/height 120% в css/dashboard.css)
 const SETTLE_AT = 12000;
 const SETTLE_MS = 1000;
 const SEEDS = { push: 11, pull: 23, legs: 37 };
 const RAY = [-1.15 / Math.hypot(1, 1.15), 1 / Math.hypot(1, 1.15)]; // луч вниз-влево
 const tr = (d) => `translate(${(RAY[0] * d).toFixed(2)}px, ${(RAY[1] * d).toFixed(2)}px)`;
 // Периоды 14/9/11 с некратны; ближний слой стартует с задержкой — без рывка на входе.
+// Сдвиг 8/16 px (вариант A, Gio 17.10): по лучу 16 px это |dx| ~12.1, |dy| ~10.6 — меньше PAD*H карточки от 106 px.
 const LOOPS = [
-  [0, [{ transform: tr(0) }, { transform: tr(2.5) }], { duration: 14000 }],
-  [1, [{ transform: tr(0) }, { transform: tr(5) }], { duration: 9000, delay: 2000 }],
-  [2, [{ opacity: 1 }, { opacity: 0.8 }], { duration: 11000 }],
+  [0, [{ transform: tr(0) }, { transform: tr(8) }], { duration: 14000 }],
+  [1, [{ transform: tr(0) }, { transform: tr(16) }], { duration: 9000, delay: 2000 }],
+  [2, [{ opacity: 1 }, { opacity: 0.7 }], { duration: 11000 }],
 ];
 
 export function mulberry(a) {
