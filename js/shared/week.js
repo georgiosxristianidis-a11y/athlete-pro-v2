@@ -35,6 +35,7 @@ export function weekKey(ts) {
  * @returns {number}
  */
 export function streakWeeks(workouts, now, min) {
+  if (!(min > 0)) return 0; // порог <= 0 засчитал бы любую неделю, цикл не кончился бы
   /** @type {Map<number, number>} */
   const perWeek = new Map();
   for (const w of workouts || []) {

@@ -68,6 +68,21 @@ describe('streakWeeks', () => {
     const ws = [s(at(9, 26)), s(at(10, 1)), s(at(10, 2)), s(at(10, 3))];
     assert.equal(streakWeeks(ws, now, 2), 2);
   });
+
+  // До гарда min <= 0 засчитывал любую неделю, в том числе пустую: цикл не кончался.
+  test('порог 0, отрицательный и NaN — 0, без зависания', () => {
+    const ws = [s(at(9, 5)), s(at(9, 7)), s(at(9, 12))];
+    for (const min of [0, -1, NaN]) {
+      assert.equal(streakWeeks([], NOW, min), 0, `пусто, min=${min}`);
+      assert.equal(streakWeeks(ws, NOW, min), 0, `с тренировками, min=${min}`);
+    }
+  });
+
+  test('порог >= 1 не изменился: 1 считает неделю с одной тренировкой', () => {
+    const ws = [s(at(9, 5)), s(at(9, 12))];
+    assert.equal(streakWeeks(ws, NOW, 1), 2);
+    assert.equal(streakWeeks(ws, NOW, 2), 0);
+  });
 });
 
 describe('обёртки ведут к одному ядру', () => {
