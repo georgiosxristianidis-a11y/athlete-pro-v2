@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A15-render: экран активной тренировки читает историю через стор (1.27.192)
+
+- **Причина.** `workout.view/render.js` держал два прямых вызова `DB.Workouts.*` (превью последних сессий на экране выбора и одно чтение всей истории на экран активной тренировки, PERF-HIST). Правило A15: view в IDB не ходит.
+- **Что.** `loadRecentWorkouts(n)` и `loadWorkoutHistory()` в `js/workout.store.js` — тонкие обёртки над `DB.Workouts.getLast`/`getAll`, поведение и порядок вызовов не менялись. Импорт `DB` из `render.js` убран. Baseline `test/import-guard.test.js`: `render.js` 2 → 0; в `workout.view/*` долг остался у `handlers.js` (4).
+
 ### HOME-3-AMP: материя двигается заметнее, вариант A (1.27.191)
 
 - **Причина.** Дрейф HOME-3 (2.5 / 5 px) почти не читался. Gio 17.10 по мокапу выбрал вариант A: заметнее, но тот же рисунок и режим «12 с, затем 1 с в нейтраль и стоп».

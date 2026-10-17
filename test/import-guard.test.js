@@ -153,7 +153,9 @@ describe('A15: views не зовут DB.* напрямую (кроме store)', 
     'js/profile.view/settings.js': 0,
     'js/profile.view.js': 0,
     'js/workout.view/handlers.js': 4,
-    'js/workout.view/render.js': 2,
+    // A15-render (18.10): 2 → 0 — история и превью последних сессий через
+    // loadWorkoutHistory()/loadRecentWorkouts() из js/workout.store.js.
+    'js/workout.view/render.js': 0,
   };
 
   const files = walkJs(JS_ROOT, [])
