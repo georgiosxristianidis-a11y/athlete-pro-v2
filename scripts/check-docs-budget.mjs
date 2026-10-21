@@ -79,8 +79,29 @@ export function measureFile(absPath) {
   };
 }
 
+// Правило из `.claude/rules/` без `paths:` во фронтматтере Claude Code грузит в
+// КАЖДУЮ сессию — это тот же горячий путь, что CLAUDE.md, только невидимый для
+// счёта по HOT_FILES. 2026-10-04: security.md (~1500 ток) ехал так в каждую
+// сессию, а гард показывал «в норме». Своего потолка у такого правила нет — оно
+// ложится в общий TOTAL.
+export function hasPathsScope(text) {
+  const m = normalize(text).match(/^---\n([\s\S]*?)\n---/);
+  return Boolean(m) && /^paths:/m.test(m[1]);
+}
+
+export function unscopedRules(root = ROOT) {
+  const dir = path.join(root, '.claude', 'rules');
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith('.md'))
+    .filter((f) => !hasPathsScope(fs.readFileSync(path.join(dir, f), 'utf8')))
+    .map((f) => path.posix.join('.claude', 'rules', f));
+}
+
 export function measureHotPath(root = ROOT) {
-  const files = HOT_FILES.map((f) => ({ file: f, ...measureFile(path.join(root, f)) }));
+  const names = [...HOT_FILES, ...unscopedRules(root)];
+  const files = names.map((f) => ({ file: f, ...measureFile(path.join(root, f)) }));
   return { files, total: files.reduce((a, f) => a + f.tokens, 0) };
 }
 
