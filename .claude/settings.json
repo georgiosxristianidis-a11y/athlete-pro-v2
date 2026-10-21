@@ -48,7 +48,8 @@
       "Bash(sudo *)",
       "Bash(curl *secret*)",
       "Bash(curl *api_key*)",
-      "Bash(cat *.env*)"
+      "Bash(cat *.env*)",
+      "Bash(gh pr merge *--auto*)"
     ]
   },
   "model": "claude-opus-4.6"

@@ -21,6 +21,8 @@ import {
   measureHotPath,
   measureFile,
   estimateTokens,
+  hasPathsScope,
+  unscopedRules,
 } from '../scripts/check-docs-budget.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -90,8 +92,7 @@ test('оценка токенов: markdown-разметка/цифры счит
 
 test('каждый файл горячего пути влезает в свой потолок', () => {
   const { files } = measureHotPath(ROOT);
-  assert.equal(files.length, HOT_FILES.length);
-  for (const f of files) {
+  for (const f of files.filter((x) => HOT_FILES.includes(x.file))) {
     const cap = BUDGETS[f.file];
     assert.ok(cap, `для ${f.file} не назначен потолок`);
     assert.ok(
@@ -108,4 +109,35 @@ test('сумма горячего пути влезает в общий пото
     total <= BUDGETS.TOTAL,
     `горячий путь ~${total} токенов при потолке ${BUDGETS.TOTAL} — стартовая нагрузка каждой сессии`,
   );
+});
+
+// Правило без `paths:` грузится в каждую сессию — значит, оно в горячем пути.
+// 2026-10-04: security.md ехал так ~1500 токенов на сессию при «бюджет в норме».
+test('фронтматтер: paths: распознаётся, без него — нет (CRLF тоже)', () => {
+  assert.equal(hasPathsScope('---\ndescription: x\npaths:\n  - "js/**"\n---\n# T'), true);
+  assert.equal(hasPathsScope('---\r\ndescription: x\r\npaths:\r\n  - "js/**"\r\n---\r\n# T'), true);
+  assert.equal(hasPathsScope('---\ndescription: x\n---\n# T'), false);
+  assert.equal(hasPathsScope('# без фронтматтера\npaths: в тексте не считается'), false);
+});
+
+test('правило без paths: ложится в горячий путь и в общий итог', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'docs-budget-rules-'));
+  try {
+    for (const f of HOT_FILES) fs.writeFileSync(path.join(dir, f), 'строка');
+    fs.mkdirSync(path.join(dir, '.claude', 'rules'), { recursive: true });
+    const before = measureHotPath(dir).total;
+
+    const scoped = '---\ndescription: s\npaths:\n  - "js/**"\n---\n' + 'а'.repeat(400);
+    fs.writeFileSync(path.join(dir, '.claude', 'rules', 'scoped.md'), scoped);
+    assert.equal(measureHotPath(dir).total, before, 'правило с paths: грузится лениво — в итог не идёт');
+
+    const unscoped = '---\ndescription: u\n---\n' + 'а'.repeat(400);
+    fs.writeFileSync(path.join(dir, '.claude', 'rules', 'always.md'), unscoped);
+    const { files, total } = measureHotPath(dir);
+    assert.deepEqual(unscopedRules(dir), ['.claude/rules/always.md']);
+    assert.ok(files.some((f) => f.file === '.claude/rules/always.md'), 'правило без paths: не попало в горячий путь');
+    assert.ok(total >= before + 200, `итог не вырос на правило без paths: ${before} -> ${total}`);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

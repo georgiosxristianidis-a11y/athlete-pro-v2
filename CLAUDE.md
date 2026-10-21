@@ -41,7 +41,7 @@
 - **Verify-over-trust:** «готово» (вкл. Gemini) — гипотеза, пока gate-команда не даёт 0; показывать фактический вывод.
 - **Причина, потом ошибка:** сперва root cause, потом фикс.
 - **Изоляция:** агенты пишут только в свой worktree; вливает LEAD после гейта.
-- **Влитие только через PR:** свежий `origin/main` → гейт → `gh pr create --base main` → зелёные чеки → `gh pr merge --rebase --delete-branch`. Отстала — `git rebase origin/main`, перегнать гейт, снова PR.
+- **Влитие только через PR:** свежий `origin/main` → гейт → `gh pr create --base main` → зелёные чеки → `gh pr merge --rebase --match-head-commit <sha>`, без `--auto`. Отстала — `git rebase origin/main`, перегнать гейт, снова PR.
 - **«Влито» = ancestry:** `git merge-base --is-ancestor <sha> origin/main` = 0, не «PR создан». Ревизия веток — `npm run inventory`.
 - **Влитая ветка умирает с мёржем** вместе со своим worktree — не информация. Тегом держим только отвергнутые линии.
 - **Рекомендация, не меню:** советовать лучший вариант + 1 строка «почему»; решает человек.
