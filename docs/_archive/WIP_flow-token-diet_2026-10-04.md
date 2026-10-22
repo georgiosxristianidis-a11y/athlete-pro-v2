@@ -12,9 +12,11 @@
 | `paths:` в `.claude/rules/security.md` | влито другим путём |
 | Перенос закрытых карточек `HANDOFF_launch_track.md` в архив | не влито; патч протух (хендофф 696 → 1402 строк), текст и так в main — не сохраняется |
 | Роутер: «защиты main нет» вместо PROT-1 | **ложно с 14.10** (защита включена) — не сохраняется |
-| Гард бюджета видит правила `.claude/rules/*.md` без `paths:` | не влито — патч ниже |
-| deny `gh pr merge *--auto*` в `.claude/settings.json` | не влито — патч ниже |
-| `--match-head-commit <sha>` вместо `--delete-branch` в CLAUDE.md | не влито — патч ниже |
+| Гард бюджета видит правила `.claude/rules/*.md` без `paths:` | влито 22.10, PR #567 |
+| deny `gh pr merge *--auto*` в `.claude/settings.json` | влито 22.10, PR #567 |
+| `--match-head-commit <sha>` вместо `--delete-branch` в CLAUDE.md | влито 22.10, PR #567 (без резки, 2992/3000) |
+
+**Все куски разобраны — живого в файле не осталось.** Патч ниже — только история.
 
 Мотив гарда (из черновика CHANGELOG): правило без `paths:` Claude Code грузит в каждую
 сессию, а `check-docs-budget` считал только `HOT_FILES` — `security.md` (~1500 ток) ехал мимо
