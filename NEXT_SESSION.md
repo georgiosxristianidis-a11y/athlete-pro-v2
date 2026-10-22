@@ -23,7 +23,7 @@
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
 1. **`FIELD-6`** ждёт развилку Gio: чек-лист снарядов / чёрный список (`HANDOFF_field_ux.md`)
-2. **`PLAN-1`**, `ANL-ALT`, `SWAP-1`, `PLATE-*` (`HANDOFF_working_sets.md`; WSET-2 влита 1.27.182)
+2. **`PLAN-1`** (стоп на развилках Gio), `ANL-ALT`, `SWAP-1`, `PLATE-*` (`HANDOFF_working_sets.md`; WSET-2 влита 1.27.182)
 3. Фон, по одной за PR: архитектурный трек (A14-хвост, A10 — хендофф Cursor)
 4. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
 5. **`GEAR-1`** — решена (A, 1.5 с); **`HOME-4`** (всплеск искр на подходе и PR, флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
