@@ -53,7 +53,7 @@ npm run preflight && npm run inventory && npm run smoke:prod && npm run docs:bud
 
 - **PROT-1:** чеки `test`+`e2e`+`drift` (strict), PR, linear history, `enforce_admins`; локально `.githooks/pre-push` (`MAIN_PUSH_OK=1`). Состояние — preflight (`scripts/main-protection.mjs`); сторож — `main-watchdog.yml`.
 - **Галочка ≠ чеки:** Vercel `combined status` врёт при нуле check-runs → `gh api repos/:owner/:repo/commits/<sha>/check-runs`.
-- Мёрж: `gh pr merge --rebase --delete-branch`.
+- Мёрж — по `CLAUDE.md`.
 
 ## Технические заметки
 
