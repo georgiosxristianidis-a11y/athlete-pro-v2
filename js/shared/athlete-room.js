@@ -12,6 +12,7 @@ import { on, onChange } from '../events.js';
 import { ensureCss } from './lazy-css.js';
 import { flag } from '../flags.js';
 import { buildLadders, splitHeroes, currentFill } from './badge-ladders.js';
+import { weekKey, weekKeyAgo } from './week.js';
 
 const _nextFrame =
   typeof requestAnimationFrame === 'function'
@@ -175,19 +176,14 @@ function _calcStreak(workouts) {
   return streak;
 }
 
-function _calcConsistency(workouts) {
+/* Неделя — с понедельника, ключ из shared/week.js. Экспорт — для теста
+   (test/athlete-room-consistency.test.js), снаружи не зовётся. */
+export function _calcConsistency(workouts, now = Date.now()) {
   if (workouts.length < 9) return false;
-  const now = new Date();
-  const weeks = new Set(
-    workouts.map((w) => {
-      const d = new Date(w.timestamp);
-      return Math.floor(d.getTime() / (7 * 86400000));
-    })
-  );
+  const weeks = new Set(workouts.map((w) => weekKey(w.timestamp)));
   let activeWeeks = 0;
-  const currentWeek = Math.floor(now.getTime() / (7 * 86400000));
   for (let i = 0; i < 5; i++) {
-    if (weeks.has(currentWeek - i)) activeWeeks++;
+    if (weeks.has(weekKeyAgo(now, i))) activeWeeks++;
   }
   return activeWeeks >= 3;
 }

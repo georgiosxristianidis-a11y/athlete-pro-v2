@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { weekKey, streakWeeks } from '../js/shared/week.js';
+import { weekKey, weekKeyAgo, streakWeeks } from '../js/shared/week.js';
 import * as ladders from '../js/shared/badge-ladders.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -39,6 +39,21 @@ describe('weekKey', () => {
 
   test('ключ — понедельник как номер дня от эпохи (UTC-календарь)', () => {
     assert.equal(weekKey(NOW), Date.UTC(2026, 9, 12) / 86400000);
+  });
+});
+
+describe('weekKeyAgo', () => {
+  test('0 — та же неделя, 1 — прошлая, 4 — пн 14.09', () => {
+    assert.equal(weekKeyAgo(NOW, 0), weekKey(NOW));
+    assert.equal(weekKeyAgo(NOW, 1), weekKey(at(9, 5)));
+    assert.equal(weekKeyAgo(NOW, 4), weekKey(at(8, 14)));
+  });
+
+  // Неделя с переходом на летнее время (29.03) короче на час: пн 30.03 00:00
+  // минус 7 суток — вс 22.03 23:00, сдвиг по ts уехал бы на две недели назад.
+  test('через переход на летнее время и смену месяца', () => {
+    assert.equal(weekKeyAgo(at(2, 30, 0), 1), weekKey(at(2, 23, 0)));
+    assert.equal(weekKeyAgo(at(10, 2), 1), weekKey(at(9, 26)));
   });
 });
 
@@ -124,6 +139,20 @@ describe('один источник недельной математики', ()
       re.test(stripComments(fs.readFileSync(path.join(ROOT, f), 'utf8')))
     );
     assert.deepEqual(hits, ['js/shared/week.js']);
+  });
+
+  // Math.floor(ts / 7 суток) — неделя от эпохи, а эпоха — четверг: так считал
+  // значок постоянства в shared/athlete-room.js. Длительность в неделях
+  // (Math.round(разница / 7 суток)) — не ключ и под гард не попадает.
+  test('ключ недели делением на 7 суток не считается нигде, в том числе в athlete-room.js', () => {
+    const re =
+      /Math\.floor\([^;]*?\/\s*\(?\s*(?:7\s*\*\s*(?:86400000|864e5|DAY_MS|24\s*\*\s*3600000|24\s*\*\s*60\s*\*\s*60\s*\*\s*1000)|604800000|6048e5)\b/;
+    const files = jsFiles('js');
+    assert.ok(files.includes('js/shared/athlete-room.js'), 'обход видит athlete-room.js');
+    const hits = files.filter((f) =>
+      re.test(stripComments(fs.readFileSync(path.join(ROOT, f), 'utf8')))
+    );
+    assert.deepEqual(hits, []);
   });
 
   test('shared/week.js без импортов — в бут-граф Главной не тянет ничего', () => {
