@@ -11,7 +11,6 @@ import { Timer } from './timer.js';
 import { Nav, Toast } from './shell.js';
 import { Dashboard } from './dashboard.js';
 import { initPrivacy, getPrivacyMode, onPrivacyChange } from './privacy.store.js';
-import { DynamicIsland } from './shared/dynamic-island.js';
 import { initLocale, t } from './locale.store.js';
 import { haptic } from './shared/utils.js';
 import { State } from './workout.store.js';
@@ -73,13 +72,64 @@ async function _loadAthleteRoom() {
   return AthleteRoom;
 }
 
+/* ── Dynamic Island (A14-хвост) — вне бут-графа ──
+   Потребители (timer, rest-timer, handlers, island-settings) зовут остров
+   через window.DynamicIsland. Пока модуль не приехал, там стоит шим ниже:
+   каждый вызов встаёт в очередь на один промис и проигрывается в том же
+   порядке. Без шима show() на восстановленной сессии (Nav.go('s-train')
+   раньше idle) ушёл бы в пустоту. Сам модуль при загрузке ставит
+   window.DynamicIsland на настоящий объект — дальше вызовы идут напрямую.
+   CSS раньше модуля: show()/setRestProgress() зовут init() сами, и без
+   стилей остров моргнул бы голым (LOAD-1). ensureCss не reject-ит. */
+/** @type {Promise<typeof import('./shared/dynamic-island.js').DynamicIsland>|null} */
+let _islandP = null;
+function _loadIsland() {
+  if (!_islandP) {
+    _islandP = ensureCss('css/dynamic-island.css')
+      .then(() => import('./shared/dynamic-island.js'))
+      .then(({ DynamicIsland }) => {
+        window.DynamicIsland = DynamicIsland;
+        return DynamicIsland;
+      })
+      .catch((e) => {
+        _islandP = null; // чанк не доехал — следующий вызов попробует снова
+        throw e;
+      });
+  }
+  return _islandP;
+}
+/** Весь публичный API острова — сверяет test/island-shim.test.js. */
+const ISLAND_API = [
+  'init',
+  'show',
+  'hide',
+  'update',
+  'setRestProgress',
+  'stopTimer',
+  'pulseSetComplete',
+  'toggleExpand',
+  'triggerPiP',
+  'showFinishReady',
+  'clearFinishReady',
+  'say',
+  '_tapFinish',
+];
+
 /* ── Bridge: expose to window for legacy global handlers + delegation ── */
 window.DB = DB;
 window.Nav = Nav;
 window.Toast = Toast;
 window.Timer = Timer;
 window.Dashboard = Dashboard;
-window.DynamicIsland = DynamicIsland;
+window.DynamicIsland = Object.fromEntries(
+  ISLAND_API.map((m) => [
+    m,
+    (...args) =>
+      _loadIsland()
+        .then((DI) => DI[m](...args))
+        .catch((e) => console.warn('[island]', m, e)),
+  ])
+);
 window.AthleteRoom = {
   open() {
     return _loadAthleteRoom().then((AR) => AR.open());
@@ -250,7 +300,9 @@ openDB()
       // Стили Острова и FAB — здесь же, а не в шапке: контейнер Острова пуст
       // до init(), FAB до renderFAB() не существует. Ждём CSS перед вставкой,
       // иначе оба моргнут нестилизованными (LOAD-1).
-      ensureCss('css/dynamic-island.css').then(() => DynamicIsland.init());
+      _loadIsland()
+        .then((DI) => DI.init())
+        .catch((e) => console.warn('[island] load failed', e));
       _loadAthleteRoom()
         .then((AR) => AR.initAvatar())
         .catch(() => {});
