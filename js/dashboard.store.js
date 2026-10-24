@@ -48,7 +48,8 @@ export function getNextType(workouts) {
  */
 export function getNextSessionRecs(workouts, nextType, plan = loadPlan()) {
   const recs = [];
-  for (const ex of plan?.[nextType] || []) {
+  // PLAN-1: редкое (`rare`) Train собирает пропущенным — обещать ему вес нечестно.
+  for (const ex of (plan?.[nextType] || []).filter((e) => !e.rare)) {
     const next = nextWeightFor(ex, workouts || []);
     if (next?.autoBumped) recs.push({ name: ex.name, from: next.lastWeight, to: next.weight });
   }
@@ -66,7 +67,8 @@ export function getNextSessionRecs(workouts, nextType, plan = loadPlan()) {
  * @returns {{total: number, items: Array<{name: string, sets: number, reps: number, weight: number|null, last: number|null, step: number}>}}
  */
 export function getTodayPreview(workouts, nextType, plan = loadPlan()) {
-  const list = plan?.[nextType] || [];
+  // PLAN-1: редкие (`rare`) приходят в сессию пропущенными — не в счёте и не в превью.
+  const list = (plan?.[nextType] || []).filter((ex) => !ex.rare);
   const loaded = list.filter((ex) => !ex.isBW && !ex.noDb);
   const row = (ex, next) => ({
     name: ex.name,
