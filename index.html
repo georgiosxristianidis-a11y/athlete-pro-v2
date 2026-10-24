@@ -110,7 +110,7 @@
          блок — прямое замыкание бута. -->
 
     <!-- Волна 2 — прямые статические импорты entry (Athlete Room, Integrity,
-         privacy.view, rest-timer/pip сняты с бута). + js/boot.js errors-ui. -->
+         privacy.view, rest-timer/pip, Dynamic Island с замыканием сняты с бута). + js/boot.js errors-ui. -->
     <link rel="modulepreload" href="js/events.js" />
     <link rel="modulepreload" href="js/db.js" />
     <link rel="modulepreload" href="js/timer.js" />
@@ -119,7 +119,6 @@
     <link rel="modulepreload" href="js/dashboard.store.js" />
     <link rel="modulepreload" href="js/shared/week.js" />
     <link rel="modulepreload" href="js/privacy.store.js" />
-    <link rel="modulepreload" href="js/shared/dynamic-island.js" />
     <link rel="modulepreload" href="js/locale.store.js" />
     <link rel="modulepreload" href="js/shared/utils.js" />
     <link rel="modulepreload" href="js/workout.store.js" />
@@ -130,9 +129,8 @@
     <link rel="modulepreload" href="js/shared/errors-ui.js" />
 
     <!-- Волна 3 — транзитивные, но в том же буте:
-         sync-secrets ← js/db/settings.js:7 · exercise-shorthand ← js/shared/dynamic-island.js:14 -->
+         sync-secrets ← js/db/settings.js:7 -->
     <link rel="modulepreload" href="js/shared/sync-secrets.js" />
-    <link rel="modulepreload" href="js/shared/exercise-shorthand.js" />
 
     <!-- Волны 5 и глубже (прежний блок). -->
     <link rel="modulepreload" href="js/db/core.js" />
@@ -153,9 +151,6 @@
     <link rel="modulepreload" href="js/shared/volume-trend.js" />
     <link rel="modulepreload" href="js/shared/ppl-color.js" />
     <link rel="modulepreload" href="js/shared/ppl-gauge.js" />
-    <link rel="modulepreload" href="js/shared/island-tracker.js" />
-    <link rel="modulepreload" href="js/shared/sync-dot.js" />
-    <link rel="modulepreload" href="js/island-profile.store.js" />
     <link rel="modulepreload" href="js/shared/chamber-pill.js" />
     <link rel="modulepreload" href="js/shared/block-names.js" />
     <link rel="modulepreload" href="js/shared/cryptoClient.js" />
