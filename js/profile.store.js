@@ -15,6 +15,7 @@
 
 import { DB } from './db.js';
 import { K_LAST_EXPORT } from './db/backup.js';
+import { flag } from './flags.js';
 
 const KEYS = {
   name: 'profile.name',
@@ -22,7 +23,10 @@ const KEYS = {
   sex: 'profile.sex', // 'm' | 'f'  (also used by body-stats Navy formula via 'sex' key — see migration)
   experienceYears: 'profile.experienceYears',
   goal: 'profile.goal', // 'strength' | 'hypertrophy' | 'cut' | 'maintain'
-  equipment: 'profile.equipment', // 'gym' | 'home' | 'minimal' | 'hotel'
+  // FIELD-6: пресет места 'gym'|'home'|'minimal'|'hotel' похоронен — UI и писателей
+  // не было; ключ 'profile.equipment' в базе остаётся ради старых бэкапов, но не читается.
+  // Источник правды — чек-лист выключенных снарядов (js/shared/gym-equipment.js).
+  equipmentOff: 'profile.equipmentOff', // string[] выключенных видов equipment
   injuries: 'profile.injuries', // string[]
   restingHr: 'profile.restingHr',
   avatarBlobId: 'profile.avatarBlobId',
@@ -41,7 +45,7 @@ const KEYS = {
  *   sex: 'm'|'f',
  *   experienceYears: number,
  *   goal: 'strength'|'hypertrophy'|'cut'|'maintain',
- *   equipment: 'gym'|'home'|'minimal'|'hotel',
+ *   equipment: string,
  *   injuries: string[],
  *   restingHr: number|null,
  *   avatarBlobId: string|null,
@@ -58,7 +62,7 @@ const KEYS = {
 
 /** @returns {Promise<ProfileData>} */
 export async function loadProfile() {
-  const [name, dob, sexProfile, sexLegacy, exp, goal, equip, injuries, hr, avatar, onb, mode, limitationsText, sessionTime] =
+  const [name, dob, sexProfile, sexLegacy, exp, goal, equipmentOff, injuries, hr, avatar, onb, mode, limitationsText, sessionTime] =
     await Promise.all([
       DB.Settings.get(KEYS.name, ''),
       DB.Settings.get(KEYS.dob, null),
@@ -66,7 +70,7 @@ export async function loadProfile() {
       DB.Settings.get('sex', 'm'), // legacy key used by body-stats.js
       DB.Settings.get(KEYS.experienceYears, 0),
       DB.Settings.get(KEYS.goal, 'hypertrophy'),
-      DB.Settings.get(KEYS.equipment, 'gym'),
+      getEquipmentOff(),
       DB.Settings.get(KEYS.injuries, []),
       DB.Settings.get(KEYS.restingHr, null),
       DB.Settings.get(KEYS.avatarBlobId, null),
@@ -81,7 +85,10 @@ export async function loadProfile() {
     sex: /** @type {'m'|'f'} */ (sexProfile || sexLegacy || 'm'),
     experienceYears: Number(exp) || 0,
     goal: goal || 'hypertrophy',
-    equipment: equip || 'gym',
+    // Строка для коуча: пусто → 'gym', как отдавал старый пресет.
+    equipment: equipmentOff.length
+      ? (await import('./shared/gym-equipment.js')).coachEquipment(equipmentOff)
+      : 'gym',
     injuries: Array.isArray(injuries) ? injuries : [],
     restingHr: hr,
     avatarBlobId: avatar,
@@ -107,7 +114,6 @@ export async function updateProfile(patch) {
   }
   if (patch.experienceYears !== undefined) writes.push(DB.Settings.set(KEYS.experienceYears, patch.experienceYears));
   if (patch.goal !== undefined)            writes.push(DB.Settings.set(KEYS.goal, patch.goal));
-  if (patch.equipment !== undefined)       writes.push(DB.Settings.set(KEYS.equipment, patch.equipment));
   if (patch.injuries !== undefined)        writes.push(DB.Settings.set(KEYS.injuries, patch.injuries));
   if (patch.restingHr !== undefined)       writes.push(DB.Settings.set(KEYS.restingHr, patch.restingHr));
   if (patch.avatarBlobId !== undefined)    writes.push(DB.Settings.set(KEYS.avatarBlobId, patch.avatarBlobId));
@@ -264,6 +270,29 @@ export async function toggleAutoProgressPref() {
 /** BG-1: дефолт ON (opt-out) — держится в `_toggleOnOff`. */
 export async function toggleKeepAwakePref() {
   return _toggleOnOff('keep-awake');
+}
+
+/* ── FIELD-6: чек-лист снарядов зала ──
+   Флаг OFF → список пуст: отсев не действует ни в модалках, ни у коуча.
+   Модуль видов грузится лениво — стор профиля стоит в бут-графе (прекеш). */
+
+/** Выключенные виды снаряда, нормализованные. @returns {Promise<string[]>} */
+export async function getEquipmentOff() {
+  if (!flag('gym-equipment')) return [];
+  const raw = await DB.Settings.get(KEYS.equipmentOff, []);
+  if (!Array.isArray(raw) || !raw.length) return [];
+  return (await import('./shared/gym-equipment.js')).normalizeOff(raw);
+}
+
+/** Переключить вид снаряда в чек-листе. @param {string} kind
+ *  @returns {Promise<string[]>} новый список выключенных */
+export async function toggleEquipmentKind(kind) {
+  const { normalizeOff, EQUIPMENT_KINDS } = await import('./shared/gym-equipment.js');
+  if (!EQUIPMENT_KINDS.includes(kind)) return getEquipmentOff();
+  const cur = normalizeOff(await DB.Settings.get(KEYS.equipmentOff, []));
+  const next = normalizeOff(cur.includes(kind) ? cur.filter((k) => k !== kind) : [...cur, kind]);
+  await DB.Settings.set(KEYS.equipmentOff, next);
+  return next;
 }
 
 /** @returns {Promise<'on'|'off'>} */
