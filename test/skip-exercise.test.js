@@ -183,5 +183,10 @@ test('проводка: пункт меню, возврат тапом и фас
 test('пропуск живёт одну сессию: buildSession статус не переносит', () => {
   const fresh = buildSession('push', { workouts: [] });
   assert.ok(fresh.length > 0);
-  assert.equal(fresh.some((e) => 'skipped' in e || 'skipFrom' in e), false);
+  // PLAN-1: редкие (`rare`) пресета собираются пропущенными намеренно — их
+  // контракт в plan-rare.test.js; здесь — что ручной пропуск не переносится.
+  const rare = new Set(store.PPL_GIO_PLAN.weekA.push.filter((e) => e.rare).map((e) => e.name));
+  const regular = fresh.filter((e) => !rare.has(e.name));
+  assert.ok(regular.length > 0);
+  assert.equal(regular.some((e) => 'skipped' in e || 'skipFrom' in e), false);
 });
