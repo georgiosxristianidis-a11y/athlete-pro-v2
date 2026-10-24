@@ -59,6 +59,9 @@ export const PPL_GIO_PLAN = {
       { name: 'Alternating Dumbbell Curls',    sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true, alias: ['Bicep Curl'] },
       { name: 'Hammer Curl',                   sets: 3, reps: 10, weight: 0, block: 'arms', isUnilateral: true, alias: ['Hammer Curls'] },
       { name: 'Preacher Curls',                sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Bicep Curl'] },
+      // PLAN-1 — редкие (раз в месяц, на закачку): сессия собирает их уже пропущенными
+      { name: 'Cable Curl',                    sets: 3, reps: 12, weight: 0, block: 'arms', rare: true },
+      { name: 'Machine Chest Press',           sets: 3, reps: 10, weight: 0, block: 'power', rare: true },
       // Block IV — Core
       { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
       { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
@@ -102,6 +105,9 @@ export const PPL_GIO_PLAN = {
       { name: 'Tricep Pushdown',               sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Triceps Rope Pushdown'] },
       { name: 'Overhead Tricep Ext.',          sets: 3, reps: 12, weight: 0, block: 'arms', alias: ['Overhead Cable Extension'] },
       { name: 'Close-Grip Bench Press',        sets: 3, reps: 10, weight: 0, block: 'arms' },
+      // PLAN-1 — редкие (раз в месяц, на закачку): сессия собирает их уже пропущенными
+      { name: 'Cable Curl',                    sets: 3, reps: 12, weight: 0, block: 'arms', rare: true },
+      { name: 'Machine Chest Press',           sets: 3, reps: 10, weight: 0, block: 'power', rare: true },
       // Block IV — Core
       { name: 'Hanging Leg Raises',            sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
       { name: 'Hyperextensions',               sets: 3, reps: 15, weight: 0, block: 'core', noDb: true, isBW: true },
@@ -984,7 +990,7 @@ export function buildSession(type, opts = {}) {
 
   const plan = loadPlan();
   const t = type || 'push';
-  return (plan[t] || []).map((ex) => {
+  const items = (plan[t] || []).map((ex) => {
     let weight = ex.weight;
     let bumped = false;
     let brk = null;
@@ -1034,6 +1040,17 @@ export function buildSession(type, opts = {}) {
       })),
     };
   });
+  // PLAN-1: редкое упражнение (`rare`, раз в месяц) собирается уже пропущенным
+  // в хвосте — то же состояние, что даёт FIELD-1, и тот же тап по шапке
+  // возвращает его. skipFrom — место среди обычных упражнений, где оно стоит
+  // в плане: вернётся туда, а не за кор.
+  const regular = [];
+  const rare = [];
+  (plan[t] || []).forEach((ex, i) => {
+    if (ex.rare) rare.push(Object.assign(items[i], { skipped: true, skipFrom: regular.length }));
+    else regular.push(items[i]);
+  });
+  return regular.concat(rare);
 }
 
 /* ── FIELD-1: пропуск упражнения на одну сессию («тренажёр занят») ──

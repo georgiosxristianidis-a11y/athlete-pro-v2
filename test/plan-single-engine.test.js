@@ -38,7 +38,8 @@ test('buildSession — выбранный день уважается даже �
     const session = buildSession(day);
     assert.deepEqual(
       session.map((e) => e.name),
-      PPL_GIO_PLAN.weekA[day].map((e) => e.name),
+      // PLAN-1: редкие (`rare`) сессия уводит в хвост пропущенными.
+      [...PPL_GIO_PLAN.weekA[day].filter((e) => !e.rare), ...PPL_GIO_PLAN.weekA[day].filter((e) => e.rare)].map((e) => e.name),
       `${day}: сессия собрана не из плана пользователя — второй движок вернулся`,
     );
   }
