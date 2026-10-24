@@ -72,7 +72,7 @@ test('Сегодня: два силовых с историей, вес и ша�
     },
   ];
   const r = getTodayPreview(workouts, 'push', PPL_GIO_PLAN.weekA);
-  assert.equal(r.total, PPL_GIO_PLAN.weekA.push.length);
+  assert.equal(r.total, PPL_GIO_PLAN.weekA.push.filter((e) => !e.rare).length);
   assert.deepEqual(
     r.items.map((x) => [x.name, x.weight, x.last, x.step]),
     [

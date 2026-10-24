@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### PLAN-1: редкие упражнения push-дня — Cable Curl и Machine Chest Press (1.27.196)
+
+- **Что.** Пресет PPL | GIO, push обеих недель: после блока рук — `Cable Curl` (arms) и `Machine Chest Press` (power) с новым полем `rare: true` — раз в месяц, на закачку (решение Gio 24.10, вариант A). Имя жима — библиотечное: `Machine Press` в `exercises-library.json` нет. Hybrid не тронут.
+- **Как.** `buildSession` собирает `rare` уже пропущенными в хвосте сессии — то же состояние FIELD-1: в обычный день ноль тапов, в запись, сводку и OneRM не идут; тап по шапке возвращает упражнение за последним обычным упражнением плана (`skipFrom` — индекс среди не-`rare`), до кора. Home (`getTodayPreview`, `getNextSessionRecs`) редкие не считает и вес им не обещает.
+- **Без флага и миграции.** Сохранённые планы `rare` не несут — у текущего пользователя ничего не меняется; новое приходит на чистой установке или по «Загрузить пресет PPL | GIO» (перезаписывает обе недели). Ручной пометки «редко» в редакторе нет. Гард — `test/plan-rare.test.js`; `skip-exercise` и `home-feed-a` теперь исключают `rare` из своих проверок.
+
 ### GATE-DESCRIBE: упавший `describe` краснит `npm test`
 
 - **Причина.** На Node 22.22.2 тело `describe()`, бросающее до первого `it()`, даёт в TAP `not ok 1 - <имя>`, но итог — `# tests 0`, `# fail 0`, exit 0: сюита со всеми кейсами выпадает из прогона молча, `npm test` зелёный. Если `it()` успел зарегистрироваться до броска, node краснеет сам (`# cancelled 1`).
