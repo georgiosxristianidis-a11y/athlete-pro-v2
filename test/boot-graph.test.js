@@ -43,7 +43,7 @@ function modulepreloadHrefs(html) {
 }
 
 const OFF_BOOT = {
-  app: ['athlete-room', 'integrity', 'panda-video', 'panda-mood', 'privacy.view'],
+  app: ['athlete-room', 'integrity', 'panda-video', 'panda-mood', 'privacy.view', 'dynamic-island'],
   pandaHosts: ['panda-video', 'panda-mood'],
   island: ['rest-timer', 'pip'],
   // strength-engine.js и profile.store.js сюда не входят намеренно: они
@@ -63,9 +63,14 @@ const OFF_BOOT = {
     'js/shared/confirm.js',
     'js/ui/factory.js',
     'js/usage.js',
+    // A14-хвост: остров и модули, которые до него доходят только через него.
+    'js/shared/dynamic-island.js',
+    'js/shared/island-tracker.js',
+    'js/shared/sync-dot.js',
+    'js/shared/exercise-shorthand.js',
+    'js/island-profile.store.js',
   ],
   keepPreload: [
-    'js/shared/dynamic-island.js',
     'js/shared/cryptoClient.js',
     'js/shared/chamber-pill.js',
     'js/shared/block-names.js',
@@ -80,7 +85,7 @@ const OFF_BOOT = {
 };
 
 describe('BOOT-TRIM: static imports off the critical path', () => {
-  test('app.js has no static import of athlete-room / integrity / panda-* / privacy.view', () => {
+  test('app.js has no static import of athlete-room / integrity / panda-* / privacy.view / dynamic-island', () => {
     const specs = staticSpecs(readText('js/app.js'));
     for (const needle of OFF_BOOT.app) {
       assert.ok(

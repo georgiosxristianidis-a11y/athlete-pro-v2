@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-ae60f4ac';
+const CACHE_NAME = 'athlete-pro-v121-0de30e1d';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -39,7 +39,6 @@ const ASSETS = [
   '/js/db.js',
   '/js/events.js',
   '/js/flags.js',
-  '/js/island-profile.store.js',
   '/js/locale.store.js',
   '/js/privacy.store.js',
   '/js/profile.store.js',
@@ -47,18 +46,14 @@ const ASSETS = [
   '/js/shared/block-names.js',
   '/js/shared/chamber-pill.js',
   '/js/shared/cryptoClient.js',
-  '/js/shared/dynamic-island.js',
   '/js/shared/errors-ui.js',
-  '/js/shared/exercise-shorthand.js',
   '/js/shared/format.js',
-  '/js/shared/island-tracker.js',
   '/js/shared/lazy-css.js',
   '/js/shared/ppl-color.js',
   '/js/shared/ppl-gauge.js',
   '/js/shared/sparkline.js',
   '/js/shared/spring.js',
   '/js/shared/sw-update.js',
-  '/js/shared/sync-dot.js',
   '/js/shared/sync-secrets.js',
   '/js/shared/theme.js',
   '/js/shared/utils.js',
@@ -102,6 +97,7 @@ const ASSETS_WARM = [
   '/js/intel.store.js',
   '/js/intel.view.js',
   '/js/intel.voice-wave.js',
+  '/js/island-profile.store.js',
   '/js/island-settings.view.js',
   '/js/journal.store.js',
   '/js/journal.view.js',
@@ -127,13 +123,16 @@ const ASSETS_WARM = [
   '/js/shared/csv-export.js',
   '/js/shared/digit-roll.js',
   '/js/shared/download.js',
+  '/js/shared/dynamic-island.js',
   '/js/shared/exercise-identity.js',
   '/js/shared/exercise-label.js',
+  '/js/shared/exercise-shorthand.js',
   '/js/shared/field-shake.js',
   '/js/shared/frame-meter.js',
   '/js/shared/gym-equipment.js',
   '/js/shared/home-matter.js',
   '/js/shared/integrity.js',
+  '/js/shared/island-tracker.js',
   '/js/shared/lift-map.js',
   '/js/shared/local-insights.js',
   '/js/shared/logger-sections.js',
@@ -144,6 +143,7 @@ const ASSETS_WARM = [
   '/js/shared/plate-math.js',
   '/js/shared/rest-next-set.js',
   '/js/shared/sse.js',
+  '/js/shared/sync-dot.js',
   '/js/shared/sync-merge.js',
   '/js/shared/txt-export.js',
   '/js/supabase-check.js',
