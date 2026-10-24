@@ -5,6 +5,7 @@ import { on } from '../events.js';
 import { flag, isOverridden, LAB_FLAGS } from '../flags.js';
 import { K_LAST_EXPORT } from '../db/backup.js';
 import { getThemePref } from '../shared/theme.js';
+import { EQUIPMENT_KINDS, equipLabelKey } from '../shared/gym-equipment.js';
 import '../ai-settings.view.js';
 
 /**
@@ -53,6 +54,7 @@ on('settings:togglePanda', () => P().togglePanda());
 on('settings:toggleFabVideo', () => P().toggleFabVideo());
 on('settings:togglePandaMoods', () => P().togglePandaMoods());
 on('settings:toggleLab', (el) => P().toggleLabFlag(el.dataset.flag));
+on('settings:toggleEquip', (el) => P().toggleEquip(el.dataset.kind));
 on('settings:syncToggle', async (el) => {
   const icon = document.getElementById('sync-connect-icon');
   icon?.classList.add('is-spinning');
@@ -80,9 +82,10 @@ on('settings:dedup', () => P().deduplicateDB());
  * @param {string} syncStatus - Current sync status
  * @param {boolean} [cloudConfigured] - CLOUD-1: Supabase в конфиге есть. Нет —
  *   карточка «Облако» не рисуется (по умолчанию: обещать облако, которого нет, нельзя)
+ * @param {string[]} [equipmentOff] - FIELD-6: выключенные виды снаряда (getEquipmentOff)
  * @returns {string}
  */
-export function renderSettings(settings, lang, syncStatus = 'idle', cloudConfigured = false) {
+export function renderSettings(settings, lang, syncStatus = 'idle', cloudConfigured = false, equipmentOff = []) {
   const themePref = getThemePref();
   // Тумблер уведомлений отражает ДВА состояния сразу: наше «хочу» из базы и
   // ответ браузера. Разрешение можно отозвать в настройках телефона, минуя
@@ -245,7 +248,7 @@ export function renderSettings(settings, lang, syncStatus = 'idle', cloudConfigu
                   data-action="settings:setUnit" data-unit="lbs">lbs</button>
         </div>
       </div>
-
+${flag('gym-equipment') ? _renderEquipment(equipmentOff) : ''}
       <!-- Здесь стояли «Режим тренировок», «Длительность сессии» и «Ограничения».
            Убраны как мёртвые (PROF-1): все три писались в IndexedDB и не читались
            никем — коуч отправляет только имя/возраст/пол/цель (claude.store.js),
@@ -315,6 +318,38 @@ export function renderSettings(settings, lang, syncStatus = 'idle', cloudConfigu
 
     ${_renderLab()}
   `;
+}
+
+/**
+ * FIELD-6 — чек-лист снарядов зала в карточке «Тренировка». Тумблер включён =
+ * снаряд в зале есть; выключенный вид не предлагается при добавлении и замене
+ * упражнения. История и сохранённые планы не трогаются — отсев только на отборе.
+ * @param {string[]} off выключенные виды
+ * @returns {string}
+ */
+function _renderEquipment(off) {
+  const offSet = new Set(off);
+  const rows = EQUIPMENT_KINDS.map(
+    (kind) => `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2);">
+          <div class="pref-title">${esc(t(equipLabelKey(kind)))}</div>
+          <div class="switch-wrap" data-action="settings:toggleEquip" data-kind="${esc(kind)}">
+            <div class="switch ${offSet.has(kind) ? '' : 'on'}" id="sw-equip-${esc(kind.replace(/ /g, '-'))}">
+              <div class="switch-thumb"></div>
+            </div>
+          </div>
+        </div>`,
+  ).join('');
+  return `
+      <div class="pref-divider"></div>
+
+      <div class="pref-info">
+        <div class="pref-title">${t('equip.title')}</div>
+        <div class="pref-sub">${t('equip.sub')}</div>
+      </div>
+      <div id="equip-checklist" style="display:flex; flex-direction:column; gap:var(--sp-1);">${rows}
+      </div>
+`;
 }
 
 /**

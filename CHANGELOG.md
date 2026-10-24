@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### FIELD-6: чек-лист снарядов зала (1.27.197)
+
+- Профиль → Тренировка: 10 тумблеров по значениям `equipment` библиотеки. Выключенный вид не предлагается
+  в модалках «добавить» и «заменить»: отсев до категории и поиска, «скрыто снарядами: N» в счётчике,
+  пустой список из-за снарядов называет причину. Флаг `gym-equipment` OFF, тумблер в Лаборатории.
+- Хранение — ключ `profile.equipmentOff` в Settings: схема IDB не менялась, `DB_VERSION` не тронут.
+- Пресет `profile.equipment` похоронен: коуч берёт строку из чек-листа (`gym, no barbell, …`);
+  пустой чек-лист и флаг OFF дают `gym` байт в байт как раньше.
+- Шаблоны пресетов (PPL | GIO, Hybrid) не режутся: в библиотеке только 13 из 41 их имён, у остальных
+  разметки снаряда нет.
+- `fetchGeneratedPlan` и `filterExercises` в `workout.store.js` мертвы — не оживлялись.
+
 ### PLAN-1: редкие упражнения push-дня — Cable Curl и Machine Chest Press (1.27.196)
 
 - **Что.** Пресет PPL | GIO, push обеих недель: после блока рук — `Cable Curl` (arms) и `Machine Chest Press` (power) с новым полем `rare: true` — раз в месяц, на закачку (решение Gio 24.10, вариант A). Имя жима — библиотечное: `Machine Press` в `exercises-library.json` нет. Hybrid не тронут.
