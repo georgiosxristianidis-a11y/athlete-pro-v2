@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### A14-хвост: Dynamic Island вне бут-графа — ленивый шим на `window` (1.27.198)
+
+- **Причина.** Остров (`js/shared/dynamic-island.js`) висел статическим импортом в `js/app.js` и `modulepreload` в `index.html` вместе с замыканием — `island-tracker`, `sync-dot`, `exercise-shorthand`, `island-profile.store`. Первый кадр Home парсил пять модулей, которые до idle-инициализации ничего не рисуют.
+- **Что.** Импорт и пять `modulepreload` сняты, остров грузится `import()` в idle, CSS острова — раньше модуля (LOAD-1). До загрузки `window.DynamicIsland` — шим по списку `ISLAND_API`: каждый вызов встаёт в очередь на один промис и проигрывается по порядку, поэтому `show()` на восстановленной сессии (`Nav.go('s-train')` раньше idle) не теряется. Загруженный модуль ставит на `window` настоящий объект — дальше вызовы идут напрямую. Чанк не доехал — промис сбрасывается, следующий вызов пробует снова. Флага нет: статический импорт рантайм-флагом не спрятать, откат — revert PR.
+- Гард — новый `test/island-shim.test.js` (шим = публичный API острова, каждый `window.DynamicIsland.<метод>` в `js/` есть в шиме, импорт только динамический, CSS раньше модуля) и `test/boot-graph.test.js` (остров и замыкание вне бута и без `modulepreload`).
+
 ### GATE-DESCRIBE: упавший `describe` краснит `npm test`
 
 - **Причина.** На Node 22.22.2 тело `describe()`, бросающее до первого `it()`, даёт в TAP `not ok 1 - <имя>`, но итог — `# tests 0`, `# fail 0`, exit 0: сюита со всеми кейсами выпадает из прогона молча, `npm test` зелёный. Если `it()` успел зарегистрироваться до броска, node краснеет сам (`# cancelled 1`).
