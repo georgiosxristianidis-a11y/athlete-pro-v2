@@ -25,6 +25,8 @@ import {
   saveGymPlace,
   loadTxtExportSources,
   computeAge,
+  getEquipmentOff,
+  toggleEquipmentKind,
 } from './profile.store.js';
 import { t, getLang, tri } from './locale.store.js';
 import { renderProfile } from './profile.view.js';
@@ -59,8 +61,8 @@ export const Profile = (() => {
     if (!screen) return;
 
     try {
-      const [syncStatus, settings, cloudConfigured] = await Promise.all([
-        _syncStatus(), getAllSettings(), _cloudConfigured(),
+      const [syncStatus, settings, cloudConfigured, equipmentOff] = await Promise.all([
+        _syncStatus(), getAllSettings(), _cloudConfigured(), getEquipmentOff(),
       ]);
       const lang = getLang() || 'en';
 
@@ -84,7 +86,7 @@ export const Profile = (() => {
       <!-- PP-6: wrapper exists so _refreshSettings() can swap the settings
            markup alone. Plain div, no styling of its own: .screen is padding
            only (no flex/gap), so it doesn't disturb the vertical rhythm. -->
-      <div id="profile-settings-block">${renderSettings(settings, lang, syncStatus, cloudConfigured)}</div>
+      <div id="profile-settings-block">${renderSettings(settings, lang, syncStatus, cloudConfigured, equipmentOff)}</div>
 
       <!-- ── DANGER ZONE ── -->
       <div class="section-label-alt" id="profile-danger-label" style="color:var(--c-red); opacity:0.8">${esc(t('profile.danger_zone'))}</div>
@@ -147,13 +149,14 @@ export const Profile = (() => {
   async function _refreshSettings() {
     const block = document.getElementById('profile-settings-block');
     if (!block) return;
-    const [syncStatus, settings, lang, cloudConfigured] = await Promise.all([
+    const [syncStatus, settings, lang, cloudConfigured, equipmentOff] = await Promise.all([
       _syncStatus(),
       getAllSettings(),
       getStoredLang(),
       _cloudConfigured(),
+      getEquipmentOff(),
     ]);
-    block.innerHTML = renderSettings(settings, lang, syncStatus, cloudConfigured);
+    block.innerHTML = renderSettings(settings, lang, syncStatus, cloudConfigured, equipmentOff);
   }
 
   /** Re-render the passport only — for actions that change workouts, not settings. */
@@ -269,6 +272,12 @@ export const Profile = (() => {
 
   async function toggleAutoProgress() {
     await toggleAutoProgressPref();
+    _refreshSettings();
+  }
+
+  /** FIELD-6 — тумблер снаряда; вид приходит из data-атрибута, стор пропускает только известные. */
+  async function toggleEquip(kind) {
+    await toggleEquipmentKind(kind);
     _refreshSettings();
   }
 
@@ -591,6 +600,7 @@ export const Profile = (() => {
     toggleFabVideo,
     togglePandaMoods,
     toggleLabFlag,
+    toggleEquip,
     setLang,
     exportData,
     exportCsv,

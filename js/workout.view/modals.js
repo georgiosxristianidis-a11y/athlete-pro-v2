@@ -11,6 +11,8 @@ import { mountSegPills, syncSegPill } from '../ui/seg-pill.js';
 import { t, isRu, getLang } from '../locale.store.js';
 import { on, onChange, onInput } from '../events.js';
 import { exerciseLabel } from '../shared/exercise-label.js';
+import { pickFromLibrary, equipLabelKey } from '../shared/gym-equipment.js';
+import { getEquipmentOff } from '../profile.store.js';
 
 const W = () => window.Workout;
 onChange('wo:planName', (el, e) =>
@@ -497,6 +499,35 @@ function _initPlanDrag(listEl) {
   });
 }
 
+/** Фильтр экрана модалок выбора и замены: категория + поиск по имени, тегам, мышцам.
+ *  @param {string} category @param {string} query @returns {(ex: any) => boolean} */
+function _libMatch(category, query) {
+  const q = query.trim().toLowerCase();
+  return (ex) => {
+    if (category !== 'all' && ex.category !== category) return false;
+    if (!q) return true;
+    const nameMatch = ex.name.toLowerCase().includes(q);
+    const nameRuMatch = isRu() && ex.nameRu ? ex.nameRu.toLowerCase().includes(q) : false;
+    const tagsMatch = ex.tags?.some((t) => t.toLowerCase().includes(q));
+    const muscleMatch =
+      ex.primaryMuscles?.some((m) => m.toLowerCase().includes(q)) ||
+      ex.secondaryMuscles?.some((m) => m.toLowerCase().includes(q));
+    return nameMatch || nameRuMatch || tagsMatch || muscleMatch;
+  };
+}
+
+/** FIELD-6: «N упражнений · скрыто снарядами: M»; без скрытых — прежняя строка.
+ *  @param {number} n @param {number} hidden */
+function _libCountText(n, hidden) {
+  const base = t('train.ex_count', { n });
+  return hidden ? `${base} · ${t('equip.hidden', { n: hidden })}` : base;
+}
+
+/** FIELD-6: причина пустого списка — какие снаряды выключены. @param {string[]} off */
+function _equipEmptyText(off) {
+  return t('equip.empty', { list: off.map((k) => t(equipLabelKey(k))).join(', ') });
+}
+
 /* ════════════════════════════════════════════════════════
    EXERCISE PICKER MODAL
    ════════════════════════════════════════════════════════ */
@@ -570,9 +601,12 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
   let activeFilter = filterCategory || 'all';
   let allExercises = [];
   let currentQuery = '';
+  /** @type {string[]} FIELD-6: выключенные снаряды; флаг OFF → пусто, отбор прежний. */
+  let equipOff = [];
 
   try {
     allExercises = await getExerciseLibrary();
+    equipOff = await getEquipmentOff().catch(() => []);
     renderList();
   } catch (err) {
     listEl.innerHTML = `<div class="add-ex-empty">${esc(t('train.load_fail'))}</div>`;
@@ -580,30 +614,19 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
   }
 
   function renderList() {
-    let filtered = allExercises;
+    // FIELD-6: снаряды отсеваются ДО категории и поиска.
+    const { shown: filtered, hiddenCount, emptyByEquipment } = pickFromLibrary(
+      allExercises,
+      equipOff,
+      _libMatch(activeFilter, currentQuery),
+    );
 
-    if (activeFilter !== 'all') {
-      filtered = filtered.filter((ex) => ex.category === activeFilter);
-    }
-
-    if (currentQuery.trim()) {
-      const q = currentQuery.trim().toLowerCase();
-      filtered = filtered.filter((ex) => {
-        const nameMatch = ex.name.toLowerCase().includes(q);
-        const nameRuMatch = isRu() && ex.nameRu ? ex.nameRu.toLowerCase().includes(q) : false;
-        const tagsMatch = ex.tags?.some((t) => t.toLowerCase().includes(q));
-        const muscleMatch =
-          ex.primaryMuscles?.some((m) => m.toLowerCase().includes(q)) ||
-          ex.secondaryMuscles?.some((m) => m.toLowerCase().includes(q));
-        return nameMatch || nameRuMatch || tagsMatch || muscleMatch;
-      });
-    }
-
-    countEl.textContent = t('train.ex_count', { n: filtered.length });
+    countEl.textContent = _libCountText(filtered.length, hiddenCount);
     listEl.innerHTML = '';
 
     if (!filtered.length) {
-      listEl.innerHTML = `<div class="add-ex-empty">${esc(t('train.picker_empty'))}</div>`;
+      const empty = emptyByEquipment ? _equipEmptyText(equipOff) : t('train.picker_empty');
+      listEl.innerHTML = `<div class="add-ex-empty">${esc(empty)}</div>`;
       return;
     }
 
@@ -747,9 +770,12 @@ export async function openReplaceExModal(ei) {
   let activeFilter = 'all';
   let allExercises = [];
   let currentQuery = '';
+  /** @type {string[]} FIELD-6: выключенные снаряды; флаг OFF → пусто, отбор прежний. */
+  let equipOff = [];
 
   try {
     allExercises = await getExerciseLibrary();
+    equipOff = await getEquipmentOff().catch(() => []);
     renderList();
   } catch (err) {
     listEl.innerHTML = `<div class="add-ex-empty">${esc(t('train.load_fail'))}</div>`;
@@ -757,30 +783,19 @@ export async function openReplaceExModal(ei) {
   }
 
   function renderList() {
-    let filtered = allExercises;
+    // FIELD-6: снаряды отсеваются ДО категории и поиска.
+    const { shown: filtered, hiddenCount, emptyByEquipment } = pickFromLibrary(
+      allExercises,
+      equipOff,
+      _libMatch(activeFilter, currentQuery),
+    );
 
-    if (activeFilter !== 'all') {
-      filtered = filtered.filter((ex) => ex.category === activeFilter);
-    }
-
-    if (currentQuery.trim()) {
-      const q = currentQuery.trim().toLowerCase();
-      filtered = filtered.filter((ex) => {
-        const nameMatch = ex.name.toLowerCase().includes(q);
-        const nameRuMatch = isRu() && ex.nameRu ? ex.nameRu.toLowerCase().includes(q) : false;
-        const tagsMatch = ex.tags?.some((t) => t.toLowerCase().includes(q));
-        const muscleMatch =
-          ex.primaryMuscles?.some((m) => m.toLowerCase().includes(q)) ||
-          ex.secondaryMuscles?.some((m) => m.toLowerCase().includes(q));
-        return nameMatch || nameRuMatch || tagsMatch || muscleMatch;
-      });
-    }
-
-    countEl.textContent = t('train.ex_count', { n: filtered.length });
+    countEl.textContent = _libCountText(filtered.length, hiddenCount);
     listEl.innerHTML = '';
 
     if (!filtered.length) {
-      listEl.innerHTML = `<div class="add-ex-empty">${esc(t('train.picker_empty'))}</div>`;
+      const empty = emptyByEquipment ? _equipEmptyText(equipOff) : t('train.picker_empty');
+      listEl.innerHTML = `<div class="add-ex-empty">${esc(empty)}</div>`;
       return;
     }
 

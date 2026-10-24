@@ -19,14 +19,14 @@
 6. **`WSET-2b`** — значки вариант E (флаг `badge-ladders` уже ON): поле на живых данных
 7. **`FIELD-7`** — флаг `rest-next-set` (Лаборатория): вес × повторы в паузе острова, поле в зале
 8. **`HOME-3`** — флаг `home-matter` в Лаборатории (нужна `home-feed-a`): поле Главной, материя 12 с
+9. **`FIELD-6`** — флаг `gym-equipment` (Лаборатория): чек-лист снарядов, поле в зале
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
-1. **`FIELD-6`** ждёт развилку Gio: чек-лист снарядов / чёрный список (`HANDOFF_field_ux.md`)
-2. **`ANL-ALT`**, `SWAP-1`, `PLATE-*` (`HANDOFF_working_sets.md`; WSET-2 влита 1.27.182)
-3. Фон, по одной за PR: архитектурный трек (A14-хвост, A10 — хендофф Cursor)
-4. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
-5. **`GEAR-1`** — решена (A, 1.5 с); **`HOME-4`** (всплеск искр на подходе и PR, флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
+1. **`ANL-ALT`**, `SWAP-1`, `PLATE-*` (`HANDOFF_working_sets.md`; WSET-2 влита 1.27.182)
+2. Фон, по одной за PR: архитектурный трек (A14-хвост, A10 — хендофф Cursor)
+3. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
+4. **`GEAR-1`** — решена (A, 1.5 с); **`HOME-4`** (всплеск искр на подходе и PR, флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
 
 **После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PERF-9` (стоп на мокап Gio), `PROG-0`.
 
