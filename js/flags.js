@@ -151,6 +151,12 @@ const DEFAULTS = {
   // карточки нет — флаг молчит. Default OFF до поля Gio; тумблер в Лаборатории.
   // Kill switch: Flags.setFlag('home-matter', false)
   'home-matter': false,
+  // FIELD-6 (вариант A, выбор Gio 24.10): чек-лист снарядов в карточке «Тренировка»
+  // Профиля. Выключенный вид снаряда не попадает в модалки выбора и замены
+  // упражнения; коуч получает «gym, no …» (js/shared/gym-equipment.js). История и
+  // сохранённые планы не переписываются. OFF — чек-листа нет, отсева нет, коуч видит 'gym'.
+  // Default OFF до поля Gio; тумблер в Лаборатории. Kill switch: Flags.setFlag('gym-equipment', false)
+  'gym-equipment': false,
 };
 
 /** @param {string} name @returns {boolean} */
@@ -180,7 +186,7 @@ export function allFlags() {
  * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
  * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
  */
-export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set']);
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'gym-equipment']);
 
 /** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
 export function isOverridden(name) {
