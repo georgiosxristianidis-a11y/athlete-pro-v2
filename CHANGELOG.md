@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Хранение — ключ `profile.equipmentOff` в Settings: схема IDB не менялась, `DB_VERSION` не тронут.
 - Пресет `profile.equipment` похоронен: коуч берёт строку из чек-листа (`gym, no barbell, …`);
   пустой чек-лист и флаг OFF дают `gym` байт в байт как раньше.
-- Шаблоны пресетов (PPL | GIO, Hybrid) не режутся: в библиотеке только 13 из 41 их имён, у остальных
+- Шаблоны пресетов (PPL | GIO, Hybrid) не режутся: в библиотеке меньше половины их имён, у остальных
   разметки снаряда нет.
 - `fetchGeneratedPlan` и `filterExercises` в `workout.store.js` мертвы — не оживлялись.
 
