@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CI-IMAGE: e2e прибит к ubuntu-24.04, образ ОС в ключе кеша браузеров
+
+- **Причина.** `ubuntu-latest` переехал на ubuntu-26.04, и webkit BOOT-1 «рост» (`boot-cascade.spec.js:153`) стал флакать во всём CI: main 8e4d6bc4, 15f13926 и 22d476dc зелёные только на retry #2 (✘✘✓), PR-ы краснели. На 24.04 (22.10) тот же тест проходил с первой попытки. Второй удар того же переезда: ключ кеша браузеров не знал образа, кеш с 24.04 восстановился на 26.04, и webkit без libicu74 уронил 98 тестов.
+- **Что.** Job `e2e` — `runs-on: ubuntu-24.04`, остальные jobs не тронуты. Новый шаг `Runner image` читает `$ImageOS` (если его нет, берёт `/etc/os-release`), ключ — `<os>-<образ>-playwright-<версия>-chromium-webkit`. `${{ env.ImageOS }}` не годится: контекст `env` не видит переменные процесса раннера, ключ вышел бы `Linux--playwright-…`. Механизм зависания `_transitionQueue` в `js/shell.js` под свежим WebKit — отдельная карточка; прибивку снимать после неё. Бампа нет — правка вне `js/`/`css/`.
+
 ### GATE-DESCRIBE: упавший `describe` краснит `npm test`
 
 - **Причина.** На Node 22.22.2 тело `describe()`, бросающее до первого `it()`, даёт в TAP `not ok 1 - <имя>`, но итог — `# tests 0`, `# fail 0`, exit 0: сюита со всеми кейсами выпадает из прогона молча, `npm test` зелёный. Если `it()` успел зарегистрироваться до броска, node краснеет сам (`# cancelled 1`).

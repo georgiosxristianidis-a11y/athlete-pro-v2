@@ -97,7 +97,13 @@ jobs:
         run: npm run security:audit
 
   e2e:
-    runs-on: ubuntu-latest
+    # Образ прибит (CI-IMAGE, 31.10): с переездом `ubuntu-latest` на 26.04
+    # webkit BOOT-1 «рост» (boot-cascade.spec.js:153) флакает на каждом
+    # прогоне, main в том числе — зелёный только на retry #2; на 24.04 тот же
+    # тест проходит с первой попытки. Механизм (очередь переходов
+    # `_transitionQueue` в js/shell.js под свежим WebKit) — отдельная карточка;
+    # снимать прибивку только после неё и после прогона на новом образе.
+    runs-on: ubuntu-24.04
     # CI-CACHE: без потолка зависший шаг держит чек до 6 ч (дефолт GitHub).
     # Обычный прогон — 8-22 мин (с установкой браузеров при промахе кеша).
     timeout-minutes: 45
@@ -123,6 +129,18 @@ jobs:
         id: pw-version
         run: echo "version=$(node -p "require('./node_modules/playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"
 
+      # Образ ОС в ключе (CI-IMAGE, 31.10): кеш, собранный на ubuntu-24.04,
+      # восстановился на 26.04, webkit не нашёл libicu74 — 98 тестов упали за
+      # 4 мс. `${{ env.ImageOS }}` здесь пуст: контекст `env` не видит
+      # переменные процесса раннера, поэтому образ читает шелл. Нет `ImageOS`
+      # (не GitHub-раннер) — берём дистрибутив из /etc/os-release.
+      - name: Runner image
+        id: runner-image
+        run: |
+          image="${ImageOS:-}"
+          if [ -z "$image" ]; then . /etc/os-release; image="$ID$VERSION_ID"; fi
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         id: playwright-cache
@@ -135,7 +153,7 @@ jobs:
           # hit skips `playwright install`, and the new webkit project fails
           # with "Executable doesn't exist" — the same mine as the pinned
           # `playwright-1.60.0` key above.
-          key: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}-chromium-webkit
+          key: ${{ runner.os }}-${{ steps.runner-image.outputs.image }}-playwright-${{ steps.pw-version.outputs.version }}-chromium-webkit
 
       # Оба шага ниже зовут `apt-get update`, а он падает целиком, если сбоит
       # ЛЮБОЙ источник образа. 09.09 таким источником стал репозиторий Google
