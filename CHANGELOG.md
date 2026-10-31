@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### P0-HAPTIC: тумблер «Вибрация» наконец глушит вибрацию (1.27.199)
+
+- **Причина.** `haptic()` (`js/shared/utils.js`) настройку `haptic` не читал вообще: тумблер в профиле писал `'off'` в базу, а все вызовы вибрировали дальше (на iOS — пульс `ios-haptic-pulse`).
+- **Фикс в одной точке.** Синхронный кеш `setHapticPref()` в `utils.js`; прошивает его владелец ключа `js/profile.store.js` — `loadHapticPref()` в бут-цепочке `js/app.js` и `toggleHapticPref()` на тумблере. Дефолт прежний: нет значения = вибрация есть. Места вызова `haptic()` не тронуты.
+- **Закон движения.** Рестарт пульса без `void el.offsetWidth`: класс снимается по `animationend` своей анимации, повторный тап перематывает живую через `getAnimations()` (cancel + play).
+- **Гард.** `test/haptic-setting.test.js` на реальной базе (fake-indexeddb): на старом коде 5 из 8 красные, после фикса 8/8.
+
 ### A14-хвост: Dynamic Island вне бут-графа — ленивый шим на `window` (1.27.198)
 
 - **Причина.** Остров (`js/shared/dynamic-island.js`) висел статическим импортом в `js/app.js` и `modulepreload` в `index.html` вместе с замыканием — `island-tracker`, `sync-dot`, `exercise-shorthand`, `island-profile.store`. Первый кадр Home парсил пять модулей, которые до idle-инициализации ничего не рисуют.
