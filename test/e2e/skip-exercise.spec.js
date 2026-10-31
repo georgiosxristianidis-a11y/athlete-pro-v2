@@ -65,6 +65,8 @@ test.describe('FIELD-1 — пропуск упражнения', () => {
   test('меню → «Skip today»: карточка гаснет внизу, тап возвращает на место', async ({ page }) => {
     const before = await planNames(page);
     const first = before[0].name;
+    // PLAN-1: редкие (rare) пресета приходят уже погашенными — счёт от них.
+    const rare = before.filter((e) => e.skipped).length;
 
     await page.locator('#ex-card-0 [data-action="wo:exMenu"]').click();
     const item = page.locator('.modal-overlay .menu-item', { hasText: 'Skip today' });
@@ -80,16 +82,17 @@ test.describe('FIELD-1 — пропуск упражнения', () => {
     await expect(page.locator(`#ex-card-${last} [data-action="wo:plates"]`)).toHaveCount(0);
 
     await page.locator(`#ex-card-${last} .exercise-name`).click();
-    await expect(page.locator('.ex-skipped')).toHaveCount(0);
+    await expect(page.locator('.ex-skipped')).toHaveCount(rare);
     expect(await planNames(page)).toEqual(before);
   });
 
   test('статус переживает перезагрузку страницы', async ({ page }) => {
+    const rare = await page.locator('.ex-skipped').count(); // PLAN-1: редкие пресета
     await page.evaluate(() => window.Workout.skipExerciseToday(0));
-    await expect(page.locator('.ex-skipped')).toHaveCount(1);
+    await expect(page.locator('.ex-skipped')).toHaveCount(rare + 1);
     await page.reload();
     await waitForBoot(page);
     await openTrain(page);
-    await expect(page.locator('.ex-skipped')).toHaveCount(1, { timeout: 10000 });
+    await expect(page.locator('.ex-skipped')).toHaveCount(rare + 1, { timeout: 10000 });
   });
 });

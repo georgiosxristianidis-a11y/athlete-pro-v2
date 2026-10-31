@@ -90,7 +90,8 @@ test.describe('LOG-SEC-1 секционный логгер (Push)', () => {
     await startPush(page);
     const first = (await states(page))[0].block;
     const eis = await page.evaluate(
-      (b) => [...document.querySelectorAll(`.log-sec[data-block="${b}"] .exercise-card`)].map((c) => +c.dataset.ei),
+      // PLAN-1: редкие (rare) лежат в секции погашенными и в счёт не входят.
+      (b) => [...document.querySelectorAll(`.log-sec[data-block="${b}"] .exercise-card:not(.ex-skipped)`)].map((c) => +c.dataset.ei),
       first
     );
     for (const ei of eis) await finishExercise(page, ei);
