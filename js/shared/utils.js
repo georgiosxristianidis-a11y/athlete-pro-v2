@@ -58,16 +58,58 @@ if (typeof window !== 'undefined') {
   window.addEventListener('pointerdown', _unlock, { passive: true });
 }
 
+let _hapticOn = true;
+
+/**
+ * Кеш тумблера «Вибрация» (P0-HAPTIC). haptic() зовут десятки мест на горячем
+ * пути — читать IndexedDB на каждый тап нельзя, поэтому значение держит модуль,
+ * а прошивает владелец ключа `js/profile.store.js`: на старте и на тумблере.
+ * Нет значения = вибрация включена (opt-out), до прошивки тоже.
+ * @param {*} value 'on' | 'off' из базы
+ */
+export const setHapticPref = (value) => {
+  _hapticOn = value !== 'off';
+};
+
+const PULSE = 'ios-haptic-pulse';
+
+/**
+ * Визуальный пульс вместо вибрации (iOS). Класс снимается по animationend своей
+ * анимации, поэтому класс на узле = анимация жива: повторный тап перематывает её
+ * через getAnimations() (cancel + play) — без `offsetWidth` и чтения layout.
+ * @param {Element} el
+ */
+const _pulse = (el) => {
+  if (el.classList.contains(PULSE)) {
+    el.getAnimations?.().forEach((a) => {
+      if (/** @type {CSSAnimation} */ (a).animationName !== PULSE) return;
+      a.cancel();
+      a.play();
+    });
+    return;
+  }
+  el.classList.add(PULSE);
+  /** @param {Event} e */
+  const done = (e) => {
+    // animationend всплывает: на body прилетает и от анимаций потомков.
+    if (e.target !== el || /** @type {AnimationEvent} */ (e).animationName !== PULSE) return;
+    el.removeEventListener('animationend', done);
+    el.classList.remove(PULSE);
+  };
+  el.addEventListener('animationend', done);
+};
+
 /**
  * Triggers a short haptic feedback (vibration) if supported.
- * Falls back to a visual pulse (iOS).
- * @param {number|number[]} pattern 
+ * Falls back to a visual pulse (iOS). Silent when the user turned haptics off.
+ * @param {number|number[]} pattern
  * @param {HTMLElement} [elementToPulse=null]
  */
 export const haptic = (pattern = 10, elementToPulse = null) => {
+  if (!_hapticOn || !_hasInteracted) return;
   let vibrated = false;
   try {
-    if (_hasInteracted && typeof navigator !== 'undefined' && navigator.vibrate) {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
       vibrated = navigator.vibrate(pattern);
     }
   } catch (e) {
@@ -75,15 +117,9 @@ export const haptic = (pattern = 10, elementToPulse = null) => {
   }
 
   // iOS Fallback or if vibrate returned false
-  if (!vibrated && _hasInteracted) {
+  if (!vibrated) {
     const el = elementToPulse || document.activeElement || document.body;
-    if (el && el !== document) {
-      el.classList.remove('ios-haptic-pulse');
-      // Trigger reflow
-      void el.offsetWidth;
-      el.classList.add('ios-haptic-pulse');
-      setTimeout(() => el.classList.remove('ios-haptic-pulse'), 150);
-    }
+    if (el && el !== document) _pulse(el);
   }
 };
 

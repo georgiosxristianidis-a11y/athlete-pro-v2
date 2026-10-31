@@ -12,6 +12,7 @@ import { Nav, Toast } from './shell.js';
 import { Dashboard } from './dashboard.js';
 import { initPrivacy, getPrivacyMode, onPrivacyChange } from './privacy.store.js';
 import { initLocale, t } from './locale.store.js';
+import { loadHapticPref } from './profile.store.js';
 import { haptic } from './shared/utils.js';
 import { State } from './workout.store.js';
 import { VERSION } from './version.js';
@@ -285,6 +286,7 @@ watchSystemTheme();
 openDB()
   .then(initPrivacy)
   .then(initLocale)
+  .then(loadHapticPref) // P0-HAPTIC: тумблер «Вибрация» в кеш haptic() до первого тапа
   .then(() => {
     // Initial UI Setup (Synchronous)
     _renderPrivacyIndicator();

@@ -15,6 +15,7 @@
 
 import { DB } from './db.js';
 import { K_LAST_EXPORT } from './db/backup.js';
+import { setHapticPref } from './shared/utils.js';
 import { flag } from './flags.js';
 
 const KEYS = {
@@ -259,8 +260,16 @@ export async function setWeightUnit(unit) {
   await DB.Settings.set('weight-unit', unit);
 }
 
+/** P0-HAPTIC: тумблер сразу прошивает кеш haptic() — иначе он глушился бы только после перезапуска. */
 export async function toggleHapticPref() {
-  return _toggleOnOff('haptic');
+  const next = await _toggleOnOff('haptic');
+  setHapticPref(next);
+  return next;
+}
+
+/** P0-HAPTIC: на старте переносит настройку из базы в синхронный кеш haptic(). Дефолт ON. */
+export async function loadHapticPref() {
+  setHapticPref(await DB.Settings.get('haptic', 'on'));
 }
 
 export async function toggleAutoProgressPref() {
