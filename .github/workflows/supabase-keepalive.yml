@@ -112,6 +112,16 @@ jobs:
             *) fail "SUPABASE_URL не заканчивается на '.supabase.co' — другой домен/регион или лишний символ на конце." 2 ;;
           esac
 
+          # Ref проекта сверяется с константой: у владельца два Free-проекта
+          # (athlete и Work_tracker), у обоих есть keepalive_ping, и секрет от
+          # чужого давал бы зелёный прогон, пока athlete засыпает. Ref не
+          # секрет — его отдаёт клиенту /api/supabase-status, печатать можно.
+          expected_ref=hkpuxvqzhcwgtbyjyinx
+          url_ref=${SUPABASE_URL#https://}
+          url_ref=${url_ref%.supabase.co}
+          [ "$url_ref" = "$expected_ref" ] || fail "SUPABASE_URL ведёт не на проект athlete ($expected_ref), а на ref длиной ${#url_ref} — пересоздать секрет из Dashboard проекта $expected_ref." 2
+          echo "SUPABASE_URL: ref $url_ref совпадает"
+
           # Роль ключа — из формата или claim `role` в payload JWT; печатается
           # только роль, не ключ. Пинг 25.09 прочитал строку `workouts` при
           # политике `to authenticated using (auth.uid() = user_id)` — так
@@ -122,7 +132,11 @@ jobs:
             *.*.*)
               payload=$(printf '%s' "$SUPABASE_ANON_KEY" | cut -d. -f2 | tr '_-' '/+')
               while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="$payload="; done
-              key_role=$(printf '%s' "$payload" | base64 -d 2>/dev/null | grep -o '"role": *"[^"]*"' | sed 's/.*"\([^"]*\)"$/\1/') || true ;;
+              key_role=$(printf '%s' "$payload" | base64 -d 2>/dev/null | grep -o '"role": *"[^"]*"' | sed 's/.*"\([^"]*\)"$/\1/') || true
+              # Legacy JWT несёт ref проекта: ключ от чужого проекта дал бы 401
+              # с невнятным диагнозом. У sb_publishable_ ref в ключе нет.
+              key_ref=$(printf '%s' "$payload" | base64 -d 2>/dev/null | grep -o '"ref": *"[^"]*"' | sed 's/.*"\([^"]*\)"$/\1/') || true
+              [ -z "$key_ref" ] || [ "$key_ref" = "$expected_ref" ] || fail "SUPABASE_ANON_KEY выдан другому проекту (ref $key_ref) — взять anon-ключ из Dashboard проекта $expected_ref." 2 ;;
             *) key_role=unknown ;;
           esac
           echo "SUPABASE_ANON_KEY: роль ${key_role:-unknown}"
