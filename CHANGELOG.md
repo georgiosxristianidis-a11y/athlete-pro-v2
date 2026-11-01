@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### SUPA-1: keep-alive Supabase сверяет ref проекта, пинг снова доходит (01.11)
+
+- **Причина.** С 01.10 60 прогонов подряд красные: `supabase/keepalive.sql` в Dashboard не применён (404), issue #481 копил провалы. 01.11 `SUPABASE_URL` к тому же перезаписан мусором, а секреты сначала ушли в архивный репо `athlete-pro`.
+- **Гард.** `supabase-keepalive.yml` сверяет ref из URL и claim `ref` legacy-JWT с `hkpuxvqzhcwgtbyjyinx`: у владельца второй Free-проект (Work_tracker) с тем же `keepalive_ping`, и его секрет давал бы зелёный прогон без пинга athlete. Тест — `test/supabase-keepalive.test.js`.
+- **Итог.** SQL применён, секреты пересозданы; прогон 41346575537: ref совпадает, роль anon, 3/3 HTTP 200, #481 закрыт сам.
+
 ### P0-HAPTIC: тумблер «Вибрация» наконец глушит вибрацию (1.27.199)
 
 - **Причина.** `haptic()` (`js/shared/utils.js`) настройку `haptic` не читал вообще: тумблер в профиле писал `'off'` в базу, а все вызовы вибрировали дальше (на iOS — пульс `ios-haptic-pulse`).
