@@ -249,6 +249,7 @@ export async function setUsageEnabled(on) {
 /** Инжект первоисточника — тот же тег, что ставит сам @vercel/analytics. */
 function _injectScript() {
   if (_injected || typeof document === 'undefined') return;
+  if (_isAirgap()) return; // airgap: ни одного запроса наружу, в том числе за скриптом
   if (document.head.querySelector(`script[src="${SCRIPT_SRC}"]`)) { _injected = true; return; }
 
   // Очередь-заглушка пакета: вызовы до загрузки скрипта буферизуются в vaq.
@@ -278,7 +279,7 @@ function _injectScript() {
 
 /**
  * Санитайзер payload: белый список ключей + только скаляры.
- * В режиме airgap возвращает undefined — наружу уходит голое имя.
+ * В режиме airgap возвращает undefined (наружу в этом режиме не уходит и имя).
  * @param {string} name
  * @param {Record<string, unknown>} [data]
  * @returns {Record<string, string|number|boolean>|undefined}
@@ -295,6 +296,11 @@ export function sanitizePayload(name, data) {
     if (ok) out[key] = /** @type {string|number|boolean} */ (v);
   }
   return Object.keys(out).length ? out : undefined;
+}
+
+/** Режим airgap закрывает сеть счётчика целиком (P0-AIRGAP-NET). */
+function _isAirgap() {
+  return _privacyMode() === 'airgap';
 }
 
 function _privacyMode() {
@@ -317,6 +323,7 @@ export async function trackUsage(name, data) {
   try {
     if (!(/** @type {readonly string[]} */ (EVENTS).includes(name))) return;
     if (getUsageState() !== 'ok') return;
+    if (_isAirgap()) return; // не шлём и не копим: имя события тоже данные
 
     const payload = sanitizePayload(name, data);
 
@@ -336,6 +343,7 @@ export async function trackUsage(name, data) {
  * @param {Record<string, string|number|boolean>|undefined} data
  */
 function _send(name, data) {
+  if (_isAirgap()) return;
   const va = typeof window !== 'undefined' ? window.va : null;
   if (typeof va !== 'function') return;
   va('event', data ? { name, data } : { name });
@@ -383,6 +391,7 @@ export function _prune(q, now = Date.now()) {
  */
 export async function flushQueue() {
   if (getUsageState() !== 'ok') return 0;
+  if (_isAirgap()) return 0;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return 0;
 
   const q = _prune(await getQueue());

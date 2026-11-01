@@ -128,12 +128,57 @@ describe('usage: payload — белый список полей', () => {
     assert.equal(sanitizePayload('coach_message', { text: 'как мне жать больше', ok: 1 }), undefined);
   });
 
-  test('airgap: наружу уходит голое имя, без payload', async () => {
+  test('airgap: sanitizePayload не отдаёт полей', () => {
     window.__privacyMode = () => 'airgap';
     assert.equal(sanitizePayload('workout_completed', { type: 'push' }), undefined);
+  });
+});
+
+describe('usage: airgap — сеть закрыта (P0-AIRGAP-NET)', () => {
+  const scripts = [];
+  beforeEach(async () => {
+    lsStore.clear();
+    setFlag('usage-stats', true);
+    window.__privacyMode = () => 'airgap';
+    armVa();
+    scripts.length = 0;
+    window.addEventListener = () => {};
+    globalThis.document = /** @type {any} */ ({
+      head: { querySelector: () => null, appendChild: (el) => scripts.push(el) },
+      createElement: () => ({ dataset: {} }),
+    });
+    await DB.Settings.set('ap-usage-queue', []);
+  });
+  afterEach(async () => {
+    lsStore.clear();
+    delete globalThis.document;
+    delete window.addEventListener;
+    setNavigator({ onLine: true });
+    window.__privacyMode = () => 'cloud';
+    await DB.Settings.set('ap-usage-queue', []);
+  });
+
+  test('trackUsage онлайн: va не зовётся', async () => {
     await trackUsage('workout_completed', { type: 'push' });
-    assert.equal(sent.length, 1);
-    assert.deepEqual(sent[0].payload, { name: 'workout_completed' }, 'в airgap payload обязан отсутствовать');
+    assert.equal(sent.length, 0, 'airgap: событие ушло: ' + JSON.stringify(sent));
+  });
+
+  test('trackUsage офлайн: в очередь не кладётся', async () => {
+    setNavigator({ onLine: false });
+    await trackUsage('workout_completed', { type: 'push' });
+    assert.equal((await getQueue()).length, 0);
+  });
+
+  test('flushQueue: очередь не уходит', async () => {
+    await DB.Settings.set('ap-usage-queue', [{ n: 'workout_completed', t: Date.now() }]);
+    assert.equal(await flushQueue(), 0);
+    assert.equal(sent.length, 0, 'airgap: flush отправил: ' + JSON.stringify(sent));
+  });
+
+  test('скрипт Vercel не добавляется ни при старте, ни при включении тумблера', async () => {
+    await usage.initUsage();
+    await usage.setUsageEnabled(true);
+    assert.equal(scripts.length, 0, 'airgap: подтянут скрипт insights');
   });
 });
 

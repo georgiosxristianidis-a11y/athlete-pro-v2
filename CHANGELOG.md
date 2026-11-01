@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### P0-AIRGAP-NET: счётчик usage молчит в режиме airgap (1.27.201)
+
+- **Было.** `js/usage.js` в airgap слал голое имя события и подтягивал скрипт Vercel Insights.
+- **Фикс.** `_isAirgap()` закрывает `_injectScript`, `trackUsage` (и офлайн-очередь), `_send`, `flushQueue`. Пять прежних ворот не тронуты. Смена режима на cloud в сессии подхватывается после перезапуска (скрипт ставится в `initUsage`).
+- Гард: 4 кейса в `test/usage-stats.test.js`, красные без фикса.
+
 ### DATA-2 хвост: «Убрать дубли» больше не стирает разные сессии с одной датой (02.11, 1.27.206, флаг `dedupe-content` OFF)
 
 - **Причина.** `Workouts.deduplicate()` ключевал по `timestamp-type`, содержимое и id игнорировал: 22 сессии импорта 2023-06 с одной датой считались копиями, кнопка убирала 21. Импорт (`put` по id) и ETL (id с колонкой) не виноваты; удаление мягкое, данные не переписывались.
