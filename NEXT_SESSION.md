@@ -23,9 +23,9 @@
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
-0. **P0 «доверие»** (`HANDOFF_launch_track.md` § P0): `P0-AI-CONSENT` (развилка Gio), затем `P0-AIRGAP-NET`
+0. **P0** (`HANDOFF_launch_track.md` § P0): `P0-AI-CONSENT` (развилка Gio) → `P0-AIRGAP-NET`
 1. **`ANL-ALT`**, `SWAP-1`, `PLATE-*` (`HANDOFF_working_sets.md`; WSET-2 влита 1.27.182)
-2. Фон, по одной за PR: A10 (хендофф Cursor); A14-хвост закрыт 01.11 (HUD на восстановленной сессии живой)
+2. Фон, по одной за PR: A10 (хендофф Cursor); A14-хвост закрыт 01.11
 3. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
 4. **`GEAR-1`** — решена (A, 1.5 с); **`HOME-4`** (всплеск искр на подходе и PR, флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
 
