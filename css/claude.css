@@ -30,7 +30,7 @@
   /* Removed overflow: hidden to allow close btn to sit outside */
   box-shadow:
     0 0 0 1px var(--c-surface) inset,
-    0 8px 22px color-mix(in srgb, var(--c-bg) 55%, transparent),
+    var(--elev-2),
     0 0 24px color-mix(in srgb, var(--c-accent) 18%, transparent);
   animation: panda-float 3s ease-in-out infinite;
   transition:
@@ -51,7 +51,7 @@
   border-color: color-mix(in srgb, var(--c-gemini) 40%, transparent);
   box-shadow:
     0 0 0 1px var(--c-surface) inset,
-    0 8px 22px color-mix(in srgb, var(--c-bg) 55%, transparent),
+    var(--elev-2),
     0 0 24px color-mix(in srgb, var(--c-gemini) 25%, transparent);
 }
 .claude-fab.gemini-mode svg {
@@ -79,7 +79,7 @@
   transition: opacity 0.2s var(--ease-std), transform 0.2s var(--ease-std), background-color 0.2s var(--ease-std), border-color 0.2s var(--ease-std), color 0.2s var(--ease-std);
   z-index: 510;
   pointer-events: auto;
-  box-shadow: 0 4px 10px color-mix(in srgb, var(--c-bg) 30%, transparent);
+  box-shadow: var(--elev-1);
 }
 .claude-fab:hover .fab-close-btn, 
 .claude-fab:active .fab-close-btn {
@@ -97,7 +97,7 @@
   border-color: color-mix(in srgb, var(--c-accent) 55%, transparent);
   box-shadow:
     0 0 0 1px var(--c-border) inset,
-    0 10px 28px color-mix(in srgb, var(--c-bg) 60%, transparent),
+    var(--elev-3),
     0 0 30px color-mix(in srgb, var(--c-accent) 28%, transparent);
 }
 @keyframes panda-float {
@@ -167,7 +167,7 @@
   z-index: 510;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 4px 10px color-mix(in srgb, var(--c-bg) 30%, transparent);
+  box-shadow: var(--elev-1);
   transition: background-color 0.2s var(--ease-std), border-color 0.2s var(--ease-std), color 0.2s var(--ease-std);
 }
 .fab-sound-btn:hover {

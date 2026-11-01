@@ -358,7 +358,7 @@
   background: var(--c-surface);
   box-shadow:
     0 0 40px rgba(0, 230, 118, 0.08),
-    0 8px 32px rgba(0, 0, 0, 0.4);
+    var(--elev-2);
 }
 
 .empty-dash-mascot video {
@@ -383,7 +383,7 @@
   border-color: color-mix(in srgb, var(--c-accent) 45%, transparent);
   box-shadow:
     0 0 40px color-mix(in srgb, var(--c-accent) 20%, transparent),
-    0 8px 32px color-mix(in srgb, var(--c-black) 40%, transparent);
+    var(--elev-2);
 }
 
 /* Волна реплики (компонент .talk в base.css) на большом маскоте: круг 150px
@@ -416,7 +416,7 @@
   transition:
     transform 0.2s ease,
     opacity 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--elev-1);
 }
 
 .mascot-close-btn:active {
@@ -491,7 +491,7 @@
   transition: transform var(--t-fast);
   box-shadow:
     0 0 20px rgba(0, 230, 118, 0.12),
-    0 4px 16px rgba(0, 0, 0, 0.3);
+    var(--elev-2);
   animation: glowPulse 2.5s ease-in-out infinite;
   pointer-events: auto;
   user-select: none;
@@ -512,12 +512,12 @@
   100% {
     box-shadow:
       0 0 20px rgba(0, 230, 118, 0.12),
-      0 4px 16px rgba(0, 0, 0, 0.3);
+      var(--elev-2);
   }
   50% {
     box-shadow:
       0 0 32px rgba(0, 230, 118, 0.22),
-      0 4px 16px rgba(0, 0, 0, 0.3);
+      var(--elev-2);
   }
 }
 

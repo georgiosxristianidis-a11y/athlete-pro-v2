@@ -523,13 +523,13 @@
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--c-border);
   border-radius: var(--r-xxl);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--elev-3);
   transition: border-color var(--t-normal), box-shadow var(--t-normal);
 }
 
 .intel-cmd-bar:focus-within {
   border-color: color-mix(in srgb, var(--c-intel) 35%, transparent);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 24px color-mix(in srgb, var(--c-intel) 12%, transparent);
+  box-shadow: var(--elev-3), 0 0 24px color-mix(in srgb, var(--c-intel) 12%, transparent);
 }
 
 .intel-cmd-input {

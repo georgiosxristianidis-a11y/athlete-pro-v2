@@ -415,9 +415,7 @@ button.pref-row-icon:active,
   height: 22px;
   border-radius: 50%;
   background: white;
-  box-shadow:
-    0 3px 8px rgba(0, 0, 0, 0.15),
-    0 1px 1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--elev-1);
   transition:
     opacity 0.25s var(--ease-std),
     transform 0.26s var(--ease-spring),
@@ -640,7 +638,7 @@ button.pref-row-icon:active,
     background-color 0.2s var(--ease-std),
     border-color 0.2s var(--ease-std),
     color 0.2s var(--ease-std);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--elev-2);
 }
 
 .pp-avatar-v2:active {

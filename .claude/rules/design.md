@@ -36,7 +36,7 @@ paths:
 6. **Без эмодзи** в UI и коде — только SVG. Типографика `→ ✓ ·` эмодзи не считается.
 7. **`island-set-pulse` НЕ ТРОГАТЬ** — жёсткий запрет пользователя.
 
-Три уровня высоты (OLED near-black): page near-black · content flat-AIR `--c-bg-2` + hairline · floating glass. `blur` только на Tier 2 — сторожит `test/air-guard.test.js` (blur вне whitelist = красный гейт, потеря Tier-2 blur — тоже).
+Три уровня высоты (OLED near-black): page near-black · content flat-AIR `--c-bg-2` + hairline · floating glass. `blur` только на Tier 2 — сторожит `test/air-guard.test.js` (blur вне whitelist = красный гейт, потеря Tier-2 blur — тоже). Тени — только шкала `--elev-1` контрол · `--elev-2` приподнятый · `--elev-3` плавающий (ELEV-1, 2026-11-02): в светлой теме стопка слоёв по 5 % (кольцо 1px + удвоение 1/2/4/8/16), в тёмной одна слабая тень. Нейтральный rgba или color-mix от `--c-bg` в `box-shadow` = красный `test/design-tokens.test.js`; цветная подсветка — отдельным слоем рядом с токеном.
 
 ## Motion — закон кадра
 

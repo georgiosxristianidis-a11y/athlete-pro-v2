@@ -26,8 +26,12 @@
 //     альфа-каналом, а не цветом, и токен там бессмыслен.
 //   · Цветные rgba/hsla — потолок, только вниз. Спек узаконил акцентные
 //     подсветки («цветные rgba ≤20% допустимы точечно»), поэтому считаются
-//     лишь те, что выше порога. Нейтральные (r=g=b) — это тени и вуали:
-//     токенов глубины в `base.css` нет, требовать их было бы нечем.
+//     лишь те, что выше порога. Нейтральные (r=g=b) здесь не в счёт — их
+//     сторожит следующий пункт.
+//   · Тени — ноль нейтральных значений в `box-shadow` (ELEV-1, 2026-11-02).
+//     Глубина приезжает токеном `--elev-1/2/3` из `:root` и светлой темы; там
+//     и только там лежит сырой чёрный. Тень через `color-mix(var(--c-bg))`
+//     тоже нарушение: в светлой теме фон светлый, и «тень» становится ореолом.
 //
 // Область — `css/*.css`. Инлайн `<style>` в `index.html` объявляет токены
 // критического пути (второй источник правды по палитре, отдельная карточка)
@@ -138,7 +142,7 @@ test('вне base.css нет цветного hex — палитра живёт 
 test('цветные rgba выше 20% держатся под потолком и только снижаются', () => {
   // Спек разрешает акцентную подсветку цветным rgba ≤20% точечно. Всё, что
   // плотнее, — уже не подсветка, а цвет мимо палитры. Нейтральные (r=g=b)
-  // не в счёт: это тени и вуали, токенов глубины в base.css нет.
+  // не в счёт: тени сторожит тест шкалы --elev-*, вуали токенов не имеют.
   const offenders = [];
 
   for (const file of cssFiles()) {
@@ -168,6 +172,99 @@ test('цветные rgba выше 20% держатся под потолком 
     `Опусти RAW_COLOR_CEILING до ${count} в этом же PR: потолок — защёлка, ` +
     'непереставленный он молча пускает назад ровно столько же.',
   );
+});
+
+/**
+ * Тени, которым сырой цвет положен по роли. Ключ — файл, значение — селекторы.
+ * Каждая строка — долг с причиной, а не разрешение.
+ */
+const SHADOW_EXEMPT = {
+  // Остров тёмный в обеих темах (свои токены в `:root[data-theme='light'] .island`),
+  // и рядом лежит `island-set-pulse` — жёсткий запрет Gio. Переводить отдельной
+  // карточкой с его согласия.
+  'dynamic-island.css': [/^\.island$/],
+};
+
+/**
+ * Все объявления файла с селектором, под которым они лежат. Многострочные
+ * значения склеиваются: `box-shadow:\n  0 4px 12px rgba(...)` однострочный
+ * греп не видит — так в ELEV-1 из 13 сырых теней греп нашёл 6.
+ * @returns {Array<{selector: string, prop: string, value: string, line: number}>}
+ */
+function declarations(file) {
+  const src = stripComments(readFileSync(join(CSS_DIR, file), 'utf8'));
+  const out = [];
+  const stack = [];
+  let buf = '';
+  let line = 1;
+  let start = 1;
+
+  for (const ch of src) {
+    if (ch === '\n') line++;
+    if (ch === '{') {
+      stack.push(buf.trim().replace(/\s+/g, ' '));
+      buf = '';
+      continue;
+    }
+    if (ch === ';' || ch === '}') {
+      const i = buf.indexOf(':');
+      if (i !== -1 && stack.length) {
+        out.push({
+          selector: stack[stack.length - 1],
+          prop: buf.slice(0, i).trim().toLowerCase(),
+          value: buf.slice(i + 1).replace(/\s+/g, ' ').trim(),
+          line: start,
+        });
+      }
+      buf = '';
+      if (ch === '}') stack.pop();
+      continue;
+    }
+    if (!buf.trim()) start = line;
+    buf += ch;
+  }
+  return out;
+}
+
+/** Нейтральный rgba (r=g=b) — чёрная тень или белое кольцо мимо токена. */
+const NEUTRAL_RGBA = /rgba?\(\s*(\d+)[,\s]+\1[,\s]+\1(?:[,\s/]+[\d.]+%?)?\s*\)/i;
+
+/** Тень цветом фона/чёрного через color-mix: в светлой теме это ореол. */
+const BG_MIX = /color-mix\([^)]*var\(--c-(bg|black)\)/i;
+
+test('тени только через шкалу --elev-*: сырой нейтральный цвет в box-shadow — красный', () => {
+  const offenders = [];
+
+  for (const file of readdirSync(CSS_DIR).filter((f) => f.endsWith('.css')).sort()) {
+    const exempt = SHADOW_EXEMPT[file] ?? [];
+    for (const d of declarations(file)) {
+      if (d.prop !== 'box-shadow') continue;
+      if (exempt.some((re) => re.test(d.selector))) continue;
+      if (NEUTRAL_RGBA.test(d.value) || BG_MIX.test(d.value)) {
+        offenders.push(`css/${file}:${d.line} [${d.selector}] → ${d.value}`);
+      }
+    }
+  }
+
+  assert.deepEqual(
+    offenders,
+    [],
+    'Нейтральная тень мимо шкалы. Бери var(--elev-1) контрол · var(--elev-2) ' +
+    'приподнятый · var(--elev-3) плавающий (.claude/rules/design.md § Три уровня ' +
+    'высоты); цветную подсветку оставь отдельным слоем:\n  ' + offenders.join('\n  '),
+  );
+});
+
+test('шкала --elev-1/2/3 объявлена в обеих темах', () => {
+  // Гард выше держится на том, что токены есть. Снять их из светлой темы —
+  // и светлая молча получит тёмные значения, тот самый грязный чёрный 30-50 %.
+  const decls = declarations(TOKEN_SOURCE);
+  for (const selector of [':root', ":root[data-theme='light']"]) {
+    const names = new Set(decls.filter((d) => d.selector === selector).map((d) => d.prop));
+    for (const level of ['--elev-1', '--elev-2', '--elev-3']) {
+      assert.ok(names.has(level), `${level} пропал из ${selector} в css/${TOKEN_SOURCE}`);
+    }
+  }
 });
 
 test('правило запрета сырых цветов не исчезло из .stylelintrc.json', () => {

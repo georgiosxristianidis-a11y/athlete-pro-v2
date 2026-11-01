@@ -72,7 +72,7 @@
   flex-shrink: 0;
   pointer-events: none;
   transition: transform 0.18s ease;
-  box-shadow: 0 0 0 2px var(--c-surface-h), 0 2px 8px color-mix(in srgb, var(--c-bg) 35%, transparent);
+  box-shadow: 0 0 0 2px var(--c-surface-h), var(--elev-2);
   position: relative;
   overflow: hidden;
 }
@@ -89,7 +89,7 @@
 @media (hover: hover) {
   .athlete-avatar-btn:hover .athlete-avatar-face {
     transform: scale(1.1);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--c-text-1) 18%, transparent), 0 0 14px color-mix(in srgb, var(--c-accent) 40%, transparent), 0 3px 10px color-mix(in srgb, var(--c-bg) 40%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--c-text-1) 18%, transparent), 0 0 14px color-mix(in srgb, var(--c-accent) 40%, transparent), var(--elev-2);
   }
 }
 #athlete-avatar-initials {
@@ -141,7 +141,7 @@
   transition: transform 0.26s var(--ease-decel);
   scrollbar-width: none;
   /* Top glow */
-  box-shadow: 0 -4px 40px color-mix(in srgb, var(--c-bg) 50%, transparent), 0 -1px 0 var(--c-border);
+  box-shadow: var(--elev-3), 0 -1px 0 var(--c-border);
 }
 .ar-sheet::-webkit-scrollbar { display: none; }
 .athlete-room-overlay.open .ar-sheet {
@@ -214,7 +214,7 @@
 @media (hover: hover) {
   .ar-avatar:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 20px color-mix(in srgb, var(--c-bg) 40%, transparent);
+    box-shadow: var(--elev-2);
   }
 }
 .ar-avatar-initials {
@@ -647,7 +647,7 @@
   background-size: cover;
   background-position: center;
   border: 1.5px solid var(--c-accent, var(--c-accent));
-  box-shadow: 0 0 8px color-mix(in srgb, var(--c-accent) 50%, transparent), 0 2px 8px color-mix(in srgb, var(--c-bg) 35%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--c-accent) 50%, transparent), var(--elev-2);
   box-sizing: border-box;
 }
 .athlete-avatar-btn.has-photo #athlete-avatar-initials {
@@ -658,7 +658,7 @@
   background-size: cover;
   background-position: center;
   border: 2px solid var(--c-accent, var(--c-accent));
-  box-shadow: 0 0 15px color-mix(in srgb, var(--c-accent) 60%, transparent), 0 4px 12px color-mix(in srgb, var(--c-bg) 50%, transparent);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--c-accent) 60%, transparent), var(--elev-2);
   box-sizing: border-box;
 }
 .ar-avatar.has-photo .ar-avatar-initials {
@@ -683,7 +683,7 @@
   z-index: 10;
   transition: transform 0.2s var(--ease-spring), background 0.2s, color 0.2s, border-color 0.2s;
   padding: 0;
-  box-shadow: 0 3px 8px color-mix(in srgb, var(--c-bg) 50%, transparent);
+  box-shadow: var(--elev-1);
   outline: none;
 }
 .ar-avatar-upload-overlay:hover {
@@ -801,7 +801,7 @@
   transform: scale(var(--press-scale));
 }
 .ar-stats-grid .ar-stat-cell.pp-bento-glow {
-  box-shadow: 0 4px 18px color-mix(in srgb, var(--c-bg) 40%, transparent), 0 0 12px var(--bento-color);
+  box-shadow: var(--elev-2), 0 0 12px var(--bento-color);
   border-color: var(--bento-color);
   background-color: color-mix(in srgb, var(--c-text-1) 2%, transparent);
 }
@@ -853,7 +853,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 10px 40px color-mix(in srgb, var(--c-bg) 60%, transparent);
+  box-shadow: var(--elev-3);
   animation: ar-scale-in 0.25s var(--ease-spring);
 }
 @keyframes ar-scale-in {
@@ -945,7 +945,7 @@
   border-radius: 50%;
   background: var(--c-accent);
   cursor: pointer;
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--c-bg) 40%, transparent);
+  box-shadow: var(--elev-1);
   transition: transform 0.1s;
 }
 .ar-crop-slider::-webkit-slider-thumb:active {
