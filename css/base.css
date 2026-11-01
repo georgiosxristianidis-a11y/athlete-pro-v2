@@ -175,6 +175,15 @@
   --glow-amber-md: 0 0 18px rgba(255, 179, 0, 0.45);
   --glow-blue-md: 0 0 20px rgba(90, 150, 255, 0.5);
   --glow-purple-md: 0 0 20px rgba(139, 92, 246, 0.6);
+
+  /* Шкала высоты (ELEV-1) — единственный источник нейтральных теней.
+     1 — контрол на контенте · 2 — приподнятый (аватар, CTA, FAB) · 3 — плавающий
+     (тост, композер, модалка). На OLED чёрная тень почти не видна: глубину
+     держат поверхность и hairline, поэтому здесь три прежних значения, сведённых
+     из одиннадцати. Сырой rgba в box-shadow вне :root красит test/design-tokens. */
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --elev-2: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --elev-3: 0 12px 40px rgba(0, 0, 0, 0.5);
   /* OBSIDIAN palette — off-black with cool undertone (avoids OLED halation, gives depth).
      Reference: Material Dark Theme #121212; we go slightly deeper for premium feel. */
   --c-bg: #050507;
@@ -430,6 +439,21 @@
   --glow-amber-md: 0 0 14px rgba(180, 83, 9, 0.2);
   --glow-blue-md: 0 0 14px rgba(2, 132, 163, 0.22);
   --glow-purple-md: 0 0 14px rgba(109, 40, 217, 0.22);
+
+  /* Тень на белом — стопка слоёв по 5 %: кольцо 1px (тот же hairline), дальше
+     смещение и размытие удваиваются 1/2/4/8/16. Уровень = сколько слоёв взято.
+     Одна плотная тень 30-60 % на светлом фоне читается грязным пятном. */
+  --elev-1:
+    0 0 0 1px rgba(0, 0, 0, 0.05), 0 1px 1px rgba(0, 0, 0, 0.05),
+    0 2px 2px rgba(0, 0, 0, 0.05);
+  --elev-2:
+    0 0 0 1px rgba(0, 0, 0, 0.05), 0 1px 1px rgba(0, 0, 0, 0.05),
+    0 2px 2px rgba(0, 0, 0, 0.05), 0 4px 4px rgba(0, 0, 0, 0.05),
+    0 8px 8px rgba(0, 0, 0, 0.05);
+  --elev-3:
+    0 0 0 1px rgba(0, 0, 0, 0.05), 0 1px 1px rgba(0, 0, 0, 0.05),
+    0 2px 2px rgba(0, 0, 0, 0.05), 0 4px 4px rgba(0, 0, 0, 0.05),
+    0 8px 8px rgba(0, 0, 0, 0.05), 0 16px 16px rgba(0, 0, 0, 0.05);
 }
 
 /* Dynamic Island остаётся тёмной в обеих темах — это осознанно: айфоновский
@@ -1257,7 +1281,7 @@ button:focus-visible {
   align-items: center;
   gap: 12px;
   max-width: 100%;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--elev-3);
   pointer-events: auto;
   /* Вход на выраженной пружине: тост едет 14 px, перелёт в 9 % это полтора
      пикселя и scale 1.004 — колебание читается как упругость, а не как рывок. */
@@ -1395,8 +1419,8 @@ button:focus-visible {
     max-height: 932px;
     background: var(--c-bg);
     box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.05),
-      0 20px 60px rgba(0, 0, 0, 0.6),
+      0 0 0 1px var(--c-border),
+      var(--elev-3),
       0 0 120px rgba(0, 200, 110, 0.1);
     border-left: 1px solid var(--c-border);
     border-right: 1px solid var(--c-border);
