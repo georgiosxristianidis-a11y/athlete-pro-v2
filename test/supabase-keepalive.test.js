@@ -113,6 +113,13 @@ test('keep-alive: в CI только SUPABASE_URL и anon-ключ, без servi
   assert.match(RUN, /\[ "\$key_role" = "anon" \] \|\| fail /, 'проверка роли ключа снята: в секрет можно положить service_role');
 });
 
+test('keep-alive: ref в URL и в JWT сверяется с проектом athlete', () => {
+  // Два Free-проекта с keepalive_ping: секрет от Work_tracker позеленел бы, не пингуя athlete.
+  assert.match(RUN, /^ *expected_ref=hkpuxvqzhcwgtbyjyinx *$/m, 'ref athlete снят или подменён');
+  assert.match(RUN, /\[ "\$url_ref" = "\$expected_ref" \] \|\| fail /, 'URL чужого проекта проходит');
+  assert.match(RUN, /\[ "\$key_ref" = "\$expected_ref" \] \|\| fail /, 'JWT чужого проекта проходит');
+});
+
 test('keep-alive: права workflow — только issues: write', () => {
   assert.deepEqual(extractPermissions(WORKFLOW), { issues: 'write' });
   assert.doesNotMatch(
