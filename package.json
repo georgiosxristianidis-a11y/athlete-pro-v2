@@ -24,6 +24,7 @@
     "tokens": "node scripts/token-economy.mjs",
     "memory:ttl": "node scripts/memory-ttl.mjs",
     "smoke:prod": "node scripts/smoke-prod.mjs",
+    "supabase:passport": "node scripts/supabase-passport.mjs",
     "security:audit": "node scripts/sca-audit.mjs --retries=3",
     "security:sast": "npm run lint",
     "security:check": "npm run security:audit && npm run security:sast",

@@ -33,6 +33,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -44,6 +45,7 @@ const SQL_RAW = fs.readFileSync(
   process.env.KEEPALIVE_SQL || path.join(REPO_ROOT, 'supabase/keepalive.sql'),
   'utf8'
 );
+const PASSPORT = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'supabase/project.json'), 'utf8'));
 
 const indentOf = (line) => line.match(/^ */)[0].length;
 const dropHashComments = (text) =>
@@ -113,9 +115,23 @@ test('keep-alive: в CI только SUPABASE_URL и anon-ключ, без servi
   assert.match(RUN, /\[ "\$key_role" = "anon" \] \|\| fail /, 'проверка роли ключа снята: в секрет можно положить service_role');
 });
 
-test('keep-alive: ref в URL и в JWT сверяется с проектом athlete', () => {
+test('паспорт supabase/project.json: имя, ref, регион и репо на месте', () => {
+  assert.deepEqual(Object.keys(PASSPORT).sort(), ['githubRepo', 'name', 'ref', 'region']);
+  assert.match(PASSPORT.ref, /^[a-z]{20}$/, 'ref проекта Supabase — 20 строчных латинских букв');
+  assert.equal(PASSPORT.githubRepo, 'georgiosxristianidis-a11y/athlete-pro-v2', 'паспорт смотрит не в тот GitHub-репо');
+});
+
+test('supabase:passport печатает gh secret set с --repo и URL из паспорта', () => {
+  // --repo руками 01.11 увёл секреты в архивный athlete-pro вместо -v2.
+  const out = execFileSync(process.execPath, [path.join(REPO_ROOT, 'scripts/supabase-passport.mjs')], { encoding: 'utf8' });
+  assert.ok(out.includes(`gh secret set SUPABASE_URL --repo ${PASSPORT.githubRepo} --body "https://${PASSPORT.ref}.supabase.co"`));
+  assert.ok(out.includes(`gh secret set SUPABASE_ANON_KEY --repo ${PASSPORT.githubRepo}\n`), 'ключ должен спрашиваться, не идти в --body');
+});
+
+test('keep-alive: ref в URL и в JWT сверяется с ref из паспорта', () => {
   // Два Free-проекта с keepalive_ping: секрет от Work_tracker позеленел бы, не пингуя athlete.
-  assert.match(RUN, /^ *expected_ref=hkpuxvqzhcwgtbyjyinx *$/m, 'ref athlete снят или подменён');
+  const refs = [...RUN.matchAll(/^ *expected_ref=(\S+) *$/gm)].map((m) => m[1]);
+  assert.deepEqual(refs, [PASSPORT.ref], 'ref в workflow разошёлся с supabase/project.json');
   assert.match(RUN, /\[ "\$url_ref" = "\$expected_ref" \] \|\| fail /, 'URL чужого проекта проходит');
   assert.match(RUN, /\[ "\$key_ref" = "\$expected_ref" \] \|\| fail /, 'JWT чужого проекта проходит');
 });
