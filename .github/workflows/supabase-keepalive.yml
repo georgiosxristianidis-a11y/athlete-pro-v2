@@ -116,6 +116,9 @@ jobs:
           # (athlete и Work_tracker), у обоих есть keepalive_ping, и секрет от
           # чужого давал бы зелёный прогон, пока athlete засыпает. Ref не
           # секрет — его отдаёт клиенту /api/supabase-status, печатать можно.
+          # Источник — паспорт supabase/project.json; константа здесь, чтобы
+          # не тянуть checkout и contents: read, а равенство сторожит
+          # test/supabase-keepalive.test.js.
           expected_ref=hkpuxvqzhcwgtbyjyinx
           url_ref=${SUPABASE_URL#https://}
           url_ref=${url_ref%.supabase.co}
