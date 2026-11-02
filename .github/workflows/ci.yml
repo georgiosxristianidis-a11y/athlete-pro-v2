@@ -125,9 +125,16 @@ jobs:
       # браузерами, установка пропустилась — и все 42 теста упали на
       # «Executable doesn't exist … chromium_headless_shell-1234». Сборки
       # браузеров определяет playwright-core, поэтому ключ — его версия.
+      # PW-KEY (02.11): читать надо ту версию, что реально запускает тесты, а не
+      # `node_modules/playwright-core` в корне: пока @playwright/test (1.63.0) и
+      # overrides.playwright (1.64.1) расходились, раннер жил во вложенном
+      # 1.63.0, а ключ брался от корневого 1.64.1 — под ключом «1.64.1» лёг кеш
+      # браузеров 1.63. Dependabot #586 (раннер 1.64.1) получил hit и упал на
+      # «Executable doesn't exist … chromium_headless_shell-1248». `npx playwright
+      # --version` отдаёт версию раннера. Префикс `pw2` обходит отравленные ключи.
       - name: Playwright version
         id: pw-version
-        run: echo "version=$(node -p "require('./node_modules/playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(npx playwright --version | awk '{print $NF}')" >> "$GITHUB_OUTPUT"
 
       # Образ ОС в ключе (CI-IMAGE, 31.10): кеш, собранный на ubuntu-24.04,
       # восстановился на 26.04, webkit не нашёл libicu74 — 98 тестов упали за
@@ -153,7 +160,7 @@ jobs:
           # hit skips `playwright install`, and the new webkit project fails
           # with "Executable doesn't exist" — the same mine as the pinned
           # `playwright-1.60.0` key above.
-          key: ${{ runner.os }}-${{ steps.runner-image.outputs.image }}-playwright-${{ steps.pw-version.outputs.version }}-chromium-webkit
+          key: ${{ runner.os }}-${{ steps.runner-image.outputs.image }}-pw2-${{ steps.pw-version.outputs.version }}-chromium-webkit
 
       # Оба шага ниже зовут `apt-get update`, а он падает целиком, если сбоит
       # ЛЮБОЙ источник образа. 09.09 таким источником стал репозиторий Google
