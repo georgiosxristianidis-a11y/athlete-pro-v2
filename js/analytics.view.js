@@ -6,6 +6,7 @@
 
 import { esc, haptic, dismissOverlay } from './shared/utils.js';
 import { Spring } from './shared/spring.js';
+import { flag } from './flags.js';
 import {
   CalState,
   calPrev as storePrev,
@@ -204,7 +205,10 @@ export async function load() {
   _renderQuickStats();
   _renderPPLBalance();
   try {
-    const curves = await getCachedOrComputeProgressionCurves(workouts, { minMonths: 1 });
+    const curves = await getCachedOrComputeProgressionCurves(
+      workouts,
+      flag('stats-families') ? { minMonths: 1, families: true } : { minMonths: 1 },
+    );
     renderStrengthCurves(curves, document.getElementById('strength-curves'));
   } catch (err) {
     console.warn('[analytics.view] progression curves render error:', err);

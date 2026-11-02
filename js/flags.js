@@ -181,6 +181,12 @@ const DEFAULTS = {
   // OFF — прежнее: 1RM из стора, стаж из онбординга. Default OFF до поля Gio; без тумблера.
   // Kill switch: Flags.setFlag('history-records', false)
   'history-records': false,
+  // DATA-3: карточки Stats по семействам реестра (js/shared/family-curves.js). ON: вместо
+  // «топ-6 по числу сессий» — по карточке на семейство, свежие движения впереди (жим ногами
+  // и штанга не тонут за тренажёрами импорта); «Мой максимум» (вес × повторы) первой строкой,
+  // 1ПМ мелко в конце, вариант виден подписью. IDB и формулы не меняются. OFF — прежние карточки побитно.
+  // Default OFF до поля Gio; без тумблера. Kill switch: Flags.setFlag('stats-families', false)
+  'stats-families': false,
 };
 
 /** @param {string} name @returns {boolean} */

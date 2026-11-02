@@ -7,6 +7,8 @@
 
 import { estimate1RM } from './strength-engine.js';
 import { canonicalName } from './shared/exercise-identity.js';
+import { findExercise } from './shared/exercise-registry.js';
+import { selectFamilyCurves } from './shared/family-curves.js';
 
 /**
  * @typedef {{
@@ -23,7 +25,11 @@ import { canonicalName } from './shared/exercise-identity.js';
  *   n: number,           // session count
  *   delta: number,       // current weight - first weight
  *   bestWeight: number,
- *   currentWeight: number
+ *   currentWeight: number,
+ *   family?: string,     // DATA-3 (options.families): id семейства реестра
+ *   label?: string,      // «семейство · вариант» для подписи карточки
+ *   myMax?: { weight: number, reps: number }, // реально поднятый вес лучшего подхода
+ *   e1rm?: number        // лучшая оценка 1ПМ
  * }} ExerciseProgressionCurve
  *
  * @typedef {{
@@ -39,17 +45,18 @@ const KNOWN_TYPES = ['push', 'pull', 'legs', 'other'];
 
 /**
  * Computes a stable cache key / signature for a list of workouts and computation options.
- * Format: `${validCount}:${maxUpdatedAt}:${minMonths}:${limit}`
+ * Format: `${validCount}:${maxUpdatedAt}:${minMonths}:${limit}` (+ `:f` в режиме семейств, DATA-3)
  * @param {Array<import('./db.js').WorkoutRecord>|null|undefined} workouts
- * @param {{ minMonths?: number, limit?: number }} [options]
+ * @param {{ minMonths?: number, limit?: number, families?: boolean }} [options]
  * @returns {string}
  */
 export function computeProgressionCacheKey(workouts, options = {}) {
   const minMonths = typeof options?.minMonths === 'number' && options.minMonths >= 0 ? options.minMonths : 1;
   const limit = typeof options?.limit === 'number' && options.limit > 0 ? options.limit : 6;
+  const mode = options?.families ? ':f' : '';
 
   if (!Array.isArray(workouts) || workouts.length === 0) {
-    return `0:0:${minMonths}:${limit}`;
+    return `0:0:${minMonths}:${limit}${mode}`;
   }
 
   let count = 0;
@@ -64,7 +71,7 @@ export function computeProgressionCacheKey(workouts, options = {}) {
     }
   }
 
-  return `${count}:${maxTs}:${minMonths}:${limit}`;
+  return `${count}:${maxTs}:${minMonths}:${limit}${mode}`;
 }
 
 /**
@@ -72,13 +79,17 @@ export function computeProgressionCacheKey(workouts, options = {}) {
  * Aggregates monthly top working weight, best estimated 1RM, and total volume.
  * Robust against empty data, null/undefined, uncompleted sets, negative weights, and corrupted inputs.
  *
+ * `options.families` (DATA-3): имена читаются через реестр, на выходе по одной кривой на
+ * СЕМЕЙСТВО (js/shared/family-curves.js), а не топ-N по числу сессий.
+ *
  * @param {Array<import('./db.js').WorkoutRecord>|null|undefined} workouts
- * @param {{ minMonths?: number, limit?: number }} [options]
+ * @param {{ minMonths?: number, limit?: number, families?: boolean }} [options]
  * @returns {ExerciseProgressionCurve[]}
  */
 export function calculateProgressionCurves(workouts, options = {}) {
   const minMonths = typeof options?.minMonths === 'number' && options.minMonths >= 0 ? options.minMonths : 1;
   const limit = typeof options?.limit === 'number' && options.limit > 0 ? options.limit : 6;
+  const families = options?.families === true;
 
   if (!Array.isArray(workouts) || workouts.length === 0) {
     return [];
@@ -113,7 +124,8 @@ export function calculateProgressionCurves(workouts, options = {}) {
     for (const ex of exercises) {
       if (!ex || typeof ex.name !== 'string') continue;
       // NAME-1: одно движение под разными именами — одна кривая.
-      const name = canonicalName(ex.name);
+      // DATA-3: в режиме семейств имя всегда читается через реестр (независимо от флага exercise-registry).
+      const name = families ? (findExercise(ex.name)?.names[0] ?? canonicalName(ex.name)) : canonicalName(ex.name);
       if (!name) continue;
 
       let topWeight = 0;
@@ -233,5 +245,6 @@ export function calculateProgressionCurves(workouts, options = {}) {
     return a.name.localeCompare(b.name);
   });
 
+  if (families) return selectFamilyCurves(out, workouts, limit);
   return out.slice(0, limit);
 }

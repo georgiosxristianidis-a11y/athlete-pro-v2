@@ -152,7 +152,13 @@ function curveCard(s, idx) {
   const vs = s.pts.map((p) => p.v);
   const color = pplColor(s.type);
   const gid = `scg-${idx}`;
-  const cur = Math.round(s.pts[s.pts.length - 1].v);
+  // DATA-3: у карточки семейства главная цифра — «Мой максимум» (вес × повторы), не вес последнего месяца
+  const fam = !!s.myMax;
+  const cur = fam ? Math.round(s.myMax.weight * 10) / 10 : Math.round(s.pts[s.pts.length - 1].v);
+  const curUnit = fam && s.myMax.reps > 0 ? `kg × ${s.myMax.reps}` : 'kg';
+  // подпись варианта и 1ПМ мелко, в конце строки (тот же класс, что «peak»)
+  const famLabel = fam && s.label ? `<span class="sc-peak">${esc(s.label)}</span>` : '';
+  const famE1rm = fam && s.e1rm ? `<span class="sc-peak">${tri('1ПМ', '1RM', '1ΜΕ')} ≈ ${s.e1rm}</span>` : '';
   const peakVal = Math.max(...vs);
   const peak = Math.round(peakVal);
 
@@ -178,7 +184,7 @@ function curveCard(s, idx) {
     `;
     subMarkup = `
       <span class="sc-delta up">${tri('Базовый вес', 'Baseline', 'Βάση')}</span>
-      <span class="sc-peak">${tri('1-я точка', '1st mark', '1ο σημείο')}</span>
+      <span class="sc-peak">${tri('1-я точка', '1st mark', '1ο σημείο')}</span>${famLabel}${famE1rm}
     `;
     axisMarkup = `<span>${fmtMon(t0)}</span><span>${s.n} ${tri(s.n === 1 ? 'сессия' : 'сессии', s.n === 1 ? 'session' : 'sessions', s.n === 1 ? 'συνεδρία' : 'συνεδρίες')}</span><span>${tri('старт', 'start', 'εκκίνηση')}</span>`;
   } else {
@@ -210,7 +216,7 @@ function curveCard(s, idx) {
     `;
     subMarkup = `
       <span class="sc-delta ${s.delta >= 0 ? 'up' : 'down'}">${deltaTxt} kg</span>
-      <span class="sc-peak">peak ${peak}</span>${gapNote}
+      <span class="sc-peak">peak ${peak}</span>${gapNote}${famLabel}${famE1rm}
     `;
     axisMarkup = `<span>${fmtMon(t0)}</span><span>${s.n} ${tri('сессий', 'sessions', 'προπονήσεις')}</span><span>${fmtMon(tN)}</span>`;
   }
@@ -219,7 +225,7 @@ function curveCard(s, idx) {
     <div class="sc-card chart-card" style="--sc:${color}" data-action="analytics:openExercise" data-exercise="${esc(s.name)}" role="button" tabindex="0" aria-label="${esc(s.name)}">
       <div class="sc-head">
         <div class="sc-name">${esc(s.name)}</div>
-        <div class="sc-cur">${cur}<span class="sc-unit">kg</span></div>
+        <div class="sc-cur">${cur}<span class="sc-unit">${curUnit}</span></div>
       </div>
       <div class="sc-sub">
         ${subMarkup}
