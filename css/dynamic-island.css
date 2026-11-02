@@ -436,6 +436,85 @@
 .island-rest-btn svg { display: block; }
 .island-rest-btn:active { filter: brightness(0.88); }
 
+/* ── REST-COUNT (флаг rest-island-count, выбор Gio 02.11) ──
+   Разворот ISL-REDESIGN 8ff970a0: цифра отсчёта вернулась. Пилюля во всю
+   колонку, как раскрытая карточка, морф ширины — тот же width-transition на
+   --ease-island. Слева «1:48», колонкой «ПОДХОД 2/3» и «упражнение · вес ×
+   повт», справа «+15» текстом и пропуск 48×40. Узлы создаёт JS только при
+   флаге (класс rest-count), поэтому OFF не видит ни одного правила ниже.
+   Подпись «далее: X» и строка FIELD-7 прячутся: строка одна, в новой колонке. */
+.island.timer-mode.rest-count:not(.expanded) {
+  width: calc(100vw - 32px);
+  max-width: 400px;
+  height: 56px;
+  border-radius: var(--r-xxl);
+}
+.island.timer-mode.rest-count:not(.expanded) .island-rest {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  justify-content: stretch;
+  column-gap: var(--sp-1-5);
+  padding: 0 var(--sp-1) 0 var(--sp-3);
+}
+.island.rest-count .island-rest-next,
+.island.rest-count .island-rest-set { display: none; }
+.island-rest-count {
+  font-size: var(--fs-6);
+  font-weight: var(--fw-black);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-1);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.island-rest-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}
+.island-rest-setn {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+}
+.island-rest-line {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-2);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Кнопки сами дают ≥40px — невидимая зона ::after не нужна. */
+.island.rest-count .island-rest-btn { height: 40px; }
+.island.rest-count .island-rest-btn::after { content: none; }
+.island-rest-plus-lbl { display: none; }
+/* «+15» — призрачная текстовая: без подложки и рамки, зона тапа 40px. */
+.island.rest-count #di-rest-plus {
+  width: auto;
+  min-width: 40px;
+  padding: 0 var(--sp-1);
+  background: transparent;
+  border-color: transparent;
+  color: var(--c-text-2);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  font-variant-numeric: tabular-nums;
+}
+.island.rest-count #di-rest-plus svg { display: none; }
+.island.rest-count .island-rest-plus-lbl { display: inline; }
+.island.rest-count .island-rest-btn.primary {
+  width: 48px;
+  border-radius: var(--r-m);
+}
+.island.rest-count .island-rest-btn.primary svg { width: 16px; height: 16px; }
+
 /* ── Finish HUD — session-complete double-confirm ──
    The final set closed every block, so no rest is armed. The pill morphs into a
    single Finish button; 1st tap darkens it (.finish-armed) + "Confirm?", a 2nd
