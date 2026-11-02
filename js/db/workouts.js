@@ -281,15 +281,21 @@ export const Workouts = {
 
   /**
    * Find and remove duplicate workouts based on timestamp and type.
+   * Флаг 'dedupe-content': ключ несёт состав сессии и id импорта, иначе разные
+   * сессии с одной датой (импорт) схлопывались в одну. OFF — прежний ключ.
    * @returns {Promise<number>} Number of duplicates removed.
    */
   async deduplicate() {
     const all = await this.getAll();
     const seen = new Set();
     const toDelete = [];
+    // Динамически: db/workouts.js в бут-графе, статический импорт утянул бы модуль в первый кадр.
+    const contentKey = flag('dedupe-content')
+      ? (await import('../shared/workout-dedupe-key.js')).contentDedupeKey
+      : null;
 
     for (const w of all) {
-      const key = `${w.timestamp}-${w.type}`;
+      const key = contentKey ? contentKey(w) : `${w.timestamp}-${w.type}`;
       if (seen.has(key)) {
         toDelete.push(w.id);
       } else {
