@@ -33,6 +33,7 @@ const flagStore = new Map([['ap-flag-exercise-registry', '1']]);
 globalThis.localStorage = /** @type {any} */ ({ getItem: (/** @type {string} */ k) => flagStore.get(k) ?? null });
 
 const { mapOneRMs } = await import('../js/shared/lift-map.js');
+const { oneRMsFromHistory, experienceYearsFromHistory, effectiveExperienceYears } = await import('../js/shared/exercise-records.js');
 const { renderStrengthHero } = await import('../js/analytics.strength-curves.js');
 const { renderPassportHero } = await import('../js/profile.view/passport-hero.js');
 
@@ -86,9 +87,10 @@ describe('1RM после импорта без orm', () => {
     assert.equal(mapOneRMs([{ id: 'Bench Press', value: 101 }]).bench, 101);
   });
 
-  // Ф2 заменит mapOneRMs(orm) производной от истории — тест переписать на неё.
-  test('жим из истории виден в 1RM, даже когда orm пуст', { todo: true }, () => {
-    assert.ok((mapOneRMs(imported.orm).bench ?? 0) > 0);
+  // DATA-2: 1RM — производная от истории (80 × 8 по Эпли = 101); mapOneRMs(orm) остаётся легаси и пуст.
+  test('жим из истории виден в 1RM, даже когда orm пуст', () => {
+    assert.equal(mapOneRMs(imported.orm).bench, undefined);
+    assert.equal(oneRMsFromHistory(imported.workouts).bench, 101);
   });
 });
 
@@ -116,8 +118,11 @@ describe('стаж: профиль и история', () => {
     assert.match(html, /2y exp/);
   });
 
-  test('стаж в паспорте совпадает со сроком истории', { todo: true }, () => {
-    const html = renderPassportHero(profile, null, {}, 'en');
-    assert.match(html, /3(\.\d)?y exp/);
+  // DATA-2: стаж — от первой сессии истории, той же мерой, что герой Stats (3.4).
+  test('стаж в паспорте совпадает со сроком истории', () => {
+    assert.equal(experienceYearsFromHistory(workouts), 3.4);
+    const eff = { ...profile, experienceYears: effectiveExperienceYears(profile.experienceYears, workouts) };
+    const html = renderPassportHero(eff, null, {}, 'en');
+    assert.match(html, /3\.4y exp/);
   });
 });

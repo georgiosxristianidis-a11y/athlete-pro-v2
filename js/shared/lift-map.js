@@ -41,10 +41,11 @@ const FOLDED_PATTERNS = [
 const NOT_BARBELL = /dumbbell|\bdb\b|гантел|machine|тренажер|hack|хак/;
 
 /**
+ * Путь через реестр без флага — его зовёт exercise-records.js (DATA-2); mapOneRMs держит флаг сам.
  * @param {string} id
  * @returns {'bench'|'squat'|'deadlift'|'ohp'|undefined}
  */
-function liftByRegistry(id) {
+export function liftByRegistry(id) {
   const known = findExercise(id);
   if (known) return known.lift;
   const n = normalizeName(id);
