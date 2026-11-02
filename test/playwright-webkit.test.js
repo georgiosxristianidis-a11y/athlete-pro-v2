@@ -72,7 +72,10 @@ test('CI-CACHE: ключ кеша браузеров — версия playwright
   assert.match(key, /steps\.pw-version\.outputs\.version/);
   assert.doesNotMatch(key, /\d+\.\d+\.\d+/,
     'версия, вписанная руками, переживает бамп Playwright и даёт hit со старыми браузерами');
-  assert.match(stepBlock('Playwright version'), /node_modules\/playwright-core\/package\.json/);
+  // PW-KEY: версия раннера (`npx playwright --version`), не корневой playwright-core —
+  // при расхождении @playwright/test и overrides они различаются (#586).
+  assert.match(stepBlock('Playwright version'), /npx playwright --version/);
+  assert.doesNotMatch(stepBlock('Playwright version'), /node_modules\/playwright-core/);
 });
 
 test('CI-CACHE: установка браузеров и e2e-задача ограничены по времени', () => {
