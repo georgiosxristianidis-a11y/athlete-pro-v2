@@ -106,6 +106,10 @@ export const DynamicIsland = (() => {
   let _progressFill = null;
   let _timerProg = null;
   let _restNextEl = null;
+  /** REST-COUNT: узлы новой вёрстки отдыха — создаются при первом отдыхе с флагом. */
+  let _restCountEl = null;
+  let _restSetNEl = null;
+  let _restLineEl = null;
 
   function _applyIslandLocale() {
     const skip = _island?.querySelector('[data-action="island:skipExercise"]');
@@ -318,7 +322,7 @@ export const DynamicIsland = (() => {
     _timerActive = false;
     _disarmFinish();
     _island?.classList.remove('expanded');
-    _island?.classList.remove('timer-mode', 'rest-has-next', 'rest-has-set');
+    _island?.classList.remove('timer-mode', 'rest-count', 'rest-has-next', 'rest-has-set');
     _island?.classList.remove('finish-mode');
     _island?.classList.add('mode-idle');
   }
@@ -336,7 +340,7 @@ export const DynamicIsland = (() => {
     // IDLE MODE: If no workout, act as the ONLINE button
     if (!State.plan || !State.plan.length) {
       _expanded = false;
-      _island?.classList.remove('timer-mode', 'expanded', 'rest-has-next', 'rest-has-set');
+      _island?.classList.remove('timer-mode', 'expanded', 'rest-count', 'rest-has-next', 'rest-has-set');
       _island?.classList.add('mode-idle');
 
       document.getElementById('status-bar')?.classList.remove('workout-active');
@@ -573,6 +577,7 @@ export const DynamicIsland = (() => {
       _restNextEl.textContent = nx ? t('island.next', { name: islandLabel(nx) }) : '';
       // Only a pill that actually carries the caption gets the wide layout.
       _island?.classList.toggle('rest-has-next', !!nx);
+      _armRestCount(nx);
       // FIELD-7: вторая строка — вес × повторы этого сета. Модуль ленивый:
       // статический импорт сажал его на бут-граф первого кадра, а флаг OFF
       // не должен платить ни байта.
@@ -586,8 +591,13 @@ export const DynamicIsland = (() => {
       }
     }
 
-    // No numeric readout by design — the depleting bar + colour escalation below
-    // carry "how much rest is left". (Old #di-rest-time removed.)
+    // Legacy has no numeric readout — the depleting bar + colour escalation below
+    // carry "how much rest is left". REST-COUNT (flag) brings the digit back:
+    // textContent on the live node, 1 Hz from rest-timer, +15 lands at once.
+    if (_restCountEl && _island?.classList.contains('rest-count')) {
+      const s = Math.max(0, secs);
+      _restCountEl.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    }
 
     // Progress-bar colour escalation each second (class only — no layout)
     if (_timerProg) {
@@ -610,6 +620,8 @@ export const DynamicIsland = (() => {
    * @param {string} line
    */
   function _paintRestSet(line) {
+    // REST-COUNT забирает «60 × 8» в свою строку — вторую копию не рисуем.
+    if (_island?.classList.contains('rest-count')) line = '';
     let setEl = document.getElementById('di-rest-set');
     if (line && !setEl && _restNextEl) {
       setEl = document.createElement('span');
@@ -622,6 +634,51 @@ export const DynamicIsland = (() => {
       else setEl.remove();
     }
     _island?.classList.toggle('rest-has-set', !!line && !!setEl);
+  }
+
+  /**
+   * REST-COUNT (флаг rest-island-count, выбор Gio 02.11 — разворот ISL-REDESIGN
+   * 8ff970a0): слева крупный отсчёт, колонкой «Подход N/M» и «упражнение · вес
+   * × повт», справа «+15» текстом и пропуск. Узлы создаются один раз через
+   * createElement и живут до конца сессии: цифру пишет setRestProgress в
+   * textContent, хост не перерисовывается (закон кадра п. 6). Флаг OFF — узлов
+   * нет, класса нет, пилюля прежняя.
+   * @param {any} nx упражнение, к которому вернёшься после отдыха
+   */
+  function _armRestCount(nx) {
+    const on = flag('rest-island-count');
+    _island?.classList.toggle('rest-count', on);
+    if (!on || !_restNextEl) return;
+    if (!_restCountEl) {
+      _restCountEl = document.createElement('span');
+      _restCountEl.className = 'island-rest-count';
+      // Остров — role=status aria-live: цифра раз в секунду зачитывалась бы вслух.
+      _restCountEl.setAttribute('aria-hidden', 'true');
+      const meta = document.createElement('span');
+      meta.className = 'island-rest-meta';
+      _restSetNEl = document.createElement('span');
+      _restSetNEl.className = 'island-rest-setn';
+      _restLineEl = document.createElement('span');
+      _restLineEl.className = 'island-rest-line';
+      meta.append(_restSetNEl, _restLineEl);
+      _restNextEl.before(_restCountEl, meta);
+      const plusLbl = document.createElement('span');
+      plusLbl.className = 'island-rest-plus-lbl';
+      plusLbl.textContent = '+15';
+      document.getElementById('di-rest-plus')?.append(plusLbl);
+    }
+    const sets = nx?.sets || [];
+    const i = sets.findIndex((s) => !s.done);
+    _restSetNEl.textContent = i >= 0 ? t('island.set_n', { n: i + 1, total: sets.length }) : '';
+    const name = nx ? islandLabel(nx) : '';
+    _restLineEl.textContent = name;
+    if (!nx) return;
+    import('./rest-next-set.js')
+      .then(({ nextSetLine }) => {
+        const line = nextSetLine(nx, t);
+        if (_timerActive && line) _restLineEl.textContent = `${name} · ${line}`;
+      })
+      .catch(() => {});
   }
 
   /** Drive the rest bar from its current fraction down to empty over `remaining`s (compositor). */
@@ -637,7 +694,7 @@ export const DynamicIsland = (() => {
 
   function stopTimer() {
     _timerActive = false;
-    _island?.classList.remove('timer-mode', 'rest-has-next', 'rest-has-set');
+    _island?.classList.remove('timer-mode', 'rest-count', 'rest-has-next', 'rest-has-set');
     if (_timerProg) {
       _timerProg.style.transition = 'none';
       _timerProg.style.transform = 'scaleX(0)';
@@ -665,7 +722,7 @@ export const DynamicIsland = (() => {
     _timerActive = false;
     _expanded = false;
     _disarmFinish();
-    _island?.classList.remove('timer-mode', 'expanded', 'mode-idle', 'rest-has-next', 'rest-has-set');
+    _island?.classList.remove('timer-mode', 'expanded', 'mode-idle', 'rest-count', 'rest-has-next', 'rest-has-set');
     _island?.classList.add('finish-mode');
   }
 

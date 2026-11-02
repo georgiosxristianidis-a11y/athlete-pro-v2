@@ -145,6 +145,12 @@ const DEFAULTS = {
   // и цвет. Строка берётся на старте отдыха, барабан во время паузы её не меняет.
   // Default OFF до поля Gio; тумблер в Лаборатории. Kill switch: Flags.setFlag('rest-next-set', false)
   'rest-next-set': false,
+  // REST-COUNT (вариант A, выбор Gio 02.11): в компактной паузе остров во всю
+  // колонку — крупный отсчёт «1:48», «Подход N/M», «упражнение · вес × повт» и
+  // крупный пропуск. Разворачивает ISL-REDESIGN (8ff970a0, цифру убрали 06.07).
+  // Строку «60 × 8» забирает себе — при rest-next-set ON она не двоится.
+  // Default OFF до поля Gio; тумблер в Лаборатории. Kill switch: Flags.setFlag('rest-island-count', false)
+  'rest-island-count': false,
   // HOME-3 (вердикт Gio 14.10, «12 с»): в карточке «Сегодня» (home-feed-a) — материя:
   // пыль и ленты от правого верхнего угла, сталь --c-chrome (js/shared/home-matter.js).
   // 12 с после входа на Главную, затем 1 с в нейтраль и замереть. Без home-feed-a
@@ -216,7 +222,7 @@ export function allFlags() {
  * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
  * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
  */
-export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'gym-equipment']);
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'gym-equipment']);
 
 /** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
 export function isOverridden(name) {
