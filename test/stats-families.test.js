@@ -111,6 +111,26 @@ describe('карточки по семействам', () => {
     assert.doesNotMatch(old.innerHTML, /kg ×|≈/);
   });
 
+  test('aria-label графика семейства: вес последнего месяца и пик, а не «Мой максимум»', () => {
+    // рекорд 110×1 в июне, к октябрю рабочий вес 85: глаз видит точку на 85, пик 110
+    const hist = [
+      session(new Date(2025, 5, 10, 12), 'push', [{ name: 'Bench Press', sets: [set(110, 1), set(80, 5)] }]),
+      session(new Date(2025, 7, 10, 12), 'push', [{ name: 'Bench Press', sets: [set(80, 5)] }]),
+      session(new Date(2025, 9, 10, 12), 'push', [{ name: 'Bench Press', sets: [set(85, 5)] }]),
+    ];
+    const ariaNums = (/** @type {any[]} */ curves) => {
+      const mount = { innerHTML: '', querySelectorAll: () => [], querySelector: () => null };
+      renderStrengthCurves(curves, /** @type {any} */ (mount));
+      const label = mount.innerHTML.match(/<svg class="sc-chart"[^>]*aria-label="([^"]*)"/)?.[1] ?? '';
+      return [...label.matchAll(/\d+/g)].map((m) => m[0]);
+    };
+    const fam = calculateProgressionCurves(hist, { minMonths: 1, families: true });
+    assert.equal(fam[0].myMax?.weight, 110);
+    assert.deepEqual(ariaNums(fam), ['85', '110']); // сейчас, пик
+    // без семейств «сейчас» и так был весом последнего месяца — не сдвигается
+    assert.deepEqual(ariaNums(calculateProgressionCurves(hist, { minMonths: 1 })), ['85', '110']);
+  });
+
   test('флаг stats-families по умолчанию OFF', () => {
     assert.equal(flag('stats-families'), false);
   });
