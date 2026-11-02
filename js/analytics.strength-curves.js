@@ -161,6 +161,8 @@ function curveCard(s, idx) {
   const famE1rm = fam && s.e1rm ? `<span class="sc-peak">${tri('1ПМ', '1RM', '1ΜΕ')} ≈ ${s.e1rm}</span>` : '';
   const peakVal = Math.max(...vs);
   const peak = Math.round(peakVal);
+  // aria-label описывает график, а не крупную цифру: «сейчас» — последняя точка, в семействах это не myMax
+  const now = Math.round(s.pts[s.pts.length - 1].v);
 
   let pts, svgContent, subMarkup, axisMarkup;
   /** @type {{x0:number,x1:number,text:string}[]} */
@@ -231,7 +233,7 @@ function curveCard(s, idx) {
         ${subMarkup}
       </div>
       <div class="sc-plot">
-        <svg class="sc-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)} ${tri(`— максимальный рабочий вес по месяцам, сейчас ${cur} кг, пик ${peak} кг`, `top working weight by month, ${cur} kg current, ${peak} kg peak`, `μέγιστο βάρος εργασίας ανά μήνα, τώρα ${cur} kg, κορυφή ${peak} kg`)}">
+        <svg class="sc-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)} ${tri(`— максимальный рабочий вес по месяцам, сейчас ${now} кг, пик ${peak} кг`, `top working weight by month, ${now} kg current, ${peak} kg peak`, `μέγιστο βάρος εργασίας ανά μήνα, τώρα ${now} kg, κορυφή ${peak} kg`)}">
           ${svgContent}
         </svg>
         <div class="sc-scrub" aria-hidden="true">
