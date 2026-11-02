@@ -19,6 +19,8 @@
 import { t } from './locale.store.js';
 import { esc, haptic, dismissOverlay } from './shared/utils.js';
 import { fmtWeight } from './shared/format.js';
+import { Spring } from './shared/spring.js';
+import { flag } from './flags.js';
 import { PLATE_SPEC, BAR_OPTIONS, loadPlates, stepLoadable, normalizeBar } from './shared/plate-math.js';
 
 const BAR_KEY = 'ap-bar-weight';
@@ -92,6 +94,28 @@ function kick(host) {
   host.getAnimations?.().forEach((a) => {
     a.cancel();
     a.play();
+  });
+}
+
+/**
+ * PLATE-2: игрушка. Пружина крутит инлайн-transform детей грифа (не самого грифа:
+ * на нём живёт CSS-драйвер .pc-kick, второй драйвер на одно свойство запрещён).
+ * Reduced-motion — без движения, только вибро (его решает Haptic Gate).
+ * @param {HTMLElement} host
+ * @param {{ stop: () => void } | null} prev
+ */
+function poke(host, prev) {
+  prev?.stop();
+  const parts = /** @type {HTMLElement[]} */ (Array.from(host.children));
+  const set = (/** @type {string} */ v) => parts.forEach((el) => { el.style.transform = v; });
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return null;
+  return Spring.animate({
+    from: 7,
+    to: 0,
+    stiffness: 420,
+    damping: 14,
+    onUpdate: (y) => set(`translateY(${y.toFixed(2)}px)`),
+    onComplete: () => set(''),
   });
 }
 
@@ -226,6 +250,15 @@ export const PlateCalc = (() => {
       render(true);
     }
 
+    if (flag('plate-toy')) {
+      /** @type {{ stop: () => void } | null} */
+      let toy = null;
+      q('barbell').addEventListener('click', () => {
+        if (q('barbell').dataset.state === 'below') return;
+        haptic([8]);
+        toy = poke(q('barbell'), toy);
+      });
+    }
     q('down').addEventListener('click', () => step(-1));
     q('up').addEventListener('click', () => step(1));
     q('close').addEventListener('click', close);

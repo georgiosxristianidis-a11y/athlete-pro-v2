@@ -164,6 +164,11 @@ const DEFAULTS = {
   // это ключ кнопки, а не вид. OFF — легаси-ключ побитно.
   // Kill switch: Flags.setFlag('dedupe-content', false)
   'dedupe-content': false,
+
+  // PLATE-2: тап по грифу в калькуляторе блинов — пружинный отскок (Spring, только
+  // transform) + мягкое вибро через Haptic Gate. Логика расчёта не затронута.
+  // Default OFF до поля Gio. Kill switch: Flags.setFlag('plate-toy', false)
+  'plate-toy': false,
 };
 
 /** @param {string} name @returns {boolean} */

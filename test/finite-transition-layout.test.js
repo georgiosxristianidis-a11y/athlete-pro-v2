@@ -63,6 +63,9 @@ const INLINE_LAYOUT_TRANSITIONS = {
 /** Spring гонит стиль сам — CSS-переход по тому же свойству это второй драйвер. */
 const SPRING_DRIVEN = [
   { selector: '.orm-bar-fill', prop: 'transform' }, // dashboard.js + analytics.view.js
+  { selector: '.pc-shaft', prop: 'transform' }, // plate-calc.js (PLATE-2): дети грифа
+  { selector: '.pc-collar', prop: 'transform' },
+  { selector: '.pc-side', prop: 'transform' },
 ];
 
 /**
@@ -73,6 +76,7 @@ const SPRING_DRIVEN = [
 const SPRING_CALLSITES = {
   'js/analytics.view.js': 1,
   'js/dashboard.js': 1,
+  'js/plate-calc.js': 1,
   'js/workout.view/handlers.js': 1,
 };
 
