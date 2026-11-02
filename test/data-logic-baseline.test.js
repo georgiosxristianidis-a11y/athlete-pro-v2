@@ -27,6 +27,11 @@ Object.defineProperty(globalThis, 'window', {
   configurable: true,
 });
 
+// DATA-1: реестр упражнений за флагом (дефолт OFF). Тесты lift-map держат фикс при ON;
+// паритет OFF с легаси — в test/exercise-registry.test.js.
+const flagStore = new Map([['ap-flag-exercise-registry', '1']]);
+globalThis.localStorage = /** @type {any} */ ({ getItem: (/** @type {string} */ k) => flagStore.get(k) ?? null });
+
 const { mapOneRMs } = await import('../js/shared/lift-map.js');
 const { renderStrengthHero } = await import('../js/analytics.strength-curves.js');
 const { renderPassportHero } = await import('../js/profile.view/passport-hero.js');
@@ -39,11 +44,11 @@ describe('lift-map: тренажёр и гантели — не жим лёжа 
     assert.equal(rm('Bench Press').bench, 100);
   });
 
-  test('Dumbbell Bench Press не засчитан как жим штанги', { todo: true }, () => {
+  test('Dumbbell Bench Press не засчитан как жим штанги', () => {
     assert.equal(rm('Dumbbell Bench Press').bench, undefined);
   });
 
-  test('Incline Dumbbell Bench Press не засчитан как жим штанги', { todo: true }, () => {
+  test('Incline Dumbbell Bench Press не засчитан как жим штанги', () => {
     assert.equal(rm('Incline Dumbbell Bench Press').bench, undefined);
   });
 });
@@ -53,7 +58,7 @@ describe('lift-map: русские названия', () => {
     assert.equal(rm('Жим лёжа').bench, 100);
   });
 
-  test('«жим лежа» через «е» распознан', { todo: true }, () => {
+  test('«жим лежа» через «е» распознан', () => {
     assert.equal(rm('Жим лежа').bench, 100);
   });
 
@@ -61,7 +66,7 @@ describe('lift-map: русские названия', () => {
     assert.equal(rm('Overhead Press (OHP)').ohp, 100);
   });
 
-  test('«жим штанги стоя» даёт ohp', { todo: true }, () => {
+  test('«жим штанги стоя» даёт ohp', () => {
     assert.equal(rm('Жим штанги стоя').ohp, 100);
   });
 });
