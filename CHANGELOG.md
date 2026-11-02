@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### DATA-2: «Мой максимум», 1RM и стаж из истории по id реестра, за флагом (1.27.203, 02.11)
+
+- `js/shared/exercise-records.js`: рекорды по варианту реестра (самый тяжёлый подход, e1RM отдельно), 1RM для норм и стаж от первой тренировки; ORM-стор и IDB не тронуты.
+- Флаг `history-records` (дефолт OFF): паспорт профиля и Athlete Room берут большее из истории и ORM-стора, стаж — из истории. OFF — прежнее.
+- Тесты: `test/exercise-records.test.js`; в baseline сняты `todo` у «1RM без orm» и «стаж».
+
 ### DATA-1: реестр упражнений, lift-map и exercise-identity читают из него за флагом (1.27.202, 02.11)
 
 `js/shared/exercise-registry.js`: стабильный id варианта, семейство, мышцы, алиасы по таблице Gio (37 строк), ё/е и регистр. Флаг `exercise-registry`, дефолт OFF: при ON гантели и тренажёр не считаются жимом штанги, «жим лежа» и «жим штанги стоя» распознаны, расколы имён (`Dips`/`Dips (Chest Focus)`, `Pullover DB`/`Dumbbell Pullover`) склеены на чтении. Записи в IDB не меняются; OFF — прежний путь.

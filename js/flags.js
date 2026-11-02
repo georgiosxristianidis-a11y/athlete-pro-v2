@@ -175,6 +175,12 @@ const DEFAULTS = {
   // на чтении. Записи в IDB не меняются. OFF — прежние регэкспы и SAME_MOVEMENT побитно.
   // Default OFF до поля Gio; без тумблера (UI нет). Kill switch: Flags.setFlag('exercise-registry', false)
   'exercise-registry': false,
+  // DATA-2: «Мой максимум», 1RM и стаж из истории (js/shared/exercise-records.js). ON: паспорт
+  // профиля и Athlete Room берут 1RM из тренировок (большее из истории и ORM-стора), а стаж —
+  // от первой тренировки вместо profile.experienceYears. Стор ORM и IDB не меняются.
+  // OFF — прежнее: 1RM из стора, стаж из онбординга. Default OFF до поля Gio; без тумблера.
+  // Kill switch: Flags.setFlag('history-records', false)
+  'history-records': false,
 };
 
 /** @param {string} name @returns {boolean} */

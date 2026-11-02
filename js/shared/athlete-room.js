@@ -2,6 +2,7 @@
 import { DB } from '../db.js';
 import { scoreBreakdown, tierFromScore, SCORE_TIERS, exrxTier } from '../strength-engine.js';
 import { mapOneRMs, powerTotal } from './lift-map.js';
+import { mergeOneRMs, oneRMsFromHistory, effectiveExperienceYears } from './exercise-records.js';
 import { renderLiftBars } from '../profile.view/lift-bars.js';
 import { loadProfile, updateProfile, updateWeightAndHeight, computeAge } from '../profile.store.js';
 import { esc, haptic, dobSelectsHtml, readDobFromSelects } from './utils.js';
@@ -282,7 +283,7 @@ const _tierFromScore = tierFromScore;
  * `computeAge`. Один и тот же атлет получал два разных скора на двух экранах.
  */
 async function _buildContext() {
-  const [workouts, orms, customName, colorIdx, frameIdx, profile, metrics, photo] =
+  const [workouts, orms, customName, colorIdx, frameIdx, profileStored, metrics, photo] =
     await Promise.all([
       DB.Workouts.getAll().catch(() => []),
       DB.OneRM.getAll().catch(() => []),
@@ -294,6 +295,7 @@ async function _buildContext() {
       DB.Settings.get('athlete-photo', null),
     ]);
 
+  let profile = profileStored;
   const name = customName || profile?.name || (tri('Атлет', 'Athlete', 'Αθλητής'));
   const [c1, c2] = AVATAR_COLORS[(parseInt(colorIdx) || 0) % AVATAR_COLORS.length];
   const [f1, f2] = FRAME_COLORS[(parseInt(frameIdx) || 0) % FRAME_COLORS.length];
@@ -306,7 +308,12 @@ async function _buildContext() {
       .join('')
       .toUpperCase() || 'A';
 
-  const oneRMs = mapOneRMs(orms);
+  let oneRMs = mapOneRMs(orms);
+  // DATA-2: 1RM и стаж из истории (флаг history-records); OFF — стор ORM и онбординг.
+  if (flag('history-records')) {
+    oneRMs = mergeOneRMs(oneRMs, oneRMsFromHistory(workouts));
+    profile = { ...(profile || {}), experienceYears: effectiveExperienceYears(profile?.experienceYears, workouts) };
+  }
   const total = powerTotal(oneRMs);
   const weight = metrics?.weight || 80;
   const height = metrics?.height || null;

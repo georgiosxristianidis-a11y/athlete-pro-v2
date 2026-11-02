@@ -5,6 +5,8 @@
 
 import { computeAge, loadPassportSources, getAvatarAppearance, getStoredLang } from './profile.store.js';
 import { mapOneRMs } from './shared/lift-map.js';
+import { flag } from './flags.js';
+import { mergeOneRMs, oneRMsFromHistory, effectiveExperienceYears } from './shared/exercise-records.js';
 import { renderPassportHero } from './profile.view/passport-hero.js';
 import { renderBento }        from './profile.view/bento.js';
 import { renderHexagonRadar } from './profile.view/hexagon-radar.js';
@@ -20,12 +22,19 @@ export { renderPassportHero, renderBento, renderHexagonRadar, renderLiftBars };
 export async function renderProfile(container, lang) {
   const resolvedLang = lang || (await getStoredLang());
 
-  const { profile, workouts, latestMetrics, oneRMsRaw } = await loadPassportSources();
+  const sources = await loadPassportSources();
+  const { workouts, latestMetrics, oneRMsRaw } = sources;
+  let profile = sources.profile;
 
   const metrics = latestMetrics || null;
   const bw = metrics?.weight || 80;
   const age = computeAge(profile.dob);
-  const oneRMs = mapOneRMs(oneRMsRaw);
+  let oneRMs = mapOneRMs(oneRMsRaw);
+  // DATA-2: 1RM и стаж из истории (флаг history-records); OFF — стор ORM и онбординг.
+  if (flag('history-records')) {
+    oneRMs = mergeOneRMs(oneRMs, oneRMsFromHistory(workouts));
+    profile = { ...profile, experienceYears: effectiveExperienceYears(profile.experienceYears, workouts) };
+  }
 
   // PP-3: ячейка «DOTS» из бенто убрана — DOTS и скор висели рядом как два
   // независимых показателя, хотя второй производен от первого. Полный разбор
