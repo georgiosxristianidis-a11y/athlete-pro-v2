@@ -1,7 +1,7 @@
 # NEXT SESSION — Athlete Pro
 
 > Читать первым. **Роутер, а не состояние:** указатель на карточку, контекст — в хендоффе.
-> Обновлено 2026-11-01 (1.27.199): очередь по приоритету.
+> Обновлено 2026-11-02 (1.27.212): очередь по приоритету.
 > Осталось поле: Gio
 
 ## Куда идти за работой
@@ -9,34 +9,40 @@
 **Трек запуска — `docs/handoff/HANDOFF_launch_track.md`.** Приоритет — стабильность, не косметика: сперва
 числа и сбои, потом вид. Маскот (PANDA-*/SKIN-1), TTS, HUD ждут.
 
-**За Gio (решения и поле), блокируют запуск:**
+**За Gio (решения и поле), блокируют запуск.** Тумблеры — Профиль → Лаборатория; новые флаги OFF, п.11-15 в Лаборатории после LAB-2:
 
-1. **`HOME-2`** — флаг `home-feed-a` в Лаборатории: поле Главной (Сегодня + неделя + CTA)
-2. **`LAUNCH-10` п.1 на Android** и `SERVER_KEY_MONTHLY_CAP_USD=1` на Vercel prod (BUDGET-1, Gio 12.10) — выставлен ли?
-3. **Поле флагов** (Профиль → Лаборатория): `sw-cache-first`, затем `boot-cascade`; `working-sets` на живых данных (жим, гантели)
-4. **`CORE-9`:** живой прогон `scripts/coach-eval.mjs` (`HANDOFF_core.md`)
-5. **`HOME-1`** — флаг `streak-weeks` тумблером в Лаборатории: поле на живых данных
-6. **`WSET-2b`** — значки вариант E (флаг `badge-ladders` уже ON): поле на живых данных
-7. **`FIELD-7`** — флаг `rest-next-set` (Лаборатория): вес × повторы в паузе острова, поле в зале
-8. **`HOME-3`** — флаг `home-matter` в Лаборатории (нужна `home-feed-a`): поле Главной, материя 12 с
-9. **`FIELD-6`** — флаг `gym-equipment` (Лаборатория): чек-лист снарядов, поле в зале
+1. HOME-2 — `home-feed-a`: поле Главной
+2. `LAUNCH-10` п.1 на Android и `SERVER_KEY_MONTHLY_CAP_USD=1` на Vercel prod (BUDGET-1, Gio 12.10) — выставлен ли?
+3. **Поле флагов:** `sw-cache-first`, затем `boot-cascade`; `working-sets` на живых данных
+4. **CORE-9:** живой прогон `scripts/coach-eval.mjs` (`HANDOFF_core.md`)
+5. HOME-1 — `streak-weeks`: поле на живых данных
+6. WSET-2b — значки E (`badge-ladders` уже ON): поле на живых данных
+7. FIELD-7 — `rest-next-set`: вес × повторы в паузе, зал
+8. HOME-3 — `home-matter` (нужна `home-feed-a`): материя 12 с
+9. FIELD-6 — `gym-equipment`: чек-лист снарядов, зал
+10. REST-COUNT — `rest-island-count`: отсчёт паузы в острове, зал
+11. DATA-1 — `exercise-registry`: гантели не жим штанги
+12. DATA-2 — `history-records`: «Мой максимум», стаж, сверка на экспорте
+13. DATA-3 — `stats-families`: жим ногами и штанга на Stats
+14. DATA-2 хвост — `dedupe-content`: «Убрать дубли», 22 сессии 2023-06
+15. PLATE-2 — `plate-toy`: тап по грифу, отскок 7 px, вибро 8 мс
+16. Развилки и мокапы (DATA, usage, SWAP-1: поиск B, радар A) — `HANDOFF_data_logic.md` § Развилки Gio
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
-0. **P0** (`HANDOFF_launch_track.md` § P0): `P0-AI-CONSENT` (развилка Gio) → `P0-AIRGAP-NET`
-1. **`ANL-ALT`**, `SWAP-1`, `PLATE-*` (`HANDOFF_working_sets.md`; WSET-2 влита 1.27.182)
-2. Фон, по одной за PR: A10 (хендофф Cursor)
-2a. **`SUPA-1`** 08.11: неделя зелёных keep-alive, проект не уснул
-3. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
-4. **`GEAR-1`** к коду; **`HOME-4`** (всплеск искр на подходе и PR, флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
+0. P0 (`HANDOFF_launch_track.md` § P0): `P0-AI-CONSENT` (развилка Gio)
+1. **LAB-2:** `exercise-registry`, `history-records`, `stats-families`, `dedupe-content`, `plate-toy` в `LAB_FLAGS` — на телефоне нет консоли
+2. `ANL-ALT` (поглощена DATA-3?), `DATA-4`, `SWAP-1` — после развилок Gio (`HANDOFF_data_logic.md`)
+3. Фон, по одной за PR: A10 (хендофф Cursor); **`SUPA-1`** 08.11: неделя зелёных keep-alive
+4. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
+5. `GEAR-1`** к коду; **`HOME-4` (флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
 
 **После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PERF-9` (стоп на мокап Gio), `PROG-0`.
 
 - **Поле — Android**, iPhone отложен. **webkit в Playwright не снимать** — единственный сигнал по Safari
 - **Невлитые ветки** — `npm run inventory`; вердикты **HYG-7** за Gio. `claude/changelog-deps-batch` влита по содержимому — мёрж откатит роутер
 
-Остальные семнадцать линий **заморожены в `docs/_archive/`** — это пауза, не отмена.
-Карточки живы; брать оттуда работу — после LAUNCH-10 и только явным решением Gio.
+Остальные семнадцать линий **заморожены в `docs/_archive/`** — пауза, не отмена; брать оттуда решением Gio после LAUNCH-10.
 
 ## Правило файла
 
@@ -47,22 +53,16 @@ git fetch origin && git rev-parse --short origin/main
 npm run preflight && npm run inventory && npm run smoke:prod && npm run docs:budget
 ```
 
-Версия — `js/version.js`. Done — `CHANGELOG.md`. Правила — `CLAUDE.md`, дизайн — `.claude/rules/design.md`.
-Архитектура % / долг — `docs/ARCHITECTURE_SCORECARD.md`. Карточки Cursor — `docs/handoff/HANDOFF_cursor_arch_cards.md`.
+Версия — `js/version.js`, done — `CHANGELOG.md`, дизайн — `.claude/rules/design.md`, долг — `docs/ARCHITECTURE_SCORECARD.md`.
 **Строка роутера ≤200 символов** — иначе в хендофф.
 
 ## Барьеры репозитория
 
-- **PROT-1:** чеки `test`+`e2e`+`drift` (strict), PR, linear history, `enforce_admins`; локально `.githooks/pre-push` (`MAIN_PUSH_OK=1`). Состояние — preflight (`scripts/main-protection.mjs`); сторож — `main-watchdog.yml`.
-- **Галочка ≠ чеки:** Vercel `combined status` врёт при нуле check-runs → `gh api repos/:owner/:repo/commits/<sha>/check-runs`.
-- Мёрж — по `CLAUDE.md`.
+- **PROT-1:** чеки `test`+`e2e`+`drift` (strict), PR, linear history, `enforce_admins`; хук `pre-push`; состояние — preflight, сторож — `main-watchdog.yml`.
+- **Галочка ≠ чеки:** Vercel `combined status` врёт при нуле check-runs → `gh api repos/:owner/:repo/commits/<sha>/check-runs`. Мёрж — по `CLAUDE.md`.
 
 ## Технические заметки
 
-- **Запуск:** `npm run dev` → :3000 (Gio), 3001 = preview; телеметрия — `scripts/telemetry-server.mjs --lan`.
-- **Тесты:** `npm test`; `npx playwright test` поднимает свой :3000 (занят — громкий отказ), против тёплого — `E2E_BASE=http://localhost:3000`.
-- **SW:** только `npm run build:sw` (`test/sw-cache-name.test.js`).
-- **lhci** — только из worktree.
-- **Прод:** Vercel `gio-g7/athlete-pro-v7`, репо athlete-pro-v2, с `main`.
-- **Git worktree:** `GIT_PAGER=cat` и `</dev/null`.
-- **Корневой чекаут делится с живой сессией** — ветка меняется под руками; работать из своего worktree.
+- **Запуск:** `npm run dev` → :3000 (Gio), 3001 = preview. **Тесты:** `npx playwright test` поднимает свой :3000 (занят — громкий отказ), против тёплого — `E2E_BASE`.
+- **SW:** только `npm run build:sw`. **lhci** — только из worktree. **Git worktree:** `GIT_PAGER=cat` и `</dev/null`.
+- **Корневой чекаут делится с живой сессией** — работать из своего worktree.
