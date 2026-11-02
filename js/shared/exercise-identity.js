@@ -7,8 +7,12 @@
    помогают: сохранённое упражнение alias не несёт, а план берёт из localStorage.
    ════════════════════════════════════════════════════════ */
 
+import { flag } from '../flags.js';
+import { findExercise, normalizeName } from './exercise-registry.js';
+
 /**
  * Каноническое имя → прочие имена того же движения в истории.
+ * Это легаси-путь (флаг `exercise-registry` OFF); за флагом имена берутся из реестра.
  * - `Seated Cable Row` — имя из импорта 2023 (`scripts/import-etl.py`, библиотека);
  * - `Cable Row` — имя в плане приложения с самого начала;
  * - `Low Block Cable Row` — прежнее имя в сид-алиасе плана.
@@ -36,6 +40,11 @@ for (const [canon, others] of Object.entries(SAME_MOVEMENT)) {
  */
 export function canonicalName(name) {
   const t = String(name ?? '').trim();
+  // DATA-1: за флагом имя ищется в реестре (первое имя строки таблицы — каноническое).
+  if (flag('exercise-registry')) {
+    const known = findExercise(t);
+    if (known?.names[0]) return known.names[0];
+  }
   return CANON.get(t.toLowerCase()) ?? t;
 }
 
@@ -45,5 +54,6 @@ export function canonicalName(name) {
  * @returns {string}
  */
 export function canonicalKey(name) {
-  return norm(canonicalName(name));
+  const canon = canonicalName(name);
+  return flag('exercise-registry') ? normalizeName(canon) : norm(canon);
 }

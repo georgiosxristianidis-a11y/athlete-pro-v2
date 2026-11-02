@@ -169,6 +169,12 @@ const DEFAULTS = {
   // transform) + мягкое вибро через Haptic Gate. Логика расчёта не затронута.
   // Default OFF до поля Gio. Kill switch: Flags.setFlag('plate-toy', false)
   'plate-toy': false,
+  // DATA-1: реестр упражнений (js/shared/exercise-registry.js, таблица семейств Gio 01.11).
+  // ON: lift-map и exercise-identity узнают движение по реестру — гантели и тренажёр не
+  // считаются жимом штанги, «жим лежа»/«жим штанги стоя» распознаны, расколы имён склеены
+  // на чтении. Записи в IDB не меняются. OFF — прежние регэкспы и SAME_MOVEMENT побитно.
+  // Default OFF до поля Gio; без тумблера (UI нет). Kill switch: Flags.setFlag('exercise-registry', false)
+  'exercise-registry': false,
 };
 
 /** @param {string} name @returns {boolean} */

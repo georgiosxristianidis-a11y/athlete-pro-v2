@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### DATA-1: реестр упражнений, lift-map и exercise-identity читают из него за флагом (1.27.202, 02.11)
+
+`js/shared/exercise-registry.js`: стабильный id варианта, семейство, мышцы, алиасы по таблице Gio (37 строк), ё/е и регистр. Флаг `exercise-registry`, дефолт OFF: при ON гантели и тренажёр не считаются жимом штанги, «жим лежа» и «жим штанги стоя» распознаны, расколы имён (`Dips`/`Dips (Chest Focus)`, `Pullover DB`/`Dumbbell Pullover`) склеены на чтении. Записи в IDB не меняются; OFF — прежний путь.
+
 ### PLATE-2: тап по штанге в калькуляторе блинов — пружинный отскок и мягкое вибро (1.27.208)
 Флаг `plate-toy`, OFF. Spring крутит только transform детей грифа, вибро через Haptic Gate, reduced-motion — без движения. Расчёт блинов не тронут.
 
