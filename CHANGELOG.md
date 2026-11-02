@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### PLATE-2: тап по штанге в калькуляторе блинов — пружинный отскок и мягкое вибро (1.27.208)
+Флаг `plate-toy`, OFF. Spring крутит только transform детей грифа, вибро через Haptic Gate, reduced-motion — без движения. Расчёт блинов не тронут.
+
 ### P0-AIRGAP-NET: счётчик usage молчит в режиме airgap (1.27.201)
 
 - **Было.** `js/usage.js` в airgap слал голое имя события и подтягивал скрипт Vercel Insights.
