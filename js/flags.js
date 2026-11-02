@@ -157,6 +157,13 @@ const DEFAULTS = {
   // сохранённые планы не переписываются. OFF — чек-листа нет, отсева нет, коуч видит 'gym'.
   // Default OFF до поля Gio; тумблер в Лаборатории. Kill switch: Flags.setFlag('gym-equipment', false)
   'gym-equipment': false,
+  // DATA-2 хвост: «Убрать дубли» сравнивает состав сессии (упражнения, подходы,
+  // тоннаж) и id импорта `imp-...`, а не только timestamp+type: 22 разные сессии
+  // импорта с одной датой больше не схлопываются в одну. Копии повторного импорта
+  // без id по-прежнему убираются. Удаление мягкое, как и раньше. Без Лаборатории:
+  // это ключ кнопки, а не вид. OFF — легаси-ключ побитно.
+  // Kill switch: Flags.setFlag('dedupe-content', false)
+  'dedupe-content': false,
 };
 
 /** @param {string} name @returns {boolean} */
