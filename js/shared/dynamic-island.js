@@ -110,6 +110,8 @@ export const DynamicIsland = (() => {
   let _restCountEl = null;
   let _restSetNEl = null;
   let _restLineEl = null;
+  let _restNameEl = null;
+  let _restNumsEl = null;
 
   function _applyIslandLocale() {
     const skip = _island?.querySelector('[data-action="island:skipExercise"]');
@@ -660,6 +662,13 @@ export const DynamicIsland = (() => {
       _restSetNEl.className = 'island-rest-setn';
       _restLineEl = document.createElement('span');
       _restLineEl.className = 'island-rest-line';
+      // Имя и «вес × повт» — разные узлы: на 360px колонка ~100px, и общий
+      // ellipsis съедал бы цифры. Режется только имя.
+      _restNameEl = document.createElement('span');
+      _restNameEl.className = 'island-rest-name';
+      _restNumsEl = document.createElement('span');
+      _restNumsEl.className = 'island-rest-nums';
+      _restLineEl.append(_restNameEl, _restNumsEl);
       meta.append(_restSetNEl, _restLineEl);
       _restNextEl.before(_restCountEl, meta);
       const plusLbl = document.createElement('span');
@@ -670,13 +679,13 @@ export const DynamicIsland = (() => {
     const sets = nx?.sets || [];
     const i = sets.findIndex((s) => !s.done);
     _restSetNEl.textContent = i >= 0 ? t('island.set_n', { n: i + 1, total: sets.length }) : '';
-    const name = nx ? islandLabel(nx) : '';
-    _restLineEl.textContent = name;
+    _restNameEl.textContent = nx ? islandLabel(nx) : '';
+    _restNumsEl.textContent = '';
     if (!nx) return;
     import('./rest-next-set.js')
       .then(({ nextSetLine }) => {
         const line = nextSetLine(nx, t);
-        if (_timerActive && line) _restLineEl.textContent = `${name} · ${line}`;
+        if (_timerActive && line) _restNumsEl.textContent = `· ${line}`;
       })
       .catch(() => {});
   }
