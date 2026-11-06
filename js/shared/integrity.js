@@ -33,9 +33,11 @@ export const Integrity = (() => {
     for (const [moduleName, methods] of Object.entries(CONTRACTS)) {
       const target = window[moduleName];
       
-      // If module isn't loaded yet (lazy), skip it for now. 
+      // If module isn't loaded yet (lazy), skip it for now.
       // It will be checked again upon usage or if strictly required.
-      if (!target) continue;
+      // Шим-заглушка до ленивой загрузки (app.js) — не модуль: в нём только
+      // методы-прокладки, контракт сверяется после подмены настоящим модулем.
+      if (!target || target.__lazyShim) continue;
 
       methods.forEach(method => {
         if (typeof target[method] !== 'function') {

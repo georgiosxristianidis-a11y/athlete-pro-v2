@@ -63,6 +63,30 @@ describe('A2: Integrity.check() wired after lazy load', () => {
     assert.match(statsBlock, /Integrity\.check\(\)/);
   });
 
+  test('шим window.AthleteRoom до загрузки модуля не роняет check() (полевой баг 06.11)', () => {
+    // Живой прогон: integrity.js без import-строки, Toast — стаб. Шим берём
+    // из app.js как есть — без метки __lazyShim check() видел 2 метода из 6.
+    const src = readText('js/shared/integrity.js')
+      .replace(/^import .*$/m, '')
+      .replace('export const Integrity', 'const Integrity');
+    const shimSrc = app.match(/window\.AthleteRoom = (\{[\s\S]*?\n\});/)?.[1];
+    assert.ok(shimSrc, 'не нашёл шим window.AthleteRoom в app.js — гард потерял якорь');
+    const toasts = [];
+    const win = { AthleteRoom: new Function('_loadAthleteRoom', `return (${shimSrc});`)(() => {}) };
+    const Integrity = new Function('window', 'Toast', 'console', `${src}\nreturn Integrity;`)(
+      win,
+      { show: (msg) => toasts.push(msg) },
+      { error() {} }
+    );
+    assert.equal(Integrity.check(), true);
+    assert.deepEqual(toasts, []);
+
+    // Настоящий модуль без метода — тревога по-прежнему звучит.
+    win.AthleteRoom = { open() {}, close() {} };
+    assert.equal(Integrity.check(), false);
+    assert.equal(toasts.length, 1);
+  });
+
   test('integrity.js stays a dynamic import — no static import re-enters boot graph', () => {
     // Каждый вызов обязан идти через await import(...), не через статический
     // import сверху файла: тот вернул бы integrity.js в бут-граф и покраснил

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Ложный тост «Integrity error detected in console» на телефоне (1.27.215, 06.11)
+
+- Причина: шим `window.AthleteRoom` из BOOT-TRIM (`js/app.js`) держит 2 метода из 6 по контракту Integrity, а A2 повесил `Integrity.check()` на загрузку Workout, Claude FAB и Stats. Любой из них раньше Athlete Room (медленная сеть, восстановленная сессия) показывал тост.
+- Фикс: шим помечен `__lazyShim`, `Integrity.check()` его пропускает; настоящий модуль сверяется после загрузки в `_loadAthleteRoom`. Гард — живой прогон `check()` против шима в `test/integrity-wired.test.js`.
+
 ### Зависимости: пачка Dependabot #606-#610 одним PR (06.11)
 
 - `@google/genai` 2.24.0→2.32.0, `@upstash/redis` 1.39.0→1.41.0, `express-rate-limit` 8.7.1→8.7.3, dev: `globals` 17.12.0→17.14.0, `eslint-plugin-security` 4.0.1→4.2.1. Без бампа версии приложения: затронуты только `package.json` и lock.

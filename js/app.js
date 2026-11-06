@@ -131,7 +131,11 @@ window.DynamicIsland = Object.fromEntries(
         .catch((e) => console.warn('[island]', m, e)),
   ])
 );
+// __lazyShim: Integrity.check() пропускает шим — без метки любой check()
+// (Workout, Claude FAB, Stats) до загрузки Athlete Room видел 2 метода из 6
+// и показывал «Integrity error» (полевой баг 06.11, медленная сеть).
 window.AthleteRoom = {
+  __lazyShim: true,
   open() {
     return _loadAthleteRoom().then((AR) => AR.open());
   },
