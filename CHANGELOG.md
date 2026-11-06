@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### LAB-2: флаги DATA и PLATE-2 в Лаборатории, «Убрать дубли» больше не стирает сессии (1.27.214, 06.11)
+
+- `exercise-registry`, `history-records`, `stats-families`, `plate-toy` — в `LAB_FLAGS` (`js/flags.js`), подписи en/ru/el: поле с телефона без консоли. Дефолты OFF.
+- `dedupe-content` теперь ON по умолчанию: легаси-ключ `timestamp+type` стирал 21 из 22 разных сессий импорта с одной датой. Это починка потери данных, поэтому без тумблера: он умел бы только вернуть стирание. Kill switch — `Flags.setFlag('dedupe-content', false)`. Гард — `test/dedupe-content.test.js`.
+
 ### DATA-3 хвост: aria-label графика семейства описывает график, не «Мой максимум» (1.27.213, 02.11)
 
 - `js/analytics.strength-curves.js`: «сейчас» в aria-label SVG — вес последней точки графика, а не `myMax` (рекорд 110×1 при рабочем 85 читался как «110 кг сейчас», хотя глаз видит 85). Крупная цифра карточки остаётся «Мой максимум». Без флага `stats-families` разметка не меняется. Флаг OFF.

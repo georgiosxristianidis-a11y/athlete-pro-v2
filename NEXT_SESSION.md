@@ -9,7 +9,7 @@
 **Трек запуска — `docs/handoff/HANDOFF_launch_track.md`.** Приоритет — стабильность, не косметика: сперва
 числа и сбои, потом вид. Маскот (PANDA-*/SKIN-1), TTS, HUD ждут.
 
-**За Gio (решения и поле), блокируют запуск.** Тумблеры — Профиль → Лаборатория; новые флаги OFF, п.11-15 в Лаборатории после LAB-2:
+**За Gio (решения и поле), блокируют запуск.** Тумблеры — Профиль → Лаборатория; новые флаги OFF (`dedupe-content` ON с LAB-2):
 
 1. HOME-2 — `home-feed-a`: поле Главной
 2. `LAUNCH-10` п.1 на Android и `SERVER_KEY_MONTHLY_CAP_USD=1` на Vercel prod (BUDGET-1, Gio 12.10) — выставлен ли?
@@ -24,18 +24,16 @@
 11. DATA-1 — `exercise-registry`: гантели не жим штанги
 12. DATA-2 — `history-records`: «Мой максимум», стаж, сверка на экспорте
 13. DATA-3 — `stats-families`: жим ногами и штанга на Stats
-14. DATA-2 хвост — `dedupe-content`: «Убрать дубли», 22 сессии 2023-06
-15. PLATE-2 — `plate-toy`: тап по грифу, отскок 7 px, вибро 8 мс
-16. Развилки и мокапы (DATA, usage, SWAP-1: поиск B, радар A) — `HANDOFF_data_logic.md` § Развилки Gio
+14. PLATE-2 — `plate-toy`: тап по грифу, отскок 7 px, вибро 8 мс
+15. Развилки и мокапы (DATA, usage, SWAP-1: поиск B, радар A) — `HANDOFF_data_logic.md` § Развилки Gio
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
 0. P0 (`HANDOFF_launch_track.md` § P0): `P0-AI-CONSENT` (развилка Gio)
-1. **LAB-2:** `exercise-registry`, `history-records`, `stats-families`, `dedupe-content`, `plate-toy` в `LAB_FLAGS` — на телефоне нет консоли
-2. `ANL-ALT` (поглощена DATA-3?), `DATA-4`, `SWAP-1` — после развилок Gio (`HANDOFF_data_logic.md`)
-3. Фон, по одной за PR: A10 (хендофф Cursor); **`SUPA-1`** 08.11: неделя зелёных keep-alive
-4. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
-5. `GEAR-1`** к коду; **`HOME-4` (флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
+1. `ANL-ALT` (поглощена DATA-3?), `DATA-4`, `SWAP-1` — после развилок Gio (`HANDOFF_data_logic.md`)
+2. Фон, по одной за PR: A10 (хендофф Cursor); **`SUPA-1`** 08.11: неделя зелёных keep-alive
+3. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
+4. `GEAR-1`** к коду; **`HOME-4` (флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
 
 **После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PERF-9` (стоп на мокап Gio), `PROG-0`.
 

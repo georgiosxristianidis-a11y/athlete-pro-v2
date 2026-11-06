@@ -167,31 +167,32 @@ const DEFAULTS = {
   // тоннаж) и id импорта `imp-...`, а не только timestamp+type: 22 разные сессии
   // импорта с одной датой больше не схлопываются в одну. Копии повторного импорта
   // без id по-прежнему убираются. Удаление мягкое, как и раньше. Без Лаборатории:
-  // это ключ кнопки, а не вид. OFF — легаси-ключ побитно.
+  // это починка потери данных, а не вид: тумблер умел бы только вернуть стирание.
+  // ON с LAB-2 (Gio 06.11): легаси-ключ стирал 21 из 22 сессий импорта. OFF — легаси побитно.
   // Kill switch: Flags.setFlag('dedupe-content', false)
-  'dedupe-content': false,
+  'dedupe-content': true,
 
   // PLATE-2: тап по грифу в калькуляторе блинов — пружинный отскок (Spring, только
   // transform) + мягкое вибро через Haptic Gate. Логика расчёта не затронута.
-  // Default OFF до поля Gio. Kill switch: Flags.setFlag('plate-toy', false)
+  // Default OFF до поля Gio; тумблер в Лаборатории (LAB-2). Kill switch: Flags.setFlag('plate-toy', false)
   'plate-toy': false,
   // DATA-1: реестр упражнений (js/shared/exercise-registry.js, таблица семейств Gio 01.11).
   // ON: lift-map и exercise-identity узнают движение по реестру — гантели и тренажёр не
   // считаются жимом штанги, «жим лежа»/«жим штанги стоя» распознаны, расколы имён склеены
   // на чтении. Записи в IDB не меняются. OFF — прежние регэкспы и SAME_MOVEMENT побитно.
-  // Default OFF до поля Gio; без тумблера (UI нет). Kill switch: Flags.setFlag('exercise-registry', false)
+  // Default OFF до поля Gio; тумблер в Лаборатории (LAB-2). Kill switch: Flags.setFlag('exercise-registry', false)
   'exercise-registry': false,
   // DATA-2: «Мой максимум», 1RM и стаж из истории (js/shared/exercise-records.js). ON: паспорт
   // профиля и Athlete Room берут 1RM из тренировок (большее из истории и ORM-стора), а стаж —
   // от первой тренировки вместо profile.experienceYears. Стор ORM и IDB не меняются.
-  // OFF — прежнее: 1RM из стора, стаж из онбординга. Default OFF до поля Gio; без тумблера.
+  // OFF — прежнее: 1RM из стора, стаж из онбординга. Default OFF до поля Gio; тумблер в Лаборатории (LAB-2).
   // Kill switch: Flags.setFlag('history-records', false)
   'history-records': false,
   // DATA-3: карточки Stats по семействам реестра (js/shared/family-curves.js). ON: вместо
   // «топ-6 по числу сессий» — по карточке на семейство, свежие движения впереди (жим ногами
   // и штанга не тонут за тренажёрами импорта); «Мой максимум» (вес × повторы) первой строкой,
   // 1ПМ мелко в конце, вариант виден подписью. IDB и формулы не меняются. OFF — прежние карточки побитно.
-  // Default OFF до поля Gio; без тумблера. Kill switch: Flags.setFlag('stats-families', false)
+  // Default OFF до поля Gio; тумблер в Лаборатории (LAB-2). Kill switch: Flags.setFlag('stats-families', false)
   'stats-families': false,
 };
 
@@ -222,7 +223,7 @@ export function allFlags() {
  * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
  * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
  */
-export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'gym-equipment']);
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'gym-equipment', 'exercise-registry', 'history-records', 'stats-families', 'plate-toy']);
 
 /** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
 export function isOverridden(name) {
