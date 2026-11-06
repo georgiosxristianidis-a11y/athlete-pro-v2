@@ -48,8 +48,22 @@ test('класс rest-count снимается везде, где снимает
 
 test('строка «60 × 8» одна: при rest-count FIELD-7 не рисует свою копию', () => {
   assert.match(SRC, /function _paintRestSet\(line\) \{[\s\S]*?if \(_island\?\.classList\.contains\('rest-count'\)\) line = '';/);
-  assert.match(SRC, /_restLineEl\.textContent = `\$\{name\} · \$\{line\}`/);
+  assert.match(SRC, /_restNumsEl\.textContent = `· \$\{line\}`/);
   assert.match(CSS, /\.island\.rest-count \.island-rest-next,\s*\.island\.rest-count \.island-rest-set \{ display: none; \}/);
+});
+
+test('360px: многоточие режет имя, «· вес × повт» не сжимается', () => {
+  assert.match(SRC, /_restLineEl\.append\(_restNameEl, _restNumsEl\)/);
+  assert.match(CSS, /\.island-rest-name \{[^}]*text-overflow: ellipsis;/);
+  assert.match(CSS, /\.island-rest-nums \{ flex: none; \}/);
+  const line = CSS.match(/\.island-rest-line \{[^}]*\}/)?.[0] || '';
+  assert.doesNotMatch(line, /text-overflow/);
+});
+
+test('флаг выключили без перезагрузки: оставшиеся узлы легаси-пилюля не показывает', () => {
+  assert.match(CSS, /\.island-rest-count,\s*\.island-rest-meta \{ display: none; \}/);
+  assert.match(CSS, /\.island\.rest-count \.island-rest-count \{ display: block; \}/);
+  assert.match(CSS, /\.island\.rest-count \.island-rest-meta \{ display: flex; \}/);
 });
 
 test('CSS: пилюля 328 на 360px, цифра --fs-6, пропуск 48×40', () => {
