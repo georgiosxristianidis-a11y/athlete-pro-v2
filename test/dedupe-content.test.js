@@ -45,6 +45,7 @@ afterEach(async () => {
 });
 
 test('22 разные сессии с одной датой: флаг OFF — прежнее поведение побитно (схлопывает 21)', async () => {
+  setFlag('dedupe-content', false);
   await DB.Backup.import(importFile());
   assert.equal((await DB.Workouts.getAll()).length, 22);
   const removed = await DB.Workouts.deduplicate();
@@ -107,7 +108,7 @@ test('разный подход при тех же упражнениях и д�
   assert.equal(await DB.Workouts.deduplicate(), 1, 'схлопнулась только пара с одинаковым составом');
 });
 
-test('флаг по умолчанию OFF', async () => {
+test('флаг по умолчанию ON (LAB-2): кнопка не стирает разные сессии с одной датой', async () => {
   const { allFlags } = await import('../js/flags.js');
-  assert.equal(allFlags()['dedupe-content'], false);
+  assert.equal(allFlags()['dedupe-content'], true);
 });
