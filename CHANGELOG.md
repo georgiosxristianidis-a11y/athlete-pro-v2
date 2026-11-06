@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Зависимости: пачка Dependabot #606-#610 одним PR (06.11)
+
+- `@google/genai` 2.24.0→2.32.0, `@upstash/redis` 1.39.0→1.41.0, `express-rate-limit` 8.7.1→8.7.3, dev: `globals` 17.12.0→17.14.0, `eslint-plugin-security` 4.0.1→4.2.1. Без бампа версии приложения: затронуты только `package.json` и lock.
+- genai: ломающих изменений между 2.24 и 2.32 нет. Новые continuation-стримы и выросшие дефолтные HTTP-таймауты коуча не касаются: свои таймауты и `abortSignal` в `lib/aiOrchestrator.js`. Upstash: новое только в поиске, `incr`/`pexpire` лимитера прежние.
+
 ### LAB-2: флаги DATA и PLATE-2 в Лаборатории, «Убрать дубли» больше не стирает сессии (1.27.214, 06.11)
 
 - `exercise-registry`, `history-records`, `stats-families`, `plate-toy` — в `LAB_FLAGS` (`js/flags.js`), подписи en/ru/el: поле с телефона без консоли. Дефолты OFF.
