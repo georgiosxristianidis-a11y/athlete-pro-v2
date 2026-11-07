@@ -7,6 +7,8 @@ import { DB } from './db.js';
 import { BLOCK_NAMES_EN } from './shared/block-names.js';
 import { flag } from './flags.js';
 import { workingTonnage } from './shared/working-sets.js';
+import { findExercise, canonicalNameOf } from './shared/exercise-registry.js';
+import { swapAnalogs, swapTraits } from './shared/swap-groups.js';
 
 export const SESSION_KEY = 'ap-active-session';
 export const PLAN_KEY = 'ap-custom-plan';        // legacy — migrated → PLAN_KEY_A on first load
@@ -951,11 +953,13 @@ export function latestWorkoutForNames(workouts, names) {
  * поднято ни разу (тренировку закрыли, не дойдя до него), пропускается — опора
  * уходит в прошлую поднятую. Порядок — по `timestamp`, не по массиву: getAll()
  * отдаёт новые первыми, и обход «с конца» брал первую сессию в жизни.
+ * SWAP-1a: ядро принимает список имён (имена одного движения в реестре) —
+ * замена берёт «последний рабочий» вес нового упражнения без автобампа.
  * @param {Array<{ timestamp?: number, exercises?: Array<{ name?: string, sets?: Array<{ weight?: number, reps?: number, done?: boolean }> }> }>} [workouts]
- * @param {string} name
+ * @param {ReadonlyArray<string>} names
  * @returns {number|null} null — поднятого подхода в истории нет
  */
-export function lastLiftedTopWeight(workouts, name) {
+export function lastWorkingWeight(workouts, names) {
   let top = null;
   let topTs = -Infinity;
   for (const w of workouts || []) {
@@ -963,7 +967,7 @@ export function lastLiftedTopWeight(workouts, name) {
     if (ts < topTs) continue;
     let best = null;
     for (const e of w.exercises || []) {
-      if (e.name !== name) continue;
+      if (!names.includes(/** @type {string} */ (e.name))) continue;
       for (const s of e.sets || []) {
         if (!s || s.done === false || !(s.reps > 0)) continue;
         const weight = Number(s.weight) || 0;
@@ -975,6 +979,16 @@ export function lastLiftedTopWeight(workouts, name) {
     topTs = ts;
   }
   return top;
+}
+
+/**
+ * Верх поднятого веса одного упражнения (по одному имени) — см. `lastWorkingWeight`.
+ * @param {Array<{ timestamp?: number, exercises?: Array<{ name?: string, sets?: Array<{ weight?: number, reps?: number, done?: boolean }> }> }>} [workouts]
+ * @param {string} name
+ * @returns {number|null}
+ */
+export function lastLiftedTopWeight(workouts, name) {
+  return lastWorkingWeight(workouts, [name]);
 }
 
 /**
@@ -1104,6 +1118,124 @@ export function unskipExercise(plan, ei) {
   delete ex.skipFrom;
   plan.splice(to, 0, ex);
   return to;
+}
+
+/* ── SWAP-1a: быстрая замена упражнения на аналог ───────────────
+   Группы — `shared/swap-groups.js`. Выполненные подходы остаются за исходным
+   упражнением (история у реально сделанного), меняются только невыполненные.
+   Вес нового — его последний рабочий вес из истории; нет истории — 0 (вес
+   штанги на гантели не переносится). Подход, который руками увели с веса
+   тренера (`coachWeight`), не трогаем. UI и флаг — SWAP-1b. */
+
+/**
+ * След замены на карточке — для «Вернуть» и рамки «было N». Живёт в State.plan
+ * (persistSession пишет план целиком), в историю тренировки не попадает.
+ * @typedef {Object} SwapTrace
+ * @property {{name: string, isBW: boolean, isUnilateral: boolean, coachWeight: number|null, alias?: string[]}} from исходное упражнение
+ * @property {Array<number|null>} weights прежний вес подхода (индекс = подход карточки-замены); null — вес не трогали (ручная правка)
+ * @property {number|null} was «было N»: прежний вес первого заменённого подхода, null — нечего показывать
+ * @property {boolean} split карточка расщеплена: исходная осталась на индексе ниже, с выполненными
+ * @property {SwapTrace|null} prev след, стоявший на карточке до этой замены
+ */
+
+/**
+ * Заменить упражнение `plan[ei]` на аналог из его группы. Правит план на месте.
+ * Есть выполненные подходы — карточка расщепляется: исходная остаётся с `done`,
+ * новая встаёт следом (`ei + 1`) с невыполненными; нет — переименование на месте.
+ * @param {Array<any>} plan — State.plan
+ * @param {number} ei
+ * @param {string} newName имя из `swapAnalogs` (алиас реестра тоже подойдёт)
+ * @param {Array<any>} [workouts] история (`loadWorkoutHistory()`), для веса нового
+ * @returns {{ei: number, name: string, weight: number|null, trace: SwapTrace}|null}
+ *   `ei` — индекс карточки с новым упражнением, `weight` — вес из истории (null — истории
+ *   нет, подходы пустые: «введи вес»); null — замена невозможна, план не тронут
+ */
+export function swapExercise(plan, ei, newName, workouts) {
+  const ex = plan?.[ei];
+  if (!ex || ex.skipped) return null;
+  const to = findExercise(newName);
+  const canon = to && canonicalNameOf(to);
+  if (!to || !canon || !swapAnalogs(ex.name).includes(canon)) return null;
+  const traits = swapTraits(canon);
+  const sets = /** @type {Array<any>} */ (ex.sets || []);
+  const pending = sets.filter((s) => !s.done);
+  if (!traits || !pending.length) return null;
+
+  const weight = lastWorkingWeight(workouts, to.names);
+  const coach = Number.isFinite(ex.coachWeight) && ex.coachWeight > 0 ? ex.coachWeight : null;
+  const weights = pending.map((s) => (coach !== null && s.weight !== coach ? null : s.weight));
+  const split = pending.length < sets.length;
+
+  /** @type {SwapTrace['from']} */
+  const from = {
+    name: ex.name,
+    isBW: !!ex.isBW,
+    isUnilateral: !!ex.isUnilateral,
+    coachWeight: Number.isFinite(ex.coachWeight) ? ex.coachWeight : null,
+    ...(ex.alias ? { alias: [...ex.alias] } : {}),
+  };
+  /** @type {SwapTrace} */
+  const trace = {
+    from,
+    weights,
+    was: weights.find((w) => w !== null) ?? null,
+    split,
+    prev: split ? null : ex.swapTrace || null,
+  };
+
+  let card = ex;
+  if (split) {
+    card = { ...ex, sets: pending };
+    delete card.swapTrace;
+    ex.sets = sets.filter((s) => s.done);
+    plan.splice(ei + 1, 0, card);
+  }
+  card.name = canon;
+  card.isBW = traits.isBW;
+  card.isUnilateral = traits.isUnilateral;
+  delete card.coachWeight; // COACH-ONE: решение было про прежнее упражнение
+  delete card.alias; // алиасы прежнего упражнения тянули бы его историю в префилл
+  pending.forEach((s, i) => {
+    if (weights[i] !== null) s.weight = weight ?? 0;
+  });
+  card.swapTrace = trace;
+  return { ei: split ? ei + 1 : ei, name: canon, weight, trace };
+}
+
+/**
+ * Вернуть упражнение, замененное `swapExercise`: имя, `isUnilateral`, `isBW`,
+ * `coachWeight`, алиасы и прежние веса; расщеплённую карточку склеить обратно.
+ * Нельзя, когда в карточке-замене уже есть выполненный подход.
+ * @param {Array<any>} plan — State.plan, правится на месте
+ * @param {number} ei индекс карточки-замены (`ei` из ответа `swapExercise`)
+ * @returns {number} индекс восстановленной карточки, -1 — нечего возвращать
+ */
+export function undoSwap(plan, ei) {
+  const ex = plan?.[ei];
+  /** @type {SwapTrace|undefined} */
+  const t = ex?.swapTrace;
+  if (!ex || !t || ex.skipped || (ex.sets || []).some((/** @type {any} */ s) => s.done)) return -1;
+  const orig = t.split ? plan[ei - 1] : null;
+  if (t.split && (!orig || orig.skipped || orig.name !== t.from.name)) return -1;
+
+  ex.sets.forEach((/** @type {any} */ s, /** @type {number} */ i) => {
+    if (t.weights[i] != null) s.weight = t.weights[i];
+  });
+  if (orig) {
+    orig.sets.push(...ex.sets);
+    plan.splice(ei, 1);
+    return ei - 1;
+  }
+  ex.name = t.from.name;
+  ex.isBW = t.from.isBW;
+  ex.isUnilateral = t.from.isUnilateral;
+  if (t.from.coachWeight !== null) ex.coachWeight = t.from.coachWeight;
+  else delete ex.coachWeight;
+  if (t.from.alias) ex.alias = [...t.from.alias];
+  else delete ex.alias;
+  if (t.prev) ex.swapTrace = t.prev;
+  else delete ex.swapTrace;
+  return ei;
 }
 
 /**
