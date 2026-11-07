@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### PERM-1: права агентов в `.claude/settings.json` сужены (07.11)
+
+- Причина (аудит /doctor 07.11): allow `node *`/`npx *`/`npm run *`/`git *`/`vercel *`/`gh repo:*` пускали любой код и делали deny на `.env`/`rm -rf` декоративными (`node -e "readFileSync('.env')"`, `git push origin main`, `vercel env pull`, `gh repo delete`).
+- Allow теперь — точные скрипты из `package.json` и `scripts/`, read-only git плюс рабочая петля на `claude/*`, чтение `gh`/`vercel`. Deny расширен: варианты `rm -rf`, чтение `.env` через head/tail/grep/sed, пуш в main/force/`--no-verify`, `git add -f`, `git reset --hard`/`clean`, `gh pr merge --admin`, `gh auth token`, `vercel env pull`/`--prod`/`rm`.
+- Убраны мёртвые/разовые правила: `Read(**/.env.example)` (перекрыт deny `.env.*`), `FIT-ELITE`, `xargs kill`, `xxd`/`curl localhost`, `cat *.js|css|...` (читали любой файл перед суффиксом).
+
 ### Ложный тост «Integrity error detected in console» на телефоне (1.27.215, 06.11)
 
 - Причина: шим `window.AthleteRoom` из BOOT-TRIM (`js/app.js`) держит 2 метода из 6 по контракту Integrity, а A2 повесил `Integrity.check()` на загрузку Workout, Claude FAB и Stats. Любой из них раньше Athlete Room (медленная сеть, восстановленная сессия) показывал тост.
