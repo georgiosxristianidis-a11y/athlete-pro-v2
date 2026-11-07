@@ -4,6 +4,7 @@ import { exrxTier } from '../strength-engine.js';
 import { flag } from '../flags.js';
 import { on, onKeydown } from '../events.js';
 import { buildRecords } from '../shared/exercise-records.js';
+import { setStatsFocus } from '../shared/stats-focus.js';
 import { axisCardHtml, hintHtml, nextSelection, isActivateKey } from './radar-axis-card.js';
 
 /* DATA-4 (флаг muscles-ui): состояние радара — выбранная ось и готовые карточки живут здесь,
@@ -33,12 +34,17 @@ onKeydown('radar-axis-key', (el, e) => {
   e.preventDefault();
   _pickAxis(el);
 });
-on('radar-open-stats', () => window.Nav?.go('s-stats'));
+on('radar-open-stats', (el) => {
+  setStatsFocus(/** @type {HTMLElement} */ (el)?.dataset?.family);
+  window.Nav?.go('s-stats');
+});
 
-const TIER_PCT = { Untrained: 8, Novice: 28, Intermediate: 52, Advanced: 76, Elite: 96 };
+/** Ключи — `TIER_NAMES` из strength-engine.js (строчные). */
+const TIER_PCT = { untrained: 8, novice: 28, intermediate: 52, advanced: 76, elite: 96 };
 
-/** @param {string} tier */
-function _tierPct(tier) { return TIER_PCT[tier] || 8; }
+/** exrxTier отдаёт объект `{ tier, … }` (или null без данных); раньше сюда шёл объект целиком → всегда 8 %.
+ * @param {{ tier: string }|null} res */
+function _tierPct(res) { return TIER_PCT[/** @type {keyof typeof TIER_PCT} */ (res?.tier)] || 8; }
 
 /**
  * @param {number} cx @param {number} cy @param {number} r @param {number} angleDeg
@@ -91,8 +97,7 @@ export function renderHexagonRadar(oneRMs, bw, sex, age, workouts, lang) {
   const pcts = axes.map((a, i) => {
     if (a.lift) {
       if (!a.rm) return 4;
-      const tier = exrxTier({ lift: a.lift, sex, bodyweight: bw, oneRM: a.rm, age: effectiveAge });
-      return _tierPct(tier);
+      return _tierPct(exrxTier({ lift: a.lift, sex, bodyweight: bw, oneRM: a.rm, age: effectiveAge }));
     }
     return i === 4 ? volPct : consPct;
   });
