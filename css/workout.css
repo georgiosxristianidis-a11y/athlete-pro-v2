@@ -1323,3 +1323,60 @@
 .pc-msg.pc-error {
   color: var(--c-red);
 }
+
+/* DATA-4 (флаг muscles-ui): мышцы под категорией и лейблы в тоне PPL. Только токены base.css.
+   Тон — --ppl; core/cardio/прочее серым --c-text-2. Фолбэк Chrome < 111 (нет color-mix) — плоская поверхность. */
+.ex-tone-push { --ppl: var(--c-push); }
+.ex-tone-pull { --ppl: var(--c-pull); }
+.ex-tone-legs { --ppl: var(--c-legs); }
+.ex-tone-core { --ppl: var(--c-text-2); }
+.ex-msub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  padding: var(--sp-1) 0 0 var(--sp-1-5);
+  border-left: 2px solid var(--ppl);
+}
+.ex-mchip {
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  padding: var(--sp-0-5) var(--sp-1-5);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-bold);
+  color: var(--ppl);
+  background: var(--c-surface);
+  cursor: pointer;
+}
+.ex-mchip.active {
+  border-color: var(--ppl);
+  background: var(--c-surface-h);
+}
+.ex-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  align-items: center;
+  margin-top: var(--sp-0-5);
+  font-size: var(--fs-1);
+}
+.ex-lbl {
+  border-radius: var(--r-pill);
+  padding: 1px var(--sp-1);
+  font-weight: var(--fw-bold);
+}
+.ex-lbl-fam {
+  color: var(--ppl);
+  background: var(--c-surface-h);
+}
+.ex-lbl-mus {
+  color: var(--c-text-2);
+  padding-left: 0;
+}
+@supports (background: color-mix(in srgb, red 10%, transparent)) {
+  .ex-mchip { background: color-mix(in srgb, var(--ppl) 10%, transparent); }
+  .ex-mchip.active {
+    border-color: color-mix(in srgb, var(--ppl) 45%, transparent);
+    background: color-mix(in srgb, var(--ppl) 18%, transparent);
+  }
+  .ex-lbl-fam { background: color-mix(in srgb, var(--ppl) 10%, transparent); }
+}

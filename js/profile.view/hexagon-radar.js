@@ -1,6 +1,39 @@
 // @ts-check
 import { tri } from '../locale.store.js';
 import { exrxTier } from '../strength-engine.js';
+import { flag } from '../flags.js';
+import { on, onKeydown } from '../events.js';
+import { buildRecords } from '../shared/exercise-records.js';
+import { axisCardHtml, hintHtml, nextSelection, isActivateKey } from './radar-axis-card.js';
+
+/* DATA-4 (флаг muscles-ui): состояние радара — выбранная ось и готовые карточки живут здесь,
+   перерисовка радара их заменяет. Полигон не перерисовывается: меняются классы, r вершины, карточка. */
+/** @type {string|null} */
+let _selected = null;
+/** @type {Map<string, string>} */
+let _cards = new Map();
+
+/** @param {Element} g */
+function _pickAxis(g) {
+  const key = /** @type {HTMLElement} */ (g).dataset.axis || '';
+  _selected = nextSelection(_selected, key);
+  const root = g.closest('.pp-radar-wrap');
+  root?.querySelectorAll('.pp-axbtn').forEach((el) => {
+    const on_ = /** @type {HTMLElement} */ (el).dataset.axis === _selected;
+    el.classList.toggle('on', on_);
+    el.setAttribute('aria-pressed', on_ ? 'true' : 'false');
+    el.querySelector('.pp-vtx')?.setAttribute('r', on_ ? '4' : '3');
+  });
+  const card = root?.querySelector('#pp-radar-card');
+  if (card) card.innerHTML = _selected ? (_cards.get(_selected) || hintHtml()) : hintHtml();
+}
+on('radar-axis', (el) => _pickAxis(el));
+onKeydown('radar-axis-key', (el, e) => {
+  if (!isActivateKey(e)) return;
+  e.preventDefault();
+  _pickAxis(el);
+});
+on('radar-open-stats', () => window.Nav?.go('s-stats'));
 
 const TIER_PCT = { Untrained: 8, Novice: 28, Intermediate: 52, Advanced: 76, Elite: 96 };
 
@@ -89,6 +122,32 @@ export function renderHexagonRadar(oneRMs, bw, sex, age, workouts, lang) {
     return `<text x="${lx.toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="${anchor}" fill="var(--c-text-3)" font-size="10" font-weight="700" letter-spacing="0.04em" class="radar-lbl">${a.label}</text>`;
   }).join('');
 
+  const ui = flag('muscles-ui');
+  let axisSVG = labelSVG;
+  let cardHtml = '';
+  if (ui) {
+    _selected = null;
+    const keyOf = (/** @type {{lift: string|null}} */ a, /** @type {number} */ i) => a.lift || (i === 4 ? 'volume' : 'consist');
+    const ctx = { oneRMs, bw, sex, age: effectiveAge, records: buildRecords(workouts), monthVol, sessions30d };
+    _cards = new Map(axes.map((a, i) => [keyOf(a, i), axisCardHtml({ key: keyOf(a, i), label: a.label }, ctx)]));
+    axisSVG = axes.map((a, i) => {
+      const v = _polar(cx, cy, R * pcts[i] / 100, i * 60);
+      const t = _polar(cx, cy, R + 18, i * 60);
+      const anchor = t.x < cx - 4 ? 'end' : t.x > cx + 4 ? 'start' : 'middle';
+      const estW = a.label.length * 6.4;
+      let lx = t.x;
+      if (anchor === 'end') lx = Math.max(t.x, estW + 2);
+      else if (anchor === 'start') lx = Math.min(t.x, 238 - estW);
+      return `<g class="pp-axbtn" data-action="radar-axis" data-keydown="radar-axis-key" data-axis="${keyOf(a, i)}" role="button" tabindex="0" aria-pressed="false" aria-label="${a.label}">
+      <circle class="pp-vtx" r="3" cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}"/>
+      <circle class="pp-hit" r="19" cx="${lx.toFixed(1)}" cy="${t.y.toFixed(1)}"/>
+      <circle class="pp-hit" r="12" cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}"/>
+      <text class="pp-ax-lbl" x="${lx.toFixed(1)}" y="${(t.y + 3).toFixed(1)}" text-anchor="${anchor}" font-size="10" font-weight="700" letter-spacing="0.04em">${a.label}</text>
+    </g>`;
+    }).join('');
+    cardHtml = `<div class="pp-radar-card" id="pp-radar-card" aria-live="polite">${hintHtml()}</div>`;
+  }
+
   return `
 <div class="pp-section-lbl pp-section-lbl-gap">${tri('Профиль силы', 'Strength Profile', 'Προφίλ δύναμης')}</div>
 <div class="pp-radar-wrap">
@@ -98,7 +157,8 @@ export function renderHexagonRadar(oneRMs, bw, sex, age, workouts, lang) {
     <polygon points="${dataPts}" fill="var(--c-accent-bg)" stroke="var(--c-accent)" stroke-width="1.5" stroke-linejoin="round">
       <animate attributeName="opacity" from="0" to="1" dur="0.5s" fill="freeze"/>
     </polygon>
-    ${labelSVG}
+    ${axisSVG}
   </svg>
+  ${cardHtml}
 </div>`;
 }

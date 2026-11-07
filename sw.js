@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-0aa9953c';
+const CACHE_NAME = 'athlete-pro-v121-30ff0c0f';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -109,6 +109,7 @@ const ASSETS_WARM = [
   '/js/profile.view/hexagon-radar.js',
   '/js/profile.view/lift-bars.js',
   '/js/profile.view/passport-hero.js',
+  '/js/profile.view/radar-axis-card.js',
   '/js/profile.view/settings.js',
   '/js/profile.view.js',
   '/js/progressive-overload.js',
@@ -163,6 +164,7 @@ const ASSETS_WARM = [
   '/js/workers/crypto.worker.js',
   '/js/workout.view/handlers.js',
   '/js/workout.view/modals.js',
+  '/js/workout.view/picker-muscles.js',
   '/js/workout.view/render.js',
   '/js/workout.view/sections.js',
   '/js/workout.view/summary.js',

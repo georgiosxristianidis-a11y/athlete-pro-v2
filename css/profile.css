@@ -898,6 +898,36 @@ button.pref-row-icon:active,
   margin-bottom: var(--sp-1);
 }
 
+/* ── DATA-4: радар силы, тапаемые оси и карточка оси (флаг muscles-ui) ── */
+.pp-axbtn { cursor: pointer; outline: none; }
+.pp-hit { fill: transparent; }
+.pp-axbtn:focus-visible .pp-hit { stroke: var(--c-accent); }
+.pp-vtx { fill: var(--c-accent); }
+.pp-ax-lbl { fill: var(--c-text-3); }
+.pp-axbtn.on .pp-ax-lbl { fill: var(--c-text-1); }
+.pp-radar-card {
+  margin-top: var(--sp-1-5);
+  padding: var(--sp-1-5) var(--sp-2);
+  border-radius: var(--r-m);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  font-size: var(--fs-2);
+  color: var(--c-text-2);
+}
+.pp-rc-head {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  margin-bottom: var(--sp-0-5);
+}
+.pp-rc-row { display: flex; justify-content: space-between; gap: var(--sp-1); }
+.pp-rc-k { color: var(--c-text-3); }
+.pp-rc-v { color: var(--c-text-1); font-weight: var(--fw-bold); }
+.pp-rc-muscles { margin-top: var(--sp-0-5); font-size: var(--fs-1); }
+.pp-radar-go { margin-top: var(--sp-1); }
+
 /* Заголовок секции, открывающий новый блок (радар, силовые показатели).
    Отступ сверху жил инлайном в двух шаблонах и разъехался: у радара было
    24, у полос — 32. Теперь одна ступень и одно место, где она задана. */

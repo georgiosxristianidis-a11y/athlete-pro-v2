@@ -13,6 +13,8 @@ import { on, onChange, onInput } from '../events.js';
 import { exerciseLabel } from '../shared/exercise-label.js';
 import { pickFromLibrary, equipLabelKey } from '../shared/gym-equipment.js';
 import { getEquipmentOff } from '../profile.store.js';
+import { flag } from '../flags.js';
+import { muscleChipsFor, matchMuscle, subChipsHtml, itemMetaHtml } from './picker-muscles.js';
 
 const W = () => window.Workout;
 onChange('wo:planName', (el, e) =>
@@ -564,7 +566,7 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
         <button class="pill-filter ${filterCategory === 'pull' ? 'active' : ''}" data-cat="pull">${esc(t('train.cat_pull'))}</button>
         <button class="pill-filter ${filterCategory === 'legs' ? 'active' : ''}" data-cat="legs">${esc(t('train.cat_legs'))}</button>
         <button class="pill-filter" data-cat="core">${esc(t('train.core'))}</button>
-      </div>
+      </div>${flag('muscles-ui') ? '\n      <div id="add-ex-sub"></div>' : ''}
 
       <!-- Results count -->
       <div style="font-size:var(--fs-1);color:var(--c-text-3);padding:var(--sp-1) 0">
@@ -599,6 +601,11 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
   const filterBtns = overlay.querySelectorAll('.pill-filter');
 
   let activeFilter = filterCategory || 'all';
+  /** DATA-4: флаг muscles-ui — подчипы мышц под категорией и лейблы в тоне PPL; OFF — прежнее побитно. */
+  const muscleOn = flag('muscles-ui');
+  const subEl = overlay.querySelector('#add-ex-sub');
+  /** @type {string|null} */
+  let activeMuscle = null;
   let allExercises = [];
   let currentQuery = '';
   /** @type {string[]} FIELD-6: выключенные снаряды; флаг OFF → пусто, отбор прежний. */
@@ -615,11 +622,15 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
 
   function renderList() {
     // FIELD-6: снаряды отсеваются ДО категории и поиска.
+    const baseMatch = _libMatch(activeFilter, currentQuery);
     const { shown: filtered, hiddenCount, emptyByEquipment } = pickFromLibrary(
       allExercises,
       equipOff,
-      _libMatch(activeFilter, currentQuery),
+      muscleOn ? (ex) => baseMatch(ex) && matchMuscle(ex, activeMuscle) : baseMatch,
     );
+    if (muscleOn && subEl) {
+      subEl.innerHTML = subChipsHtml(muscleChipsFor(activeFilter, allExercises), activeFilter, activeMuscle);
+    }
 
     countEl.textContent = _libCountText(filtered.length, hiddenCount);
     listEl.innerHTML = '';
@@ -637,13 +648,13 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       const label = exerciseLabel(ex.name, { library: allExercises, lang: getLang() });
       btn.innerHTML = `
         <div style="font-weight:var(--fw-bold);font-size:var(--fs-2);color:var(--c-text-1)">${esc(label)}</div>
-        <div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:var(--sp-0-5);display:flex;gap:var(--sp-1);flex-wrap:wrap">
+        ${muscleOn ? itemMetaHtml(ex) : `<div style="font-size:var(--fs-1);color:var(--c-text-3);margin-top:var(--sp-0-5);display:flex;gap:var(--sp-1);flex-wrap:wrap">
           <span style="text-transform:capitalize">${esc(ex.muscleGroup)}</span>
           <span>·</span>
           <span style="text-transform:capitalize">${esc(ex.equipment)}</span>
           <span>·</span>
           <span style="text-transform:capitalize">${esc(ex.mechanic)}</span>
-        </div>
+        </div>`}
       `;
       btn.dataset.name = ex.name;
       listEl.appendChild(btn);
@@ -663,8 +674,17 @@ export async function openExercisePickerModal(filterCategory, onSelect) {
       });
       btn.classList.add('active');
       activeFilter = btn.dataset.cat;
+      activeMuscle = null;
       renderList();
     });
+  });
+
+  // DATA-4: делегат подчипов мышц — повторный тап по активной снимает отбор.
+  subEl?.addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-muscle]');
+    if (!chip) return;
+    activeMuscle = activeMuscle === chip.dataset.muscle ? null : chip.dataset.muscle;
+    renderList();
   });
 
   const addCustomBtn = overlay.querySelector('#add-ex-add-custom');
