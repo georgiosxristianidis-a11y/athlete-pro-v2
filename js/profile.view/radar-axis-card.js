@@ -107,6 +107,8 @@ export function axisCardHtml(axis, ctx) {
   const muscles = entry && isRu()
     ? `<div class="pp-rc-muscles">${esc(entry.familyRu)} · ${entry.muscles.map((m) => esc(/** @type {Record<string, string>} */ (MUSCLE_RU)[m] || m)).join(', ')}</div>`
     : '';
-  const go = `<button type="button" class="btn-text pp-radar-go" data-action="radar-open-stats">${tri('График', 'Chart', 'Γράφημα')}</button>`;
+  // Ключ семейства — тот же `family:<id>`, что у карточки Stats (family-curves.js); вне реестра — без него.
+  const famAttr = entry ? ` data-family="family:${esc(entry.family)}"` : '';
+  const go = `<button type="button" class="btn-text pp-radar-go" data-action="radar-open-stats"${famAttr}>${tri('График', 'Chart', 'Γράφημα')}</button>`;
   return head + body + muscles + go;
 }

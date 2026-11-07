@@ -224,7 +224,7 @@ function curveCard(s, idx) {
   }
 
   const html = `
-    <div class="sc-card chart-card" style="--sc:${color}" data-action="analytics:openExercise" data-exercise="${esc(s.name)}" role="button" tabindex="0" aria-label="${esc(s.name)}">
+    <div class="sc-card chart-card" style="--sc:${color}" data-action="analytics:openExercise" data-exercise="${esc(s.name)}"${s.family ? ` data-family="${esc(s.family)}"` : ''} role="button" tabindex="0" aria-label="${esc(s.name)}">
       <div class="sc-head">
         <div class="sc-name">${esc(s.name)}</div>
         <div class="sc-cur">${cur}<span class="sc-unit">${curUnit}</span></div>

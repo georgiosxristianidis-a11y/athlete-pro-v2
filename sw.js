@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-30ff0c0f';
+const CACHE_NAME = 'athlete-pro-v121-c5870547';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -147,6 +147,7 @@ const ASSETS_WARM = [
   '/js/shared/plate-math.js',
   '/js/shared/rest-next-set.js',
   '/js/shared/sse.js',
+  '/js/shared/stats-focus.js',
   '/js/shared/sync-dot.js',
   '/js/shared/sync-merge.js',
   '/js/shared/txt-export.js',

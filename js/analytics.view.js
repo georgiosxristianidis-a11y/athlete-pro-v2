@@ -44,6 +44,7 @@ import {
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { ORM_BODY_ID, mergeORMRows, ormSectionHtml, setORMExpanded } from './shared/orm-list.js';
 import { on } from './events.js';
+import { takeStatsFocus, findFamilyCard } from './shared/stats-focus.js';
 import { fmtDate, fmtWeight } from './shared/format.js';
 import { pplColor, pplColorAlpha, isPplType, PPL_TYPES } from './shared/ppl-color.js';
 
@@ -89,6 +90,7 @@ const PERIOD_LABEL_KEY = {
  * @returns {Promise<void>}
  */
 export async function load() {
+  const focusFamily = takeStatsFocus(); // DATA-4: «График» из радара — один заход, фокус сбрасывается
   const screen = document.getElementById('s-stats');
   if (!screen) return;
 
@@ -214,10 +216,22 @@ export async function load() {
     console.warn('[analytics.view] progression curves render error:', err);
     renderStrengthCurves(workouts, document.getElementById('strength-curves'));
   }
+  _focusFamilyCard(focusFamily);
   _renderCalendar(workouts);
   const trend = await fetchWeeklyTrend(10);
   _renderVolumeChart(workouts, trend);
   _renderORMList(orms);
+}
+
+/** Подсветить и показать карточку семейства (флаг `stats-families`); нет карточки — Stats как раньше.
+ * @param {string|null} family */
+function _focusFamilyCard(family) {
+  const card = findFamilyCard(document.querySelectorAll('#strength-curves .sc-card'), family);
+  if (!card) return;
+  const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  card.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' });
+  card.classList.add('sc-focus');
+  setTimeout(() => card.classList.remove('sc-focus'), 2400);
 }
 
 /** Workouts inside the currently selected period (AN-1). */

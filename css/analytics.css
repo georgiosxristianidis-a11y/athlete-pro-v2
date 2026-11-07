@@ -415,6 +415,10 @@
   transform: scale(var(--press-scale));
   border-color: var(--c-border-h);
 }
+/* DATA-4: карточка семейства, на которую пришли из радара («График») — акцентный фон на пару секунд */
+.sc-card.sc-focus {
+  background: var(--c-accent-bg);
+}
 .sc-head {
   display: flex;
   align-items: baseline;
