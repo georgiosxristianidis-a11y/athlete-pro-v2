@@ -25,7 +25,7 @@
 12. DATA-2 — `history-records`: «Мой максимум», стаж, сверка на экспорте
 13. DATA-3 — `stats-families`: жим ногами и штанга на Stats
 14. PLATE-2 — `plate-toy`: тап по грифу, отскок 7 px, вибро 8 мс
-15. Развилки и мокапы (DATA, usage, SWAP-1: поиск B, радар A) — `HANDOFF_data_logic.md` § Развилки Gio
+15. Развилки и мокапы (DATA-4 влита, флаг muscles-ui у Gio; SWAP-1) — `HANDOFF_data_logic.md` § Развилки Gio
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 

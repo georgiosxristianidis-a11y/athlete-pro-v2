@@ -194,6 +194,14 @@ const DEFAULTS = {
   // 1ПМ мелко в конце, вариант виден подписью. IDB и формулы не меняются. OFF — прежние карточки побитно.
   // Default OFF до поля Gio; тумблер в Лаборатории (LAB-2). Kill switch: Flags.setFlag('stats-families', false)
   'stats-families': false,
+  // DATA-4 (выбор Gio 07.11: поиск B, радар A): мышцы в поиске упражнений и в радаре Профиля.
+  // ON: в пикере под категорией раскрываются подчипы мышц (Push → Грудь/Плечи/Трицепс), у
+  // карточки — лейблы семейства и мышц в тоне PPL (js/workout.view/picker-muscles.js); оси
+  // радара силы тапаются и открывают карточку оси: «Мой максимум», 1ПМ, уровень, мышцы, «График»
+  // (js/profile.view/radar-axis-card.js). IDB, выбор myMax и второй пикер (замена) не меняются.
+  // OFF — пикер и радар побитно прежние. Default OFF до поля Gio; тумблер в Лаборатории.
+  // Kill switch: Flags.setFlag('muscles-ui', false)
+  'muscles-ui': false,
 };
 
 /** @param {string} name @returns {boolean} */
@@ -223,7 +231,7 @@ export function allFlags() {
  * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
  * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
  */
-export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'gym-equipment', 'exercise-registry', 'history-records', 'stats-families', 'plate-toy']);
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'gym-equipment', 'exercise-registry', 'history-records', 'stats-families', 'plate-toy', 'muscles-ui']);
 
 /** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
 export function isOverridden(name) {
