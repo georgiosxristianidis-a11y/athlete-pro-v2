@@ -25,12 +25,12 @@
 12. DATA-2 — `history-records`: «Мой максимум», стаж, сверка на экспорте
 13. DATA-3 — `stats-families`: жим ногами и штанга на Stats
 14. PLATE-2 — `plate-toy`: тап по грифу, отскок 7 px, вибро 8 мс
-15. Развилки и мокапы (DATA-4 влита, флаг muscles-ui у Gio; SWAP-1) — `HANDOFF_data_logic.md` § Развилки Gio
+15. Развилки и мокапы (DATA-4 влита, флаг muscles-ui у Gio; SWAP-1a влита, 1b — UI и флаг) — `HANDOFF_data_logic.md` § Развилки Gio
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
 0. P0 (`HANDOFF_launch_track.md` § P0): `P0-AI-CONSENT` (развилка Gio)
-1. `ANL-ALT` (поглощена DATA-3 при `stats-families` ON, закрыть после поля п.13), `DATA-4`, `SWAP-1` — после развилок Gio (`HANDOFF_data_logic.md`)
+1. `ANL-ALT` (поглощена DATA-3 при `stats-families` ON, закрыть после поля п.13), `DATA-4`, `SWAP-1b` (1a влита) — после развилок Gio (`HANDOFF_data_logic.md`)
 2. Фон, по одной за PR: A10 (хендофф Cursor); **`SUPA-1`** 08.11: неделя зелёных keep-alive
 3. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
 4. `GEAR-1`** к коду; **`HOME-4` (флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`

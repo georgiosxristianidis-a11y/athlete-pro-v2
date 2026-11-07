@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-520c8994';
+const CACHE_NAME = 'athlete-pro-v121-c653a10e';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -47,6 +47,7 @@ const ASSETS = [
   '/js/shared/chamber-pill.js',
   '/js/shared/cryptoClient.js',
   '/js/shared/errors-ui.js',
+  '/js/shared/exercise-registry.js',
   '/js/shared/format.js',
   '/js/shared/lazy-css.js',
   '/js/shared/ppl-color.js',
@@ -54,6 +55,7 @@ const ASSETS = [
   '/js/shared/sparkline.js',
   '/js/shared/spring.js',
   '/js/shared/sw-update.js',
+  '/js/shared/swap-groups.js',
   '/js/shared/sync-secrets.js',
   '/js/shared/theme.js',
   '/js/shared/utils.js',
@@ -128,7 +130,6 @@ const ASSETS_WARM = [
   '/js/shared/exercise-identity.js',
   '/js/shared/exercise-label.js',
   '/js/shared/exercise-records.js',
-  '/js/shared/exercise-registry.js',
   '/js/shared/exercise-shorthand.js',
   '/js/shared/family-curves.js',
   '/js/shared/field-shake.js',
