@@ -375,7 +375,7 @@ export const EL = {
   'train.skip_today': 'Παράλειψη σήμερα',
   'train.skipped': 'Παραλείφθηκε σήμερα',
   'train.skipped_undo': 'Πάτησε για επαναφορά',
-  'train.skipped_toast': '{name}: μετακινήθηκε στο τέλος',
+  'train.skipped_toast': '{name}: στο τέλος',
   'train.undo': 'Αναίρεση',
   'rest.skipped_toast': 'Η ξεκούραση παραλείφθηκε',
   'train.menu_cancel': 'ΑΚΥΡΩΣΗ',
