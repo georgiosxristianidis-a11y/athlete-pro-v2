@@ -186,6 +186,11 @@
       "Bash(git push *--no-verify*)",
       "Bash(git commit *--no-verify*)",
       "Bash(git add -f*)",
+      "Bash(git add -Af*)",
+      "Bash(git add -uf*)",
+      "Bash(git add -Nf*)",
+      "Bash(git add -vf*)",
+      "Bash(git add -nf*)",
       "Bash(git add * -f)",
       "Bash(git add * -f *)",
       "Bash(git add *--force*)",
@@ -222,6 +227,5 @@
       "Bash(vercel promote*)",
       "Bash(vercel rollback*)"
     ]
-  },
-  "model": "claude-opus-4.6"
+  }
 }
