@@ -1326,6 +1326,16 @@ button:focus-visible {
     transform var(--t-fast),
     opacity var(--t-fast);
 }
+/* UNDO-1/2: «Вернуть» жмут потным пальцем в зале — зона ≥44px невидимым
+   ::after, глиф не растёт (тот же приём, что у кнопок отдыха в острове). */
+.toast-action {
+  position: relative;
+}
+.toast-action::after {
+  content: '';
+  position: absolute;
+  inset: -12px -10px;
+}
 .toast-action:active {
   transform: scale(var(--press-scale));
   opacity: 0.75;

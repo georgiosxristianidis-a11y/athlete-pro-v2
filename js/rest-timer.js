@@ -40,6 +40,7 @@ export const RestTimer = (() => {
   let _overrun = null; // PANDA-1: 5s watcher over "rest expired, still no set"
   let _overrunFrom = 0; // epoch-ms the overrun started
   let _overrunGen = 0; // invalidates in-flight panda-mood import()
+  let _gen = 0; // UNDO-2: номер отдыха — «Вернуть» старого тоста не перебьёт новый отдых
 
   /** PANDA-1 — мимики живут в видео-FAB, без него включать нечего. */
   const _moodsOn = () => flag('panda-moods') && flag('fab-video');
@@ -85,9 +86,20 @@ export const RestTimer = (() => {
   }
 
   function start(_exName, _setLabel, duration) {
+    _run(Date.now() + duration * 1000, duration);
+  }
+
+  /**
+   * Запуск отсчёта к абсолютному _end. Общий для start и UNDO-2 (возврат
+   * пропущенного отдыха к тому же _end — время шло, пока висел тост).
+   * @param {number} end epoch-ms конца отдыха
+   * @param {number} total полная длительность, сек (для доли полосы)
+   */
+  function _run(end, total) {
     stop(); // clear any prior rest cleanly (снимает и осуждение)
-    _total = duration;
-    _end = Date.now() + duration * 1000;
+    _gen++;
+    _total = total;
+    _end = end;
     _done = false;
 
     // Same rule dynamic-island.js uses for its rest-HUD "далее: X" sublabel
@@ -104,7 +116,7 @@ export const RestTimer = (() => {
     // (Profile.toggleNotify), по тапу пользователя.
     _render(); // immediate paint
     _interval = setInterval(_render, 1000); // 1 Hz — no rAF freeze, no 60fps churn
-    _alarm = setTimeout(_finish, duration * 1000 + 250); // fires near on-time if page stays alive
+    _alarm = setTimeout(_finish, Math.max(0, _end - Date.now()) + 250); // fires near on-time if page stays alive
     document.addEventListener('visibilitychange', _onVisible); // instant catch-up on return
   }
 
@@ -158,7 +170,26 @@ export const RestTimer = (() => {
   }
 
   function tapSkip() {
+    const running = _interval !== null && !_done;
+    const end = _end;
+    const total = _total;
     stop();
+    // UNDO-2: крупная кнопка пропуска стоит под большим пальцем — промах
+    // потным пальцем терял отдых насовсем. Тост «Вернуть» запускает отсчёт к
+    // тому же _end: секунды, пока висел тост, тоже отдых. Новый подход за это
+    // время (_gen сдвинулся) или истёкший срок — возвращать нечего.
+    if (!running || !flag('rest-skip-undo')) return;
+    const gen = _gen;
+    // @ts-ignore
+    window.Toast?.show(t('rest.skipped_toast'), 'info', 4000, {
+      action: {
+        label: t('train.undo'),
+        onClick: () => {
+          if (gen !== _gen || end - Date.now() <= 0) return;
+          _run(end, total);
+        },
+      },
+    });
   }
 
   function _finish() {

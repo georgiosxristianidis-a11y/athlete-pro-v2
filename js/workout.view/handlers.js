@@ -532,11 +532,25 @@ export async function showExerciseMenu(ei) {
  * @param {number} ei
  */
 export async function skipExerciseToday(ei) {
+  const ex = State.plan[ei];
   if (!skipExercise(State.plan, ei)) return;
   haptic(10);
   persistSession();
   await renderActive();
-  Toast.show(t('train.skipped_toast'), 'info');
+  // UNDO-1: случайный тап по пункту меню отменяется кнопкой в тосте. Индекс
+  // ищется по ссылке на момент тапа — за 5 с план мог сдвинуться (второй
+  // пропуск, возврат тапом по карточке). Имя в тексте разводит тосты двух
+  // пропусков подряд: одинаковый текст схлопнулся бы в первый, и «Вернуть»
+  // второго молча вернул бы не то.
+  Toast.show(t('train.skipped_toast', { name: ex.name }), 'info', 5000, {
+    action: {
+      label: t('train.undo'),
+      onClick: () => {
+        const i = State.plan.indexOf(ex);
+        if (i !== -1) _unskipExercise(i);
+      },
+    },
+  });
 }
 
 /**
