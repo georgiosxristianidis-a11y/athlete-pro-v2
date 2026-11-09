@@ -184,7 +184,7 @@ node --test test/smoke.test.js  # Run specific test
 
 ## Common Pitfalls to Avoid
 
-1. **Don't modify completed phases** - See .planning/STATE.md
+1. **Don't modify completed phases** - shipped work is recorded in `CHANGELOG.md`, the live queue is `NEXT_SESSION.md`
 2. **Don't expose API keys** - All AI calls through backend
 3. **Don't skip IndexedDB versioning** - Increment DB_VERSION on schema changes
 4. **Don't use frameworks** - Keep it vanilla

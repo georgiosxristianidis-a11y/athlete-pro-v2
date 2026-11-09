@@ -137,6 +137,13 @@
     JSON-векторы HRV, очередь Room с `commit`, исключение WebView из бэкапа Android. Нативный
     origin ломает относительные `/api/*` — CORS и CSP до первой сборки. Пульс в PWA без
     Capacitor — `ORBIT-1` (`docs/_archive/HANDOFF_hr_orbit.md`).
+  - **невзятое из снятого `.planning/`** (AUD-14, 09.11; исходники —
+    `git show 761ce9e4:.planning/phases/<файл>`). Из `ELITE-EVOLUTION-PLAN.md`: три режима острова
+    (ultra-min / mini / detail + жест; остров с тех пор переписан — сперва перечитать
+    `js/shared/dynamic-island.js`), Remote Bridge («Next Set» извне), Wear OS, Health Connect; при
+    живом пульсе (`ORBIT-1`) снять декоративный BPM — DI-3 в `docs/DELEGATION-PLAN.md`. Из
+    `2026-04-25-workspace-optimization.md`: `/showcase` (Storybook-lite), визуальная регрессия
+    Playwright; критерий «нет JS-файла > 800 строк» не выполнен и гарда не имеет — решается в `AUD-4`.
 - Для каждой новой фичи один и тот же цикл:
   1. Сформулировать цель.
   2. Продумать UX‑флоу.
