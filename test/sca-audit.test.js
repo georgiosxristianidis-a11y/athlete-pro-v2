@@ -44,6 +44,8 @@ import {
   formatLines,
   parseArgs,
   run,
+  unusedExceptions,
+  warningLines,
 } from '../scripts/sca-audit.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -791,4 +793,110 @@ test('SCA-1: живой список исключений — данные, а �
     const d = new Date(`${e.review}T00:00:00Z`);
     assert.equal(d.toISOString().slice(0, 10), e.review, 'дата пересмотра существует');
   }
+});
+
+// --- AUD-3: moderate вслух, мёртвые исключения вслух ------------------------
+//
+// BASELINE (9f87f9dd): живой `npm audit --omit=dev` — 3 moderate (qs → express,
+// body-parser), гард печатал одно «[SCA Pass]» и молчал о них; запись braces в
+// EXCEPTIONS пережила свою дату пересмотра молча — в отчёте её не было.
+
+/** Адвайзори qs из живого `npm audit --omit=dev` 2026-11-10. */
+const QS_ADVISORY = {
+  source: 1111111,
+  name: 'qs',
+  dependency: 'qs',
+  title: 'qs test advisory',
+  url: 'https://github.com/advisories/GHSA-6pq8-jhm2-2vcw',
+  severity: 'moderate',
+  range: '*',
+};
+
+const PROD_QS = auditResult({
+  qs: { name: 'qs', severity: 'moderate', via: [QS_ADVISORY], fixAvailable: true },
+  express: { name: 'express', severity: 'moderate', via: ['qs'], fixAvailable: true },
+  'body-parser': { name: 'body-parser', severity: 'moderate', via: ['qs'], fixAvailable: true },
+});
+
+test('AUD-3: moderate в production печатаются предупреждением и не блокируют', async () => {
+  const r = await runScoped({ dev: PROD_QS, prod: PROD_QS, argv: ['--omit-dev', '--retries=0'] });
+  assert.equal(r.code, EXIT.CLEAN, 'порог блока не сдвинут: moderate проходит');
+  assert.match(r.text, /\[SCA Pass\]/);
+  assert.match(r.text, /\[SCA Warn\] Moderate в production-зависимостях: 3/);
+  assert.match(r.text, /qs \(фикс: npm audit fix\)/);
+  assert.match(r.text, /express \(фикс: npm audit fix\)/);
+});
+
+test('AUD-3: moderate видны и рядом с блокирующей находкой', async () => {
+  const both = auditResult({
+    ...bracesChain(),
+    qs: { name: 'qs', severity: 'moderate', via: [QS_ADVISORY], fixAvailable: true },
+  });
+  const r = await runScoped({ dev: both, exceptions: [] });
+  assert.equal(r.code, EXIT.FINDING);
+  assert.match(r.text, /\[SCA Warn\] Moderate в зависимостях \(включая dev\): 1/);
+});
+
+test('AUD-3: фикс moderate мажором назван честно, не «npm audit fix»', () => {
+  const v = classify(
+    auditResult({
+      minimatch: {
+        name: 'minimatch',
+        severity: 'moderate',
+        via: [foreignAdvisory('minimatch', 'moderate')],
+        fixAvailable: { name: 'eslint', version: '9.39.5', isSemVerMajor: true },
+      },
+    })
+  );
+  assert.match(warningLines(v).join('\n'), /minimatch \(фикс: только мажором\)/);
+});
+
+test('AUD-3: чистый отчёт без moderate — предупреждений нет', async () => {
+  const r = await runScoped({ dev: CLEAN_REPORT, exceptions: [] });
+  assert.equal(r.code, EXIT.CLEAN);
+  assert.doesNotMatch(r.text, /SCA Warn/);
+});
+
+test('AUD-3: мёртвое исключение (нет в отчёте) — вслух, но не блок; просроченное тоже', async () => {
+  const expired = { ...BRACES_EXCEPTION, review: '2026-11-04' };
+  const r = await runScoped({
+    dev: PROD_QS,
+    exceptions: [expired],
+    now: new Date('2026-11-10T00:00:00Z'),
+  });
+  assert.equal(r.code, EXIT.CLEAN, 'запись не задействована — блокировать нечего');
+  assert.match(
+    r.text,
+    /\[SCA Warn\] Исключение GHSA-vfj7-8cjw-p6xm \(braces\) в отчёте не задействовано/
+  );
+  assert.deepEqual(unusedExceptions(classify(PROD_QS).report, [expired]), [expired]);
+
+  // --omit-dev не видит dev-цепочек — судить о мёртвости по нему нельзя.
+  const prodOnly = await runScoped({
+    dev: PROD_QS,
+    prod: PROD_QS,
+    argv: ['--omit-dev', '--retries=0'],
+    exceptions: [expired],
+  });
+  assert.doesNotMatch(prodOnly.text, /не задействовано/);
+});
+
+test('AUD-3: задействованное исключение мёртвым не считается', () => {
+  assert.deepEqual(unusedExceptions(classify(DEV_BRACES).report, [BRACES_EXCEPTION]), []);
+});
+
+test('AUD-3: просроченная запись, задействованная в выдаче, красит гейт', async () => {
+  const r = await runScoped({ dev: DEV_BRACES, now: new Date('2026-11-10T00:00:00Z') });
+  assert.equal(r.code, EXIT.FINDING);
+  assert.match(r.text, /не действует: дата пересмотра 2026-11-04 наступила/);
+  assert.doesNotMatch(r.text, /не задействовано/);
+});
+
+test('AUD-3: в CI предупреждения уходят аннотацией', async () => {
+  const r = await runScoped({ dev: PROD_QS, exceptions: [], env: { GITHUB_ACTIONS: 'true' } });
+  assert.match(r.text, /::warning title=SCA предупреждение::Moderate в зависимостях/);
+});
+
+test('AUD-3: живой список исключений не держит мёртвую запись braces', () => {
+  assert.ok(!EXCEPTIONS.some((e) => e.id === 'GHSA-vfj7-8cjw-p6xm'));
 });

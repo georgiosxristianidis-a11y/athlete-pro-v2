@@ -234,15 +234,13 @@ export function classify(result) {
  * Список исключений. Запись: адвайзори GHSA, пакет, в котором он сидит, причина
  * одной строкой и дата пересмотра YYYY-MM-DD.
  */
-export const EXCEPTIONS = Object.freeze([
-  Object.freeze({
-    id: 'GHSA-vfj7-8cjw-p6xm',
-    package: 'braces',
-    reason:
-      'DoS через вложенный паттерн; braces только в dev-цепочке stylelint, паттерны — наши CSS-глобы, в бандл не попадает; патча нет',
-    review: '2026-11-04',
-  }),
-]);
+//
+// Пуст с AUD-3 (2026-11-10): запись braces/GHSA-vfj7-8cjw-p6xm умерла — braces
+// ушёл из дерева, `npm audit` его не показывает. Дата пересмотра 2026-11-04
+// прошла, а гард молчал: просрочку он читает только у задействованной записи.
+// Чтобы мёртвая запись не висела молча, прогон с dev печатает её строкой
+// `[SCA Warn]` (см. unusedExceptions).
+export const EXCEPTIONS = Object.freeze([]);
 
 /** Уровни ниже порога блока: такой корень не блокирует и исключения не требует. */
 const NON_BLOCKING_LEVELS = ['info', 'low', 'moderate'];
@@ -409,6 +407,63 @@ export function applyExceptions(verdict, { prod, now = new Date(), exceptions = 
   };
 }
 
+/**
+ * Находки ниже порога блока (moderate): не блокируют, но печатаются — иначе гард
+ * зелёный и немой, а moderate в production-дереве никто не видит (AUD-3). Порог
+ * блока (BLOCK_LEVELS) этим не меняется.
+ */
+export function moderateFindings(report) {
+  return Object.entries(report?.vulnerabilities ?? {})
+    .filter(([, v]) => v?.severity === 'moderate')
+    .map(([name, v]) => ({
+      name,
+      fix: hasPatch(v.fixAvailable) ? 'npm audit fix' : v.fixAvailable ? 'только мажором' : 'нет',
+    }));
+}
+
+/**
+ * Исключения, которых нет в отчёте вовсе: ни адвайзори в `via`, ни записи пакета.
+ * Мёртвая запись не действует и не блокирует, но держать её молча — значит
+ * пропустить её дату пересмотра (AUD-3). Судить можно только по прогону с dev:
+ * --omit-dev не видит dev-цепочек, где исключения и живут.
+ */
+export function unusedExceptions(report, exceptions = EXCEPTIONS) {
+  const vulns = report?.vulnerabilities ?? {};
+  return exceptions.filter(
+    (exc) => !Object.hasOwn(vulns, exc.package) && carriersOf(report, exc).length === 0
+  );
+}
+
+/** Предупреждения поверх вердикта: moderate и мёртвые исключения. Код выхода не меняют. */
+export function warningLines(verdict, { omitDev = false, exceptions = EXCEPTIONS } = {}) {
+  if (!verdict?.report) return [];
+  const scope = omitDev ? 'production-зависимостях' : 'зависимостях (включая dev)';
+  const lines = [];
+  const mods = moderateFindings(verdict.report);
+  if (mods.length) {
+    lines.push(
+      `[SCA Warn] Moderate в ${scope}: ${mods.length} — не блокирует (порог: ${BLOCK_LEVELS.join('/')}).`,
+      `   Пакеты: ${mods.map((m) => `${m.name} (фикс: ${m.fix})`).join(', ')}`
+    );
+  }
+  if (!omitDev) {
+    for (const exc of unusedExceptions(verdict.report, exceptions)) {
+      lines.push(
+        `[SCA Warn] Исключение ${exc.id} (${exc.package}) в отчёте не задействовано — снять запись (пересмотр ${exc.review}).`
+      );
+    }
+  }
+  return lines;
+}
+
+/** Предупреждения в CI — аннотацией, иначе их не видно в зелёном шаге. */
+function annotateWarnings(lines, out, env) {
+  if (env.GITHUB_ACTIONS !== 'true') return;
+  for (const line of lines.filter((l) => l.startsWith('[SCA Warn]'))) {
+    out.log(`::warning title=SCA предупреждение::${line.slice('[SCA Warn] '.length)}`);
+  }
+}
+
 /** Один прогон `npm audit --json`. Вынесен отдельно — в тестах подменяется. */
 export function auditOnce({ omitDev = false } = {}) {
   const args = ['audit', '--json'];
@@ -559,16 +614,19 @@ export async function run(opts = {}) {
   }
 
   const lines = formatLines(verdict, cfg);
+  const warnings = warningLines(verdict, { omitDev: cfg.omitDev, exceptions });
 
   if (verdict.outcome === OUTCOME.CLEAN) {
-    for (const line of lines) out.log(line);
+    for (const line of [...lines, ...warnings]) out.log(line);
     annotateExceptions(verdict, out, env);
+    annotateWarnings(warnings, out, env);
     return EXIT.CLEAN;
   }
 
   if (verdict.outcome === OUTCOME.FINDING) {
-    for (const line of lines) out.error(line);
+    for (const line of [...lines, ...warnings]) out.error(line);
     annotateExceptions(verdict, out, env);
+    annotateWarnings(warnings, out, env);
     if (env[BYPASS_ENV] === '1') {
       out.error(`   ${BYPASS_ENV}=1 — находка пропущена осознанно.`);
       return EXIT.CLEAN;
