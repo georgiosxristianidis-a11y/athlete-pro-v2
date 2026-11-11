@@ -29,7 +29,7 @@
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
-0. P0 (`HANDOFF_launch_track.md` § P0): `P0-AI-CONSENT` (развилка Gio)
+0. P0 (`HANDOFF_launch_track.md` § P0): `P0-AI-CONSENT` (развилки решены, к коду)
 1. `ANL-ALT` (поглощена DATA-3 при `stats-families` ON, закрыть после поля п.13), `DATA-4`, `SWAP-1b` (1a влита) — после развилок Gio (`HANDOFF_data_logic.md`)
 2. Фон, по одной за PR: A10 и `AUD-*` (хендофф Cursor, § Аудит 09.11); **`SUPA-1`** 08.11: неделя зелёных keep-alive
 3. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
