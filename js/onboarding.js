@@ -12,7 +12,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { DB } from './db.js';
-import { setPrivacyMode, setAiEnabled } from './privacy.store.js';
+import { setPrivacyMode } from './privacy.store.js';
 import { on, onChange, onInput } from './events.js';
 import { t, getLang, setLang } from './locale.store.js';
 import { blockTicks } from './shared/block-ticks.js';
@@ -161,8 +161,9 @@ export async function commitOnboarding() {
     DB.Settings.set('sex', _data.sex), // legacy mirror — body-stats Navy formula
     DB.Settings.set('profile.dob', _data.dob),
     DB.Metrics.save(Number(_data.weight), Number(_data.height)),
+    // P0-AI-CONSENT (решение 4): режим выбирается как раньше, ИИ онбординг
+    // не включает — согласие спрашивается при первом явном тапе по ИИ.
     setPrivacyMode(_data.privacy),
-    setAiEnabled(_data.privacy !== 'airgap'),
     DB.Settings.set('onboarding-complete', true),
     clearOnboardingDraft(),
   ]);

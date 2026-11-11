@@ -218,6 +218,22 @@
   line-height: 1.4;
 }
 .intel-local-banner svg { flex-shrink: 0; }
+/* P0-AI-CONSENT: явная дверь к экрану согласия. Текстовая ссылка, не CTA —
+   локальный режим законен, ИИ предлагается, а не навязывается. */
+.intel-local-enable {
+  flex: none;
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0 var(--sp-1);
+  background: none;
+  border: 0;
+  color: var(--c-text-1);
+  font: inherit;
+  font-weight: var(--fw-bold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
 
 /* ── Ожидание ответа: стеклянный скелетон (HUD-2) ──
    Пришёл на смену одиночному маркеру: он держит высоту карточки заранее,
