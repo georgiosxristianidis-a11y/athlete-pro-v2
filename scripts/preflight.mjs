@@ -19,10 +19,12 @@
 //      проверяем то, что реально держит main на этом плане, — .githooks/pre-push.
 //      Три состояния, а не два: снятый потолок enforce_admins — это WARN, а не FAIL,
 //      он оставлен как выход из аварии раннеров. Разбор — scripts/main-protection.mjs.
+//   6b. secret scanning / push protection выключены -> секрет провайдерского формата
+//      уезжает в публичную историю без барьера (AUD-17a). Разбор — scripts/secret-scanning.mjs.
 //   7. Production-деплой не с main  -> прод живёт своей жизнью (кейс: смоук чист,
 //      а раскатка шла бы с чужой ветки)
 // Ненулевой exit = есть FAIL. WARN не блокирует.
-// Проверки 5-7 сетевые: оффлайн/нет gh = WARN-пропуск, сессию не блокируют.
+// Проверки 5-7 (и 6b) сетевые: оффлайн/нет gh = WARN-пропуск, сессию не блокируют.
 
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -30,6 +32,7 @@ import path from 'node:path';
 
 import { judgeProtection } from './main-protection.mjs';
 import { scanBase } from './rejected-lines.mjs';
+import { judgeSecretScanning } from './secret-scanning.mjs';
 import { judgeRootWip, scanRootWip } from './root-wip.mjs';
 import {
   BUDGETS,
@@ -368,6 +371,10 @@ if (!repoSlug || !fetched) {
     const verdict = judgeProtection(protRaw);
     add(verdict.level, 'защита main', verdict.msg, verdict.hint);
   }
+
+  // 6b. Secret scanning + push protection: только GET, вердикт — чистая функция.
+  const secret = judgeSecretScanning(tryGh(['api', `repos/${repoSlug}`]));
+  add(secret.level, 'секреты', secret.msg, secret.hint);
 
   // 7. Последний Production-деплой Vercel обязан быть коммитом из main.
   const depRaw = tryGh(['api', `repos/${repoSlug}/deployments?environment=Production&per_page=1`]);
