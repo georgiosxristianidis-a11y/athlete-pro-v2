@@ -115,7 +115,7 @@ async function openIntel(page, { tts = 'ok' } = {}) {
   await page.evaluate(async () => {
     const P = await import('/js/privacy.store.js');
     await P.setPrivacyMode('cloud');
-    await P.setAiEnabled(true);
+    await P.grantAiConsent(); // P0-AI-CONSENT: тумблер без маркера ИИ не включает
     window.Nav.go('s-intel');
   });
   await page.waitForSelector('[data-action="intel:weekly"]', { timeout: 12000 });
