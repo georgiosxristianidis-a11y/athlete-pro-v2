@@ -14,6 +14,9 @@ import {
   calendarDayMarkers,
   calendarStubTimestamp,
   fetchAllData,
+  fetchWorkoutsOnly,
+  isCalendarToday,
+  averageDurationMs,
   fetchWeeklyTrend,
   fmtVol,
   weekLabel,
@@ -243,9 +246,7 @@ function _periodWorkouts() {
 function _renderQuickStats() {
   const recent = _periodWorkouts();
   const totalVol = recent.reduce((s, w) => s + (w.tonnage || 0), 0);
-  const avgMs = recent.length
-    ? recent.reduce((s, w) => s + (w.duration || 0), 0) / recent.length
-    : 0;
+  const avgMs = averageDurationMs(recent);
   _set('an-total-sessions', recent.length);
   _set('an-total-vol', fmtVol(totalVol) + '<span class="stat-chip-unit">kg</span>');
   _set('an-avg-time', Math.round(avgMs / 60000) + '<span class="stat-chip-unit">m</span>');
@@ -414,7 +415,7 @@ function _drawCalendar() {
   for (let d = 1; d <= daysInMonth; d++) {
     const entry = workedDays[d],
       type = entry?.type || '',
-      isToday = new Date().getDate() === d && new Date().getMonth() === CalState.month;
+      isToday = isCalendarToday(CalState.year, CalState.month, d);
     const style = isPplType(type)
       ? `background:${pplColorAlpha(type, 0.125)};border-color:${pplColorAlpha(type, 0.25)}`
       : '';
@@ -442,7 +443,23 @@ function _drawCalendar() {
 }
 
 export function calDayClick(year, month, day, existingType, existingId, hasSets = false) {
-  openCalendarPicker(year, month, day, existingType, existingId, hasSets, load);
+  openCalendarPicker(year, month, day, existingType, existingId, hasSets, refreshCalendar);
+}
+
+/**
+ * ANL-A2: после правки дня перерисовать только календарь и то, что от записей зависит
+ * (чипы, баланс PPL). Полный `load()` пересобирал экран — скролл улетал наверх,
+ * лесенка `stagger-item` играла заново. Экран ещё не загружен — полный `load()`.
+ * @returns {Promise<void>}
+ */
+export async function refreshCalendar() {
+  if (!document.getElementById('cal-card')) return load();
+  const workouts = await fetchWorkoutsOnly();
+  if (!workouts.length) return load(); // последнюю запись убрали — нужен пустой экран
+  _workoutsCache = workouts;
+  _renderQuickStats();
+  _renderPPLBalance();
+  _renderCalendar(workouts);
 }
 
 function _renderVolumeChart(workouts, buckets) {

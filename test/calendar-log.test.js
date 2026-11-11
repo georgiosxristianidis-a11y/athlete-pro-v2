@@ -9,7 +9,10 @@ import {
   restoreCalendarEntry,
   calendarStubTimestamp,
   workoutHasSets,
+  isCalendarToday,
+  averageDurationMs,
 } from '../js/analytics.store.js';
+import { readFileSync } from 'node:fs';
 import { DB } from '../js/db.js';
 
 beforeEach(async () => {
@@ -221,5 +224,71 @@ describe('ANL-A1: удаление из календаря', () => {
     const r = await applyCalendarTypeTap({ existingId: null, type: 'push', timestamp: future });
     assert.equal(r.action, 'noop');
     assert.equal((await DB.Workouts.getAll()).length, 0);
+  });
+});
+
+describe('ANL-A2: «сегодня» с годом', () => {
+  const now = new Date(2026, 10, 11, 9, 0, 0);
+
+  test('тот же день и месяц в прошлом и будущем году — не сегодня', () => {
+    assert.equal(isCalendarToday(2026, 10, 11, now), true);
+    assert.equal(isCalendarToday(2025, 10, 11, now), false);
+    assert.equal(isCalendarToday(2027, 10, 11, now), false);
+  });
+
+  test('другой день или месяц того же года — не сегодня', () => {
+    assert.equal(isCalendarToday(2026, 10, 12, now), false);
+    assert.equal(isCalendarToday(2026, 9, 11, now), false);
+  });
+});
+
+describe('ANL-A2: среднее время без duration 0', () => {
+  const MIN = 60000;
+
+  test('заглушки и импорт (duration 0 / нет поля) не занижают среднее', () => {
+    const ws = [{ duration: 60 * MIN }, { duration: 40 * MIN }, { duration: 0 }, {}, { duration: null }];
+    assert.equal(averageDurationMs(ws), 50 * MIN);
+  });
+
+  test('нет ни одной тренировки с длительностью — 0, без NaN', () => {
+    assert.equal(averageDurationMs([]), 0);
+    assert.equal(averageDurationMs([{ duration: 0 }, {}]), 0);
+    assert.equal(averageDurationMs(undefined), 0);
+  });
+
+  test('отрицательная и нечисловая длительность игнорируются', () => {
+    assert.equal(averageDurationMs([{ duration: -5 }, { duration: 'x' }, { duration: 30 * MIN }]), 30 * MIN);
+  });
+});
+
+describe('ANL-A2: тап по дню не пересобирает экран', () => {
+  const src = readFileSync(new URL('../js/analytics.view.js', import.meta.url), 'utf8');
+
+  /** Тело функции верхнего уровня: от заголовка до первой строки, равной закрывающей скобке. */
+  const fnSrc = (head) => {
+    const i = src.indexOf(head);
+    if (i < 0) return '';
+    const lines = src.slice(i).split('\n');
+    const last = lines.findIndex((l) => l.startsWith('}'));
+    return lines.slice(0, last < 0 ? undefined : last + 1).join('\n');
+  };
+
+  // Юнитом на node DOM-скролл не поймать (нет вёрстки); держим проводку: лист дня
+  // получает refreshCalendar, а не полный load(), и refreshCalendar не пересобирает экран.
+  test('calDayClick отдаёт листу refreshCalendar, не load', () => {
+    const body = fnSrc('export function calDayClick');
+    assert.ok(body.includes('hasSets, refreshCalendar);'), 'лист дня должен получать refreshCalendar');
+    assert.doesNotMatch(body, /load/);
+  });
+
+  test('refreshCalendar: перерисовывает календарь и чипы, screen.innerHTML не трогает', () => {
+    const body = fnSrc('export async function refreshCalendar');
+    assert.ok(body, 'refreshCalendar не найден');
+    assert.match(body, /_renderCalendar\(/);
+    assert.match(body, /_renderQuickStats\(/);
+    assert.match(body, /_renderPPLBalance\(/);
+    assert.doesNotMatch(body, /innerHTML|fetchAllData|stagger/);
+    // load() допустим только запасным путём (экран не загружен / стало пусто)
+    assert.equal(body.split('load()').length - 1, 2);
   });
 });
