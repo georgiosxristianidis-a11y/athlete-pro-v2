@@ -294,6 +294,39 @@ export async function fetchAllData() {
 }
 
 /**
+ * ANL-A2: только тренировки — для перерисовки календаря и чипов после тапа по дню
+ * (без OneRM и Metrics, которые экран не меняет).
+ * @returns {Promise<import('./db.js').WorkoutRecord[]>}
+ */
+export async function fetchWorkoutsOnly() {
+  const workouts = await DB.Workouts.getAll();
+  _calWorkouts = workouts;
+  return workouts;
+}
+
+/**
+ * ANL-A2: клетка календаря — сегодня только при совпадении дня, месяца и года.
+ * @param {number} year @param {number} month @param {number} day
+ * @param {Date} [now]
+ */
+export function isCalendarToday(year, month, day, now = new Date()) {
+  return now.getFullYear() === year && now.getMonth() === month && now.getDate() === day;
+}
+
+/**
+ * ANL-A2: среднее время тренировки, мс. Заглушки календаря и импорт пишут
+ * `duration: 0` — это «неизвестно», а не нулевая тренировка: в среднее не входят.
+ * @param {Array<{ duration?: number }>} workouts
+ * @returns {number} 0, если ни у одной тренировки нет длительности
+ */
+export function averageDurationMs(workouts) {
+  const timed = (Array.isArray(workouts) ? workouts : []).filter(
+    (w) => Number.isFinite(w?.duration) && w.duration > 0
+  );
+  return timed.length ? timed.reduce((s, w) => s + w.duration, 0) / timed.length : 0;
+}
+
+/**
  * Fetch weekly volume trend data.
  * @param {number} weeks
  * @returns {Promise<Array<{label: string, start: number, end: number, tonnage: number}>>}
