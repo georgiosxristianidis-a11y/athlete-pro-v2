@@ -196,7 +196,11 @@ describe('CORE-8 — view: локальная ветка стоит ДО пох�
   }
 
   test('плашка «Локальный режим» одна — карточка не дублирует её, а стоит рядом', () => {
-    assert.equal(view.split('intel-local-banner').length - 1, 1);
+    // P0-AI-CONSENT: разметка плашки живёт в хелпере ai-consent.view; view зовёт его ровно раз.
+    const helper = stripComments(read('js/ai-consent.view.js'));
+    assert.equal(view.split('aiLocalBannerHtml(').length - 1, 1, 'view зовёт хелпер плашки ровно раз');
+    assert.equal(view.split('intel-local-banner').length - 1, 0, 'view не рисует плашку сам — дубль');
+    assert.equal(helper.split('intel-local-banner').length - 1, 1, 'класс плашки — один, в хелпере');
     assert.match(view, /id="intel-local-mount"/);
     assert.doesNotMatch(view, /getAiEnabled\(\)/, 'развилка режима — через isCoachLocal() стора');
   });
