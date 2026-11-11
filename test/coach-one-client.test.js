@@ -36,7 +36,7 @@ globalThis.window = /** @type {any} */ ({
   dispatchEvent: () => true,
 });
 
-const { setPrivacyMode, setAiEnabled } = await import('../js/privacy.store.js');
+const { setPrivacyMode, grantAiConsent } = await import('../js/privacy.store.js');
 const { streamCoachReply, COACH_MEMORY_EXCHANGES, COACH_MAX_CONTENT_LEN } = await import(
   '../js/intel.store.js'
 );
@@ -71,7 +71,7 @@ const ask = (/** @type {string} */ text, door) => streamCoachReply({ text, door 
 
 before(async () => {
   await setPrivacyMode('cloud');
-  await setAiEnabled(true);
+  await grantAiConsent(); // P0-AI-CONSENT: тумблер без маркера согласия ИИ не включает
 });
 
 describe('CORE-5 — память диалога: 3 обмена, потолок держится', () => {

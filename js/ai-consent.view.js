@@ -11,12 +11,36 @@
    `css/base.css`), здесь только содержимое шторки.
    ════════════════════════════════════════════════════════ */
 
-import { esc, haptic } from './shared/utils.js';
-import { t } from './locale.store.js';
-import { getPrivacyMode, grantAiConsent } from './privacy.store.js';
+import { html, raw, haptic, listenerGroup } from './shared/utils.js';
+import { tri } from './locale.store.js';
+import { getPrivacyMode, getAiEnabled, grantAiConsent } from './privacy.store.js';
 
 /** 0.26s --ease-decel + запас на отрисовку — как SHEET_MS в confirm.js. */
 const SHEET_MS = 350;
+
+/**
+ * Тексты шторки живут здесь через tri(), а не в DICT: `js/locale.store.js` стоит на
+ * потолке гигантов (`test/file-size-ratchet.test.js`), а читает их только этот модуль.
+ */
+const copy = () => ({
+  title: tri('Включить ИИ-коуча?', 'Turn on the AI coach?', 'Ενεργοποίηση του AI προπονητή;'),
+  leadChat: tri(
+    'Ответ на вопрос уйдёт на сервер вместе с:',
+    'Your question will be sent to the server along with:',
+    'Η ερώτησή σου θα σταλεί στον διακομιστή μαζί με:'
+  ),
+  lead: tri('Запросы к ИИ уйдут на сервер вместе с:', 'The server will receive:', 'Στον διακομιστή θα σταλούν:'),
+  itemHistory: tri('историей тренировок и замерами', 'workout history and measurements', 'ιστορικό προπονήσεων και μετρήσεις'),
+  itemText: tri('текстом сообщений', 'the text of your messages', 'το κείμενο των μηνυμάτων σου'),
+  itemPhoto: tri('фото, если приложено', 'a photo, if attached', 'φωτογραφία, αν επισυναφθεί'),
+  note: tri(
+    'Выключить можно в Профиле. Без ИИ подсказки считаются на устройстве.',
+    'You can turn it off in Profile. Without AI, tips are computed on this device.',
+    'Μπορείς να το απενεργοποιήσεις στο Προφίλ. Χωρίς AI οι συμβουλές υπολογίζονται στη συσκευή.'
+  ),
+  enable: tri('Включить ИИ', 'Turn on AI', 'Ενεργοποίηση AI'),
+  later: tri('Не сейчас', 'Not now', 'Όχι τώρα'),
+});
 
 const ICONS = {
   history:
@@ -33,6 +57,36 @@ const ICONS = {
  */
 export function canAskAiConsent() {
   return getPrivacyMode() !== 'airgap';
+}
+
+/**
+ * Дверь точки ИИ (чат, недельный отчёт): ИИ уже работает или режим airgap —
+ * шторки нет, ответ false и точка идёт своим путём; иначе — шторка.
+ * @param {'chat'|'general'} [context]
+ * @returns {Promise<boolean>} true — согласие дано только что, точке пора перерисоваться.
+ */
+export function aiConsentDoor(context = 'general') {
+  if (getAiEnabled() || !canAskAiConsent()) return Promise.resolve(false);
+  return requestAiConsent({ context });
+}
+
+/**
+ * Плашка локального режима Core: замок, подпись и (вне airgap) ссылка на шторку.
+ * @param {string} label уже локализованная подпись «локальный режим»
+ * @param {string} action data-action кнопки «Включить ИИ»
+ */
+export function aiLocalBannerHtml(label, action) {
+  const enable = canAskAiConsent()
+    ? html`<button type="button" class="intel-local-enable" data-action="${action}">${copy().enable}</button>`
+    : '';
+  return html`
+      <div class="intel-local-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+        </svg>
+        <span>${label}</span>
+        ${raw(enable)}
+      </div>`;
 }
 
 /**
@@ -54,30 +108,32 @@ export function requestAiConsent({ context = 'general' } = {}) {
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-labelledby', 'ai-consent-title');
-    const lead = context === 'chat' ? t('aiConsent.leadChat') : t('aiConsent.lead');
-    const row = (icon, key) => `
+    const L = copy();
+    const row = (icon, text) => html`
           <li class="ai-consent-row">
-            <span class="ai-consent-ico">${icon}</span>
-            <span>${esc(t(key))}</span>
+            <span class="ai-consent-ico">${raw(icon)}</span>
+            <span>${text}</span>
           </li>`;
-    overlay.innerHTML = `
+    // html`` экранирует интерполяции сам; insertAdjacentHTML — пустой узел, AUD-1.
+    overlay.insertAdjacentHTML(
+      'beforeend',
+      html`
       <div class="modal-sheet confirm-sheet ai-consent-sheet" role="document">
         <div class="modal-handle"></div>
         <div class="modal-header">
-          <span class="modal-title" id="ai-consent-title">${esc(t('aiConsent.title'))}</span>
+          <span class="modal-title" id="ai-consent-title">${L.title}</span>
         </div>
-        <p class="ai-consent-lead">${esc(lead)}</p>
+        <p class="ai-consent-lead">${context === 'chat' ? L.leadChat : L.lead}</p>
         <ul class="ai-consent-list">
-          ${row(ICONS.history, 'aiConsent.itemHistory')}
-          ${row(ICONS.text, 'aiConsent.itemText')}
-          ${row(ICONS.photo, 'aiConsent.itemPhoto')}
+          ${raw(row(ICONS.history, L.itemHistory) + row(ICONS.text, L.itemText) + row(ICONS.photo, L.itemPhoto))}
         </ul>
-        <p class="ai-consent-note">${esc(t('aiConsent.note'))}</p>
+        <p class="ai-consent-note">${L.note}</p>
         <div class="confirm-actions ai-consent-actions">
-          <button type="button" class="confirm-btn ai-consent-btn ai-consent-later" data-act="cancel">${esc(t('aiConsent.later'))}</button>
-          <button type="button" class="confirm-btn ai-consent-btn ai-consent-ok" data-act="ok">${esc(t('aiConsent.enable'))}</button>
+          <button type="button" class="confirm-btn ai-consent-btn ai-consent-later" data-act="cancel">${L.later}</button>
+          <button type="button" class="confirm-btn ai-consent-btn ai-consent-ok" data-act="ok">${L.enable}</button>
         </div>
-      </div>`;
+      </div>`
+    );
     document.body.appendChild(overlay);
 
     const okBtn = /** @type {HTMLButtonElement} */ (overlay.querySelector('[data-act="ok"]'));
@@ -92,7 +148,7 @@ export function requestAiConsent({ context = 'general' } = {}) {
     const finish = (result) => {
       if (settled) return;
       settled = true;
-      document.removeEventListener('keydown', onKey, true);
+      keys.release();
       overlay.classList.remove('visible');
       setTimeout(() => {
         overlay.remove();
@@ -113,7 +169,9 @@ export function requestAiConsent({ context = 'general' } = {}) {
         (document.activeElement === okBtn ? cancelBtn : okBtn).focus();
       }
     };
-    document.addEventListener('keydown', onKey, true);
+    // listenerGroup — одна точка снятия (LEAK-1); снимается в finish().
+    const keys = listenerGroup(document);
+    keys.add('keydown', onKey, true);
 
     okBtn.addEventListener('click', async () => {
       if (settled) return;
