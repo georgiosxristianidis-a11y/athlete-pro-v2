@@ -51,7 +51,7 @@ globalThis.fetch = /** @type {any} */ (
 
 const { buildLocalInsights, LOCAL_INSIGHTS_MAX } = await import('../js/shared/local-insights.js');
 const { buildSnapshot } = await import('../js/shared/coach-snapshot.js');
-const { initPrivacy, getPrivacyMode, setPrivacyMode, setAiEnabled } = await import(
+const { initPrivacy, getPrivacyMode, setPrivacyMode, setAiEnabled, grantAiConsent } = await import(
   '../js/privacy.store.js'
 );
 const { isCoachLocal, localCoachInsights } = await import('../js/intel.store.js');
@@ -161,6 +161,8 @@ describe('CORE-8 — стор: airgap ON, ни одного запроса к м
     await setAiEnabled(false);
     assert.equal(isCoachLocal(), true);
     await setAiEnabled(true);
+    assert.equal(isCoachLocal(), true, 'P0-AI-CONSENT: тумблер без маркера согласия ИИ не включает');
+    await grantAiConsent();
     assert.equal(isCoachLocal(), false);
     await setPrivacyMode('airgap');
     assert.equal(isCoachLocal(), true, 'airgap обязан гасить ИИ, даже если тумблер был включён');
