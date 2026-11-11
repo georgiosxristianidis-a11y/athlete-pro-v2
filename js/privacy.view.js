@@ -11,7 +11,7 @@ import {
   getPrivacyMode,
   getAiEnabled,
   setPrivacyMode,
-  setAiEnabled,
+  revokeAiConsent,
   getAuditLog,
   clearAuditLog,
   loadPassportData,
@@ -21,6 +21,7 @@ import { isUsageEnabled, setUsageEnabled, getUsageState } from './usage.js';
 import { t, getLang, tri } from './locale.store.js';
 import { esc, haptic, dismissOverlay } from './shared/utils.js';
 import { confirmDialog } from './shared/confirm.js';
+import { requestAiConsent } from './ai-consent.view.js';
 import { on } from './events.js';
 import { initSegPill } from './ui/seg-pill.js';
 
@@ -211,10 +212,14 @@ async function _setMode(mode) {
 
 async function _toggleAi() {
   const cur = getAiEnabled();
-  await setAiEnabled(!cur);
+  // P0-AI-CONSENT (решения 6-7): включение — только через экран согласия;
+  // выключение стирает маркер (revokeAiConsent), следующее — снова через экран.
+  let next = false;
+  if (cur) await revokeAiConsent();
+  else next = await requestAiConsent();
   const sw = document.getElementById('sw-privacy-ai');
-  if (sw) sw.classList.toggle('on', !cur);
-  haptic(8);
+  if (sw) sw.classList.toggle('on', next);
+  if (cur) haptic(8);
 }
 
 async function _toggleUsage() {

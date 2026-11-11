@@ -4,9 +4,10 @@
    ────────────────────────────────────────────────────────
    Tri-state: 'cloud' | 'anon' | 'airgap'
    Independent toggle: aiEnabled (default false — opt-in)
+   AI also needs the device consent marker `ap-ai-consent` (P0-AI-CONSENT)
 
    safeFetch(url, opts, kind):
-     kind='ai'   → blocked unless mode!=airgap AND aiEnabled
+     kind='ai'   → blocked unless mode!=airgap AND aiEnabled AND consent
      kind='sync' → blocked unless mode!=airgap; identifiers stripped if anon
      kind='static' → always allowed (local assets only)
 
@@ -20,6 +21,15 @@ const KEY_MODE = 'privacy.mode';
 const KEY_AI = 'privacy.aiEnabled';
 const KEY_INSTALL = 'privacy.installedAt';
 const KEY_AUDIT = 'privacy.audit'; // last 50 fetch events (in-memory + persisted)
+/**
+ * P0-AI-CONSENT: маркер согласия на ИИ — отдельно от тумблера `privacy.aiEnabled`.
+ * Тумблер едет в бэкап (`js/db/backup.js`) и в синк (`js/db/settings.js`), поэтому
+ * «включил сам» от «включилось само / приехало с другого устройства» по нему не
+ * отличить. Маркер живёт только в localStorage этого устройства: не в
+ * `LOCAL_BACKUP_KEYS` (импорт его не принимает), префикс `ap-` не синкается, и не в
+ * `KEEP_ON_WIPE` — «удалить мои данные» стирает его вместе со всем.
+ */
+export const AI_CONSENT_KEY = 'ap-ai-consent';
 
 /* ── In-memory cache (sync access) ── */
 let _mode = 'airgap';
@@ -56,7 +66,9 @@ export async function initPrivacy() {
     const workouts = await DB.Workouts.getAll().catch(() => []);
     const isExistingUser = workouts.length > 0;
     _mode = isExistingUser ? 'cloud' : 'airgap';
-    _aiEnabled = isExistingUser; // legacy users keep AI on
+    // P0-AI-CONSENT: история тренировок больше не включает ИИ молча —
+    // только экран согласия (`js/ai-consent.view.js`).
+    _aiEnabled = false;
     await DB.Settings.set(KEY_MODE, _mode);
     await DB.Settings.set(KEY_AI, _aiEnabled);
     if (!installedAt) {
@@ -72,7 +84,7 @@ export async function initPrivacy() {
   // Expose globally so service worker / inline handlers can read
   if (typeof window !== 'undefined') {
     window.__privacyMode = () => _mode;
-    window.__privacyAi = () => _aiEnabled;
+    window.__privacyAi = () => getAiEnabled();
   }
 
   _syncToServiceWorker();
@@ -92,7 +104,39 @@ function _syncToServiceWorker() {
 
 /* ── Public getters ── */
 export function getPrivacyMode() { return _mode; }
-export function getAiEnabled() { return _aiEnabled; }
+/** ИИ работает только при трёх условиях сразу: не airgap, тумблер, маркер согласия. */
+export function getAiEnabled() { return _mode !== 'airgap' && _aiEnabled && hasAiConsent(); }
+
+/* ── Согласие на ИИ (маркер устройства) ── */
+export function hasAiConsent() {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem(AI_CONSENT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function _writeConsent(on) {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    if (on) localStorage.setItem(AI_CONSENT_KEY, '1');
+    else localStorage.removeItem(AI_CONSENT_KEY);
+  } catch {
+    /* private mode / storage disabled — без маркера ИИ остаётся выключен */
+  }
+}
+
+/** «Включить ИИ» на экране согласия: маркер + тумблер. В airgap бросает, как setAiEnabled. */
+export async function grantAiConsent() {
+  if (_mode === 'airgap') throw new Error('Cannot enable AI in air-gapped mode');
+  _writeConsent(true);
+  await setAiEnabled(true);
+}
+
+/** Отзыв согласия: маркер стёрт, тумблер выключен. */
+export async function revokeAiConsent() {
+  await setAiEnabled(false);
+}
 export function isLegacyInstall() {
   // Returns true if app had data before privacy system existed.
   // Used to show one-time "switch to private?" prompt.
@@ -106,10 +150,13 @@ export async function setPrivacyMode(mode) {
   }
   _mode = mode;
   await DB.Settings.set(KEY_MODE, mode);
-  // Forcing airgap implicitly disables AI
-  if (mode === 'airgap' && _aiEnabled) {
-    _aiEnabled = false;
-    await DB.Settings.set(KEY_AI, false);
+  // Forcing airgap implicitly disables AI and revokes consent (P0-AI-CONSENT, решение 7)
+  if (mode === 'airgap') {
+    _writeConsent(false);
+    if (_aiEnabled) {
+      _aiEnabled = false;
+      await DB.Settings.set(KEY_AI, false);
+    }
   }
   _syncToServiceWorker();
   _notify();
@@ -120,6 +167,8 @@ export async function setAiEnabled(enabled) {
     throw new Error('Cannot enable AI in air-gapped mode');
   }
   _aiEnabled = !!enabled;
+  // Выключение тумблером стирает согласие: следующее включение — снова через экран.
+  if (!_aiEnabled) _writeConsent(false);
   await DB.Settings.set(KEY_AI, _aiEnabled);
   _notify();
 }
@@ -130,11 +179,12 @@ export function onPrivacyChange(fn) {
   return () => _listeners.delete(fn);
 }
 function _notify() {
-  _listeners.forEach((fn) => { try { fn({ mode: _mode, aiEnabled: _aiEnabled }); } catch {} });
+  const aiEnabled = getAiEnabled();
+  _listeners.forEach((fn) => { try { fn({ mode: _mode, aiEnabled }); } catch {} });
   // Decoupled broadcast so UI not subscribed to the store (e.g. the Island sync
   // dot) can react to a mode switch without importing the subscriber API.
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('ap-privacy-mode', { detail: { mode: _mode, aiEnabled: _aiEnabled } }));
+    window.dispatchEvent(new CustomEvent('ap-privacy-mode', { detail: { mode: _mode, aiEnabled } }));
   }
 }
 
@@ -165,7 +215,9 @@ export async function safeFetch(url, opts = {}, kind = 'sync') {
       _logAudit({ url, kind, allowed: false, reason: 'airgap' });
       throw new PrivacyBlockedError('AI blocked in air-gapped mode', 'airgap', kind);
     }
-    if (!_aiEnabled) {
+    // Центральный барьер: без маркера согласия не уходит ни одна точка ИИ,
+    // включая те, у которых нет своей двери (fetchGeneratedPlan).
+    if (!getAiEnabled()) {
       _logAudit({ url, kind, allowed: false, reason: 'ai-disabled' });
       throw new PrivacyBlockedError('AI Coach is disabled (Settings → Privacy)', 'ai-off', kind);
     }

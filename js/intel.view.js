@@ -24,6 +24,7 @@ import { flag } from './flags.js';
 import { on, onChange, onKeydown } from './events.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
 import { startVoiceWave, stopVoiceWave } from './intel.voice-wave.js';
+import { requestAiConsent, canAskAiConsent } from './ai-consent.view.js';
 
 // A7: was a hard Nav.go('s-home') — broke "where I came from" whenever Intel
 // was opened from anywhere but Home. Intel is only ever entered via
@@ -42,6 +43,10 @@ on('intel:weekly', () => window.IntelView.generateWeekly());
 on('intel:createWorkout', () => window.IntelView.createWorkout());
 on('intel:analyzeStats', () => window.IntelView.analyzeStats());
 on('intel:biometrics', () => window.IntelView.checkBiometrics());
+// P0-AI-CONSENT: явный тап «Включить ИИ» в плашке локального режима.
+on('intel:enableAi', async () => {
+  if (await requestAiConsent()) window.IntelView.load();
+});
 on('intel:clearImage', () => {
   const w = document.getElementById('intel-vision-preview-wrap');
   if (w) w.innerHTML = '';
@@ -294,6 +299,7 @@ export const IntelView = (() => {
           <rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
         </svg>
         <span>${esc(L.localMode)}</span>
+        ${canAskAiConsent() ? `<button type="button" class="intel-local-enable" data-action="intel:enableAi">${esc(t('aiConsent.enable'))}</button>` : ''}
       </div>` : '';
 
     screen.innerHTML = `
@@ -550,6 +556,18 @@ export const IntelView = (() => {
 
     // CORE-8: ИИ выключен — вопрос не уходит никуда, экран отвечает локальным
     // разбором. Раньше тут был поход в safeFetch, отказ и карточка ошибки.
+    // P0-AI-CONSENT: без согласия тап по «Отправить» открывает экран; «Включить ИИ»
+    // отправляет этот же вопрос дальше, «Не сейчас» — локальный разбор ниже.
+    if (isCoachLocal() && canAskAiConsent()) {
+      if (await requestAiConsent({ context: 'chat' })) {
+        // Перерисовка снимает плашку локального режима; вопрос возвращается в поле.
+        const asked = input.value;
+        await load();
+        const again = /** @type {HTMLInputElement|null} */ (document.getElementById('intel-input'));
+        if (again) again.value = asked;
+        return submit();
+      }
+    }
     if (isCoachLocal()) {
       IntelStore.addLog('USER', input.value.trim());
       input.value = '';
@@ -719,6 +737,9 @@ export const IntelView = (() => {
   }
 
   async function generateWeekly() {
+    if (isCoachLocal() && canAskAiConsent() && (await requestAiConsent())) {
+      await load();
+    }
     if (isCoachLocal()) {
       await _renderLocalInsights({ focus: true });
       return;
