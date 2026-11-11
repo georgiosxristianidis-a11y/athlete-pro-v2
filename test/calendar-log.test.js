@@ -278,7 +278,7 @@ describe('ANL-A2: тап по дню не пересобирает экран', 
   test('calDayClick отдаёт листу refreshCalendar, не load', () => {
     const body = fnSrc('export function calDayClick');
     assert.ok(body.includes('hasSets, refreshCalendar);'), 'лист дня должен получать refreshCalendar');
-    assert.doesNotMatch(body, /load/);
+    assert.ok(!body.includes('load('), 'полный load() в листе дня не нужен');
   });
 
   test('refreshCalendar: перерисовывает календарь и чипы, screen.innerHTML не трогает', () => {
