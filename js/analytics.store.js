@@ -78,16 +78,45 @@ export function calNext() {
 }
 
 /**
+ * Есть ли в сессии подходы — то, что нельзя стирать тапом по календарю (ANL-A1).
+ * Пустая заглушка (`logged: true`, ноль упражнений) — единственное, что календарь вправе удалить.
+ * @param {{ exercises?: Array<{ sets?: unknown[] }>, tonnage?: number }|null|undefined} w
+ * @returns {boolean}
+ */
+export function workoutHasSets(w) {
+  if (!w) return false;
+  if ((w.tonnage || 0) > 0) return true;
+  return Array.isArray(w.exercises) && w.exercises.some((e) => (e?.sets?.length || 0) > 0);
+}
+
+/**
+ * Метка времени для заглушки дня календаря; `null` для будущего дня (ANL-A1:
+ * тап по будущему не создаёт запись). Сегодня — не позже «сейчас»: полдень
+ * утром был бы уже в будущем.
+ * @param {number} year
+ * @param {number} month
+ * @param {number} day
+ * @param {Date} [ref=new Date()]
+ * @returns {number|null}
+ */
+export function calendarStubTimestamp(year, month, day, ref = new Date()) {
+  const startOfTomorrow = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() + 1).getTime();
+  const noon = new Date(year, month, day, 12, 0, 0).getTime();
+  if (new Date(year, month, day).getTime() >= startOfTomorrow) return null;
+  return Math.min(noon, ref.getTime());
+}
+
+/**
  * Newest workout per calendar day. Two sessions on the same date used to
  * overwrite each other in forEach order (oldest won because getAll is
  * newest-first); the cell then pointed at the wrong id for retag/remove.
- * @param {Array<{ id?: *, type?: string, timestamp?: number, _deleted?: boolean }>} workouts
+ * @param {Array<{ id?: *, type?: string, timestamp?: number, _deleted?: boolean, exercises?: Array<{ sets?: unknown[] }>, tonnage?: number }>} workouts
  * @param {number} year
  * @param {number} month
- * @returns {Record<number, { type: string, id: *, timestamp: number }>}
+ * @returns {Record<number, { type: string, id: *, timestamp: number, hasSets: boolean }>}
  */
 export function calendarDayMarkers(workouts, year, month) {
-  /** @type {Record<number, { type: string, id: *, timestamp: number }>} */
+  /** @type {Record<number, { type: string, id: *, timestamp: number, hasSets: boolean }>} */
   const days = {};
   for (const w of Array.isArray(workouts) ? workouts : []) {
     if (!w || w._deleted) continue;
@@ -98,7 +127,7 @@ export function calendarDayMarkers(workouts, year, month) {
     const prev = days[day];
     const ts = w.timestamp || 0;
     if (!prev || ts >= prev.timestamp) {
-      days[day] = { type: w.type, id: w.id, timestamp: ts };
+      days[day] = { type: w.type, id: w.id, timestamp: ts, hasSets: workoutHasSets(w) };
     }
   }
   return days;
@@ -132,6 +161,11 @@ export async function applyCalendarTypeTap({ existingId, type, timestamp }) {
     await DB.Workouts.update(existingId, { type });
     return { action, id: existingId };
   }
+  // ANL-A1: стор тоже не пишет заглушку в будущее — вид может ошибиться.
+  const t = new Date();
+  if (timestamp >= new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1).getTime()) {
+    return { action: 'noop' };
+  }
   const id = await DB.Workouts.save({
     type,
     timestamp,
@@ -143,10 +177,32 @@ export async function applyCalendarTypeTap({ existingId, type, timestamp }) {
   return { action: 'create', id };
 }
 
-/** Remove a logged workout from the calendar day picker. */
+/**
+ * Remove a logged workout from the calendar day picker. Сессия с подходами не
+ * удаляется никогда (ANL-A1) — вернуть `null`. Иначе — снимок удалённой записи
+ * для `restoreCalendarEntry` («Вернуть» в тосте).
+ * @param {string|number|null|undefined} existingId
+ * @returns {Promise<Record<string, any>|null>}
+ */
 export async function removeCalendarEntry(existingId) {
-  if (existingId == null || existingId === '') return;
+  if (existingId == null || existingId === '') return null;
+  const record = await DB.Workouts.get(existingId);
+  if (!record || workoutHasSets(record)) return null;
   await DB.Workouts.deleteById(existingId);
+  return record;
+}
+
+/**
+ * Вернуть удалённую заглушку: новая запись с тем же содержимым. Тот же id
+ * нельзя — надгробие уже ушло в синк; новый id выдаёт `withMeta`.
+ * @param {Record<string, any>|null|undefined} snapshot
+ * @returns {Promise<*>}
+ */
+export async function restoreCalendarEntry(snapshot) {
+  if (!snapshot) return null;
+  const copy = { ...snapshot };
+  for (const k of ['id', '_deleted', 'updatedAt', 'deviceId']) delete copy[k];
+  return DB.Workouts.save(/** @type {any} */ (copy));
 }
 
 /* ══════════════════════════════════════════════

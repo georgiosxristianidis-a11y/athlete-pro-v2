@@ -12,8 +12,7 @@ import {
   calPrev as storePrev,
   calNext as storeNext,
   calendarDayMarkers,
-  applyCalendarTypeTap,
-  removeCalendarEntry,
+  calendarStubTimestamp,
   fetchAllData,
   fetchWeeklyTrend,
   fmtVol,
@@ -43,10 +42,11 @@ import {
 } from './analytics.strength-curves.js';
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { ORM_BODY_ID, mergeORMRows, ormSectionHtml, setORMExpanded } from './shared/orm-list.js';
+import { openCalendarPicker } from './analytics.cal-picker.js';
 import { on } from './events.js';
 import { takeStatsFocus, findFamilyCard } from './shared/stats-focus.js';
 import { fmtDate, fmtWeight } from './shared/format.js';
-import { pplColor, pplColorAlpha, isPplType, PPL_TYPES } from './shared/ppl-color.js';
+import { pplColor, pplColorAlpha, isPplType } from './shared/ppl-color.js';
 
 on('analytics:calPrev', () => calPrev());
 on('analytics:calNext', () => calNext());
@@ -418,7 +418,7 @@ function _drawCalendar() {
     const style = isPplType(type)
       ? `background:${pplColorAlpha(type, 0.125)};border-color:${pplColorAlpha(type, 0.25)}`
       : '';
-    html += `<div class="cal-cell ${type ? 'has-workout' : ''} ${isToday ? 'cal-today' : ''}" style="${style}" data-day="${d}" data-type="${type}" data-wid="${entry?.id ?? ''}"><span class="cal-num">${d}</span>${isPplType(type) ? `<div class="cal-dot" style="background:${pplColor(type)}"></div>` : ''}</div>`;
+    html += `<div class="cal-cell ${type ? 'has-workout' : ''} ${isToday ? 'cal-today' : ''}" style="${style}" data-day="${d}" data-type="${type}" data-wid="${entry?.id ?? ''}" data-sets="${entry?.hasSets ? '1' : ''}"><span class="cal-num">${d}</span>${isPplType(type) ? `<div class="cal-dot" style="background:${pplColor(type)}"></div>` : ''}</div>`;
   }
   card.innerHTML = html + `</div>`;
   card.querySelector('.cal-grid')?.addEventListener('click', (e) => {
@@ -427,102 +427,22 @@ function _drawCalendar() {
     // IDB keys are typed: legacy ids are numbers, CRDT ids are UUID strings
     const wid = cell.dataset.wid || '';
     const existingId = wid === '' ? null : /^\d+$/.test(wid) ? parseInt(wid) : wid;
+    const day = parseInt(cell.dataset.day);
+    // ANL-A1: пустой будущий день — не кнопка; запись из прошлых версий (заглушка) открывается, чтобы её можно было убрать.
+    if (existingId === null && calendarStubTimestamp(CalState.year, CalState.month, day) === null) return;
     calDayClick(
       CalState.year,
       CalState.month,
-      parseInt(cell.dataset.day),
+      day,
       cell.dataset.type,
-      existingId
+      existingId,
+      cell.dataset.sets === '1'
     );
   });
 }
 
-export function calDayClick(year, month, day, existingType, existingId) {
-  const monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  const dateLabel = `${day} ${monthNames[month]} ${year}`;
-
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay sd-overlay';
-  overlay.style.zIndex = '4000';
-
-  const removeBtn = existingType
-    ? `
-    <button class="cal-pick-remove" id="cal-pick-rm">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="14" height="14">
-        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-      </svg>
-      Remove workout
-    </button>`
-    : '';
-
-  overlay.innerHTML = `
-    <!-- Инлайн padding-bottom снят: base.css .modal-sheet уже даёт ровно
-         calc(var(--sp-3) + var(--safe-bottom)), инлайн повторял его сырым 20px. -->
-    <div class="modal-sheet">
-      <div class="modal-handle"></div>
-      <div class="modal-header">
-        <div class="modal-title">Log Workout</div>
-        <button class="btn-icon-sm" id="cal-pick-close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="18" height="18">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      <div class="cal-pick-date">${dateLabel}</div>
-      <div class="cal-pick-grid">
-        ${PPL_TYPES.map(
-          (t) => `
-          <button class="cal-pick-btn ${existingType === t ? 'active' : ''}" data-type="${t}" style="--pick-color:${pplColor(t)}">
-            <span class="cal-pick-dot" style="background:${pplColor(t)}"></span>
-            ${t.charAt(0).toUpperCase() + t.slice(1)}
-          </button>`
-        ).join('')}
-      </div>
-      ${removeBtn}
-    </div>`;
-
-  document.body.appendChild(overlay);
-
-  const close = () => dismissOverlay(overlay);
-
-  overlay.querySelectorAll('[data-type]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const type = btn.dataset.type;
-      await applyCalendarTypeTap({
-        existingId,
-        type,
-        timestamp: new Date(year, month, day, 12, 0, 0).getTime(),
-      });
-      close();
-      load();
-      document.dispatchEvent(new CustomEvent('ap-sync-status', { detail: { force: true } }));
-    });
-  });
-
-  overlay.querySelector('#cal-pick-rm')?.addEventListener('click', async () => {
-    await removeCalendarEntry(existingId);
-    close();
-    load();
-    document.dispatchEvent(new CustomEvent('ap-sync-status', { detail: { force: true } }));
-  });
-
-  overlay.querySelector('#cal-pick-close').addEventListener('click', close);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) close();
-  });
+export function calDayClick(year, month, day, existingType, existingId, hasSets = false) {
+  openCalendarPicker(year, month, day, existingType, existingId, hasSets, load);
 }
 
 function _renderVolumeChart(workouts, buckets) {
