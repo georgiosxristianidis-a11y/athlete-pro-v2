@@ -5,6 +5,10 @@ import {
   calendarDayMarkers,
   resolveCalendarTypeTap,
   applyCalendarTypeTap,
+  removeCalendarEntry,
+  restoreCalendarEntry,
+  calendarStubTimestamp,
+  workoutHasSets,
 } from '../js/analytics.store.js';
 import { DB } from '../js/db.js';
 
@@ -153,5 +157,69 @@ describe('applyCalendarTypeTap — no silent wipe', () => {
     assert.equal(row.type, 'legs');
     assert.equal(row.logged, true);
     assert.deepEqual(row.exercises, []);
+  });
+});
+
+describe('ANL-A1: удаление из календаря', () => {
+  const SETS = [{ name: 'Bench', sets: [{ weight: 80, reps: 5, done: true }] }];
+
+  test('workoutHasSets: подходы или тоннаж — да, пустая заглушка — нет', () => {
+    assert.equal(workoutHasSets({ exercises: SETS }), true);
+    assert.equal(workoutHasSets({ exercises: [], tonnage: 300 }), true);
+    assert.equal(workoutHasSets({ exercises: [{ name: 'X', sets: [] }] }), false);
+    assert.equal(workoutHasSets({ exercises: [], logged: true }), false);
+    assert.equal(workoutHasSets(null), false);
+  });
+
+  test('calendarDayMarkers несёт hasSets', () => {
+    const ts = new Date(2026, 8, 3, 12).getTime();
+    const m = calendarDayMarkers(
+      [{ id: 1, type: 'push', timestamp: ts, exercises: SETS, tonnage: 400 }],
+      2026,
+      8
+    );
+    assert.equal(m[3].hasSets, true);
+  });
+
+  test('сессия с подходами не удаляется: removeCalendarEntry → null, запись цела', async () => {
+    const id = await DB.Workouts.save({ type: 'push', timestamp: Date.now(), tonnage: 400, exercises: SETS });
+    assert.equal(await removeCalendarEntry(id), null);
+    assert.equal((await DB.Workouts.getAll()).length, 1);
+  });
+
+  test('пустая заглушка удаляется, снимок возвращается, restore даёт её назад', async () => {
+    const ts = new Date(2026, 8, 1, 12).getTime();
+    const { id } = await applyCalendarTypeTap({ existingId: null, type: 'legs', timestamp: ts });
+    const snapshot = await removeCalendarEntry(id);
+    assert.equal(snapshot.type, 'legs');
+    assert.equal((await DB.Workouts.getAll()).length, 0);
+
+    const newId = await restoreCalendarEntry(snapshot);
+    const rows = await DB.Workouts.getAll();
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].id, newId);
+    assert.equal(rows[0].type, 'legs');
+    assert.equal(rows[0].timestamp, ts);
+    assert.equal(rows[0].logged, true);
+  });
+
+  test('removeCalendarEntry на отсутствующий id — null, без падения', async () => {
+    assert.equal(await removeCalendarEntry(null), null);
+    assert.equal(await removeCalendarEntry(999999), null);
+  });
+
+  test('calendarStubTimestamp: будущий день — null, сегодня — не позже «сейчас», прошлое — полдень', () => {
+    const ref = new Date(2026, 10, 11, 9, 0, 0);
+    assert.equal(calendarStubTimestamp(2026, 10, 12, ref), null);
+    assert.equal(calendarStubTimestamp(2027, 0, 1, ref), null);
+    assert.equal(calendarStubTimestamp(2026, 10, 11, ref), ref.getTime());
+    assert.equal(calendarStubTimestamp(2026, 10, 10, ref), new Date(2026, 10, 10, 12).getTime());
+  });
+
+  test('стор не создаёт заглушку в будущем', async () => {
+    const future = Date.now() + 3 * 86400000;
+    const r = await applyCalendarTypeTap({ existingId: null, type: 'push', timestamp: future });
+    assert.equal(r.action, 'noop');
+    assert.equal((await DB.Workouts.getAll()).length, 0);
   });
 });
