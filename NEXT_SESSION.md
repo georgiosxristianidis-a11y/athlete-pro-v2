@@ -35,7 +35,7 @@
 3. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
 4. `GEAR-1`** к коду; **`HOME-4` (флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
 
-5. Аудит Analytics 10.11 — `ANL-A1…A11` в `docs/handoff/HANDOFF_analytics_audit.md`; `ANL-A1` влита (PR), следующая `ANL-A2`
+5. Аудит Analytics 10.11 — `ANL-A1…A11` в `docs/handoff/HANDOFF_analytics_audit.md`; `ANL-A1`/`A2` влиты, следующая `ANL-A3`
 
 **После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PERF-9` (стоп на мокап Gio), `PROG-0`.
 
