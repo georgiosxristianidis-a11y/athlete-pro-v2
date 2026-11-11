@@ -63,7 +63,7 @@ test('CORE-5: «Спросить коуча» из сводки открывае
     });
     const P = await import('/js/privacy.store.js');
     await P.setPrivacyMode('cloud');
-    await P.setAiEnabled(true);
+    await P.grantAiConsent(); // P0-AI-CONSENT: тумблер без маркера ИИ не включает
   });
   await page.reload();
   await waitForBoot(page);
