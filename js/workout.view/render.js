@@ -30,6 +30,8 @@ import { initDragNumbers } from '../ui/drag-number.js';
 import { initGravitySubmit } from '../ui/gravity-submit.js';
 import { initDrumPickers } from '../ui/drum-picker.js';
 import { flag } from '../flags.js';
+import { hasAnalogs, swapKind } from '../shared/swap-groups.js';
+import { swapSegments } from '../shared/swap-strip.js';
 import { plannedWarmupFlags } from '../shared/working-sets.js';
 import { fmtVol } from '../shared/format.js';
 import { blockTicks, blockOrder } from '../shared/block-ticks.js';
@@ -532,7 +534,9 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
 
   // Блин в разрезе: диск с отверстием. Со своим весом блинов нет — кнопки нет.
   const iconPlate = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg>`;
-  const plateBtn = ex.isBW
+  // SWAP-1b: на карточке-замене блины только у штанги (флаг OFF — прежнее условие).
+  const noPlates = ex.isBW || (flag('swap-quick') && ex.swapTrace && swapKind(ex.name) !== 'barbell');
+  const plateBtn = noPlates
     ? ''
     : `<button class="ex-action-btn" title="${esc(t('plate.title'))}" aria-label="${esc(t('plate.title'))}" data-action="wo:plates" data-ei="${ei}">${iconPlate}</button>`;
 
@@ -565,6 +569,7 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
         <div class="exercise-chevron" id="ex-chevron-${ei}"${open ? ' style="transform:rotate(180deg)"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg></div>`}
       </div>
       <div class="sets-wrap" id="sets-wrap-${ei}" style="display:${open ? 'block' : 'none'}">
+        ${swapStripHtml(ex, ei)}
         <div class="set-header-row">
           <span style="width:20px"></span>
           <button class="set-col-label set-col-btn ${ex.isBW ? 'is-bw' : ''}"
@@ -600,6 +605,41 @@ export function setNumCell(ex, ei, si) {
         aria-label="${esc(t('train.warmup_set', { n: si + 1 }))}">${warm ? 'W' : si + 1}</button>`;
 }
 
+/**
+ * SWAP-1b (флаг swap-quick): полоса замены на аналог под шапкой карточки и след
+ * прошлой замены («Было …» + «Вернуть»). Пусто при OFF, у пропущенной карточки и у
+ * упражнения без аналогов, которое ещё не меняли. Логика замены — workout.store.js.
+ * @param {any} ex
+ * @param {number} ei
+ * @returns {string}
+ */
+function swapStripHtml(ex, ei) {
+  if (!flag('swap-quick') || ex.skipped) return '';
+  const segs = hasAnalogs(ex.name) ? swapSegments(ex.name) : [];
+  const tr = ex.swapTrace;
+  if (!segs.length && !tr) return '';
+  const seg = (s) => {
+    const kind = s.kind === 'other' ? '' : `<small>${esc(t(`train.swap_kind_${s.kind}`))}</small>`;
+    return s.on
+      ? `<button type="button" class="swap-seg on" aria-pressed="true">${kind}${esc(s.label)}</button>`
+      : `<button type="button" class="swap-seg" aria-pressed="false" data-action="wo:swap" data-ei="${ei}" data-name="${esc(s.name)}" aria-label="${esc(t('train.swap_to', { name: s.name }))}">${kind}${esc(s.label)}</button>`;
+  };
+  const strip = segs.length
+    ? `<div class="swap-strip" role="group" aria-label="${esc(t('train.swap_strip'))}">${segs.map(seg).join('')}</div>`
+    : '';
+  let note = '';
+  if (tr) {
+    const head = tr.was != null ? t('train.swap_was', { name: tr.from.name, w: tr.was }) : t('train.swap_was_nowt', { name: tr.from.name });
+    const first = ex.sets.find((s) => !s.done);
+    const noWeight = !ex.isBW && first && !(first.weight > 0);
+    const undo = ex.sets.some((s) => s.done)
+      ? ''
+      : `<button type="button" class="swap-undo" data-action="wo:swapUndo" data-ei="${ei}">${esc(t('train.undo'))}</button>`;
+    note = `<div class="swap-trace"><span>${esc(head)}${noWeight ? `<br>${esc(t('train.swap_enter_weight'))}` : ''}</span>${undo}</div>`;
+  }
+  return strip + note;
+}
+
 export async function renderSetRow(ex, ei, set, si) {
   const firstUndoneIdx = ex.sets.findIndex((s) => !s.done);
   const isActive = !set.done && si === firstUndoneIdx;
@@ -614,11 +654,13 @@ export async function renderSetRow(ex, ei, set, si) {
 
   // Formatting weight: if BW, show as +Weight or BW
   const displayWeight = isBW ? (set.weight > 0 ? `+${set.weight}` : 'BW') : set.weight;
+  // SWAP-1b: янтарная рамка веса, который замена сменила (след на карточке, подход не выполнен).
+  const swapped = flag('swap-quick') && !set.done && ex.swapTrace?.weights?.[si] != null;
 
   return `
     <div class="set-row ${set.done ? 'set-done' : ''} ${isActive ? 'set-active' : ''}" id="set-row-${ei}-${si}">
       ${setNumCell(ex, ei, si)}
-      <div class="drum-wrap" id="sw-${ei}-${si}"
+      <div class="drum-wrap${swapped ? ' swap-changed' : ''}" id="sw-${ei}-${si}"
            data-type="w" data-ei="${ei}" data-si="${si}"
            data-value="${set.weight}"
            data-step="${step}"

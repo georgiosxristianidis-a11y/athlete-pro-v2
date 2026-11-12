@@ -1380,3 +1380,76 @@
   }
   .ex-lbl-fam { background: color-mix(in srgb, var(--ppl) 10%, transparent); }
 }
+
+/* SWAP-1 (флаг swap-quick): полоса замены на аналог под шапкой карточки, след замены и янтарная рамка веса. Только токены base.css. */
+.swap-strip {
+  display: flex;
+  gap: var(--sp-0-5);
+  padding: var(--sp-0-5);
+  margin: 0 0 var(--sp-1);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+}
+.swap-seg {
+  flex: 1;
+  min-width: 0;
+  min-height: calc(var(--sp-5) + var(--sp-0-5));
+  padding: 0 var(--sp-1);
+  border: 0;
+  border-radius: var(--r-xl);
+  background: none;
+  color: var(--c-text-2);
+  font-family: inherit;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.swap-seg small {
+  display: block;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+.swap-seg.on {
+  background: var(--c-accent-bg);
+  color: var(--c-accent);
+  font-weight: var(--fw-black);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-accent) 25%, transparent);
+}
+.swap-seg.on small { color: var(--c-accent); }
+.swap-trace {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-1-5);
+  margin: 0 0 var(--sp-1);
+  background: var(--c-amber-bg);
+  border: 1px solid color-mix(in srgb, var(--c-amber) 20%, transparent);
+  border-radius: var(--r-s);
+  color: var(--c-text-1);
+  font-size: var(--fs-2);
+  line-height: 1.3;
+}
+.swap-undo {
+  margin-left: auto;
+  padding: var(--sp-1);
+  border: 0;
+  background: none;
+  color: var(--c-amber);
+  font-family: inherit;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.drum-wrap.swap-changed {
+  background: var(--c-amber-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-amber) 40%, transparent);
+}

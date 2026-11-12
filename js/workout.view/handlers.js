@@ -27,6 +27,8 @@ import {
   isPending,
   skipExercise,
   unskipExercise,
+  swapExercise,
+  undoSwap,
   loadWorkoutHistory,
   loadRestDurationSetting,
   loadKeepAwakeSetting,
@@ -559,6 +561,28 @@ export async function skipExerciseToday(ei) {
  */
 export async function _unskipExercise(ei) {
   if (unskipExercise(State.plan, ei) === -1) return;
+  haptic(10);
+  persistSession();
+  await renderActive();
+}
+
+/* SWAP-1b (флаг swap-quick): тап по сегменту полосы — замена на аналог (вес из истории,
+   логика в workout.store.js), «Вернуть» в следе — обратно. Расщепление сдвигает индексы —
+   перерисовка всего экрана, не патч карточки. */
+on('wo:swap', (el) => _swapQuick(+el.dataset.ei, el.dataset.name || ''));
+on('wo:swapUndo', (el) => _swapUndo(+el.dataset.ei));
+
+async function _swapQuick(ei, name) {
+  if (!flag('swap-quick')) return;
+  const r = swapExercise(State.plan, ei, name, await loadWorkoutHistory());
+  if (!r) return;
+  haptic(10);
+  persistSession();
+  await renderActive();
+}
+
+async function _swapUndo(ei) {
+  if (!flag('swap-quick') || undoSwap(State.plan, ei) === -1) return;
   haptic(10);
   persistSession();
   await renderActive();
