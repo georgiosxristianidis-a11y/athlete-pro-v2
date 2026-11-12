@@ -14,7 +14,7 @@
 - **Кода нет на месте → `git log origin/main -- <файл>`**, не гипотеза: почти всегда «влито в main, у тебя старая база».
 - **Аномалия в фоновом шуме — проговорить вслух, не игнорить.**
 - Разборы инцидентов — `docs/_archive/INCIDENTS.md`; здесь только правила.
-- Antigravity: `~/.gemini/antigravity/brain/<uuid>/`. GIO-стандарты: `~/.gemini/GEMINI.md` + корневой `GEMINI.md`. Аудиты: `/audit_core` · `/audit_cyber` · `/audit_speed`.
+- Antigravity: `~/.gemini/antigravity/brain/<uuid>/`. GIO-стандарты: `~/.gemini/GEMINI.md` + корневой `GEMINI.md`. Аудиты: `/audit_core` · `/audit_cyber` · `/audit_speed` · `audit-protocol`.
 
 ## Где что лежит (закон структуры, H-3)
 
