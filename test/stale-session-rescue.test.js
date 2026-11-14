@@ -10,8 +10,8 @@
  * того, как окно «Вернуть» закрылось без отмены.
  *
  * bootTrain() повторяет store-сторону Workout.load(): спасение, потом restore.
- * На старом коде rescueStaleSession нет — вызов `?.()` пуст, и тест краснеет
- * на «записи нет», а не на импорте.
+ * Функции спасения живут в stale-session.store.js (вне бут-графа); на коде до
+ * UX-1b модуля нет — тест краснеет на импорте.
  */
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
@@ -38,6 +38,7 @@ mockStorage();
 
 /** @type {any} */
 const store = await import('../js/workout.store.js');
+const rescueMod = await import('../js/stale-session.store.js');
 const { DB } = await import('../js/db.js');
 const { State, SESSION_KEY } = store;
 
@@ -78,7 +79,7 @@ function seedSnapshot(o = {}) {
 }
 
 async function bootTrain() {
-  const rescue = await store.rescueStaleSession?.({ oneRMLookup: noOneRM });
+  const rescue = await rescueMod.rescueStaleSession?.({ oneRMLookup: noOneRM });
   const restored = store.tryRestoreSession();
   return { rescue, restored };
 }
@@ -161,7 +162,7 @@ test('сбой записи: снимок возвращается, чтобы �
     throw new Error('idb down');
   };
   try {
-    await assert.rejects(() => store.rescueStaleSession({ oneRMLookup: noOneRM }));
+    await assert.rejects(() => rescueMod.rescueStaleSession({ oneRMLookup: noOneRM }));
   } finally {
     DB.Workouts.save = save;
   }
@@ -181,9 +182,9 @@ test('сторож 12 ч: активная сессия уходит в журн
   State.startedAt = snap.startedAt;
   State.blockTimings = {};
 
-  const first = store.rescueActiveSession?.({ oneRMLookup: noOneRM });
+  const first = rescueMod.rescueActiveSession?.({ oneRMLookup: noOneRM });
   assert.notEqual(State.phase, 'active', 'фаза снимается синхронно — второй тик сторожа не задвоит');
-  const second = store.rescueActiveSession?.({ oneRMLookup: noOneRM });
+  const second = rescueMod.rescueActiveSession?.({ oneRMLookup: noOneRM });
   const [r1, r2] = await Promise.all([first, second]);
 
   assert.equal(r1.sets, 5);

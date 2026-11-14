@@ -11,6 +11,7 @@ import { findExercise, canonicalNameOf } from './shared/exercise-registry.js';
 import { swapAnalogs, swapTraits } from './shared/swap-groups.js';
 
 export const SESSION_KEY = 'ap-active-session';
+export const STALE_SESSION_MS = 4 * 3600000; // UX-1b: старше по savedAt — не restore, а спасение
 export const PLAN_KEY = 'ap-custom-plan';        // legacy — migrated → PLAN_KEY_A on first load
 export const PLAN_KEY_A = 'ap-custom-plan-A';
 export const PLAN_KEY_B = 'ap-custom-plan-B';
@@ -1311,8 +1312,7 @@ export async function fetchGeneratedPlan(options = {}) {
  * Try to restore an interrupted workout session from localStorage.
  * Returns the restored session data if found, null otherwise.
  * DOES NOT call Nav or Toast — caller handles navigation and notifications.
- * Snapshots older than STALE_SESSION_MS (by savedAt) are left for
- * rescueStaleSession(): never restored, never silently dropped (UX-1b).
+ * Older than STALE_SESSION_MS (savedAt): left for stale-session.store (UX-1b).
  * @returns {{ type: string, plan: Array, startedAt: number }|null}
  */
 export function tryRestoreSession() {
@@ -1320,9 +1320,7 @@ export function tryRestoreSession() {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const s = JSON.parse(raw);
-    // Протухший снимок (> 4 ч с последнего касания) не воскрешаем, но и не
-    // стираем: его забирает rescueStaleSession() (UX-1b). Упала запись в
-    // журнал — снимок лежит до следующей загрузки, а не теряется.
+    // UX-1b: протухший не воскрешаем и не стираем — его забирает rescueStaleSession().
     if (Date.now() - s.savedAt > STALE_SESSION_MS) return null;
     State.type = s.type;
     State.plan = s.plan;
@@ -1338,134 +1336,6 @@ export function tryRestoreSession() {
   } catch {
     localStorage.removeItem(SESSION_KEY);
     return null;
-  }
-}
-
-/* ── UX-1b: спасение протухшей сессии ──
-   Снимок старше STALE_SESSION_MS по savedAt (последнее касание) раньше
-   стирался молча вместе с закрытыми подходами. Теперь они уходят в журнал
-   тем же путём, что «Завершить»; 1RM — только через commit(), когда окно
-   «Вернуть» закрылось без отмены (DB.OneRM.update необратим). */
-
-/** Снимок старше этого (по savedAt) не восстанавливается, а спасается. */
-export const STALE_SESSION_MS = 4 * 3600000;
-
-/**
- * Закрытые подходы, которые попадут в запись: isRecorded и не Camera 4 (noDb
- * в журнал не идёт — пустая строка журнала хуже, чем ничего).
- * @param {any[]} plan
- * @returns {number}
- */
-export function rescuableSets(plan) {
-  let n = 0;
-  for (const ex of plan || []) {
-    if (ex?.noDb || !isRecorded(ex)) continue;
-    for (const s of ex.sets || []) if (s.done) n++;
-  }
-  return n;
-}
-
-/**
- * @typedef {{ id: number, sets: number, startedAt: number,
- *   undo: () => Promise<boolean>, commit: () => Promise<boolean> }} RescuedSession
- */
-
-/**
- * Записать снимок в журнал. Длительность = savedAt − startedAt, timestamp =
- * startedAt. undo() удаляет запись, commit() пишет 1RM; сработает только
- * первый из двух вызовов.
- * @param {{ type: string, plan: any[], startedAt: number, blockTimings?: object, savedAt: number }} snap
- * @param {{ oneRMLookup?: (name: string) => Promise<any> }} [opts]
- * @returns {Promise<RescuedSession|null>} null — нечего сохранять
- */
-export async function rescueSession(snap, opts = {}) {
-  const plan = Array.isArray(snap?.plan) ? snap.plan : [];
-  const sets = rescuableSets(plan);
-  if (!sets) return null;
-  const savedAt = Number(snap.savedAt) || Date.now();
-  const startedAt = Number(snap.startedAt) || savedAt;
-  const duration = Math.max(0, savedAt - startedAt);
-  const state = { type: snap.type, plan, startedAt, blockTimings: snap.blockTimings || {} };
-  const summary = await buildSessionSummary(state, duration, opts);
-  const id = await persistFinalSession(state, summary, duration, { oneRM: false });
-  let settled = false;
-  return {
-    id,
-    sets,
-    startedAt,
-    async undo() {
-      if (settled) return false;
-      settled = true;
-      await DB.Workouts.deleteById(id);
-      return true;
-    },
-    async commit() {
-      if (settled) return false;
-      settled = true;
-      await applyOneRMUpdates(plan);
-      return true;
-    },
-  };
-}
-
-/**
- * @param {string} raw
- * @returns {any}
- */
-function _parseSnapshot(raw) {
-  try {
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Загрузка Train: протухший снимок → журнал. Снимок снимается синхронно (двойной
- * load() не задвоит запись); сбой записи кладёт его обратно до следующей загрузки.
- * @param {{ oneRMLookup?: (name: string) => Promise<any> }} [opts]
- * @returns {Promise<RescuedSession|null>}
- */
-export async function rescueStaleSession(opts = {}) {
-  const raw = localStorage.getItem(SESSION_KEY);
-  const snap = _parseSnapshot(raw);
-  if (!snap || !(Date.now() - snap.savedAt > STALE_SESSION_MS)) return null;
-  localStorage.removeItem(SESSION_KEY);
-  try {
-    return await rescueSession(snap, opts);
-  } catch (err) {
-    localStorage.setItem(SESSION_KEY, /** @type {string} */ (raw));
-    throw err;
-  }
-}
-
-/**
- * Сторож 12 ч: активную сессию в памяти — в журнал, без диалога. Фаза снимается
- * синхронно, поэтому следующий тик сторожа получит null. Конец сессии — savedAt
- * снимка (последнее касание), а не момент срабатывания сторожа.
- * @param {{ oneRMLookup?: (name: string) => Promise<any> }} [opts]
- * @returns {Promise<RescuedSession|null>}
- */
-export async function rescueActiveSession(opts = {}) {
-  if (State.phase !== 'active') return null;
-  const prev = _parseSnapshot(localStorage.getItem(SESSION_KEY));
-  const snap = {
-    type: State.type,
-    plan: State.plan,
-    startedAt: State.startedAt,
-    blockTimings: State.blockTimings || {},
-    savedAt: Number(prev?.savedAt) || Date.now(),
-  };
-  State.phase = 'select';
-  State.startedAt = 0;
-  State.plan = [];
-  State.blockTimings = {};
-  clearPersistedSession();
-  try {
-    return await rescueSession(snap, opts);
-  } catch (err) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(snap));
-    throw err;
   }
 }
 
@@ -1724,8 +1594,7 @@ export async function buildSessionSummary(state, durationMs, opts = {}) {
  * @param {object} state        current workout State (type, plan, startedAt, blockTimings)
  * @param {object} summaryData  result of buildSessionSummary(state, durationMs)
  * @param {number} duration     wall-clock session length in ms
- * @param {{ oneRM?: boolean }} [opts]  oneRM:false — 1RM не трогать (UX-1b:
- *   спасение пишет его через applyOneRMUpdates после окна «Вернуть»)
+ * @param {{ oneRM?: boolean }} [opts]  oneRM:false — 1RM пишет спасение после «Вернуть» (UX-1b)
  * @returns {Promise<number>} id новой записи
  */
 export async function persistFinalSession(state, summaryData, duration, opts = {}) {
@@ -1764,18 +1633,11 @@ export async function persistFinalSession(state, summaryData, duration, opts = {
 
   const id = await DB.Workouts.save(session);
   await DB.Events.log('workout_complete', { type: state.type, tonnage: summaryData.totalTonnage });
-
   if (opts.oneRM !== false) await applyOneRMUpdates(state.plan);
   return id;
 }
 
-/**
- * Update OneRMs (also covers W-1 live additions — new exercise names get a
- * fresh OneRM record from this point on; isAdded:true is preserved in
- * session.exercises so future analytics can separate the two streams).
- * @param {any[]} plan
- * @returns {Promise<void>}
- */
+/** OneRM по лучшему подходу; W-1 добавки (isAdded) получают свою запись. @param {any[]} plan */
 export async function applyOneRMUpdates(plan) {
   for (const ex of plan) {
     if (ex.noDb || !isRecorded(ex)) continue;

@@ -10,7 +10,6 @@ import {
   persistSession,
   persistFinalSession,
   clearPersistedSession,
-  rescueActiveSession,
   getWeekMode,
   setWeekMode,
   getCustomWorkouts,
@@ -53,7 +52,6 @@ import { flag } from '../flags.js';
 import { workingTonnage, plannedWarmupFlags } from '../shared/working-sets.js';
 import { confirmDialog } from '../shared/confirm.js';
 import { t } from '../locale.store.js';
-import { fmtDate } from '../shared/format.js';
 import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
 import { on } from '../events.js';
 
@@ -691,57 +689,6 @@ export async function cancelSession() {
   if (window.DynamicIsland) window.DynamicIsland.hide();
   releaseWakeLock();
   await renderSelect();
-}
-
-/* ════════════════════════════════════════════════════════
-   UX-1b — спасённая протухшая сессия: тост «Вернуть», потом 1RM
-   ════════════════════════════════════════════════════════ */
-
-/** Окно «Вернуть»: пока оно открыто, 1RM не пишется (DB.OneRM.update необратим). */
-const RESCUE_UNDO_MS = 8000;
-
-/**
- * Тост «Тренировка от <время> сохранена» с кнопкой «Вернуть». Отмена удаляет
- * запись; окно закрылось без отмены — пишем 1RM.
- * @param {import('../workout.store.js').RescuedSession|null} rescued
- */
-export function showRescueToast(rescued) {
-  if (!rescued) return;
-  const when = fmtDate(rescued.startedAt, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-  Toast.show(t('train.stale_saved', { when, n: rescued.sets }), 'success', RESCUE_UNDO_MS, {
-    action: {
-      label: t('train.undo'),
-      onClick: () => {
-        rescued.undo().then(async (undone) => {
-          if (!undone) return;
-          Toast.show(t('train.stale_undone'), 'info');
-          if (State.phase !== 'active') await renderSelect();
-        }).catch(() => Toast.show(t('train.stale_undo_failed'), 'error'));
-      },
-    },
-  });
-  setTimeout(() => {
-    rescued.commit().catch(() => {});
-  }, RESCUE_UNDO_MS);
-}
-
-/**
- * Сторож 12 ч: сессия уходит в журнал без диалога (раньше cancelSession()
- * открывал «Отменить тренировку?» поверх любого confirm).
- */
-export async function rescueOverdueSession() {
-  let rescued = null;
-  try {
-    rescued = await rescueActiveSession();
-  } catch {
-    // Снимок вернулся в localStorage — следующая загрузка Train повторит.
-  }
-  Timer.reset();
-  // @ts-ignore
-  if (window.DynamicIsland) window.DynamicIsland.hide();
-  releaseWakeLock();
-  await renderSelect();
-  showRescueToast(rescued);
 }
 
 /* ════════════════════════════════════════════════════════

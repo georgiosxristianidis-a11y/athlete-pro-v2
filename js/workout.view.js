@@ -6,7 +6,9 @@
 
 import { Timer } from './timer.js';
 import { RestTimer } from './rest-timer.js'; // eslint-disable-line no-unused-vars
-import { State, persistSession, tryRestoreSession, rescueStaleSession } from './workout.store.js';
+import { State, persistSession, tryRestoreSession } from './workout.store.js';
+import { rescueStaleSession } from './stale-session.store.js';
+import { showRescueToast, rescueOverdueSession } from './workout.view/stale-rescue.js';
 import { listenerGroup } from './shared/utils.js';
 
 import { 
@@ -25,7 +27,7 @@ import {
   selectType, stepWeight, stepReps, setWeight, setReps, editVal, commitVal, toggleSet, toggleCard,
   openCustomWorkoutModal, showExerciseMenu, _createNewCustomWorkout, _editCustomWorkout, _deleteCustomWorkout,
   _startCustomWorkout, _closeCustomWorkoutModal, addSet, smartCopy, smartCoach, skipExerciseToday, _unskipExercise,
-  completeSession, cancelSession, rescueOverdueSession, showRescueToast, _toggleUnilateral, _toggleWarmup, _toggleBW, _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem,
+  completeSession, cancelSession, _toggleUnilateral, _toggleWarmup, _toggleBW, _toggleWeek, _addLiveExercise, _toggleCoreItem, _addCoreItem,
   _removeCoreItem, _openFocus, _closeFocus, _focusNext, _focusPrev, jumpToNextExercise,
   _focusStepW, _focusStepR, _focusCompleteSet, _initFocusLongPress,
 } from './workout.view/handlers.js';
