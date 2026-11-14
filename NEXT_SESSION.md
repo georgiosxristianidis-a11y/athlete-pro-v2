@@ -1,7 +1,7 @@
 # NEXT SESSION — Athlete Pro
 
 > Читать первым. **Роутер, а не состояние:** указатель на карточку, контекст — в хендоффе.
-> Обновлено 2026-11-09 (1.27.221): очередь по приоритету.
+> Обновлено 2026-11-14: очередь по приоритету.
 > Осталось поле: Gio
 
 ## Куда идти за работой
@@ -35,7 +35,7 @@
 3. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
 4. `GEAR-1`** к коду; **`HOME-4` (флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
 
-5. Аудиты: `ANL-A3…A11` — `docs/handoff/HANDOFF_analytics_audit.md`; `UX-1b…l` — `docs/handoff/HANDOFF_ux_mechanics_audit.md`
+5. Аудиты (`docs/handoff/`): `ANL-A3…A11` — `HANDOFF_analytics_audit`; `UX-1b…l` — `HANDOFF_ux_mechanics_audit`; `UX-2a…p` — `HANDOFF_ux_irritants`
 
 **После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PERF-9` (стоп на мокап Gio), `PROG-0`.
 
