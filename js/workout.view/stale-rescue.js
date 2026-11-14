@@ -15,6 +15,11 @@ import { releaseWakeLock } from '../features/wake-lock.js';
 
 /** Окно «Вернуть»: пока оно открыто, 1RM не пишется (запись 1RM необратима). */
 const RESCUE_UNDO_MS = 8000;
+/**
+ * commit() — только когда тоста уже нет в DOM: Toast._dismiss оставляет кнопку
+ * кликабельной ещё 400 мс fade, и клик в эту щель молча не отменял запись.
+ */
+const RESCUE_COMMIT_MS = RESCUE_UNDO_MS + 500;
 
 /**
  * Тост «Тренировка от <время> сохранена» с кнопкой «Вернуть». Отмена удаляет
@@ -49,7 +54,7 @@ export function showRescueToast(rescued) {
   });
   setTimeout(() => {
     rescued.commit().catch(() => {});
-  }, RESCUE_UNDO_MS);
+  }, RESCUE_COMMIT_MS);
 }
 
 /**
