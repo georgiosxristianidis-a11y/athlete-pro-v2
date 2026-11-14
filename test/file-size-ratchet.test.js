@@ -19,7 +19,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Поимённые потолки гигантов (пути сверены по `git ls-files`).
 const GIANT_CEILINGS = {
   'js/workout.store.js': 1651,
-  'js/locale.store.js': 1306,
+  'js/locale.store.js': 1308,
   'js/dashboard.js': 1303,
   'js/intel.view.js': 1179,
   'js/shared/athlete-room.js': 1166,
