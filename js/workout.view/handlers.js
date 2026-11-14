@@ -52,7 +52,7 @@ import { flag } from '../flags.js';
 import { workingTonnage, plannedWarmupFlags } from '../shared/working-sets.js';
 import { confirmDialog } from '../shared/confirm.js';
 import { t } from '../locale.store.js';
-import { acquireWakeLock, releaseWakeLock } from '../features/wake-lock.js';
+import { startWakeLockSession, releaseWakeLock } from '../features/wake-lock.js';
 import { on } from '../events.js';
 
 on('wo:menuAction', (el) => {
@@ -442,7 +442,7 @@ export async function selectType(type) {
 
   // @ts-ignore
   if (window.DynamicIsland) window.DynamicIsland.show();
-  if (keepAwake === 'on') acquireWakeLock();
+  startWakeLockSession(keepAwake === 'on');
 
   await renderActive();
 }

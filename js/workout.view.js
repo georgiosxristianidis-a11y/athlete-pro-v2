@@ -6,7 +6,8 @@
 
 import { Timer } from './timer.js';
 import { RestTimer } from './rest-timer.js'; // eslint-disable-line no-unused-vars
-import { State, persistSession, tryRestoreSession } from './workout.store.js';
+import { State, persistSession, tryRestoreSession, loadKeepAwakeSetting } from './workout.store.js';
+import { startWakeLockSession } from './features/wake-lock.js';
 import { rescueStaleSession } from './stale-session.store.js';
 import { showRescueToast, rescueOverdueSession } from './workout.view/stale-rescue.js';
 import { listenerGroup } from './shared/utils.js';
@@ -91,6 +92,10 @@ export async function load() {
       const el = document.getElementById('session-timer-val');
       if (el) el.textContent = Timer.fmt(sec);
     });
+    // UX-2a: восстановленная сессия тоже держит экран (раньше — только selectType).
+    loadKeepAwakeSetting()
+      .catch(() => 'on')
+      .then((v) => startWakeLockSession(v !== 'off'));
     await renderActive();
     window.Toast?.show('Session restored', 'info');
     return true;

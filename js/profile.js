@@ -37,6 +37,7 @@ import { on, onChange } from './events.js';
 import { haptic, esc } from './shared/utils.js';
 import { forceUpdate } from './shared/sw-update.js';
 import { clearSeen } from './shared/digit-roll.js';
+import { setWakeLockEnabled } from './features/wake-lock.js';
 
 on('profile:clearData', () => window.Profile.clearAllData());
 onChange('profile:importFile', (el, e) => window.Profile._onImportFile(e));
@@ -415,7 +416,8 @@ export const Profile = (() => {
   }
 
   async function toggleKeepAwake() {
-    await toggleKeepAwakePref(); // BG-1: default ON (opt-out)
+    const next = await toggleKeepAwakePref(); // BG-1: default ON (opt-out)
+    setWakeLockEnabled(next !== 'off'); // UX-2a: действует сразу и на идущую тренировку
     _refreshSettings();
   }
 
