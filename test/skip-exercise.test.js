@@ -2,6 +2,8 @@
 // FIELD-1 — «тренажёр занят»: упражнение пропускается на одну сессию. Пропуск
 // не равен провалу: в сохраняемую запись, сводку, тоннаж и префилл следующей
 // сессии он не попадает, а снимок persistSession переживает перезагрузку.
+// UX-1a (14.11): это про пропуск НЕТРОНУТОГО упражнения. Пропуск после
+// закрытых подходов запись сохраняет — контракт в skip-keeps-closed-sets.test.js.
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import 'fake-indexeddb/auto';
@@ -104,9 +106,8 @@ test('статус skipped переживает перезагрузку (persis
   State.phase = 'select';
 });
 
-test('сводка: пропущенное не входит ни в тоннаж, ни в сеты, ни в блоки', async () => {
+test('сводка: пропущенное нетронутым не входит ни в тоннаж, ни в сеты, ни в блоки', async () => {
   const plan = plan3();
-  plan[1].sets[0].done = true; // успел один подход, потом тренажёр заняли
   store.skipExercise(plan, 1);
   const s = await buildSessionSummary({ type: 'push', plan, blockTimings: {} }, 600_000, { oneRMLookup: noOneRM });
   assert.equal(s.totalTonnage, 100 * 5 * 2 + 10 * 12);
@@ -116,9 +117,8 @@ test('сводка: пропущенное не входит ни в тонна�
   assert.equal(s.prs.some((p) => p.name === 'Hip Thrust'), false);
 });
 
-test('запись: пропуск не пишется, тоннаж = sessionLoad, 1RM не трогается', async () => {
+test('запись: нетронутый пропуск не пишется, тоннаж = sessionLoad, 1RM не трогается', async () => {
   const plan = plan3();
-  plan[1].sets[0].done = true;
   store.skipExercise(plan, 1);
   await finish(plan, Date.now());
   const [row] = await DB.Workouts.getAll();

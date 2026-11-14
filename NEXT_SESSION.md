@@ -29,13 +29,13 @@
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
-0. P0 (`HANDOFF_launch_track.md` § P0): `P0-AI-CONSENT` (код в PR #643, 1.27.223; остаток — § P0 хендоффа)
+0. P0 (`HANDOFF_launch_track.md` § P0): `P0-AI-CONSENT` (код в PR #643, 1.27.223; остаток — § P0 хендоффа); `UX-1b` — ждёт развилки Gio
 1. `ANL-ALT` (поглощена DATA-3 при `stats-families` ON, закрыть после поля п.13), `DATA-4`, `SWAP-1b` (1a влита) — после развилок Gio (`HANDOFF_data_logic.md`)
 2. Фон, по одной за PR: A10 и `AUD-*` (хендофф Cursor, § Аудит 09.11); **`SUPA-1`** 08.11: неделя зелёных keep-alive
 3. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
 4. `GEAR-1`** к коду; **`HOME-4` (флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
 
-5. Аудит Analytics 10.11 — `ANL-A1…A11` в `docs/handoff/HANDOFF_analytics_audit.md`; `ANL-A1`/`A2` влиты, следующая `ANL-A3`
+5. Аудиты: `ANL-A3…A11` — `docs/handoff/HANDOFF_analytics_audit.md`; `UX-1b…l` — `docs/handoff/HANDOFF_ux_mechanics_audit.md`
 
 **После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PERF-9` (стоп на мокап Gio), `PROG-0`.
 
