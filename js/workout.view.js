@@ -32,6 +32,7 @@ import {
   _removeCoreItem, _openFocus, _closeFocus, _focusNext, _focusPrev, jumpToNextExercise,
   _focusStepW, _focusStepR, _focusCompleteSet, _initFocusLongPress,
 } from './workout.view/handlers.js';
+import './workout.view/swap-quick.js';
 
 /* ── Public API (window.Workout) ── */
 
