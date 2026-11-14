@@ -206,6 +206,14 @@ const DEFAULTS = {
   // OFF — пикер и радар побитно прежние. Default OFF до поля Gio; тумблер в Лаборатории.
   // Kill switch: Flags.setFlag('muscles-ui', false)
   'muscles-ui': false,
+  // SWAP-1 (выбор Gio 07.11, вариант A мокапа): быстрая замена упражнения на аналог в карточке
+  // сет-логгера. ON: под названием полоса сегментов `Bench | Incline | Machine` (только если у
+  // упражнения есть аналог, js/shared/swap-groups.js), тап = swapExercise: невыполненные подходы
+  // берут последний рабочий вес НОВОГО из истории (нет истории — пусто), выполненные остаются за
+  // исходным; след «было N» + «Вернуть»; блины только у штанги. OFF — карточка побитно прежняя,
+  // старая замена (⋮ → «Заменить») не меняется. Default OFF до поля Gio; тумблер в Лаборатории.
+  // Kill switch: Flags.setFlag('swap-quick', false)
+  'swap-quick': false,
 };
 
 /** @param {string} name @returns {boolean} */
@@ -235,7 +243,7 @@ export function allFlags() {
  * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
  * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
  */
-export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'rest-skip-undo', 'gym-equipment', 'exercise-registry', 'history-records', 'stats-families', 'plate-toy', 'muscles-ui']);
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'rest-skip-undo', 'gym-equipment', 'exercise-registry', 'history-records', 'stats-families', 'plate-toy', 'muscles-ui', 'swap-quick']);
 
 /** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
 export function isOverridden(name) {
