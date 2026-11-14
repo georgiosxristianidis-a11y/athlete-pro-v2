@@ -24,7 +24,7 @@ import {
   snapWeight,
   snapPlanWeights,
   lastLiftedTopWeight,
-  isPending,
+  isPending, isRecorded,
   skipExercise,
   unskipExercise,
   loadWorkoutHistory,
@@ -605,7 +605,7 @@ export function _closeCustomWorkoutModal() {
    ════════════════════════════════════════════════════════ */
 export async function completeSession() {
   const doneSets = State.plan.reduce(
-    (sum, ex) => sum + (ex.skipped ? 0 : ex.sets.filter((s) => s.done).length),
+    (sum, ex) => sum + ex.sets.filter((s) => s.done).length,
     0
   );
 
@@ -927,12 +927,12 @@ export function _updateLiveStats() {
   if (working) _refreshWarmupLabels();
 
   State.plan.forEach((ex) => {
-    if (ex.skipped) return; // FIELD-1: пропуск не в счёте сессии
+    if (!isRecorded(ex)) return; // FIELD-1/UX-1a: нетронутый пропуск не в счёте сессии
     const mul = ex.isUnilateral ? 2 : 1;
     if (working) tonnage += workingTonnage(ex);
     let allExDone = true,
       anyDone = false;
-    ex.sets.forEach((s) => {
+    ex.sets.filter((s) => s.done || !ex.skipped).forEach((s) => { // UX-1a: отложенный остаток рельс не ждёт
       totalSets++;
       if (s.done) {
         if (!working) tonnage += (s.weight || 0) * (s.reps || 0) * mul;
@@ -940,7 +940,7 @@ export function _updateLiveStats() {
         anyDone = true;
       } else allExDone = false;
     });
-    if (anyDone && allExDone) exDone++;
+    if (!ex.skipped && anyDone && allExDone) exDone++;
   });
 
   const tEl = document.getElementById('live-tonnage');
