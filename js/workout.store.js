@@ -1071,8 +1071,10 @@ export function buildSession(type, opts = {}) {
    Статус живёт только в State.plan (и в снимке persistSession, который пишет
    plan целиком), buildSession его не знает — следующая тренировка собирается
    из плана заново, упражнение на своём месте. В сохраняемую запись и сводку
-   пропущенное не попадает вовсе: ни «ноль сетов» в статистике, ни запись, из
-   которой latestWorkoutForNames взял бы вес для префилла. */
+   пропущенное НЕТРОНУТЫМ не попадает вовсе: ни «ноль сетов» в статистике, ни
+   запись, из которой latestWorkoutForNames взял бы вес для префилла.
+   UX-1a: пропущенное ПОСЛЕ закрытых подходов в запись идёт — сделанная работа
+   не теряется от того, что остаток отложили (см. isRecorded). */
 
 /**
  * Упражнение ещё ждёт подходов: не пропущено и есть незакрытый сет. Единый
@@ -1083,6 +1085,18 @@ export function buildSession(type, opts = {}) {
  */
 export function isPending(ex) {
   return !ex?.skipped && (ex?.sets || []).some((s) => !s.done);
+}
+
+/**
+ * UX-1a: упражнение попадает в сводку, запись и 1RM. Решают закрытые подходы,
+ * а не флаг `skipped`: «Пропустить сегодня» после двух закрытых подходов
+ * откладывает остаток, но сделанное остаётся сделанным (было: жим 2×60×8
+ * пропадал из записи, тоннаж 400 вместо 1360). Нетронутый пропуск — мимо.
+ * @param {{skipped?: boolean, sets?: Array<{done?: boolean}>}} ex
+ * @returns {boolean}
+ */
+export function isRecorded(ex) {
+  return !ex?.skipped || (ex?.sets || []).some((s) => s.done);
 }
 
 /**
@@ -1491,8 +1505,9 @@ export async function buildSessionSummary(state, durationMs, opts = {}) {
   const prCandidates = [];
 
   for (const ex of (state.plan || [])) {
-    // FIELD-1: пропущенное не сделано и не провалено — его нет в отчёте.
-    if (ex.skipped) continue;
+    // FIELD-1: пропущенное нетронутым не сделано и не провалено — его нет в
+    // отчёте. UX-1a: с закрытыми подходами — есть, строкой «2/3».
+    if (!isRecorded(ex)) continue;
     const id = ex.block || 'custom';
     if (!blockMap.has(id)) {
       blockMap.set(id, { tonnage: 0, exercises: [] });
@@ -1605,11 +1620,11 @@ export async function persistFinalSession(state, summaryData, duration) {
     duration,
     tonnage: summaryData.totalTonnage,
     sessionRpe: summaryData.sessionRpe ?? null,
-    // FIELD-1: пропущенное в запись не идёт — иначе префилл следующей
-    // сессии (latestWorkoutForNames) взял бы вес отсюда, а статистика
-    // увидела бы «ноль сетов».
+    // FIELD-1: пропущенное нетронутым в запись не идёт — иначе префилл
+    // следующей сессии (latestWorkoutForNames) взял бы вес отсюда, а
+    // статистика увидела бы «ноль сетов». UX-1a: с закрытыми подходами идёт.
     exercises: state.plan
-      .filter((ex) => !ex.noDb && !ex.skipped)
+      .filter((ex) => !ex.noDb && isRecorded(ex))
       .map((ex) => ({
         name: ex.name,
         block: ex.block || null,
@@ -1640,7 +1655,7 @@ export async function persistFinalSession(state, summaryData, duration) {
   // fresh OneRM record from this point on; isAdded:true is preserved in
   // session.exercises so future analytics can separate the two streams).
   for (const ex of state.plan) {
-    if (ex.noDb || ex.skipped) continue;
+    if (ex.noDb || !isRecorded(ex)) continue;
     const bestSet = ex.sets
       .filter((s) => s.done && s.weight && s.reps)
       .sort((a, b) => b.weight - a.weight)[0];
