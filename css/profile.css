@@ -1234,3 +1234,48 @@ button.pref-row-icon:active,
     transform: translateX(3px);
   }
 }
+
+/* ════════════════════════════════════════════════
+   AVA-1 — hero профиля под флагом 'avatar-ring' (вариант A): раскладка прежняя,
+   меняется только аватар — круг 80px в кольце (база .ava-ring в athlete-room.css),
+   кнопка-карандаш на кольце справа внизу, мягкое свечение тир-пилюли.
+   ════════════════════════════════════════════════ */
+.pp-hero-v2.ava-on .pp-avatar-v2.ava-ring {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: var(--ava-ring-w) solid transparent;
+  box-shadow: var(--elev-2);
+}
+.pp-hero-v2.ava-on .pp-avatar-v2.ava-ring:active { transform: scale(var(--press-scale-lg)); }
+.pp-hero-v2.ava-on .pp-avatar-ring { display: none; }
+.pp-avatar-edit {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-border-h);
+  color: var(--c-text-2);
+  box-shadow: var(--elev-1);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-fast);
+}
+/* Хит-бокс 44px поверх видимых 26px — палец не промахивается. */
+.pp-avatar-edit::before {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+}
+.pp-avatar-edit:active { transform: scale(var(--press-scale)); }
+.pp-hero-v2.ava-on .pp-tier-pill-v2 {
+  box-shadow: var(--elev-1), 0 0 12px color-mix(in srgb, var(--c-secondary) 20%, transparent);
+}

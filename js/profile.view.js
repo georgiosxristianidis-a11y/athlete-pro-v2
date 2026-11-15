@@ -57,11 +57,23 @@ export async function renderProfile(container, lang) {
 
 /** @param {HTMLElement} container */
 async function _syncAvatar(container) {
-  const { photo, colorIdx } = await getAvatarAppearance();
+  const { photo, colorIdx, ringId } = await getAvatarAppearance();
 
   const avatar = container.querySelector('#pp-avatar-main');
   const ring = container.querySelector('#pp-avatar-ring-main');
   if (!avatar) return;
+
+  // AVA-1: кольцо красит CSS по id токена; фото — слой --ava-face, не инлайн-фон
+  // (инлайн background перебил бы три слоя кольца).
+  if (avatar.classList.contains('ava-ring')) {
+    avatar.dataset.ring = ringId;
+    if (photo) {
+      avatar.style.setProperty('--ava-face', `url("${photo}")`);
+      const initials = avatar.querySelector('.pp-avatar-initials');
+      if (initials) initials.style.display = 'none';
+    }
+    return;
+  }
 
   if (photo) {
     avatar.style.backgroundImage = `url(${photo})`;

@@ -12,6 +12,7 @@ import { getLang, tri } from '../locale.store.js';
 import { on, onChange } from '../events.js';
 import { ensureCss } from './lazy-css.js';
 import { flag } from '../flags.js';
+import { loadRingId, ringRoomAvatarHtml, ringPickerHtml, initHeaderRing } from './avatar-ring.js';
 import { buildLadders, splitHeroes, currentFill } from './badge-ladders.js';
 import { weekKey, weekKeyAgo } from './week.js';
 
@@ -341,7 +342,7 @@ async function _buildContext() {
     f1,
     f2,
     colorIdx,
-    frameIdx,
+    frameIdx, ringId: flag('avatar-ring') ? await loadRingId() : 'brand', // AVA-1
     tierLabel: tri(TIER_RU[tier], tier, TIER_EL[tier]),
     tierColor: TIER_COLOR[tier],
     tier,
@@ -501,8 +502,7 @@ export const AthleteRoom = (() => {
       metrics,
     } = ctx;
 
-    // Use the existing avatar init logic but wrap the HTML
-    const avatarHtml = photo
+    const avatarHtml = flag('avatar-ring') ? ringRoomAvatarHtml(photo, c1, c2, initials, ctx.ringId) : photo
       ? `<div class="ar-avatar has-photo" style="background-image: url('${photo}')" data-action="ar:photoUpload">
            <div class="ar-avatar-ring" style="--c1:${f1}; --c2:${f2}"></div><div style="position:absolute; bottom:-4px; right:-4px; background:var(--c-surface); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.5); pointer-events:none;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" stroke-width="2" width="12" height="12"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
          </div>`
@@ -606,7 +606,7 @@ export const AthleteRoom = (() => {
                 ).join('')}
               </div>
 
-              <div class="ar-editor-colors-label" style="margin-top:var(--sp-2)">${tri('Цвет рамки', 'Frame Color', 'Χρώμα πλαισίου')}</div>
+              ${flag('avatar-ring') ? ringPickerHtml(ctx.ringId) : `<div class="ar-editor-colors-label" style="margin-top:var(--sp-2)">${tri('Цвет рамки', 'Frame Color', 'Χρώμα πλαισίου')}</div>
               <div class="ar-color-row">
                 ${FRAME_COLORS.map(
                   ([e, t], i) => `
@@ -614,7 +614,7 @@ export const AthleteRoom = (() => {
                        style="background:conic-gradient(from 0deg, ${e}, ${t}, ${e})"
                        data-action="ar:selectFrame" data-i="${i}"></div>`
                 ).join('')}
-              </div>
+              </div>`}
 
               <div class="ar-editor-actions" style="margin-top:var(--sp-3)">
                 <button class="ar-btn-save" data-action="ar:saveName">${tri('Применить', 'Apply', 'Εφαρμογή')}</button>
@@ -902,7 +902,7 @@ export const AthleteRoom = (() => {
 
   async function initAvatar() {
     const btn = document.getElementById('athlete-avatar-btn');
-    if (!btn) return;
+    if (!btn || (flag('avatar-ring') && initHeaderRing(btn, AVATAR_COLORS))) return; // AVA-1
     const [colorIdx, photo, customName, profile] = await Promise.all([
       DB.Settings.get('avatar-color', '0'),
       DB.Settings.get('athlete-photo', null),

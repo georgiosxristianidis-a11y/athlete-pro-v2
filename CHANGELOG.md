@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### AVA-1: аватар в бренд-кольце, флаг `avatar-ring` OFF (1.27.235)
+
+- Вариант A по макету Gio: круг в кольце accent→secondary с тёмным зазором `--c-bg` на трёх поверхностях — шапка (30px, 2px), комната атлета (72px, без `ring-spin`), hero профиля (80px + карандаш 26px → редактор комнаты, свечение тир-пилюли `--c-secondary` 20%). Раскладка hero прежняя.
+- Цвет кольца — 4 бренд-токена (`brand`/`accent`/`secondary`/`chrome`) вместо ряда «Цвет рамки» из 6 hex; ключ `avatar-ring` через `profile.store.js` (`setAvatarRing`, неизвестный id → `brand`). Легаси-ключи и OFF-путь побитно прежние.
+- Код кольца — `js/shared/avatar-ring.js`: `athlete-room.js` на потолке гиганта. Тумблер в Лаборатории не добавлен — `locale.store.js` тоже на потолке; включать `Flags.setFlag('avatar-ring', true)`.
+
 ### NAV-1: мягкая иконка Home в таб-баре (1.27.234)
 - Силуэт домика со скруглёнными коньком, плечами и низом (по референсу Gio). Неактивна — контур, как соседние иконки; активна — заливка `currentColor` того же силуэта (класс `nav-ico-fill`).
 
