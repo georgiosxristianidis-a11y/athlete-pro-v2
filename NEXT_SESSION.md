@@ -1,7 +1,7 @@
 # NEXT SESSION — Athlete Pro
 
 > Читать первым. **Роутер, а не состояние:** указатель на карточку, контекст — в хендоффе.
-> Обновлено 2026-11-14: очередь по приоритету.
+> Обновлено 2026-11-15: SWAP-1b влита, пачка P0 закрыта.
 > Осталось поле: Gio
 
 ## Куда идти за работой
@@ -25,23 +25,24 @@
 12. DATA-2 — `history-records`: «Мой максимум», стаж, сверка на экспорте
 13. DATA-3 — `stats-families`: жим ногами и штанга на Stats
 14. PLATE-2 — `plate-toy`: тап по грифу, отскок 7 px, вибро 8 мс
-15. Развилки и мокапы (DATA-4 влита, флаг muscles-ui у Gio) — `HANDOFF_data_logic.md` § Развилки Gio
-16. SWAP-1b — `swap-quick`: полоса замены на карточке, зал, узкий экран
+15. Развилки и мокапы, флаг `muscles-ui` — `HANDOFF_data_logic.md` § Развилки Gio
+16. SWAP-1b — `swap-quick` (влита 1.27.228): полоса замены на карточке, зал, узкий экран
+17. ANL-A1/A2 — календарь Stats на телефоне: тап по дню, «Вернуть», скролл на месте
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
-0. P0 (`HANDOFF_launch_track.md` § P0): `P0-AI-CONSENT` (код в PR #643, 1.27.223; остаток — § P0 хендоффа)
-1. `ANL-ALT` (поглощена DATA-3 при `stats-families` ON, закрыть после поля п.13), `DATA-4` — после развилок Gio (`HANDOFF_data_logic.md`)
-2. Фон, по одной за PR: A10 и `AUD-*` (хендофф Cursor, § Аудит 09.11); **`SUPA-1`** 08.11: неделя зелёных keep-alive
+0. UX — `HANDOFF_ux_irritants.md` § Порядок (UX-2b → 2c → 2e…), затем UX-1c…l
+1. `ANL-ALT` — закрыть после поля п.13 (поглощена DATA-3)
+2. Фон, по одной за PR: A10 и `AUD-*` (хендофф Cursor, § Аудит 09.11); **`SUPA-1`**: keep-alive зелёный 08–14.11 (14 прогонов) — закрыть карточку
 3. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio
-4. `GEAR-1`** к коду; **`HOME-4` (флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
+4. **`GEAR-1`** к коду; **`HOME-4` (флаг `burst-events`) и волна MOTION — косметика, `HANDOFF_motion_pro.md`
 
-5. Аудиты (`docs/handoff/`): `ANL-A3…A11` — `HANDOFF_analytics_audit`; `UX-1b…l` — `HANDOFF_ux_mechanics_audit`; `UX-2a…p` — `HANDOFF_ux_irritants`
+5. Аудиты (`docs/handoff/`): `ANL-A3…A11` — `HANDOFF_analytics_audit`; `UX-1c…l` — `HANDOFF_ux_mechanics_audit`; `UX-2b…p` — `HANDOFF_ux_irritants`
 
 **После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PERF-9` (стоп на мокап Gio), `PROG-0`.
 
 - **Поле — Android**, iPhone отложен. **webkit в Playwright не снимать** — единственный сигнал по Safari
-- **Невлитые ветки** — `npm run inventory`; вердикты **HYG-7** за Gio. `claude/changelog-deps-batch` влита по содержимому — мёрж откатит роутер
+- **Невлитые ветки** — `npm run inventory`; вердикты **HYG-7** за Gio
 
 Остальные семнадцать линий **заморожены в `docs/_archive/`** — пауза, не отмена; брать оттуда решением Gio после LAUNCH-10.
 
