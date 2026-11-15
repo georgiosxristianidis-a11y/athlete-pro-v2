@@ -404,6 +404,10 @@
       .nav-btn.active {
         color: var(--c-accent);
       }
+      /* NAV-1: Home неактивна — контур, активна — заливка того же силуэта. */
+      .nav-btn.active .nav-ico-fill {
+        fill: currentColor;
+      }
       .nav-btn:active {
         transform: scale(var(--press-scale));
       }
@@ -504,6 +508,7 @@
       <nav id="nav">
         <button class="nav-btn active" data-s="s-home" data-action="nav:go" aria-label="Home">
           <svg
+            class="nav-ico-fill"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -512,7 +517,9 @@
             width="22"
             height="22"
           >
-            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" />
+            <path
+              d="M13.7 4L19.46 8.73Q21 10 21 12V16.6Q21 20.6 17 20.6H7Q3 20.6 3 16.6V12Q3 10 4.54 8.73L10.3 4Q12 2.6 13.7 4Z"
+            />
           </svg>
         </button>
         <button
