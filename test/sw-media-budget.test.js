@@ -45,8 +45,12 @@ const INSTALL_BUDGET_BYTES = 0.75 * 1024 * 1024;
  * first ordinary feature module went red (progression curves, +12 KB). Raised
  * in its own PR per ceiling-bump-isolated; ~240 KB of headroom, still far
  * below a media drop.
+ *
+ * 2.25 -> 2.50 MB (2026-11-15, Gio): after CORE-02/03 the set sat ~10 KB under
+ * the ceiling and CORE-06 (js/intel.on-device.js + its CSS, ~13 KB) went red by
+ * 2.7 KB. Same reason as above, own PR again; ~250 KB of headroom.
  */
-const OFFLINE_BUDGET_BYTES = 2.25 * 1024 * 1024;
+const OFFLINE_BUDGET_BYTES = 2.5 * 1024 * 1024;
 
 const MEDIA_EXT = /\.(?:mp4|webm|m4a|mp3|ogg|mov)$/i;
 
