@@ -53,12 +53,10 @@ const LAYOUT_TRANSITIONS = {
 };
 
 /**
- * То же для инлайнового CSS: `index.html` + строки в `js/**`. Один шаблон бара
- * в Intel, размноженный по трём метрикам. Вне зоны PERF-2 и PERF-INLINE.
+ * То же для инлайнового CSS: `index.html` + строки в `js/**`. Пусто с CORE-GPU
+ * (1.27.229): три бара метрик Intel переехали с `width` на `translateX`.
  */
-const INLINE_LAYOUT_TRANSITIONS = {
-  'js/intel.view.js::width': 3,      // бары метрик, шаблон одной строкой
-};
+const INLINE_LAYOUT_TRANSITIONS = {};
 
 /** Spring гонит стиль сам — CSS-переход по тому же свойству это второй драйвер. */
 const SPRING_DRIVEN = [
