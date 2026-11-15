@@ -32,6 +32,7 @@ import { initDrumPickers } from '../ui/drum-picker.js';
 import { flag } from '../flags.js';
 import { hasAnalogs, swapKind } from '../shared/swap-groups.js';
 import { swapSegments, swapText } from '../shared/swap-strip.js';
+import { hintStripHtml } from './exercise-hint.js';
 import { plannedWarmupFlags } from '../shared/working-sets.js';
 import { fmtVol } from '../shared/format.js';
 import { blockTicks, blockOrder } from '../shared/block-ticks.js';
@@ -531,6 +532,7 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
   const coach = brk ? null : coachPillWeight(ex, workouts);
   const muscleBadge = await getMuscleBadge(ex.name);
   const displayName = await getDisplayName(ex.name);
+  const hintStrip = await hintStripHtml(ex, ei, workouts);
 
   // Блин в разрезе: диск с отверстием. Со своим весом блинов нет — кнопки нет.
   const iconPlate = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg>`;
@@ -570,6 +572,7 @@ export async function renderExerciseCard(ex, ei, workouts, open = !ex.sets.every
       </div>
       <div class="sets-wrap" id="sets-wrap-${ei}" style="display:${open ? 'block' : 'none'}">
         ${swapStripHtml(ex, ei)}
+        ${hintStrip}
         <div class="set-header-row">
           <span style="width:20px"></span>
           <button class="set-col-label set-col-btn ${ex.isBW ? 'is-bw' : ''}"

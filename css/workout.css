@@ -1453,3 +1453,59 @@
   background: var(--c-amber-bg);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-amber) 40%, transparent);
 }
+/* HINT-1 (флаг exercise-hint): полоса подсказки техники в раскрытой карточке и шторка «Техника». Только токены base.css. */
+.hint-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  width: 100%;
+  padding: var(--sp-0-5) var(--sp-1);
+  margin: 0 0 var(--sp-1);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-s);
+  color: var(--c-text-2);
+  font-family: inherit;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  text-align: left;
+}
+[data-tone='push'] { --hint-tone: var(--c-push); }
+[data-tone='pull'] { --hint-tone: var(--c-pull); }
+[data-tone='legs'] { --hint-tone: var(--c-legs); }
+[data-tone='core'] { --hint-tone: var(--c-accent); }
+.hint-body { flex: none; }
+.hint-body polygon { fill: var(--c-surface-h); }
+.hint-body polygon.is-n { fill: var(--c-border); }
+.hint-body polygon.is-p { fill: var(--hint-tone); }
+.hint-body polygon.is-s { fill: var(--hint-tone); fill-opacity: 0.38; }
+.hint-body.is-mini { height: var(--sp-6); }
+.hint-body.is-big { height: calc(var(--sp-6) * 4); }
+.hint-line {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hint-chev { flex: none; width: var(--sp-2); height: var(--sp-2); color: var(--c-text-3); }
+.hint-title { font-size: var(--fs-4); font-weight: var(--fw-bold); color: var(--c-text-1); }
+.hint-sub { margin-top: var(--sp-0-5); font-size: var(--fs-2); color: var(--c-text-3); }
+.hint-bodies { display: flex; justify-content: center; gap: var(--sp-3); margin: var(--sp-2) 0; }
+.hint-bodies figure { margin: 0; text-align: center; }
+.hint-bodies figcaption {
+  margin-top: var(--sp-0-5);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+.hint-legend { list-style: none; margin: 0 0 var(--sp-2); padding: 0; font-size: var(--fs-2); color: var(--c-text-2); }
+.hint-lg { display: flex; align-items: baseline; gap: var(--sp-1); margin-bottom: var(--sp-0-5); }
+.hint-lg i { flex: none; width: var(--sp-1); height: var(--sp-1); border-radius: var(--r-xs); background: var(--hint-tone); }
+.hint-lg.is-s i { opacity: 0.38; }
+.hint-tech { font-size: var(--fs-2); color: var(--c-text-2); line-height: 1.4; }
+.hint-tech p { margin: 0 0 var(--sp-1); }
+.hint-tech .hint-tech-line { font-size: var(--fs-3); font-weight: var(--fw-bold); color: var(--c-text-1); }
+.hint-close { width: 100%; margin-top: var(--sp-1); }
