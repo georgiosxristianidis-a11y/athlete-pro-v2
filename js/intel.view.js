@@ -16,11 +16,12 @@ import {
 } from './intel.store.js';
 import { Heatmap } from './claude.store.js';
 import { fatiguePercent } from './shared/coach-snapshot.js';
-import { esc, haptic, dismissOverlay } from './shared/utils.js';
+import { esc, haptic } from './shared/utils.js';
 import { formatAirMarkdown } from './shared/air-markdown.js';
 import { toUserMessage } from './shared/errors-ui.js';
 import { getLang, isRu, t, tri } from './locale.store.js';
 import { flag } from './flags.js';
+import * as Dock from './intel.dock.js';
 import { on, onChange, onKeydown } from './events.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
 import { startVoiceWave, stopVoiceWave } from './intel.voice-wave.js';
@@ -85,8 +86,6 @@ export const IntelView = (() => {
   let _keySource = 'offline';
   /** Вопрос с другой двери, ждёт отрисовки экрана (CORE-5). @type {string|null} */
   let _asked = null;
-  /** Лист журнала потока (CORE-03). */
-  const JOURNAL_ID = 'intel-journal-overlay';
 
   /**
    * Строки экрана. Язык — только через isRu()/getLang() (правило i18n проекта):
@@ -304,59 +303,11 @@ export const IntelView = (() => {
     // из-под пальца с каждой репликой. Пилюля статуса уходит из потока в лист
     // журнала (иконка в шапке). OFF — разметка побитно прежняя.
     const dock = flag('core-composer-dock');
-    document.getElementById(JOURNAL_ID)?.remove();
-    const modulesGrid = `
-        <div class="intel-modules-grid">
-          <button class="intel-module-card" data-action="intel:weekly">
-            <span class="intel-module-icon intel-module-icon--intel">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-            </span>
-            <span class="intel-module-label">${L.summary}</span>
-          </button>
-          ${generateCard}
-          <button class="intel-module-card" data-action="intel:analyzeStats">
-            <span class="intel-module-icon intel-module-icon--blue">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-            </span>
-            <span class="intel-module-label">${L.analyze}</span>
-          </button>
-          <button class="intel-module-card" data-action="intel:biometrics">
-            <span class="intel-module-icon intel-module-icon--red">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-            </span>
-            <span class="intel-module-label">${L.biometrics}</span>
-          </button>
-        </div>`;
-    const logsPill = `
-      <div class="intel-logs" data-action="intel:toggleLogs" data-keydown="intel:toggleLogs" role="button" tabindex="0" aria-expanded="false" aria-label="${L.logs}">
-        <div class="intel-logs-header">
-          <h3 class="intel-logs-title">STREAMING_LOGS</h3>
-          <span class="intel-logs-status" id="intel-logs-status-pill">${esc(IntelStore.getStatus())}</span>
-        </div>
-        <div id="intel-logs-container"></div>
-      </div>`;
-    const journalButton = dock
-      ? `
-          <button class="intel-btn-close intel-btn-journal" data-action="intel:openJournal" aria-label="${L.logs}" aria-haspopup="dialog">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
-              <line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>
-            </svg>
-          </button>`
-      : '';
-    // Лист собирается из шаблона в разметке экрана — без своего innerHTML (AUD-1).
-    const journalTpl = dock
-      ? `<template id="intel-journal-tpl"><div class="modal-sheet intel-journal-sheet" role="dialog" aria-modal="true" aria-label="${L.logs}">
-        <div class="modal-handle"></div>
-        <div class="modal-header">
-          <div class="modal-title">${L.logs}</div>
-          <button class="btn-icon-sm" data-action="intel:closeJournal" aria-label="${L.close}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-        <span class="intel-logs-status" id="intel-logs-status-pill"></span>
-        <div id="intel-logs-container"></div>
-      </div></template>`
-      : '';
+    document.getElementById(Dock.JOURNAL_ID)?.remove();
+    const modulesGrid = Dock.modulesGridHtml(L, generateCard);
+    const logsPill = Dock.logsPillHtml(L, IntelStore.getStatus());
+    const journalButton = dock ? Dock.journalButtonHtml(L) : '';
+    const journalTpl = dock ? Dock.journalTplHtml(L) : '';
 
     screen.innerHTML = `
       <header class="intel-header">
@@ -467,48 +418,13 @@ export const IntelView = (() => {
       const el = document.getElementById('intel-status-text');
       if (el) el.textContent = statusText;
 
-      _paintStatusPill(document.getElementById('intel-logs-status-pill'), statusText);
+      Dock.paintStatusPill(document.getElementById('intel-logs-status-pill'), statusText);
     });
   }
 
-  /** @param {HTMLElement|null} pill @param {string} statusText */
-  function _paintStatusPill(pill, statusText) {
-    if (!pill) return;
-    pill.textContent = statusText;
-    let color = 'var(--c-intel)';
-    if (statusText.includes('ERROR')) color = 'var(--c-red)';
-    else if (statusText.includes('SCANNING')) color = 'var(--c-accent)';
-    else if (statusText.includes('COMPUTING')) color = 'var(--c-amber)';
-    else if (statusText.includes('STANDBY')) color = 'var(--c-text-3)';
-    pill.style.color = color;
-    pill.style.borderColor = color;
-  }
-
-  /* ── CORE-03: журнал потока — лист из иконки шапки ──
-     Та же шторка, что AI-настройки (.modal-overlay.sd-overlay): стекло листа
-     узаконено в base.css, третьего стекла на экране Core не появляется.
-     Внутри — те же #intel-logs-status-pill и #intel-logs-container, поэтому
-     renderLogs() и слушатель статуса работают с листом без второй ветки. */
-  function openJournal() {
-    document.getElementById(JOURNAL_ID)?.remove();
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay sd-overlay intel-journal-overlay';
-    overlay.id = JOURNAL_ID;
-    const tpl = /** @type {HTMLTemplateElement|null} */ (document.getElementById('intel-journal-tpl'));
-    if (!tpl) return;
-    overlay.append(tpl.content.cloneNode(true));
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closeJournal();
-    });
-    _paintStatusPill(document.getElementById('intel-logs-status-pill'), IntelStore.getStatus());
-    renderLogs();
-  }
-
-  function closeJournal() {
-    const overlay = document.getElementById(JOURNAL_ID);
-    if (overlay) dismissOverlay(overlay);
-  }
+  /* CORE-03: журнал потока — лист из иконки шапки (js/intel.dock.js). */
+  const openJournal = () => Dock.openJournal(IntelStore.getStatus(), renderLogs);
+  const closeJournal = Dock.closeJournal;
 
   function handleCamera() {
     document.getElementById('intel-file-input')?.click();
