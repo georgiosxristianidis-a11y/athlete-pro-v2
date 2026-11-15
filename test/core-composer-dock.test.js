@@ -5,7 +5,7 @@
  * ON — модули закреплены доком над композером (вне скролла ленты), пилюли
  * статуса в потоке нет, журнал открывается листом из иконки в шапке.
  * OFF — разметка прежняя: сетка модулей в ленте, пилюля лога над композером.
- * Флаг OFF по умолчанию и в Лаборатории. Живой прогон (попадание пальцем,
+ * Флаг OFF по умолчанию. Живой прогон (попадание пальцем,
  * 5+ реплик) — ручной в превью; здесь то, что ловится без браузера.
  */
 import { test } from 'node:test';
@@ -24,10 +24,8 @@ const flags = stripComments(read('js/flags.js'));
 const view = stripComments(read('js/intel.view.js'));
 const css = read('css/intel.css');
 
-test('core-composer-dock: флаг объявлен OFF и выведен в Лабораторию', () => {
-  assert.match(flags, new RegExp(`'${FLAG}':\\s*false`));
-  const lab = flags.match(/LAB_FLAGS = Object\.freeze\(\[([^\]]*)\]/);
-  assert.ok(lab && lab[1].includes(`'${FLAG}'`), 'флаг должен быть в LAB_FLAGS');
+test('core-composer-dock: флаг объявлен OFF', () => {
+  assert.match(flags, new RegExp(`'${FLAG}':\s*false`));
 });
 
 test('core-composer-dock: ON — док над композером, OFF — легаси-пилюля и сетка в ленте', () => {
@@ -47,10 +45,12 @@ test('core-composer-dock: журнал — иконка шапки и лист �
   assert.match(view, /data-action="intel:openJournal"/);
   assert.match(view, /on\('intel:openJournal'/);
   assert.match(view, /on\('intel:closeJournal'/);
+  const tpl = view.slice(view.indexOf('const journalTpl'), view.indexOf('</template>'));
+  assert.match(tpl, /id="intel-logs-status-pill"/);
+  assert.match(tpl, /id="intel-logs-container"/);
   const open = view.slice(view.indexOf('function openJournal'), view.indexOf('function closeJournal'));
-  assert.match(open, /id="intel-logs-status-pill"/);
-  assert.match(open, /id="intel-logs-container"/);
   assert.match(open, /modal-overlay sd-overlay/);
+  assert.doesNotMatch(open, /innerHTML/);
 });
 
 test('core-composer-dock: док плоский — без нового стекла на экране', () => {

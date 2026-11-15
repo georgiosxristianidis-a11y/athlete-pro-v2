@@ -343,6 +343,20 @@ export const IntelView = (() => {
             </svg>
           </button>`
       : '';
+    // Лист собирается из шаблона в разметке экрана — без своего innerHTML (AUD-1).
+    const journalTpl = dock
+      ? `<template id="intel-journal-tpl"><div class="modal-sheet intel-journal-sheet" role="dialog" aria-modal="true" aria-label="${L.logs}">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">${L.logs}</div>
+          <button class="btn-icon-sm" data-action="intel:closeJournal" aria-label="${L.close}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <span class="intel-logs-status" id="intel-logs-status-pill"></span>
+        <div id="intel-logs-container"></div>
+      </div></template>`
+      : '';
 
     screen.innerHTML = `
       <header class="intel-header">
@@ -391,6 +405,7 @@ export const IntelView = (() => {
         </div>
         ${fileInput}
       </div>
+      ${journalTpl}
     `;
 
     renderLogs();
@@ -476,29 +491,15 @@ export const IntelView = (() => {
      renderLogs() и слушатель статуса работают с листом без второй ветки. */
   function openJournal() {
     document.getElementById(JOURNAL_ID)?.remove();
-    const L = _copy();
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay sd-overlay intel-journal-overlay';
     overlay.id = JOURNAL_ID;
-    overlay.innerHTML = `
-      <div class="modal-sheet intel-journal-sheet" role="dialog" aria-modal="true" aria-label="${L.logs}">
-        <div class="modal-handle"></div>
-        <div class="modal-header">
-          <div class="modal-title">${L.logs}</div>
-          <button class="btn-icon-sm" data-action="intel:closeJournal" aria-label="${L.close}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-        <span class="intel-logs-status" id="intel-logs-status-pill"></span>
-        <div id="intel-logs-container"></div>
-      </div>`;
+    const tpl = /** @type {HTMLTemplateElement|null} */ (document.getElementById('intel-journal-tpl'));
+    if (!tpl) return;
+    overlay.append(tpl.content.cloneNode(true));
     document.body.appendChild(overlay);
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) closeJournal();
-    });
-    // Системный «назад» уводит с экрана — лист не должен остаться висеть над чужим.
-    window.addEventListener('popstate', () => document.getElementById(JOURNAL_ID)?.remove(), {
-      once: true,
     });
     _paintStatusPill(document.getElementById('intel-logs-status-pill'), IntelStore.getStatus());
     renderLogs();
