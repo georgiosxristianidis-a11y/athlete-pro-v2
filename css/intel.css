@@ -418,6 +418,52 @@
   letter-spacing: 0.07em;
 }
 
+/* ── CORE-03 (флаг 'core-composer-dock'): док модулей над композером ──
+   Вне скролла .intel-body: лента растёт сверху, а док стоит на месте под
+   большим пальцем. Плоский (Tier 1) — стекла на экране по-прежнему два. */
+.intel-dock {
+  flex-shrink: 0;
+  margin-bottom: var(--sp-1);
+}
+
+.intel-dock .intel-modules-grid {
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: var(--sp-1);
+  margin: 0;
+}
+
+.intel-dock .intel-module-card,
+.intel-dock .intel-module-card:last-child:nth-child(odd) {
+  grid-column: auto;
+  min-height: 48px;
+  padding: var(--sp-1) 4px;
+  gap: 4px;
+}
+
+.intel-dock .intel-module-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.intel-dock .intel-module-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.intel-dock .intel-module-label {
+  font-size: var(--fs-1);
+}
+
+/* Журнал потока в листе: пилюля статуса — строкой над лентой, лента выше. */
+.intel-journal-sheet .intel-logs-status {
+  display: inline-block;
+  margin-bottom: var(--sp-2);
+}
+
+.intel-journal-sheet #intel-logs-container {
+  max-height: 50vh;
+}
+
 /* ── Tier 2 · пилюля лога ──
    Свёрнута до статуса; раскрывается тапом (data-action="intel:toggleLogs").
    Blur здесь легален: элемент плавает над потоком. */
