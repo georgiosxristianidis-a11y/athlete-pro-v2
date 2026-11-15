@@ -992,7 +992,7 @@ export const IntelView = (() => {
     if (!mount) return;
     try {
       const data = await fetchReadiness();
-      mount.innerHTML = _buildReadinessWidget(data);
+      mount.innerHTML = flag('core-ready-strip') ? (await import('./intel.ready-strip.js')).buildReadyStrip(data) : _buildReadinessWidget(data); // CORE-02
     } catch (err) {
       // Пустая история/сбой IDB — не повод ронять экран, просто нет виджета.
       mount.innerHTML = '';
