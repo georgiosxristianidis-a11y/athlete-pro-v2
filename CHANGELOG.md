@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CORE-02: полоса готовности 64 px на P.A.N.D.A. Core за флагом `core-ready-strip` (1.27.230)
+
+- Сценарий 02 макета: виджет готовности (индекс, четыре слагаемых, ЦНС) сворачивается в одну полосу «68 · Удовл.» + «ЦНС 0%». Тап раскрывает шесть шкал панелью поверх ленты — absolute, въезд transform/opacity; в превью 375×812 верх сетки модулей и scrollHeight ленты до/после раскрытия совпали.
+- Числа — те же поля `fetchReadiness()`: индекс, `parts.recovery/acwr/monotony/trend`, `cns`. Сна в движке нет — шкалы сна нет.
+- Код в `js/intel.ready-strip.js`, вью грузит его `import()`-ом только при ON: `intel.view.js` на потолке гигантов, бут не платит. Легаси `_buildReadinessWidget` — ветка OFF. Дефолт OFF; гард `test/core-ready-strip.test.js`.
+- Тумблер Лаборатории не заведён: `locale.store.js` на потолке (1310), подъём — отдельным PR.
+
 ### CORE-GPU: анимации экрана P.A.N.D.A. Core — только композитор (1.27.229)
 
 - Лазер сканера фото (`.intel-scanner-bar`) ехал по `top: 0 → 100%` — пересчёт раскладки на каждом кадре вечной анимации. Теперь едет обёртка во всю высоту превью `translateY(0 → 100%)`, луч — её `::before`; путь и вид прежние.
