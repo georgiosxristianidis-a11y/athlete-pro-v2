@@ -222,6 +222,13 @@ const DEFAULTS = {
   // старая замена (⋮ → «Заменить») не меняется. Default OFF до поля Gio; тумблер в Лаборатории.
   // Kill switch: Flags.setFlag('swap-quick', false)
   'swap-quick': false,
+  // CORE-03 (макет P.A.N.D.A., сценарий 03): на экране Core пилюля статуса уходит из
+  // потока — журнал потока открывается листом из иконки в шапке, а быстрые модули
+  // (Сводка/Анализ/Биометрия) закреплены над композером в зоне большого пальца и не
+  // уезжают при переписке (js/intel.view.js). OFF — пилюля лога и сетка модулей в ленте
+  // побитно прежние. Default OFF до поля Gio; тумблер в Лаборатории.
+  // Kill switch: Flags.setFlag('core-composer-dock', false)
+  'core-composer-dock': false,
 };
 
 /** @param {string} name @returns {boolean} */
@@ -251,7 +258,7 @@ export function allFlags() {
  * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
  * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
  */
-export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'rest-skip-undo', 'gym-equipment', 'exercise-registry', 'history-records', 'stats-families', 'plate-toy', 'muscles-ui', 'swap-quick']);
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'rest-skip-undo', 'gym-equipment', 'exercise-registry', 'history-records', 'stats-families', 'plate-toy', 'muscles-ui', 'swap-quick', 'core-composer-dock']);
 
 /** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
 export function isOverridden(name) {
