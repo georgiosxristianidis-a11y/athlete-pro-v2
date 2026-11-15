@@ -22,10 +22,12 @@ const stripComments = (/** @type {string} */ s) =>
 const FLAG = 'core-composer-dock';
 const flags = stripComments(read('js/flags.js'));
 const view = stripComments(read('js/intel.view.js'));
+// Разметка модулей/журнала и открытие листа вынесены в js/intel.dock.js (потолок размера intel.view.js).
+const dock = stripComments(read('js/intel.dock.js'));
 const css = read('css/intel.css');
 
 test('core-composer-dock: флаг объявлен OFF', () => {
-  assert.match(flags, new RegExp(`'${FLAG}':\s*false`));
+  assert.match(flags, new RegExp(`'${FLAG}':\\s*false`));
 });
 
 test('core-composer-dock: ON — док над композером, OFF — легаси-пилюля и сетка в ленте', () => {
@@ -33,7 +35,8 @@ test('core-composer-dock: ON — док над композером, OFF — л�
   // OFF-ветка не снесена: пилюля лога и сетка в ленте живы.
   assert.match(view, /\$\{dock \? '' : modulesGrid\}/);
   assert.match(view, /: logsPill\}/);
-  assert.match(view, /class="intel-logs" data-action="intel:toggleLogs"/);
+  assert.match(view, /const logsPill = Dock\.logsPillHtml\(/);
+  assert.match(dock, /class="intel-logs" data-action="intel:toggleLogs"/);
   // ON: док стоит ПЕРЕД композером и вне .intel-body.
   const dockAt = view.indexOf('<nav class="intel-dock"');
   const cmdAt = view.indexOf('<div class="intel-cmd-wrap">');
@@ -42,13 +45,18 @@ test('core-composer-dock: ON — док над композером, OFF — л�
 });
 
 test('core-composer-dock: журнал — иконка шапки и лист с теми же узлами лога', () => {
-  assert.match(view, /data-action="intel:openJournal"/);
+  assert.match(view, /const journalButton = dock \? Dock\.journalButtonHtml\(L\) : ''/);
+  assert.match(view, /const journalTpl = dock \? Dock\.journalTplHtml\(L\) : ''/);
+  assert.match(view, /\$\{journalTpl\}/);
+  assert.match(dock, /data-action="intel:openJournal"/);
   assert.match(view, /on\('intel:openJournal'/);
   assert.match(view, /on\('intel:closeJournal'/);
-  const tpl = view.slice(view.indexOf('const journalTpl'), view.indexOf('</template>'));
+  const tpl = dock.slice(dock.indexOf('function journalTplHtml'), dock.indexOf('</template>'));
+  assert.ok(tpl.length > 0, 'шаблон журнала пропал');
   assert.match(tpl, /id="intel-logs-status-pill"/);
   assert.match(tpl, /id="intel-logs-container"/);
-  const open = view.slice(view.indexOf('function openJournal'), view.indexOf('function closeJournal'));
+  const open = dock.slice(dock.indexOf('function openJournal'), dock.indexOf('function closeJournal'));
+  assert.ok(open.length > 0, 'openJournal пропала');
   assert.match(open, /modal-overlay sd-overlay/);
   assert.doesNotMatch(open, /innerHTML/);
 });
