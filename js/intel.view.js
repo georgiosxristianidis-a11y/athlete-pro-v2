@@ -26,6 +26,7 @@ import { on, onChange, onKeydown } from './events.js';
 import { openAiSettings, closeAiSettings } from './ai-settings.view.js';
 import { startVoiceWave, stopVoiceWave } from './intel.voice-wave.js';
 import { requestAiConsent, aiConsentDoor, aiLocalBannerHtml } from './ai-consent.view.js';
+import { onDeviceMode, keyBadge, onDeviceCardHtml, renderOnDevice } from './intel.on-device.js';
 
 // A7: was a hard Nav.go('s-home') — broke "where I came from" whenever Intel
 // was opened from anywhere but Home. Intel is only ever entered via
@@ -238,16 +239,13 @@ export const IntelView = (() => {
     const header = document.querySelector('#s-intel .intel-header');
     if (!header) return;
     const L = _copy();
+    const b = keyBadge(L, _hasValidKey, _keySource);
     const dot = header.querySelector('.ai-indicator');
     const label = header.querySelector('.intel-key-state');
-    if (dot) dot.className = `ai-indicator ${_hasValidKey ? 'active' : 'missing'}`;
+    if (dot) dot.className = `ai-indicator ${b.dot}`;
     if (label) {
-      label.className = `intel-key-state ${_hasValidKey ? 'is-ok' : 'is-missing'}`;
-      label.textContent = _hasValidKey
-        ? L.keyOk
-        : _keySource === 'airgap'
-          ? L.keyAirgap
-          : L.keyMissing;
+      label.className = `intel-key-state ${b.cls}`;
+      label.textContent = b.text;
     }
   }
 
@@ -291,12 +289,13 @@ export const IntelView = (() => {
       ? '<input type="file" id="intel-file-input" accept="image/*" style="display:none" data-change="intel:fileSelected">'
       : '';
 
-    // CORE-S: airgap форсирует aiEnabled=false (privacy.store.js), поэтому
-    // одного флага хватает и на дефолтный airgap, и на ручное «ИИ выключен»
-    // в cloud/anon — оба случая означают, что ниже считается только локальная
-    // история (fetchReadiness), а модули СВОДКА/АНАЛИЗ/БИОМЕТРИЯ заблокированы.
+    // CORE-S: airgap форсирует aiEnabled=false (privacy.store.js) — один флаг на дефолтный
+    // airgap и ручное «ИИ выключен»: ниже только локальная история, двери идут локально.
+    // CORE-06 (флаг core-on-device): вместо плашки с замком — карточка «На устройстве · 0 ₽».
     const local = isCoachLocal();
-    const localBanner = local ? aiLocalBannerHtml(esc(L.localMode), 'intel:enableAi') : '';
+    const onDevice = onDeviceMode();
+    const localBanner = onDevice ? onDeviceCardHtml() : local ? aiLocalBannerHtml(esc(L.localMode), 'intel:enableAi') : '';
+    const b = keyBadge(L, _hasValidKey, _keySource);
 
     // CORE-03 (флаг 'core-composer-dock'): модули уходят из ленты в док над
     // композером — лента растёт сверху (prepend), и сетка в её хвосте уезжала
@@ -314,8 +313,8 @@ export const IntelView = (() => {
         <div>
           <h1 class="intel-title">P.A.N.D.A. Core</h1>
           <div class="intel-sub">
-            <span class="ai-indicator ${_hasValidKey ? 'active' : 'missing'}"></span>
-            <span class="intel-key-state ${_hasValidKey ? 'is-ok' : 'is-missing'}">${esc(_hasValidKey ? L.keyOk : _keySource === 'airgap' ? L.keyAirgap : L.keyMissing)}</span>
+            <span class="ai-indicator ${b.dot}"></span>
+            <span class="intel-key-state ${b.cls}">${esc(b.text)}</span>
             <span class="intel-sub-sep">·</span>
             <span id="intel-status-text" class="intel-status-text">${esc(IntelStore.getStatus())}</span>
           </div>
@@ -363,6 +362,7 @@ export const IntelView = (() => {
     _listen();
     _renderReadinessWidget();
     if (local) _renderLocalInsights();
+    if (onDevice) renderOnDevice(document.getElementById('intel-device-muscles'));
     // Разметку экрана load() пересобирает целиком, а запрос мог остаться в
     // полёте (ушёл с экрана и вернулся) — иначе кнопка выглядит свободной,
     // но submit() молча выходит по флагу.
