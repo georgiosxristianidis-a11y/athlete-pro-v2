@@ -1245,6 +1245,13 @@ button.pref-row-icon:active,
   height: 80px;
   border-radius: 50%;
   border: var(--ava-ring-w) solid transparent;
+  padding: var(--ava-gap);
+  /* Слои .ava-ring повторены: profile.css грузится позже athlete-room.css,
+     и фон .pp-avatar-v2 (--c-bg-3) иначе перебивает кольцо целиком. */
+  background:
+    var(--ava-face) center / cover no-repeat content-box,
+    linear-gradient(var(--c-bg), var(--c-bg)) padding-box,
+    var(--ava-ring-fill) border-box;
   box-shadow: var(--elev-2);
 }
 .pp-hero-v2.ava-on .pp-avatar-v2.ava-ring:active { transform: scale(var(--press-scale-lg)); }
