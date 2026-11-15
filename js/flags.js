@@ -226,8 +226,7 @@ const DEFAULTS = {
   // потока — журнал потока открывается листом из иконки в шапке, а быстрые модули
   // (Сводка/Анализ/Биометрия) закреплены над композером в зоне большого пальца и не
   // уезжают при переписке (js/intel.view.js). OFF — пилюля лога и сетка модулей в ленте
-  // побитно прежние. Default OFF до поля Gio; тумблер в Лаборатории.
-  // Kill switch: Flags.setFlag('core-composer-dock', false)
+  // побитно прежние. Default OFF до поля Gio. Включить: Flags.setFlag('core-composer-dock', true)
   'core-composer-dock': false,
 };
 
@@ -258,7 +257,7 @@ export function allFlags() {
  * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
  * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
  */
-export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'rest-skip-undo', 'gym-equipment', 'exercise-registry', 'history-records', 'stats-families', 'plate-toy', 'muscles-ui', 'swap-quick', 'core-composer-dock']);
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'rest-skip-undo', 'gym-equipment', 'exercise-registry', 'history-records', 'stats-families', 'plate-toy', 'muscles-ui', 'swap-quick']);
 
 /** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
 export function isOverridden(name) {
