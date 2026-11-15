@@ -105,9 +105,35 @@ describe('A13 profile.store — данные', () => {
   });
 
   test('аватар: индекс палитры — число, мусор даёт 0', async () => {
-    assert.deepEqual(await store.getAvatarAppearance(), { photo: null, colorIdx: 0 });
+    assert.deepEqual(await store.getAvatarAppearance(), { photo: null, colorIdx: 0, ringId: 'brand' });
     await DB.Settings.set('avatar-color', '3');
     assert.equal((await store.getAvatarAppearance()).colorIdx, 3);
+  });
+
+  test('AVA-1 кольцо: дефолт brand, только 4 бренд-id, мусор пишется как дефолт', async () => {
+    assert.equal((await store.getAvatarAppearance()).ringId, 'brand', 'чистая база');
+    assert.deepEqual([...store.AVATAR_RING_IDS], ['brand', 'accent', 'secondary', 'chrome']);
+    for (const id of store.AVATAR_RING_IDS) {
+      assert.equal(await store.setAvatarRing(id), id);
+      assert.equal((await store.getAvatarAppearance()).ringId, id);
+      assert.equal(await DB.Settings.get('avatar-ring'), id, 'записано в базу, не только возвращено');
+    }
+    // семантические цвета и сырые hex отвергнуты законом палитры
+    for (const bad of ['cyan', 'amber', '#ff4d88', '', null, undefined, 3, 'BRAND']) {
+      assert.equal(await store.setAvatarRing(bad), 'brand', `${String(bad)} → brand`);
+      assert.equal(await DB.Settings.get('avatar-ring'), 'brand');
+    }
+    // мусор, попавший в базу мимо сеттера (старый бэкап), читается как дефолт
+    await DB.Settings.set('avatar-ring', 'pink');
+    assert.equal((await store.getAvatarAppearance()).ringId, 'brand');
+  });
+
+  test('AVA-1 кольцо: легаси-ключи avatar-color/avatar-frame сеттер не трогает', async () => {
+    await DB.Settings.set('avatar-frame', '4');
+    await DB.Settings.set('avatar-color', '2');
+    await store.setAvatarRing('chrome');
+    assert.equal(await DB.Settings.get('avatar-frame'), '4');
+    assert.equal(await DB.Settings.get('avatar-color'), '2');
   });
 
   test('паспорт: один заход отдаёт все четыре источника', async () => {
