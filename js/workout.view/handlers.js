@@ -54,6 +54,7 @@ import { confirmDialog } from '../shared/confirm.js';
 import { t } from '../locale.store.js';
 import { startWakeLockSession, releaseWakeLock } from '../features/wake-lock.js';
 import { on } from '../events.js';
+import { hintMenuItems } from './exercise-hint.js';
 
 on('wo:menuAction', (el) => {
   el.closest('.modal-overlay')?.remove();
@@ -464,10 +465,7 @@ export async function showExerciseMenu(ei) {
   // Пропуск: стрелка «в обход» вниз — упражнение уходит в конец списка.
   const _svgSkip = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M5 4v6a6 6 0 006 6h8"/><polyline points="15 12 19 16 15 20"/></svg>`;
   // Турбо целится в первый недоделанный подход (все сделаны — в первый).
-  const turboSi = Math.max(
-    0,
-    ex.sets.findIndex((s) => !s.done)
-  );
+  const turboSi = Math.max(0, ex.sets.findIndex((s) => !s.done));
   const actions = [
     {
       label: t('train.replace'),
@@ -494,6 +492,7 @@ export async function showExerciseMenu(ei) {
       icon: _svgSkip,
       action: () => skipExerciseToday(ei),
     },
+    ...(await hintMenuItems(ei)),
   ];
 
   const overlay = document.createElement('div');

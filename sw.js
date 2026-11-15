@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-348c0ae3';
+const CACHE_NAME = 'athlete-pro-v121-d06bbd5e';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -126,12 +126,14 @@ const ASSETS_WARM = [
   '/js/shared/athlete-room.js',
   '/js/shared/badge-ladders.js',
   '/js/shared/block-ticks.js',
+  '/js/shared/body-map.js',
   '/js/shared/coach-snapshot.js',
   '/js/shared/confirm.js',
   '/js/shared/csv-export.js',
   '/js/shared/digit-roll.js',
   '/js/shared/download.js',
   '/js/shared/dynamic-island.js',
+  '/js/shared/exercise-hints.js',
   '/js/shared/exercise-identity.js',
   '/js/shared/exercise-label.js',
   '/js/shared/exercise-records.js',
@@ -140,6 +142,7 @@ const ASSETS_WARM = [
   '/js/shared/field-shake.js',
   '/js/shared/frame-meter.js',
   '/js/shared/gym-equipment.js',
+  '/js/shared/hint-resolve.js',
   '/js/shared/home-matter.js',
   '/js/shared/integrity.js',
   '/js/shared/island-tracker.js',
@@ -171,6 +174,7 @@ const ASSETS_WARM = [
   '/js/usage.js',
   '/js/vendor/supabase.umd.js',
   '/js/workers/crypto.worker.js',
+  '/js/workout.view/exercise-hint.js',
   '/js/workout.view/handlers.js',
   '/js/workout.view/modals.js',
   '/js/workout.view/picker-muscles.js',

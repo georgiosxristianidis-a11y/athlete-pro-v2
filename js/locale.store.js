@@ -180,6 +180,8 @@ const DICT = {
     'lab.muscles-ui_sub': 'Muscle chips and labels in the exercise picker; tap a radar axis for its card',
     'lab.swap-quick': 'Quick swap in the logger',
     'lab.swap-quick_sub': 'A strip under the exercise name: swap for an analogue in one tap; the weight comes from history, with Undo',
+    'lab.exercise-hint': 'Technique hint',
+    'lab.exercise-hint_sub': 'Strip in the open exercise card: which machine and movement, muscle silhouette; hides after 3 sessions',
     'equip.title': 'Gym equipment',
     'equip.sub': 'Switched off is not offered when adding or replacing an exercise',
     'equip.kind.barbell': 'barbell',
@@ -353,14 +355,12 @@ const DICT = {
     'metrics.empty_title': 'No measurements',
     'metrics.empty_sub': 'Tap "Add Entry" to record your body metrics',
     'metrics.delete_confirm_title': 'Delete Entry?',
-    // PANDA-1 — голос маскота. Тон: молчаливое осуждение, потолок 5 слов.
-    // Он никогда не тренируется и не хвалит с пустым ртом.
+    // PANDA-1 — голос маскота. Тон: молчаливое осуждение, потолок 5 слов. Он никогда не тренируется и не хвалит с пустым ртом.
     'mascot.cold_bamboo': 'Bamboo went cold.',
     'mascot.ledger_title': 'Ledger',
     'mascot.ledger_you': 'You',
     'mascot.ledger_me': 'Me',
-    // Единицы — подписи, а не счётные слова: число живёт отдельной колонкой,
-    // поэтому склонение («24 подходов») в принципе не может сломаться.
+    // Единицы — подписи, а не счётные слова: число живёт отдельной колонкой, поэтому склонение («24 подходов») в принципе не может сломаться.
     'mascot.ledger_sets': 'sets',
     'mascot.ledger_bamboo': 'bamboo',
     'mascot.draw': 'A draw.',
@@ -775,6 +775,8 @@ const DICT = {
     'lab.muscles-ui_sub': 'Подчипы и лейблы мышц в выборе упражнения; тап по оси радара открывает её карточку',
     'lab.swap-quick': 'Быстрая замена в логгере',
     'lab.swap-quick_sub': 'Полоса под названием упражнения: замена на аналог одним тапом; вес берётся из истории, есть «Вернуть»',
+    'lab.exercise-hint': 'Подсказка техники',
+    'lab.exercise-hint_sub': 'Полоса в раскрытой карточке: какой тренажёр и движение, силуэт мышц; скрывается после 3 сессий',
     'equip.title': 'Снаряды зала',
     'equip.sub': 'Выключенное не предлагается при добавлении и замене упражнения',
     'equip.kind.barbell': 'штанга',
@@ -1255,9 +1257,7 @@ export async function initLocale() {
   await DB.Settings.set('lang', detected);
 }
 
-/**
- * Get current language.
- */
+/** Get current language. */
 export function getLang() {
   return _lang;
 }
