@@ -371,14 +371,38 @@ export async function loadPassportSources() {
   return { profile, workouts, latestMetrics, oneRMsRaw };
 }
 
-/** Фото и индекс палитры аватара (Athlete Room).
- *  @returns {Promise<{ photo: string|null, colorIdx: number }>} */
+/**
+ * AVA-1 — цвет кольца аватара (флаг 'avatar-ring'). Хранится id токена, а не
+ * цвет: сам цвет резолвит CSS по `[data-ring]` (css/athlete-room.css), поэтому
+ * светлая тема и смена палитры доезжают без миграции. Только бренд-цвета:
+ * семантические (циан, янтарь, розовый) по закону палитры не для декора.
+ * Легаси-ключ 'avatar-frame' (6 сырых hex) не трогаем — им живёт OFF-путь.
+ */
+export const AVATAR_RING_IDS = Object.freeze(['brand', 'accent', 'secondary', 'chrome']);
+export const AVATAR_RING_DEFAULT = 'brand';
+
+/** @param {unknown} id @returns {string} известный id или дефолт */
+export function normalizeAvatarRing(id) {
+  return typeof id === 'string' && AVATAR_RING_IDS.includes(id) ? id : AVATAR_RING_DEFAULT;
+}
+
+/** Фото, индекс палитры и цвет кольца аватара (Athlete Room).
+ *  @returns {Promise<{ photo: string|null, colorIdx: number, ringId: string }>} */
 export async function getAvatarAppearance() {
-  const [photo, colorIdxRaw] = await Promise.all([
+  const [photo, colorIdxRaw, ringRaw] = await Promise.all([
     DB.Settings.get('athlete-photo', null),
     DB.Settings.get('avatar-color', '0'),
+    DB.Settings.get('avatar-ring', AVATAR_RING_DEFAULT),
   ]);
-  return { photo, colorIdx: parseInt(colorIdxRaw) || 0 };
+  return { photo, colorIdx: parseInt(colorIdxRaw) || 0, ringId: normalizeAvatarRing(ringRaw) };
+}
+
+/** Записать цвет кольца. Неизвестный id пишется как дефолт, а не как мусор.
+ *  @param {unknown} id @returns {Promise<string>} записанный id */
+export async function setAvatarRing(id) {
+  const ringId = normalizeAvatarRing(id);
+  await DB.Settings.set('avatar-ring', ringId);
+  return ringId;
 }
 
 /* ════════════════════════════════════════════════════════
