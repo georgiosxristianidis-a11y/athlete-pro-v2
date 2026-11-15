@@ -680,7 +680,19 @@
   cursor: pointer;
 }
 
+/* Лазер едет сдвигом, а не `top` (CORE-GPU): `top` пересчитывал раскладку на
+   каждом кадре. translateY в процентах берёт высоту самого элемента, поэтому
+   едет обёртка во всю высоту превью, а луч рисует её ::before у верхнего края —
+   путь 0 → 100% высоты контейнера, как было. */
 .intel-scanner-bar {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: intel-scan 2s linear infinite;
+}
+
+.intel-scanner-bar::before {
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
@@ -688,12 +700,11 @@
   height: 2px;
   background: var(--c-intel);
   box-shadow: 0 0 10px var(--c-intel);
-  animation: intel-scan 2s linear infinite;
 }
 
 @keyframes intel-scan {
-  0% { top: 0; }
-  100% { top: 100%; }
+  0% { transform: translateY(0); }
+  100% { transform: translateY(100%); }
 }
 
 /* ════════════════════════════════════════════════════════

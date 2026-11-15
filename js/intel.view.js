@@ -1038,7 +1038,7 @@ export const IntelView = (() => {
           <div style="font-size:var(--fs-2); font-weight:var(--fw-md); color:var(--c-text-2);">${label}</div>
           <div style="display:flex; align-items:center; gap:var(--sp-1); width:55%;">
             <div style="flex:1; height:6px; background:var(--c-surface-h); border-radius:3px; overflow:hidden;">
-              <div style="width:${v}%; height:100%; background:${c}; border-radius:3px; transition: width 1s ease-out;"></div>
+              <div style="width:100%; height:100%; background:${c}; border-radius:3px; transform:translateX(${v - 100}%); transition: transform 1s ease-out;"></div>
             </div>
             <span style="font-size:var(--fs-2); font-weight:var(--fw-black); color:${c}; width:28px; text-align:right;">${v}</span>
           </div>
@@ -1066,7 +1066,7 @@ export const IntelView = (() => {
           <div style="font-size:var(--fs-6); font-weight:var(--fw-black); color:${mainColor}; line-height:1; font-family:'Instrument Sans', sans-serif;">${index}</div>
           <div style="flex:1; padding-bottom:var(--sp-1);">
             <div style="height:6px; background:var(--c-border-h); border-radius:3px; overflow:hidden;">
-              <div style="height:100%; width:${index}%; background:${mainColor}; border-radius:3px; transition: width 1s ease-out;"></div>
+              <div style="height:100%; width:100%; background:${mainColor}; border-radius:3px; transform:translateX(${index - 100}%); transition: transform 1s ease-out;"></div>
             </div>
             <div style="font-size:var(--fs-2); color:var(--c-text-3); margin-top:var(--sp-1); text-transform:uppercase; font-weight:var(--fw-bold);">${indexLabel}${lowNote}</div>
           </div>
@@ -1082,7 +1082,7 @@ export const IntelView = (() => {
         <div style="border-top:1px solid var(--c-border); padding-top:var(--sp-3); display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size:var(--fs-1); font-weight:var(--fw-black); letter-spacing:0.1em; color:var(--c-text-3); text-transform:uppercase;">${tri('ЦНС', 'CNS', 'ΚΝΣ')}</span>
           <div style="display:flex; align-items:center; gap:var(--sp-1);">
-            <div style="width:40px; height:4px; background:var(--c-border-h); border-radius:2px;"><div style="width:${cns}%; height:100%; background:var(--c-red); border-radius:2px; transition: width 1s ease-out;"></div></div>
+            <div style="width:40px; height:4px; background:var(--c-border-h); border-radius:2px; overflow:hidden;"><div style="width:100%; height:100%; background:var(--c-red); border-radius:2px; transform:translateX(${cns - 100}%); transition: transform 1s ease-out;"></div></div>
             <span style="font-size:var(--fs-2); font-weight:var(--fw-bold); color:var(--c-red);">${cns}%</span>
           </div>
         </div>
