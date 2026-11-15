@@ -238,6 +238,13 @@ const DEFAULTS = {
   // Сети нет. OFF — шапка и плашка побитно прежние. Default OFF до поля Gio.
   // Kill switch: Flags.setFlag('core-on-device', false)
   'core-on-device': false,
+  // AVA-1 (выбор Gio 16.11, вариант A макета): аватар — круг в кольце бренд-градиента
+  // (accent → secondary) с тёмным зазором на трёх поверхностях: шапка, комната атлета, hero
+  // профиля (+ кнопка-карандаш, свечение тир-пилюли). Цвет кольца — id токена в 'avatar-ring'
+  // (profile.store.js), выбор из 4 бренд-цветов вместо ряда «Цвет рамки». OFF — аватар и
+  // легаси-ключи avatar-color/avatar-frame побитно прежние. Default OFF до поля Gio.
+  // Kill switch: Flags.setFlag('avatar-ring', false)
+  'avatar-ring': false,
 };
 
 /** @param {string} name @returns {boolean} */

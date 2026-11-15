@@ -6,8 +6,15 @@ import { athleteProScore, exrxTier, tierFromScore } from '../strength-engine.js'
 import { DB } from '../db.js';
 import { esc } from '../shared/utils.js';
 import { on } from '../events.js';
+import { flag } from '../flags.js';
 
 on('pp:openRoom',    () => window.AthleteRoom?.open());
+// AVA-1: карандаш на кольце — сразу редактор имени/аватара в комнате атлета.
+on('pp:editAvatar',  async () => {
+  window._arActiveTab = 'profile';
+  await window.AthleteRoom?.open();
+  window.AthleteRoom?.editName();
+});
 on('pp:openMetrics', () => { window._arActiveTab = 'metrics'; window.AthleteRoom?.open(); });
 // PP-3 + PCT-1: обе пилюли ведут в одно место — вкладку «Сила», где скор
 // разложен на множители, а процентиль объяснён таблицей ExRx.
@@ -68,13 +75,23 @@ export function renderPassportHero(profile, metrics, oneRMs, lang) {
   // Photo & Color cycle integration from AthleteRoom
   // We'll use a placeholder for the photo and ring color, to be populated by the caller if possible
   // or just default to initials for now as we don't want to make renderPassportHero async
+  // AVA-1: под флагом — круг в кольце + карандаш; цвет кольца (data-ring) и фото
+  // докрашивает _syncAvatar в profile.view.js, дефолт brand виден сразу.
+  const ring = flag('avatar-ring');
+  const editBtn = ring
+    ? `<button type="button" class="pp-avatar-edit" data-action="pp:editAvatar"
+         aria-label="${tri('Изменить аватар', 'Edit avatar', 'Επεξεργασία avatar')}">
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4z"/></svg>
+       </button>`
+    : '';
   return `
-<div class="pp-hero-v2">
+<div class="pp-hero-v2${ring ? ' ava-on' : ''}">
   <div class="pp-avatar-wrap">
-    <div class="pp-avatar-v2" id="pp-avatar-main" data-action="pp:openRoom">
+    <div class="pp-avatar-v2${ring ? ' ava-ring' : ''}" id="pp-avatar-main" data-action="pp:openRoom"${ring ? ' data-ring="brand"' : ''}>
       <span class="pp-avatar-initials">${esc(initials)}</span>
     </div>
     <div class="pp-avatar-ring" id="pp-avatar-ring-main"></div>
+    ${editBtn}
   </div>
   
   <div class="pp-identity-v2">

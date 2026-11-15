@@ -1142,3 +1142,78 @@
 .ar-lad-rowhead b.none { color: var(--c-text-3); }
 .ar-lad-rowcap { margin: 2px 0 8px; font-size: var(--fs-2); font-weight: var(--fw-md); color: var(--c-text-3); }
 .ar-lad-rows .ar-lad-bar { height: 6px; border-radius: 3px; }
+
+/* ════════════════════════════════════════════════
+   AVA-1 — аватар в кольце (флаг 'avatar-ring', выбор Gio 16.11, вариант A)
+   Три слоя фона одного узла, без псевдоэлементов (у кружка шапки overflow:hidden):
+   фото/заливка в content-box · зазор --c-bg в padding-box · кольцо в border-box.
+   Цвет кольца — только токены бренда по [data-ring]; JS пишет id, не цвет.
+   Слой фото обязан быть градиентом или url: цвет допустим только в последнем слое.
+   Анимаций нет: ring-spin под флагом не включается.
+   ════════════════════════════════════════════════ */
+.ava-ring {
+  --ava-ring-w: 3px;
+  --ava-gap: 3px;
+  --ava-ring-fill: linear-gradient(135deg, var(--c-accent), var(--c-secondary));
+  --ava-face: linear-gradient(135deg, var(--c-bg-3), var(--c-bg-3));
+  border: var(--ava-ring-w) solid transparent;
+  padding: var(--ava-gap);
+  border-radius: 50%;
+  box-sizing: border-box;
+  background:
+    var(--ava-face) center / cover no-repeat content-box,
+    linear-gradient(var(--c-bg), var(--c-bg)) padding-box,
+    var(--ava-ring-fill) border-box;
+}
+.ava-ring[data-ring='accent'] { --ava-ring-fill: linear-gradient(var(--c-accent), var(--c-accent)); }
+.ava-ring[data-ring='secondary'] { --ava-ring-fill: linear-gradient(var(--c-secondary), var(--c-secondary)); }
+.ava-ring[data-ring='chrome'] { --ava-ring-fill: linear-gradient(var(--c-chrome), var(--c-chrome)); }
+
+/* Шапка: кружок 30px, кольцо и зазор по 2px. Специфичность перебивает .has-photo. */
+.athlete-avatar-btn .athlete-avatar-face.ava-ring,
+.athlete-avatar-btn.has-photo .athlete-avatar-face.ava-ring {
+  --ava-ring-w: 2px;
+  --ava-gap: 2px;
+  border: var(--ava-ring-w) solid transparent;
+  box-shadow: var(--elev-1);
+}
+
+/* Комната атлета: тот же круг 72px, без вращения и без неонового пульса. */
+.ar-avatar.ava-ring {
+  border: var(--ava-ring-w) solid transparent;
+  box-shadow: var(--elev-2);
+}
+.ava-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-border-h);
+  color: var(--c-text-2);
+  box-shadow: var(--elev-1);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Выбор цвета кольца: образец — само кольцо с пустым центром. */
+.ar-ring-swatch.ava-ring {
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-fast);
+  --ava-ring-w: 4px;
+  --ava-gap: 0px;
+  --ava-face: linear-gradient(var(--c-bg-2), var(--c-bg-2));
+}
+.ar-ring-swatch:active { transform: scale(var(--press-scale)); }
+.ar-ring-swatch.active {
+  outline: 2px solid var(--c-text-1);
+  outline-offset: 2px;
+}
