@@ -14,6 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
@@ -59,14 +60,35 @@ function readList(name) {
 const readAssets = () => readList('ASSETS');
 const readWarm = () => readList('ASSETS_WARM');
 
-/** Total size on disk, asserting every listed path exists. */
+/** Текстовые расширения, где `core.autocrlf` меняет размер файла на диске. */
+const TEXT_EXT = /\.(?:js|mjs|css|json|html|svg|webmanifest|txt|xml)$/i;
+
+/**
+ * Размер файла так, как его видит Linux-CI: у текстовых `\r\n` считается как `\n`.
+ * На Windows `core.autocrlf=true` кладёт на диск лишний байт на строку: тот же набор
+ * файлов весил 2.269 МБ на диске против 2.221 МБ в git при потолке 2.25 — гард
+ * отвечал «какая у тебя ОС», а не «сколько весит офлайн-набор». Бинарники (png, woff2,
+ * видео) не трогаем: пара 0D 0A внутри них — случайные данные, не перевод строки.
+ */
+function lfSize(abs) {
+  const size = fs.statSync(abs).size;
+  if (!TEXT_EXT.test(abs)) return size;
+  const buf = fs.readFileSync(abs);
+  let crlf = 0;
+  for (let i = 0; i < buf.length - 1; i++) {
+    if (buf[i] === 0x0d && buf[i + 1] === 0x0a) crlf++;
+  }
+  return size - crlf;
+}
+
+/** Total size (LF-normalised, see lfSize), asserting every listed path exists. */
 function sizeOf(paths) {
   let total = 0;
   const missing = [];
   for (const webPath of paths) {
     const abs = path.join(REPO_ROOT, webPath);
     if (!fs.existsSync(abs)) { missing.push(webPath); continue; }
-    total += fs.statSync(abs).size;
+    total += lfSize(abs);
   }
   assert.deepEqual(missing, [], 'manifest lists files that do not exist — run npm run build:sw');
   return total;
@@ -101,6 +123,23 @@ function loadSw() {
   vm.runInContext(`${SW_SRC}\n;globalThis.__sw = { cacheWholeMedia, mediaCacheFirst, MEDIA_RE, precache };`, context);
   return { api: context.__sw, puts, context };
 }
+
+test('lfSize: CRLF в тексте считается как LF, бинарник не трогается', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ap-lfsize-'));
+  try {
+    const lf = path.join(dir, 'a.css');
+    const crlf = path.join(dir, 'b.css');
+    const bin = path.join(dir, 'c.png');
+    fs.writeFileSync(lf, 'a{}\nb{}\nc{}\n');
+    fs.writeFileSync(crlf, 'a{}\r\nb{}\r\nc{}\r\n');
+    fs.writeFileSync(bin, Buffer.from([0x89, 0x50, 0x0d, 0x0a, 0x1a, 0x0d, 0x0a]));
+    assert.equal(lfSize(crlf), lfSize(lf), 'CRLF-вариант должен весить как LF-вариант');
+    assert.equal(lfSize(lf), 12, 'LF-файл считается как есть');
+    assert.equal(lfSize(bin), 7, 'пара 0D 0A в бинарнике — данные, не перевод строки');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
 
 test('the install phase stays under the cellular budget', () => {
   const total = sizeOf(readAssets());
