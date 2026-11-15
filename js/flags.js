@@ -90,6 +90,14 @@ const DEFAULTS = {
   // Try on device: Flags.setFlag('core-photo-generate', true)
   'core-photo-generate': false,
 
+  // CORE-02 (макет P.A.N.D.A., сценарий 02): на экране Core виджет готовности
+  // (индекс · четыре слагаемых · ЦНС) сворачивается в одну полосу 64 px —
+  // «84 · Хорошо» + «ЦНС 26%». Тап раскрывает шкалы ПОВЕРХ ленты (absolute,
+  // transform/opacity), поток не сдвигается. Числа — те же fetchReadiness().
+  // Легаси-виджет _buildReadinessWidget остаётся рядом. Дефолт OFF до Gio.
+  // Try on device: Flags.setFlag('core-ready-strip', true)
+  'core-ready-strip': false,
+
   // FRAME-1: замер кадров в рантайме (js/shared/frame-meter.js) — p95 кадра,
   // % пропусков, long tasks > 50 мс, экспорт JSON. Debug-инструмент для
   // motion-карточек; на пользователей не влияет, пока OFF (дефолт).

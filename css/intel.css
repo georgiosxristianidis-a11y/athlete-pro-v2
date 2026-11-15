@@ -1184,3 +1184,205 @@
     opacity: 0.6;
   }
 }
+
+/* ── CORE-02 (флаг core-ready-strip): полоса готовности 64 px ──
+   Маунт держит высоту полосы; панель шкал — absolute поверх ленты, поэтому
+   раскрытие не сдвигает поток. Въезд — transform/opacity (закон кадра),
+   blur не берём: панель вне whitelist air-guard, глубина — тенью --elev-3. */
+.intel-ready {
+  position: relative;
+  z-index: 3;
+  margin: var(--sp-1) 0 var(--sp-2);
+}
+
+.intel-ready-strip {
+  box-sizing: border-box;
+  width: 100%;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1-5);
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-l);
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-fast);
+}
+
+.intel-ready-strip:active {
+  transform: scale(0.985);
+}
+.intel-ready-strip:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+.intel-ready-strip.is-empty {
+  cursor: default;
+}
+.intel-ready-strip.is-empty:active {
+  transform: none;
+}
+
+.intel-ready-index {
+  font-size: var(--fs-5);
+  font-weight: var(--fw-black);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.intel-ready-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.intel-ready-word {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-1);
+}
+
+.intel-ready-note {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-md);
+  color: var(--c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.intel-ready-strip.is-empty .intel-ready-note {
+  flex: 1;
+  text-align: right;
+}
+
+.intel-ready-cns {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  color: var(--c-text-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.intel-ready-cns b {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  color: var(--c-red);
+  letter-spacing: 0;
+}
+
+.intel-ready-chev {
+  flex-shrink: 0;
+  color: var(--c-text-3);
+  transition: transform var(--t-fast);
+}
+
+.intel-ready.is-open .intel-ready-chev {
+  transform: rotate(180deg);
+}
+
+.intel-ready-panel {
+  position: absolute;
+  top: calc(100% + var(--sp-1));
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1-5);
+  padding: var(--sp-2);
+  border-radius: var(--r-l);
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border-h);
+  box-shadow: var(--elev-3);
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  transform-origin: top center;
+  pointer-events: none;
+  transition:
+    opacity var(--t-exit),
+    transform var(--t-exit);
+}
+
+.intel-ready.is-open .intel-ready-panel {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition:
+    opacity var(--t-enter),
+    transform var(--t-enter);
+}
+
+.intel-ready-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1-5);
+}
+
+.intel-ready-row-label {
+  flex: 0 0 42%;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-2);
+}
+
+.intel-ready-row-none {
+  flex: 1;
+  text-align: right;
+  font-size: var(--fs-2);
+  color: var(--c-text-3);
+}
+
+.intel-ready-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--c-border-h);
+  overflow: hidden;
+}
+
+.intel-ready-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+  transform-origin: left center;
+  background: var(--c-text-3);
+}
+
+.intel-ready-row-val {
+  width: 28px;
+  text-align: right;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-black);
+  font-variant-numeric: tabular-nums;
+}
+
+.intel-ready-index.is-high,
+.intel-ready-row-val.is-high {
+  color: var(--c-accent);
+}
+.intel-ready-index.is-mid,
+.intel-ready-row-val.is-mid {
+  color: var(--c-amber);
+}
+.intel-ready-index.is-low,
+.intel-ready-row-val.is-low,
+.intel-ready-row-val.is-cns {
+  color: var(--c-red);
+}
+.intel-ready-fill.is-high {
+  background: var(--c-accent);
+}
+.intel-ready-fill.is-mid {
+  background: var(--c-amber);
+}
+.intel-ready-fill.is-low,
+.intel-ready-fill.is-cns {
+  background: var(--c-red);
+}
