@@ -105,6 +105,7 @@
 }
 .intel-key-state.is-ok { color: var(--c-accent); }
 .intel-key-state.is-missing { color: var(--c-text-3); }
+.intel-key-state.is-device { color: var(--c-text-2); }
 
 .intel-sub-sep {
   color: var(--c-border-h);
@@ -229,6 +230,118 @@
   border: 0;
   color: var(--c-text-1);
   font: inherit;
+  font-weight: var(--fw-bold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* ── CORE-06: «На устройстве · 0 ₽» вместо плашки с замком (флаг core-on-device) ──
+   Content-слой AIR: flat --c-bg-2 + hairline, без blur. Полосы мышц — scaleX, не width. */
+.intel-device {
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-l);
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+}
+.intel-device-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--c-accent);
+}
+.intel-device-head svg { flex-shrink: 0; }
+.intel-device-title {
+  margin: 0;
+  color: var(--c-text-1);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-bold);
+}
+.intel-device-text,
+.intel-device-empty {
+  margin: var(--sp-1) 0 0;
+  color: var(--c-text-2);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  line-height: 1.45;
+}
+.intel-device-label {
+  margin-top: var(--sp-2);
+  color: var(--c-text-3);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.intel-device-muscles {
+  margin: var(--sp-1) 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--sp-1);
+}
+.intel-device-row {
+  display: grid;
+  grid-template-columns: minmax(0, 9em) 1fr 3em;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-md);
+  color: var(--c-text-2);
+}
+.intel-device-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.intel-device-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--c-surface-h);
+  overflow: hidden;
+}
+.intel-device-fill {
+  display: block;
+  height: 100%;
+  background: var(--c-accent);
+  transform-origin: left center;
+}
+.intel-device-row.is-high .intel-device-fill { background: var(--c-amber); }
+.intel-device-pct {
+  text-align: right;
+  font-weight: var(--fw-black);
+  color: var(--c-text-1);
+  font-variant-numeric: tabular-nums;
+}
+.intel-device-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-3);
+}
+.intel-device-btn {
+  min-height: 44px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-m);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-h);
+  color: var(--c-text-1);
+  font: inherit;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+}
+.intel-device-btn.is-quiet {
+  background: none;
+  border-color: var(--c-border);
+  color: var(--c-text-2);
+}
+.intel-device-link {
+  min-height: 44px;
+  padding: 0 var(--sp-1);
+  background: none;
+  border: 0;
+  color: var(--c-text-2);
+  font: inherit;
+  font-size: var(--fs-2);
   font-weight: var(--fw-bold);
   text-decoration: underline;
   text-underline-offset: 3px;

@@ -228,6 +228,12 @@ const DEFAULTS = {
   // уезжают при переписке (js/intel.view.js). OFF — пилюля лога и сетка модулей в ленте
   // побитно прежние. Default OFF до поля Gio. Включить: Flags.setFlag('core-composer-dock', true)
   'core-composer-dock': false,
+  // CORE-06 (макет P.A.N.D.A., сценарий 06): Core без ИИ. ON: вместо плашки с замком «ИИ выключен»
+  // и «НЕТ КЛЮЧА» в шапке — карточка «На устройстве · 0 ₽» (js/intel.on-device.js): что считается на
+  // телефоне, нагрузка по мышцам за 72 ч, «Биометрия без ИИ», тихая дверь «Подключить ключ».
+  // Сети нет. OFF — шапка и плашка побитно прежние. Default OFF до поля Gio.
+  // Kill switch: Flags.setFlag('core-on-device', false)
+  'core-on-device': false,
 };
 
 /** @param {string} name @returns {boolean} */
