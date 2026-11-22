@@ -1278,7 +1278,7 @@ button.pref-row-icon:active,
      и фон .pp-avatar-v2 (--c-bg-3) иначе перебивает кольцо целиком. */
   background:
     var(--ava-face) center / cover no-repeat content-box,
-    linear-gradient(var(--c-bg), var(--c-bg)) padding-box,
+    linear-gradient(var(--ava-gap-c, var(--c-bg)), var(--ava-gap-c, var(--c-bg))) padding-box,
     var(--ava-ring-fill) border-box;
   box-shadow: var(--elev-2);
 }

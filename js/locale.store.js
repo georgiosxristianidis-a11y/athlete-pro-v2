@@ -26,10 +26,8 @@ const DICT = {
     'privacy.ai_desc_airgap': 'Disabled in Air-Gapped mode',
     'privacy.ai_desc_active': 'Sends workout context to AI when on',
     'privacy.usage': 'Anonymous usage count',
-    'privacy.usage_desc':
-      'Three counters only: app opened, workout finished, coach asked. No content, no identifiers.',
-    'privacy.usage_desc_airgap':
-      'Counted as an aggregate even here: the event name alone, with no payload at all.',
+    'privacy.usage_desc': 'Three counters only: app opened, workout finished, coach asked. No content, no identifiers.',
+    'privacy.usage_desc_airgap': 'Counted as an aggregate even here: the event name alone, with no payload at all.',
     'privacy.usage_dnt': 'Off — your browser sends Do Not Track',
     'privacy.usage_excluded': 'Off — this device is excluded from the count',
     'privacy.dev_excluded_toast': 'Dev mode: this device is excluded from analytics',
@@ -182,6 +180,8 @@ const DICT = {
     'lab.swap-quick_sub': 'A strip under the exercise name: swap for an analogue in one tap; the weight comes from history, with Undo',
     'lab.exercise-hint': 'Technique hint',
     'lab.exercise-hint_sub': 'Strip in the open exercise card: which machine and movement, muscle silhouette; hides after 3 sessions',
+    'lab.avatar-ring': 'Avatar in a ring',
+    'lab.avatar-ring_sub': 'Round avatar in a brand-colour ring: header, Athlete room and Profile; ring colour in the room editor',
     'equip.title': 'Gym equipment',
     'equip.sub': 'Switched off is not offered when adding or replacing an exercise',
     'equip.kind.barbell': 'barbell',
@@ -621,10 +621,8 @@ const DICT = {
     'privacy.ai_desc_airgap': 'Отключен в режиме "Без сети"',
     'privacy.ai_desc_active': 'Отправляет контекст тренировки AI при включении',
     'privacy.usage': 'Анонимный счёт установок',
-    'privacy.usage_desc':
-      'Три счётчика и всё: запуск, завершённая тренировка, вопрос коучу. Ни содержимого, ни идентификаторов.',
-    'privacy.usage_desc_airgap':
-      'Считаетесь агрегатом даже здесь: наружу уходит одно имя события, без единого поля.',
+    'privacy.usage_desc': 'Три счётчика и всё: запуск, завершённая тренировка, вопрос коучу. Ни содержимого, ни идентификаторов.',
+    'privacy.usage_desc_airgap': 'Считаетесь агрегатом даже здесь: наружу уходит одно имя события, без единого поля.',
     'privacy.usage_dnt': 'Выключен — браузер шлёт Do Not Track',
     'privacy.usage_excluded': 'Выключен — это устройство исключено из счёта',
     'privacy.dev_excluded_toast': 'Dev-режим: устройство исключено из аналитики',
@@ -777,6 +775,8 @@ const DICT = {
     'lab.swap-quick_sub': 'Полоса под названием упражнения: замена на аналог одним тапом; вес берётся из истории, есть «Вернуть»',
     'lab.exercise-hint': 'Подсказка техники',
     'lab.exercise-hint_sub': 'Полоса в раскрытой карточке: какой тренажёр и движение, силуэт мышц; скрывается после 3 сессий',
+    'lab.avatar-ring': 'Аватар в кольце',
+    'lab.avatar-ring_sub': 'Круглый аватар в кольце бренд-цвета: шапка, комната атлета и Профиль; цвет кольца — в редакторе комнаты',
     'equip.title': 'Снаряды зала',
     'equip.sub': 'Выключенное не предлагается при добавлении и замене упражнения',
     'equip.kind.barbell': 'штанга',
