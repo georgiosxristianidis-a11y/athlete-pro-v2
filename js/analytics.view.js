@@ -48,6 +48,8 @@ import { renderPplGauge } from './shared/ppl-gauge.js';
 import { ORM_BODY_ID, mergeORMRows, ormSectionHtml, setORMExpanded } from './shared/orm-list.js';
 import { openCalendarPicker } from './analytics.cal-picker.js';
 import { renderWeeklyCalendar } from './analytics.weekly-chart.js';
+import { openAllExercisesSheet } from './analytics.all-exercises.js';
+import { calculateProgressionCurves } from './analytics.progression-curves.js';
 import { on } from './events.js';
 import { takeStatsFocus, findFamilyCard } from './shared/stats-focus.js';
 import { fmtDate, fmtWeight } from './shared/format.js';
@@ -62,6 +64,7 @@ on('analytics:openExercise', (el) => {
   if (name) openExerciseHistoryModal(name);
 });
 on('analytics:openIndex', () => openStrengthIndexModal());
+on('analytics:allExercises', () => openAllExercisesSheet(calculateProgressionCurves(_workoutsCache, { minMonths: 1, limit: 100000 })));
 on('analytics:toggleORM', (el) => _toggleORM(el));
 
 // PPL-цвет берётся из токенов темы — см. `js/shared/ppl-color.js` (DS-1).
@@ -153,6 +156,10 @@ export async function load() {
         <span class="section-label">${tri('Прогресс силы', 'Strength Progression', 'Πρόοδος δύναμης')}</span>
       </div>
       <div id="strength-curves" class="stagger-item" style="animation-delay: 0.11s"></div>
+      <div class="section-header" id="an-allex-head" hidden>
+        <span class="section-label"></span>
+        <button class="btn-text" data-action="analytics:allExercises">${tri('Все упражнения', 'All exercises', 'Όλες οι ασκήσεις')}</button>
+      </div>
 
       <!-- ── Monthly Calendar ── -->
       <div class="chart-card stagger-item" style="padding:var(--sp-2); margin-top:var(--sp-4); animation-delay: 0.12s;">
@@ -222,10 +229,20 @@ export async function load() {
     renderStrengthCurves(workouts, document.getElementById('strength-curves'));
   }
   _focusFamilyCard(focusFamily);
+  _showAllExercisesEntry(workouts);
   _renderCalendar(workouts);
   if (flag('weekly-calendar')) renderWeeklyCalendar(workouts);
   else _renderVolumeChart(workouts, await fetchWeeklyTrend(10));
   _renderORMList(orms);
+}
+
+/** ANL-A11: при `stats-families` OFF карточки режутся лимитом — даём вход к полному списку.
+ * Виден, только если карточки показали не все упражнения. */
+function _showAllExercisesEntry(workouts) {
+  const head = document.getElementById('an-allex-head');
+  if (!head || flag('stats-families')) return;
+  const shown = document.querySelectorAll('#strength-curves .sc-card').length;
+  head.hidden = calculateProgressionCurves(workouts, { minMonths: 1, limit: 100000 }).length <= shown;
 }
 
 /** Подсветить и показать карточку семейства (флаг `stats-families`); нет карточки — Stats как раньше.

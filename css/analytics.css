@@ -660,6 +660,19 @@
   height: 44px;
 }
 
+/* ── Все упражнения (ANL-A11) ── */
+.an-allex-sub,
+.an-allex-meta {
+  font-size: var(--fs-1);
+  color: var(--c-text-3);
+}
+.an-allex-meta {
+  white-space: nowrap;
+}
+#an-allex-head[hidden] {
+  display: none;
+}
+
 /* ── Exercise History Modal (AN-2) ── */
 /* Хвост `--sheet-tail` (base.css, MO-1) живёт под краем экрана: без него в
    padding-bottom весь нижний отступ уходит за край и последняя сессия
