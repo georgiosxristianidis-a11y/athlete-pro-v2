@@ -26,6 +26,7 @@ import { selectFamilyCurves } from './shared/family-curves.js';
  *   delta: number,       // current weight - first weight
  *   bestWeight: number,
  *   currentWeight: number,
+ *   lastTs?: number,     // ANL-A11: timestamp последней сессии
  *   family?: string,     // DATA-3 (options.families): id семейства реестра
  *   label?: string,      // «семейство · вариант» для подписи карточки
  *   myMax?: { weight: number, reps: number }, // реально поднятый вес лучшего подхода
@@ -165,11 +166,13 @@ export function calculateProgressionCurves(workouts, options = {}) {
           typeCounts: { push: 0, pull: 0, legs: 0, other: 0 },
           sessionIds: new Set(),
           bestWeight: 0,
+          lastTs: 0,
         };
         map.set(name, entry);
       }
 
       entry.sessionIds.add(workoutId);
+      if (ts > entry.lastTs) entry.lastTs = ts;
       entry.typeCounts[workoutType] = (entry.typeCounts[workoutType] || 0) + 1;
       if (topWeight > entry.bestWeight) {
         entry.bestWeight = topWeight;
@@ -236,12 +239,14 @@ export function calculateProgressionCurves(workouts, options = {}) {
       delta,
       bestWeight: data.bestWeight,
       currentWeight,
+      lastTs: data.lastTs,
     });
   }
 
-  // Sort by session count descending, then by name
+  // ANL-A11: по числу сессий, при равенстве — свежее первым, имя — последний тай-брейк
   out.sort((a, b) => {
     if (b.n !== a.n) return b.n - a.n;
+    if (b.lastTs !== a.lastTs) return b.lastTs - a.lastTs;
     return a.name.localeCompare(b.name);
   });
 
