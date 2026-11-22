@@ -1,6 +1,6 @@
 /**
  * AVA-1b: флаг 'avatar-ring' — тумблер в Лаборатории и светлая тема кольца.
- * Дефолт OFF (выбор за Gio), тумблер без подписи рендерил бы сырой ключ lab.*.
+ * Дефолт ON с 22.11 (решение Gio), тумблер без подписи рендерил бы сырой ключ lab.*.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,9 +12,9 @@ import { flag, LAB_FLAGS } from '../js/flags.js';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
-test('avatar-ring: в Лаборатории, дефолт OFF', () => {
+test('avatar-ring: в Лаборатории, дефолт ON (решение Gio 22.11)', () => {
   assert.ok(LAB_FLAGS.includes('avatar-ring'));
-  assert.equal(flag('avatar-ring'), false);
+  assert.equal(flag('avatar-ring'), true);
 });
 
 test('avatar-ring: подписи тумблера в en, ru, el', () => {

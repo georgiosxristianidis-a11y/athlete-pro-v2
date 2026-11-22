@@ -242,9 +242,9 @@ const DEFAULTS = {
   // (accent → secondary) с тёмным зазором на трёх поверхностях: шапка, комната атлета, hero
   // профиля (+ кнопка-карандаш, свечение тир-пилюли). Цвет кольца — id токена в 'avatar-ring'
   // (profile.store.js), выбор из 4 бренд-цветов вместо ряда «Цвет рамки». OFF — аватар и
-  // легаси-ключи avatar-color/avatar-frame побитно прежние. Default OFF до поля Gio.
+  // легаси-ключи avatar-color/avatar-frame побитно прежние. Default ON с 22.11 (решение Gio).
   // Kill switch: Flags.setFlag('avatar-ring', false)
-  'avatar-ring': false,
+  'avatar-ring': true,
 };
 
 /** @param {string} name @returns {boolean} */
