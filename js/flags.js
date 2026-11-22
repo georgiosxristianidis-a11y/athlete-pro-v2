@@ -281,7 +281,7 @@ export function allFlags() {
  * намеренно: в поле они обнуляли вес. Новый флаг на поле — одна строка здесь
  * и две строки словаря `lab.<имя>` / `lab.<имя>_sub`.
  */
-export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'rest-skip-undo', 'gym-equipment', 'exercise-registry', 'history-records', 'stats-families', 'plate-toy', 'muscles-ui', 'swap-quick', 'exercise-hint', 'avatar-ring']);
+export const LAB_FLAGS = Object.freeze(['sw-cache-first', 'boot-cascade', 'logger-sections', 'badge-ladders', 'streak-weeks', 'home-feed-a', 'home-matter', 'rest-next-set', 'rest-island-count', 'rest-skip-undo', 'gym-equipment', 'exercise-registry', 'history-records', 'stats-families', 'plate-toy', 'muscles-ui', 'swap-quick', 'exercise-hint', 'avatar-ring', 'weekly-calendar']);
 
 /** @param {string} name @returns {boolean} есть ли на устройстве своё значение поверх дефолта */
 export function isOverridden(name) {
