@@ -39,6 +39,7 @@ import {
   valueBand,
   findGaps,
   curvePaths,
+  roundDot,
   gapZones,
   pauseLabel,
   SESSION_GAP_DAYS,
@@ -698,8 +699,8 @@ export function openExerciseHistoryModal(exerciseName) {
           </defs>
           <path d="${area}" fill="url(#${gid})"/>
           <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>${extra}
-          <circle cx="${ptsGeo[peakI].x.toFixed(1)}" cy="${ptsGeo[peakI].y.toFixed(1)}" r="3.5" fill="${GOLD}" class="sc-peak-dot"/>
-          <circle cx="${ptsGeo[ptsGeo.length - 1].x.toFixed(1)}" cy="${ptsGeo[ptsGeo.length - 1].y.toFixed(1)}" r="3.5" fill="${color}" class="sc-cur-dot"/>
+          ${roundDot(ptsGeo[peakI].x, ptsGeo[peakI].y, { r: 3.5, fill: GOLD, cls: 'sc-peak-dot' })}
+          ${roundDot(ptsGeo[ptsGeo.length - 1].x, ptsGeo[ptsGeo.length - 1].y, { r: 3.5, fill: color, cls: 'sc-cur-dot' })}
         </svg>
         <div class="sc-scrub" aria-hidden="true">
           <div class="sc-scrub-line"></div>
