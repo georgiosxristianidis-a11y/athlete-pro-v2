@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### HINT: линия закрыта (доки, без кода)
+
+- Хендофф `HANDOFF_exercise_hint.md` → `docs/_archive/`. Контур крупного силуэта остаётся `--c-accent` (Gio 22.11, «тон PPL» отклонён). HINT-2 (позы, пикер, `swap-quick`, упражнения вне сид-планов) не начата — в архивном хендоффе. Флаг `exercise-hint` OFF, поле и вычитка el — за Gio.
+
 ### UX-2k: цельные кривые силы (1.27.245)
 
 - Графики силы (карточки Stats и лист упражнения) — одна монотонная кривая и одна заливка через все точки:
