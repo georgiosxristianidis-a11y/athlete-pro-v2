@@ -46,6 +46,7 @@ import {
 import { renderPplGauge } from './shared/ppl-gauge.js';
 import { ORM_BODY_ID, mergeORMRows, ormSectionHtml, setORMExpanded } from './shared/orm-list.js';
 import { openCalendarPicker } from './analytics.cal-picker.js';
+import { renderWeeklyCalendar } from './analytics.weekly-chart.js';
 import { on } from './events.js';
 import { takeStatsFocus, findFamilyCard } from './shared/stats-focus.js';
 import { fmtDate, fmtWeight } from './shared/format.js';
@@ -221,8 +222,8 @@ export async function load() {
   }
   _focusFamilyCard(focusFamily);
   _renderCalendar(workouts);
-  const trend = await fetchWeeklyTrend(10);
-  _renderVolumeChart(workouts, trend);
+  if (flag('weekly-calendar')) renderWeeklyCalendar(workouts);
+  else _renderVolumeChart(workouts, await fetchWeeklyTrend(10));
   _renderORMList(orms);
 }
 
@@ -460,6 +461,7 @@ export async function refreshCalendar() {
   _renderQuickStats();
   _renderPPLBalance();
   _renderCalendar(workouts);
+  if (flag('weekly-calendar')) renderWeeklyCalendar(workouts);
 }
 
 function _renderVolumeChart(workouts, buckets) {
