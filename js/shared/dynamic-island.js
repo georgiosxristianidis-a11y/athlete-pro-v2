@@ -320,6 +320,11 @@ export const DynamicIsland = (() => {
 
   function hide() {
     if (!_island) return;
+    // UX-1e: остров прячут только концы сессии (сброс, сохранение, сторож 12 ч).
+    // Отдых, идущий в этот момент, гаснет вместе с ней — иначе интервал
+    // RestTimer раз в секунду возвращал timer-mode на пустой остров.
+    // @ts-ignore
+    window.RestTimer?.stop();
     _expanded = false;
     _timerActive = false;
     _disarmFinish();
@@ -381,7 +386,9 @@ export const DynamicIsland = (() => {
 
     // Safety: if we're showing the Finish HUD but the session is no longer
     // complete (e.g. a live exercise was added after the last set), drop it.
-    if (_island?.classList.contains('finish-mode') && (total === 0 || done !== total)) {
+    // UX-1e: «закрыта» — тем же предикатом, что toggleSet (isPending): подходы
+    // пропущенных упражнений не ждут, иначе Finish гас на первом же тике.
+    if (_island?.classList.contains('finish-mode') && (total === 0 || State.plan.some(isPending))) {
       _disarmFinish();
       _island.classList.remove('finish-mode');
     }
