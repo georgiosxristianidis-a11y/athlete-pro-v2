@@ -86,41 +86,43 @@ export function pauseLabel(days, monthly) {
 }
 
 /**
- * Линия и заливка с разрывами: сплошная кривая внутри каждого отрезка, пунктир через
- * паузу, заливки под паузой нет. Без разрывов — ровно прежняя геометрия.
+ * UX-2k: круглая точка, которую не сплющит `preserveAspectRatio="none"`. `<circle>` растягивался
+ * вместе с viewBox (на ширине 700 px точка 15×7); штрих нулевой длины с круглым концом и
+ * `non-scaling-stroke` остаётся кругом диаметра 2r в пикселях. `ring` — обводка цветом фона.
+ * @param {number} x
+ * @param {number} y
+ * @param {{r:number, fill:string, cls:string, ring?:number}} o
+ */
+export function roundDot(x, y, { r, fill, cls, ring = 0 }) {
+  const d = `M ${x.toFixed(1)},${y.toFixed(1)} h 0`;
+  const dot = (w, c, k) =>
+    `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" vector-effect="non-scaling-stroke"${k ? ` class="${k}"` : ''}/>`;
+  return (ring ? dot(2 * (r + ring), 'var(--c-surface)', '') : '') + dot(2 * r, fill, cls);
+}
+
+/** UX-2k: высота засечки паузы у нижнего края графика, в единицах viewBox. */
+const GAP_TICK_H = 5;
+
+/**
+ * UX-2k: одна монотонная кривая и одна заливка через все точки — без моста-пунктира,
+ * точек-одиночек и излома на стыках (FIELD-3 резал линию на куски, сглаженные порознь).
+ * Пауза — тихая засечка у оси посреди пропуска; подпись и зона скраба живут отдельно.
+ * Засечка — линия с `non-scaling-stroke`: `preserveAspectRatio="none"` её не растянет.
  * @param {{x:number,y:number}[]} P
  * @param {{i:number}[]} gaps
- * @param {{H:number, color:string}} o
+ * @param {{H:number, color?:string}} o
  * @returns {{line:string, area:string, extra:string}}
  */
-export function curvePaths(P, gaps, { H, color }) {
-  if (!gaps.length) {
-    const line = smoothPath(P);
-    return { line, area: `${line} L ${P[P.length - 1].x.toFixed(1)},${H} L ${P[0].x.toFixed(1)},${H} Z`, extra: '' };
-  }
-  const cut = new Set(gaps.map((g) => g.i));
-  const runs = [[]];
-  P.forEach((p, i) => {
-    runs[runs.length - 1].push(p);
-    if (cut.has(i)) runs.push([]);
-  });
-  const lines = [];
-  const areas = [];
-  let dots = '';
-  for (const r of runs) {
-    if (r.length === 1) {
-      dots += `<circle cx="${r[0].x.toFixed(1)}" cy="${r[0].y.toFixed(1)}" r="2.5" fill="${color}" class="sc-gap-dot"/>`;
-      continue;
-    }
-    const d = smoothPath(r);
-    lines.push(d);
-    areas.push(`${d} L ${r[r.length - 1].x.toFixed(1)},${H} L ${r[0].x.toFixed(1)},${H} Z`);
-  }
-  const bridge = gaps
-    .map((g) => `M ${P[g.i].x.toFixed(1)},${P[g.i].y.toFixed(1)} L ${P[g.i + 1].x.toFixed(1)},${P[g.i + 1].y.toFixed(1)}`)
-    .join(' ');
-  const extra = `<path d="${bridge}" fill="none" stroke="${color}" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round" vector-effect="non-scaling-stroke" class="sc-gap-line"/>${dots}`;
-  return { line: lines.join(' '), area: areas.join(' '), extra };
+export function curvePaths(P, gaps, { H }) {
+  const line = smoothPath(P);
+  const area = `${line} L ${P[P.length - 1].x.toFixed(1)},${H} L ${P[0].x.toFixed(1)},${H} Z`;
+  const extra = gaps
+    .map((g) => {
+      const x = ((P[g.i].x + P[g.i + 1].x) / 2).toFixed(1);
+      return `<line x1="${x}" y1="${H - GAP_TICK_H}" x2="${x}" y2="${H}" stroke="var(--c-text-3)" stroke-opacity="0.6" stroke-width="1" vector-effect="non-scaling-stroke" class="sc-gap-tick"/>`;
+    })
+    .join('');
+  return { line, area, extra };
 }
 
 /** Зоны пауз в координатах viewBox — wireScrub читает ими, что под пальцем. */
@@ -182,7 +184,7 @@ function curveCard(s, idx) {
       </defs>
       <rect x="${padX}" y="${midY}" width="${W - 2 * padX}" height="${H - midY}" fill="url(#${gid})"/>
       <line x1="${padX}" y1="${midY}" x2="${W - padX}" y2="${midY}" stroke="${color}" stroke-opacity="0.4" stroke-dasharray="4 4" stroke-width="1.5"/>
-      <circle cx="${midX}" cy="${midY}" r="4" fill="${color}" stroke="var(--c-surface)" stroke-width="2" class="sc-cur-dot"/>
+      ${roundDot(midX, midY, { r: 4, fill: color, cls: 'sc-cur-dot', ring: 2 })}
     `;
     subMarkup = `
       <span class="sc-delta up">${tri('Базовый вес', 'Baseline', 'Βάση')}</span>
@@ -213,8 +215,8 @@ function curveCard(s, idx) {
       </defs>
       <path d="${area}" fill="url(#${gid})"/>
       <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>${extra}
-      <circle cx="${pts[peakI].x.toFixed(1)}" cy="${pts[peakI].y.toFixed(1)}" r="3.5" fill="${GOLD}" class="sc-peak-dot"/>
-      <circle cx="${pts[pts.length - 1].x.toFixed(1)}" cy="${pts[pts.length - 1].y.toFixed(1)}" r="3.5" fill="${color}" class="sc-cur-dot"/>
+      ${roundDot(pts[peakI].x, pts[peakI].y, { r: 3.5, fill: GOLD, cls: 'sc-peak-dot' })}
+      ${roundDot(pts[pts.length - 1].x, pts[pts.length - 1].y, { r: 3.5, fill: color, cls: 'sc-cur-dot' })}
     `;
     subMarkup = `
       <span class="sc-delta ${s.delta >= 0 ? 'up' : 'down'}">${deltaTxt} kg</span>
@@ -535,7 +537,7 @@ export function strengthIndexPlot(workouts) {
           </defs>
           <path d="${area}" fill="url(#${gid})"/>
           <path d="${line}" fill="none" stroke="var(--c-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="sc-stroke"/>
-          <circle cx="${pts[pts.length - 1].x.toFixed(1)}" cy="${pts[pts.length - 1].y.toFixed(1)}" r="3.5" fill="var(--c-accent)" class="sc-cur-dot"/>
+          ${roundDot(pts[pts.length - 1].x, pts[pts.length - 1].y, { r: 3.5, fill: 'var(--c-accent)', cls: 'sc-cur-dot' })}
         </svg>
         <div class="sc-scrub" aria-hidden="true">
           <div class="sc-scrub-line"></div>
