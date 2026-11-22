@@ -4,7 +4,7 @@
    Calendar state, data fetching, formatters
    ════════════════════════════════════════════════════════ */
 
-import { DB } from './db.js';
+import { DB, startOfWeek } from './db.js';
 import { estimate1RM } from './strength-engine.js';
 import {
   calculateProgressionCurves,
@@ -361,6 +361,91 @@ export function weekLabel(bucket) {
   return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
 }
 
+/* ══════════════════════════════════════════════
+   ANL-A3: календарные недели для графика объёма (флаг 'weekly-calendar')
+   ══════════════════════════════════════════════ */
+
+/** Сколько последних полных недель дают «норму» в бейдже графика. */
+export const NORM_WEEKS = 4;
+
+/**
+ * Календарные недели пн–вс (локальное время) с тоннажем всех типов, включая custom.
+ * В отличие от легаси `weeklyTrend` (скользящие 7 дней от «сейчас»), граница недели —
+ * понедельник 00:00, поэтому тренировка в вс 23:59 и в пн 00:00 попадают в разные столбцы.
+ * Последняя неделя — текущая, она всегда `partial` (ещё идёт).
+ * @param {Array<{timestamp?: number, tonnage?: number}>} workouts
+ * @param {number} [weeks=10]
+ * @param {Date|number} [now=new Date()]
+ * @returns {Array<{start: number, end: number, tonnage: number, partial: boolean}>} старые → новые
+ */
+export function calendarWeeks(workouts, weeks = 10, now = new Date()) {
+  const ref = now instanceof Date ? now : new Date(now);
+  const cur = new Date(startOfWeek(ref));
+  const out = [];
+  for (let i = weeks - 1; i >= 0; i--) {
+    // setDate, не 7*86400000: переход на летнее время сдвинул бы границу на час
+    const s = new Date(cur);
+    s.setDate(s.getDate() - 7 * i);
+    const e = new Date(s);
+    e.setDate(e.getDate() + 7);
+    out.push({ start: s.getTime(), end: e.getTime(), tonnage: 0, partial: i === 0 });
+  }
+  if (!out.length) return out;
+  const from = out[0].start;
+  const to = out[out.length - 1].end;
+  for (const w of Array.isArray(workouts) ? workouts : []) {
+    const ts = Number(w?.timestamp);
+    if (!Number.isFinite(ts) || ts < from || ts >= to) continue;
+    const b = out.find((x) => ts >= x.start && ts < x.end);
+    if (b) b.tonnage += Number(w.tonnage) || 0;
+  }
+  return out;
+}
+
+/**
+ * Лучшая полная неделя и норма. Неполная (текущая) неделя не участвует ни там, ни там.
+ * Норма — среднее непустых среди последних NORM_WEEKS полных недель: пропущенная неделя
+ * (отпуск, болезнь) — это не «обычный объём», ноль занижал бы планку.
+ * @param {Array<{tonnage: number, partial: boolean}>} buckets
+ * @returns {{ bestIndex: number, best: number, norm: number|null }} bestIndex −1, если полных непустых нет
+ */
+export function weekSummary(buckets) {
+  const list = Array.isArray(buckets) ? buckets : [];
+  let bestIndex = -1;
+  let best = 0;
+  list.forEach((b, i) => {
+    if (!b.partial && b.tonnage > best) {
+      best = b.tonnage;
+      bestIndex = i;
+    }
+  });
+  const recent = list
+    .filter((b) => !b.partial)
+    .slice(-NORM_WEEKS)
+    .filter((b) => b.tonnage > 0);
+  const norm = recent.length ? recent.reduce((s, b) => s + b.tonnage, 0) / recent.length : null;
+  return { bestIndex, best, norm };
+}
+
+/**
+ * Какие столбцы подписать: через один, считая справа — текущая неделя (последняя) подписана всегда.
+ * @param {number} n
+ * @returns {boolean[]}
+ */
+export function axisLabelMask(n) {
+  return Array.from({ length: Math.max(0, n) }, (_, i) => (n - 1 - i) % 2 === 0);
+}
+
+/**
+ * Подпись недели — дата понедельника «д.мм» (12.01): короче месяца словом и одинакова в ru/en/el.
+ * @param {{ start: number }} bucket
+ * @returns {string}
+ */
+export function calendarWeekLabel(bucket) {
+  const d = new Date(bucket.start);
+  return `${d.getDate()}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 /** Compound lifts to highlight in personal metrics (names match exercise / 1RM ids). */
 const MAIN_LIFT_IDS = ['Bench Press', 'Squat', 'Deadlift', 'Overhead Press'];
 
@@ -565,11 +650,7 @@ export async function getCachedOrComputeProgressionCurves(workouts, options = {}
 
     try {
       const cached = await getProgressionCurvesCache(cacheKey);
-      if (
-        cached &&
-        cached.version === PROGRESSION_CACHE_VERSION &&
-        Array.isArray(cached.curves)
-      ) {
+      if (cached && cached.version === PROGRESSION_CACHE_VERSION && Array.isArray(cached.curves)) {
         return cached.curves;
       }
     } catch (e) {

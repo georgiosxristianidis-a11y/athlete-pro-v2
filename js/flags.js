@@ -245,6 +245,13 @@ const DEFAULTS = {
   // легаси-ключи avatar-color/avatar-frame побитно прежние. Default ON с 22.11 (решение Gio).
   // Kill switch: Flags.setFlag('avatar-ring', false)
   'avatar-ring': true,
+  // ANL-A3 (вариант B, решение Gio 22.11): график «Прогресс объёма» по календарным неделям
+  // пн–вс вместо скользящих 7 дней от «сейчас». Нейтральный столбец (--c-text-2), лучшая
+  // полная неделя ярче, текущая — штриховкой и в лучшую/норму не входит; бейдж
+  // «<лучшая> · норма <среднее 4 полных>»; подписи оси через одну; перерисовка на тему,
+  // ширину и правку дня в календаре. OFF — легаси-столбцы PPL побитно прежние.
+  // Default OFF до поля Gio. Kill switch: Flags.setFlag('weekly-calendar', false)
+  'weekly-calendar': false,
 };
 
 /** @param {string} name @returns {boolean} */
