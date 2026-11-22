@@ -55,6 +55,7 @@ on('settings:toggleFabVideo', () => P().toggleFabVideo());
 on('settings:togglePandaMoods', () => P().togglePandaMoods());
 on('settings:toggleLab', (el) => P().toggleLabFlag(el.dataset.flag));
 on('settings:toggleEquip', (el) => P().toggleEquip(el.dataset.kind));
+on('settings:reinstallSw', () => P().reinstallSw());
 on('settings:syncToggle', async (el) => {
   const icon = document.getElementById('sync-connect-icon');
   icon?.classList.add('is-spinning');
@@ -82,10 +83,9 @@ on('settings:dedup', () => P().deduplicateDB());
  * @param {string} syncStatus - Current sync status
  * @param {boolean} [cloudConfigured] - CLOUD-1: Supabase в конфиге есть. Нет —
  *   карточка «Облако» не рисуется (по умолчанию: обещать облако, которого нет, нельзя)
- * @param {string[]} [equipmentOff] - FIELD-6: выключенные виды снаряда (getEquipmentOff)
  * @returns {string}
  */
-export function renderSettings(settings, lang, syncStatus = 'idle', cloudConfigured = false, equipmentOff = []) {
+export function renderSettings(settings, lang, syncStatus = 'idle', cloudConfigured = false) {
   const themePref = getThemePref();
   // Тумблер уведомлений отражает ДВА состояния сразу: наше «хочу» из базы и
   // ответ браузера. Разрешение можно отозвать в настройках телефона, минуя
@@ -248,7 +248,7 @@ export function renderSettings(settings, lang, syncStatus = 'idle', cloudConfigu
                   data-action="settings:setUnit" data-unit="lbs">lbs</button>
         </div>
       </div>
-${flag('gym-equipment') ? _renderEquipment(equipmentOff) : ''}
+      <!-- UX-2j: чек-лист снарядов переехал в Лабораторию (renderLab). -->
       <!-- Здесь стояли «Режим тренировок», «Длительность сессии» и «Ограничения».
            Убраны как мёртвые (PROF-1): все три писались в IndexedDB и не читались
            никем — коуч отправляет только имя/возраст/пол/цель (claude.store.js),
@@ -319,9 +319,14 @@ ${flag('gym-equipment') ? _renderEquipment(equipmentOff) : ''}
 }
 
 /**
- * FIELD-6 — чек-лист снарядов зала в карточке «Тренировка». Тумблер включён =
- * снаряд в зале есть; выключенный вид не предлагается при добавлении и замене
- * упражнения. История и сохранённые планы не трогаются — отсев только на отборе.
+ * FIELD-6 — чек-лист снарядов зала. Тумблер включён = снаряд в зале есть;
+ * выключенный вид не предлагается при добавлении и замене упражнения. История
+ * и сохранённые планы не трогаются — отсев только на отборе.
+ *
+ * UX-2j: живёт в Лаборатории вложенным свёрнутым <details>, а не в карточке
+ * «Тренировка». Рисуется всегда, `hidden` — пока флаг gym-equipment OFF;
+ * тумблер флага снимает/ставит его на месте (profile.js:_syncLabRow). Тексты и
+ * тумблеры правятся по data-атрибутам, без перерисовки.
  * @param {string[]} off выключенные виды
  * @returns {string}
  */
@@ -330,7 +335,7 @@ function _renderEquipment(off) {
   const rows = EQUIPMENT_KINDS.map(
     (kind) => `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2);">
-          <div class="pref-title">${esc(t(equipLabelKey(kind)))}</div>
+          <div class="pref-title" data-equip-kind-label="${esc(kind)}">${esc(t(equipLabelKey(kind)))}</div>
           <div class="switch-wrap" data-action="settings:toggleEquip" data-kind="${esc(kind)}">
             <div class="switch ${offSet.has(kind) ? '' : 'on'}" id="sw-equip-${esc(kind.replace(/ /g, '-'))}">
               <div class="switch-thumb"></div>
@@ -340,13 +345,15 @@ function _renderEquipment(off) {
   ).join('');
   return `
       <div class="pref-divider"></div>
-
-      <div class="pref-info">
-        <div class="pref-title">${t('equip.title')}</div>
-        <div class="pref-sub">${t('equip.sub')}</div>
-      </div>
-      <div id="equip-checklist" style="display:flex; flex-direction:column; gap:var(--sp-1);">${rows}
-      </div>
+      <details class="lab-sub" id="lab-equipment"${flag('gym-equipment') ? '' : ' hidden'}>
+        <summary class="lab-sub-summary">
+          <span class="pref-title" id="lab-equip-title">${t('equip.title')}</span>
+          <svg class="lab-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="pref-sub" id="lab-equip-sub">${t('equip.sub')}</div>
+        <div id="equip-checklist" style="display:flex; flex-direction:column; gap:var(--sp-1); padding-top:var(--sp-1);">${rows}
+        </div>
+      </details>
 `;
 }
 
@@ -364,9 +371,14 @@ function _renderEquipment(off) {
  * тумблер и смена языка правят узлы на месте (profile.js), иначе раскрытый
  * блок захлопывался бы под пальцем. Бейдж «изменено» есть всегда, `hidden`
  * снимается по isOverridden.
+ *
+ * UX-2j: сам блок рисуется скрытым (`hidden` на #profile-lab-block, profile.js)
+ * и открывается жестом — 5 тапов по строке версии. Внутри: флаги, свёрнутые
+ * «Снаряды» и кнопка переустановки SW (раньше те же 5 тапов).
+ * @param {string[]} [equipmentOff] FIELD-6: выключенные виды снаряда
  * @returns {string}
  */
-export function renderLab() {
+export function renderLab(equipmentOff = []) {
   const rows = LAB_FLAGS.map(
     (name) => `
       <div style="display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); padding: var(--sp-0-5) 0;">
@@ -390,6 +402,13 @@ export function renderLab() {
       <div class="profile-card" style="padding:var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-1);">
         <div class="pref-sub" id="profile-lab-hint">${t('settings.lab_hint')}</div>
         ${rows}
+        ${_renderEquipment(equipmentOff)}
+        <div class="pref-divider"></div>
+        <div class="pref-info">
+          <div class="pref-title" id="lab-sw-title">${tri('Service Worker', 'Service Worker', 'Service Worker')}</div>
+          <div class="pref-sub" id="lab-sw-sub">${tri('Сбросить кеш и поставить SW заново. Тренировки не трогает.', 'Clear the cache and reinstall the SW. Workouts are kept.', 'Καθαρισμός cache και επανεγκατάσταση SW. Οι προπονήσεις μένουν.')}</div>
+        </div>
+        <button class="btn-soft" id="lab-sw-reinstall" data-action="settings:reinstallSw">${tri('Переустановить SW', 'Reinstall SW', 'Επανεγκατάσταση SW')}</button>
       </div>
     </details>
   `;

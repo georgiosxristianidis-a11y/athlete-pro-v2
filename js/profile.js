@@ -36,11 +36,17 @@ import { Toast } from './shell.js';
 import { on, onChange } from './events.js';
 import { haptic, esc } from './shared/utils.js';
 import { forceUpdate } from './shared/sw-update.js';
+import { createTapGesture } from './shared/tap-gesture.js';
+import { equipLabelKey } from './shared/gym-equipment.js';
 import { clearSeen } from './shared/digit-roll.js';
 import { setWakeLockEnabled } from './features/wake-lock.js';
 
 on('profile:clearData', () => window.Profile.clearAllData());
 onChange('profile:importFile', (el, e) => window.Profile._onImportFile(e));
+
+/* UX-2j: жест Лаборатории — 5 тапов по строке версии, пауза между тапами ≤3 с. */
+const LAB_TAPS = 5;
+const LAB_TAP_WINDOW_MS = 3000;
 
 export const Profile = (() => {
   /* ══════════════════════════════════════════════
@@ -87,7 +93,7 @@ export const Profile = (() => {
       <!-- PP-6: wrapper exists so _refreshSettings() can swap the settings
            markup alone. Plain div, no styling of its own: .screen is padding
            only (no flex/gap), so it doesn't disturb the vertical rhythm. -->
-      <div id="profile-settings-block">${renderSettings(settings, lang, syncStatus, cloudConfigured, equipmentOff)}</div>
+      <div id="profile-settings-block">${renderSettings(settings, lang, syncStatus, cloudConfigured)}</div>
 
       <!-- ── DANGER ZONE ── -->
       <div class="section-label-alt" id="profile-danger-label" style="color:var(--c-red); opacity:0.8">${esc(t('profile.danger_zone'))}</div>
@@ -104,8 +110,9 @@ export const Profile = (() => {
         Athlete Pro v${VERSION} · Elite Edition
       </div>
       <!-- LAB-3: Лаборатория под строкой версии, свёрнута. Клиренс таб-бара
-           (120px) переехал сюда со строки версии — блок теперь последний. -->
-      <div id="profile-lab-block" style="padding-bottom: 120px;">${renderLab()}</div>
+           (120px) переехал сюда со строки версии — блок теперь последний.
+           UX-2j: скрыта целиком, пока жест (5 тапов по версии) её не открыл. -->
+      <div id="profile-lab-block" style="padding-bottom: 120px;" hidden>${renderLab(equipmentOff)}</div>
       <input type="file" id="import-file-input" accept=".json" style="display:none" data-change="profile:importFile">
     `;
 
@@ -153,14 +160,13 @@ export const Profile = (() => {
   async function _refreshSettings() {
     const block = document.getElementById('profile-settings-block');
     if (!block) return;
-    const [syncStatus, settings, lang, cloudConfigured, equipmentOff] = await Promise.all([
+    const [syncStatus, settings, lang, cloudConfigured] = await Promise.all([
       _syncStatus(),
       getAllSettings(),
       getStoredLang(),
       _cloudConfigured(),
-      getEquipmentOff(),
     ]);
-    block.innerHTML = renderSettings(settings, lang, syncStatus, cloudConfigured, equipmentOff);
+    block.innerHTML = renderSettings(settings, lang, syncStatus, cloudConfigured);
   }
 
   /* LAB-3: Лаборатория вне #profile-settings-block и не перерисовывается —
@@ -169,6 +175,11 @@ export const Profile = (() => {
   async function _syncLabRow(name) {
     const { flag, isOverridden } = await import('./flags.js');
     document.getElementById(`sw-lab-${name}`)?.classList.toggle('on', flag(name));
+    // UX-2j: «Снаряды» живут в Лаборатории и появляются вместе с флагом.
+    if (name === 'gym-equipment') {
+      const equip = document.getElementById('lab-equipment');
+      if (equip) equip.hidden = !flag(name);
+    }
     const badge = document.querySelector(`[data-lab-changed="${CSS.escape(name)}"]`);
     if (badge) badge.hidden = !isOverridden(name);
   }
@@ -182,6 +193,11 @@ export const Profile = (() => {
     document.querySelectorAll('[data-lab-title]').forEach((el) => set(el, t(`lab.${el.dataset.labTitle}`)));
     document.querySelectorAll('[data-lab-sub]').forEach((el) => set(el, t(`lab.${el.dataset.labSub}_sub`)));
     document.querySelectorAll('[data-lab-changed]').forEach((el) => set(el, t('lab.changed')));
+    set(document.getElementById('lab-equip-title'), t('equip.title'));
+    set(document.getElementById('lab-equip-sub'), t('equip.sub'));
+    document.querySelectorAll('[data-equip-kind-label]').forEach((el) => set(el, t(equipLabelKey(el.dataset.equipKindLabel))));
+    set(document.getElementById('lab-sw-sub'), tri('Сбросить кеш и поставить SW заново. Тренировки не трогает.', 'Clear the cache and reinstall the SW. Workouts are kept.', 'Καθαρισμός cache και επανεγκατάσταση SW. Οι προπονήσεις μένουν.'));
+    set(document.getElementById('lab-sw-reinstall'), tri('Переустановить SW', 'Reinstall SW', 'Επανεγκατάσταση SW'));
   }
 
   /** Re-render the passport only — for actions that change workouts, not settings. */
@@ -255,30 +271,36 @@ export const Profile = (() => {
     }
   }
 
-  /* Manual escape hatch: 5 taps on the version stamp within ~3s force a clean
-     SW re-install (unregister + drop Cache Storage) — un-sticks a stubborn
-     Service Worker without "clear site data", which would also wipe IndexedDB
-     (workouts). Workouts survive here. */
+  /* UX-2j: 5 тапов по строке версии за ~3 с открывают Лабораторию — по
+     умолчанию #profile-lab-block скрыт целиком. Раньше те же 5 тапов делали
+     переустановку SW; она теперь кнопка внутри Лаборатории (reinstallSw).
+     Открытое состояние живёт до следующего load() экрана. */
   function _wireVersionTap() {
     const el = document.getElementById('app-build-stamp');
     if (!el || el._tapWired) return;
     el._tapWired = true;
-    let taps = 0;
-    let timer = null;
+    const hit = createTapGesture(LAB_TAPS, LAB_TAP_WINDOW_MS);
     el.addEventListener('click', () => {
-      taps += 1;
       haptic(8);
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        taps = 0;
-      }, 3000);
-      if (taps >= 5) {
-        taps = 0;
-        clearTimeout(timer);
-        Toast.show(tri('Обновление…', 'Updating…', 'Ενημέρωση…'), 'info');
-        forceUpdate();
-      }
+      if (hit()) _openLab();
     });
+  }
+
+  function _openLab() {
+    const block = document.getElementById('profile-lab-block');
+    if (!block) return;
+    block.hidden = false;
+    const details = document.getElementById('profile-lab');
+    if (details) details.open = true;
+    block.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    Toast.show(tri('Лаборатория открыта', 'Labs unlocked', 'Το Labs άνοιξε'), 'info');
+  }
+
+  /** Ручной выход из залипшего SW: unregister + сброс Cache Storage, IndexedDB
+   *  (тренировки) не трогается. Кнопка в Лаборатории. */
+  function reinstallSw() {
+    Toast.show(tri('Обновление…', 'Updating…', 'Ενημέρωση…'), 'info');
+    return forceUpdate();
   }
 
   async function adjustRest(delta) {
@@ -303,8 +325,9 @@ export const Profile = (() => {
 
   /** FIELD-6 — тумблер снаряда; вид приходит из data-атрибута, стор пропускает только известные. */
   async function toggleEquip(kind) {
-    await toggleEquipmentKind(kind);
-    _refreshSettings();
+    const off = await toggleEquipmentKind(kind);
+    // UX-2j: чек-лист в Лаборатории не перерисовывается — правим тумблер на месте.
+    document.getElementById(`sw-equip-${kind.replace(/ /g, '-')}`)?.classList.toggle('on', !off.includes(kind));
   }
 
   async function togglePanda() {
@@ -630,6 +653,7 @@ export const Profile = (() => {
     togglePandaMoods,
     toggleLabFlag,
     toggleEquip,
+    reinstallSw,
     setLang,
     exportData,
     exportCsv,
