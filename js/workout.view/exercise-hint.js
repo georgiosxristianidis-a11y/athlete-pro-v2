@@ -104,13 +104,50 @@ function bodyNode(body, v, zones, cls) {
   svg.setAttribute('class', cls);
   svg.setAttribute('viewBox', body.VIEWBOX[v]);
   svg.setAttribute('aria-hidden', 'true');
+  const g = document.createElementNS(SVG_NS, 'g');
   for (const [c, pt] of bodyPolys(body, v, zones)) {
     const p = document.createElementNS(SVG_NS, 'polygon');
     if (c) p.setAttribute('class', c);
     p.setAttribute('points', pt);
-    svg.append(p);
+    g.append(p);
   }
+  svg.append(outlineFilter(`hint-ol-${v}`), g);
+  g.setAttribute('filter', `url(#hint-ol-${v})`);
   return svg;
+}
+/**
+ * HINT-1b: тонкий контур тела крупного силуэта. Полигоны разделены зазорами, обводка
+ * каждого дала бы линии между мышцами — фильтр смыкает зазоры (dilate→erode, радиус 4
+ * единиц viewBox), расширяет маску на 1 единицу и вычитает её: остаётся кольцо только по
+ * внешнему краю. Без blur; цвет кольца — flood-color в css/workout.css (блок HINT-1).
+ * @param {string} id
+ */
+function outlineFilter(id) {
+  const f = document.createElementNS(SVG_NS, 'filter');
+  f.id = id;
+  f.setAttribute('class', 'hint-ol');
+  /** @type {Array<[string, Record<string, string>]>} */
+  const steps = [
+    ['feMorphology', { in: 'SourceAlpha', operator: 'dilate', radius: '4', result: 'd' }],
+    ['feMorphology', { in: 'd', operator: 'erode', radius: '4', result: 'c' }],
+    ['feMorphology', { in: 'c', operator: 'dilate', radius: '1', result: 'r' }],
+    ['feComposite', { in: 'r', in2: 'c', operator: 'out', result: 'ring' }],
+    ['feFlood', {}],
+    ['feComposite', { in2: 'ring', operator: 'in', result: 'line' }],
+  ];
+  for (const [tag, attrs] of steps) {
+    const s = document.createElementNS(SVG_NS, tag);
+    for (const [k, val] of Object.entries(attrs)) s.setAttribute(k, val);
+    f.append(s);
+  }
+  const merge = document.createElementNS(SVG_NS, 'feMerge');
+  for (const src of ['SourceGraphic', 'line']) {
+    const m = document.createElementNS(SVG_NS, 'feMergeNode');
+    m.setAttribute('in', src);
+    merge.append(m);
+  }
+  f.append(merge);
+  return f;
 }
 /** Элемент с классом и текстом. @param {string} tag @param {string} cls @param {string} [text] @param {Array<Node|string>} [kids] */
 function node(tag, cls, text, kids = []) {
