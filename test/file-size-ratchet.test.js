@@ -19,7 +19,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Поимённые потолки гигантов (пути сверены по `git ls-files`).
 const GIANT_CEILINGS = {
   'js/workout.store.js': 1651,
-  'js/locale.store.js': 1310,
+  'js/locale.store.js': 1314, // +4: тумблер weekly-calendar в Лаборатории (ANL-A3, решение Gio 22.11)
   'js/dashboard.js': 1303,
   'js/intel.view.js': 1179,
   'js/shared/athlete-room.js': 1166,
