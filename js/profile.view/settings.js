@@ -315,8 +315,6 @@ ${flag('gym-equipment') ? _renderEquipment(equipmentOff) : ''}
 
     <!-- ── DATA & CLOUD SYNC ── -->
     ${_renderData(settings, syncStatus, syncStatusLabel, syncStatusColor, cloudConfigured)}
-
-    ${_renderLab()}
   `;
 }
 
@@ -357,15 +355,24 @@ function _renderEquipment(off) {
  * Стоит последней карточкой: это инструмент проверки, а не настройка.
  * Метка «изменено» — чтобы на телефоне было видно, что устройство идёт не по
  * дефолту релиза, и не гадать, почему экран ведёт себя иначе.
+ *
+ * LAB-3: блок переехал из настроек под строку версии Профиля и свёрнут по
+ * умолчанию — инструмент разработки, а не настройка, ему не место среди
+ * пользовательских карточек. Заголовок одет как строка версии (те же токены),
+ * чтобы читался служебной подписью, а не секцией. Блок вне
+ * #profile-settings-block и после первого рендера не перерисовывается:
+ * тумблер и смена языка правят узлы на месте (profile.js), иначе раскрытый
+ * блок захлопывался бы под пальцем. Бейдж «изменено» есть всегда, `hidden`
+ * снимается по isOverridden.
  * @returns {string}
  */
-function _renderLab() {
+export function renderLab() {
   const rows = LAB_FLAGS.map(
     (name) => `
       <div style="display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); padding: var(--sp-0-5) 0;">
         <div class="pref-info">
-          <div class="pref-title">${t(`lab.${name}`)}${isOverridden(name) ? ` <span style="color:var(--c-accent); font-size:var(--fs-1); font-weight:var(--fw-bold);">${t('lab.changed')}</span>` : ''}</div>
-          <div class="pref-sub">${t(`lab.${name}_sub`)}</div>
+          <div class="pref-title"><span data-lab-title="${esc(name)}">${t(`lab.${name}`)}</span> <span data-lab-changed="${esc(name)}" style="color:var(--c-accent); font-size:var(--fs-1); font-weight:var(--fw-bold);"${isOverridden(name) ? '' : ' hidden'}>${t('lab.changed')}</span></div>
+          <div class="pref-sub" data-lab-sub="${esc(name)}">${t(`lab.${name}_sub`)}</div>
         </div>
         <div class="switch-wrap" data-action="settings:toggleLab" data-flag="${esc(name)}">
           <div class="switch ${flag(name) ? 'on' : ''}" id="sw-lab-${esc(name)}">
@@ -375,11 +382,16 @@ function _renderLab() {
       </div>`,
   ).join('<div class="pref-divider"></div>');
   return `
-    <div class="section-label-alt">${t('settings.lab')}</div>
-    <div class="profile-card" style="padding:var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-1);">
-      <div class="pref-sub">${t('settings.lab_hint')}</div>
-      ${rows}
-    </div>
+    <details class="lab-block" id="profile-lab">
+      <summary class="lab-summary">
+        <span id="profile-lab-label">${t('settings.lab')}</span>
+        <svg class="lab-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </summary>
+      <div class="profile-card" style="padding:var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-1);">
+        <div class="pref-sub" id="profile-lab-hint">${t('settings.lab_hint')}</div>
+        ${rows}
+      </div>
+    </details>
   `;
 }
 

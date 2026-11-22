@@ -30,7 +30,7 @@ import {
 } from './profile.store.js';
 import { t, getLang, tri } from './locale.store.js';
 import { renderProfile } from './profile.view.js';
-import { renderSettings, backupSubLabel, backupMetaLabel } from './profile.view/settings.js';
+import { renderSettings, renderLab, backupSubLabel, backupMetaLabel } from './profile.view/settings.js';
 import { VERSION } from './version.js';
 import { Toast } from './shell.js';
 import { on, onChange } from './events.js';
@@ -100,9 +100,12 @@ export const Profile = (() => {
 
       <!-- ── Version (Subtle Elite) ── -->
       <!-- padding-bottom: 120px — не ритм, а клиренс таб-бара, тот же, что у .screen. -->
-      <div id="app-build-stamp" style="margin-top: var(--sp-6); padding-bottom: 120px; text-align: center; opacity: 0.25; font-size: var(--fs-1); font-weight: var(--fw-black); letter-spacing: 0.15em; color: var(--c-text-2); text-transform: uppercase;">
+      <div id="app-build-stamp" style="margin-top: var(--sp-6); text-align: center; opacity: 0.25; font-size: var(--fs-1); font-weight: var(--fw-black); letter-spacing: 0.15em; color: var(--c-text-2); text-transform: uppercase;">
         Athlete Pro v${VERSION} · Elite Edition
       </div>
+      <!-- LAB-3: Лаборатория под строкой версии, свёрнута. Клиренс таб-бара
+           (120px) переехал сюда со строки версии — блок теперь последний. -->
+      <div id="profile-lab-block" style="padding-bottom: 120px;">${renderLab()}</div>
       <input type="file" id="import-file-input" accept=".json" style="display:none" data-change="profile:importFile">
     `;
 
@@ -160,6 +163,27 @@ export const Profile = (() => {
     block.innerHTML = renderSettings(settings, lang, syncStatus, cloudConfigured, equipmentOff);
   }
 
+  /* LAB-3: Лаборатория вне #profile-settings-block и не перерисовывается —
+     раскрытый <details> захлопнулся бы под пальцем, а тумблер терял бы свой
+     transition. Правим узлы на месте, тексты — через textContent. */
+  async function _syncLabRow(name) {
+    const { flag, isOverridden } = await import('./flags.js');
+    document.getElementById(`sw-lab-${name}`)?.classList.toggle('on', flag(name));
+    const badge = document.querySelector(`[data-lab-changed="${CSS.escape(name)}"]`);
+    if (badge) badge.hidden = !isOverridden(name);
+  }
+
+  function _relabelLab() {
+    const set = (el, text) => {
+      if (el) el.textContent = text;
+    };
+    set(document.getElementById('profile-lab-label'), t('settings.lab'));
+    set(document.getElementById('profile-lab-hint'), t('settings.lab_hint'));
+    document.querySelectorAll('[data-lab-title]').forEach((el) => set(el, t(`lab.${el.dataset.labTitle}`)));
+    document.querySelectorAll('[data-lab-sub]').forEach((el) => set(el, t(`lab.${el.dataset.labSub}_sub`)));
+    document.querySelectorAll('[data-lab-changed]').forEach((el) => set(el, t('lab.changed')));
+  }
+
   /** Re-render the passport only — for actions that change workouts, not settings. */
   function _refreshPassport(lang) {
     const el = document.getElementById('profile-passport');
@@ -192,6 +216,7 @@ export const Profile = (() => {
     if (clearLabel) clearLabel.textContent = t('profile.clear_all');
 
     await _refreshSettings();
+    _relabelLab();
     await _refreshPassport(lang);
   }
 
@@ -350,7 +375,9 @@ export const Profile = (() => {
         .catch(() => {});
     }
     Toast.show(t('lab.restart'), 'success');
+    // Настройки тоже: часть карточек там рисуется за лаб-флагом (gym-equipment).
     _refreshSettings();
+    _syncLabRow(name);
   }
 
   async function exportData() {

@@ -445,6 +445,34 @@ button.pref-row-icon:active,
   margin: var(--sp-3) var(--sp-2) var(--sp-1);
 }
 
+/* ── LAB-3: Лаборатория под строкой версии ──
+   Заголовок одет токенами #app-build-stamp (fs-1, fw-black, text-2, 0.25,
+   разрядка 0.15em): служебная подпись, а не секция. Высота 44px — тач-цель. */
+.lab-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-0-5);
+  min-height: 44px;
+  cursor: pointer;
+  opacity: 0.25;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.15em;
+  color: var(--c-text-2);
+  text-transform: uppercase;
+}
+.lab-summary::-webkit-details-marker {
+  display: none;
+}
+.lab-chev {
+  transition: transform var(--t-fast);
+}
+.lab-block[open] .lab-chev {
+  transform: rotate(180deg);
+}
+
 /* ── Row with Icon (Reference Pattern) ── */
 .pref-row-icon {
   display: flex;
