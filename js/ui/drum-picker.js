@@ -92,7 +92,15 @@ function _healIfOutsideWindow(d, rawIdx) {
 export function syncDrumUI(type, ei, si, value) {
   const key = `${type}-${ei}-${si}`;
   const d   = _drums.get(key);
-  if (!d) return;
+  if (!d) {
+    // UX-1c: барабаны строятся кадром позже рендера (rAF → initDrumPickers) и
+    // берут старт из data-value. Запись, пришедшая до сборки, иначе терялась
+    // для показа: State 60, барабан встаёт на отрисованный 0 (webkit e2e).
+    const wrap = /** @type {HTMLElement|null} */ (document.querySelector(
+      `.drum-wrap[data-type="${type}"][data-ei="${ei}"][data-si="${si}"]:not([data-drum-init])`));
+    if (wrap) wrap.dataset.value = String(value);
+    return;
+  }
   const idx = Math.max(0, Math.min(d.count - 1, Math.round((value - d.min) / d.step)));
   if (idx === d.lastIdx) return;
   d.syncing      = true;

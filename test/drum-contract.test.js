@@ -18,7 +18,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ITEM_H, buildDrum, countItems } from './drum-harness.js';
+import { ITEM_H, buildDrum, countItems, FakeTrack, setupGlobals, activeItem } from './drum-harness.js';
 
 const MODES = ['legacy', 'virtual', 'window'];
 const BASE = { legacy: 0, virtual: 100, window: 200 };
@@ -151,4 +151,27 @@ test('[window] consecutive flings chain across re-centres to reach any value', a
   track.fire('scrollend');
   assert.deepEqual(setWeight.calls,
     [[304, 0, 130], [304, 0, 80]]); // 180 → 130 → 80
+});
+
+// UX-1c (webkit e2e): барабаны строятся кадром позже рендера и берут старт из
+// data-value. Запись, пришедшая ДО сборки, обязана дойти до показа — иначе
+// State 60, а барабан встаёт на отрисованный 0 («показано ≠ записано»).
+test('[legacy] contract: syncDrumUI before the drum is built lands in the lazy build', async () => {
+  setupGlobals();
+  const { syncDrumUI, initDrumPickers } = await import('../js/ui/drum-picker.js');
+  const track = new FakeTrack();
+  const wrap = { dataset: { type: 'w', ei: '400', si: '2', value: '0' }, querySelector: () => track };
+  const sels = [];
+  globalThis.document.querySelector = (sel) => { sels.push(sel); return wrap; };
+  try {
+    syncDrumUI('w', 400, 2, 60);
+  } finally {
+    delete globalThis.document.querySelector;
+  }
+  assert.match(sels[0], /data-type="w"\]\[data-ei="400"\]\[data-si="2"\]:not\(\[data-drum-init\]\)/);
+  assert.equal(wrap.dataset.value, '60');
+  globalThis.document._wraps.push(wrap);
+  initDrumPickers();
+  assert.equal(track.scrollTop, 24 * ITEM_H); // 60 / 2.5
+  assert.equal(activeItem(track)?.textContent, '60');
 });
