@@ -58,7 +58,7 @@ describe('карточки по семействам', () => {
     const bench = curves.filter((c) => c.family === 'family:bench');
     assert.equal(bench.length, 1);
     assert.equal(bench[0].name, 'Bench Press');
-    assert.equal(bench[0].label, 'жим лёжа · штанга');
+    assert.equal(bench[0].label, 'bench press · barbell');
   });
 
   test('«Мой максимум» — реально поднятый вес лучшего подхода, e1RM отдельно', () => {
@@ -86,7 +86,7 @@ describe('карточки по семействам', () => {
     assert.equal(c.label, '');
     assert.equal(activityOf(w).byFamily.size, 1);
     assert.equal([...activityOf(w).byFamily.values()][0].recent, 1);
-    assert.equal(familyLabel('Leg Press').label, 'жим ногами 45°');
+    assert.equal(familyLabel('Leg Press').label, 'leg press 45°', 'язык теста en — английская пара (UX-2g)');
   });
 
   test('пустая и битая история не падает', () => {
@@ -105,7 +105,7 @@ describe('карточки по семействам', () => {
     renderStrengthCurves(calculateProgressionCurves(skewedHistory(), { minMonths: 1, families: true }), /** @type {any} */ (mount));
     assert.match(mount.innerHTML, /sc-cur">90<span class="sc-unit">kg × 3</);
     assert.match(mount.innerHTML, /1ПМ|1RM|1ΜΕ/);
-    assert.match(mount.innerHTML, /жим лёжа · штанга/);
+    assert.match(mount.innerHTML, /bench press · barbell/);
     const old = { innerHTML: '', querySelectorAll: () => [], querySelector: () => null };
     renderStrengthCurves(calculateProgressionCurves(skewedHistory(), { minMonths: 1 }), /** @type {any} */ (old));
     assert.doesNotMatch(old.innerHTML, /kg ×|≈/);

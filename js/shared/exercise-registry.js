@@ -25,6 +25,8 @@
  * @property {string} familyRu      семейство по-русски (как в таблице)
  * @property {string} variant       id варианта
  * @property {string} variantRu     вариант по-русски (пусто — таблица варианта не называет)
+ * @property {string} familyEn      семейство по-английски (UX-2g)
+ * @property {string} variantEn     вариант по-английски (пусто там же, где variantRu)
  * @property {ReadonlyArray<string>} muscles  id мышц, главные первыми
  * @property {ReadonlyArray<string>} names    имена в истории; первое — каноническое
  * @property {LiftKey} [lift]       базовое движение для lift-map/DOTS; нет — в нормы не входит
@@ -53,6 +55,92 @@ export const MUSCLE_RU = Object.freeze({
   abs: 'пресс',
 });
 
+/** id мышцы → подпись в en/el (UX-2g): пара к MUSCLE_RU, ключи те же. */
+export const MUSCLE_EN = Object.freeze({
+  chest: 'chest',
+  'chest-upper': 'upper chest',
+  triceps: 'triceps',
+  biceps: 'biceps',
+  brachialis: 'brachialis',
+  shoulders: 'shoulders',
+  'delts-side': 'side delts',
+  'delts-rear': 'rear delts',
+  traps: 'traps',
+  lats: 'lats',
+  back: 'back',
+  'lower-back': 'lower back',
+  quads: 'quads',
+  glutes: 'glutes',
+  hamstrings: 'hamstrings',
+  adductors: 'adductors',
+  calves: 'calves',
+  legs: 'legs',
+  abs: 'abs',
+});
+
+/**
+ * id семейства → английская подпись (UX-2g). Таблицу семейств не трогаем: пары живут
+ * рядом и подставляются в `ex()`, строки таблицы остаются как утвердил Gio.
+ * @type {Readonly<Record<string, string>>}
+ */
+const FAMILY_EN = Object.freeze({
+  bench: 'bench press',
+  'incline-press': 'incline press',
+  'chest-press': 'chest press',
+  fly: 'chest fly',
+  dips: 'dips',
+  pullover: 'pullover',
+  'leg-press': 'leg press 45°',
+  squat: 'squat',
+  'leg-extension': 'leg extension',
+  'leg-curl': 'leg curl',
+  lunge: 'lunges',
+  'hip-thrust': 'hip thrust',
+  'hip-abduction': 'hip abduction',
+  'hip-adduction': 'hip adduction',
+  'calf-raise': 'calf raise',
+  pulldown: 'lat pulldown',
+  'pull-up': 'pull-ups',
+  'cable-row': 'cable row',
+  'lever-row': 'seated lever row',
+  't-bar-row': 'T-bar row',
+  'back-extension': 'back extension',
+  shrug: 'shrugs',
+  ohp: 'overhead press',
+  'lateral-raise': 'lateral raise',
+  'rear-fly': 'reverse fly',
+  'upright-row': 'upright row',
+  pushdown: 'cable pushdown',
+  'skull-crusher': 'skull crusher',
+  'overhead-extension': 'overhead extension',
+  'cable-curl': 'cable curl',
+  'barbell-curl': 'barbell curl',
+  'dumbbell-curl': 'dumbbell curl',
+  'hammer-curl': 'hammer curl',
+  'preacher-curl': 'preacher curl',
+  crunch: 'crunches',
+});
+
+/**
+ * id варианта (`<семейство>.<вариант>`) → английская подпись; только у вариантов,
+ * которые таблица называет (variantRu не пуст).
+ * @type {Readonly<Record<string, string>>}
+ */
+const VARIANT_EN = Object.freeze({
+  'bench.barbell': 'barbell',
+  'bench.dumbbell': 'dumbbells',
+  'incline-press.dumbbell': 'dumbbells',
+  'chest-press.machine': 'machine',
+  'fly.machine': 'machine',
+  'dips.bodyweight': 'bodyweight/weighted',
+  'dips.machine': 'dip machine (stack)',
+  'squat.machine': 'machine (not DOTS)',
+  't-bar-row.supported': 'chest-supported',
+  't-bar-row.bent': 'bent-over',
+  'ohp.barbell': 'barbell standing',
+  'ohp.dumbbell-seated': 'dumbbells seated',
+});
+
 /**
  * @param {number} row
  * @param {string} family
@@ -65,14 +153,17 @@ export const MUSCLE_RU = Object.freeze({
  * @returns {Readonly<ExerciseEntry>}
  */
 function ex(row, family, familyRu, variant, variantRu, muscles, names, lift) {
+  const id = `${family}.${variant}`;
   /** @type {ExerciseEntry} */
   const e = {
-    id: `${family}.${variant}`,
+    id,
     row,
     family,
     familyRu,
+    familyEn: FAMILY_EN[family] ?? family,
     variant,
     variantRu,
+    variantEn: variantRu ? (VARIANT_EN[id] ?? variant) : '',
     muscles: Object.freeze(muscles),
     names: Object.freeze(names),
   };

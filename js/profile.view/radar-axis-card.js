@@ -10,11 +10,12 @@
    Чистый модуль: ни DOM, ни events.js, ни флагов — обработчики вешает hexagon-radar.js.
    ════════════════════════════════════════════════════════ */
 
-import { tri, isRu } from '../locale.store.js';
+import { tri } from '../locale.store.js';
 import { esc } from '../shared/utils.js';
 import { fmtNum } from '../shared/format.js';
 import { exrxTier } from '../strength-engine.js';
-import { EXERCISES, MUSCLE_RU, getExercise } from '../shared/exercise-registry.js';
+import { EXERCISES, getExercise } from '../shared/exercise-registry.js';
+import { entryLabels } from '../shared/exercise-labels.js';
 
 /** @type {Record<string, [string, string, string]>} */
 const TIER = {
@@ -102,10 +103,11 @@ export function axisCardHtml(axis, ctx) {
     body += row(tri('1ПМ', '1RM', '1RM'), `${fmtNum(Math.round(rm))} ${tri('кг', 'kg', 'kg')}${lvl}`);
   }
 
-  // Семейство и мышцы — из реестра (русские подписи; в en/el строка скрыта, как и в пикере — только ru).
+  // Семейство и мышцы — из реестра на языке UI (UX-2g: в en/el английские пары).
   const entry = (rec && getExercise(rec.id)) || EXERCISES.find((e) => e.lift === lift) || null;
-  const muscles = entry && isRu()
-    ? `<div class="pp-rc-muscles">${esc(entry.familyRu)} · ${entry.muscles.map((m) => esc(/** @type {Record<string, string>} */ (MUSCLE_RU)[m] || m)).join(', ')}</div>`
+  const lbl = entry ? entryLabels(entry) : null;
+  const muscles = lbl
+    ? `<div class="pp-rc-muscles">${esc(lbl.family)} · ${lbl.muscles.map((m) => esc(m)).join(', ')}</div>`
     : '';
   // Ключ семейства — тот же `family:<id>`, что у карточки Stats (family-curves.js); вне реестра — без него.
   const famAttr = entry ? ` data-family="family:${esc(entry.family)}"` : '';
