@@ -260,11 +260,14 @@ function pauseMotion(s, p) {
   }
 }
 
+// UX-2e: перерисовка не трогает циклы — WAAPI живёт на самих canvas, новый битмап едет
+// с того же currentTime; запуск только на первом рисунке (дальше вход — через IO и навигацию).
 function paint(s) {
   if (!s.host.getBoundingClientRect().width) return; // экран скрыт: нарисуем, когда карточка получит размер
   draw(s.host, s.cvs, s.type);
+  const first = !s.drawn;
   s.drawn = true;
-  startMotion(s);
+  if (first) startMotion(s);
 }
 
 /**
@@ -279,7 +282,6 @@ export function mountMatter(host, type) {
   if (s) {
     if (s.type !== type) {
       s.type = type;
-      s.drawn = false;
       paint(s);
     }
     return;
@@ -293,7 +295,13 @@ export function mountMatter(host, type) {
   const screenId = host.closest('.screen')?.id;
   s = { host, wrap, type, cvs: [...wrap.children], loops: null, clock: null, settles: [], drawn: false, visible: false, onScreen: true };
   let timer = 0;
-  s.ro = new ResizeObserver(() => {
+  // UX-2e: только ширина. Высоту меняет renderToday на каждом load(), а 2400 частиц в главном
+  // потоке — фриз; по высоте слой тянет CSS (120% хоста), край держит запас PAD.
+  let lastW = -1;
+  s.ro = new ResizeObserver((entries) => {
+    const w = Math.round(entries[entries.length - 1].contentRect.width);
+    if (w === lastW) return;
+    lastW = w;
     clearTimeout(timer);
     timer = setTimeout(() => paint(s), s.drawn ? 150 : 0);
   });
