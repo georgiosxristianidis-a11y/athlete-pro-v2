@@ -1474,9 +1474,13 @@
 [data-tone='pull'] { --hint-tone: var(--c-pull); }
 [data-tone='legs'] { --hint-tone: var(--c-legs); }
 [data-tone='core'] { --hint-tone: var(--c-accent); }
-.hint-body { flex: none; }
-.hint-body polygon { fill: var(--c-surface-h); }
-.hint-body polygon.is-n { fill: var(--c-border); }
+/* HINT-1b: тело тёмной заливкой (тёмная тема — самый глубокий слой, светлая — «врезка»),
+   голова/шея/колени тем же тоном; у крупного силуэта — тонкий контур акцентом (фильтр hint-ol в JS). */
+.hint-body { flex: none; --hint-fill: var(--c-bg); }
+:root[data-theme='light'] .hint-body { --hint-fill: var(--c-bg-3); }
+.hint-body polygon,
+.hint-body polygon.is-n { fill: var(--hint-fill); }
+.hint-ol feFlood { flood-color: var(--c-accent); }
 .hint-body polygon.is-p { fill: var(--hint-tone); }
 .hint-body polygon.is-s { fill: var(--hint-tone); fill-opacity: 0.38; }
 .hint-body.is-mini { height: var(--sp-6); }

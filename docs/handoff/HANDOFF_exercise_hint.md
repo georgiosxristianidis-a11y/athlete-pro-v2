@@ -7,6 +7,7 @@
 - Пункт «Техника» в меню ⋮ — при ON всегда, даже когда полоса скрыта.
 - Полоса скрывается после 3 сессий с упражнением (`HINT_HIDE_AFTER`, `sessionsDone` по canonicalKey, закрытый подход с повторами).
 - Данные: `js/shared/exercise-hints.js` — 43 имени сид-планов, мост `lib` в `exercises-library.json`, ru/en/el (el не вычитан носителем). Контуры: `js/shared/body-map.js` (MIT, react-body-highlighter, (c) 2020 GV79); мышца → зона — `MUSCLE_ZONES`.
+- Стиль силуэта (HINT-1b, 1.27.236, решение Gio 15.11): тело тёмное (`--c-bg`, в светлой теме `--c-bg-3`), зоны тоном PPL, вспомогательные приглушённо. У крупного — тонкий контур `--c-accent` SVG-фильтром `hint-ol` (смыкание зазоров, кольцо по внешнему краю, без blur), у мини контура нет.
 - Код: `js/workout.view/exercise-hint.js`, логика `js/shared/hint-resolve.js`; данные и контуры грузятся `import()` только при ON. CSS — блок `HINT-1` в `css/workout.css`. Гард `test/exercise-hint.test.js`.
 
 ## Ограничения и вопросы Gio
