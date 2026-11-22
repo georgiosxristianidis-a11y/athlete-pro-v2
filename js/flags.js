@@ -163,6 +163,10 @@ const DEFAULTS = {
   // пальцем больше не теряет отдых. Возврат ведёт отсчёт к прежнему концу.
   // Default OFF до поля Gio; тумблер в Лаборатории. Kill switch: Flags.setFlag('rest-skip-undo', false)
   'rest-skip-undo': false,
+  // UX-1c (аудит 14.11, №3): вес, поставленный барабаном, протягивается вниз по подряд
+  // идущим незакрытым подходам, которых рука не касалась (js/workout.view/weight-fill.js).
+  // Default OFF до поля Gio. Kill switch: Flags.setFlag('weight-fill', false)
+  'weight-fill': false,
   // HOME-3 (вердикт Gio 14.10, «12 с»): в карточке «Сегодня» (home-feed-a) — материя:
   // пыль и ленты от правого верхнего угла, сталь --c-chrome (js/shared/home-matter.js).
   // 12 с после входа на Главную, затем 1 с в нейтраль и замереть. Без home-feed-a
