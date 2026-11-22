@@ -24,7 +24,7 @@ const TABLE = [
   [6, ['Chest Dip', 'Dips', 'Dips (Chest Focus)', 'Tricep Dip'], 'брусья'],
   [7, ['Dumbbell Pullover', 'Pullover DB'], 'пуловер'],
   [8, ['Leg Press'], 'жим ногами 45°'],
-  [9, ['Hack Squat (Machine)', 'Squat machine'], 'присед'],
+  [9, ['Hack Squat (Machine)', 'Hack Squat', 'Squat machine'], 'присед'],
   [10, ['Leg Extension', 'Leg Extensions'], 'разгибание ног'],
   [11, ['Lying Leg Curl', 'Leg Curl'], 'сгибание ног'],
   [12, ['Walking Lunge', 'Reverse Lunge'], 'выпады'],

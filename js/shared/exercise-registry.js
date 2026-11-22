@@ -102,7 +102,7 @@ export const EXERCISES = Object.freeze([
   ex(8, 'leg-press', 'жим ногами 45°', 'base', '', ['quads', 'glutes'], ['Leg Press']),
   // Не DOTS: присед в тренажёре считается своим вариантом, `lift` не задан.
   ex(9, 'squat', 'присед', 'machine', 'тренажёр (не DOTS)', ['quads', 'glutes'],
-    ['Hack Squat (Machine)', 'Squat machine']),
+    ['Hack Squat (Machine)', 'Hack Squat', 'Squat machine']),
   ex(10, 'leg-extension', 'разгибание ног', 'base', '', ['quads'], ['Leg Extension', 'Leg Extensions']),
   ex(11, 'leg-curl', 'сгибание ног', 'base', '', ['hamstrings'], ['Lying Leg Curl', 'Leg Curl']),
   ex(12, 'lunge', 'выпады', 'base', '', ['legs', 'glutes'], ['Walking Lunge', 'Reverse Lunge']),
