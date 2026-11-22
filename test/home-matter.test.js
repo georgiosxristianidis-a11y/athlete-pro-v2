@@ -109,3 +109,47 @@ test('край не открывается: сдвиг ближнего слоя
   assert.ok(minH <= 106, `минимальная высота карточки ${minH} px`);
   assert.ok(minH <= 124, 'самая низкая измеренная карточка (пустой список, 124 px) в запасе');
 });
+
+// ── UX-2e: материя без фриза ─────────────────────────────────────────────────
+test('UX-2e: смена высоты не зовёт paint, смена ширины зовёт', async () => {
+  const { mountMatter, unmountMatter } = await import('../js/shared/home-matter.js');
+  const ros = [];
+  const saved = { document: globalThis.document, window: globalThis.window, RO: globalThis.ResizeObserver, IO: globalThis.IntersectionObserver };
+  const doc = new EventTarget();
+  doc.documentElement = { dataset: {} };
+  doc.hidden = false;
+  doc.createElement = () => ({ setAttribute() {}, remove() {}, children: [{}, {}, {}], innerHTML: '' });
+  globalThis.document = doc;
+  globalThis.window = new EventTarget();
+  globalThis.ResizeObserver = class { constructor(cb) { this.cb = cb; ros.push(this); } observe() {} disconnect() {} };
+  globalThis.IntersectionObserver = class { observe() {} disconnect() {} };
+  let paints = 0; // paint() первым делом меряет хост; ширина 0 — дальше draw не идёт (canvas в node нет)
+  const host = {
+    prepend() {}, closest: () => null, classList: { add() {}, remove() {} },
+    getBoundingClientRect: () => { paints++; return { width: 0, height: 0 }; },
+  };
+  const tick = () => new Promise((r) => setTimeout(r, 200));
+  const fire = (width, height) => ros[0].cb([{ contentRect: { width, height } }]);
+  try {
+    mountMatter(host, 'push');
+    fire(360, 180);
+    await tick();
+    assert.equal(paints, 1, 'первый размер рисует');
+    fire(360, 240);
+    fire(360, 120);
+    await tick();
+    assert.equal(paints, 1, 'высота (renderToday) не перерисовывает');
+    fire(390, 120);
+    await tick();
+    assert.equal(paints, 2, 'ширина перерисовывает');
+  } finally {
+    unmountMatter(host);
+    Object.assign(globalThis, { document: saved.document, window: saved.window, ResizeObserver: saved.RO, IntersectionObserver: saved.IO });
+  }
+});
+
+test('UX-2e: перерисовка не перезапускает циклы — startMotion только на первом рисунке', () => {
+  const body = MOD.slice(MOD.indexOf('function paint('), MOD.indexOf('export function mountMatter'));
+  assert.match(body, /if \(first\) startMotion\(s\)/);
+  assert.doesNotMatch(MOD.slice(MOD.indexOf('export function mountMatter')), /s\.drawn = false/, 'смена типа дня не сбрасывает циклы');
+});
