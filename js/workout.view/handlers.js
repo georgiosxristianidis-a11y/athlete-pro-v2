@@ -25,8 +25,7 @@ import {
   snapPlanWeights,
   lastLiftedTopWeight,
   isPending, isRecorded,
-  skipExercise,
-  unskipExercise,
+  skipExercise, unskipExercise,
   loadWorkoutHistory,
   loadRestDurationSetting,
   loadKeepAwakeSetting,
@@ -55,6 +54,7 @@ import { t } from '../locale.store.js';
 import { startWakeLockSession, releaseWakeLock } from '../features/wake-lock.js';
 import { on } from '../events.js';
 import { hintMenuItems } from './exercise-hint.js';
+import { fillWeightDown } from './weight-fill.js';
 
 on('wo:menuAction', (el) => {
   el.closest('.modal-overlay')?.remove();
@@ -109,6 +109,7 @@ export function setWeight(ei, si, w) {
   if (val === set.weight) return;
   set.weight = val;
   _updateStepperUI('w', ei, si, set.weight, set.weight <= 0, true);
+  for (const i of flag('weight-fill') ? fillWeightDown(ex.sets, si) : []) _updateStepperUI('w', ei, i, val, val <= 0); // UX-1c
   _updateLiveStats();
   persistSession();
 }
