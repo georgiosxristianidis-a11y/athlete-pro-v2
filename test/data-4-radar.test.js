@@ -94,7 +94,7 @@ describe('DATA-4 карточка оси: четыре случая данных
     const h = axisCardHtml(BENCH, ctxOf(WORKOUTS, { bench: 117 }));
     assert.ok(h.includes('100 × 5'), 'мой максимум — реально поднятый подход');
     assert.ok(h.includes('117'), '1ПМ из oneRMs, то же число что у радара');
-    assert.ok(!h.includes('pp-rc-muscles'), 'семейство и мышцы — только в ru (реестр русский); в en строки нет');
+    assert.ok(h.includes('<div class="pp-rc-muscles">bench press · chest</div>'), 'семейство и мышцы — английские пары в en (UX-2g)');
     assert.ok(/Untrained|Novice|Intermediate|Advanced|Elite/.test(h), 'уровень');
     assert.ok(h.includes('data-action="radar-open-stats"'));
   });

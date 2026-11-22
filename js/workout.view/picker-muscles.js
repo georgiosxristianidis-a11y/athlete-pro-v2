@@ -14,7 +14,8 @@
 
 import { esc } from '../shared/utils.js';
 import { tri } from '../locale.store.js';
-import { findExercise, MUSCLE_RU } from '../shared/exercise-registry.js';
+import { findExercise } from '../shared/exercise-registry.js';
+import { entryLabels } from '../shared/exercise-labels.js';
 
 /** muscleGroup библиотеки → [ru, en]. Не в списке — показываем как есть. */
 const GROUP_LABEL = Object.freeze({
@@ -71,10 +72,9 @@ export function subChipsHtml(chips, category, active) {
  *  @param {any} ex */
 export function itemMetaHtml(ex) {
   const entry = findExercise(ex.name);
-  const muscles = entry
-    ? entry.muscles.map((m) => /** @type {Record<string, string>} */ (MUSCLE_RU)[m] || m)
-    : [groupLabel(ex.muscleGroup)];
-  const fam = entry ? `<span class="ex-lbl ex-lbl-fam">${esc(entry.familyRu)}</span>` : '';
+  const lbl = entry ? entryLabels(entry) : null;
+  const muscles = lbl ? lbl.muscles : [groupLabel(ex.muscleGroup)];
+  const fam = lbl ? `<span class="ex-lbl ex-lbl-fam">${esc(lbl.family)}</span>` : '';
   const mus = muscles.map((m) => `<span class="ex-lbl ex-lbl-mus">${esc(m)}</span>`).join('');
   return `<div class="ex-meta ex-tone-${toneOf(ex.category)}">${fam}${mus}</div>`;
 }

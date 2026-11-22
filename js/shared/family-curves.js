@@ -18,6 +18,7 @@
    ════════════════════════════════════════════════════════ */
 
 import { findExercise } from './exercise-registry.js';
+import { entryLabels } from './exercise-labels.js';
 import { recordKey, buildRecords } from './exercise-records.js';
 import { isLifted } from './working-sets.js';
 
@@ -43,15 +44,15 @@ export function familyKey(name) {
 }
 
 /**
- * Подпись «семейство · вариант» (пусто для имён вне реестра и у безымянных вариантов).
+ * Подпись «семейство · вариант» на языке UI (пусто для имён вне реестра и у безымянных вариантов).
  * @param {string} name
  * @returns {{ family: string, label: string }}
  */
 export function familyLabel(name) {
   const known = findExercise(name);
   if (!known) return { family: familyKey(name), label: '' };
-  const variant = known.variantRu;
-  return { family: `family:${known.family}`, label: variant ? `${known.familyRu} · ${variant}` : known.familyRu };
+  const { family, variant } = entryLabels(known);
+  return { family: `family:${known.family}`, label: variant ? `${family} · ${variant}` : family };
 }
 
 /**
