@@ -1156,15 +1156,19 @@
   --ava-gap: 3px;
   --ava-ring-fill: linear-gradient(135deg, var(--c-accent), var(--c-secondary));
   --ava-face: linear-gradient(135deg, var(--c-bg-3), var(--c-bg-3));
+  --ava-gap-c: var(--c-bg);
   border: var(--ava-ring-w) solid transparent;
   padding: var(--ava-gap);
   border-radius: 50%;
   box-sizing: border-box;
   background:
     var(--ava-face) center / cover no-repeat content-box,
-    linear-gradient(var(--c-bg), var(--c-bg)) padding-box,
+    linear-gradient(var(--ava-gap-c), var(--ava-gap-c)) padding-box,
     var(--ava-ring-fill) border-box;
 }
+/* Светлая тема (AVA-1b): лицо без фото --c-bg-3 и фон --c-bg почти одного тона,
+   зазор пропадал. Белый ободок --c-bg-1 отделяет кольцо и от лица, и от фона. */
+:root[data-theme='light'] .ava-ring { --ava-gap-c: var(--c-bg-1); }
 .ava-ring[data-ring='accent'] { --ava-ring-fill: linear-gradient(var(--c-accent), var(--c-accent)); }
 .ava-ring[data-ring='secondary'] { --ava-ring-fill: linear-gradient(var(--c-secondary), var(--c-secondary)); }
 .ava-ring[data-ring='chrome'] { --ava-ring-fill: linear-gradient(var(--c-chrome), var(--c-chrome)); }
