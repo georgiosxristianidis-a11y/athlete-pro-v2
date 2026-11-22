@@ -33,7 +33,7 @@
 
 **Агенту, по порядку (карточка = PR = бамп версии; параллелить нельзя):**
 
-0. UX — `HANDOFF_ux_irritants.md` § Порядок (UX-2k → 2j…; 2b — поле), затем UX-1c…l
+0. UX — `HANDOFF_ux_irritants.md` § Порядок (дальше UX-2d; 2b, 2j — поле), затем UX-1c…l
 1. `ANL-ALT` — закрыть после поля п.13 (поглощена DATA-3)
 2. Фон, по одной за PR: A10 и `AUD-*` (хендофф Cursor, § Аудит 09.11); **`SUPA-1`**: keep-alive зелёный неделю — закрыть
 3. Хвост HOME-1: `insights.engine._computeStreak` в днях — решение Gio

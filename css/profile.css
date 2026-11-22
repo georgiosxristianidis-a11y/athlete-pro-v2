@@ -473,6 +473,26 @@ button.pref-row-icon:active,
   transform: rotate(180deg);
 }
 
+/* UX-2j: «Снаряды» — вложенный свёрнутый блок внутри Лаборатории. */
+.lab-sub-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  min-height: 44px;
+  cursor: pointer;
+}
+.lab-sub-summary::-webkit-details-marker {
+  display: none;
+}
+.lab-sub[open] .lab-chev {
+  transform: rotate(180deg);
+}
+.lab-sub[hidden] {
+  display: none;
+}
+
 /* ── Row with Icon (Reference Pattern) ── */
 .pref-row-icon {
   display: flex;
