@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### UX-2c: тренажёрный присед в реестре (1.27.240)
+
+- `Hack Squat` — имя записи `squat.machine` (fallback-каталог звал его так, реестр не знал). Не DOTS. Гард «каталог ⊂ реестр» + храповик непризнанных имён. Флаги не тронуты.
+
 ### AVA-1c: аватар в кольце включён по умолчанию (1.27.239)
 
 - `avatar-ring` дефолт ON по решению Gio 22.11. Kill switch прежний: тумблер в Лаборатории или `Flags.setFlag('avatar-ring', false)`.
