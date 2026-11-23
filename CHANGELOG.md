@@ -18,8 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `js/workout.view/weight-fill.js` (метка `wSet` в снимке, в запись тренировки не идёт).
 - Тесты: `test/weight-fill.test.js`, `test/e2e/weight-fill.spec.js` (барабан нижней строки = записанное).
   Тумблера в Лаборатории нет: `locale.store.js` на потолке храповика — отдельным PR.
-- webkit e2e: барабаны строятся кадром позже рендера; запись до сборки теряла показ (State 60,
-  барабан 0). `syncDrumUI` теперь пишет `data-value` несобранной обёртки.
 
 ### UX-1e: остров на концах сессии (1.27.247)
 
