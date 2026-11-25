@@ -1,0 +1,194 @@
+# Пост-мёрж smoke: после каждого мёржа в main проверяет, что релиз доехал до прода.
+#
+# Раньше это был шаг ритуала агента (`npm run smoke:prod -- --wait 180` после
+# мёржа). Мёрж уходит в auto-merge, агента при нём не будет, и шаг, который жил
+# в чьей-то голове, должен жить на сервере. Сторож `main-watchdog.yml` на этот
+# вопрос не отвечает: он смотрит на красный CI, коммит без PR и коммит без
+# прогонов, но не на то, что Vercel выкатил именно этот коммит. Зелёный CI и
+# мёртвый деплой — разные поломки.
+#
+# smoke-prod.mjs сверяет прод с ЛОКАЛЬНЫМИ `js/version.js` и `sw.js`, поэтому
+# checkout идёт на SHA пуша: версия на проде обязана совпасть с версией этого
+# коммита, а не с тем, что лежит в main к моменту, когда кто-то запустил руками.
+#
+# Устаревший SHA. Если за время окна ожидания в main приехал следующий мёрж,
+# прод уже на его версии, и smoke старого SHA честно скажет «не та версия» —
+# ложная тревога, а не потерянный релиз. Защита двойная: `concurrency` отменяет
+# прогон, когда стартует следующий, а перед зондом и перед заведением issue
+# job сам сверяет SHA с HEAD main и пропускает чужое прошлое. Релиз устаревшего
+# SHA отдельно не подтверждается: его перекрывает smoke следующего коммита.
+#
+# Первый боевой прогон — на ближайшем мёрже после влития этого файла:
+#   gh run list --workflow post-merge-smoke.yml
+# Руками (на main): Actions → Post-merge smoke → Run workflow.
+name: Post-merge smoke
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Одна проверка на main: следующий пуш отменяет текущую. Отменённый прогон issue
+# не заводит (`failure()` на отмене ложен), а проверку подхватывает новый SHA.
+concurrency:
+  group: post-merge-smoke
+  cancel-in-progress: true
+
+# Минимум прав: checkout и чтение HEAD main — contents; заведение issue — issues.
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  smoke:
+    # Ручной запуск с ветки сверял бы прод с версией ветки и красил бы на ровном
+    # месте. Зонд осмыслен только на main.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Потолок на всё: окно ожидания 5 мин + checkout/setup + заведение issue.
+    # Без него зависший fetch держал бы раннер до дефолтных 6 часов.
+    timeout-minutes: 10
+    steps:
+      - name: Сверить SHA с HEAD main
+        id: fresh
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            try {
+              const { data } = await github.rest.repos.getBranch({ owner, repo, branch: 'main' });
+              if (data.commit.sha !== context.sha) {
+                core.notice(
+                  `${context.sha.slice(0, 7)} уже не HEAD main (${data.commit.sha.slice(0, 7)}): ` +
+                  `прод едет на следующую версию, проверит её smoke следующего коммита.`
+                );
+                core.setOutput('stale', 'true');
+                return;
+              }
+            } catch (err) {
+              // Не удалось прочитать HEAD — не повод пропускать зонд. Лучше
+              // лишний прогон (и, в худшем случае, ложное issue, которое закроют),
+              // чем релиз, который никто не проверил.
+              core.warning(`HEAD main не прочитан (${err.status ?? '?'}): ${err.message}. Зондирую без сверки.`);
+            }
+            core.setOutput('stale', 'false');
+
+      - name: Checkout на SHA пуша
+        if: steps.fresh.outputs.stale != 'true'
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        if: steps.fresh.outputs.stale != 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Smoke прода
+        if: steps.fresh.outputs.stale != 'true'
+        # shell: bash включает pipefail — без него `| tee` съел бы ненулевой exit
+        # зонда, и красный прод светился бы зелёным.
+        shell: bash
+        # 300 с, а не 180 из ритуала. Vercel начинает сборку в момент пуша, но
+        # очередь деплоев и холодная сборка в пиковый час растягивают выкат за
+        # три минуты, а ложная тревога из-за слишком короткого окна хуже, чем
+        # лишние две минуты ожидания. Окно ничего не стоит на успехе: зонд
+        # ретраится раз в 15 с и выходит на первом зелёном, весь запас тратится
+        # только когда прод действительно не доехал.
+        run: node scripts/smoke-prod.mjs --wait 300 2>&1 | tee "$RUNNER_TEMP/smoke.log"
+
+      - name: Завести issue, если релиз не доехал
+        # failure(), а не always(): отмена (cancel-in-progress) и пропуск по
+        # устаревшему SHA issue не заводят.
+        if: failure() && steps.fresh.outputs.stale != 'true'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('node:fs');
+            const { owner, repo } = context.repo;
+            const sha = context.sha;
+            const short = sha.slice(0, 7);
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            // За окно ожидания main мог уехать вперёд: тогда «не та версия» — это
+            // следующий релиз, а не провал этого. Не прочитан HEAD — заводим:
+            // ложная тревога дешевле непроверенного релиза.
+            try {
+              const { data } = await github.rest.repos.getBranch({ owner, repo, branch: 'main' });
+              if (data.commit.sha !== sha) {
+                core.notice(
+                  `${short} за время проверки перестал быть HEAD main (${data.commit.sha.slice(0, 7)}). ` +
+                  `Красный зонд мог мерить прод следующего релиза — issue не завожу, проверит следующий smoke.`
+                );
+                return;
+              }
+            } catch (err) {
+              core.warning(`HEAD main не прочитан (${err.status ?? '?'}): ${err.message}. Завожу issue без сверки.`);
+            }
+
+            // Хвост лога зонда. Файла нет, если job упал до зонда (checkout,
+            // setup-node) — тогда причина в самом прогоне, а не в проде.
+            let tail = '';
+            try {
+              const lines = fs.readFileSync(`${process.env.RUNNER_TEMP}/smoke.log`, 'utf8').trimEnd().split('\n');
+              tail = lines.slice(-40).join('\n').replaceAll('```', "'''");
+            } catch {
+              tail = null;
+            }
+
+            const marker = `Smoke прода: ${short}`;
+            const title = `${marker} — релиз не доехал`;
+
+            // Дедупликация по короткому SHA в заголовке. Список открытых issue, а
+            // не search: поисковый индекс отстаёт на минуты (как в сторожа main).
+            try {
+              const open = await github.paginate(github.rest.issues.listForRepo, {
+                owner,
+                repo,
+                state: 'open',
+                per_page: 100,
+              });
+              const dup = open.find((i) => !i.pull_request && i.title.startsWith(marker));
+              if (dup) {
+                core.info(`issue на ${short} уже есть: ${dup.html_url}`);
+                return;
+              }
+            } catch (err) {
+              core.warning(
+                `Не удалось проверить дубли (${err.status ?? '?'}): ${err.message}. ` +
+                `Завожу issue: дубль лучше молчания.`
+              );
+            }
+
+            const body = [
+              `После мёржа \`${short}\` в \`main\` прод не подтвердил релиз за окно ожидания (300 с).`,
+              ``,
+              `- **Коммит:** https://github.com/${owner}/${repo}/commit/${sha}`,
+              `- **Прогон:** ${runUrl}`,
+              ``,
+              `### Что показал зонд`,
+              tail === null
+                ? `Лога зонда нет: job упал до \`scripts/smoke-prod.mjs\` (checkout или setup-node). Причина в прогоне, не обязательно в проде.`
+                : '```\n' + tail + '\n```',
+              ``,
+              `### Что делать`,
+              `1. Проверить руками, вдруг Vercel просто опоздал: \`npm run smoke:prod -- --wait 180\``,
+              `2. Красный — смотреть деплой в Vercel (сборка упала, или выкатилась не та ревизия) и \`/js/version.js\`, \`/sw.js\` на проде.`,
+              `3. Зелёный — прод догнал позже окна. Закрыть issue; если так повторяется, поднять \`--wait\` в \`.github/workflows/post-merge-smoke.yml\`.`,
+              ``,
+              `---`,
+              `Заведено автоматически: \`.github/workflows/post-merge-smoke.yml\`.`,
+            ].join('\n');
+
+            // Завести issue не вышло — сигналу больше некуда деться. Красный прогон
+            // и есть последний канал, поэтому падаем намеренно, с названной причиной
+            // (как в main-watchdog.yml): стек не скажет, какого права не хватает.
+            try {
+              const { data: issue } = await github.rest.issues.create({ owner, repo, title, body });
+              core.warning(`Заведён issue ${issue.html_url}`);
+            } catch (err) {
+              core.setFailed(
+                `Smoke на ${short} красный, но не удалось завести issue ` +
+                `(${err.status ?? '?'}): ${err.message}. Если 403 — не хватает права ` +
+                `\`issues: write\` в \`.github/workflows/post-merge-smoke.yml\`.\n\n${title}\n\n${body}`
+              );
+            }
