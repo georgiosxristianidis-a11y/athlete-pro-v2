@@ -5,7 +5,7 @@
    by short-circuiting all /api/* requests with 503.
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'athlete-pro-v121-ae80ffb4';
+const CACHE_NAME = 'athlete-pro-v121-c0821cc9';
 
 /* ── Two-phase precache (card PRECACHE-1) ──
    ASSETS — бут-замыкание: то, что index.html просит сам на холодном старте
@@ -40,10 +40,12 @@ const ASSETS = [
   '/js/events.js',
   '/js/flags.js',
   '/js/locale.store.js',
+  '/js/onboarding.js',
   '/js/privacy.store.js',
   '/js/profile.store.js',
   '/js/shared/ai-engine.js',
   '/js/shared/block-names.js',
+  '/js/shared/block-ticks.js',
   '/js/shared/chamber-pill.js',
   '/js/shared/cryptoClient.js',
   '/js/shared/errors-ui.js',
@@ -110,7 +112,6 @@ const ASSETS_WARM = [
   '/js/island-settings.view.js',
   '/js/journal.store.js',
   '/js/journal.view.js',
-  '/js/onboarding.js',
   '/js/plate-calc.js',
   '/js/privacy.view.js',
   '/js/profile.js',
@@ -128,7 +129,6 @@ const ASSETS_WARM = [
   '/js/shared/athlete-room.js',
   '/js/shared/avatar-ring.js',
   '/js/shared/badge-ladders.js',
-  '/js/shared/block-ticks.js',
   '/js/shared/body-map.js',
   '/js/shared/coach-snapshot.js',
   '/js/shared/confirm.js',
