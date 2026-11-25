@@ -201,7 +201,10 @@ export async function showOnboarding() {
     _overlay._resolve = resolve;
     document.body.appendChild(_overlay);
     setShellInert(true);
-    _render();
+    // PERF-9: первый кадр (включая шаг из черновика) — без fade-in: <p> шага —
+    // LCP первого визита, opacity:0 на 0.4 с добавлял ~250 мс. Переходы шагов
+    // анимируются как раньше — любой следующий _render() снимает data-still.
+    _render({ animate: false });
     const title = _overlay.querySelector('h1');
     if (title && typeof title.focus === 'function') title.focus();
   });
@@ -220,8 +223,10 @@ function _langToggle() {
       </div>`;
 }
 
-function _render() {
+function _render({ animate = true } = {}) {
   if (!_overlay) return;
+  if (animate) _overlay.removeAttribute('data-still');
+  else _overlay.setAttribute('data-still', '');
   _overlay.innerHTML = `
     <div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:var(--sp-4); padding-top:var(--sp-3); position:relative; z-index:1;">
       ${_langToggle()}
@@ -614,6 +619,7 @@ window._obFinish = async () => {
 const style = document.createElement('style');
 style.textContent = `
   .animate-in { animation: ob-fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) both; }
+  #onboarding-overlay[data-still] .animate-in { animation: none; }
   @keyframes ob-fade-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
   .ob-btn-tab { background:var(--c-bg-3); border:1.5px solid var(--c-border); border-radius:var(--r-m); color:var(--c-text-3); padding:var(--sp-1-5); font-size:var(--fs-3); font-weight:var(--fw-bold); cursor:pointer; font-family:inherit; transition:background-color 0.2s, border-color 0.2s, color 0.2s; }
   .ob-btn-tab.active { background:var(--c-accent-bg); border-color:var(--c-accent); color:var(--c-accent); }

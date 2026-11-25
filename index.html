@@ -165,10 +165,17 @@
     <link rel="modulepreload" href="js/profile.store.js" />
     <link rel="modulepreload" href="js/strength-engine.js" />
     <link rel="modulepreload" href="js/shared/ai-engine.js" />
-    <!-- PERF-3: сняты onboarding.js · claude.view.js · shared/block-ticks.js —
-         все три вне бут-замыкания, приходят через import() (js/app.js:231,
-         js/app.js:222, и block-ticks ← workout.view/render.js за ленивым
-         _loadWorkout()). Прелоад тянул их в первый заход зря.
+    <!-- PERF-9: onboarding.js и его статический импорт block-ticks.js вернулись
+         (PERF-3 их снимал как «вне бут-замыкания»). На холодном профиле LCP —
+         <p> первого шага онбординга, и без прелоада он ждал два запроса подряд
+         после бута: app.js → import('./onboarding.js') → block-ticks.js.
+         Цена — ~37 KiB у вернувшегося пользователя и оба файла в install-фазе
+         прекеша. Всё статическое замыкание onboarding.js обязано быть здесь —
+         сторожит test/perf-9-onboarding-lcp.test.js. -->
+    <link rel="modulepreload" href="js/onboarding.js" />
+    <link rel="modulepreload" href="js/shared/block-ticks.js" />
+    <!-- PERF-3: снят claude.view.js — вне бут-замыкания, приходит через
+         import(). Прелоад тянул его в первый заход зря.
          BOOT-TRIM: athlete-room · integrity · panda-* и AR-транзитивы
          (lift-map, lift-bars) — вне первого кадра.
          BOOT-TRIM-2: privacy.view · rest-timer · pip · confirm · factory ·

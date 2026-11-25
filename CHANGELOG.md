@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### PERF-9: LCP онбординга без водопада (1.27.250)
+
+- Холодный профиль (новый пользователь): LCP — `<p>` первого шага онбординга. Он ждал два запроса
+  подряд после бута (`app.js` → `import('./onboarding.js')` → `block-ticks.js`) и fade-in 0.4 с.
+- `index.html`: `modulepreload` на `js/onboarding.js` и `js/shared/block-ticks.js` (PERF-3 их снимал
+  как «вне бут-замыкания»). Оба файла теперь в install-фазе прекеша (бут ≈739 из 768 KiB).
+- `js/onboarding.js`: первый показ оверлея, включая шаг из черновика, — без fade (`data-still`);
+  переходы шагов анимируются как раньше (решение Gio 22.11, вариант A).
+- Замер (MEASURE-1, headless, CPU 4x, сеть 150 мс/1.6 Мбит/с, только дельта): FCP→LCP холодного
+  профиля 2536 → 1724 мс (медиана 5 прогонов, −812 мс); `profile.mjs --seed=0` −650 мс;
+  `--seed=120` LCP 5054 → 5022 мс — не хуже. Гард `test/perf-9-onboarding-lcp.test.js`.
+
 ### UX-1c: вес протягивается вниз по нетронутым подходам (1.27.249, флаг `weight-fill`, OFF)
 
 - Аудит 14.11, №3 и половина №10: вес, поставленный барабаном, переходит на подряд идущие незакрытые

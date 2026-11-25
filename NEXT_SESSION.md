@@ -41,7 +41,7 @@
 
 5. Аудиты (`docs/handoff/`): `ANL-A3…A11` — `HANDOFF_analytics_audit`; `UX-1c…l` — `HANDOFF_ux_mechanics_audit`; `UX-2b…p` — `HANDOFF_ux_irritants`
 
-**После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PERF-9` (стоп на мокап Gio), `PROG-0`.
+**После `LAUNCH-10`:** `USAGE-4`, `BOOT-2`/`BOOT-3`, `PROG-0`.
 
 - **Поле — Android**, iPhone отложен. **webkit в Playwright не снимать** — единственный сигнал по Safari
 - **Невлитые ветки** — `npm run inventory`; вердикты **HYG-7** за Gio
