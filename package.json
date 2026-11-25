@@ -57,7 +57,7 @@
     "@playwright/test": "^1.65.1",
     "eslint": "^10.15.0",
     "eslint-plugin-security": "^4.2.1",
-    "fake-indexeddb": "^6.2.7",
+    "fake-indexeddb": "^6.2.8",
     "globals": "^17.14.0",
     "playwright": "^1.65.1",
     "prettier": "^3.10.1",
